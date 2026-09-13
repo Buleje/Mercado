@@ -1,7 +1,8 @@
 "use client";
 
 import { CardTitle, DataTable, BlockTitle } from "@buleje/design-system";
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, startTransition } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Calculator, Download, X, Eye,
   CheckCircle2, AlertTriangle, TrendingDown, TrendingUp,
@@ -412,6 +413,9 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
   // sobre la caja abierta, no sobre la más reciente (que puede estar cerrada).
   const [rawRegisters, setRawRegisters] = useState<CashRegisterRaw[]>([]);
   const [loading, setLoading] = useState(true);
+  const detailTitleId = useId();
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(detailPanelRef, { onCerrar: () => setDetail(null), activo: !!detail });
 
   const inflightRef = useRef<AbortController | null>(null);
   const loadAudits = useCallback(() => {
@@ -577,7 +581,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
                     <td className="font-bold text-[var(--text-primary)]">{a.status !== "pendiente" ? fmt(a.countedAmount) : "—"}</td>
                     <td className={cn("font-extrabold", a.difference === 0 ? "text-[var(--text-tertiary)]" : a.difference > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{a.status !== "pendiente" ? (a.difference > 0 ? "+" : "") + fmt(a.difference) : "—"}</td>
                     <td><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[a.status].color)}><SIcon className="h-4 w-4" />{STATUS_MAP[a.status].label}</span></td>
-                    <td><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-4 w-4" /></button></td>
+                    <td><button aria-label="Ver" onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-4 w-4" /></button></td>
                   </tr>
                 );
               })}
@@ -589,13 +593,13 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       {/* Detail Modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cuadre — {detail.date} {detail.shift}</CardTitle>
+                <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cuadre — {detail.date} {detail.shift}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">{detail.cashier}{detail.closedBy ? ` · Cerrado por: ${detail.closedBy}` : " · Turno abierto"}</p>
               </div>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              <button aria-label="Cerrar" onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-center">

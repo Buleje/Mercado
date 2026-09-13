@@ -6,8 +6,9 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { activateProps } from "@/components/admin/shared/a11y";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useId, useRef, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   FileText, User, Printer, DollarSign, Clock, CheckCircle, BookOpen, FileSignature, LayoutGrid, List,
@@ -188,6 +189,11 @@ export default function ContratosModule() {
 
   // -- Contract detail
   const [selected, setSelected] = useState<ContratoAPI | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const panelTitleId = useId();
+  // El propio Escape de arriba ya cierra el panel — el hook sólo aporta foco
+  // inicial + trampa de Tab (por eso cerrarConEscape: false).
+  useModalAccesible(panelRef, { cerrarConEscape: false, activo: !!selected });
   /** El mismo contrato pero completo (con firmantes e historial), pedido al abrirlo. */
   const [detalle, setDetalle] = useState<ContratoAPI | null>(null);
   const [archivando, setArchivando] = useState<string | null>(null);
@@ -830,19 +836,19 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
-                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select aria-label="Filtrar por tipo" value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los tipos</option>
                     {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
-                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select aria-label="Filtrar por estado" value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los estados</option>
                     <option value="VIGENTE">Vigentes</option>
                     <option value="POR_VENCER">Por vencer</option>
                     <option value="VENCIDO">Vencidos</option>
                   </select>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => setViewMode("cards")} className={cn("p-2 rounded-xl transition-colors", viewMode === "cards" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}><LayoutGrid className="h-4 w-4" /></button>
-                    <button onClick={() => setViewMode("list")} className={cn("p-2 rounded-xl transition-colors", viewMode === "list" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}><List className="h-4 w-4" /></button>
+                    <button aria-label="Vista en cuadrícula" onClick={() => setViewMode("cards")} className={cn("p-2 rounded-xl transition-colors", viewMode === "cards" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}><LayoutGrid className="h-4 w-4" /></button>
+                    <button aria-label="Vista en lista" onClick={() => setViewMode("list")} className={cn("p-2 rounded-xl transition-colors", viewMode === "list" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}><List className="h-4 w-4" /></button>
                   </div>
                 </div>
 
@@ -915,7 +921,15 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         {paginated.map(c => {
                           const estado = estadoVisible(c);
                           return (
-                            <tr key={c.id} onClick={() => setSelected(c)} className="cursor-pointer">
+                            <tr
+                              key={c.id}
+                              onClick={() => setSelected(c)}
+                              tabIndex={0}
+                              role="button"
+                              aria-label={`Ver contrato ${c.numero}`}
+                              onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(c); } }}
+                              className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                            >
                               <td className="font-mono text-xs text-[var(--text-secondary)]">{c.numero}</td>
                               <td>
                                 <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
@@ -947,8 +961,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-[var(--text-secondary)]">{filteredContratos.length} contrato{filteredContratos.length !== 1 ? "s" : ""} — Pag. {page}/{totalPages}</p>
                     <div className="flex gap-1">
-                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
+                      <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+                      <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
                     </div>
                   </div>
                 )}
@@ -977,7 +991,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <CardTitle className="text-sm font-bold text-[var(--text-primary)]">{selectedTemplate.name}</CardTitle>
                           <p className="text-xs text-[var(--text-tertiary)]">{selectedTemplate.legalBasis}</p>
                         </div>
-                        <button onClick={() => { setSelectedTemplate(null); setWizardStep(0); setWizardData({}); }} className="ml-auto text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
+                        <button aria-label="Cerrar" onClick={() => { setSelectedTemplate(null); setWizardStep(0); setWizardData({}); }} className="ml-auto text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
                           <X className="h-5 w-5" />
                         </button>
                       </div>
@@ -1384,6 +1398,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Editor de Plantillas</CardTitle>
                   <select
+                    aria-label="Elegir plantilla a editar"
                     value={editorTemplate?.id || ""}
                     onChange={e => {
                       const tpl = PLANTILLAS.find(p => p.id === e.target.value);
@@ -1471,20 +1486,25 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
             <m.div key="ct-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 40 }} onClick={() => setSelected(null)} />
             <m.div
               key="ct-panel"
+              ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={panelTitleId}
+              tabIndex={-1}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] dark:bg-[#1a1a2e] border-l border-[var(--rule-base)] overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.numero}</CardTitle>
+                    <CardTitle id={panelTitleId} className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.numero}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">{TIPO_LABELS[selected.tipo] || selected.tipo}</p>
                   </div>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] ">
+                  <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] ">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>

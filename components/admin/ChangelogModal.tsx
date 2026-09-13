@@ -1,9 +1,9 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { X, Sparkles } from "@buleje/design-system/icons";
+import { Sparkles } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 const CHANGELOG = [
   {
@@ -72,73 +72,55 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
     }
   }, [open]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-100 overflow-y-auto">
-      <div className="modal-backdrop" onClick={onClose} />
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-lg max-h-[85vh] flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <SectionTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Novedades</SectionTitle>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
-            >
-              <X className="h-5 w-5 text-[var(--text-secondary)]" />
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="overflow-y-auto flex-1 px-6 py-4 space-y-6">
-            {CHANGELOG.map((release) => (
-              <div key={release.version}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 px-2.5 py-1 rounded-full">
-                    v{release.version}
-                  </span>
-                  <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">
-                    {release.fecha}
-                  </span>
-                  {release.version === CURRENT_VERSION && (
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-2 py-0.5 rounded-full uppercase">
-                      Actual
-                    </span>
-                  )}
-                </div>
-                <ul className="space-y-1.5">
-                  {release.items.map((item, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start gap-2 text-sm text-[var(--text-secondary)]"
-                    >
-                      <span className="text-primary mt-0.5 shrink-0">&#8226;</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          {/* Footer */}
-          <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-            <button
-              onClick={onClose}
-              className={cn(
-                "w-full min-h-11 rounded-xl text-sm font-semibold transition-colors",
-                "bg-primary text-white hover:bg-primary/90"
+    <AdminModal
+      open={open}
+      onClose={onClose}
+      title="Novedades"
+      icon={Sparkles}
+      variant="default"
+      footer={
+        <button
+          onClick={onClose}
+          className={cn(
+            "w-full min-h-11 rounded-xl text-sm font-semibold transition-colors",
+            "bg-primary text-white hover:bg-primary/90"
+          )}
+        >
+          Entendido
+        </button>
+      }
+    >
+      <div className={cn(MODAL_BODY, "space-y-6")}>
+        {CHANGELOG.map((release) => (
+          <div key={release.version}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 px-2.5 py-1 rounded-full">
+                v{release.version}
+              </span>
+              <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">
+                {release.fecha}
+              </span>
+              {release.version === CURRENT_VERSION && (
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-2 py-0.5 rounded-full uppercase">
+                  Actual
+                </span>
               )}
-            >
-              Entendido
-            </button>
+            </div>
+            <ul className="space-y-1.5">
+              {release.items.map((item, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2 text-sm text-[var(--text-secondary)]"
+                >
+                  <span className="text-primary mt-0.5 shrink-0">&#8226;</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        ))}
       </div>
-    </div>
+    </AdminModal>
   );
 }

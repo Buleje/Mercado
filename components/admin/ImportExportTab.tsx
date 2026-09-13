@@ -2,6 +2,7 @@
 
 import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck, DollarSign } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -163,7 +164,7 @@ export default function ImportExportTab() {
     try {
       const rows = await fetchModuleData(moduleId);
       if (rows.length === 0) {
-        alert("No hay datos disponibles para exportar.");
+        toast.info("No hay datos disponibles para exportar.");
         return;
       }
       const filename = `${moduleId}_${new Date().toISOString().slice(0, 10)}`;
@@ -173,7 +174,7 @@ export default function ImportExportTab() {
         downloadExcel(rows, filename);
       }
     } catch {
-      alert("Error al exportar. Intenta de nuevo.");
+      toast.error("Error al exportar. Intenta de nuevo.");
     } finally {
       setExporting(null);
     }

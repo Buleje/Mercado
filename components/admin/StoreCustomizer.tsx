@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -16,6 +17,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import dynamic from "next/dynamic";
 import StorefrontEditor from "./StorefrontEditor";
 
@@ -504,6 +506,7 @@ function ColorPicker({
         <div className="relative">
           <input
             type="color"
+            aria-label={`${label} personalizado`}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             className="h-11 w-11 rounded-2xl cursor-pointer border border-[var(--rule-base)] overflow-hidden p-0"
@@ -1528,11 +1531,16 @@ export default function StoreCustomizer() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const previewPanelRef = useRef<HTMLDivElement>(null);
+  const previewTitleId = useId();
+  const cerrarPreview = useCallback(() => setShowPreview(false), []);
+  useModalAccesible(previewPanelRef, { onCerrar: cerrarPreview, activo: showPreview });
   const [showCreativeMode, setShowCreativeMode] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
   const [previewWidth, setPreviewWidth] = useState(0); // 0 = full width (desktop)
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const { confirm } = useConfirm();
   // Inicializamos con el slug de la URL (si está) para evitar el flash de "/t/main"
   // que aparece antes de que useEffect cargue el slug real desde resolveActiveTenantSlug.
   const [activeTenantSlug, setActiveTenantSlug] = useState(() => {
@@ -1639,11 +1647,16 @@ export default function StoreCustomizer() {
     setSaved(false);
   }, []);
 
-  const handleReset = useCallback(() => {
-    if (!confirm("¿Restaurar todos los valores por defecto? Se perderán los cambios no guardados.")) return;
+  const handleReset = useCallback(async () => {
+    if (!(await confirm({
+      title: "¿Restaurar todos los valores por defecto?",
+      description: "Se perderán los cambios no guardados.",
+      intent: "warning",
+      confirmLabel: "Sí, restaurar",
+    }))) return;
     setTheme(DEFAULT_THEME);
     setSaved(false);
-  }, []);
+  }, [confirm]);
 
   const _handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -3589,11 +3602,12 @@ export default function StoreCustomizer() {
 
       {/* ── Modal fullscreen de preview ──────────────────────────── */}
       {showPreview && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
+        <div ref={previewPanelRef} role="dialog" aria-modal="true" aria-labelledby={previewTitleId} tabIndex={-1}
+          className="fixed inset-0 z-50 bg-black/80 flex flex-col">
           {/* Header del modal */}
           <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 shrink-0">
             <div className="flex items-center gap-3">
-              <p className="text-sm font-bold text-white">Vista previa en vivo</p>
+              <p id={previewTitleId} className="text-sm font-bold text-white">Vista previa en vivo</p>
               {/* Toggle responsive */}
               <div className="flex gap-0.5 bg-neutral-800 rounded-lg p-0.5">
                 {([
@@ -3616,7 +3630,7 @@ export default function StoreCustomizer() {
               <a href={`/t/${activeTenantSlug}?preview=true`} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-tertiary)] hover:text-white">
                 Abrir en nueva pestaña
               </a>
-              <button type="button" onClick={() => setShowPreview(false)}
+              <button aria-label="Ocultar" type="button" onClick={() => setShowPreview(false)}
                 className="h-8 w-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-white transition-colors">
                 <EyeOff className="h-4 w-4" />
               </button>

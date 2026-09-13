@@ -4,7 +4,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { CardTitle, StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 
-import { useState, useEffect, useCallback, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useId, useRef, type FormEvent } from "react";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, X,
   DollarSign, CreditCard, Check,
@@ -12,6 +12,8 @@ import {
 import type { DbPayable, DbSupplier, PaymentMethod } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import StatusBadge from "./shared/StatusBadge";
@@ -49,6 +51,10 @@ export default function PayablesTab() {
   const [showPayment, setShowPayment] = useState<string | null>(null);
   const [filterSupplier, setFilterSupplier] = useState("");
   useScrollLock(showAdd);
+  const { confirm } = useConfirm();
+  const addTitleId = useId();
+  const addPanelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(addPanelRef, { onCerrar: () => setShowAdd(false), activo: showAdd });
 
   // Add form
   const [addForm, setAddForm] = useState({ supplierId: "", description: "", amount: "", dueDate: "" });
@@ -120,7 +126,7 @@ export default function PayablesTab() {
   };
 
   const deletePayable = async (id: string) => {
-    if (!confirm("¿Eliminar esta cuenta por pagar?")) return;
+    if (!(await confirm({ title: "¿Eliminar esta cuenta por pagar?", intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
     setError(null);
     const res = await fetch(`/api/payables/${id}`, { method: "DELETE", headers: csrfHeaders() });
     if (!res.ok) { setError(await readError(res)); return; }
@@ -328,10 +334,10 @@ export default function PayablesTab() {
       {/* ── Add payable modal ── */}
       {showAdd && (
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-        <div className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
+        <div ref={addPanelRef} role="dialog" aria-modal="true" aria-labelledby={addTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
           <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
-            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</CardTitle>
-            <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
+            <CardTitle id={addTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</CardTitle>
+            <button aria-label="Cerrar" onClick={() => setShowAdd(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
           </div>
           <form onSubmit={addPayable} className="p-5 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">

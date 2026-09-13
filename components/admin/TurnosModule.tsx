@@ -2,8 +2,9 @@
 
 import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Clock, Play, Square, DollarSign, Loader2, AlertTriangle,
   User, ChevronLeft, ChevronRight, X, ShoppingCart, Download,
@@ -277,6 +278,26 @@ export default function TurnosModule() {
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
   }, [showMetaConfig, showResumen, showCierre, showCreateCajero, creatingCajero, showDiffConfirm, resetCierreState]);
+
+  // A11y: los 4 modales de este módulo son overlays a mano sin rol de diálogo
+  // ni trampa de foco. El Escape ya lo maneja el handler de arriba →
+  // cerrarConEscape: false para no duplicarlo.
+  const createCajeroModalRef = useRef<HTMLDivElement>(null);
+  const createCajeroTitleId = useId();
+  const closeCreateCajeroModal = useCallback(() => { if (!creatingCajero) setShowCreateCajero(false); }, [creatingCajero]);
+  useModalAccesible(createCajeroModalRef, { activo: showCreateCajero, cerrarConEscape: false });
+
+  const cierreModalRef = useRef<HTMLDivElement>(null);
+  const cierreTitleId = useId();
+  useModalAccesible(cierreModalRef, { activo: showCierre, cerrarConEscape: false });
+
+  const diffConfirmModalRef = useRef<HTMLDivElement>(null);
+  const diffConfirmTitleId = useId();
+  useModalAccesible(diffConfirmModalRef, { activo: showDiffConfirm, cerrarConEscape: false });
+
+  const resumenModalRef = useRef<HTMLDivElement>(null);
+  const resumenTitleId = useId();
+  useModalAccesible(resumenModalRef, { activo: showResumen, cerrarConEscape: false });
 
   // FIX 2026-07-08 (reporte ventas-caja bug 6): al abrir el modal de cierre,
   // cargar el efectivo ESPERADO real desde los movimientos de la caja
@@ -1070,6 +1091,7 @@ export default function TurnosModule() {
                       value={metaInput}
                       onChange={e => setMetaInput(e.target.value)}
                       autoFocus
+                      aria-label="Meta del turno en soles"
                       className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-lg font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
@@ -1377,14 +1399,14 @@ export default function TurnosModule() {
                     {historial.length} turno{historial.length !== 1 ? "s" : ""} — Pag. {page}/{totalPages}
                   </p>
                   <div className="flex gap-1">
-                    <button
+                    <button aria-label="Anterior"
                       disabled={page <= 1}
                       onClick={() => setPage(p => p - 1)}
                       className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
-                    <button
+                    <button aria-label="Siguiente"
                       disabled={page >= totalPages}
                       onClick={() => setPage(p => p + 1)}
                       className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
@@ -1411,10 +1433,15 @@ export default function TurnosModule() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             className="modal-backdrop p-4"
-            onClick={e => e.target === e.currentTarget && !creatingCajero && setShowCreateCajero(false)}
+            onClick={e => e.target === e.currentTarget && closeCreateCajeroModal()}
           >
             <m.div
               key="create-cajero-modal"
+              ref={createCajeroModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={createCajeroTitleId}
+              tabIndex={-1}
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
@@ -1427,12 +1454,12 @@ export default function TurnosModule() {
                     <User className="h-5 w-5 text-primary" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-bold">Nueva cajera</CardTitle>
+                    <CardTitle id={createCajeroTitleId} className="text-lg font-bold">Nueva cajera</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)]">Se crea con rol Cajero y queda disponible al instante</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => !creatingCajero && setShowCreateCajero(false)}
+                  onClick={closeCreateCajeroModal}
                   aria-label="Cerrar"
                   className="p-2 hover:bg-[var(--surface-sunken)] rounded-xl transition-colors"
                 >
@@ -1483,7 +1510,7 @@ export default function TurnosModule() {
 
               <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex gap-3">
                 <button
-                  onClick={() => !creatingCajero && setShowCreateCajero(false)}
+                  onClick={closeCreateCajeroModal}
                   disabled={creatingCajero}
                   className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] disabled:opacity-50 transition-colors"
                 >
@@ -1516,6 +1543,11 @@ export default function TurnosModule() {
             onClick={e => { if (e.target === e.currentTarget) resetCierreState(); }}
           >
             <m.div
+              ref={cierreModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={cierreTitleId}
+              tabIndex={-1}
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
@@ -1529,7 +1561,7 @@ export default function TurnosModule() {
                     <Square className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-bold">Cerrar turno</CardTitle>
+                    <CardTitle id={cierreTitleId} className="text-lg font-bold">Cerrar turno</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y confirma el cierre</p>
                   </div>
                 </div>
@@ -1782,6 +1814,11 @@ export default function TurnosModule() {
             >
               <m.div
                 key="diff-confirm-modal"
+                ref={diffConfirmModalRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={diffConfirmTitleId}
+                tabIndex={-1}
                 initial={{ scale: 0.95, y: 10 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 10 }}
@@ -1793,7 +1830,7 @@ export default function TurnosModule() {
                     <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-bold text-[var(--data-error-500)]">Diferencia alta</CardTitle>
+                    <CardTitle id={diffConfirmTitleId} className="text-lg font-bold text-[var(--data-error-500)]">Diferencia alta</CardTitle>
                     <p className="text-sm text-[var(--text-secondary)]">Antes de cerrar, anotá qué pasó</p>
                   </div>
                 </div>
@@ -1885,6 +1922,11 @@ export default function TurnosModule() {
           >
             <m.div
               key="resumen-modal"
+              ref={resumenModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={resumenTitleId}
+              tabIndex={-1}
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
@@ -1892,11 +1934,11 @@ export default function TurnosModule() {
               className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
             >
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <CardTitle id={resumenTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                     Resumen del Turno
                   </CardTitle>
-                  <button onClick={() => setShowResumen(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
+                  <button aria-label="Cerrar" onClick={() => setShowResumen(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>

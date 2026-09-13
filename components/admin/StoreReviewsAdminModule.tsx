@@ -64,7 +64,7 @@ const STATUS_COLORS: Record<AdminReview["status"], string> = {
 
 function StarsDisplay({ rating }: { rating: number }) {
   return (
-    <span className="flex items-center gap-0.5" aria-label={`${rating} estrellas`}>
+    <span role="img" className="flex items-center gap-0.5" aria-label={`${rating} estrellas`}>
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}

@@ -2,6 +2,7 @@
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Image from "next/image";
 import {
   X,
@@ -551,6 +552,8 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cn("relative h-6 w-11 rounded-full transition-colors", checked ? "bg-primary/10" : "bg-gray-700")}
     >
@@ -751,7 +754,7 @@ function AdvancedBackground({ onSetBg }: { onSetBg: (bg: string) => void }) {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Ángulo</span>
-          <input type="range" min={0} max={360} value={angle} onChange={(e) => setAngle(Number(e.target.value))} className="w-full accent-[var(--accent-soft)]" />
+          <input type="range" min={0} max={360} value={angle} onChange={(e) => setAngle(Number(e.target.value))} aria-label="Ángulo del degradado" className="w-full accent-[var(--accent-soft)]" />
           <span className="w-9 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent-soft)]">{angle}°</span>
         </div>
         <button type="button" onClick={() => onSetBg(`linear-gradient(${angle}deg, ${gA}, ${gB})`)} className="w-full rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90">
@@ -768,7 +771,7 @@ function AdvancedBackground({ onSetBg }: { onSetBg: (bg: string) => void }) {
         {imgUrl && (
           <div className="flex items-center gap-2">
             <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Oscurecer</span>
-            <input type="range" min={0} max={80} value={overlay} onChange={(e) => { const ov = Number(e.target.value); setOverlay(ov); onSetBg(composeImage(imgUrl, ov)); }} className="w-full accent-[var(--accent-soft)]" />
+            <input type="range" min={0} max={80} value={overlay} onChange={(e) => { const ov = Number(e.target.value); setOverlay(ov); onSetBg(composeImage(imgUrl, ov)); }} aria-label="Oscurecer la imagen de fondo" className="w-full accent-[var(--accent-soft)]" />
             <span className="w-9 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent-soft)]">{overlay}%</span>
           </div>
         )}
@@ -1288,26 +1291,26 @@ function CustomSectionEditor({
         {typeof d.eyebrow === "string" && (
           <div className="space-y-1.5">
             <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Etiqueta</p>
-            <input className={INPUT_CLASS} value={d.eyebrow as string} onChange={(e) => onPatch({ eyebrow: e.target.value })} maxLength={60} />
+            <input className={INPUT_CLASS} value={d.eyebrow as string} onChange={(e) => onPatch({ eyebrow: e.target.value })} maxLength={60} aria-label="Etiqueta del bloque" />
           </div>
         )}
         {typeof d.title === "string" && (
           <div className="space-y-1.5">
             <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Título</p>
-            <input className={INPUT_CLASS} value={d.title as string} onChange={(e) => onPatch({ title: e.target.value })} maxLength={100} />
+            <input className={INPUT_CLASS} value={d.title as string} onChange={(e) => onPatch({ title: e.target.value })} maxLength={100} aria-label="Título del bloque" />
             <TextStyleControls field={`customText:${section.id}:title`} value={textStyles[`customText:${section.id}:title`] ?? {}} onChange={onTextStyle} />
           </div>
         )}
         {typeof d.subtitle === "string" && (
           <div className="space-y-1.5">
             <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Subtítulo</p>
-            <input className={INPUT_CLASS} value={d.subtitle as string} onChange={(e) => onPatch({ subtitle: e.target.value })} maxLength={140} />
+            <input className={INPUT_CLASS} value={d.subtitle as string} onChange={(e) => onPatch({ subtitle: e.target.value })} maxLength={140} aria-label="Subtítulo del bloque" />
           </div>
         )}
         {typeof d.body === "string" && (
           <div className="space-y-1.5">
             <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Texto</p>
-            <textarea className={cn(INPUT_CLASS, "resize-none")} rows={5} value={d.body as string} onChange={(e) => onPatch({ body: e.target.value })} maxLength={1500} />
+            <textarea className={cn(INPUT_CLASS, "resize-none")} rows={5} value={d.body as string} onChange={(e) => onPatch({ body: e.target.value })} maxLength={1500} aria-label="Texto del bloque" />
             {/* #4 Formato markdown-lite: listas, links, negrita */}
             <div className="flex flex-wrap items-center gap-1.5">
               {([["• Lista", "\n- "], ["1. Numerada", "\n1. "], ["Link", "[texto](https://)"], ["Negrita", "**texto**"]] as const).map(([lbl, ins]) => (
@@ -1327,7 +1330,7 @@ function CustomSectionEditor({
           {typeof d.buttonLabel === "string" && (
             <div className="space-y-1.5">
               <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Texto del botón</p>
-              <input className={INPUT_CLASS} value={d.buttonLabel as string} onChange={(e) => onPatch({ buttonLabel: e.target.value })} maxLength={40} />
+              <input className={INPUT_CLASS} value={d.buttonLabel as string} onChange={(e) => onPatch({ buttonLabel: e.target.value })} maxLength={40} aria-label="Texto del botón" />
             </div>
           )}
           {typeof d.buttonUrl === "string" && (
@@ -1351,7 +1354,7 @@ function CustomSectionEditor({
           {typeof d.endsAt === "string" && (
             <div className="space-y-1.5">
               <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Termina el</p>
-              <input type="datetime-local" className={INPUT_CLASS} value={(d.endsAt as string).slice(0, 16)} onChange={(e) => onPatch({ endsAt: e.target.value })} />
+              <input type="datetime-local" className={INPUT_CLASS} value={(d.endsAt as string).slice(0, 16)} onChange={(e) => onPatch({ endsAt: e.target.value })} aria-label="Fecha y hora en que termina" />
             </div>
           )}
         </SectionCard>
@@ -2807,6 +2810,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   // #16 Atajos de teclado (Lote H, Brandon 2026-06-27). Capture + stopImmediate
   // para preempt el shell admin (que usa teclas sueltas para navegar tabs).
   const [showShortcuts, setShowShortcuts] = useState(false);
+  // El diálogo de atajos ya cierra con Escape vía el listener global de abajo
+  // (`cerrarConEscape: false`); el hook sólo agrega la trampa de Tab y
+  // devuelve el foco al icono "?" que lo abrió.
+  const shortcutsPanelRef = useRef<HTMLDivElement>(null);
+  const cerrarShortcuts = useCallback(() => setShowShortcuts(false), []);
+  useModalAccesible(shortcutsPanelRef, { onCerrar: cerrarShortcuts, cerrarConEscape: false, activo: showShortcuts });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tgt = e.target as HTMLElement | null;
@@ -2898,7 +2907,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       {showShortcuts && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <button type="button" aria-label="Cerrar" onClick={() => setShowShortcuts(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div role="dialog" aria-modal="true" aria-label="Atajos de teclado" className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-[var(--shadow-xl)]">
+          <div ref={shortcutsPanelRef} role="dialog" aria-modal="true" aria-label="Atajos de teclado" tabIndex={-1} className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-[var(--shadow-xl)] outline-none">
             <div className="mb-3 flex items-center justify-between">
               <p className="inline-flex items-center gap-2 text-sm font-bold text-white"><Keyboard className="h-4 w-4" /> Atajos de teclado</p>
               <button type="button" onClick={() => setShowShortcuts(false)} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
@@ -3189,9 +3198,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     const sc = panelScore(item.id);
                     if (!sc) return null;
                     return (
-                      <span className="flex shrink-0 items-center gap-0.5" title={`${sc.done}/${sc.total} configurado`} aria-label={`${sc.done} de ${sc.total} configurado`}>
+                      <span className="flex shrink-0 items-center gap-0.5" title={`${sc.done}/${sc.total} configurado`}>
+                        <span className="sr-only">{`${sc.done} de ${sc.total} configurado`}</span>
                         {Array.from({ length: sc.total }).map((_, i) => (
-                          <span key={i} className={cn("h-1.5 w-1.5 rounded-full", i < sc.done ? "bg-[var(--data-success-500)]" : "bg-white/15")} />
+                          <span key={i} aria-hidden="true" className={cn("h-1.5 w-1.5 rounded-full", i < sc.done ? "bg-[var(--data-success-500)]" : "bg-white/15")} />
                         ))}
                       </span>
                     );
@@ -3656,7 +3666,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Ángulo</span>
-                    <input type="range" min={0} max={360} value={draft.heroGradientAngle ?? 135} onChange={(e) => patch("heroGradientAngle", Number(e.target.value))} className="w-full accent-[var(--data-success-500)]" />
+                    <input type="range" min={0} max={360} value={draft.heroGradientAngle ?? 135} onChange={(e) => patch("heroGradientAngle", Number(e.target.value))} aria-label="Ángulo del gradiente del hero" className="w-full accent-[var(--data-success-500)]" />
                     <span className="w-9 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--data-success-500)]">{draft.heroGradientAngle ?? 135}°</span>
                   </div>
                   {(draft.heroGradientFrom || draft.heroGradientTo) && (
@@ -4388,8 +4398,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   {DAYS.map((day) => (
                     <div key={day} className="grid grid-cols-3 gap-2 items-center rounded-lg bg-white/[0.03] border border-white/10 p-2">
                       <span className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] capitalize">{day}</span>
-                      <input className={cn(INPUT_CLASS, "px-2 py-1.5 text-xs")} value={draft.schedules[day].open} onChange={(e) => patchSchedule(day, "open", e.target.value)} />
-                      <input className={cn(INPUT_CLASS, "px-2 py-1.5 text-xs")} value={draft.schedules[day].close} onChange={(e) => patchSchedule(day, "close", e.target.value)} />
+                      <input className={cn(INPUT_CLASS, "px-2 py-1.5 text-xs")} value={draft.schedules[day].open} onChange={(e) => patchSchedule(day, "open", e.target.value)} aria-label={`Hora de apertura los ${day}`} />
+                      <input className={cn(INPUT_CLASS, "px-2 py-1.5 text-xs")} value={draft.schedules[day].close} onChange={(e) => patchSchedule(day, "close", e.target.value)} aria-label={`Hora de cierre los ${day}`} />
                     </div>
                   ))}
                 </div>
@@ -4599,7 +4609,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                           <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
                         </button>
                       </div>
-                      <select className={INPUT_CLASS} value={t.stars} onChange={(e) => updateTestimonial(idx, "stars", Number(e.target.value))}>
+                      <select className={INPUT_CLASS} value={t.stars} onChange={(e) => updateTestimonial(idx, "stars", Number(e.target.value))} aria-label="Calificación de estrellas de la reseña">
                         {[5, 4, 3, 2, 1].map((s) => <option key={s} value={s}>{"★".repeat(s)} ({s})</option>)}
                       </select>
                       <textarea className={cn(INPUT_CLASS, "resize-none")} rows={2} value={t.comment} onChange={(e) => updateTestimonial(idx, "comment", e.target.value)} placeholder="Comentario de la reseña…" />

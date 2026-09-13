@@ -198,7 +198,7 @@ export function ThreadsList({
                           {thread.lastMessageText}
                         </span>
                         {unread > 0 && (
-                          <span
+                          <span role="img"
                             className="flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-[var(--data-error-500)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-white"
                             aria-label={`${unread} mensajes sin leer`}
                           >

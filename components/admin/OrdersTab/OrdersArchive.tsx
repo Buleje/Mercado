@@ -56,6 +56,7 @@ export function OrdersArchive({
             value={archiveDateFrom}
             onChange={e => setArchiveDateFrom(e.target.value)}
             title="Desde"
+            aria-label="Desde"
             className="text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 h-10 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
           />
           <input
@@ -63,6 +64,7 @@ export function OrdersArchive({
             value={archiveDateTo}
             onChange={e => setArchiveDateTo(e.target.value)}
             title="Hasta"
+            aria-label="Hasta"
             className="text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 h-10 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
           />
         </div>
@@ -92,6 +94,9 @@ export function OrdersArchive({
                         key={o.id}
                         className="hover:bg-[var(--surface-sunken)] cursor-pointer"
                         onClick={() => { onSelectOrder(o); onClose(); }}
+                        tabIndex={0}
+                        onKeyDown={e => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelectOrder(o); onClose(); } }}
+                        aria-label={`Ver pedido de ${o.customer.name}`}
                       >
                         <td className="px-4 py-3">
                           <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{o.customer.name}</p>

@@ -265,13 +265,13 @@ export default function TeamTab() {
                 >
                   {u.active ? <CheckCircle2 className="w-4 h-4 text-[var(--data-success-500)]" /> : <XCircle className="w-4 h-4" />}
                 </button>
-                <button
+                <button aria-label="Editar"
                   onClick={() => openEdit(u)}
                   className="p-1.5 rounded-xl hover:bg-(--color-surface) text-muted hover:text-foreground"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button
+                <button aria-label="Eliminar"
                   onClick={() => handleDelete(u)}
                   className="p-1.5 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-muted hover:text-[var(--data-error-500)]"
                 >

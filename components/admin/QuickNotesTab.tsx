@@ -222,8 +222,8 @@ export default function QuickNotesTab() {
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={() => { setShowNew(false); setNewTitle(""); setNewContent(""); }} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)] "><X className="h-4 w-4" /></button>
-                    <button onClick={handleAdd} disabled={!newTitle.trim()} className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50"><Check className="h-4 w-4" /></button>
+                    <button aria-label="Cerrar" onClick={() => { setShowNew(false); setNewTitle(""); setNewContent(""); }} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)] "><X className="h-4 w-4" /></button>
+                    <button aria-label="Confirmar" onClick={handleAdd} disabled={!newTitle.trim()} className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50"><Check className="h-4 w-4" /></button>
                   </div>
                 </div>
               </div>
@@ -237,8 +237,8 @@ export default function QuickNotesTab() {
                 <div key={note.id} className={cn("rounded-xl border p-4 transition-shadow hover:shadow-[var(--shadow-sm)]", colors.bg, colors.border, colors.darkBg, colors.darkBorder)}>
                   {isEditing ? (
                     <>
-                      <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-transparent outline-none mb-2" />
-                      <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={3} className="w-full text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-transparent outline-none resize-none mb-3" />
+                      <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} aria-label="Título de la nota" className="w-full text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-transparent outline-none mb-2" />
+                      <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={3} aria-label="Contenido de la nota" className="w-full text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-transparent outline-none resize-none mb-3" />
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                           {(Object.keys(COLOR_DOTS) as NoteColor[]).map(c => (
@@ -246,8 +246,8 @@ export default function QuickNotesTab() {
                           ))}
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <button onClick={() => setEditingId(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)] "><X className="h-4 w-4" /></button>
-                          <button onClick={saveEdit} className="p-1.5 rounded-xl bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4" /></button>
+                          <button aria-label="Cerrar" onClick={() => setEditingId(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)] "><X className="h-4 w-4" /></button>
+                          <button aria-label="Confirmar" onClick={saveEdit} className="p-1.5 rounded-xl bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4" /></button>
                         </div>
                       </div>
                     </>
@@ -255,7 +255,12 @@ export default function QuickNotesTab() {
                     <>
                       <div className="flex items-start justify-between mb-2">
                         <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm leading-snug pr-2">{note.title}</CardTitle>
-                        <button onClick={() => handlePin(note.id)} className="p-1 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-warning-500)] transition-colors shrink-0">
+                        <button
+                          onClick={() => handlePin(note.id)}
+                          aria-label={note.pinned ? "Quitar de fijadas" : "Fijar nota"}
+                          aria-pressed={note.pinned}
+                          className="p-1 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-warning-500)] transition-colors shrink-0"
+                        >
                           {note.pinned ? <Pin className="h-3.5 w-3.5 text-[var(--data-warning-500)]" /> : <PinOff className="h-3.5 w-3.5" />}
                         </button>
                       </div>
@@ -263,8 +268,8 @@ export default function QuickNotesTab() {
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{note.updatedAt}</p>
                         <div className="flex items-center gap-1">
-                          <button onClick={() => startEdit(note)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-primary hover:bg-white/50 dark:hover:bg-accent transition-colors"><Edit3 className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => handleDelete(note.id)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-white/50 dark:hover:bg-accent transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                          <button aria-label="Editar" onClick={() => startEdit(note)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-primary hover:bg-white/50 dark:hover:bg-accent transition-colors"><Edit3 className="h-3.5 w-3.5" /></button>
+                          <button aria-label="Eliminar" onClick={() => handleDelete(note.id)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-white/50 dark:hover:bg-accent transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                         </div>
                       </div>
                     </>

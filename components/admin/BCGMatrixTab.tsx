@@ -1,6 +1,7 @@
 "use client";
 import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Star, Download, Eye,
   Coins, HelpCircle, TrendingDown,
@@ -31,6 +32,10 @@ export default function BCGMatrixTab() {
   const [loading, setLoading] = useState(true);
   const [selectedQ, setSelectedQ] = useState<Quadrant | "todas">("todas");
   const [detail, setDetail] = useState<Product | null>(null);
+  const detailModalRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const cerrarDetail = useCallback(() => setDetail(null), []);
+  useModalAccesible(detailModalRef, { onCerrar: cerrarDetail, activo: !!detail });
 
   useEffect(() => {
     fetch("/api/analytics/bcg", { credentials: "include" })
@@ -173,7 +178,7 @@ export default function BCGMatrixTab() {
                     <td className="text-right font-bold">{p.marketShare}%</td>
                     <td><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
                     <td className="text-center">
-                      <button onClick={() => setDetail(p)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] "><Eye className="h-4 w-4" /></button>
+                      <button aria-label="Ver" onClick={() => setDetail(p)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] "><Eye className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 );
@@ -202,11 +207,11 @@ export default function BCGMatrixTab() {
 
       {/* Detail modal */}
       {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" onClick={cerrarDetail}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.name}</CardTitle>
-              <button onClick={() => setDetail(null)} className="text-base sm:text-xl font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">×</button>
+              <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.name}</CardTitle>
+              <button onClick={cerrarDetail} aria-label="Cerrar" className="text-base sm:text-xl font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">×</button>
             </div>
             <div className="px-3 sm:px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>

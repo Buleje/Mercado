@@ -164,13 +164,13 @@ export default function ObligacionesTab() {
         description="Cuánto debe pagar y declarar tu empresa este mes (IGV, Renta y más)"
         icon={Landmark}
       >
-          <select value={regimen} onChange={e => { const v = e.target.value as RegimenTributario; setRegimen(v); saveSetting({ regimenTributario: v }); }} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+          <select value={regimen} onChange={e => { const v = e.target.value as RegimenTributario; setRegimen(v); saveSetting({ regimenTributario: v }); }} aria-label="Régimen tributario" className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {(Object.keys(REGIMEN_LABELS) as RegimenTributario[]).map(r => <option key={r} value={r}>{REGIMEN_LABELS[r]}</option>)}
           </select>
-          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+          <select value={month} onChange={e => setMonth(Number(e.target.value))} aria-label="Mes" className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
-          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+          <select value={year} onChange={e => setYear(Number(e.target.value))} aria-label="Año" className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {[now.getFullYear() - 1, now.getFullYear()].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
       </AdminModuleHeader>

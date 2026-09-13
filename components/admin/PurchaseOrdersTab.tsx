@@ -2,9 +2,11 @@
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, useId, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, Package,
   X, FileText, ScanBarcode, History,
@@ -244,6 +246,7 @@ function FleteTardio({
 }
 
 export default function PurchaseOrdersTab() {
+  const { confirm } = useConfirm();
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -403,6 +406,27 @@ export default function PurchaseOrdersTab() {
   }, [recurringInterval, showRecurringModal]);
 
   useScrollLock(showCreate || showScanner || showAddItemModal);
+
+  // A11y: el modal de "Nueva orden" ya tenía role="dialog" pero sin trampa de
+  // foco/Escape; el de "Hacer recurrente" no tenía ni siquiera el rol.
+  const createModalRef = useRef<HTMLDivElement>(null);
+  const closeCreateModal = useCallback(() => setShowCreate(false), []);
+  useModalAccesible(createModalRef, { onCerrar: closeCreateModal, activo: showCreate });
+
+  const recurringModalRef = useRef<HTMLDivElement>(null);
+  const recurringTitleId = useId();
+  const closeRecurringModal = useCallback(() => setShowRecurringModal(null), []);
+  useModalAccesible(recurringModalRef, { onCerrar: closeRecurringModal, activo: !!showRecurringModal });
+
+  // «Agregar producto» y «Escanear» se abren DESDE ADENTRO de «Nueva orden».
+  // Sin rol de diálogo propio el hook de la orden no sabía que tenía otro
+  // encima: Escape cerraba la orden entera y se perdían los ítems cargados.
+  const addItemModalRef = useRef<HTMLDivElement>(null);
+  const closeAddItemModal = useCallback(() => setShowAddItemModal(false), []);
+  useModalAccesible(addItemModalRef, { onCerrar: closeAddItemModal, activo: showAddItemModal });
+  const scannerModalRef = useRef<HTMLDivElement>(null);
+  const closeScannerModal = useCallback(() => setShowScanner(false), []);
+  useModalAccesible(scannerModalRef, { onCerrar: closeScannerModal, activo: showScanner });
   const [addItemMode, setAddItemMode] = useState<"search" | "new">("search");
   const [addItemSearch, setAddItemSearch] = useState("");
   const [addItemSel, setAddItemSel] = useState<DbProduct | null>(null);
@@ -545,11 +569,14 @@ export default function PurchaseOrdersTab() {
     // estado más, y salía del `<select>` sin preguntar nada.
     if (status === "cancelado") {
       const aCredito = (orden?.paymentMethod ?? "").startsWith("credito_");
-      const ok = window.confirm(
-        `¿Cancelar la orden de ${orden?.supplierName || "este proveedor"} por S/${Number(orden?.total ?? 0).toFixed(2)}?` +
-        (aCredito ? "\n\nSe anulará también la cuenta por pagar que generó (salvo que ya tenga pagos)." : "") +
-        "\n\nUna orden cancelada no vuelve atrás.",
-      );
+      const ok = await confirm({
+        title: `¿Cancelar la orden de ${orden?.supplierName || "este proveedor"}?`,
+        description: `Por S/${Number(orden?.total ?? 0).toFixed(2)}.` +
+          (aCredito ? " Se anulará también la cuenta por pagar que generó (salvo que ya tenga pagos)." : "") +
+          " Una orden cancelada no vuelve atrás.",
+        intent: "danger",
+        confirmLabel: "Sí, cancelar",
+      });
       if (!ok) return;
     }
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
@@ -624,7 +651,11 @@ export default function PurchaseOrdersTab() {
   };
 
   const deleteOrder = async (id: string) => {
-    if (!confirm("¿Eliminar esta orden de compra?")) return;
+    if (!(await confirm({
+      title: "¿Eliminar esta orden de compra?",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
     await fetch(`/api/purchases/${id}`, { method: "DELETE", headers: csrfHeaders() });
     load();
   };
@@ -1089,9 +1120,9 @@ export default function PurchaseOrdersTab() {
 
       {/* Mejora 15: Modal de configuración recurrente */}
       {showRecurringModal && (
-        <div className="modal-backdrop p-4" onClick={() => setShowRecurringModal(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Hacer recurrente</CardTitle>
+        <div className="modal-backdrop p-4" onClick={closeRecurringModal}>
+          <div ref={recurringModalRef} role="dialog" aria-modal="true" aria-labelledby={recurringTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <CardTitle id={recurringTitleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Hacer recurrente</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               OC para {suppliers.find(s => s.id === showRecurringModal.supplierId)?.name} · {showRecurringModal.items.length} productos
             </p>
@@ -1133,7 +1164,7 @@ export default function PurchaseOrdersTab() {
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setShowRecurringModal(null)}
+                onClick={closeRecurringModal}
                 className="flex-1 h-12 rounded-xl bg-[var(--surface-sunken)] text-sm font-semibold text-[var(--text-secondary)]"
               >
                 Cancelar
@@ -1270,11 +1301,13 @@ export default function PurchaseOrdersTab() {
       {/* ─── Create order modal (rediseñado 2026-05-17) ──────────────── */}
       {showCreate && (
         <div
+          ref={createModalRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-oc-title"
+          tabIndex={-1}
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
-          onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}
+          onClick={(e) => e.target === e.currentTarget && closeCreateModal()}
         >
           <div className="bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
             {/* Header */}
@@ -2011,12 +2044,12 @@ export default function PurchaseOrdersTab() {
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
           onClick={(e) => e.target === e.currentTarget && setShowAddItemModal(false)}
         >
-          <div className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl max-h-[85dvh] flex flex-col overflow-hidden">
+          <div ref={addItemModalRef} role="dialog" aria-modal="true" aria-label="Agregar producto" tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl max-h-[85dvh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                 <Plus className="h-5 w-5 text-primary" /> Agregar producto
               </CardTitle>
-              <button onClick={() => setShowAddItemModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+              <button aria-label="Cerrar" onClick={() => setShowAddItemModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
               </button>
             </div>
@@ -2228,10 +2261,10 @@ export default function PurchaseOrdersTab() {
       {/* Barcode scanner modal */}
       {showScanner && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowScanner(false)}>
-          <div className="bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
+          <div ref={scannerModalRef} role="dialog" aria-modal="true" aria-label="Escanear código de barras" tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
-              <button onClick={() => setShowScanner(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
+              <button aria-label="Cerrar" onClick={() => setShowScanner(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
             </div>
             <div className="p-4">
               <BarcodeScanner onDetected={handleScan} onClose={() => setShowScanner(false)} />

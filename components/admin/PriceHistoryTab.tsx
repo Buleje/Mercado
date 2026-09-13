@@ -145,7 +145,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               className="w-full pl-9 pr-9 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <button aria-label="Quitar" onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
                 <X className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)]" />
               </button>
             )}
@@ -153,6 +153,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
           <select
             value={filter}
             onChange={e => setFilter(e.target.value)}
+            aria-label="Filtrar por producto"
             className="px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           >
             <option value="">Todos los productos</option>

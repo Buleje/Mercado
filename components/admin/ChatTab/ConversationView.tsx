@@ -440,7 +440,7 @@ function MessageBubble({
           )}
         >
           <span>{time}</span>
-          {isSeller && message.readByBuyerAt && <span aria-label="Leído">· ✓✓</span>}
+          {isSeller && message.readByBuyerAt && <span role="img" aria-label="Leído">· ✓✓</span>}
         </div>
       </div>
     </div>

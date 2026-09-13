@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Image from "next/image";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
@@ -107,9 +108,9 @@ const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc:
 
 // ── Reusable sub-components ───────────────────────────────────────────────────
 
-function FieldLabel({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
+function FieldLabel({ icon, children, htmlFor }: { icon?: React.ReactNode; children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted mb-1.5">
+    <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted mb-1.5">
       {icon}{children}
     </label>
   );
@@ -136,12 +137,13 @@ function TextInput({ value, onChange, placeholder, mono, type = "text", disabled
   );
 }
 
-function NumberInput({ value, onChange, min, max, step, suffix }: {
-  value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; suffix?: string;
+function NumberInput({ value, onChange, min, max, step, suffix, id }: {
+  value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; suffix?: string; id?: string;
 }) {
   return (
     <div className="flex items-center gap-2">
       <input
+        id={id}
         type="number"
         value={value}
         onChange={e => onChange(Number(e.target.value))}
@@ -153,11 +155,13 @@ function NumberInput({ value, onChange, min, max, step, suffix }: {
   );
 }
 
-function SelectInput({ value, onChange, options }: {
-  value: string; onChange: (v: string) => void; options: { value: string; label: string }[];
+function SelectInput({ value, onChange, options, id, ariaLabel }: {
+  value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; id?: string; ariaLabel?: string;
 }) {
   return (
     <select
+      id={id}
+      aria-label={ariaLabel}
       value={value}
       onChange={e => onChange(e.target.value)}
       className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
@@ -178,13 +182,15 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
       </div>
       <button
         type="button"
+        aria-label={label}
+        aria-pressed={enabled}
         onClick={() => onChange(!enabled)}
         className={cn(
           "relative w-11 h-6 rounded-full transition-colors shrink-0",
           enabled ? (danger ? "bg-[var(--data-error-500)]" : "bg-primary") : "bg-gray-300 dark:bg-gray-600"
         )}
       >
-        <span className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[var(--surface-raised)] shadow transition-transform", enabled && "translate-x-5")} />
+        <span aria-hidden="true" className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[var(--surface-raised)] shadow transition-transform", enabled && "translate-x-5")} />
       </button>
     </div>
   );
@@ -438,6 +444,23 @@ export default function SettingsModule({
   const [restoring, setRestoring] = useState(false);
   const [restoreSuccess] = useState(false);
   const [restoreError, setRestoreError] = useState<string | null>(null);
+
+  // Semántica + foco atrapado para los 3 modales a mano de este módulo
+  // (ninguno tenía su propio Escape, así que acá sí cierra con Escape).
+  const restorePanelRef = useRef<HTMLDivElement>(null);
+  const restoreTitleId = useId();
+  const cerrarRestore = useCallback(() => { if (!restoring) setShowRestoreModal(false); }, [restoring]);
+  useModalAccesible(restorePanelRef, { onCerrar: cerrarRestore, activo: showRestoreModal });
+
+  const mobileNavRef = useRef<HTMLDivElement>(null);
+  const mobileNavTitleId = useId();
+  const cerrarMobileNav = useCallback(() => setShowMobileNav(false), []);
+  useModalAccesible(mobileNavRef, { onCerrar: cerrarMobileNav, activo: showMobileNav });
+
+  const mapPickerPanelRef = useRef<HTMLDivElement>(null);
+  const mapPickerTitleId = useId();
+  const cerrarMapPicker = useCallback(() => setShowMapPicker(false), []);
+  useModalAccesible(mapPickerPanelRef, { onCerrar: cerrarMapPicker, activo: showMapPicker });
 
   // Subscription
   const [planName, setPlanName] = useState("free");
@@ -794,19 +817,21 @@ export default function SettingsModule({
               <div key={sc.id} className="flex items-center gap-3 p-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <Zap className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
                 <input
+                  aria-label="Nombre del acceso"
                   value={sc.label}
                   onChange={e => updateShortcut(sc.id, "label", e.target.value)}
                   className="flex-1 px-2 py-1.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   placeholder="Nombre del acceso"
                 />
                 <select
+                  aria-label="Pantalla a la que apunta el acceso"
                   value={sc.tabId}
                   onChange={e => updateShortcut(sc.id, "tabId", e.target.value)}
                   className="px-2 py-1.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 >
                   {availableTabs.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
-                <button onClick={() => removeShortcut(sc.id)} className="p-1.5 rounded-xl text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors">
+                <button aria-label="Eliminar" onClick={() => removeShortcut(sc.id)} className="p-1.5 rounded-xl text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -851,8 +876,8 @@ export default function SettingsModule({
           <div><FieldLabel icon={<Phone className="h-3.5 w-3.5" />}>WhatsApp</FieldLabel><TextInput value={businessPhone} onChange={setBusinessPhone} placeholder="51929340532" mono /></div>
           <div><FieldLabel icon={<Mail className="h-3.5 w-3.5" />}>Correo del negocio</FieldLabel><TextInput value={businessEmail} onChange={setBusinessEmail} placeholder="ventas@bodega.pe" type="email" /></div>
           <div>
-            <FieldLabel icon={<Store className="h-3.5 w-3.5" />}>Tipo de negocio</FieldLabel>
-            <SelectInput value={businessType} onChange={setBusinessType} options={[
+            <FieldLabel htmlFor="settings-businessType" icon={<Store className="h-3.5 w-3.5" />}>Tipo de negocio</FieldLabel>
+            <SelectInput id="settings-businessType" value={businessType} onChange={setBusinessType} options={[
               { value: "bodega", label: "Bodega" }, { value: "minimarket", label: "Minimarket" },
               { value: "tienda", label: "Tienda" }, { value: "restaurante", label: "Restaurante" },
             ]} />
@@ -867,7 +892,7 @@ export default function SettingsModule({
             <FieldLabel icon={<MapPin className="h-3.5 w-3.5" />}>Dirección</FieldLabel>
             <div className="flex gap-2">
               <div className="flex-1"><TextInput value={businessAddress} onChange={setBusinessAddress} /></div>
-              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-xl text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30 transition-colors shrink-0">
+              <button aria-label="Ver ubicación" onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-xl text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30 transition-colors shrink-0">
                 <MapPin className="h-4 w-4" />
               </button>
               <button
@@ -894,8 +919,8 @@ export default function SettingsModule({
           <div><FieldLabel icon={<Truck className="h-3.5 w-3.5" />}>Zona de delivery</FieldLabel><TextInput value={deliveryZone} onChange={setDeliveryZone} /></div>
           <div><FieldLabel icon={<Clock className="h-3.5 w-3.5" />}>Horario</FieldLabel><TextInput value={hours} onChange={setHours} placeholder="Lun - Sáb: 7am - 9pm" /></div>
         </div>
-        <div><FieldLabel icon={<AlignLeft className="h-3.5 w-3.5" />}>Descripción</FieldLabel>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+        <div><FieldLabel htmlFor="settings-description" icon={<AlignLeft className="h-3.5 w-3.5" />}>Descripción</FieldLabel>
+          <textarea id="settings-description" value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
         </div>
       </SectionCard>
 
@@ -957,14 +982,14 @@ export default function SettingsModule({
       <SectionCard title="Regional">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <FieldLabel icon={<DollarSign className="h-3.5 w-3.5" />}>Moneda</FieldLabel>
-            <SelectInput value={currency} onChange={setCurrency} options={[
+            <FieldLabel htmlFor="settings-currency" icon={<DollarSign className="h-3.5 w-3.5" />}>Moneda</FieldLabel>
+            <SelectInput id="settings-currency" value={currency} onChange={setCurrency} options={[
               { value: "PEN", label: "S/ — Sol peruano" }, { value: "USD", label: "$ — Dólar" },
             ]} />
           </div>
           <div>
-            <FieldLabel icon={<Globe className="h-3.5 w-3.5" />}>Zona horaria</FieldLabel>
-            <SelectInput value={timezone} onChange={setTimezone} options={[
+            <FieldLabel htmlFor="settings-timezone" icon={<Globe className="h-3.5 w-3.5" />}>Zona horaria</FieldLabel>
+            <SelectInput id="settings-timezone" value={timezone} onChange={setTimezone} options={[
               { value: "America/Lima", label: "America/Lima (PET)" }, { value: "America/Bogota", label: "America/Bogotá (COT)" },
               { value: "America/Santiago", label: "America/Santiago (CLT)" }, { value: "America/Mexico_City", label: "America/Mexico City (CST)" },
             ]} />
@@ -1033,7 +1058,7 @@ export default function SettingsModule({
                 navigator.share({ title: "Credenciales del Panel", text }).catch(() => { /* user cancelled share */ });
               } else {
                 navigator.clipboard.writeText(text);
-                alert("Credenciales copiadas al portapapeles");
+                toast.success("Credenciales copiadas al portapapeles");
               }
             }}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/5 transition-colors"
@@ -1154,8 +1179,8 @@ export default function SettingsModule({
           {navLinks.map((link, idx) => (
             <div key={link.id} className="flex items-center gap-3 p-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex flex-col gap-0.5">
-                <button disabled={idx === 0} onClick={() => { const n = [...navLinks]; [n[idx], n[idx - 1]] = [n[idx - 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowUp className="h-3.5 w-3.5" /></button>
-                <button disabled={idx === navLinks.length - 1} onClick={() => { const n = [...navLinks]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowDown className="h-3.5 w-3.5" /></button>
+                <button aria-label="Subir" disabled={idx === 0} onClick={() => { const n = [...navLinks]; [n[idx], n[idx - 1]] = [n[idx - 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowUp className="h-3.5 w-3.5" /></button>
+                <button aria-label="Bajar" disabled={idx === navLinks.length - 1} onClick={() => { const n = [...navLinks]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowDown className="h-3.5 w-3.5" /></button>
               </div>
               <span className="flex-1 font-semibold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{NAV_LABEL[link.id] || link.id}</span>
               <button onClick={() => setNavLinks(prev => prev.map((l, i) => i === idx ? { ...l, visible: !l.visible } : l))} className={cn("p-1.5 rounded-xl", link.visible ? "text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10" : "text-[var(--text-tertiary)]")}>
@@ -1175,28 +1200,28 @@ export default function SettingsModule({
       <SectionCard title="Formato y regional" desc="Cómo se muestran fechas, horas y números">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <FieldLabel icon={<Calendar className="h-3.5 w-3.5" />}>Formato de fecha</FieldLabel>
-            <SelectInput value={dateFormat} onChange={setDateFormat} options={[
+            <FieldLabel htmlFor="settings-dateFormat" icon={<Calendar className="h-3.5 w-3.5" />}>Formato de fecha</FieldLabel>
+            <SelectInput id="settings-dateFormat" value={dateFormat} onChange={setDateFormat} options={[
               { value: "DD/MM/YYYY", label: "DD/MM/YYYY (Perú)" }, { value: "MM/DD/YYYY", label: "MM/DD/YYYY (USA)" },
               { value: "YYYY-MM-DD", label: "YYYY-MM-DD (ISO)" },
             ]} />
           </div>
           <div>
-            <FieldLabel icon={<Timer className="h-3.5 w-3.5" />}>Formato de hora</FieldLabel>
-            <SelectInput value={timeFormat} onChange={setTimeFormat} options={[
+            <FieldLabel htmlFor="settings-timeFormat" icon={<Timer className="h-3.5 w-3.5" />}>Formato de hora</FieldLabel>
+            <SelectInput id="settings-timeFormat" value={timeFormat} onChange={setTimeFormat} options={[
               { value: "24h", label: "24 horas (14:30)" }, { value: "12h", label: "12 horas (2:30 PM)" },
             ]} />
           </div>
-          <div><FieldLabel icon={<Hash className="h-3.5 w-3.5" />}>Decimales en precios</FieldLabel><NumberInput value={decimals} onChange={setDecimals} min={0} max={4} /></div>
-          <div><FieldLabel icon={<Calendar className="h-3.5 w-3.5" />}>Inicio año fiscal (mes)</FieldLabel><NumberInput value={fiscalYearStart} onChange={setFiscalYearStart} min={1} max={12} suffix="mes" /></div>
+          <div><FieldLabel htmlFor="settings-decimals" icon={<Hash className="h-3.5 w-3.5" />}>Decimales en precios</FieldLabel><NumberInput id="settings-decimals" value={decimals} onChange={setDecimals} min={0} max={4} /></div>
+          <div><FieldLabel htmlFor="settings-fiscalYearStart" icon={<Calendar className="h-3.5 w-3.5" />}>Inicio año fiscal (mes)</FieldLabel><NumberInput id="settings-fiscalYearStart" value={fiscalYearStart} onChange={setFiscalYearStart} min={1} max={12} suffix="mes" /></div>
         </div>
       </SectionCard>
 
       <SectionCard title="Impuestos" desc="Configuración del IGV / impuesto general">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <FieldLabel icon={<Percent className="h-3.5 w-3.5" />}>Tasa de IGV</FieldLabel>
-            <NumberInput value={taxRate} onChange={setTaxRate} min={0} max={100} step={0.1} suffix="%" />
+            <FieldLabel htmlFor="settings-taxRate" icon={<Percent className="h-3.5 w-3.5" />}>Tasa de IGV</FieldLabel>
+            <NumberInput id="settings-taxRate" value={taxRate} onChange={setTaxRate} min={0} max={100} step={0.1} suffix="%" />
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Hoy es 18% en Perú. Se usa para calcular totales en comprobantes.</p>
           </div>
         </div>
@@ -1251,12 +1276,12 @@ export default function SettingsModule({
       <SectionCard title="Descuentos y redondeo">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <FieldLabel icon={<Percent className="h-3.5 w-3.5" />}>Descuento máximo</FieldLabel>
-            <NumberInput value={maxDiscountPercent} onChange={setMaxDiscountPercent} min={0} max={100} suffix="%" />
+            <FieldLabel htmlFor="settings-maxDiscountPercent" icon={<Percent className="h-3.5 w-3.5" />}>Descuento máximo</FieldLabel>
+            <NumberInput id="settings-maxDiscountPercent" value={maxDiscountPercent} onChange={setMaxDiscountPercent} min={0} max={100} suffix="%" />
           </div>
           <div>
-            <FieldLabel>Regla de redondeo</FieldLabel>
-            <SelectInput value={roundingMode} onChange={setRoundingMode} options={[
+            <FieldLabel htmlFor="settings-roundingMode">Regla de redondeo</FieldLabel>
+            <SelectInput id="settings-roundingMode" value={roundingMode} onChange={setRoundingMode} options={[
               { value: "none", label: "Sin redondeo" }, { value: "0.10", label: "Redondear a S/ 0.10" }, { value: "0.50", label: "Redondear a S/ 0.50" },
             ]} />
           </div>
@@ -1281,14 +1306,14 @@ export default function SettingsModule({
       <SectionCard title="Configuración general" desc="Unidades, stock mínimo y alertas">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <FieldLabel icon={<Package className="h-3.5 w-3.5" />}>Unidad por defecto</FieldLabel>
-            <SelectInput value={defaultUnit} onChange={setDefaultUnit} options={[
+            <FieldLabel htmlFor="settings-defaultUnit" icon={<Package className="h-3.5 w-3.5" />}>Unidad por defecto</FieldLabel>
+            <SelectInput id="settings-defaultUnit" value={defaultUnit} onChange={setDefaultUnit} options={[
               { value: "unidad", label: "Unidad" }, { value: "kg", label: "Kilogramo" },
               { value: "litro", label: "Litro" }, { value: "caja", label: "Caja" },
               { value: "docena", label: "Docena" }, { value: "paquete", label: "Paquete" },
             ]} />
           </div>
-          <div><FieldLabel icon={<AlertTriangle className="h-3.5 w-3.5" />}>Stock mínimo global</FieldLabel><NumberInput value={globalMinStock} onChange={setGlobalMinStock} min={0} suffix="unidades" /></div>
+          <div><FieldLabel htmlFor="settings-globalMinStock" icon={<AlertTriangle className="h-3.5 w-3.5" />}>Stock mínimo global</FieldLabel><NumberInput id="settings-globalMinStock" value={globalMinStock} onChange={setGlobalMinStock} min={0} suffix="unidades" /></div>
         </div>
       </SectionCard>
 
@@ -1315,7 +1340,7 @@ export default function SettingsModule({
       <SectionCard title="FEFO (Primero en vencer, primero en salir)">
         <Toggle enabled={fefoEnabled} onChange={setFefoEnabled} label="Sistema FEFO activo" desc="Los productos más próximos a vencer se despachan primero" />
         {fefoEnabled && (
-          <div><FieldLabel>Días de alerta antes del vencimiento</FieldLabel><NumberInput value={fefoAlertDays} onChange={setFefoAlertDays} min={1} max={365} suffix="días" /></div>
+          <div><FieldLabel htmlFor="settings-fefoAlertDays">Días de alerta antes del vencimiento</FieldLabel><NumberInput id="settings-fefoAlertDays" value={fefoAlertDays} onChange={setFefoAlertDays} min={1} max={365} suffix="días" /></div>
         )}
       </SectionCard>
 
@@ -1324,7 +1349,7 @@ export default function SettingsModule({
           {adjustReasons.map((reason, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <TextInput value={reason} onChange={v => setAdjustReasons(p => p.map((r, i) => i === idx ? v : r))} />
-              <button onClick={() => setAdjustReasons(p => p.filter((_, i) => i !== idx))} className="p-2 rounded-xl text-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
+              <button aria-label="Eliminar" onClick={() => setAdjustReasons(p => p.filter((_, i) => i !== idx))} className="p-2 rounded-xl text-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setAdjustReasons(p => [...p, ""])} className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"><Plus className="h-3.5 w-3.5" /> Agregar motivo</button>
@@ -1332,8 +1357,8 @@ export default function SettingsModule({
       </SectionCard>
 
       <SectionCard title="Conteo de inventario">
-        <FieldLabel>Frecuencia de conteo programado</FieldLabel>
-        <SelectInput value={inventoryCountFreq} onChange={setInventoryCountFreq} options={[
+        <FieldLabel htmlFor="settings-inventoryCountFreq">Frecuencia de conteo programado</FieldLabel>
+        <SelectInput id="settings-inventoryCountFreq" value={inventoryCountFreq} onChange={setInventoryCountFreq} options={[
           { value: "weekly", label: "Semanal" }, { value: "monthly", label: "Mensual" }, { value: "quarterly", label: "Trimestral" },
         ]} />
       </SectionCard>
@@ -1349,8 +1374,8 @@ export default function SettingsModule({
     <div className="space-y-6">
       <SectionCard title="Apertura / cierre de caja">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div><FieldLabel icon={<DollarSign className="h-3.5 w-3.5" />}>Monto base de apertura</FieldLabel><NumberInput value={cashOpeningAmount} onChange={setCashOpeningAmount} min={0} suffix="soles" /></div>
-          <div><FieldLabel icon={<AlertTriangle className="h-3.5 w-3.5" />}>Alerta de exceso en caja</FieldLabel><NumberInput value={cashAlertMax} onChange={setCashAlertMax} min={0} suffix="soles" /></div>
+          <div><FieldLabel htmlFor="settings-cashOpeningAmount" icon={<DollarSign className="h-3.5 w-3.5" />}>Monto base de apertura</FieldLabel><NumberInput id="settings-cashOpeningAmount" value={cashOpeningAmount} onChange={setCashOpeningAmount} min={0} suffix="soles" /></div>
+          <div><FieldLabel htmlFor="settings-cashAlertMax" icon={<AlertTriangle className="h-3.5 w-3.5" />}>Alerta de exceso en caja</FieldLabel><NumberInput id="settings-cashAlertMax" value={cashAlertMax} onChange={setCashAlertMax} min={0} suffix="soles" /></div>
           <div><FieldLabel icon={<Timer className="h-3.5 w-3.5" />}>Cierre automático</FieldLabel><TextInput value={autoCloseTime} onChange={setAutoCloseTime} placeholder="22:00 (vacío = manual)" /></div>
         </div>
       </SectionCard>
@@ -1402,8 +1427,8 @@ export default function SettingsModule({
 
       <SectionCard title="Política de devoluciones">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div><FieldLabel>Plazo máximo para devolver</FieldLabel><NumberInput value={returnPolicyDays} onChange={setReturnPolicyDays} min={0} suffix="días" /></div>
-          <div><FieldLabel>Monto máximo sin autorización</FieldLabel><NumberInput value={returnMaxNoAuth} onChange={setReturnMaxNoAuth} min={0} suffix="soles" /></div>
+          <div><FieldLabel htmlFor="settings-returnPolicyDays">Plazo máximo para devolver</FieldLabel><NumberInput id="settings-returnPolicyDays" value={returnPolicyDays} onChange={setReturnPolicyDays} min={0} suffix="días" /></div>
+          <div><FieldLabel htmlFor="settings-returnMaxNoAuth">Monto máximo sin autorización</FieldLabel><NumberInput id="settings-returnMaxNoAuth" value={returnMaxNoAuth} onChange={setReturnMaxNoAuth} min={0} suffix="soles" /></div>
         </div>
       </SectionCard>
 
@@ -1433,7 +1458,7 @@ export default function SettingsModule({
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">min</span>
                 </div>
               </div>
-              <button onClick={() => setDeliveryZones(p => p.filter((_, i) => i !== idx))} className="p-1.5 rounded-xl text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
+              <button aria-label="Eliminar" onClick={() => setDeliveryZones(p => p.filter((_, i) => i !== idx))} className="p-1.5 rounded-xl text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setDeliveryZones(p => [...p, { name: "", fee: 0, estimatedMin: 30 }])} className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"><Plus className="h-3.5 w-3.5" /> Agregar zona</button>
@@ -1442,8 +1467,8 @@ export default function SettingsModule({
 
       <SectionCard title="Configuración general">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div><FieldLabel icon={<DollarSign className="h-3.5 w-3.5" />}>Envío gratis desde</FieldLabel><NumberInput value={freeDeliveryMin} onChange={setFreeDeliveryMin} min={0} suffix="soles (0 = no aplica)" /></div>
-          <div><FieldLabel icon={<MapPin className="h-3.5 w-3.5" />}>Radio máximo de cobertura</FieldLabel><NumberInput value={deliveryMaxRadius} onChange={setDeliveryMaxRadius} min={1} suffix="km" /></div>
+          <div><FieldLabel htmlFor="settings-freeDeliveryMin" icon={<DollarSign className="h-3.5 w-3.5" />}>Envío gratis desde</FieldLabel><NumberInput id="settings-freeDeliveryMin" value={freeDeliveryMin} onChange={setFreeDeliveryMin} min={0} suffix="soles (0 = no aplica)" /></div>
+          <div><FieldLabel htmlFor="settings-deliveryMaxRadius" icon={<MapPin className="h-3.5 w-3.5" />}>Radio máximo de cobertura</FieldLabel><NumberInput id="settings-deliveryMaxRadius" value={deliveryMaxRadius} onChange={setDeliveryMaxRadius} min={1} suffix="km" /></div>
         </div>
       </SectionCard>
 
@@ -1464,7 +1489,7 @@ export default function SettingsModule({
                 <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-sm font-mono bg-[var(--surface-raised)] outline-none" />
                 <input value={rider.zone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, zone: e.target.value } : r))} placeholder="Zona" className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-sm bg-[var(--surface-raised)] outline-none" />
               </div>
-              <button onClick={() => setRiders(p => p.filter((_, i) => i !== idx))} className="p-1.5 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
+              <button aria-label="Eliminar" onClick={() => setRiders(p => p.filter((_, i) => i !== idx))} className="p-1.5 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setRiders(p => [...p, { name: "", phone: "", zone: "" }])} className="flex items-center gap-1.5 text-xs font-semibold text-primary"><Plus className="h-3.5 w-3.5" /> Agregar repartidor</button>
@@ -1482,7 +1507,7 @@ export default function SettingsModule({
       <SectionCard title="Configuración SMTP (Email)" desc="Servidor para enviar correos automáticos">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><FieldLabel icon={<Mail className="h-3.5 w-3.5" />}>Servidor SMTP</FieldLabel><TextInput value={smtpHost} onChange={setSmtpHost} placeholder="smtp.gmail.com" /></div>
-          <div><FieldLabel>Puerto</FieldLabel><NumberInput value={smtpPort} onChange={setSmtpPort} min={1} max={65535} /></div>
+          <div><FieldLabel htmlFor="settings-smtpPort">Puerto</FieldLabel><NumberInput id="settings-smtpPort" value={smtpPort} onChange={setSmtpPort} min={1} max={65535} /></div>
           <div><FieldLabel icon={<User className="h-3.5 w-3.5" />}>Usuario</FieldLabel><TextInput value={smtpUser} onChange={setSmtpUser} placeholder="ventas@bodega.pe" /></div>
           <div><FieldLabel icon={<Key className="h-3.5 w-3.5" />}>Contraseña</FieldLabel><TextInput value={smtpPass} onChange={setSmtpPass} type="password" /></div>
           <div className="sm:col-span-2"><FieldLabel>Email remitente</FieldLabel><TextInput value={smtpFrom} onChange={setSmtpFrom} placeholder="Buleje <ventas@bodega.pe>" /></div>
@@ -1508,8 +1533,8 @@ export default function SettingsModule({
       </SectionCard>
 
       <SectionCard title="Recordatorio de recompra">
-        <FieldLabel>Enviar recordatorio si el cliente no compra en</FieldLabel>
-        <NumberInput value={reorderReminderDays} onChange={setReorderReminderDays} min={0} suffix="días (0 = desactivado)" />
+        <FieldLabel htmlFor="settings-reorderReminderDays">Enviar recordatorio si el cliente no compra en</FieldLabel>
+        <NumberInput id="settings-reorderReminderDays" value={reorderReminderDays} onChange={setReorderReminderDays} min={0} suffix="días (0 = desactivado)" />
       </SectionCard>
 
       <SaveButton saving={saving} saved={savedSection === "notifications"} onClick={() => patch({
@@ -1545,8 +1570,8 @@ export default function SettingsModule({
       <SectionCard title="Facturación electrónica SUNAT" desc="Conecta con un proveedor para emitir comprobantes">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <FieldLabel>Proveedor</FieldLabel>
-            <SelectInput value={sunatProvider} onChange={setSunatProvider} options={[
+            <FieldLabel htmlFor="settings-sunatProvider">Proveedor</FieldLabel>
+            <SelectInput id="settings-sunatProvider" value={sunatProvider} onChange={setSunatProvider} options={[
               { value: "none", label: "No configurado" }, { value: "nubefact", label: "Nubefact" },
               { value: "efact", label: "Efact" }, { value: "otro", label: "Otro" },
             ]} />
@@ -1593,14 +1618,14 @@ export default function SettingsModule({
           <div>
             <FieldLabel>Color primario</FieldLabel>
             <div className="flex items-center gap-2">
-              <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-[var(--rule-base)] cursor-pointer" />
+              <input aria-label="Color primario" type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-[var(--rule-base)] cursor-pointer" />
               <TextInput value={primaryColor} onChange={setPrimaryColor} mono />
             </div>
           </div>
           <div>
             <FieldLabel>Color secundario</FieldLabel>
             <div className="flex items-center gap-2">
-              <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-[var(--rule-base)] cursor-pointer" />
+              <input aria-label="Color secundario" type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-[var(--rule-base)] cursor-pointer" />
               <TextInput value={secondaryColor} onChange={setSecondaryColor} mono />
             </div>
           </div>
@@ -1668,8 +1693,8 @@ export default function SettingsModule({
       <SectionCard title="Retención de logs" desc="Cuánto tiempo se guardan los registros de actividad">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <FieldLabel icon={<Clock className="h-3.5 w-3.5" />}>Mantener logs por</FieldLabel>
-            <SelectInput value={String(logRetentionDays)} onChange={v => setLogRetentionDays(Number(v))} options={[
+            <FieldLabel htmlFor="settings-logRetentionDays" icon={<Clock className="h-3.5 w-3.5" />}>Mantener logs por</FieldLabel>
+            <SelectInput id="settings-logRetentionDays" value={String(logRetentionDays)} onChange={v => setLogRetentionDays(Number(v))} options={[
               { value: "30", label: "30 días" }, { value: "60", label: "60 días" },
               { value: "90", label: "90 días" }, { value: "180", label: "6 meses" }, { value: "365", label: "1 año" },
             ]} />
@@ -1732,7 +1757,7 @@ export default function SettingsModule({
       </SectionCard>
 
       <SectionCard title="Programación automática" desc="Recordatorios periódicos de backup">
-        <SelectInput value={backupSchedule} onChange={v => { setBackupSchedule(v); patch({ backupSchedule: v }); }} options={[
+        <SelectInput id="settings-backupSchedule" ariaLabel="Programación automática de respaldo" value={backupSchedule} onChange={v => { setBackupSchedule(v); patch({ backupSchedule: v }); }} options={[
           { value: "none", label: "Ninguno" }, { value: "daily", label: "Diario" }, { value: "weekly", label: "Semanal" },
         ]} />
       </SectionCard>
@@ -1740,10 +1765,11 @@ export default function SettingsModule({
       {/* Restore modal */}
       {showRestoreModal && (
         <div className="modal-backdrop p-4" onClick={() => !restoring && setShowRestoreModal(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div ref={restorePanelRef} role="dialog" aria-modal="true" aria-labelledby={restoreTitleId} tabIndex={-1}
+            className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Restaurar Base de Datos</CardTitle>
-              {!restoring && <button onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]"><X className="h-5 w-5" /></button>}
+              <CardTitle id={restoreTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Restaurar Base de Datos</CardTitle>
+              {!restoring && <button aria-label="Cerrar" onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]"><X className="h-5 w-5" /></button>}
             </div>
             <div className="px-6 py-5 space-y-4">
               {!restoreSuccess && !restoreFile && (
@@ -1912,7 +1938,7 @@ export default function SettingsModule({
             className="w-full pl-9 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
+            <button aria-label="Quitar" onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -2012,7 +2038,13 @@ export default function SettingsModule({
           >
             <div className="flex gap-6">
               {/* ── Sidebar navigation ── */}
-              <div className={cn(
+              <div
+                ref={mobileNavRef}
+                role={showMobileNav ? "dialog" : undefined}
+                aria-modal={showMobileNav ? true : undefined}
+                aria-labelledby={showMobileNav ? mobileNavTitleId : undefined}
+                tabIndex={-1}
+                className={cn(
                 "shrink-0 space-y-1",
                 showMobileNav
                   ? "fixed inset-0 z-40 bg-[var(--surface-raised)] p-4 overflow-y-auto sm:relative sm:inset-auto sm:z-auto sm:bg-transparent sm:p-0 sm:w-60"
@@ -2020,8 +2052,8 @@ export default function SettingsModule({
               )}>
                 {showMobileNav && (
                   <div className="flex items-center justify-between mb-4 sm:hidden">
-                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Secciones</CardTitle>
-                    <button onClick={() => setShowMobileNav(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]">
+                    <CardTitle id={mobileNavTitleId} className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Secciones</CardTitle>
+                    <button aria-label="Cerrar" onClick={() => setShowMobileNav(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]">
                       <X className="h-5 w-5" />
                     </button>
                   </div>
@@ -2080,7 +2112,7 @@ export default function SettingsModule({
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{SECTION_META.find(s => s.id === activeSection)?.desc}</p>
                   </div>
                   {/* Mobile nav toggle */}
-                  <button onClick={() => setShowMobileNav(!showMobileNav)} className="sm:hidden p-2 rounded-xl bg-[var(--rule-soft)] dark:bg-accent">
+                  <button aria-label="Configurar" onClick={() => setShowMobileNav(!showMobileNav)} className="sm:hidden p-2 rounded-xl bg-[var(--rule-soft)] dark:bg-accent">
                     <Settings className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -2107,14 +2139,19 @@ export default function SettingsModule({
       {showMapPicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setShowMapPicker(false)}>
           <m.div
+            ref={mapPickerPanelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={mapPickerTitleId}
+            tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ubicación del negocio</CardTitle>
-              <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]"><X className="h-5 w-5" /></button>
+              <CardTitle id={mapPickerTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ubicación del negocio</CardTitle>
+              <button aria-label="Cerrar" onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
               <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30">
@@ -2231,6 +2268,7 @@ function ImageDropCard({
         )}
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onUpload} />
         <input
+          aria-label={`URL de ${label}`}
           value={safeUrl}
           onChange={(e) => onChange(e.target.value)}
           placeholder="o pegá URL: https://…"

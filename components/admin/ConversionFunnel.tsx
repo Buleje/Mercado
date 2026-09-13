@@ -68,15 +68,15 @@ async function fetchFunnelData(): Promise<FunnelStage[]> {
 const STAGE_COLORS = [
   "bg-primary",
   "bg-[color-mix(in_oklab,var(--accent)_70%,white)]",
-  "bg-[#14C2C2]",
-  "bg-[#74c69d]",
+  "bg-[var(--data-success-500)]",
+  "bg-[var(--data-success-700)]",
 ];
 
 const STAGE_TEXT = [
-  "text-primary dark:text-[#74c69d]",
+  "text-primary dark:text-[var(--data-success-700)]",
   "text-[color-mix(in_oklab,var(--accent)_70%,white)] dark:text-primary",
-  "text-[#14C2C2]",
-  "text-[#74c69d]",
+  "text-[var(--data-success-500)]",
+  "text-[var(--data-success-700)]",
 ];
 
 export default function ConversionFunnel() {

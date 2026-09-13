@@ -71,7 +71,7 @@ export default function BasketAnalysisTab() {
               {p === "7d" ? "7 días" : p === "30d" ? "30 días" : "90 días"}
             </button>
           ))}
-          <button onClick={load} disabled={loading} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+          <button aria-label="Actualizar" onClick={load} disabled={loading} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(sorted.map(a => ({ producto_a: a.productA, producto_b: a.productB, categoria: a.category, soporte: (a.support * 100).toFixed(1) + "%", confianza: (a.confidence * 100).toFixed(1) + "%", lift: Number(a.lift).toFixed(1), transacciones: a.count })), "analisis-cesta")}
@@ -165,6 +165,7 @@ export default function BasketAnalysisTab() {
           <div className="flex flex-wrap items-center gap-2">
             {/* Filtro categoría */}
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
+              aria-label="Filtrar por categoría"
               className="px-2 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted border-0">
               {categories.map(c => <option key={c} value={c}>{c === "all" ? "Todas las categorías" : c}</option>)}
             </select>

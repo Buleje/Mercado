@@ -1,7 +1,8 @@
 "use client";
 
 import { CardTitle, DataTable, StatCard, SectionTitle, BlockTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useId, useRef, useMemo, type FormEvent } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Package, AlertTriangle, ArrowUp, ArrowDown, RefreshCw,
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
@@ -232,11 +233,17 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   const [showAutoReorder, setShowAutoReorder] = useState<number | null>(null);
   const [arThreshold, setArThreshold] = useState("");
   const [arQty, setArQty] = useState("");
+  const autoReorderPanelRef = useRef<HTMLDivElement>(null);
+  const autoReorderTitleId = useId();
+  useModalAccesible(autoReorderPanelRef, { onCerrar: () => setShowAutoReorder(null), activo: showAutoReorder !== null });
 
   // Mejora 6 nueva: QR modal
   const [showQRProduct, setShowQRProduct] = useState<DbProduct | null>(null);
   // QR generado localmente (chart.googleapis.com está muerto desde 2019).
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const qrPanelRef = useRef<HTMLDivElement>(null);
+  const qrTitleId = useId();
+  useModalAccesible(qrPanelRef, { onCerrar: () => setShowQRProduct(null), activo: !!showQRProduct });
   useEffect(() => {
     if (!showQRProduct) { setQrDataUrl(null); return; }
     const payload = `PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`;
@@ -1611,6 +1618,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 </button>
                 <button
                   onClick={() => setExpandedOC(!expandedOC)}
+                  aria-expanded={expandedOC}
+                  aria-label={expandedOC ? "Contraer productos con stock bajo" : "Expandir productos con stock bajo"}
                   className="p-2 rounded-xl hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/30 transition-colors"
                 >
                   <ChevronRight className={cn("h-4 w-4 text-[var(--text-secondary)] dark:text-muted transition-transform", expandedOC && "rotate-90")} />
@@ -1777,7 +1786,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             <p className="font-bold">{csvResult.created} producto{csvResult.created !== 1 ? "s" : ""} importado{csvResult.created !== 1 ? "s" : ""} correctamente.</p>
             {csvResult.errors.length > 0 && <ul className="mt-1 text-xs space-y-0.5">{csvResult.errors.slice(0, 5).map((e, i) => <li key={i}>• {e}</li>)}{csvResult.errors.length > 5 && <li>...y {csvResult.errors.length - 5} más</li>}</ul>}
           </div>
-          <button onClick={() => setCsvResult(null)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] shrink-0"><X className="h-4 w-4" /></button>
+          <button aria-label="Quitar" onClick={() => setCsvResult(null)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] shrink-0"><X className="h-4 w-4" /></button>
         </div>
       )}
       {/* Mejora QW-10j: Alerta precio inconsistente */}
@@ -1927,7 +1936,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <thead>
                   <tr>
                     <th className="w-10">
-                      <input type="checkbox" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
+                      <input type="checkbox" aria-label="Seleccionar todos" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                     </th>
                     <th className="w-12">Img</th>
                     <th>Producto</th>
@@ -1960,7 +1969,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         }}
                       >
                         <td>
-                          <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
+                          <input type="checkbox" aria-label={`Seleccionar ${p.name}`} checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                         </td>
                         <td>
                           {p.image ? (
@@ -2264,6 +2273,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   />
                 </div>
                 <select
+                  aria-label="Filtrar por categoría"
                   value={pickerCat}
                   onChange={e => setPickerCat(e.target.value)}
                   className="px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none"
@@ -2519,7 +2529,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   {(id) => (
                     <div className="flex flex-wrap gap-2">
                       <input id={id} value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className={cn(FIELD_INPUT, "flex-1 font-mono")} />
-                      <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-xl border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors">
+                      <button aria-label="Escanear código de barras" type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-xl border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors">
                         <ScanBarcode className="h-4 w-4" />
                       </button>
                     </div>
@@ -3325,6 +3335,9 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 </div>
                 <button
                   type="button"
+                  role="switch"
+                  aria-checked={editForm.active}
+                  aria-label="Estado del producto: visible en la tienda"
                   onClick={() => setEditForm(f => ({ ...f, active: !f.active }))}
                   className={cn(
                     "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer",
@@ -3539,7 +3552,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <div className="bg-[var(--surface-raised)] rounded-xl max-w-sm w-full overflow-hidden">
             <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</CardTitle>
-              <button onClick={() => setBulkModal(false)} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
+              <button aria-label="Cerrar" onClick={() => setBulkModal(false)} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <Field label="Campo a modificar" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
@@ -3571,14 +3584,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     <option value="false">Inactivo</option>
                   </select>
                 ) : bulkField === "category" ? (
-                  <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
+                  <select id={bulkValId} value={bulkValue} onChange={e => setBulkValue(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm">
                     <option value="">Seleccionar…</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 ) : bulkField === "badge" ? (
                   <div className="mt-1 space-y-2">
-                    <input type="text" maxLength={50} value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: Oferta, Nuevo, Combo…"
+                    <input id={bulkValId} type="text" maxLength={50} value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: Oferta, Nuevo, Combo…"
                       className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <div className="flex flex-wrap gap-1.5">
                       {["Nuevo", "Oferta", "Combo", "Recomendado", "Más vendido"].map(b => (
@@ -3592,19 +3605,19 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   </div>
                 ) : bulkField === "price" ? (
                   <div className="mt-1">
-                    <input type="number" min="0.01" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 12.50"
+                    <input id={bulkValId} type="number" min="0.01" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 12.50"
                       className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Fija el mismo precio en {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}.</p>
                   </div>
                 ) : bulkField === "priceDelta" ? (
                   <div className="mt-1">
-                    <input type="number" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 1.50 sube · -2 baja"
+                    <input id={bulkValId} type="number" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 1.50 sube · -2 baja"
                       className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma o resta soles al precio actual de cada producto.</p>
                   </div>
                 ) : bulkField === "pricePercent" ? (
                   <div className="mt-1">
-                    <input type="number" step="1" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 10 = +10% · -5 = -5%"
+                    <input id={bulkValId} type="number" step="1" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 10 = +10% · -5 = -5%"
                       className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">
                       Ajusta el precio {bulkValue ? `un ${bulkValue}%` : "un …%"} en {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}.
@@ -3612,18 +3625,18 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   </div>
                 ) : bulkField === "stockMin" ? (
                   <div className="mt-1">
-                    <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 5"
+                    <input id={bulkValId} type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 5"
                       className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Umbral para la alerta de “stock bajo”.</p>
                   </div>
                 ) : bulkField === "stockMax" ? (
                   <div className="mt-1">
-                    <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 100"
+                    <input id={bulkValId} type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 100"
                       className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Capacidad máxima sugerida (para reposición).</p>
                   </div>
                 ) : (
-                  <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Cantidad"
+                  <input id={bulkValId} type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Cantidad"
                     className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                 )}
                 </>)}
@@ -3702,10 +3715,17 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <>
           <div className="modal-backdrop" onClick={() => setShowQRProduct(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowQRProduct(null)}>
-            <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4 text-center">
+            <div
+              ref={qrPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={qrTitleId}
+              tabIndex={-1}
+              className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4 text-center"
+            >
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Codigo QR</CardTitle>
-                <button onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
+                <CardTitle id={qrTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Codigo QR</CardTitle>
+                <button aria-label="Cerrar" onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
                   <X className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
               </div>
@@ -3760,10 +3780,17 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <>
           <div className="modal-backdrop" onClick={() => setShowAutoReorder(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowAutoReorder(null)}>
-            <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+            <div
+              ref={autoReorderPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={autoReorderTitleId}
+              tabIndex={-1}
+              className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4"
+            >
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Configurar Auto-Reorden</CardTitle>
-                <button onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
+                <CardTitle id={autoReorderTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Configurar Auto-Reorden</CardTitle>
+                <button aria-label="Cerrar" onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
                   <X className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
               </div>

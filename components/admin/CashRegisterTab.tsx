@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, useId } from "react";
 import Image from "next/image";
 import {
   Calculator, DollarSign, ArrowUp, ArrowDown, Clock,
@@ -13,6 +13,8 @@ import { CardTitle, DataTable, EmptyState, LoadingState, WarningAlert } from "@b
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { Field } from "@/components/admin/shared/Field";
 import { activateProps } from "@/components/admin/shared/a11y";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { diaLocal, ultimosDiasLocales } from "@/lib/fechas/dia-local";
@@ -181,6 +183,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function CashRegisterTab() {
+  const { confirm } = useConfirm();
   const [registers, setRegisters] = useState<CashRegister[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("current");
@@ -541,11 +544,15 @@ export default function CashRegisterTab() {
      * El botón decía «Confirmar arqueo» y el cajero se quedaba sin caja sin
      * haberlo pedido — y sin que nada se lo dijera.
      */
-    const ok = window.confirm(
-      `Esto CIERRA la caja del día con S/${guiadoTotal.toFixed(2)} contados en efectivo.\n\n` +
-      `Esperado: S/${guiadoExpected.toFixed(2)} · Diferencia: ${guiadoDiff >= 0 ? "+" : "−"}S/${Math.abs(guiadoDiff).toFixed(2)}\n\n` +
-      "Después de cerrar hay que abrir una caja nueva para seguir vendiendo. ¿Cerrar?",
-    );
+    const ok = await confirm({
+      title: "¿Cerrar la caja del día?",
+      description:
+        `Esto CIERRA la caja del día con S/${guiadoTotal.toFixed(2)} contados en efectivo. ` +
+        `Esperado: S/${guiadoExpected.toFixed(2)} · Diferencia: ${guiadoDiff >= 0 ? "+" : "−"}S/${Math.abs(guiadoDiff).toFixed(2)}. ` +
+        "Después de cerrar hay que abrir una caja nueva para seguir vendiendo.",
+      intent: "warning",
+      confirmLabel: "Sí, cerrar",
+    });
     if (!ok) return;
     setAddingArqueoGuiado(true);
     setArqueoError(null);
@@ -621,6 +628,35 @@ export default function CashRegisterTab() {
     }
   };
 
+  // ── Semántica de los modales a mano ──────────────────────────────────────────
+  const cerrarOpen = useCallback(() => setShowOpen(false), []);
+  const cerrarClose = useCallback(() => { setShowClose(false); setDenominations({}); }, []);
+  const cerrarMovement = useCallback(() => setShowMovement(false), []);
+  const cerrarArqueo = useCallback(() => { setShowArqueo(false); setArqueoDenoms({}); setArqueoError(null); }, []);
+  const cerrarArqueoGuiado = useCallback(() => setShowArqueoGuiado(false), []);
+  const cerrarDetail = useCallback(() => setDetailRegister(null), []);
+
+  const openModalRef = useRef<HTMLDivElement>(null);
+  const closeModalRef = useRef<HTMLDivElement>(null);
+  const movementModalRef = useRef<HTMLDivElement>(null);
+  const arqueoModalRef = useRef<HTMLDivElement>(null);
+  const arqueoGuiadoModalRef = useRef<HTMLDivElement>(null);
+  const detailModalRef = useRef<HTMLDivElement>(null);
+
+  const openTitleId = useId();
+  const closeTitleId = useId();
+  const movementTitleId = useId();
+  const arqueoTitleId = useId();
+  const arqueoGuiadoTitleId = useId();
+  const detailTitleId = useId();
+
+  useModalAccesible(openModalRef, { onCerrar: cerrarOpen, activo: showOpen });
+  useModalAccesible(closeModalRef, { onCerrar: cerrarClose, activo: showClose });
+  useModalAccesible(movementModalRef, { onCerrar: cerrarMovement, activo: showMovement });
+  useModalAccesible(arqueoModalRef, { onCerrar: cerrarArqueo, activo: showArqueo });
+  useModalAccesible(arqueoGuiadoModalRef, { onCerrar: cerrarArqueoGuiado, activo: showArqueoGuiado });
+  useModalAccesible(detailModalRef, { onCerrar: cerrarDetail, activo: !!detailRegister });
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -678,6 +714,7 @@ export default function CashRegisterTab() {
                       setCashTolerance(v);
                       try { localStorage.setItem("cash-tolerance", String(v)); } catch {}
                     }}
+                    aria-label="Tolerancia de diferencia en soles"
                     className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base font-bold tabular-nums text-center text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-raised)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
@@ -1483,7 +1520,7 @@ export default function CashRegisterTab() {
       {/* Open register modal */}
       {showOpen && (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowOpen(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
+          <div ref={openModalRef} role="dialog" aria-modal="true" aria-labelledby={openTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1491,7 +1528,7 @@ export default function CashRegisterTab() {
                   <Unlock className="h-5 w-5 text-primary" strokeWidth={2} />
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-bold">Abrir caja</CardTitle>
+                  <CardTitle id={openTitleId} className="text-lg font-bold">Abrir caja</CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">Registra el efectivo inicial del día</p>
                 </div>
               </div>
@@ -1609,7 +1646,7 @@ export default function CashRegisterTab() {
         
         return (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowClose(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
+          <div ref={closeModalRef} role="dialog" aria-modal="true" aria-labelledby={closeTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1617,7 +1654,7 @@ export default function CashRegisterTab() {
                   <Lock className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-bold">Cerrar caja</CardTitle>
+                  <CardTitle id={closeTitleId} className="text-lg font-bold">Cerrar caja</CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y cierra el día</p>
                 </div>
               </div>
@@ -1781,7 +1818,7 @@ export default function CashRegisterTab() {
       {/* Add movement modal */}
       {showMovement && (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowMovement(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
+          <div ref={movementModalRef} role="dialog" aria-modal="true" aria-labelledby={movementTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1794,7 +1831,7 @@ export default function CashRegisterTab() {
                     : <ArrowDown className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />}
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-bold">
+                  <CardTitle id={movementTitleId} className="text-lg font-bold">
                     {mvType === "ingreso" ? "Registrar ingreso" : "Registrar egreso"}
                   </CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">
@@ -1919,7 +1956,7 @@ export default function CashRegisterTab() {
         
         return (
           <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueo(false)}>
-            <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
+            <div ref={arqueoModalRef} role="dialog" aria-modal="true" aria-labelledby={arqueoTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
               {/* Header */}
               <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1927,7 +1964,7 @@ export default function CashRegisterTab() {
                     <Scan className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-bold">Arqueo Express</CardTitle>
+                    <CardTitle id={arqueoTitleId} className="text-lg font-bold">Arqueo Express</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)]">Verificación rápida sin cerrar caja</p>
                   </div>
                 </div>
@@ -2098,7 +2135,7 @@ export default function CashRegisterTab() {
       {/* Arqueo Guiado modal */}
       {showArqueoGuiado && currentRegister && (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueoGuiado(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
+          <div ref={arqueoGuiadoModalRef} role="dialog" aria-modal="true" aria-labelledby={arqueoGuiadoTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -2106,7 +2143,7 @@ export default function CashRegisterTab() {
                   <Calculator className="h-5 w-5 text-primary" strokeWidth={2} />
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-bold">Arqueo guiado</CardTitle>
+                  <CardTitle id={arqueoGuiadoTitleId} className="text-lg font-bold">Arqueo guiado</CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">Cuenta billetes, monedas y métodos de pago</p>
                 </div>
               </div>
@@ -2286,7 +2323,7 @@ export default function CashRegisterTab() {
               {arqueoFoto ? (
                 <div className="relative inline-block">
                   <Image src={arqueoFoto} alt="Foto del cajon" width={200} height={120} className="object-cover rounded-lg border border-[var(--rule-base)]" unoptimized />
-                  <button
+                  <button aria-label="Quitar"
                     onClick={() => setArqueoFoto(null)}
                     className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-[var(--data-error-500)] text-white flex items-center justify-center"
                   >
@@ -2397,17 +2434,17 @@ export default function CashRegisterTab() {
       {/* Detail register modal (history) */}
       {detailRegister && (
         <div className="modal-backdrop p-4" onClick={() => setDetailRegister(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="px-2 sm:px-4 py-2 sm:py-3 border-b flex items-center justify-between">
               <div>
-                <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de caja</CardTitle>
+                <CardTitle id={detailTitleId} className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de caja</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{fmtDate(detailRegister.openedAt)} → {detailRegister.closedAt ? fmtDate(detailRegister.closedAt) : "—"}</p>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => window.print()} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] print:hidden" title="Imprimir resumen">
                   <Printer className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
                 </button>
-                <button onClick={() => setDetailRegister(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] print:hidden">
+                <button aria-label="Cerrar" onClick={() => setDetailRegister(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] print:hidden">
                   <X className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
                 </button>
               </div>

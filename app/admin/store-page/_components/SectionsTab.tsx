@@ -18,6 +18,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Plus,
   Eye,
@@ -88,6 +89,7 @@ const TYPE_LABEL: Record<SectionType, string> = {
 };
 
 export default function SectionsTab({ slug = "main" }: { slug?: string }) {
+  const { confirm } = useConfirm();
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -173,10 +175,15 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
     });
   }, []);
 
-  const removeSection = useCallback((id: string) => {
-    if (!confirm("¿Eliminar esta sección? Esta acción no se puede deshacer.")) return;
+  const removeSection = useCallback(async (id: string) => {
+    if (!(await confirm({
+      title: "¿Eliminar esta sección?",
+      description: "Esta acción no se puede deshacer.",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
     setSections((prev) => prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, order: i })));
-  }, []);
+  }, [confirm]);
 
   const toggleVisible = useCallback((id: string) => {
     setSections((prev) =>

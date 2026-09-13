@@ -1,14 +1,15 @@
 ﻿"use client";
 
-import { CardTitle, PageTitle } from "@buleje/design-system";
+import { PageTitle } from "@buleje/design-system";
 
 import { useState, useMemo, useEffect } from "react";
 import {
-  ScrollText, Download, Search, Eye, X, AlertTriangle,
+  ScrollText, Download, Search, Eye, AlertTriangle,
   Shield, Trash2, Pencil, Plus, Settings, UserCog, Loader2,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import ResponsiveTable from "@/components/ui/ResponsiveTable";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 // import type { ReactNode } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -302,19 +303,19 @@ export default function AuditLogTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, usuario..." className="w-full pl-9 pr-3 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value as AuditSeverity | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select aria-label="Filtrar por severidad" value={filterSeverity} onChange={e => setFilterSeverity(e.target.value as AuditSeverity | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las severidades</option>
           {(Object.keys(SEVERITY_META) as AuditSeverity[]).map(s => <option key={s} value={s}>{SEVERITY_META[s].label}</option>)}
         </select>
-        <select value={filterAction} onChange={e => setFilterAction(e.target.value as AuditAction | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select aria-label="Filtrar por acción" value={filterAction} onChange={e => setFilterAction(e.target.value as AuditAction | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las acciones</option>
           {(Object.keys(ACTION_META) as AuditAction[]).map(a => <option key={a} value={a}>{ACTION_META[a].label}</option>)}
         </select>
-        <select value={filterModule} onChange={e => setFilterModule(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select aria-label="Filtrar por módulo" value={filterModule} onChange={e => setFilterModule(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los módulos</option>
           {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
-        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select aria-label="Filtrar por usuario" value={filterUser} onChange={e => setFilterUser(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los usuarios</option>
           {users.map(u => <option key={u} value={u}>{u}</option>)}
         </select>
@@ -348,13 +349,9 @@ export default function AuditLogTab() {
       )}
 
       {/* Detail modal */}
-      {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Detalle del evento</CardTitle>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
-            </div>
+      <AdminModal open={!!detail} onClose={() => setDetail(null)} title="Detalle del evento">
+        <div className={MODAL_BODY}>
+          {detail && (
             <div className="space-y-2 text-sm">
               {[
                 ["Fecha/Hora", fmtDate(detail.timestamp)], ["Usuario", `${detail.user} (${detail.role})`],
@@ -368,9 +365,9 @@ export default function AuditLogTab() {
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </AdminModal>
     </div>
   );
 }

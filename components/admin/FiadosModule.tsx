@@ -1,8 +1,10 @@
 "use client";
 
+import { toast } from "sonner";
 import { CardTitle, LoadingState, BlockTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useId, useRef, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Plus, X, DollarSign, Calendar, User,
   ChevronLeft, ChevronRight, Loader2, AlertTriangle,
@@ -216,6 +218,11 @@ export default function FiadosModule() {
 
   // Detail sheet
   const [selected, setSelected] = useState<Fiado | null>(null);
+  const sheetPanelRef = useRef<HTMLDivElement>(null);
+  const sheetTitleId = useId();
+  // El Escape central de más arriba ya cierra el panel — el hook sólo aporta
+  // foco inicial + trampa de Tab (por eso cerrarConEscape: false).
+  useModalAccesible(sheetPanelRef, { cerrarConEscape: false, activo: !!selected });
   const [detailLoading, setDetailLoading] = useState(false);
 
   // New fiado modal
@@ -1078,12 +1085,23 @@ export default function FiadosModule() {
                       <tr
                         key={f.id}
                         onClick={() => openDetail(f)}
-                        className="border-b border-gray-50 hover:bg-[var(--surface-alt)] cursor-pointer transition-colors"
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Ver fiado de ${f.customerName || f.customerId}`}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter" && e.key !== " ") return;
+                          const target = e.target as HTMLElement;
+                          if (target.closest("button, input, a, [data-no-row-click]")) return;
+                          e.preventDefault();
+                          openDetail(f);
+                        }}
+                        className="border-b border-gray-50 hover:bg-[var(--surface-alt)] cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                       >
                         <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
                           {(f.status === "ACTIVO" || f.status === "VENCIDO") && (
                             <input
                               type="checkbox"
+                              aria-label={`Seleccionar fiado de ${f.customerName || f.customerId}`}
                               checked={selectedIds.has(f.id)}
                               onChange={() => toggleSelect(f.id)}
                               className="h-4 w-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
@@ -1161,14 +1179,14 @@ export default function FiadosModule() {
                   {fiados.length} fíado{fiados.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}
                 </p>
                 <div className="flex gap-1">
-                  <button
+                  <button aria-label="Anterior"
                     disabled={page <= 1}
                     onClick={() => setPage(p => p - 1)}
                     className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button
+                  <button aria-label="Siguiente"
                     disabled={page >= totalPages}
                     onClick={() => setPage(p => p + 1)}
                     className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
@@ -1199,6 +1217,11 @@ export default function FiadosModule() {
             />
             <m.div
               key="sheet-panel"
+              ref={sheetPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={sheetTitleId}
+              tabIndex={-1}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -1208,7 +1231,7 @@ export default function FiadosModule() {
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Sheet header — UX Mejora 16: Width toggle */}
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Detalle del fiado</CardTitle>
+                  <CardTitle id={sheetTitleId} className="text-lg font-bold text-[var(--text-primary)]">Detalle del fiado</CardTitle>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => { const next = !isPanelWide; setIsPanelWide(next); try { localStorage.setItem(tenantCacheKey("panel-width-preference"), next ? "wide" : "normal"); } catch {} }}
@@ -1217,7 +1240,7 @@ export default function FiadosModule() {
                     >
                       {isPanelWide ? <Minimize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /> : <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
                     </button>
-                    <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                    <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                       <X className="h-5 w-5 text-[var(--text-secondary)]" />
                     </button>
                   </div>
@@ -1366,13 +1389,13 @@ export default function FiadosModule() {
                                 headers: csrfHeaders({ "Content-Type": "application/json" }),
                                 body: JSON.stringify({ customerId: selected.customerId }),
                               });
-                              if (!res.ok) { alert("No se pudo generar el link"); return; }
+                              if (!res.ok) { toast.error("No se pudo generar el link"); return; }
                               const { url } = (await res.json()) as { url: string };
                               const msg = `Hola ${selected.customerName || ""}, aquí puedes ver tu estado de cuenta completo: ${url}`;
                               const wa = waLink(selected.customerId, msg);
                               if (wa) window.open(wa, "_blank", "noopener");
                             } catch {
-                              alert("Error al generar el link");
+                              toast.error("Error al generar el link");
                             }
                           }}
                           className="w-full flex items-center justify-center gap-1.5 px-3 min-h-11 rounded-xl text-sm font-semibold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Tag, X, Check, Plus } from "@buleje/design-system/icons";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { THREAD_LABEL_PRESETS, labelChipClass } from "./types";
 
@@ -42,7 +43,7 @@ export function LabelPicker({ value, onChange }: LabelPickerProps) {
     try {
       await onChange(next);
     } catch {
-      window.alert("No se pudo actualizar la etiqueta.");
+      toast.error("No se pudo actualizar la etiqueta.");
     } finally {
       setBusy(false);
     }

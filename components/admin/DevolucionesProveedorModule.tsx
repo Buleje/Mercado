@@ -8,6 +8,7 @@ import ProductCombobox, { type ProductOption } from "@/components/admin/shared/P
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { Field } from "@/components/admin/shared/Field";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 
 const DevolucionesChart = dynamic(() => import("./DevolucionesChart"), {
   ssr: false,
@@ -160,6 +161,7 @@ export default function DevolucionesProveedorModule() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<DevolucionEstado | "">("");
   const [actionId, setActionId] = useState<string | null>(null);
+  const { confirm } = useConfirm();
 
   // Campos del formulario
   const [proveedorId, setProveedorId] = useState("");
@@ -451,7 +453,12 @@ export default function DevolucionesProveedorModule() {
     // que quizá ya se le reclamó al proveedor.
     const dev = devoluciones.find(d => d.id === id);
     const detalle = dev ? `la devolución a ${dev.proveedorNombre} (${dev.items.length} item${dev.items.length === 1 ? "" : "s"})` : "esta devolución";
-    if (!window.confirm(`¿Eliminar ${detalle}?\n\nEs definitivo: no queda en la papelera ni se puede deshacer.`)) return;
+    if (!(await confirm({
+      title: `¿Eliminar ${detalle}?`,
+      description: "Es definitivo: no queda en la papelera ni se puede deshacer.",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
 
     setActionId(id);
     setAviso(null);
@@ -628,7 +635,7 @@ export default function DevolucionesProveedorModule() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between">
             <CardTitle className="font-semibold text-[var(--text-primary)] text-sm">Nueva devolución</CardTitle>
-            <button
+            <button aria-label="Cerrar"
               onClick={() => setMostrarFormulario(false)}
               className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
@@ -693,11 +700,13 @@ export default function DevolucionesProveedorModule() {
                 <input
                   type="number"
                   min={1}
+                  aria-label={`Cantidad del ítem ${index + 1}`}
                   value={item.cantidad}
                   onChange={e => actualizarItem(index, "cantidad", Number(e.target.value))}
                   className="w-16 px-2 h-10 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
                 <select
+                  aria-label={`Unidad del ítem ${index + 1}`}
                   value={item.unidad}
                   onChange={e => actualizarItem(index, "unidad", e.target.value)}
                   className="w-20 px-2 h-10 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
@@ -718,7 +727,7 @@ export default function DevolucionesProveedorModule() {
                   {valorItem(item) != null ? soles(valorItem(item)!) : "sin costo"}
                 </span>
                 {items.length > 1 && (
-                  <button
+                  <button aria-label="Quitar"
                     onClick={() => quitarItem(index)}
                     className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                   >

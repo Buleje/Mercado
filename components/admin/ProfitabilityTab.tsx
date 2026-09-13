@@ -2,13 +2,14 @@
 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { CardTitle, DataTable } from "@buleje/design-system";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   TrendingUp, Download, Search, Eye, X, ArrowUpRight, ArrowDownRight,
   AlertTriangle, RefreshCw,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import { useProductProfitability } from "@/hooks/use-product-profitability";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,10 @@ export default function ProfitabilityTab() {
   const [filterCat, setFilterCat] = useState("todos");
   const [sortBy, setSortBy] = useState<"marginPct" | "grossMargin" | "revenue" | "unitsSold">("marginPct");
   const [detail, setDetail] = useState<ProfitLine | null>(null);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  // El propio Escape de abajo ya cierra el detalle — el hook sólo aporta foco
+  // inicial + trampa de Tab (por eso cerrarConEscape: false).
+  useModalAccesible(detailPanelRef, { cerrarConEscape: false, activo: !!detail });
 
   const periodo = since ? `desde ${since}` : `últimos ${days} días`;
 
@@ -239,11 +244,11 @@ export default function ProfitabilityTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select aria-label="Filtrar por categoría" value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las categorías</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select aria-label="Ordenar por" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="marginPct">Mayor % margen</option>
           <option value="grossMargin">Mayor margen bruto</option>
           <option value="revenue">Mayor ingreso</option>
@@ -312,7 +317,7 @@ export default function ProfitabilityTab() {
                 </span>
               </td>
               <td>
-                <button onClick={() => setDetail(l)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
+                <button aria-label="Ver" onClick={() => setDetail(l)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
               </td>
             </tr>
           ))}
@@ -343,9 +348,11 @@ export default function ProfitabilityTab() {
           onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setDetail(null); }}
         >
           <div
+            ref={detailPanelRef}
             role="dialog"
             aria-modal="true"
             aria-label="Detalle de producto"
+            tabIndex={-1}
             className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4"
             onClick={e => e.stopPropagation()}
             onKeyDown={e => e.stopPropagation()}

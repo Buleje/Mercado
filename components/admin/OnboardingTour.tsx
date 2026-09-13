@@ -156,7 +156,7 @@ export function OnboardingTour({
 
   return (
     <TourSpotlight targetSelector={targetSelector} onMissingTarget={onSkip}>
-      <div className="w-[320px] sm:w-[340px] bg-[var(--surface-raised)] dark:bg-[#1e293b] rounded-xl border border-[var(--rule-base)] overflow-hidden">
+      <div className="w-[320px] sm:w-[340px] bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden">
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
           <div className="flex items-center gap-2">
@@ -198,7 +198,7 @@ export function OnboardingTour({
               </p>
             </div>
           </div>
-          <div className="bg-[#f0fdf4] dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
+          <div className="bg-[var(--data-success-50)] border border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
             <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
               {step.example}
             </p>
@@ -225,7 +225,7 @@ export function OnboardingTour({
 
           <button
             onClick={isLastStep ? onComplete : onNext}
-            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] transition-colors"
+            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[var(--accent-ink)]/90 transition-colors"
           >
             {isLastStep ? (
               <>

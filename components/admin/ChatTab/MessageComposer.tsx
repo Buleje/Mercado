@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Send, Paperclip, Smile, X, Plus, Minus, Search, Loader2, ShoppingCart, RefreshCw, ReceiptText, Trash2, Wallet, Sparkles, FileText, Star } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getActiveTenantSlug } from "@/lib/tenant-fetch";
 import { fmtSoles, orderTotal, type SharedChatProduct, type ChatOrderItem, type ChatPayment } from "@/lib/chat/shared-product";
@@ -117,7 +118,7 @@ export function MessageComposer({
       await onRequestReview(getActiveTenantSlug() ?? "", storeName ?? "");
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
-      window.alert("No se pudo pedir la reseña.");
+      toast.error("No se pudo pedir la reseña.");
     }
   }
 
@@ -137,7 +138,7 @@ export function MessageComposer({
       setPayNote("");
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
-      window.alert("No se pudo enviar el cobro.");
+      toast.error("No se pudo enviar el cobro.");
     } finally {
       setSendingPay(false);
     }
@@ -181,7 +182,7 @@ export function MessageComposer({
       setResults([]);
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
-      window.alert("No se pudo enviar el pedido.");
+      toast.error("No se pudo enviar el pedido.");
     } finally {
       setSendingOrder(false);
     }
@@ -230,7 +231,7 @@ export function MessageComposer({
       setResults([]);
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
-      window.alert("No se pudo compartir el producto.");
+      toast.error("No se pudo compartir el producto.");
     } finally {
       setSharingId(null);
     }
@@ -257,7 +258,7 @@ export function MessageComposer({
       setOriginalName("");
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
-      window.alert("No se pudo proponer la sustitución.");
+      toast.error("No se pudo proponer la sustitución.");
     } finally {
       setSharingId(null);
     }
@@ -275,7 +276,7 @@ export function MessageComposer({
       textareaRef.current?.focus();
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
-      window.alert("No se pudo enviar el mensaje. Reintentá.");
+      toast.error("No se pudo enviar el mensaje. Reintentá.");
     } finally {
       setSending(false);
     }
@@ -292,7 +293,7 @@ export function MessageComposer({
       setSuggestions(s);
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
-      window.alert("No se pudieron generar sugerencias. Reintentá.");
+      toast.error("No se pudieron generar sugerencias. Reintentá.");
     } finally {
       setLoadingSuggest(false);
     }

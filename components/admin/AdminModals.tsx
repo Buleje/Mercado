@@ -2,8 +2,11 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import React from "react";
+import React, { useRef } from "react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import {
   Trash2, Check, X, AlertTriangle,
   Users, Star, ShoppingCart, Loader2, Truck,
@@ -62,58 +65,42 @@ const SHORTCUT_SECTIONS = [
 ];
 
 export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
-  if (!open) return null;
-
-  // Close on Escape
   return (
-    <div className="modal-backdrop flex items-center justify-center" style={{ zIndex: 60 }} onClick={onClose}>
-      <div
-        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2">
-            <Monitor className="h-5 w-5 text-primary" />
-            Atajos de teclado
-          </CardTitle>
-          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
-            <X className="h-4 w-4 text-[var(--text-secondary)]" />
-          </button>
-        </div>
-
-        {/* Body — sections in 2-column grid */}
-        <div className="px-6 py-4 max-h-[60vh] overflow-y-auto space-y-5">
-          {SHORTCUT_SECTIONS.map((section) => (
-            <div key={section.title}>
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">
-                {section.title}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                {section.shortcuts.map(([key, label]) => (
-                  <div key={key} className="flex items-center justify-between py-1">
-                    <span className="text-sm text-[var(--text-secondary)] dark:text-muted">{label}</span>
-                    <kbd className="ml-2 bg-[var(--surface-sunken)] text-[var(--text-primary)] px-2 py-0.5 rounded-md text-xs font-mono border border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
-                      {key}
-                    </kbd>
-                  </div>
-                ))}
-              </div>
+    <AdminModal
+      open={open}
+      onClose={onClose}
+      title="Atajos de teclado"
+      icon={Monitor}
+      variant="default"
+      footer={
+        <button
+          onClick={onClose}
+          className="w-full min-h-11 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors"
+        >
+          Cerrar
+        </button>
+      }
+    >
+      <div className={cn(MODAL_BODY, "space-y-5")}>
+        {SHORTCUT_SECTIONS.map((section) => (
+          <div key={section.title}>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">
+              {section.title}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+              {section.shortcuts.map(([key, label]) => (
+                <div key={key} className="flex items-center justify-between py-1">
+                  <span className="text-sm text-[var(--text-secondary)] dark:text-muted">{label}</span>
+                  <kbd className="ml-2 bg-[var(--surface-sunken)] text-[var(--text-primary)] px-2 py-0.5 rounded-md text-xs font-mono border border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
+                    {key}
+                  </kbd>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] ">
-          <button
-            onClick={onClose}
-            className="w-full min-h-11 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors"
-          >
-            Cerrar
-          </button>
-        </div>
+          </div>
+        ))}
       </div>
-    </div>
+    </AdminModal>
   );
 }
 
@@ -162,6 +149,11 @@ export function ClearDataModal({
   onClose,
   demoDataModuleKeys,
 }: ClearDataModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  // `handleCancel` (más abajo) resetea el wizard además de cerrar; la
+  // referencia se resuelve recién cuando Escape dispara, ya con el nombre asignado.
+  useModalAccesible(panelRef, { onCerrar: () => handleCancel(), activo: open });
+
   if (!open) return null;
 
   const allSelected = clearCategories.size === ALL_CLEAR_CATS.length;
@@ -214,16 +206,24 @@ export function ClearDataModal({
           try { localStorage.setItem("admin_demo_cleared", JSON.stringify(demoDataModuleKeys)); } catch {}
           window.location.reload();
         } else {
-          alert(d.error || "Error al borrar datos");
+          toast.error(d.error || "Error al borrar datos");
         }
       })
-      .catch((err) => alert(`Error de conexión: ${err?.message ?? "verifica tu red"}`))
+      .catch((err) => toast.error(`Error de conexión: ${err?.message ?? "verifica tu red"}`))
       .finally(() => setClearingData(false));
   };
 
   return (
     <div className="modal-backdrop flex items-center justify-center" style={{ zIndex: 100 }} onClick={handleCancel}>
-      <div className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full mx-4 p-6 space-y-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Borrar datos del negocio"
+        tabIndex={-1}
+        className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full mx-4 p-6 space-y-4 max-h-[90vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
 
         {/* Step indicator */}
         <div className="flex items-center gap-2">

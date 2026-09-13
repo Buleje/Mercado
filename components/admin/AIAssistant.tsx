@@ -4,6 +4,9 @@ import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Bot, X, Send, Mic, MicOff, Sparkles,
   AlertTriangle, TrendingUp, Package, Users, Lightbulb,
@@ -275,6 +278,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   // Mejora 21: Command palette
   const [showCmdPalette, setShowCmdPalette] = useState(false);
   const [cmdSearch, setCmdSearch] = useState("");
+  const cmdPalettePanelRef = useRef<HTMLDivElement>(null);
+  const cerrarCmdPalette = useCallback(() => { setShowCmdPalette(false); setCmdSearch(""); }, []);
+  useModalAccesible(cmdPalettePanelRef, { onCerrar: cerrarCmdPalette, activo: showCmdPalette && !open });
+
+  const { confirm } = useConfirm();
 
   // Mejora 34: Favorites
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -405,7 +413,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   // Speech recognition
   const toggleVoice = useCallback(() => {
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      alert("Tu navegador no soporta reconocimiento de voz.");
+      toast.error("Tu navegador no soporta reconocimiento de voz.");
       return;
     }
     if (isListening && recognitionRef.current) {
@@ -575,7 +583,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     const action = msg?.actions?.[actionIndex];
     if (!action) return;
     const destructive = ["toggle_product", "update_order_status"].includes(action.type);
-    if (destructive && !window.confirm(`¿Confirmas ejecutar: ${action.label}?`)) return;
+    if (destructive && !(await confirm({
+      title: `¿Confirmas ejecutar: ${action.label}?`,
+      intent: "warning",
+      confirmLabel: "Sí, ejecutar",
+    }))) return;
 
     setMessages(prev => prev.map(m => {
       if (m.id !== msgId || !m.actions) return m;
@@ -879,7 +891,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           title={isListening ? "Detener" : "Hablar"}>
           {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
         </button>
-        <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
+        <button aria-label="Enviar" onClick={() => sendMessage()} disabled={!input.trim() || loading}
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
             input.trim() && !loading
               ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90 "
@@ -1039,7 +1051,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         <>
           <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => { setShowCmdPalette(false); setCmdSearch(""); }} />
           <div className="fixed top-1/4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md mx-4">
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+            <div ref={cmdPalettePanelRef} role="dialog" aria-modal="true" aria-label="Comandos rápidos del asistente" tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden outline-none">
               <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <input autoFocus type="text" value={cmdSearch} onChange={e => setCmdSearch(e.target.value)} placeholder="¿Qué quieres hacer?"

@@ -294,7 +294,7 @@ export default function CompetitorPriceTracker() {
             placeholder='Ej: "Bodega Pérez", "Market Plaza"'
             className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-          <button
+          <button aria-label="Agregar"
             onClick={addCompetitor}
             disabled={!newCompetitor.trim()}
             className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
@@ -307,7 +307,7 @@ export default function CompetitorPriceTracker() {
             {data.competitors.map(c => (
               <span key={c.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--surface-sunken)] text-xs font-medium text-[var(--text-secondary)]">
                 {c.name}
-                <button onClick={() => removeCompetitor(c.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
+                <button aria-label="Eliminar" onClick={() => removeCompetitor(c.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
                   <Trash2 className="h-3 w-3" />
                 </button>
               </span>
@@ -335,7 +335,7 @@ export default function CompetitorPriceTracker() {
             step="0.10"
             className="w-24 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-          <button
+          <button aria-label="Agregar"
             onClick={addProduct}
             disabled={!newProduct.trim()}
             className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
@@ -387,6 +387,7 @@ export default function CompetitorPriceTracker() {
                         onBlur={() => { updateMyPrice(product.productId, parseFloat(editValue) || 0); }}
                         onKeyDown={e => { if (e.key === "Enter") updateMyPrice(product.productId, parseFloat(editValue) || 0); }}
                         step="0.10"
+                        aria-label={`Mi precio de ${product.productName}`}
                         className="w-20 px-2 py-1 rounded-xl border border-primary text-xs text-right bg-[var(--surface-raised)] focus:outline-none text-[var(--text-primary)]"
                       />
                     ) : (
@@ -414,6 +415,7 @@ export default function CompetitorPriceTracker() {
                             onBlur={() => updatePrice(product.productId, comp.id, editValue ? parseFloat(editValue) : null)}
                             onKeyDown={e => { if (e.key === "Enter") updatePrice(product.productId, comp.id, editValue ? parseFloat(editValue) : null); }}
                             step="0.10"
+                            aria-label={`Precio de ${comp.name} para ${product.productName}`}
                             className="w-20 px-2 py-1 rounded-xl border border-[var(--rule-base)] text-xs text-right bg-[var(--surface-raised)] focus:outline-none text-[var(--text-primary)]"
                           />
                         ) : (

@@ -1,10 +1,11 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo } from "react";
 import {
-  Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, X, BarChart2,
+  Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, BarChart2,
   Home, Lightbulb, Users, Truck, Sparkles, Megaphone, Wrench, Package,
   type LucideIcon,
 } from "@buleje/design-system/icons";
@@ -147,9 +148,9 @@ export default function ExpensesTab() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="sm:col-span-2 flex flex-wrap items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
           <Calendar className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} aria-label="Desde" className="bg-transparent text-sm flex-1 min-w-0" />
           <span className="text-[var(--text-tertiary)]">→</span>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
+          <input type="date" value={to} onChange={e => setTo(e.target.value)} aria-label="Hasta" className="bg-transparent text-sm flex-1 min-w-0" />
         </div>
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)]">S/{totalPeriod.toFixed(2)}</p>
@@ -227,34 +228,28 @@ export default function ExpensesTab() {
       })()}
 
       {/* Form modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-3 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-lg">Registrar Gasto</CardTitle>
-              <button onClick={() => setShowForm(false)}><X className="h-5 w-5 text-[var(--text-tertiary)]" /></button>
+      <AdminModal open={showForm} onClose={() => setShowForm(false)} title="Registrar Gasto">
+        <div className={cn(MODAL_BODY, "space-y-4")}>
+          <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} aria-label="Categoría del gasto" className="w-full px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm">
+            {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+          <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
+          <div className="flex flex-wrap gap-3">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm">S/</span>
+              <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full pl-8 pr-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
             </div>
-            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm">
-              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
-            <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
-            <div className="flex flex-wrap gap-3">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm">S/</span>
-                <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full pl-8 pr-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
-              </div>
-              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
-            </div>
-            <label className="flex flex-wrap items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.recurring} onChange={e => setForm(f => ({ ...f, recurring: e.target.checked }))} className="rounded" />
-              Gasto recurrente (mensual)
-            </label>
-            <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full min-h-11 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Guardar Gasto
-            </button>
+            <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} aria-label="Fecha del gasto" className="px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
           </div>
+          <label className="flex flex-wrap items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.recurring} onChange={e => setForm(f => ({ ...f, recurring: e.target.checked }))} className="rounded" />
+            Gasto recurrente (mensual)
+          </label>
+          <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full min-h-11 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Guardar Gasto
+          </button>
         </div>
-      )}
+      </AdminModal>
 
       {/* Expenses list */}
       {expenses.length === 0 ? (
@@ -277,7 +272,7 @@ export default function ExpensesTab() {
                 <p className="text-xs text-[var(--text-tertiary)]">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
               </div>
               <p className="font-extrabold text-[var(--data-error-500)] shrink-0">-S/{Number(e.amount).toFixed(2)}</p>
-              <button onClick={() => remove(e.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition"><Trash2 className="h-4 w-4" /></button>
+              <button aria-label="Eliminar" onClick={() => remove(e.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition"><Trash2 className="h-4 w-4" /></button>
             </div>
             );
           })}

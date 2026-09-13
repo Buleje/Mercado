@@ -4,6 +4,7 @@ import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Ticket, Plus, Trash2, Check, X, Copy, Gift, Sparkles, Zap, UserPlus, PartyPopper, Settings, Calendar, MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -180,7 +181,7 @@ export default function CouponsTab() {
     const rnd = Math.random().toString(36).substring(2, 5).toUpperCase();
     const mmdd = new Date().toISOString().slice(5, 10).replace("-", "");
     const code = templatePattern.replace("{MMDD}", mmdd).replace("{RND3}", rnd);
-    alert(`Código generado: ${code}`);
+    toast.success(`Código generado: ${code}`);
     return code;
   };
 
@@ -401,7 +402,7 @@ export default function CouponsTab() {
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono font-extrabold text-primary text-lg">{c.code}</span>
-                <button onClick={() => navigator.clipboard.writeText(c.code)} className="text-[var(--text-tertiary)] hover:text-primary"><Copy className="h-3.5 w-3.5" /></button>
+                <button aria-label="Copiar" onClick={() => navigator.clipboard.writeText(c.code)} className="text-[var(--text-tertiary)] hover:text-primary"><Copy className="h-3.5 w-3.5" /></button>
                 {c.storeId ? (
                   <span className="text-[length:var(--ts-2xs)] bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-bold">Tienda</span>
                 ) : (
@@ -435,7 +436,7 @@ export default function CouponsTab() {
               <button onClick={() => toggleActive(c)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", c.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]" : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10")}>
                 {c.active ? "Desactivar" : "Activar"}
               </button>
-              <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-xl text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition"><Trash2 className="h-4 w-4" /></button>
+              <button aria-label="Eliminar" onClick={() => handleDelete(c.id)} className="p-1.5 rounded-xl text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition"><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
         ))}
@@ -450,7 +451,7 @@ export default function CouponsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Configurar Regla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ruleConfigs[editingRule.type].label}</p>
               </div>
-              <button onClick={() => setShowRuleConfig(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
+              <button aria-label="Cerrar" onClick={() => setShowRuleConfig(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -509,7 +510,7 @@ export default function CouponsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Enviar cupon por WhatsApp</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Codigo: <span className="font-mono font-bold text-primary">{whatsappCoupon.code}</span></p>
               </div>
-              <button onClick={() => setWhatsappCoupon(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
+              <button aria-label="Quitar" onClick={() => setWhatsappCoupon(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -564,7 +565,7 @@ export default function CouponsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Constructor de Plantilla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Define el patrón de códigos automáticos</p>
               </div>
-              <button onClick={() => setShowTemplateBuilder(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
+              <button aria-label="Cerrar" onClick={() => setShowTemplateBuilder(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>

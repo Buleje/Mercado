@@ -209,7 +209,7 @@ export default function QuickStockCounter() {
           <button
             onClick={() => lookupBarcode(code)}
             disabled={lookupState === "loading" || !code.trim()}
-            className="flex items-center gap-2 rounded-xl bg-primary px-4 min-h-10 text-sm font-medium text-white transition hover:bg-[#245a40] disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 min-h-10 text-sm font-medium text-white transition hover:bg-primary/90 disabled:opacity-50"
           >
             {lookupState === "loading" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -250,7 +250,7 @@ export default function QuickStockCounter() {
             <div className="flex items-center gap-3">
               <Field label="Stock físico contado:" labelClassName="text-xs font-medium text-[var(--text-secondary)] whitespace-nowrap">{(id) => (
                 <div className="flex items-center gap-1">
-                  <button
+                  <button aria-label="Disminuir cantidad"
                     onClick={() =>
                       setPhysicalStock((v) => Math.max(0, (Number(v) || 0) - 1))
                     }
@@ -276,7 +276,7 @@ export default function QuickStockCounter() {
                       "dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                     )}
                   />
-                  <button
+                  <button aria-label="Aumentar cantidad"
                     onClick={() => setPhysicalStock((v) => (Number(v) || 0) + 1)}
                     className="rounded-xl p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
                   >
@@ -307,7 +307,7 @@ export default function QuickStockCounter() {
               <button
                 onClick={addToCount}
                 disabled={physicalStock === ""}
-                className="ml-auto rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#245a40] disabled:opacity-40"
+                className="ml-auto rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition hover:bg-primary/90 disabled:opacity-40"
               >
                 Agregar
               </button>
@@ -359,7 +359,7 @@ export default function QuickStockCounter() {
                     )}
                   </div>
 
-                  <button
+                  <button aria-label="Eliminar"
                     onClick={() => removeItem(item.productId)}
                     className="ml-1 rounded-xl p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:text-[var(--text-secondary)]"
                   >
@@ -416,7 +416,7 @@ export default function QuickStockCounter() {
                   ? "bg-primary/10"
                   : saveState === "error"
                   ? "bg-[var(--data-error-500)]"
-                  : "bg-primary hover:bg-[#245a40]",
+                  : "bg-primary hover:bg-primary/90",
                 "disabled:opacity-60"
               )}
             >

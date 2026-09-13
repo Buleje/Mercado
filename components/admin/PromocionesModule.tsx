@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { Field } from "@/components/admin/shared/Field";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -182,6 +183,7 @@ export default function PromocionesModule() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const { confirm } = useConfirm();
 
   // Auto-clear success messages
   useEffect(() => {
@@ -241,7 +243,13 @@ export default function PromocionesModule() {
   const handleDelete = useCallback(async (id: string) => {
     // Confirmación: el botón de basura está a un toque del toggle; en móvil un
     // error de dedo borraba una promo activa sin deshacer (audit 2026-05-29).
-    if (!window.confirm("¿Eliminar esta promoción? No se puede deshacer.")) return;
+    const ok = await confirm({
+      title: "¿Eliminar esta promoción?",
+      description: "No se puede deshacer.",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    });
+    if (!ok) return;
     setFormError(null);
     setSaving(true);
     try {
@@ -257,7 +265,7 @@ export default function PromocionesModule() {
     } finally {
       setSaving(false);
     }
-  }, []);
+  }, [confirm]);
 
   const handleSubmit = useCallback(async () => {
     setFormError(null);

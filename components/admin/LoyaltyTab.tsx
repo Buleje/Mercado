@@ -245,6 +245,7 @@ export default function LoyaltyTab() {
             <select
               value={expirationPolicy}
               onChange={e => setExpirationPolicy(e.target.value === 'never' ? 'never' : Number(e.target.value) as 3 | 6 | 12)}
+              aria-label="Vencimiento de puntos"
               className="px-3 py-1.5 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-xs font-medium"
             >
               <option value="3">3 meses</option>

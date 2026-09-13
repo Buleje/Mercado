@@ -2,6 +2,7 @@
 
 import { LoadingState, CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
@@ -43,6 +44,7 @@ type CatalogProduct = {
 };
 
 export default function ProductsTab() {
+  const { confirm } = useConfirm();
   const [overrides, setOverrides] = useState<Override[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -98,7 +100,11 @@ export default function ProductsTab() {
   }
 
   async function remove(productId: number) {
-    if (!confirm("¿Eliminar este producto de la página individual?")) return;
+    if (!(await confirm({
+      title: "¿Eliminar este producto de la página individual?",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
     const res = await fetch(`/api/store-page/overrides/${productId}`, {
       method: "DELETE",
       headers: csrfHeaders(),

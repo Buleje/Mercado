@@ -3,6 +3,8 @@
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   TrendingUp,
   TrendingDown,
@@ -152,6 +154,7 @@ export default function CompetitivePricingTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [applying, setApplying] = useState<string | null>(null);
+  const { confirm } = useConfirm();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -177,7 +180,11 @@ export default function CompetitivePricingTab() {
         ? Math.ceil(product.avgPrice * 100) / 100
         : Math.floor(product.avgPrice * 100) / 100;
 
-    if (!confirm(`¿Cambiar precio de "${product.name}" a S/${newPrice.toFixed(2)}?`)) return;
+    if (!(await confirm({
+      title: `¿Cambiar precio de "${product.name}" a S/${newPrice.toFixed(2)}?`,
+      intent: "warning",
+      confirmLabel: "Sí, cambiar",
+    }))) return;
 
     setApplying(product.id);
     try {
@@ -195,7 +202,7 @@ export default function CompetitivePricingTab() {
         )
       );
     } catch {
-      alert("No se pudo actualizar el precio. Intenta nuevamente.");
+      toast.error("No se pudo actualizar el precio. Intenta nuevamente.");
     } finally {
       setApplying(null);
     }

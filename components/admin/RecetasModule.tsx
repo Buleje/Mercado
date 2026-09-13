@@ -4,7 +4,8 @@ import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { CardTitle, DataTable, LoadingState, StatCard, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, Loader2, AlertTriangle, ChevronLeft, ChevronRight,
@@ -352,6 +353,18 @@ export default function RecetasModule() {
     return () => document.removeEventListener("keydown", handleEsc);
   }, [showProducir, showNew, selected]);
 
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const cerrarSelected = useCallback(() => setSelected(null), []);
+  const newPanelRef = useRef<HTMLDivElement>(null);
+  const newTitleId = useId();
+  const producirPanelRef = useRef<HTMLDivElement>(null);
+  const producirTitleId = useId();
+  const cerrarProducir = useCallback(() => setShowProducir(false), []);
+
+  useModalAccesible(detailPanelRef, { onCerrar: cerrarSelected, activo: !!selected, cerrarConEscape: false });
+  useModalAccesible(producirPanelRef, { onCerrar: cerrarProducir, activo: showProducir && !!selected, cerrarConEscape: false });
+
   // ── Open detail ────────────────────────────────────────────────────────────
 
   const openDetail = async (receta: Receta) => {
@@ -380,10 +393,15 @@ export default function RecetasModule() {
 
   // ── Create receta ──────────────────────────────────────────────────────────
 
-  const resetNew = () => {
+  const resetNew = useCallback(() => {
     setShowNew(false); setStep(1); setNewName(""); setNewDesc("");
     setNewProductoId(""); setNewIngredientes([]); setCreateError(null);
-  };
+  }, []);
+
+  // El Escape de estos modales ya lo maneja el listener global de arriba
+  // (coordina cuál cierra según cuál está abierto) — acá sólo se pide el foco
+  // atrapado y la semántica de diálogo.
+  useModalAccesible(newPanelRef, { onCerrar: resetNew, activo: showNew, cerrarConEscape: false });
 
   const addIngrediente = () => {
     setNewIngredientes(prev => [...prev, { productoId: "", cantidad: "", unidad: "unidad" }]);
@@ -586,6 +604,7 @@ export default function RecetasModule() {
                     ))}
                   </div>
                   <select
+                    aria-label="Ordenar recetas"
                     value={recetaSort}
                     onChange={e => setRecetaSort(e.target.value as typeof recetaSort)}
                     className="px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
@@ -679,7 +698,7 @@ export default function RecetasModule() {
                           <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] flex gap-2">
                             <button
                               onClick={(e) => { e.stopPropagation(); setSelected(r); setShowProducir(true); setProducirCantidad(""); setProducirNotas(""); }}
-                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] transition-colors"
+                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] transition-colors"
                             >
                               Producir
                             </button>
@@ -727,6 +746,11 @@ export default function RecetasModule() {
             />
             <m.div
               key="receta-panel"
+              ref={detailPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={detailTitleId}
+              tabIndex={-1}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -735,8 +759,8 @@ export default function RecetasModule() {
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">{selected.nombre}</CardTitle>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
+                  <CardTitle id={detailTitleId} className="text-lg font-bold text-[var(--text-primary)]">{selected.nombre}</CardTitle>
+                  <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -914,7 +938,7 @@ export default function RecetasModule() {
                       {/* Producir button */}
                       <button
                         onClick={() => { setShowProducir(true); setProducirError(null); }}
-                        className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] transition-colors"
+                        className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] transition-colors"
                       >
                         <Layers className="h-4 w-4" />
                         Producir Lote
@@ -949,13 +973,14 @@ export default function RecetasModule() {
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && resetNew()}
             >
-              <div className="w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
+              <div ref={newPanelRef} role="dialog" aria-modal="true" aria-labelledby={newTitleId} tabIndex={-1}
+                className="w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
                 {/* UX Mejora 12: Sticky header */}
                 <div className="sticky top-0 z-10 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">
+                  <CardTitle id={newTitleId} className="text-lg font-semibold text-[var(--text-primary)]">
                     Nueva Receta — Paso {step}/3
                   </CardTitle>
-                  <button onClick={resetNew} className="p-1 hover:bg-[var(--rule-soft)] rounded-xl transition-colors">
+                  <button aria-label="Cerrar" onClick={resetNew} className="p-1 hover:bg-[var(--rule-soft)] rounded-xl transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1046,7 +1071,7 @@ export default function RecetasModule() {
                             className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-ink)]/30"
                           />
                         </Field>
-                        <button
+                        <button aria-label="Quitar"
                           onClick={() => removeIngrediente(i)}
                           className="p-1.5 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                         >
@@ -1092,7 +1117,7 @@ export default function RecetasModule() {
                   {step < 3 ? (
                     <button
                       onClick={() => setStep(s => s + 1)}
-                      className="px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] rounded-xl transition-colors"
+                      className="px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] rounded-xl transition-colors"
                     >
                       Siguiente
                     </button>
@@ -1100,7 +1125,7 @@ export default function RecetasModule() {
                     <button
                       onClick={handleCreate}
                       disabled={creating}
-                      className="flex items-center justify-center gap-2 px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] disabled:opacity-50 rounded-xl transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] disabled:opacity-50 rounded-xl transition-colors"
                     >
                       {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                       Crear Receta
@@ -1133,8 +1158,9 @@ export default function RecetasModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowProducir(false)}
             >
-              <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
-                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Producir Lote</CardTitle>
+              <div ref={producirPanelRef} role="dialog" aria-modal="true" aria-labelledby={producirTitleId} tabIndex={-1}
+                className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+                <CardTitle id={producirTitleId} className="text-lg font-bold text-[var(--text-primary)]">Producir Lote</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)]">
                   Receta: <span className="font-bold text-[var(--text-primary)]">{selected.nombre}</span>
                 </p>
@@ -1258,7 +1284,7 @@ export default function RecetasModule() {
                   <button
                     onClick={handleProducir}
                     disabled={producing}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] disabled:opacity-50 transition-colors"
                   >
                     {producing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
                     Producir
@@ -1424,10 +1450,10 @@ function ProducciónTab() {
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-[var(--text-secondary)]">{lotes.length} lotes — Pag. {page}/{totalPages}</p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] disabled:opacity-30">
+                  <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] disabled:opacity-30">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] disabled:opacity-30">
+                  <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] disabled:opacity-30">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>

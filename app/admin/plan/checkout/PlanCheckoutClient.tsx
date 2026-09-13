@@ -20,7 +20,8 @@
  * En producción, el webhook Stripe actualiza Tenant.plan en la DB.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -182,7 +183,7 @@ export default function PlanCheckoutClient() {
         setCurrentPlan(targetPlan);
         setStep("success");
       } else {
-        alert("No pudimos confirmar la activación. Intentá nuevamente.");
+        toast.error("No pudimos confirmar la activación. Intentá nuevamente.");
       }
     } finally {
       setSubmitting(false);
@@ -213,7 +214,7 @@ export default function PlanCheckoutClient() {
         window.location.href = data.url;
       } catch (err) {
         setSubmitting(false);
-        alert(
+        toast.error(
           err instanceof Error
             ? err.message
             : "Error al iniciar Stripe. Intentá otra vez.",
@@ -519,6 +520,7 @@ function PayInstructions({
   onConfirm,
   onBack,
 }: PayInstructionsProps) {
+  const voucherInputId = useId();
   return (
     <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-8 shadow-sm">
       <div className="mb-5 flex items-center gap-3">
@@ -631,10 +633,11 @@ function PayInstructions({
             </div>
           </div>
           <div>
-            <label className="block mb-2 text-sm font-bold text-[var(--text-primary)]">
+            <label htmlFor={voucherInputId} className="block mb-2 text-sm font-bold text-[var(--text-primary)]">
               Subí el voucher de tu transferencia
             </label>
             <input
+              id={voucherInputId}
               type="file"
               accept="image/*,application/pdf"
               onChange={(e) => onVoucherChange(e.target.files?.[0] ?? null)}

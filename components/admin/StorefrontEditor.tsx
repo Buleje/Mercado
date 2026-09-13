@@ -1,10 +1,11 @@
 "use client";
 
 import { LoadingState, CardTitle, Kicker, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { activateProps } from "@/components/admin/shared/a11y";
 import Image from "next/image";
 import { Field } from "@/components/admin/shared/Field";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Save, Eye, Loader2, Check, GripVertical,
   Megaphone, Grid3x3, ShoppingBag, Tag,
@@ -416,9 +417,18 @@ function SectionEditorModal({
   // Total estimado de productos asignados (suma de precios).
   const assignedTotal = assignedProducts.reduce((sum, p) => sum + p.price, 0);
 
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose });
+
   return (
     <div className="modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -430,7 +440,7 @@ function SectionEditorModal({
             </div>
             <div>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">Editar sección</p>
-              <SectionTitle className="text-[var(--text-primary)]">{sectionLabel}</SectionTitle>
+              <SectionTitle id={titleId} className="text-[var(--text-primary)]">{sectionLabel}</SectionTitle>
             </div>
           </div>
           <button
@@ -599,7 +609,7 @@ function SectionEditorModal({
                   className="w-full pl-12 pr-12 h-12 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {searchQuery && (
-                  <button
+                  <button aria-label="Quitar"
                     type="button"
                     onClick={() => setSearchQuery("")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-xl hover:bg-[var(--rule-soft)] text-muted hover:text-[var(--text-primary)]"
@@ -1013,6 +1023,7 @@ function SortableRow({
               ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary/20"
               : "bg-[var(--rule-soft)] text-[var(--text-tertiary)] border-transparent"
           )}
+          role="img"
           aria-label={`Posición ${position}`}
         >
           {position}

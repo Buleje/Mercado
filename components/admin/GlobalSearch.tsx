@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useId, useRef, useCallback } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { ALL_TABS } from "@/app/admin/_lib/tab-data";
 import { ANIDADAS_POR_MODULO, CTP_VISTAS, LOTH_VISTAS, VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
 import {
@@ -333,6 +334,10 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
   const inputRef    = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dialogRef   = useRef<HTMLDivElement>(null);
+  // Foco atrapado + devuelto al cerrar. Escape lo sigue manejando el handler
+  // de más abajo (también mueve ↑/↓/Enter) — acá se apaga para no cerrarlo dos veces.
+  useModalAccesible(dialogRef, { onCerrar: onClose, activo: open, cerrarConEscape: false });
 
   // Offset vertical del popover. Estaba fijo en `top-14` (56px), que asume que
   // el header arranca en y=0 — pero arriba puede haber una barra de alertas o
@@ -485,9 +490,11 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
             `aria-labelledby` apunta al «Buscar en todo el panel» de adentro, que
             ya existía: no hace falta un título invisible aparte. */}
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby={`${idBase}-titulo`}
+          tabIndex={-1}
           className="bg-[var(--surface-raised)] rounded-2xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
           onClick={e => e.stopPropagation()}
         >

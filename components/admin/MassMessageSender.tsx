@@ -299,6 +299,7 @@ export default function MassMessageSender({
           <textarea
             value={template}
             onChange={(e) => setTemplate(e.target.value)}
+            aria-label="Mensaje a enviar"
             rows={5}
             className={cn(
               "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-sm leading-relaxed",
@@ -337,6 +338,7 @@ export default function MassMessageSender({
                       filtered.find((c) => c.id === Number(e.target.value)) ?? null
                     )
                   }
+                  aria-label="Cliente de ejemplo para la vista previa"
                   className="appearance-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] py-1 pl-2 pr-6 text-xs text-[var(--text-primary)] focus:border-primary focus:outline-none"
                 >
                   {filtered.slice(0, 10).map((c, idx) => (

@@ -2,6 +2,8 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 // ═══════════════════════════════════════════════════════
 // CMS PAGE BUILDER - Simple Editor
 // ═══════════════════════════════════════════════════════
@@ -146,6 +148,7 @@ const FIELD_TYPE_ICON: Record<FieldType, React.ComponentType<{ className?: strin
 
 export default function PageBuilder({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const { confirm } = useConfirm();
   const [page, setPage] = useState<Page | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -206,11 +209,11 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         if (params.id === "new") {
           router.push(`/admin/cms/pages/${savedPage.id}`);
         }
-        alert("Página guardada");
+        toast.success("Página guardada");
       }
     } catch (error) {
       Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
-      alert("Error al guardar");
+      toast.error("Error al guardar");
     } finally {
       setSaving(false);
     }
@@ -218,7 +221,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
 
   async function addBlock(type: string) {
     if (!page || params.id === "new") {
-      alert("Guarda la página primero");
+      toast.error("Guarda la página primero");
       return;
     }
 
@@ -243,7 +246,11 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
   }
 
   async function deleteBlock(blockId: string) {
-    if (!confirm("¿Eliminar este bloque?")) return;
+    if (!(await confirm({
+      title: "¿Eliminar este bloque?",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
 
     try {
       const res = await fetch(
@@ -293,11 +300,11 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
       if (res.ok) {
         await fetchPage();
       } else {
-        alert("Error al guardar propiedades");
+        toast.error("Error al guardar propiedades");
       }
     } catch (error) {
       Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
-      alert("Error al guardar propiedades");
+      toast.error("Error al guardar propiedades");
     } finally {
       setSavingProps(false);
     }
@@ -319,7 +326,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
       {/* Toolbar */}
       <div className="bg-[var(--surface-raised)] border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button
+          <button aria-label="Volver"
             onClick={() => router.push("/admin/cms")}
             className="p-2 hover:bg-[var(--rule-soft)] rounded"
           >
@@ -381,14 +388,22 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
               {page.blocks
                 .sort((a: Block, b: Block) => a.order - b.order)
                 .map((block: Block) => (
-                  <div
+                  <div role="button"
                     key={block.id}
+                    tabIndex={0}
+                    aria-label={`Editar bloque ${block.type}`}
                     className={`p-2 bg-[var(--surface-raised)] border rounded cursor-pointer ${
  selectedBlock === block.id
  ? "border-[var(--data-success-500)]/30 bg-primary/10"
  : ""
  }`}
                     onClick={() => setSelectedBlock(block.id)}
+                    onKeyDown={(e) => { if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedBlock(block.id);
+                      }
+                    }}
                   >
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium capitalize">
@@ -409,7 +424,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                             }`}
                           />
                         </button>
-                        <button
+                        <button aria-label="Eliminar"
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteBlock(block.id);
@@ -443,14 +458,22 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                   if (!Component) return null;
 
                   return (
-                    <div
+                    <div role="button"
                       key={block.id}
+                      tabIndex={0}
+                      aria-label={`Seleccionar bloque ${block.type} para editar`}
                       className={`relative ${
                         selectedBlock === block.id
                           ? "ring-4 ring-[var(--data-success-500)]/40"
                           : ""
                       }`}
                       onClick={() => setSelectedBlock(block.id)}
+                      onKeyDown={(e) => { if (e.target !== e.currentTarget) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelectedBlock(block.id);
+                        }
+                      }}
                     >
                       <Component {...block.props} />
                     </div>

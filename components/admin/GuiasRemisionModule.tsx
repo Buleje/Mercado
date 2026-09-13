@@ -4,7 +4,8 @@ import { CardTitle, DataTable, LoadingState, StatCard, BlockTitle } from "@bulej
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { ReactNode } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -425,9 +426,15 @@ export default function GuiasRemisionModule() {
   const [_actionLoading, setActionLoading] = useState(false);
   const [showAnular, setShowAnular] = useState(false);
   const [_copiedLink, setCopiedLink] = useState(false);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const cerrarSelected = useCallback(() => setSelected(null), []);
 
   // ── New form ──
   const [showNew, setShowNew] = useState(false);
+  const newPanelRef = useRef<HTMLDivElement>(null);
+  const newTitleId = useId();
+  const cerrarNew = useCallback(() => setShowNew(false), []);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -489,6 +496,11 @@ export default function GuiasRemisionModule() {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [showNew, selected, showAnular]);
+
+  // El Escape de estos dos modales ya lo maneja el listener global de arriba
+  // (coordina con showAnular) — acá sólo se pide el foco atrapado.
+  useModalAccesible(detailPanelRef, { onCerrar: cerrarSelected, activo: !!selected, cerrarConEscape: false });
+  useModalAccesible(newPanelRef, { onCerrar: cerrarNew, activo: showNew, cerrarConEscape: false });
 
   // ── Fetch guias ──
   const fetchGuias = useCallback(async () => {
@@ -899,6 +911,10 @@ export default function GuiasRemisionModule() {
                       <tr
                         key={g.id}
                         onClick={() => setSelected(g)}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Ver guía ${g.numero} de ${g.destinatarioNombre}`}
+                        onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(g); } }}
                         className="cursor-pointer"
                       >
                         <td className="font-mono text-xs text-[var(--text-secondary)]">
@@ -934,10 +950,10 @@ export default function GuiasRemisionModule() {
                   {guias.length} guía{guias.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}
                 </p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
+                  <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
+                  <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -953,14 +969,15 @@ export default function GuiasRemisionModule() {
           <>
             <m.div key="grr-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="modal-backdrop" style={{ zIndex: 40 }} onClick={() => setSelected(null)} />
-            <m.div key="grr-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+            <m.div key="grr-panel" ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1}
+              initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto">
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)] font-mono">{selected.numero}</CardTitle>
+                    <CardTitle id={detailTitleId} className="text-lg font-bold text-[var(--text-primary)] font-mono">{selected.numero}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada: {formatDateTime(selected.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -976,7 +993,7 @@ export default function GuiasRemisionModule() {
                         <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
                       </button>
                     )}
-                    <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                    <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                       <X className="h-5 w-5 text-[var(--text-secondary)]" />
                     </button>
                   </div>
@@ -1193,11 +1210,12 @@ export default function GuiasRemisionModule() {
               className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
               onClick={e => e.target === e.currentTarget && setShowNew(false)}
             >
-              <div className="w-full max-w-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
+              <div ref={newPanelRef} role="dialog" aria-modal="true" aria-labelledby={newTitleId} tabIndex={-1}
+                className="w-full max-w-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
                 {/* UX Mejora 12: Sticky header */}
                 <div className="sticky top-0 z-10 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
-                  <button onClick={() => setShowNew(false)} className="p-1 hover:bg-[var(--surface-sunken)] rounded-xl transition-colors">
+                  <CardTitle id={newTitleId} className="text-lg font-semibold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
+                  <button aria-label="Cerrar" onClick={() => setShowNew(false)} className="p-1 hover:bg-[var(--surface-sunken)] rounded-xl transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1313,7 +1331,7 @@ export default function GuiasRemisionModule() {
                         <input type="number" min="0" step="0.1" value={item.pesoUnitario} onChange={e => updateItem(idx, "pesoUnitario", e.target.value)} placeholder="Peso kg"
                           className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-center text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         {newItems.length > 1 && (
-                          <button onClick={() => removeItem(idx)} className="p-1 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-4 w-4" /></button>
+                          <button aria-label="Quitar" onClick={() => removeItem(idx)} className="p-1 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-4 w-4" /></button>
                         )}
                       </div>
                     ))}

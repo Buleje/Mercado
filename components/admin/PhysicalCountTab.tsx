@@ -553,6 +553,7 @@ export default function PhysicalCountTab() {
                           value={row.reason}
                           onChange={(e) => updateRow(row.productId, "reason", e.target.value)}
                           disabled={session.status === "aplicado"}
+                          aria-label={`Motivo de la diferencia en ${row.productName}`}
                           className="w-full px-2 py-1.5 rounded border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
                         >
                           {REASONS.map((r) => (

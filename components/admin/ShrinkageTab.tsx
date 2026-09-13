@@ -2,7 +2,8 @@
 
 import { CardTitle, DataTable, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useId, useCallback } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Package,
   Download,
@@ -119,6 +120,10 @@ export default function ShrinkageTab() {
   const [search, setSearch] = useState("");
   const [filterCause, setFilterCause] = useState<ShrinkageCause | "todos">("todos");
   const [detail, setDetail] = useState<ShrinkageRecord | null>(null);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const cerrarDetail = useCallback(() => setDetail(null), []);
+  useModalAccesible(detailPanelRef, { onCerrar: cerrarDetail, activo: !!detail });
   const [form, setForm] = useState({ productId: "", quantity: "", cause: "vencimiento" as ShrinkageCause, notes: "", reportedBy: "Almacenero" });
 
   useEffect(() => {
@@ -293,7 +298,7 @@ export default function ShrinkageTab() {
                     <span className={cn("inline-flex rounded-full px-2 py-1 text-xs font-bold", CAUSE_META[record.cause].bg, CAUSE_META[record.cause].color)}>{CAUSE_META[record.cause].label}</span>
                   </td>
                   <td className="text-center">
-                    <button onClick={() => setDetail(record)} className="rounded-xl border border-[var(--rule-base)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] "><Eye className="h-4 w-4" /></button>
+                    <button aria-label="Ver" onClick={() => setDetail(record)} className="rounded-xl border border-[var(--rule-base)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] "><Eye className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}
@@ -302,13 +307,14 @@ export default function ShrinkageTab() {
 
       {detail && (
         <div className="modal-backdrop p-4">
-          <div className="w-full max-w-lg rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-6 dark:border-[var(--rule-base)] ">
+          <div ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1}
+            className="w-full max-w-lg rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-6 dark:border-[var(--rule-base)] ">
             <div className="mb-4 flex items-start justify-between">
               <div>
-                <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de la pérdida</CardTitle>
+                <CardTitle id={detailTitleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de la pérdida</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{detail.product}</p>
               </div>
-              <button onClick={() => setDetail(null)} className="rounded-xl p-2 text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "><X className="h-4 w-4" /></button>
+              <button aria-label="Cerrar" onClick={() => setDetail(null)} className="rounded-xl p-2 text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-sm">
               <p><strong>Fecha:</strong> {new Date(detail.date).toLocaleString("es-PE")}</p>

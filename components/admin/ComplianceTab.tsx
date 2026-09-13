@@ -82,7 +82,7 @@ export default function ComplianceTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">SUNAT · Municipalidad · Defensa Civil · Sanidad</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={load} disabled={loading} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+          <button aria-label="Actualizar" onClick={load} disabled={loading} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(filtered.map(o => ({ obligacion: o.title, entidad: o.entity, categoria: o.category, frecuencia: o.frequency, proximo_vencimiento: fmtDate(o.nextDue), estado: o.status, ultimo_presentado: fmtDate(o.lastFiled) })), "cumplimiento")}

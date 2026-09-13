@@ -2,8 +2,10 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Field } from "@/components/admin/shared/Field";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Loader2, Save, Check, GripVertical, Eye, EyeOff,
   ArrowUp, ArrowDown, Layers, Search, Globe, Tag, FileText, Link2, Sparkles,
@@ -205,6 +207,13 @@ export default function CategoriesEditorTab() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [search, setSearch] = useState("");
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const { confirm } = useConfirm();
+
+  // El modal ya cierra con Escape por su propio onKeyDown (cerrarConEscape:
+  // false) — el hook agrega la trampa de Tab y devuelve el foco al cerrar.
+  const newFormPanelRef = useRef<HTMLDivElement>(null);
+  const cerrarNewForm = useCallback(() => { setShowNewForm(false); setNewCatName(""); }, []);
+  useModalAccesible(newFormPanelRef, { onCerrar: cerrarNewForm, cerrarConEscape: false, activo: showNewForm });
 
   // Reordena moviendo el item `from` a la posición `to` (drag & drop).
   const moveTo = useCallback((from: number, to: number) => {
@@ -255,17 +264,18 @@ export default function CategoriesEditorTab() {
     setShowNewForm(false);
   }, [newCatName, cats, storeName]);
 
-  const handleDeleteCategory = useCallback((idx: number) => {
+  const handleDeleteCategory = useCallback(async (idx: number) => {
     const cat = cats[idx];
     if (!cat) return;
-    const ok = confirm(
-      `¿Eliminar la categoría "${cat.label}"?\n\n` +
-        `Los productos que la tenían quedarán sin categoría hasta que les asignes otra. ` +
-        `Esto NO borra productos.`,
-    );
+    const ok = await confirm({
+      title: `¿Eliminar la categoría "${cat.label}"?`,
+      description: "Los productos que la tenían quedarán sin categoría hasta que les asignes otra. Esto NO borra productos.",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    });
     if (!ok) return;
     setCats((prev) => prev.filter((_, i) => i !== idx).map((c, i) => ({ ...c, order: i })));
-  }, [cats]);
+  }, [cats, confirm]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -386,8 +396,10 @@ export default function CategoriesEditorTab() {
           }}
         >
           <div
+            ref={newFormPanelRef}
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
+            className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden outline-none"
           >
             <header className="flex items-start gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-5 sm:px-6">
               <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">

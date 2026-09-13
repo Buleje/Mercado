@@ -150,6 +150,7 @@ export default function CronDeadLettersPage() {
               <select
                 value={filterJob}
                 onChange={(e) => setFilterJob(e.target.value)}
+                aria-label="Filtrar por job"
                 className={ADMIN_TOKENS.input + " w-auto"}
               >
                 <option value="">Todos los jobs</option>

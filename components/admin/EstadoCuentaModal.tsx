@@ -1,11 +1,12 @@
 "use client";
 
 import { CardTitle, DataTable, LoadingState, BlockTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
 import {
   X, CreditCard, Banknote, Star, ShoppingBag,
   MessageCircle, Printer, AlertCircle,
 } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -162,13 +163,17 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
   const handlePrint = () => window.print();
 
+  const modalRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useModalAccesible(modalRef, { onCerrar: onClose });
+
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+            <CardTitle id={titleId} className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
               Estado de Cuenta
             </CardTitle>
@@ -176,7 +181,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
               {customerName ?? customerPhone}
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+          <button aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         </div>

@@ -212,7 +212,10 @@ export default function AdminAlertsBanner() {
   const ctaCls =
     headerTone === "urgent"
       ? "bg-[var(--data-error-600,#dc2626)] hover:bg-[var(--data-error-700,#b91c1c)] text-white"
-      : "bg-[var(--data-warning-600,var(--data-warning-500))] hover:bg-[var(--data-warning-700)] text-white";
+      /* Ámbar con texto OSCURO: blanco sobre el ámbar del preset daba 2.85:1
+         (axe 2026-09-12, en todas las pantallas). Oscurecer el fondo lo volvía
+         marrón y dejaba de leerse como aviso; el texto oscuro da ~9:1. */
+      : "bg-[var(--data-warning-500)] hover:brightness-95 text-[var(--text-primary)] dark:text-[var(--surface-canvas)]";
 
   return (
     <div

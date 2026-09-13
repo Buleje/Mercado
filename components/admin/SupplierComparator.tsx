@@ -404,6 +404,9 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
                     <tr
                       key={s.id}
                       onClick={() => setSelectedId(s.id)}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedId(s.id); } }}
+                      aria-label={`Ver detalle del proveedor ${s.name}`}
                       className={cn(
                         "cursor-pointer transition-colors",
                         selectedId === s.id

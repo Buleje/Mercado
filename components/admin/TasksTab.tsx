@@ -170,10 +170,10 @@ export default function TasksTab() {
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <p className={cn("font-semibold text-sm text-[var(--text-primary)] dark:text-foreground", t.status === "completada" && "line-through text-[var(--text-tertiary)]")}>{t.title}</p>
                       <div className="flex items-center gap-1 shrink-0">
-                        <button onClick={() => openEdit(t)} className="p-1 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
+                        <button aria-label="Editar" onClick={() => openEdit(t)} className="p-1 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
                           <Pencil className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                         </button>
-                        <button onClick={() => deleteTask(t.id)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
+                        <button aria-label="Eliminar" onClick={() => deleteTask(t.id)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
                           <Trash2 className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]" />
                         </button>
                       </div>

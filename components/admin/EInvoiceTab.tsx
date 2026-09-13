@@ -3,11 +3,12 @@
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useId, useRef } from "react";
 import {
   FileText, Download, Search, Eye, X, CheckCircle2,
   XCircle, Clock, Send, AlertTriangle, Receipt, Loader2,
 } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn, exportToCSV } from "@/lib/utils";
 import dynamic from "next/dynamic";
 
@@ -256,6 +257,15 @@ export default function EInvoiceTab() {
     }
   }
 
+  const cerrarDetail = useCallback(() => setDetail(null), []);
+  const cerrarEmit = useCallback(() => { if (!emitLoading) setEmitForm(null); }, [emitLoading]);
+  const detailModalRef = useRef<HTMLDivElement>(null);
+  const emitModalRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const emitTitleId = useId();
+  useModalAccesible(detailModalRef, { onCerrar: cerrarDetail, activo: !!detail });
+  useModalAccesible(emitModalRef, { onCerrar: cerrarEmit, activo: emitForm !== null });
+
   return (
     <div className="space-y-3 sm:space-y-6">
       {/* Estado del Modo SUNAT Oficial — el admin ve si está activo + requisitos */}
@@ -345,11 +355,11 @@ export default function EInvoiceTab() {
             className="w-full pl-9 pr-3 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           />
         </div>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as DocType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select value={filterType} onChange={e => setFilterType(e.target.value as DocType | "todos")} aria-label="Filtrar por tipo de comprobante" className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los tipos</option>
           {(Object.keys(TYPE_META) as DocType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as DocStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as DocStatus | "todos")} aria-label="Filtrar por estado" className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as DocStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
@@ -399,7 +409,7 @@ export default function EInvoiceTab() {
                         </span>
                       </td>
                       <td className="flex items-center gap-2">
-                        <button onClick={() => setDetail(d)} className="text-primary hover:underline text-xs font-bold">
+                        <button aria-label="Ver" onClick={() => setDetail(d)} className="text-primary hover:underline text-xs font-bold">
                           <Eye className="h-3.5 w-3.5 inline" />
                         </button>
                         {d.pdfUrl && (
@@ -425,10 +435,10 @@ export default function EInvoiceTab() {
       {/* Detail modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.serie}-{detail.number}</CardTitle>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.serie}-{detail.number}</CardTitle>
+              <button aria-label="Cerrar" onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {([
@@ -469,13 +479,13 @@ export default function EInvoiceTab() {
       {/* Emit modal */}
       {emitForm !== null && (
         <div className="modal-backdrop p-4" onClick={() => !emitLoading && setEmitForm(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div ref={emitModalRef} role="dialog" aria-modal="true" aria-labelledby={emitTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+              <CardTitle id={emitTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Send className="h-4 w-4 text-primary" /> Emitir comprobante SUNAT
               </CardTitle>
               {!emitLoading && (
-                <button onClick={() => setEmitForm(null)}>
+                <button aria-label="Cerrar" onClick={() => setEmitForm(null)}>
                   <X className="h-4 w-4 text-[var(--text-tertiary)]" />
                 </button>
               )}

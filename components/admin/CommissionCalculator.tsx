@@ -177,6 +177,7 @@ export default function CommissionCalculator() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-3">
         <div className="flex items-center gap-2">
           <select
+            aria-label="Filtrar por periodo"
             value={period}
             onChange={(e) => setPeriod(e.target.value as "month" | "week")}
             className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-sm text-[var(--text-secondary)]"
@@ -184,7 +185,7 @@ export default function CommissionCalculator() {
             <option value="month">Este mes</option>
             <option value="week">Esta semana</option>
           </select>
-          <button
+          <button aria-label="Configurar"
             onClick={() => setShowSettings((s) => !s)}
             className={cn(
               "p-1.5 rounded-xl border transition-colors",
@@ -195,7 +196,7 @@ export default function CommissionCalculator() {
           >
             <Settings className="w-4 h-4" />
           </button>
-          <button
+          <button aria-label="Actualizar"
             onClick={load}
             disabled={loading}
             className="p-1.5 rounded-xl border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] transition-colors"

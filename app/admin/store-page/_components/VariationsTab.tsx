@@ -25,6 +25,7 @@ import {
 } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   DndContext,
@@ -295,6 +296,7 @@ function ProductModifierEditor({
   product: ProductSummary;
   onChange: () => void;
 }) {
+  const { confirm, prompt } = useConfirm();
   const [groups, setGroups] = useState<ModifierGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -375,7 +377,11 @@ function ProductModifierEditor({
   }
 
   async function deleteGroup(groupId: string) {
-    if (!confirm("¿Eliminar este grupo y todas sus opciones?")) return;
+    if (!(await confirm({
+      title: "¿Eliminar este grupo y todas sus opciones?",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
     try {
       const res = await fetch(
         `/api/admin/products/${product.id}/modifier-groups/${groupId}`,
@@ -421,9 +427,19 @@ function ProductModifierEditor({
   }
 
   async function addOption(groupId: string) {
-    const name = prompt("Nombre de la opcion (ej: Mayonesa, Talla M, Pierna)");
+    const name = await prompt({
+      title: "Nombre de la opción",
+      label: "Nombre",
+      placeholder: "Ej. Mayonesa, Talla M, Pierna",
+      required: true,
+    });
     if (!name?.trim()) return;
-    const priceDeltaStr = prompt("Costo adicional en S/ (0 si no cobra extra)", "0");
+    const priceDeltaStr = await prompt({
+      title: "Costo adicional",
+      label: "Costo adicional en S/ (0 si no cobra extra)",
+      defaultValue: "0",
+      inputType: "number",
+    });
     const priceDelta = parseFloat(priceDeltaStr ?? "0") || 0;
     try {
       const res = await fetch(`/api/admin/modifier-groups/${groupId}/options`, {
@@ -468,7 +484,11 @@ function ProductModifierEditor({
   }
 
   async function deleteOption(optionId: string) {
-    if (!confirm("¿Eliminar esta opcion?")) return;
+    if (!(await confirm({
+      title: "¿Eliminar esta opción?",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
     try {
       const res = await fetch(`/api/admin/modifier-options/${optionId}`, {
         method: "DELETE",
@@ -629,8 +649,13 @@ function ProductModifierEditor({
                 ))}
                 <button
                   type="button"
-                  onClick={() => {
-                    const name = prompt("Nombre del grupo (ej: Toppings)");
+                  onClick={async () => {
+                    const name = await prompt({
+                      title: "Nombre del grupo",
+                      label: "Nombre",
+                      placeholder: "Ej. Toppings",
+                      required: true,
+                    });
                     if (!name?.trim()) return;
                     void addGroup({
                       name: name.trim(),
@@ -714,6 +739,7 @@ function GroupCard({
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
+          aria-label="Nombre del grupo"
           className="flex-1 bg-transparent text-base font-bold text-[var(--text-primary)] focus:outline-none"
         />
         <button
@@ -875,11 +901,11 @@ function OptionRow({
   const MAX_BYTES = 800 * 1024;
   async function handleFile(file: File) {
     if (!file.type.startsWith("image/")) {
-      alert("Solo imagenes (JPG, PNG, WebP)");
+      toast.error("Solo imagenes (JPG, PNG, WebP)");
       return;
     }
     if (file.size > MAX_BYTES) {
-      alert(`Imagen muy grande. Maximo 800KB; subiste ${(file.size / 1024).toFixed(0)}KB`);
+      toast.error(`Imagen muy grande. Maximo 800KB; subiste ${(file.size / 1024).toFixed(0)}KB`);
       return;
     }
     setBusy(true);
@@ -939,6 +965,7 @@ function OptionRow({
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={commit}
+          aria-label="Nombre de la opción"
           className="text-sm font-semibold text-[var(--text-primary)] bg-transparent focus:outline-none"
         />
         <input
@@ -958,6 +985,7 @@ function OptionRow({
           value={priceDelta}
           onChange={(e) => setPriceDelta(e.target.value)}
           onBlur={commit}
+          aria-label="Costo adicional en soles"
           className="w-14 rounded border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1 py-0.5 text-sm text-right tabular-nums"
         />
       </div>

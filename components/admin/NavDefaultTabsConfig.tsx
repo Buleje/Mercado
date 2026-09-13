@@ -99,6 +99,7 @@ export function NavDefaultTabsConfig() {
             <select
               value={defaults[mod.id] ?? mod.tabs[0].id}
               onChange={(e) => handleChange(mod.id, e.target.value)}
+              aria-label={`Pestaña por defecto de ${mod.name}`}
               className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] rounded-xl px-2.5 py-1.5 text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--accent-ink)]/30 focus:border-[var(--accent-ink)] outline-none transition-all"
             >
               {mod.tabs.map((t) => (

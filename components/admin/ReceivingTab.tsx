@@ -2,7 +2,8 @@
 
 import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useId, useMemo, useCallback, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   PackageCheck, Download, Search, Eye, X,
   Camera, AlertTriangle, CheckCircle2, XCircle,
@@ -79,6 +80,12 @@ export default function ReceivingTab() {
   const [filterStatus, setFilterStatus] = useState<ReceptionStatus | "todos">("todos");
   const [detail, setDetail]             = useState<Reception | null>(null);
   const [showNew, setShowNew]           = useState(false);
+  const detailTitleId = useId();
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(detailPanelRef, { onCerrar: () => setDetail(null), activo: !!detail });
+  const newTitleId = useId();
+  const newPanelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(newPanelRef, { onCerrar: () => setShowNew(false), activo: showNew });
 
   // Órdenes pendientes de recibir (para el dropdown del modal)
   const [pendingOCs, setPendingOCs] = useState<PendingOC[]>([]);
@@ -415,7 +422,7 @@ export default function ReceivingTab() {
                         ) : null}
                       </td>
                       <td>
-                        <button onClick={() => setDetail(r)} className="p-1 rounded-xl hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition">
+                        <button aria-label="Ver" onClick={() => setDetail(r)} className="p-1 rounded-xl hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                       </td>
@@ -434,16 +441,21 @@ export default function ReceivingTab() {
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
           <div
+            ref={detailPanelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={detailTitleId}
+            tabIndex={-1}
             className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[85vh] overflow-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
+                <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">OC: {detail.orderRef} · {detail.supplier}</p>
                 {detail.inspector && <p className="text-xs text-[var(--text-tertiary)]">Inspector: {detail.inspector}</p>}
               </div>
-              <button onClick={() => setDetail(null)} className="p-1 rounded-xl hover:bg-[var(--rule-soft)] ">
+              <button aria-label="Cerrar" onClick={() => setDetail(null)} className="p-1 rounded-xl hover:bg-[var(--rule-soft)] ">
                 <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -517,12 +529,17 @@ export default function ReceivingTab() {
       {showNew && (
         <div className="modal-backdrop p-4" onClick={() => setShowNew(false)}>
           <div
+            ref={newPanelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={newTitleId}
+            tabIndex={-1}
             className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[90vh] overflow-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva recepción de mercadería</CardTitle>
-              <button onClick={() => setShowNew(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              <CardTitle id={newTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva recepción de mercadería</CardTitle>
+              <button aria-label="Cerrar" onClick={() => setShowNew(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
 
             {/* Dropdown OC pendiente — auto-completa todo */}
@@ -535,6 +552,7 @@ export default function ReceivingTab() {
                 <select
                   value={selectedOcId}
                   onChange={(e) => applyOC(e.target.value)}
+                  aria-label="Elegir orden de compra para auto-completar"
                   className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
                 >
                   <option value="">— Elegir orden de compra —</option>
@@ -603,13 +621,14 @@ export default function ReceivingTab() {
                     <input type="number" min="0" value={row.receivedQty} onChange={e => updateChecklistRow(idx, "receivedQty", +e.target.value)}
                       placeholder="Recibido" className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     <select value={row.condition} onChange={e => updateChecklistRow(idx, "condition", e.target.value as ItemCondition)}
+                      aria-label={`Condición de ${row.product || "el producto"}`}
                       className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs">
                       {Object.entries(COND_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                     </select>
                     <input value={row.notes} onChange={e => updateChecklistRow(idx, "notes", e.target.value)}
                       placeholder="Notas (opcional)" className="flex-1 min-w-24 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     {checklist.length > 1 && (
-                      <button onClick={() => removeChecklistRow(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition">
+                      <button aria-label="Quitar" onClick={() => removeChecklistRow(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}

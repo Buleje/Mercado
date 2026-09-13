@@ -1,8 +1,9 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useId, useRef, useState, useCallback } from "react";
 import { Camera, X, SwitchCamera, Flashlight, FlashlightOff } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 type Props = {
   onDetected: (code: string) => void;
@@ -32,9 +33,11 @@ function playBeep() {
 
 export default function BarcodeScanner({ onDetected, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const detectedRef = useRef(false);
   const scanTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tituloId = useId();
 
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(true);
@@ -53,6 +56,13 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
       streamRef.current = null;
     }
   }, []);
+
+  const cerrar = useCallback(() => {
+    stopCamera();
+    onClose();
+  }, [stopCamera, onClose]);
+
+  useModalAccesible(panelRef, { onCerrar: cerrar, activo: true });
 
   const startCamera = useCallback(async (facing: "environment" | "user") => {
     stopCamera();
@@ -139,16 +149,24 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-9000 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg overflow-hidden">
+    <div className="fixed inset-0 z-9000 bg-black/80 flex items-center justify-center p-4" onClick={cerrar}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg overflow-hidden"
+      >
         {/* Header */}
         <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <Camera className="h-5 w-5 text-primary" />
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
+            <CardTitle id={tituloId} className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
           </div>
-          <button
-            onClick={() => { stopCamera(); onClose(); }}
+          <button aria-label="Cerrar"
+            onClick={cerrar}
             className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <X className="h-5 w-5" />

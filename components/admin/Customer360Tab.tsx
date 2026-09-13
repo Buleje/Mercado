@@ -462,7 +462,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
             <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{m.nombre} <span className="text-[var(--text-tertiary)] font-normal">({m.relacion})</span></p>
             <p className="text-xs text-[var(--text-tertiary)]">{m.teléfono}</p>
           </div>
-          <button onClick={() => saveFamily(familyMembers.filter((_, idx) => idx !== i))} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0">
+          <button aria-label="Quitar" onClick={() => saveFamily(familyMembers.filter((_, idx) => idx !== i))} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -749,7 +749,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente 360°</SectionTitle>
         </div>
         {onClose && (
-          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+          <button aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         )}
@@ -1063,7 +1063,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               return (
                 <span key={tag} className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", colorClass)}>
                   {tag}
-                  <button
+                  <button aria-label="Quitar"
                     onClick={() => handleRemoveTag(tag)}
                     className="hover:opacity-60 transition-opacity"
                   >

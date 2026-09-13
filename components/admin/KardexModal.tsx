@@ -1,10 +1,11 @@
 "use client";
 
-import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { useState, useEffect, useCallback } from "react";
 import {
-  X, BookOpen, Download, ArrowUpCircle, ArrowDownCircle, Calendar,
+  BookOpen, Download, ArrowUpCircle, ArrowDownCircle, Calendar,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
@@ -111,57 +112,50 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
   };
 
   return (
-    <div className="modal-backdrop p-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-              Kardex — {productName ?? data?.producto.name ?? `#${productId}`}
-            </CardTitle>
-          </div>
-          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
-            <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-          </button>
-        </div>
+    <AdminModal
+      open
+      onClose={onClose}
+      title={`Kardex — ${productName ?? data?.producto.name ?? `#${productId}`}`}
+      icon={BookOpen}
+      variant="info"
+    >
+      {/* Filters — banda pegajosa de borde a borde (patrón MODAL_BODY: no lleva
+          el gutter del cuerpo, así su border-b llega de punta a punta). */}
+      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3 sm:px-6">
+        <Field label="Desde" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted" className="flex items-center gap-1.5">
+          {(id) => (
+            <>
+              <Calendar className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+              <input
+                id={id}
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </>
+          )}
+        </Field>
+        <Field label="Hasta" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted" className="flex items-center gap-1.5">
+          <input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </Field>
+        <button
+          onClick={handleExport}
+          disabled={!data || data.movimientos.length === 0}
+          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition-colors disabled:opacity-50"
+        >
+          <Download className="h-3.5 w-3.5" /> Exportar Excel
+        </button>
+      </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-[var(--rule-base)] shrink-0">
-          <Field label="Desde" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted" className="flex items-center gap-1.5">
-            {(id) => (
-              <>
-                <Calendar className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                <input
-                  id={id}
-                  type="date"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                  className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </>
-            )}
-          </Field>
-          <Field label="Hasta" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted" className="flex items-center gap-1.5">
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </Field>
-          <button
-            onClick={handleExport}
-            disabled={!data || data.movimientos.length === 0}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition-colors disabled:opacity-50"
-          >
-            <Download className="h-3.5 w-3.5" /> Exportar Excel
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {loading && (
+      {/* Body */}
+      <div className={MODAL_BODY}>
+        {loading && (
             <LoadingState />
           )}
 
@@ -245,7 +239,6 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
             </>
           )}
         </div>
-      </div>
-    </div>
+    </AdminModal>
   );
 }

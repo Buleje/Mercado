@@ -40,6 +40,7 @@ export function OrdersBulkActions({
       <select
         value={bulkStatusTarget}
         onChange={e => onBulkStatusChange(e.target.value as OrderStatus)}
+        aria-label="Cambiar estado de los pedidos seleccionados"
         className="rounded-xl border-0 bg-white/20 text-white text-xs font-semibold px-2 py-1.5 [&>option]:text-[var(--text-primary)]"
       >
         <option value="">Cambiar estado…</option>

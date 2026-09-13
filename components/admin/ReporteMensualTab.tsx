@@ -203,7 +203,7 @@ export default function ReporteMensualTab() {
             "flex items-center gap-2 px-5 min-h-10 rounded-xl text-sm font-semibold text-white transition-colors",
             loading
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-primary hover:bg-[#1e4d38]",
+              : "bg-primary hover:bg-primary/90",
           )}
         >
           {loading ? (

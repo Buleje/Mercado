@@ -1,11 +1,13 @@
 ﻿"use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { activateProps } from "@/components/admin/shared/a11y";
 import Image from "next/image";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Plus, Trash2, X, Check, Search, Loader2, AlertTriangle,
   MessageCircle, ExternalLink, Send, Calendar, TrendingUp,
@@ -81,6 +83,7 @@ function applyStoreName(template: string, storeName: string): string {
 }
 
 export default function PromotionsTab() {
+  const { confirm, notice } = useConfirm();
   // Brandon mayo 2026 v7: el admin no monta SettingsProvider (lo monta el
   // storefront). Usamos la variante "safe" + fallback.
   const settings = useSettingsSafe();
@@ -176,6 +179,43 @@ export default function PromotionsTab() {
   };
 
   useScrollLock(showForm || showAiModal || !!sendPromo || !!confirmDeleteId || !!detailPromo || showTemplates || showCampaignForm);
+
+  // A11y: los 7 modales de este tab son overlays a mano sin rol de diálogo
+  // ni trampa de foco/Escape — cableado mínimo con el hook compartido.
+  const formModalRef = useRef<HTMLDivElement>(null);
+  const formTitleId = useId();
+  const closeFormModal = useCallback(() => setShowForm(false), []);
+  useModalAccesible(formModalRef, { onCerrar: closeFormModal, activo: showForm });
+
+  const detailModalRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const closeDetailModal = useCallback(() => setDetailPromo(null), []);
+  useModalAccesible(detailModalRef, { onCerrar: closeDetailModal, activo: !!detailPromo });
+
+  const sendModalRef = useRef<HTMLDivElement>(null);
+  const sendTitleId = useId();
+  const closeSendModal = useCallback(() => setSendPromo(null), []);
+  useModalAccesible(sendModalRef, { onCerrar: closeSendModal, activo: !!sendPromo });
+
+  const aiModalRef = useRef<HTMLDivElement>(null);
+  const aiTitleId = useId();
+  const closeAiModal = useCallback(() => setShowAiModal(false), []);
+  useModalAccesible(aiModalRef, { onCerrar: closeAiModal, activo: showAiModal });
+
+  const deleteModalRef = useRef<HTMLDivElement>(null);
+  const deleteTitleId = useId();
+  const closeDeleteModal = useCallback(() => setConfirmDeleteId(null), []);
+  useModalAccesible(deleteModalRef, { onCerrar: closeDeleteModal, activo: !!confirmDeleteId });
+
+  const templatesModalRef = useRef<HTMLDivElement>(null);
+  const templatesTitleId = useId();
+  const closeTemplatesModal = useCallback(() => setShowTemplates(false), []);
+  useModalAccesible(templatesModalRef, { onCerrar: closeTemplatesModal, activo: showTemplates });
+
+  const campaignFormModalRef = useRef<HTMLDivElement>(null);
+  const campaignFormTitleId = useId();
+  const closeCampaignFormModal = useCallback(() => setShowCampaignForm(false), []);
+  useModalAccesible(campaignFormModalRef, { onCerrar: closeCampaignFormModal, activo: showCampaignForm });
 
   // Save campaigns to localStorage whenever they change
   useEffect(() => {
@@ -392,8 +432,12 @@ export default function PromotionsTab() {
     }));
   };
 
-  const deleteCampaign = (id: string) => {
-    if (confirm("¿Eliminar campaña programada?")) {
+  const deleteCampaign = async (id: string) => {
+    if (await confirm({
+      title: "¿Eliminar campaña programada?",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    })) {
       setCampaigns(prev => prev.filter(c => c.id !== id));
     }
   };
@@ -501,7 +545,11 @@ export default function PromotionsTab() {
     // Open first WhatsApp link
     sendWhatsApp(phones[0], msg);
     if (phones.length > 1) {
-      alert(`Se abrió WhatsApp para ${phones[0]}.\n\nSe crearon ${phones.length} notificaciones in-app.\nQuedan ${phones.length - 1} clientes más por WhatsApp. Haz clic en cada botón "Enviar" para enviar individualmente.`);
+      await notice({
+        title: `Se abrió WhatsApp para ${phones[0]}`,
+        description: `Se crearon ${phones.length} notificaciones in-app. Quedan ${phones.length - 1} clientes más por WhatsApp: haz clic en cada botón "Enviar" para enviarles individualmente.`,
+        intent: "info",
+      });
     }
   };
 
@@ -828,11 +876,11 @@ export default function PromotionsTab() {
 
       {/* ── Create/Edit Modal ─────────────────────────────────────────────── */}
       {showForm && (
-        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowForm(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={closeFormModal}>
+          <div ref={formModalRef} role="dialog" aria-modal="true" aria-labelledby={formTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingId ? "Editar promoción" : "Nueva promoción"}</CardTitle>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
+              <CardTitle id={formTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingId ? "Editar promoción" : "Nueva promoción"}</CardTitle>
+              <button aria-label="Cerrar" onClick={closeFormModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -935,7 +983,7 @@ export default function PromotionsTab() {
               </Field>
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3 shrink-0">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
+              <button onClick={closeFormModal} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
               <button onClick={savePromo} disabled={saving || !form.name.trim()}
                 className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
                 {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Crear promoción"}
@@ -947,11 +995,11 @@ export default function PromotionsTab() {
 
       {/* ── Promo Detail Modal ────────────────────────────────────────────── */}
       {detailPromo && (
-        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setDetailPromo(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={closeDetailModal}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{detailPromo.name}</CardTitle>
-              <button onClick={() => setDetailPromo(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
+              <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{detailPromo.name}</CardTitle>
+              <button aria-label="Cerrar" onClick={closeDetailModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1033,14 +1081,14 @@ export default function PromotionsTab() {
 
       {/* ── WhatsApp Send Modal ───────────────────────────────────────────── */}
       {sendPromo && (
-        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setSendPromo(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={closeSendModal}>
+          <div ref={sendModalRef} role="dialog" aria-modal="true" aria-labelledby={sendTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Enviar por WhatsApp</CardTitle>
+                <CardTitle id={sendTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Enviar por WhatsApp</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{sendPromo.name}</p>
               </div>
-              <button onClick={() => setSendPromo(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
+              <button aria-label="Quitar" onClick={closeSendModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1076,6 +1124,7 @@ export default function PromotionsTab() {
                           return next;
                         });
                       }}
+                      aria-label={`Seleccionar ${c.name}`}
                       className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</p>
@@ -1110,16 +1159,16 @@ export default function PromotionsTab() {
 
       {/* ── AI Suggestions Modal ──────────────────────────────────────────── */}
       {showAiModal && (
-        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowAiModal(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={closeAiModal}>
+          <div ref={aiModalRef} role="dialog" aria-modal="true" aria-labelledby={aiTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, #8b5cf6, #9333ea)' }}>
                   <MessageCircle className="h-4 w-4 text-white" />
                 </div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Sugerencias IA</CardTitle>
+                <CardTitle id={aiTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Sugerencias IA</CardTitle>
               </div>
-              <button onClick={() => setShowAiModal(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
+              <button aria-label="Cerrar" onClick={closeAiModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1138,19 +1187,19 @@ export default function PromotionsTab() {
 
       {/* ── Delete Confirmation ───────────────────────────────────────────── */}
       {confirmDeleteId && (
-        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/60" style={{ zIndex: 200 }} onClick={() => setConfirmDeleteId(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/60" style={{ zIndex: 200 }} onClick={closeDeleteModal}>
+          <div ref={deleteModalRef} role="dialog" aria-modal="true" aria-labelledby={deleteTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">¿Eliminar promoción?</CardTitle>
+                <CardTitle id={deleteTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">¿Eliminar promoción?</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Esta acción no se puede deshacer.</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
+              <button onClick={closeDeleteModal} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
               <button onClick={confirmDelete} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">Sí, eliminar</button>
             </div>
           </div>
@@ -1159,14 +1208,14 @@ export default function PromotionsTab() {
 
       {/* ── Campaign Templates Modal ── */}
       {showTemplates && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowTemplates(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={closeTemplatesModal}>
+          <div ref={templatesModalRef} role="dialog" aria-modal="true" aria-labelledby={templatesTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b dark:border-[var(--rule-base)] shrink-0">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Plantillas de Campaña</CardTitle>
+                <CardTitle id={templatesTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Plantillas de Campaña</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Selecciona una plantilla y personalízala</p>
               </div>
-              <button onClick={() => setShowTemplates(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] transition-colors">
+              <button aria-label="Cerrar" onClick={closeTemplatesModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1192,11 +1241,11 @@ export default function PromotionsTab() {
 
       {/* ── Campaign Form Modal ───────────────────────────────────────────── */}
       {showCampaignForm && (
-        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowCampaignForm(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={closeCampaignFormModal}>
+          <div ref={campaignFormModalRef} role="dialog" aria-modal="true" aria-labelledby={campaignFormTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</CardTitle>
-              <button onClick={() => setShowCampaignForm(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
+              <CardTitle id={campaignFormTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</CardTitle>
+              <button aria-label="Cerrar" onClick={closeCampaignFormModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1262,7 +1311,7 @@ export default function PromotionsTab() {
               </div>
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3 shrink-0">
-              <PrimaryButton variant="secondary" onClick={() => setShowCampaignForm(false)} className="flex-1">Cancelar</PrimaryButton>
+              <PrimaryButton variant="secondary" onClick={closeCampaignFormModal} className="flex-1">Cancelar</PrimaryButton>
               <PrimaryButton
                 variant="primary"
                 onClick={saveCampaign}

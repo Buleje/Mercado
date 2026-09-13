@@ -3,6 +3,8 @@
 import { SectionTitle } from "@buleje/design-system";
 import { useEffect, useMemo, useState } from "react";
 import { MessageCircle, AlertCircle, XCircle, ReceiptText } from "@buleje/design-system/icons";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { fmtSoles } from "@/lib/chat/shared-product";
@@ -35,6 +37,7 @@ function relativeSeen(ts: number): string {
  * Polling: threads cada 8s, messages cada 5s. Auto-markAsRead al abrir.
  */
 export default function ChatTab() {
+  const { prompt } = useConfirm();
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   // Tanda 3: nombre de la tienda para la variable {tienda} de plantillas.
   const settings = useSettingsSafe();
@@ -93,13 +96,18 @@ export default function ChatTab() {
 
   async function handleClose() {
     if (!selectedThread) return;
-    const reason = window.prompt("Motivo del cierre (opcional):");
+    const reason = await prompt({
+      title: "Motivo del cierre",
+      label: "Motivo (opcional)",
+      placeholder: "Ej. pedido entregado",
+      inputType: "text",
+    });
     if (reason === null) return; // canceló
     try {
       await closeThread(selectedThread.id, reason.trim() || undefined);
       setSelectedThreadId(null);
     } catch {
-      window.alert("No se pudo cerrar la conversación.");
+      toast.error("No se pudo cerrar la conversación.");
     }
   }
 

@@ -12,7 +12,7 @@
  * /api/marketplace/stores/[slug]/branding.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Image from "next/image";
 import {
   Save,
@@ -44,6 +44,7 @@ export default function MarketplaceBrandingTab() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const whatsappInputId = useId();
 
   useEffect(() => {
     void load();
@@ -203,7 +204,7 @@ export default function MarketplaceBrandingTab() {
         {/* WhatsApp público — muestra un botón flotante en el storefront mobile
             para que los clientes te escriban directo. Audit #6 (Brandon). */}
         <div>
-          <label className="text-sm font-semibold text-[var(--text-primary)]">
+          <label htmlFor={whatsappInputId} className="text-sm font-semibold text-[var(--text-primary)]">
             WhatsApp de contacto (opcional)
           </label>
           <p className="text-xs text-[var(--text-tertiary)] mt-0.5 mb-1.5">
@@ -211,6 +212,7 @@ export default function MarketplaceBrandingTab() {
           </p>
           <div className="flex items-center gap-2">
             <input
+              id={whatsappInputId}
               type="tel"
               inputMode="tel"
               value={whatsappInput}
@@ -307,14 +309,16 @@ function UrlField({
   onChange: (v: string) => void;
   onClear: () => void;
 }) {
+  const inputId = useId();
   return (
     <div>
-      <label className="text-sm font-semibold text-[var(--text-primary)]">
+      <label htmlFor={inputId} className="text-sm font-semibold text-[var(--text-primary)]">
         {label}
       </label>
       <p className="text-xs text-[var(--text-tertiary)] mt-0.5 mb-1.5">{hint}</p>
       <div className="flex items-center gap-2">
         <input
+          id={inputId}
           type="url"
           inputMode="url"
           value={value}

@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { FileText, Download, Loader2, RefreshCw, TrendingUp, Package, AlertTriangle } from "@buleje/design-system/icons";
@@ -245,7 +246,7 @@ export default function WeeklyReportCard() {
 
       doc.save(`reporte-semanal-${data.weekLabel.replace(/\s/g, "-")}.pdf`);
     } catch {
-      alert("Error al generar el PDF. Intente de nuevo.");
+      toast.error("Error al generar el PDF. Intente de nuevo.");
     } finally {
       setGeneratingPdf(false);
     }

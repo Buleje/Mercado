@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useId } from "react";
 import Image from "next/image";
 import { Search, X, Plus, Minus, Trash2, Package, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -53,6 +54,10 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [flash, setFlash] = useState(false);
   const [longPressQty, setLongPressQty] = useState<number | null>(null);
+  const qtyModalRef = useRef<HTMLDivElement>(null);
+  const qtyTitleId = useId();
+  const cerrarQtyModal = useCallback(() => setLongPressQty(null), []);
+  useModalAccesible(qtyModalRef, { onCerrar: cerrarQtyModal, activo: longPressQty !== null });
 
   const handleAdd = useCallback(() => {
     setFlash(true);
@@ -112,18 +117,25 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
       {/* Long press modal — cantidad */}
       {longPressQty !== null && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6">
-          <div className="bg-gray-900 rounded-3xl p-6 w-full max-w-xs border border-gray-700 space-y-4">
-            <p className="text-white font-bold text-center text-base">{product.name}</p>
+          <div
+            ref={qtyModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={qtyTitleId}
+            tabIndex={-1}
+            className="bg-gray-900 rounded-3xl p-6 w-full max-w-xs border border-gray-700 space-y-4"
+          >
+            <p id={qtyTitleId} className="text-white font-bold text-center text-base">{product.name}</p>
             <p className="text-[var(--text-tertiary)] text-sm text-center">Elige la cantidad</p>
             <div className="flex items-center justify-center gap-6">
-              <button
+              <button aria-label="Disminuir cantidad"
                 onClick={() => setLongPressQty(q => Math.max(1, (q ?? 1) - 1))}
                 className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center active:scale-95"
               >
                 <Minus className="h-5 w-5 text-white" />
               </button>
               <span className="text-4xl font-extrabold text-white w-12 text-center">{longPressQty}</span>
-              <button
+              <button aria-label="Aumentar cantidad"
                 onClick={() => setLongPressQty(q => (q ?? 1) + 1)}
                 className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center active:scale-95"
               >
@@ -190,20 +202,20 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
         <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] font-bold">S/{Number(item.product.price).toFixed(2)} c/u</p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
-        <button
+        <button aria-label="Disminuir cantidad"
           onClick={onDec}
           className="w-11 h-11 rounded-xl bg-gray-700 flex items-center justify-center active:scale-90"
         >
           <Minus className="h-3 w-3 text-white" />
         </button>
         <span className="w-6 text-center text-sm font-extrabold text-white">{item.quantity}</span>
-        <button
+        <button aria-label="Aumentar cantidad"
           onClick={onInc}
           className="w-11 h-11 rounded-xl bg-gray-700 flex items-center justify-center active:scale-90"
         >
           <Plus className="h-3 w-3 text-white" />
         </button>
-        <button
+        <button aria-label="Eliminar"
           onClick={onRemove}
           className="w-11 h-11 rounded-xl bg-[var(--data-error-500)]/50 flex items-center justify-center active:scale-90 ml-1"
         >
@@ -369,7 +381,7 @@ export default function MobilePOS() {
               style={{ fontSize: 16 }}
             />
             {query && (
-              <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <button aria-label="Quitar" onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
                 <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             )}

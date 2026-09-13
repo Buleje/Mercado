@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { escapeHtml } from "@/lib/safe-html";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -906,6 +907,33 @@ export default function PrestamosModule() {
     setCreateFechaDesembolso(""); setCreateStep(1); setCreateError(null);
   };
 
+  // ── Accesibilidad de los modales a mano: foco atrapado + Escape + devolver
+  // el foco (ninguno tenía role="dialog" ni teclado — sólo backdrop de mouse). ──
+  const selectedPanelRef = useRef<HTMLDivElement>(null);
+  const cerrarSelected = useCallback(() => setSelected(null), []);
+  useModalAccesible(selectedPanelRef, { onCerrar: cerrarSelected, activo: !!selected });
+
+  const refinanciarPanelRef = useRef<HTMLDivElement>(null);
+  const cerrarRefinanciar = useCallback(() => setShowRefinanciar(false), []);
+  useModalAccesible(refinanciarPanelRef, { onCerrar: cerrarRefinanciar, activo: showRefinanciar && !!selected });
+
+  const cancelPanelRef = useRef<HTMLDivElement>(null);
+  const cerrarCancelConfirm = useCallback(() => setShowCancelConfirm(false), []);
+  useModalAccesible(cancelPanelRef, { onCerrar: cerrarCancelConfirm, activo: showCancelConfirm && !!selected });
+
+  const pagoPanelRef = useRef<HTMLDivElement>(null);
+  const cerrarPago = useCallback(() => setShowPago(false), []);
+  useModalAccesible(pagoPanelRef, { onCerrar: cerrarPago, activo: showPago && !!selected });
+
+  // `resetCreateForm` no está memoizada (se redefine cada render); un ref
+  // evita que `cerrarCreate` cambie de identidad en cada tecleo del form
+  // largo y reinicie el atrapa-foco (perdería a quién devolverle el foco).
+  const resetCreateFormRef = useRef(resetCreateForm);
+  resetCreateFormRef.current = resetCreateForm;
+  const createPanelRef = useRef<HTMLDivElement>(null);
+  const cerrarCreate = useCallback(() => { setShowCreate(false); resetCreateFormRef.current(); }, []);
+  useModalAccesible(createPanelRef, { onCerrar: cerrarCreate, activo: showCreate });
+
   // Bank presets para autocompletar campos
   const BANK_PRESETS: Array<{ nombre: string; entidadTipo: PrestamoEntidadTipo; tasaRef: string; moraRef: string; teaRef: string; sistema: SistemaAmortizacion }> = [
     { nombre: "BCP", entidadTipo: "BANCO", tasaRef: "1.5", moraRef: "15", teaRef: "19.56", sistema: "FRANCES" },
@@ -1206,7 +1234,7 @@ export default function PrestamosModule() {
                   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
                   const a = document.createElement("a"); a.href = url; a.download = "prestamos.csv"; a.click(); URL.revokeObjectURL(url);
                 }} className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:underline"><FileDown className="h-3 w-3" /> CSV</button>
-                <button onClick={() => setSelectedIds(new Set())} className="text-[var(--accent)] hover:text-[var(--data-error-500)]"><X className="h-3 w-3" /></button>
+                <button onClick={() => setSelectedIds(new Set())} aria-label="Quitar selección" className="text-[var(--accent)] hover:text-[var(--data-error-500)]"><X className="h-3 w-3" /></button>
               </div>
             )}
           </div>
@@ -1236,7 +1264,7 @@ export default function PrestamosModule() {
                   <thead>
                     <tr className="border-b border-[var(--rule-soft)]">
                       <th className="w-8">
-                        <input type="checkbox" checked={selectedIds.size > 0 && selectedIds.size === paginated.length} onChange={toggleSelectAll} className="rounded accent-blue-600 cursor-pointer" />
+                        <input type="checkbox" checked={selectedIds.size > 0 && selectedIds.size === paginated.length} onChange={toggleSelectAll} aria-label="Seleccionar todos" className="rounded accent-blue-600 cursor-pointer" />
                       </th>
                       <th>Cliente</th>
                       <th className="text-center hidden sm:table-cell">Sys</th>
@@ -1269,11 +1297,18 @@ export default function PrestamosModule() {
                       const sisBadge = p.sistemaAmortizacion === "FRANCES" ? "F" : p.sistemaAmortizacion === "ALEMAN" ? "A" : "AM";
                       const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : p.sistemaAmortizacion === "ALEMAN" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]";
                       return (
-                        <tr key={p.id} className={selectedIds.has(p.id) ? "bg-primary/10" : undefined}>
+                        <tr
+                          key={p.id}
+                          onClick={() => openDetail(p)}
+                          tabIndex={0}
+                          onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(p); } }}
+                          aria-label={`Ver detalle del préstamo de ${p.entidadNombre || p.customerId}`}
+                          className={cn("cursor-pointer", selectedIds.has(p.id) ? "bg-primary/10" : undefined)}
+                        >
                           <td className="w-8" onClick={e => e.stopPropagation()}>
-                            <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded accent-blue-600 cursor-pointer" />
+                            <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} aria-label={`Seleccionar préstamo de ${p.entidadNombre || p.customerId}`} className="rounded accent-blue-600 cursor-pointer" />
                           </td>
-                          <td className="cursor-pointer" onClick={() => openDetail(p)}>
+                          <td>
                             <div className="flex items-center gap-2">
                               <div className="relative h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
                                 <User className="h-4 w-4 text-secondary" />
@@ -1293,14 +1328,14 @@ export default function PrestamosModule() {
                               </div>
                             </div>
                           </td>
-                          <td className="hidden sm:table-cell text-center cursor-pointer" onClick={() => openDetail(p)}>
+                          <td className="hidden sm:table-cell text-center">
                             <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold", sisBg)}>{sisBadge}</span>
                           </td>
-                          <td className="num font-medium text-[var(--text-primary)] cursor-pointer" onClick={() => openDetail(p)}>{formatCurrency(p.monto)}</td>
-                          <td className="num text-[var(--text-secondary)] hidden sm:table-cell cursor-pointer" onClick={() => openDetail(p)}>{p.tasaInteres}%</td>
-                          <td className="num text-[var(--text-secondary)] hidden sm:table-cell cursor-pointer" onClick={() => openDetail(p)}>{p.numeroCuotas}</td>
-                          <td className="num font-bold text-[var(--text-primary)] cursor-pointer" onClick={() => openDetail(p)}>{formatCurrency(saldoPend)}</td>
-                          <td className="cursor-pointer" onClick={() => openDetail(p)}>
+                          <td className="num font-medium text-[var(--text-primary)]">{formatCurrency(p.monto)}</td>
+                          <td className="num text-[var(--text-secondary)] hidden sm:table-cell">{p.tasaInteres}%</td>
+                          <td className="num text-[var(--text-secondary)] hidden sm:table-cell">{p.numeroCuotas}</td>
+                          <td className="num font-bold text-[var(--text-primary)]">{formatCurrency(saldoPend)}</td>
+                          <td>
                             <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
                               <StatusIcon className="h-3 w-3" />
                               {meta.label}
@@ -1316,10 +1351,10 @@ export default function PrestamosModule() {
                 <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                   <p className="text-xs text-[var(--text-secondary)]">{displayList.length} préstamo{displayList.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}</p>
                   <div className="flex gap-1">
-                    <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30">
+                    <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30">
                       <ChevronLeft className="h-4 w-4" />
                     </button>
-                    <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30">
+                    <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30">
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
@@ -1657,16 +1692,21 @@ export default function PrestamosModule() {
             />
             <m.div
               key="prestamo-panel"
+              ref={selectedPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Detalle préstamo"
+              tabIndex={-1}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto outline-none"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Detalle Préstamo</CardTitle>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                  <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -2229,10 +2269,10 @@ ${cuotas.map(c => { const row = `<tr>
           <>
             <m.div key="ref-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowRefinanciar(false)} />
             <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
-              <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+              <div ref={refinanciarPanelRef} role="dialog" aria-modal="true" aria-label="Refinanciar préstamo" tabIndex={-1} className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2"><RotateCcw className="h-5 w-5 text-[var(--data-success-500)]" /> Refinanciar Préstamo</CardTitle>
-                  <button onClick={() => setShowRefinanciar(false)}><X className="h-4 w-4 text-[var(--text-secondary)]" /></button>
+                  <button aria-label="Cerrar" onClick={() => setShowRefinanciar(false)}><X className="h-4 w-4 text-[var(--text-secondary)]" /></button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Nuevo monto (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
@@ -2259,7 +2299,7 @@ ${cuotas.map(c => { const row = `<tr>
           <>
             <m.div key="cancel-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowCancelConfirm(false)} />
             <m.div key="cancel-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowCancelConfirm(false)}>
-              <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+              <div ref={cancelPanelRef} role="dialog" aria-modal="true" aria-label="¿Cancelar este préstamo?" tabIndex={-1} className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
                 <div className="flex items-center gap-3 p-3 bg-[var(--data-error-50)] rounded-xl border border-[var(--data-error-500)]">
                   <AlertCircle className="h-6 w-6 text-[var(--data-error-500)] shrink-0" />
                   <div>
@@ -2300,7 +2340,7 @@ ${cuotas.map(c => { const row = `<tr>
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowPago(false)}
             >
-              <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+              <div ref={pagoPanelRef} role="dialog" aria-modal="true" aria-label="Pagar cuota" tabIndex={-1} className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
                 <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Pagar Cuota</CardTitle>
                 <Field label="Monto del pago (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                   <input
@@ -2352,7 +2392,7 @@ ${cuotas.map(c => { const row = `<tr>
               className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
               onClick={e => e.target === e.currentTarget && (() => { setShowCreate(false); resetCreateForm(); })()}
             >
-              <div className="w-full max-w-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 my-4">
+              <div ref={createPanelRef} role="dialog" aria-modal="true" aria-label="Crear préstamo" tabIndex={-1} className="w-full max-w-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 my-4 outline-none">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -2361,7 +2401,7 @@ ${cuotas.map(c => { const row = `<tr>
                       Paso {createStep} de 2
                     </span>
                   </div>
-                  <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)]">
+                  <button aria-label="Cerrar" onClick={() => { setShowCreate(false); resetCreateForm(); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)]">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>

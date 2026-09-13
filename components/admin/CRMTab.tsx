@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -13,6 +13,7 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import dynamic from "next/dynamic";
 
 const CRMTabChart = dynamic(() => import("./CRMTabChart"), {
@@ -548,7 +549,7 @@ export default function CRMTab() {
             className="w-full pl-10 pr-9 h-11 sm:h-auto sm:py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+            <button aria-label="Quitar" onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
               <X className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)]" />
             </button>
           )}
@@ -763,6 +764,7 @@ export default function CRMTab() {
                       <td onClick={e => e.stopPropagation()}>
                         <input
                           type="checkbox"
+                          aria-label={`Seleccionar ${c.name || c.phone} para comparar`}
                           checked={comparePhones.has(c.phone)}
                           onChange={() => toggleCompare(c.phone)}
                           disabled={!comparePhones.has(c.phone) && comparePhones.size >= 3}
@@ -902,7 +904,7 @@ export default function CRMTab() {
               Página {effectivePage} de {totalPages} · {filtered.length} clientes
             </p>
             <div className="flex items-center gap-1">
-              <button
+              <button aria-label="Anterior"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={effectivePage === 1}
                 className="p-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
@@ -925,7 +927,7 @@ export default function CRMTab() {
                   </button>
                 );
               })}
-              <button
+              <button aria-label="Siguiente"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={effectivePage === totalPages}
                 className="p-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
@@ -964,35 +966,14 @@ export default function CRMTab() {
       )}
 
       {/* Mejora 13: Compare modal */}
-      <AnimatePresence>
-        {showCompareModal && compareCustomers.length >= 2 && (
-          <>
-            <m.div
-              key="compare-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop"
-              onClick={() => setShowCompareModal(false)}
-            />
-            <m.div
-              key="compare-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowCompareModal(false)}
-            >
-              <div className="w-full max-w-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparativa de Clientes
-                  </CardTitle>
-                  <button onClick={() => setShowCompareModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
-
+      <AdminModal
+        open={showCompareModal && compareCustomers.length >= 2}
+        onClose={() => setShowCompareModal(false)}
+        title="Comparativa de Clientes"
+        icon={BarChart3}
+        variant="wide"
+      >
+        <div className={MODAL_BODY}>
                 <DataTable>
                     <thead>
                       <tr>
@@ -1092,11 +1073,8 @@ export default function CRMTab() {
                       </tr>
                     </tbody>
                 </DataTable>
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+        </div>
+      </AdminModal>
 
       {/* New client modal */}
       <ClienteFormModal

@@ -476,6 +476,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
                   min={1}
                   max={MAX_DAILY_GOAL}
                   autoFocus
+                  aria-label="Meta diaria en soles"
                   aria-invalid={!!editError}
                   aria-describedby={editError ? "daily-goal-error" : undefined}
                   className={cn(

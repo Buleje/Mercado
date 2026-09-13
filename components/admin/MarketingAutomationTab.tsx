@@ -1,11 +1,11 @@
 "use client";
 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { CardTitle } from "@buleje/design-system";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useId, useMemo, useCallback } from "react";
 import {
-  Megaphone, Plus, Trash2, X, Users, Clock, CheckCircle2,
+  Megaphone, Plus, Trash2, Users, Clock, CheckCircle2,
   Loader2, MessageCircle, Bell, Send, Ban, Eye, TrendingUp,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -95,6 +95,11 @@ export default function MarketingAutomationTab({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const nameId = useId();
+  const messageId = useId();
+  const segmentId = useId();
+  const channelId = useId();
+  const scheduledAtId = useId();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -121,14 +126,6 @@ export default function MarketingAutomationTab({
     setShowForm(true);
     onConsumeSegment?.();
   }, [initialSegment, onConsumeSegment]);
-
-  // Cerrar modal con Escape (ui-components rule: modal = click-fuera + Escape)
-  useEffect(() => {
-    if (!showForm) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setShowForm(false); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [showForm]);
 
   // Preview de audiencia en vivo cuando cambia el segmento del form
   useEffect(() => {
@@ -328,68 +325,71 @@ export default function MarketingAutomationTab({
       </p>
 
       {/* Modal crear */}
-      {showForm && (
-        <div className="modal-backdrop p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] text-base flex items-center gap-2"><Megaphone className="h-5 w-5 text-primary" /> Nueva campaña</CardTitle>
-              <button onClick={() => setShowForm(false)} aria-label="Cerrar"><X className="h-5 w-5 text-[var(--text-tertiary)]" /></button>
-            </div>
+      <AdminModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title="Nueva campaña"
+        icon={Megaphone}
+        variant="default"
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+            <button onClick={submit} disabled={saving} className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {form.mode === "borrador" ? "Guardar borrador" : form.mode === "programar" ? "Programar" : "Crear y enviar"}
+            </button>
+          </div>
+        }
+      >
+        <div className={cn(MODAL_BODY, "space-y-4")}>
+          <div className="space-y-1.5">
+            <label htmlFor={nameId} className="text-xs font-bold text-[var(--text-secondary)]">Nombre</label>
+            <input id={nameId} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Oferta de fin de semana" className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary" />
+          </div>
 
+          <div className="space-y-1.5">
+            <label htmlFor={messageId} className="text-xs font-bold text-[var(--text-secondary)]">Mensaje</label>
+            <textarea id={messageId} value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3} placeholder="Hola {{nombre}}, hoy tenemos 20% en arroz. ¡Pásate por la bodega!" className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary resize-none" />
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Usa <span className="font-mono font-semibold">{"{{nombre}}"}</span> para personalizar con el nombre del cliente.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Nombre</label>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Oferta de fin de semana" className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary" />
+              <label htmlFor={segmentId} className="text-xs font-bold text-[var(--text-secondary)]">A quién</label>
+              <select id={segmentId} value={form.segment} onChange={e => setForm(f => ({ ...f, segment: e.target.value as Segment }))} className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary">
+                {(Object.keys(SEGMENT_LABELS) as Segment[]).map(s => <option key={s} value={s}>{SEGMENT_LABELS[s]}</option>)}
+              </select>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] inline-flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {audience === null ? "Calculando…" : `${audience} cliente${audience === 1 ? "" : "s"} alcanzables`}
+              </p>
             </div>
-
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Mensaje</label>
-              <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3} placeholder="Hola {{nombre}}, hoy tenemos 20% en arroz. ¡Pásate por la bodega!" className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary resize-none" />
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Usa <span className="font-mono font-semibold">{"{{nombre}}"}</span> para personalizar con el nombre del cliente.</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">A quién</label>
-                <select value={form.segment} onChange={e => setForm(f => ({ ...f, segment: e.target.value as Segment }))} className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary">
-                  {(Object.keys(SEGMENT_LABELS) as Segment[]).map(s => <option key={s} value={s}>{SEGMENT_LABELS[s]}</option>)}
-                </select>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] inline-flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  {audience === null ? "Calculando…" : `${audience} cliente${audience === 1 ? "" : "s"} alcanzables`}
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Canal</label>
-                <select value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value as Channel }))} className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary">
-                  {(Object.keys(CHANNEL_META) as Channel[]).map(c => <option key={c} value={c}>{CHANNEL_META[c].label}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Cuándo</label>
-              <div className="grid grid-cols-3 gap-2">
-                {([["ahora", "Ahora"], ["programar", "Programar"], ["borrador", "Borrador"]] as const).map(([m, lbl]) => (
-                  <button key={m} type="button" onClick={() => setForm(f => ({ ...f, mode: m }))} className={cn("h-11 rounded-xl text-sm font-semibold border-2 transition-colors", form.mode === m ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}>{lbl}</button>
-                ))}
-              </div>
-              {form.mode === "programar" && (
-                <input type="datetime-local" value={form.scheduledAt} min={nowLocalInput()} onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))} className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary" />
-              )}
-            </div>
-
-            {error && <p className="text-xs font-semibold text-[var(--data-error-500)]">{error}</p>}
-
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
-              <button onClick={submit} disabled={saving} className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {form.mode === "borrador" ? "Guardar borrador" : form.mode === "programar" ? "Programar" : "Crear y enviar"}
-              </button>
+              <label htmlFor={channelId} className="text-xs font-bold text-[var(--text-secondary)]">Canal</label>
+              <select id={channelId} value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value as Channel }))} className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary">
+                {(Object.keys(CHANNEL_META) as Channel[]).map(c => <option key={c} value={c}>{CHANNEL_META[c].label}</option>)}
+              </select>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-[var(--text-secondary)]">Cuándo</p>
+            <div className="grid grid-cols-3 gap-2">
+              {([["ahora", "Ahora"], ["programar", "Programar"], ["borrador", "Borrador"]] as const).map(([m, lbl]) => (
+                <button key={m} type="button" onClick={() => setForm(f => ({ ...f, mode: m }))} className={cn("h-11 rounded-xl text-sm font-semibold border-2 transition-colors", form.mode === m ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}>{lbl}</button>
+              ))}
+            </div>
+            {form.mode === "programar" && (
+              <>
+                <label htmlFor={scheduledAtId} className="sr-only">Fecha y hora de envío</label>
+                <input id={scheduledAtId} type="datetime-local" value={form.scheduledAt} min={nowLocalInput()} onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))} className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary" />
+              </>
+            )}
+          </div>
+
+          {error && <p className="text-xs font-semibold text-[var(--data-error-500)]">{error}</p>}
         </div>
-      )}
+      </AdminModal>
     </div>
   );
 }

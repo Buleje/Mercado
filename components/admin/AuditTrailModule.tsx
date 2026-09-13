@@ -199,6 +199,7 @@ export default function AuditTrailModule() {
             />
           </div>
           <select
+            aria-label="Filtrar por entidad"
             value={entityFilter}
             onChange={(e) => { setEntityFilter(e.target.value); setPage(0); }}
             className={cn(FILTER_CLS, "px-4 font-medium")}
@@ -206,6 +207,7 @@ export default function AuditTrailModule() {
             {ENTITIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
           <select
+            aria-label="Filtrar por acción"
             value={actionFilter}
             onChange={(e) => { setActionFilter(e.target.value); setPage(0); }}
             className={cn(FILTER_CLS, "px-4 font-medium")}

@@ -126,6 +126,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
                 min={1}
                 max={MAX_WEEKLY_GOAL}
                 autoFocus
+                aria-label="Meta de la semana en soles"
                 aria-invalid={!!editError}
                 aria-describedby={editError ? "weekly-goal-error" : undefined}
                 className={cn(

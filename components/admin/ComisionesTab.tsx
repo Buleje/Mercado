@@ -287,9 +287,9 @@ export default function ComisionesTab() {
           </div>
           {period === "personalizado" && (
             <div className="flex gap-2 items-center flex-wrap">
-              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-1.5 text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+              <input aria-label="Desde" type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-1.5 text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
               <span className="text-xs text-[var(--text-secondary)]">—</span>
-              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-1.5 text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+              <input aria-label="Hasta" type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-1.5 text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
               <button onClick={loadData} className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90">Aplicar</button>
             </div>
           )}
@@ -333,7 +333,7 @@ export default function ComisionesTab() {
                       Desde S/ {r.minSales.toLocaleString("es-PE")}{r.maxSales ? ` hasta S/ ${r.maxSales.toLocaleString("es-PE")}` : " en adelante"} → <strong>{r.rate}%</strong>
                     </p>
                   </div>
-                  <button onClick={() => handleDeleteTier(r.id)} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] transition-colors">
+                  <button aria-label="Eliminar" onClick={() => handleDeleteTier(r.id)} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] transition-colors">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -384,7 +384,7 @@ export default function ComisionesTab() {
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ROLE_LABEL[cashier?.role ?? ""] ?? cashier?.role}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <input type="number" min={0} max={20} step={0.5} value={r.rate} onChange={e => updateRate(r.cashierId, Number(e.target.value))} className="w-16 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 text-sm text-center bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                      <input aria-label={`Tasa de comisión de ${cashier?.cashierName ?? r.cashierId}`} type="number" min={0} max={20} step={0.5} value={r.rate} onChange={e => updateRate(r.cashierId, Number(e.target.value))} className="w-16 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 text-sm text-center bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
                       <span className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">%</span>
                     </div>
                   </div>

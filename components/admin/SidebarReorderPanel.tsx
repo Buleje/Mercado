@@ -101,7 +101,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
             <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted w-5 text-center">{idx + 1}</span>
             <span className="flex-1 text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.label}</span>
             <div className="flex gap-0.5">
-              <button
+              <button aria-label="Subir"
                 onClick={() => moveItem(idx, idx - 1)}
                 disabled={idx === 0}
                 className={cn(
@@ -111,7 +111,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
               >
                 <ArrowUp className="h-3.5 w-3.5" />
               </button>
-              <button
+              <button aria-label="Bajar"
                 onClick={() => moveItem(idx, idx + 1)}
                 disabled={idx === items.length - 1}
                 className={cn(

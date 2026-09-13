@@ -4,8 +4,10 @@ import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, useId } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   Calendar, DollarSign, FileX, Download, ArrowUpDown, ArrowUp,
@@ -203,7 +205,14 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
             selected ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
           {selected && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
         </button>
-        <div className="flex-1 min-w-0" onClick={onSelect}>
+        <div
+          className="flex-1 min-w-0"
+          onClick={onSelect}
+          role="button"
+          tabIndex={0}
+          aria-label={`Ver detalle de ${nc.numero}`}
+          onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
+        >
           <div className="flex items-center justify-between mb-1">
             <span className="flex items-center gap-1.5">
               <span className="text-lg">{getDocIcon(nc.numero)}</span>
@@ -456,6 +465,14 @@ export default function NotasCreditoModule() {
   const [devolverStock, setDevolverStock] = useState(true);
   const esDevolucion = form.codigoMotivo === "06" || form.codigoMotivo === "07";
   const searchRef = useRef<HTMLInputElement>(null);
+  const { confirm, prompt } = useConfirm();
+  const wizardTitleId = useId();
+  const detailTitleId = useId();
+  const wizardPanelRef = useRef<HTMLDivElement>(null);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  // Escape ya lo maneja el efecto de más abajo (centraliza showNew/selected/showShortcuts).
+  useModalAccesible(wizardPanelRef, { onCerrar: () => resetWizard(), activo: showNew, cerrarConEscape: false });
+  useModalAccesible(detailPanelRef, { onCerrar: () => setSelected(null), activo: !!selected, cerrarConEscape: false });
 
   // ── Keyboard Shortcuts ────────────────────────────────────────────────────
   useKeyboardShortcuts(useMemo(() => ({
@@ -674,7 +691,12 @@ export default function NotasCreditoModule() {
   };
 
   const handleEmitSunat = async (nc: NotaCredito) => {
-    if (!confirm("\u00bfEmitir nota de cr\u00e9dito a SUNAT? Esta acci\u00f3n no se puede deshacer.")) return;
+    if (!(await confirm({
+      title: "\u00bfEmitir nota de cr\u00e9dito a SUNAT?",
+      description: "Esta acci\u00f3n no se puede deshacer.",
+      intent: "warning",
+      confirmLabel: "S\u00ed, emitir",
+    }))) return;
     try {
       const res = await fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) });
       if (res.ok) fetchNotas();
@@ -682,7 +704,11 @@ export default function NotasCreditoModule() {
   };
 
   const handleAnular = async (nc: NotaCredito) => {
-    if (!confirm("\u00bfSeguro que quieres anular esta nota de cr\u00e9dito?")) return;
+    if (!(await confirm({
+      title: "\u00bfAnular esta nota de cr\u00e9dito?",
+      intent: "danger",
+      confirmLabel: "S\u00ed, anular",
+    }))) return;
     try {
       const res = await fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "ANULADA" }) });
       if (res.ok) { fetchNotas(); if (selected?.id === nc.id) setSelected(null); }
@@ -693,7 +719,11 @@ export default function NotasCreditoModule() {
   const handleBulkEmit = async () => {
     const borradores = filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR");
     if (borradores.length === 0) return;
-    if (!confirm(`¿Emitir ${borradores.length} nota(s) de crédito a SUNAT?`)) return;
+    if (!(await confirm({
+      title: `¿Emitir ${borradores.length} nota(s) de crédito a SUNAT?`,
+      intent: "warning",
+      confirmLabel: "Sí, emitir",
+    }))) return;
     await Promise.all(borradores.map(nc =>
       fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) }).catch(() => null)
     ));
@@ -701,9 +731,15 @@ export default function NotasCreditoModule() {
   };
 
   // ── Templates ─────────────────────────────────────────────────────────────
-  const saveTemplate = () => {
+  const saveTemplate = async () => {
     if (!form.codigoMotivo || !form.descripcionMotivo.trim()) return;
-    const name = window.prompt("Nombre del template (ej: Devolución Parcial):");
+    const name = await prompt({
+      title: "Nombre del template",
+      label: "Nombre",
+      placeholder: "Ej: Devolución Parcial",
+      inputType: "text",
+      required: true,
+    });
     if (!name?.trim()) return;
     const t: NCTemplate = { id: crypto.randomUUID(), name: name.trim(), codigoMotivo: form.codigoMotivo, descripcionMotivo: form.descripcionMotivo };
     const updated = [...templates, t];
@@ -979,6 +1015,8 @@ export default function NotasCreditoModule() {
               );
             })}
             <button onClick={() => setShowAdvFilters(s => !s)}
+              aria-label="Filtros avanzados"
+              aria-expanded={showAdvFilters}
               className={cn("p-2 rounded-xl transition-colors relative", showAdvFilters ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]")}>
               <Filter className="h-4 w-4" />
               {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">{activeFilterCount}</span>}
@@ -1163,7 +1201,13 @@ export default function NotasCreditoModule() {
                             {checkedIds.has(nc.id) && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
                           </button>
                         </td>
-                        <td className="cursor-pointer" onClick={() => setSelected(nc)}>
+                        <td
+                          className="cursor-pointer"
+                          onClick={() => setSelected(nc)}
+                          tabIndex={0}
+                          aria-label={`Ver detalle de ${nc.numero}`}
+                          onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(nc); } }}
+                        >
                           <span className="flex items-center gap-2">
                             <span className="text-base">{getDocIcon(nc.numero)}</span>
                             <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.numero}</span>
@@ -1215,8 +1259,8 @@ export default function NotasCreditoModule() {
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-[var(--text-secondary)]">{filteredNotas.length} doc{filteredNotas.length !== 1 ? "s" : ""} {"\u2014"} P{"\u00e1"}g. {page}/{totalPages}</p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
+                  <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+                  <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
                 </div>
               </div>
             )}
@@ -1232,18 +1276,18 @@ export default function NotasCreditoModule() {
         {selected && (
           <>
             <m.div key="nc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 40 }} onClick={() => setSelected(null)} />
-            <m.div key="nc-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 250 }}
+            <m.div key="nc-panel" ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto">
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    <CardTitle id={detailTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                       <span className="text-xl">{getDocIcon(selected.numero)}</span>
                       NC {selected.numero}
                     </CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada {formatDateTime(selected.createdAt)}</p>
                   </div>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                  <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1368,20 +1412,26 @@ export default function NotasCreditoModule() {
             <m.div key="nnc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" onClick={() => resetWizard()} />
             <m.div key="nnc-modal" initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && resetWizard()}>
-              <div className={cn(
+              <div
+                ref={wizardPanelRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={wizardTitleId}
+                tabIndex={-1}
+                className={cn(
                 "w-full bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden",
                 wizardStep === 0 ? "max-w-3xl" : "max-w-xl"
               )}>
                 {/* Wizard Header */}
                 <div className="px-5 pt-5 pb-0">
                   <div className="flex items-center justify-between mb-4">
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    <CardTitle id={wizardTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                         <CreditCard className="h-4 w-4 text-primary" />
                       </div>
                       Nueva Nota de Cr{"\u00e9"}dito
                     </CardTitle>
-                    <button onClick={resetWizard} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                    <button onClick={resetWizard} aria-label="Cerrar" className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                       <X className="h-5 w-5" />
                     </button>
                   </div>
@@ -1573,12 +1623,12 @@ export default function NotasCreditoModule() {
                                 </div>
                                 {item.selected && (
                                   <div className="flex items-center gap-1.5">
-                                    <button type="button" onClick={() => handleItemQty(idx, item.cantidadDevolver - 1)}
+                                    <button aria-label="Disminuir cantidad" type="button" onClick={() => handleItemQty(idx, item.cantidadDevolver - 1)}
                                       className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-[var(--rule-soft)] transition-colors">
                                       <Minus className="h-3 w-3 text-[var(--text-secondary)]" />
                                     </button>
                                     <span className="w-8 text-center text-sm font-bold text-[var(--text-primary)]">{item.cantidadDevolver}</span>
-                                    <button type="button" onClick={() => handleItemQty(idx, item.cantidadDevolver + 1)}
+                                    <button aria-label="Aumentar cantidad" type="button" onClick={() => handleItemQty(idx, item.cantidadDevolver + 1)}
                                       className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-[var(--rule-soft)] transition-colors">
                                       <Plus className="h-3 w-3 text-[var(--text-secondary)]" />
                                     </button>
@@ -1626,6 +1676,9 @@ export default function NotasCreditoModule() {
                         <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3">
                           <div className="flex items-center gap-3">
                             <button type="button" onClick={() => setDevolverStock(!devolverStock)}
+                              role="switch"
+                              aria-checked={devolverStock}
+                              aria-label="Devolver items al stock"
                               className={cn("relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
                                 devolverStock ? "bg-primary" : "bg-[var(--rule-base)]")}>
                               <span className={cn("inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] transition-transform", devolverStock ? "translate-x-4" : "translate-x-0")} />

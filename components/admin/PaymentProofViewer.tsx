@@ -17,7 +17,7 @@
  *   - Badge de status (pending / approved / rejected)
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   X,
   ZoomIn,
@@ -27,6 +27,7 @@ import {
   AlertCircle,
   Clock,
 } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 
 type Method = "yape" | "plin" | "transfer" | "efectivo" | string | null;
@@ -152,6 +153,13 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
       cancelled = true;
     };
   }, [orderId, isCash]);
+
+  /* Los hooks van ANTES de los returns tempranos: debajo, el primer render
+     (sin comprobante) llamaba 3 hooks menos que el siguiente y React tiraba
+     «Rendered more hooks than during the previous render» (revisión 2026-09-12). */
+  const cerrarLightbox = useCallback(() => setLightbox(false), []);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(lightboxRef, { onCerrar: cerrarLightbox, activo: lightbox });
 
   if (isCash) return null;
   if (loading) {
@@ -313,9 +321,11 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
 
       {lightbox && (
         <div
+          ref={lightboxRef}
           role="dialog"
           aria-modal="true"
           aria-label="Comprobante ampliado"
+          tabIndex={-1}
           className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setLightbox(false)}
         >

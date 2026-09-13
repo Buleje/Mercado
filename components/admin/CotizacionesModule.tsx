@@ -1,9 +1,11 @@
 "use client";
 
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useId, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   FileText, User, Calendar, Printer, Send, Check, XCircle, ShoppingCart,
@@ -316,6 +318,10 @@ export default function CotizacionesModule() {
   const [selected, setSelected] = useState<Cotizacion | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const detailTituloId = useId();
+  const cerrarDetalle = useCallback(() => setSelected(null), []);
+  useModalAccesible(detailPanelRef, { onCerrar: cerrarDetalle, activo: !!selected });
   // Datos del emisor (para el header del PDF); best-effort desde la config SUNAT.
   const [empresa, setEmpresa] = useState<EmpresaEmisor | null>(null);
   useEffect(() => {
@@ -860,7 +866,15 @@ export default function CotizacionesModule() {
                       const headerColor = c.status === "BORRADOR" ? "bg-[var(--surface-sunken)]" : c.status === "ENVIADA" ? "bg-primary/10" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-primary/10" : "bg-[var(--data-error-50)]";
                       const diasValidez = Math.max(0, Math.ceil((new Date(c.validoHasta).getTime() - Date.now()) / 86400000));
                       return (
-                        <div key={c.id} onClick={() => openDetail(c)} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden hover:shadow-[var(--shadow-lg)] cursor-pointer transition-all group">
+                        <div
+                          key={c.id}
+                          onClick={() => openDetail(c)}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Ver cotización ${c.numero} de ${c.clienteNombre}`}
+                          onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(c); } }}
+                          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden hover:shadow-[var(--shadow-lg)] cursor-pointer transition-all group"
+                        >
                           <div className={cn("px-4 py-2 flex items-center justify-between", headerColor)}>
                             <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">{c.numero}</span>
                             <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>
@@ -899,6 +913,9 @@ export default function CotizacionesModule() {
                           <tr
                             key={c.id}
                             onClick={() => openDetail(c)}
+                            tabIndex={0}
+                            aria-label={`Ver cotización ${c.numero} de ${c.clienteNombre}`}
+                            onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(c); } }}
                             className="hover:bg-[var(--surface-alt)] cursor-pointer transition-colors group"
                           >
                             <td className="font-mono text-xs text-[var(--text-secondary)]">
@@ -938,10 +955,10 @@ export default function CotizacionesModule() {
                       {cotizaciones.length} cotizaci{cotizaciones.length !== 1 ? "ones" : "ón"} — Pág. {page}/{totalPages}
                     </p>
                     <div className="flex gap-1">
-                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
+                      <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                         <ChevronLeft className="h-4 w-4" />
                       </button>
-                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
+                      <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                         <ChevronRight className="h-4 w-4" />
                       </button>
                     </div>
@@ -1085,21 +1102,24 @@ export default function CotizacionesModule() {
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="1" step="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)}
+                              aria-label={`Cantidad de ${item.descripcion || `item ${idx + 1}`}`}
                               className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" step="0.01" value={item.precioUnit} onChange={e => updateItem(idx, "precioUnit", e.target.value)}
                               placeholder="0.00"
+                              aria-label={`Precio unitario de ${item.descripcion || `item ${idx + 1}`}`}
                               className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-right" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" max="100" step="1" value={item.descuento} onChange={e => updateItem(idx, "descuento", e.target.value)}
+                              aria-label={`Descuento % de ${item.descripcion || `item ${idx + 1}`}`}
                               className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
                           </td>
                           <td className="py-2 text-right font-medium text-[var(--text-primary)]">{formatCurrency(sub)}</td>
                           <td className="py-2 pl-1">
                             {items.length > 1 && (
-                              <button onClick={() => removeItem(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors">
+                              <button aria-label="Eliminar" onClick={() => removeItem(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             )}
@@ -1200,10 +1220,15 @@ export default function CotizacionesModule() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="modal-backdrop" style={{ zIndex: 40 }}
-              onClick={() => setSelected(null)}
+              onClick={cerrarDetalle}
             />
             <m.div
               key="cot-panel"
+              ref={detailPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={detailTituloId}
+              tabIndex={-1}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -1212,8 +1237,8 @@ export default function CotizacionesModule() {
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Cotización {selected.numero}</CardTitle>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                  <CardTitle id={detailTituloId} className="text-lg font-bold text-[var(--text-primary)]">Cotización {selected.numero}</CardTitle>
+                  <button aria-label="Cerrar" onClick={cerrarDetalle} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1467,130 +1492,80 @@ export default function CotizacionesModule() {
       </AnimatePresence>
 
       {/* ── Template Selection Modal ─────────────────────────────────────── */}
-      <AnimatePresence>
-        {showTemplateModal && (
-          <>
-            <m.div
-              key="tpl-select-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop" style={{ zIndex: 60 }}
-              onClick={() => setShowTemplateModal(false)}
-            />
-            <m.div
-              key="tpl-select-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowTemplateModal(false)}
-            >
-              <div className="w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Seleccionar plantilla</CardTitle>
-                  <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)]">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
-                {templates.length === 0 ? (
-                  <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No hay plantillas guardadas</p>
-                ) : (
-                  <div className="space-y-2">
-                    {templates.map(tpl => (
-                      <button
-                        key={tpl.id}
-                        onClick={() => handleLoadTemplate(tpl)}
-                        className="w-full text-left p-3 bg-[var(--surface-alt)] rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <Bookmark className="h-4 w-4 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tpl.nombre}</p>
-                            <p className="text-xs text-[var(--text-tertiary)]">
-                              {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+      <AdminModal open={showTemplateModal} onClose={() => setShowTemplateModal(false)} title="Seleccionar plantilla">
+        <div className={MODAL_BODY}>
+          {templates.length === 0 ? (
+            <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No hay plantillas guardadas</p>
+          ) : (
+            <div className="space-y-2">
+              {templates.map(tpl => (
+                <button
+                  key={tpl.id}
+                  onClick={() => handleLoadTemplate(tpl)}
+                  className="w-full text-left p-3 bg-[var(--surface-alt)] rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Bookmark className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tpl.nombre}</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">
+                        {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </AdminModal>
 
       {/* ── Template Management Modal ────────────────────────────────────── */}
-      <AnimatePresence>
-        {showTemplateList && (
-          <>
-            <m.div
-              key="tpl-manage-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop" style={{ zIndex: 60 }}
-              onClick={() => setShowTemplateList(false)}
-            />
-            <m.div
-              key="tpl-manage-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowTemplateList(false)}
-            >
-              <div className="w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Plantillas guardadas</CardTitle>
-                  <button onClick={() => setShowTemplateList(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)]">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
+      <AdminModal
+        open={showTemplateList}
+        onClose={() => setShowTemplateList(false)}
+        title="Plantillas guardadas"
+        description={`${templates.length} de ${MAX_TEMPLATES} plantillas usadas`}
+      >
+        <div className={MODAL_BODY}>
+          {templates.length === 0 ? (
+            <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No hay plantillas. Guarda una desde una cotizacion existente.</p>
+          ) : (
+            <div className="space-y-2">
+              {templates.map(tpl => (
+                <div
+                  key={tpl.id}
+                  className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl"
+                >
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Bookmark className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tpl.nombre}</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                      {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleLoadTemplate(tpl)}
+                    className="px-2 py-1 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
+                  >
+                    Usar
+                  </button>
+                  <button aria-label="Eliminar"
+                    onClick={() => handleDeleteTemplate(tpl.id)}
+                    className="p-1.5 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <p className="text-xs text-[var(--text-tertiary)]">{templates.length} de {MAX_TEMPLATES} plantillas usadas</p>
-                {templates.length === 0 ? (
-                  <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No hay plantillas. Guarda una desde una cotizacion existente.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {templates.map(tpl => (
-                      <div
-                        key={tpl.id}
-                        className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl"
-                      >
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Bookmark className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tpl.nombre}</p>
-                          <p className="text-xs text-[var(--text-tertiary)]">
-                            {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleLoadTemplate(tpl)}
-                          className="px-2 py-1 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
-                        >
-                          Usar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTemplate(tpl.id)}
-                          className="p-1.5 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+              ))}
+            </div>
+          )}
+        </div>
+      </AdminModal>
 
       {/* Quick client creation modal */}
       <ClienteFormModal

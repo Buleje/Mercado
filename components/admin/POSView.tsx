@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
+import { toast } from "sonner";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Plus, Minus, ShoppingBasket, ScanBarcode,
@@ -36,6 +37,8 @@ function prettyCategory(id: string): string {
     .replace(/\b\p{L}/gu, (ch) => ch.toUpperCase());
 }
 import EmptyState from "@/components/admin/shared/EmptyState";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import Image from "next/image";
 import { m } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
@@ -655,7 +658,7 @@ function SaleCompleteModal({
                     change: saleComplete.change >= 0 ? saleComplete.change : undefined,
                   });
                 } catch (e) {
-                  alert(e instanceof Error ? e.message : "Error al imprimir");
+                  toast.error(e instanceof Error ? e.message : "Error al imprimir");
                 }
               }}
               className="w-full py-2.5 rounded-xl text-[var(--text-secondary)] dark:text-muted font-semibold text-sm hover:bg-[var(--surface-sunken)] transition-colors flex items-center justify-center gap-2"
@@ -862,6 +865,7 @@ function POSTodayStrip() {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function POSView() {
+  const { confirm } = useConfirm();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("todos");
@@ -1638,7 +1642,7 @@ export default function POSView() {
         <div className="flex flex-wrap items-center gap-2 p-2.5 mb-3 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
           <Info className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
           <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex-1">{saleError}</p>
-          <button onClick={() => setSaleError(null)} className="p-0.5 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-3.5 w-3.5" /></button>
+          <button aria-label="Quitar" onClick={() => setSaleError(null)} className="p-0.5 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-3.5 w-3.5" /></button>
         </div>
       )}
 
@@ -1783,12 +1787,16 @@ export default function POSView() {
                         try { const ls = localStorage.getItem("pos-last-sale-items"); if (!ls) return null; } catch { return null; }
                         return (
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               try {
                                 const raw = localStorage.getItem("pos-last-sale-items");
                                 if (!raw) return;
                                 const items: { productId: number; name: string; quantity: number; price: number; stock?: number }[] = JSON.parse(raw);
-                                if (cart.length > 0 && !window.confirm("Reemplazar carrito actual?")) return;
+                                if (cart.length > 0 && !(await confirm({
+                                  title: "¿Reemplazar el carrito actual?",
+                                  intent: "warning",
+                                  confirmLabel: "Sí, reemplazar",
+                                }))) return;
                                 const newCart: CartItem[] = [];
                                 const skipped: string[] = [];
                                 for (const item of items) {
@@ -1922,28 +1930,20 @@ export default function POSView() {
                 {filtered.map(p => {
                   const inCart = cart.find(i => i.product.id === p.id);
                   const outOfStock = estaAgotado(p);
+                  const isFav = favorites.includes(p.id);
                   return (
+                    <div key={p.id} className="relative">
                     <button
-                      key={p.id}
                       onClick={() => !outOfStock && addToCart(p)}
                       disabled={outOfStock}
                       className={cn(
-                        "bg-[var(--surface-raised)] rounded-xl border p-1.5 text-left transition-all hover:shadow-[var(--shadow-sm)] relative",
+                        "block w-full h-full bg-[var(--surface-raised)] rounded-xl border p-1.5 text-left transition-all hover:shadow-[var(--shadow-sm)] relative",
                         inCart ? "border-primary ring-1 ring-primary/20" : "border-[var(--rule-soft)] hover:border-[var(--rule-base)]",
                         outOfStock && "opacity-40 cursor-not-allowed"
                       )}
                     >
                       <div className="aspect-[5/4] rounded-md overflow-hidden bg-[var(--surface-sunken)] mb-1 relative">
                         <POSProductImage src={p.image} name={p.name} />
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
-                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); toggleFavorite(p.id); } }}
-                          className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white/90 dark:bg-[var(--surface-raised)]/90 backdrop-blur-sm flex items-center justify-center hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] transition-colors z-10 cursor-pointer"
-                        >
-                          <Star className={cn("h-3 w-3", favorites.includes(p.id) ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-muted")} />
-                        </span>
                         {inCart && (
                           <div className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">
                             {inCart.quantity}
@@ -1988,6 +1988,20 @@ export default function POSView() {
                         )}
                       </div>
                     </button>
+                    {/* Hermano del tile, no descendiente: un <button> adentro de
+                        otro <button> es "nested-interactive" para axe (56 nodos
+                        medidos). Misma posición visual de siempre (9px = borde
+                        1px + padding 6px del tile + 2px que tenía adentro). */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
+                      aria-label={isFav ? `Quitar ${p.name} de favoritos` : `Agregar ${p.name} a favoritos`}
+                      aria-pressed={isFav}
+                      className="absolute top-[9px] left-[9px] h-5 w-5 rounded-full bg-white/90 dark:bg-[var(--surface-raised)]/90 backdrop-blur-sm flex items-center justify-center hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] transition-colors z-10 cursor-pointer"
+                    >
+                      <Star className={cn("h-3 w-3", isFav ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-muted")} />
+                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -2043,7 +2057,7 @@ export default function POSView() {
                                 <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente {idx + 1}</span>
                                 <span className="text-[var(--text-tertiary)] dark:text-muted ml-1">{qItems} items · {fmt(qTotal)}</span>
                               </button>
-                              <button onClick={() => removeFromQueue(idx)} className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><X className="h-3 w-3" /></button>
+                              <button aria-label="Quitar" onClick={() => removeFromQueue(idx)} className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><X className="h-3 w-3" /></button>
                             </div>
                           );
                         })}
@@ -2139,14 +2153,14 @@ export default function POSView() {
                         </div>
                       </div>
                       <div className="flex items-center gap-0.5 shrink-0">
-                        <button
+                        <button aria-label="Disminuir cantidad"
                           onClick={() => updateQuantity(item.product.id, -1)}
                           className="h-6 w-6 rounded-lg bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center hover:bg-[var(--surface-sunken)] transition-colors"
                         >
                           <Minus className="h-3 w-3 text-[var(--text-secondary)] dark:text-muted" />
                         </button>
                         <span className="w-6 text-center text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.quantity}</span>
-                        <button
+                        <button aria-label="Aumentar cantidad"
                           onClick={() => updateQuantity(item.product.id, 1)}
                           className="h-6 w-6 rounded-lg bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center hover:bg-[var(--surface-sunken)] transition-colors"
                         >
@@ -2164,7 +2178,7 @@ export default function POSView() {
                       >
                         <Percent className="h-3.5 w-3.5" />
                       </button>
-                      <button
+                      <button aria-label="Quitar"
                         onClick={() => removeFromCart(item.product.id)}
                         className="p-1 rounded text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] transition-colors shrink-0"
                       >
@@ -2364,17 +2378,8 @@ export default function POSView() {
       )}
 
       {/* IDEA 6: Modal Pedido WhatsApp */}
-      {showWhatsAppOrder && (
-        <div className="modal-backdrop p-4" onClick={() => setShowWhatsAppOrder(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-[var(--data-success-500)]" />
-                <CardTitle className="text-base font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Pedido por WhatsApp</CardTitle>
-              </div>
-              <button onClick={() => setShowWhatsAppOrder(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"><X className="h-4 w-4" /></button>
-            </div>
-
+      <AdminModal open={showWhatsAppOrder} onClose={() => setShowWhatsAppOrder(false)} title="Pedido por WhatsApp" icon={MessageCircle}>
+          <div className={MODAL_BODY}>
             <p className="text-xs text-[var(--text-secondary)] mb-3">Pega aqui el mensaje del cliente y el sistema encontrara los productos:</p>
 
             <textarea
@@ -2454,8 +2459,7 @@ export default function POSView() {
               </div>
             )}
           </div>
-        </div>
-      )}
+      </AdminModal>
 
       {/* Barcode scanner overlay */}
       {showScanner && (
@@ -2471,7 +2475,7 @@ export default function POSView() {
               <History className="h-4 w-4 text-primary" />
               <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Historial del Turno</CardTitle>
             </div>
-            <button
+            <button aria-label="Cerrar"
               onClick={() => setShowHistory(false)}
               className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
             >
@@ -2511,13 +2515,8 @@ export default function POSView() {
       )}
 
       {/* ── Idea 12: Trueque Digital ──────────────────────────────────────── */}
-      {showTrueque && (
-        <div className="modal-backdrop p-4" onClick={() => setShowTrueque(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl max-w-sm w-full p-5" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-2 mb-4">
-              <RefreshCcw className="h-6 w-6 text-[var(--data-warning-500)]" aria-hidden />
-              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Trueque Digital</CardTitle>
-            </div>
+      <AdminModal open={showTrueque} onClose={() => setShowTrueque(false)} title="Trueque Digital" icon={RefreshCcw} variant="centered-sm">
+          <div className={MODAL_BODY}>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">El cliente intercambia productos por su compra (comun en zonas rurales de selva).</p>
             <div className="space-y-3">
               <Field label="Que recibe a cambio?" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">
@@ -2576,8 +2575,7 @@ export default function POSView() {
               </div>
             </div>
           </div>
-        </div>
-      )}
+      </AdminModal>
 
       {/* ── Payment Modal (Upgrade 3) ──────────────────────────────────────── */}
       {showPayment && (
@@ -2632,7 +2630,7 @@ export default function POSView() {
                 {stockAlert.actionLabel}
               </button>
             )}
-            <button onClick={() => setStockAlert(null)} className="p-0.5 hover:bg-white/20 rounded">
+            <button aria-label="Quitar" onClick={() => setStockAlert(null)} className="p-0.5 hover:bg-white/20 rounded">
               <X className="h-3 w-3" />
             </button>
           </div>

@@ -637,6 +637,7 @@ export default function BudgetVsRealTab() {
           className="px-4 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
         />
         <select
+          aria-label="Filtrar por mes"
           value={effectiveMonthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
           className="px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
@@ -647,6 +648,7 @@ export default function BudgetVsRealTab() {
           ))}
         </select>
         <select
+          aria-label="Filtrar por departamento"
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
           className="px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
