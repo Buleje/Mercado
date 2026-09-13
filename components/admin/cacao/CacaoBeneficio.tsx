@@ -455,7 +455,11 @@ export default function CacaoBeneficio() {
                 <tr
                   key={b.id}
                   onClick={() => b.loteId && setLoteDrawerId(b.loteId)}
-                  className={`border-t border-[var(--rule-soft)] transition ${b.loteId ? "cursor-pointer hover:bg-[var(--surface-sunken)]" : ""}`}
+                  tabIndex={b.loteId ? 0 : undefined}
+                  role={b.loteId ? "button" : undefined}
+                  aria-label={b.loteId ? `Ver lote ${b.loteCode ?? ""}` : undefined}
+                  onKeyDown={b.loteId ? (e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLoteDrawerId(b.loteId!); } } : undefined}
+                  className={`border-t border-[var(--rule-soft)] transition ${b.loteId ? "cursor-pointer hover:bg-[var(--surface-sunken)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]" : ""}`}
                 >
                   <Td>
                     <span className="font-mono text-xs font-bold text-[var(--text-primary)]">

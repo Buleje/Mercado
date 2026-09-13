@@ -181,7 +181,7 @@ export function QuotaAlertBanner({ snapshot, upgradeHref = "/admin/billing/upgra
           {/* Upgrade plan */}
           <a
             href={upgradeHref}
-            className="min-h-[44px] min-w-[44px] inline-flex items-center px-3 py-1.5 rounded-lg bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+            className="min-h-[44px] min-w-[44px] inline-flex items-center px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             aria-label="Mejorar plan de facturación"
           >
             Mejorar plan

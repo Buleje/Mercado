@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { X, Sparkles } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { SmartFolder, SmartFolderRules } from "@/lib/documentos/smart-folders";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 /**
  * Modal para crear/editar una carpeta inteligente (filtro guardado). No mueve
@@ -17,6 +18,9 @@ const STATUS_LABEL: Record<string, string> = { draft: "Borrador", review: "En re
 export function SmartFolderModal({ initial, onSave, onClose }: { initial?: SmartFolder; onSave: (f: SmartFolder) => void; onClose: () => void }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [r, setR] = useState<SmartFolderRules>(initial?.rules ?? {});
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useModalAccesible(panelRef, { onCerrar: onClose });
 
   const set = (patch: Partial<SmartFolderRules>) => setR((prev) => ({ ...prev, ...patch }));
 
@@ -38,9 +42,10 @@ export function SmartFolderModal({ initial, onSave, onClose }: { initial?: Smart
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-[30rem] rounded-2xl bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
+        className="w-full max-w-[30rem] rounded-2xl bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
-          <CardTitle as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><Sparkles className="h-5 w-5 text-primary" /> Carpeta inteligente</CardTitle>
+          <CardTitle id={titleId} as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><Sparkles className="h-5 w-5 text-primary" /> Carpeta inteligente</CardTitle>
           <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
         </div>
         <p className="mb-3 text-xs text-[var(--text-secondary)]">Agrupa dinámicamente los documentos que cumplen estas reglas. No mueve archivos.</p>

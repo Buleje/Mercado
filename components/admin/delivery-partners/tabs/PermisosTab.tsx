@@ -124,7 +124,7 @@ export function PermisosTab() {
         <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span className="font-bold">{error}</span>
-          <button
+          <button aria-label="Quitar"
             type="button"
             onClick={() => setError(null)}
             className="ml-auto p-1 rounded-xl hover:bg-[var(--data-error-100)] transition-colors"

@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Copy, FolderOpen, Layers, Loader2, Search, Trash2, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { filtrarDistribuciones, type DistribucionRegistro } from "@/lib/forestal/distribucion-registro";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
@@ -36,6 +37,7 @@ export default function DistribucionesGuardadas({
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [borrando, setBorrando] = useState<string | null>(null);
+  const { confirm } = useConfirm();
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -58,7 +60,13 @@ export default function DistribucionesGuardadas({
   useEffect(() => { void cargar(); }, [cargar, recargarToken]);
 
   const borrar = async (d: DistribucionRegistro) => {
-    if (!window.confirm(`¿Borrar la distribución "${d.nombre}"? No se puede deshacer.`)) return;
+    const ok = await confirm({
+      title: `¿Borrar la distribución "${d.nombre}"?`,
+      description: "No se puede deshacer.",
+      intent: "danger",
+      confirmLabel: "Sí, borrar",
+    });
+    if (!ok) return;
     setBorrando(d.id);
     try {
       const r = await fetch(`/api/admin/forestal/distribuciones?id=${encodeURIComponent(d.id)}`, {

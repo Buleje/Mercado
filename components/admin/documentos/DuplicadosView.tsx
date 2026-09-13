@@ -17,6 +17,7 @@ import { Copy, Loader2, ShieldCheck, Trash2, AlertCircle } from "@buleje/design-
 import { cn } from "@/lib/utils";
 import type { DbDocument } from "@/lib/types/documents";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 
 interface Grupo { clave: string; nombre: string; size: number; docs: DbDocument[] }
 
@@ -41,6 +42,7 @@ export default function DuplicadosView({ onOpenDoc, onEliminar }: {
   const [trabajando, setTrabajando] = useState<string | null>(null);
   /** clave del grupo → resultado de comparar el contenido. */
   const [verificado, setVerificado] = useState<Record<string, "iguales" | "distintos">>({});
+  const { confirm } = useConfirm();
 
   const cargar = useCallback(() => {
     setError(null);
@@ -76,10 +78,12 @@ export default function DuplicadosView({ onOpenDoc, onEliminar }: {
   const limpiar = async (g: Grupo) => {
     const sobran = g.docs.slice(1); // vienen del más nuevo al más viejo
     const cuantos = sobran.length;
-    if (!confirm(
-      `Se queda "${g.docs[0].name}" (el más nuevo) y ${cuantos} copia${cuantos === 1 ? "" : "s"} van a la papelera.\n\n` +
-      `Recuperás ${pesoLegible(g.size * cuantos)}. Se pueden restaurar desde la papelera.`,
-    )) return;
+    if (!(await confirm({
+      title: `Se queda "${g.docs[0].name}" (el más nuevo)`,
+      description: `${cuantos} copia${cuantos === 1 ? "" : "s"} van a la papelera. Recuperas ${pesoLegible(g.size * cuantos)}. Se pueden restaurar desde la papelera.`,
+      intent: "warning",
+      confirmLabel: "Sí, mandar a la papelera",
+    }))) return;
     setTrabajando(g.clave);
     try {
       await onEliminar(sobran.map((d) => d.id));

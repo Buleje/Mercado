@@ -15,10 +15,11 @@
  * un ingreso de caja que no pasó.
  */
 
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { AlertTriangle, Ban } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { fmtMon } from "../shared";
 
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
@@ -49,12 +50,8 @@ export default function AnularAdelantoModal({
   const [via, setVia] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose });
 
   const anular = async () => {
     setSaving(true);
@@ -83,10 +80,12 @@ export default function AnularAdelantoModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
+        ref={modalRef}
         onClick={(e) => e.stopPropagation()}
         role="alertdialog"
         aria-modal="true"
         aria-label="Anular adelanto"
+        tabIndex={-1}
         className="w-full max-w-md rounded-2xl bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-xl)]"
       >
         <div className="mb-3 flex items-start gap-3">

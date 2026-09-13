@@ -15,6 +15,7 @@
 
 import { useMemo, useState } from "react";
 import { MessageCircle, Share2, Loader2, Pencil, Plus, Search, Trash2, Truck, Users } from "@buleje/design-system/icons";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   CATEGORIA_LABEL,
   ROLES_PARTE,
@@ -51,6 +52,7 @@ const PESTAÑAS: { id: Pestaña; label: string }[] = [
 const plural = (n: number, sing: string, plur: string) => `${n} ${n === 1 ? sing : plur}`;
 
 export default function CtpDirectorioView() {
+  const { confirm } = useConfirm();
   const dir = useDirectorioForestal();
   const [pestaña, setPestaña] = useState<Pestaña>("destinatario");
   const [q, setQ] = useState("");
@@ -94,7 +96,12 @@ export default function CtpDirectorioView() {
     p === "vehiculos" ? dir.vehiculos.length : dir.partes.filter((x) => x.roles.includes(p as RolParte)).length;
 
   async function borrar(id: string, nombre: string, tipo: "parte" | "vehiculo") {
-    if (!window.confirm(`¿Dar de baja a ${nombre}? Deja de ofrecerse en las guías; lo ya emitido no cambia.`)) return;
+    if (!(await confirm({
+      title: `¿Dar de baja a ${nombre}?`,
+      description: "Deja de ofrecerse en las guías; lo ya emitido no cambia.",
+      intent: "danger",
+      confirmLabel: "Sí, dar de baja",
+    }))) return;
     setBorrando(id);
     try {
       if (tipo === "parte") await dir.eliminarParte(id);

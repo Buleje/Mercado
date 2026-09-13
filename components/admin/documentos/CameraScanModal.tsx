@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useId, useRef, useState, useCallback } from "react";
 import { X, Camera, Image as ImageIcon, FileText, Loader2, Trash2 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { scanToPdf } from "@/hooks/use-documents";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 /**
  * Escáner multipágina: captura varias fotos con la cámara (getUserMedia) o las
@@ -19,6 +20,9 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -77,9 +81,9 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-[var(--rule-base)] p-4">
-          <CardTitle as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><Camera className="h-5 w-5 text-primary" /> Escanear a PDF</CardTitle>
+          <CardTitle id={titleId} as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><Camera className="h-5 w-5 text-primary" /> Escanear a PDF</CardTitle>
           <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
         </div>
 

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
 import { Field } from "@/components/admin/shared/Field";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 interface DeliveryAssignment {
   id: string;
@@ -140,7 +141,7 @@ export function AsignacionesTab() {
         <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span className="font-bold">{error}</span>
-          <button
+          <button aria-label="Quitar"
             type="button"
             onClick={() => setError(null)}
             className="ml-auto p-1 rounded-xl hover:bg-[var(--data-error-100)] transition-colors"
@@ -362,97 +363,78 @@ export function AsignacionesTab() {
       ) : null}
 
       {/* ── 3. Modal asignar ───────────────────────────────────────── */}
-      {assignModal.open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => setAssignModal({ open: false })}
-        >
-          <div
-            className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-md p-6 sm:p-7 space-y-5 shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                  <Plus className="h-5 w-5" />
-                </span>
-                <CardTitle className="font-display text-xl font-extrabold text-[var(--text-primary)]">
-                  Nueva asignación
-                </CardTitle>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAssignModal({ open: false })}
-                className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <Field className="space-y-2" label="ID de orden (opcional)" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              <input
-                type="text"
-                value={assignModal.orderId ?? ""}
-                onChange={(e) => setAssignModal((p) => ({ ...p, orderId: e.target.value }))}
-                placeholder="Ej: ORD-12345"
-                className="w-full px-4 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-              />
-            </Field>
-
-            <Field className="space-y-2" label="Repartidor *" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              {(id) => (
-                <>
-                  <div className="relative">
-                    <select
-                      id={id}
-                      value={selectedPartner}
-                      onChange={(e) => setSelectedPartner(e.target.value)}
-                      className="w-full px-4 h-12 pr-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-                    >
-                      <option value="">Seleccionar repartidor...</option>
-                      {partners.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} — {p.zone} — S/{toNum(p.fee).toFixed(2)}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
-                  </div>
-                  {partners.length === 0 && (
-                    <p className="text-sm text-[var(--data-warning-500)] font-bold flex items-center gap-1.5 mt-2">
-                      <AlertCircle className="h-4 w-4" />
-                      No hay repartidores activos. Activá uno desde la pestaña Repartidores.
-                    </p>
-                  )}
-                </>
+      <AdminModal
+        open={assignModal.open}
+        onClose={() => setAssignModal({ open: false })}
+        title="Nueva asignación"
+        icon={Plus}
+        variant="default"
+        footer={
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setAssignModal({ open: false })}
+              className="flex-1 h-12 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-base)] transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleAssign}
+              disabled={assigning || !selectedPartner}
+              className="flex-[2] inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+            >
+              {assigning ? (
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4" />
               )}
-            </Field>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setAssignModal({ open: false })}
-                className="flex-1 h-12 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-base)] transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleAssign}
-                disabled={assigning || !selectedPartner}
-                className="flex-[2] inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
-              >
-                {assigning ? (
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <CheckCircle className="h-4 w-4" />
-                )}
-                {assigning ? "Asignando..." : "Confirmar asignación"}
-              </button>
-            </div>
+              {assigning ? "Asignando..." : "Confirmar asignación"}
+            </button>
           </div>
+        }
+      >
+        <div className={cn(MODAL_BODY, "space-y-5")}>
+          <Field className="space-y-2" label="ID de orden (opcional)" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <input
+              type="text"
+              value={assignModal.orderId ?? ""}
+              onChange={(e) => setAssignModal((p) => ({ ...p, orderId: e.target.value }))}
+              placeholder="Ej: ORD-12345"
+              className="w-full px-4 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+            />
+          </Field>
+
+          <Field className="space-y-2" label="Repartidor *" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            {(id) => (
+              <>
+                <div className="relative">
+                  <select
+                    id={id}
+                    value={selectedPartner}
+                    onChange={(e) => setSelectedPartner(e.target.value)}
+                    className="w-full px-4 h-12 pr-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  >
+                    <option value="">Seleccionar repartidor...</option>
+                    {partners.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — {p.zone} — S/{toNum(p.fee).toFixed(2)}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
+                </div>
+                {partners.length === 0 && (
+                  <p className="text-sm text-[var(--data-warning-500)] font-bold flex items-center gap-1.5 mt-2">
+                    <AlertCircle className="h-4 w-4" />
+                    No hay repartidores activos. Activá uno desde la pestaña Repartidores.
+                  </p>
+                )}
+              </>
+            )}
+          </Field>
         </div>
-      )}
+      </AdminModal>
     </div>
   );
 }

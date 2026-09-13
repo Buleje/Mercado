@@ -49,7 +49,8 @@ export default function LothLineaDetalleModal({
   /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
   const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onClose });
+  // `activo`: el libro lo monta siempre, con `linea` en null hasta abrir una.
+  useModalAccesible(cajaRef, { onCerrar: onClose, activo: !!linea });
   if (!linea) return null;
 
   const dias = diasDeRegistro(linea.entryDate, linea.createdAt);

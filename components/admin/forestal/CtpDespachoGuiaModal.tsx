@@ -760,7 +760,7 @@ function Pestana({
         <span className={`rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] tabular-nums ${activa ? "bg-white/25" : "bg-[var(--surface-raised)]"}`}>{contador}</span>
       )}
       {!activa && pendiente != null && pendiente > 0 && (
-        <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" aria-label="tiene datos pendientes" />
+        <span role="img" className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" aria-label="tiene datos pendientes" />
       )}
     </button>
   );

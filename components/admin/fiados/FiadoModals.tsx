@@ -4,8 +4,10 @@ import { CardTitle } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { waLink } from "@/lib/whatsapp-link";
-import React from "react";
+import React, { useCallback, useId, useRef } from "react";
+import { toast } from "sonner";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   X, DollarSign,
   Loader2,
@@ -105,6 +107,34 @@ export default function FiadoModals({
   showCompromiso, setShowCompromiso, compromisoMonto, setCompromisoMonto, compromisoFecha, setCompromisoFecha, firmaCanvasRef, isDrawing, setIsDrawing,
   showDebtorsMap, setShowDebtorsMap, fiados,
 }: FiadoModalsProps) {
+  // El Escape de estos 5 modales ya lo maneja el listener global en
+  // FiadosModule (coordina cuál cierra según cuál está abierto) — acá sólo se
+  // pide el foco atrapado y la semántica de diálogo.
+  const pagoPanelRef = useRef<HTMLDivElement>(null);
+  const pagoTitleId = useId();
+  const cerrarPago = useCallback(() => setShowPago(false), [setShowPago]);
+  useModalAccesible(pagoPanelRef, { onCerrar: cerrarPago, activo: showPago && !!selected, cerrarConEscape: false });
+
+  const cobroPanelRef = useRef<HTMLDivElement>(null);
+  const cobroTitleId = useId();
+  const cerrarCobro = useCallback(() => setShowCobroMasivo(false), [setShowCobroMasivo]);
+  useModalAccesible(cobroPanelRef, { onCerrar: cerrarCobro, activo: showCobroMasivo, cerrarConEscape: false });
+
+  const reciboPanelRef = useRef<HTMLDivElement>(null);
+  const reciboTitleId = useId();
+  const cerrarRecibo = useCallback(() => setShowRecibo(false), [setShowRecibo]);
+  useModalAccesible(reciboPanelRef, { onCerrar: cerrarRecibo, activo: showRecibo && !!reciboData, cerrarConEscape: false });
+
+  const compromisoPanelRef = useRef<HTMLDivElement>(null);
+  const compromisoTitleId = useId();
+  const cerrarCompromiso = useCallback(() => setShowCompromiso(false), [setShowCompromiso]);
+  useModalAccesible(compromisoPanelRef, { onCerrar: cerrarCompromiso, activo: showCompromiso && !!selected, cerrarConEscape: false });
+
+  const debtorsMapPanelRef = useRef<HTMLDivElement>(null);
+  const debtorsMapTitleId = useId();
+  const cerrarDebtorsMap = useCallback(() => setShowDebtorsMap(false), [setShowDebtorsMap]);
+  useModalAccesible(debtorsMapPanelRef, { onCerrar: cerrarDebtorsMap, activo: showDebtorsMap, cerrarConEscape: false });
+
   return (
     <>
       <AnimatePresence>
@@ -127,8 +157,9 @@ export default function FiadoModals({
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowPago(false)}
             >
-              <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
-                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Registrar Pago</CardTitle>
+              <div ref={pagoPanelRef} role="dialog" aria-modal="true" aria-labelledby={pagoTitleId} tabIndex={-1}
+                className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+                <CardTitle id={pagoTitleId} className="text-lg font-bold text-[var(--text-primary)]">Registrar Pago</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)]">
                   Saldo pendiente: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(selected.saldo)}</span>
                 </p>
@@ -237,10 +268,11 @@ export default function FiadoModals({
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowCobroMasivo(false)}
             >
-              <div className="w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div ref={cobroPanelRef} role="dialog" aria-modal="true" aria-labelledby={cobroTitleId} tabIndex={-1}
+                className="w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Cobro Masivo</CardTitle>
-                  <button onClick={() => setShowCobroMasivo(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
+                  <CardTitle id={cobroTitleId} className="text-lg font-bold text-[var(--text-primary)]">Cobro Masivo</CardTitle>
+                  <button aria-label="Cerrar" onClick={() => setShowCobroMasivo(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -335,13 +367,14 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowRecibo(false)}
             >
-              <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 print:shadow-none print:border-0">
+              <div ref={reciboPanelRef} role="dialog" aria-modal="true" aria-labelledby={reciboTitleId} tabIndex={-1}
+                className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 print:shadow-none print:border-0">
                 {/* Mejora 18 (ronda 3): Recibo imprimible mejorado */}
                 <div className="text-center print:mb-2">
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 print:hidden">
                     <CheckCircle2 className="h-6 w-6 text-[var(--data-success-500)]" />
                   </div>
-                  <CardTitle className="text-base font-extrabold text-[var(--text-primary)] print:text-lg">RECIBO DE PAGO</CardTitle>
+                  <CardTitle id={reciboTitleId} className="text-base font-extrabold text-[var(--text-primary)] print:text-lg">RECIBO DE PAGO</CardTitle>
                   <p className="text-xs text-[var(--text-tertiary)] print:text-sm print:font-bold">Buleje</p>
                 </div>
 
@@ -448,12 +481,13 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowCompromiso(false)}
             >
-              <div id="compromiso-printable" className="w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto print:shadow-none print:border print:max-h-none">
+              <div id="compromiso-printable" ref={compromisoPanelRef} role="dialog" aria-modal="true" aria-labelledby={compromisoTitleId} tabIndex={-1}
+                className="w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto print:shadow-none print:border print:max-h-none">
                 <div className="flex items-center justify-between print:hidden">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <CardTitle id={compromisoTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <PenTool className="h-5 w-5 text-primary" /> Compromiso de Pago
                   </CardTitle>
-                  <button onClick={() => setShowCompromiso(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
+                  <button aria-label="Cerrar" onClick={() => setShowCompromiso(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -636,11 +670,11 @@ export default function FiadoModals({
                           }),
                         });
                         if (!res.ok) {
-                          alert("No se pudo guardar el compromiso de pago. Intenta de nuevo antes de imprimir.");
+                          toast.error("No se pudo guardar el compromiso de pago. Intenta de nuevo antes de imprimir.");
                           return;
                         }
                       } catch {
-                        alert("No se pudo guardar el compromiso de pago. Revisa tu conexión e intenta de nuevo.");
+                        toast.error("No se pudo guardar el compromiso de pago. Revisa tu conexión e intenta de nuevo.");
                         return;
                       }
                       window.print();
@@ -678,9 +712,10 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowDebtorsMap(false)}
             >
-              <div className="w-full max-w-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[85vh] flex flex-col">
+              <div ref={debtorsMapPanelRef} role="dialog" aria-modal="true" aria-labelledby={debtorsMapTitleId} tabIndex={-1}
+                className="w-full max-w-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[85vh] flex flex-col">
                 <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <CardTitle id={debtorsMapTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" /> Mapa de deudores
                   </CardTitle>
                   <div className="flex items-center gap-2">
@@ -733,7 +768,7 @@ export default function FiadoModals({
                     >
                       <Printer className="h-3.5 w-3.5" /> Imprimir ruta
                     </button>
-                    <button onClick={() => setShowDebtorsMap(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
+                    <button aria-label="Cerrar" onClick={() => setShowDebtorsMap(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
                       <X className="h-4 w-4 text-[var(--text-secondary)]" />
                     </button>
                   </div>

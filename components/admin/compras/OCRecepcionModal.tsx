@@ -2,13 +2,14 @@
 
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   X, ChevronRight, ChevronLeft, Check,
   Loader2, AlertTriangle, Package,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 type OCItem = {
   productId: number;
@@ -55,6 +56,9 @@ type ReceivedItem = {
 
 export default function OCRecepcionModal({ ocId, supplier, items, onComplete, onClose }: OCRecepcionModalProps) {
   useScrollLock(true);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   const [step, setStep] = useState(1);
   const [receivedItems, setReceivedItems] = useState<ReceivedItem[]>(
@@ -151,18 +155,18 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div>
-            <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+            <SectionTitle id={titleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Recepcion de Pedido
             </SectionTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
               OC #{ocId.slice(-8).toUpperCase()} - Paso {step} de 3
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
+          <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-secondary)]" />
           </button>
         </div>
@@ -227,6 +231,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                                 setError(null);
                                 updateItem(idx, { receivedQty: val, noLlego: false });
                               }}
+                              aria-label={`Cantidad recibida de ${item.name}`}
                               className="w-16 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                               disabled={item.noLlego}
                             />
@@ -318,6 +323,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                                 step={0.01}
                                 value={item.unitPrice}
                                 onChange={(e) => updateItem(idx, { unitPrice: Math.max(0, parseFloat(e.target.value) || 0) })}
+                                aria-label={`Precio de factura de ${item.name}`}
                                 className="w-24 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                               />
                             </td>

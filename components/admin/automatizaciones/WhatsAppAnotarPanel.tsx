@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { MessageCircle, Trash2, Copy, Check, Link2, Loader2 } from "@buleje/design-system/icons";
 import { CardTitle, InfoAlert, WarningAlert, BadgeStatus, PrimaryButton } from "@buleje/design-system";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useCopiar } from "./shared";
 
@@ -52,6 +53,7 @@ function telefonoLegible(soloDigitos: string): string {
 }
 
 export default function WhatsAppAnotarPanel() {
+  const { confirm } = useConfirm();
   const [estado, setEstado] = useState<Estado | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -215,14 +217,14 @@ export default function WhatsAppAnotarPanel() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (
-                        confirm(
-                          `¿Quitar ${telefonoLegible(d.telefono)}? Deja de poder anotar al instante y vuelve a ser atendido como cliente.`,
-                        )
-                      ) {
-                        void accion({ telefono: d.telefono }, "DELETE");
-                      }
+                    onClick={async () => {
+                      if (!(await confirm({
+                        title: `¿Quitar ${telefonoLegible(d.telefono)}?`,
+                        description: "Deja de poder anotar al instante y vuelve a ser atendido como cliente.",
+                        intent: "danger",
+                        confirmLabel: "Sí, quitar",
+                      }))) return;
+                      void accion({ telefono: d.telefono }, "DELETE");
                     }}
                     aria-label={`Quitar ${telefonoLegible(d.telefono)}`}
                     className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-xl border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)]/40 transition-colors"

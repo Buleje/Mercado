@@ -114,7 +114,15 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
           </thead>
           <tbody>
             {secciones.map((s, i) => (
-              <tr key={s.id} onClick={() => onOpenParcela(s.id)} className="cursor-pointer border-b border-[var(--rule-base)] last:border-0 hover:bg-[var(--surface-canvas)]">
+              <tr
+                key={s.id}
+                onClick={() => onOpenParcela(s.id)}
+                tabIndex={0}
+                role="button"
+                aria-label={`Ver sección ${s.codigo}`}
+                onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenParcela(s.id); } }}
+                className="cursor-pointer border-b border-[var(--rule-base)] last:border-0 hover:bg-[var(--surface-canvas)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]"
+              >
                 <td className="px-3 py-2.5">
                   <span className="flex items-center gap-2">
                     {i === 0 && s.rendKgHa != null && <Trophy className="h-3.5 w-3.5 text-[var(--data-warning-600)]" />}

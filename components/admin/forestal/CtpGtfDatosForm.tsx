@@ -258,7 +258,7 @@ export default function CtpGtfDatosForm({
             >
               {s.label}
               {conFalta && (
-                <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" aria-label="tiene datos pendientes" />
+                <span role="img" className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" aria-label="tiene datos pendientes" />
               )}
             </button>
           );

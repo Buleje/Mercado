@@ -653,6 +653,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               <select
                 value={planId ?? ""}
                 onChange={(e) => setPlanId(e.target.value || null)}
+                aria-label="Elegir plan de manejo"
                 className="h-8 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none"
               >
                 {plans.length === 0 && <option value="">Sin plan</option>}

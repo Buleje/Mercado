@@ -134,6 +134,9 @@ export default function LotesTabla({
               <tr
                 key={l.id}
                 onClick={() => onAbrir(l.id)}
+                tabIndex={0}
+                aria-label={`Abrir el lote ${l.loteCode}`}
+                onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onAbrir(l.id); } }}
                 className="cursor-pointer transition-colors hover:bg-[var(--surface-sunken)]"
               >
                 <td className="whitespace-nowrap px-3 py-2 font-mono font-bold text-[var(--text-primary)]">

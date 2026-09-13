@@ -421,6 +421,14 @@ export default function CtpTrozasLista({
                     <tr
                       key={t.id}
                       onClick={() => onVerFicha(t.id)}
+                      tabIndex={0}
+                      aria-label={`Ver ficha de ${t.codificacion ?? t.codigoPlanta ?? "la pieza"}`}
+                      onKeyDown={(e) => { if (e.target !== e.currentTarget) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onVerFicha(t.id);
+                        }
+                      }}
                       className={`cursor-pointer border-b border-[var(--rule-soft)] last:border-0 transition-colors ${elegidas.has(t.id) ? "bg-primary/10 dark:bg-[var(--accent)]/12" : "hover:bg-[var(--surface-sunken)]"}`}
                     >
                       {/* El clic en la casilla NO abre la ficha: elegir para

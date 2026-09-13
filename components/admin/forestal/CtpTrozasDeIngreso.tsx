@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { AlertTriangle, ArrowDownRight, Check, ClipboardList, FileText, Loader2, PackageCheck, PackageOpen, Pencil, Scissors, Search } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import CtpRetrozarModal, { type TrozaParaCortar } from "./CtpRetrozarModal";
 import CtpRecepcionTrozas from "./CtpRecepcionTrozas";
 import CtpDocumentoVisor from "./CtpDocumentoVisor";
@@ -85,6 +86,7 @@ export default function CtpTrozasDeIngreso({
   /** Recargar la lista del libro: corregir el volumen cambia la fila de la tabla. */
   onIngresoCambiado?: () => void;
 }) {
+  const { confirm } = useConfirm();
   const [trozas, setTrozas] = useState<Troza[] | null>(null);
   const [cargando, setCargando] = useState(true);
   const [cortando, setCortando] = useState<TrozaParaCortar | null>(null);
@@ -362,15 +364,16 @@ export default function CtpTrozasDeIngreso({
               /* Confirmación explícita: el volumen del ingreso es el que declara
                  la GTF. Bajarlo para que "cuadre" con una lista incompleta es
                  falsear el libro, así que se dice antes de hacerlo. */
-              onClick={() => {
-                if (
-                  window.confirm(
-                    `El volumen del ingreso pasará de ${volumenDelIngreso != null ? fmtM3(volumenDelIngreso) : "—"} a ${fmtM3(total)} m³.\n\n` +
-                      `Hacelo sólo si el volumen estaba mal tipeado. Si lo que falta son piezas por cargar, este cambio haría que el libro declare menos madera de la que ampara la guía.`,
-                  )
-                ) {
-                  void corregirVolumen(Number(total.toFixed(4)));
-                }
+              onClick={async () => {
+                if (!(await confirm({
+                  title: "¿Corregir el volumen del ingreso?",
+                  description:
+                    `El volumen del ingreso pasará de ${volumenDelIngreso != null ? fmtM3(volumenDelIngreso) : "—"} a ${fmtM3(total)} m³. ` +
+                    "Hacelo sólo si el volumen estaba mal tipeado. Si lo que falta son piezas por cargar, este cambio haría que el libro declare menos madera de la que ampara la guía.",
+                  intent: "warning",
+                  confirmLabel: "Sí, corregir",
+                }))) return;
+                void corregirVolumen(Number(total.toFixed(4)));
               }}
               className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] disabled:opacity-60"
             >

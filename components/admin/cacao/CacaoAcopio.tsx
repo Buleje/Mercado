@@ -614,7 +614,11 @@ export default function CacaoAcopio() {
                     <tr
                       key={l.id}
                       onClick={() => setLoteDrawerId(l.id)}
-                      className={`cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)] ${annul ? "opacity-50" : ""}`}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Ver lote ${l.loteCode}`}
+                      onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLoteDrawerId(l.id); } }}
+                      className={`cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${annul ? "opacity-50" : ""}`}
                     >
                       <Td>
                         <span className="font-mono text-sm font-bold text-[var(--text-primary)]">

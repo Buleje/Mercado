@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Send, Trash2, Copy, Check, Link2, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import { CardTitle, InfoAlert, WarningAlert, BadgeStatus, PrimaryButton } from "@buleje/design-system";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useCopiar } from "./shared";
 
@@ -32,6 +33,7 @@ const fecha = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short" }) : "—";
 
 export default function TelegramPanel() {
+  const { confirm } = useConfirm();
   const [estado, setEstado] = useState<Estado | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -182,10 +184,14 @@ export default function TelegramPanel() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirm(`¿Desvincular el chat de ${c.nombre}? Deja de poder anotar al instante.`)) {
-                        void accion({ chatId: c.chatId }, "DELETE");
-                      }
+                    onClick={async () => {
+                      if (!(await confirm({
+                        title: `¿Desvincular el chat de ${c.nombre}?`,
+                        description: "Deja de poder anotar al instante.",
+                        intent: "danger",
+                        confirmLabel: "Sí, desvincular",
+                      }))) return;
+                      void accion({ chatId: c.chatId }, "DELETE");
                     }}
                     aria-label={`Desvincular ${c.nombre}`}
                     className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-xl border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)]/40 transition-colors"

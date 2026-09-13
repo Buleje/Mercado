@@ -16,6 +16,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Folder as FolderIcon, ChevronRight, Home, ArrowUp, FileText,
   MessageCircle, Download, Star, Trash2, Check, Loader2,
@@ -72,6 +73,7 @@ function pesoCorto(bytes: number): string {
 export default function ExploradorDoc({
   docs, folders, carpetaActiva, onNavegar, docActivoId, onAbrirDoc, revision = 0, lote,
 }: Props) {
+  const { confirm } = useConfirm();
   /** Los tildados. Se vacía al cambiar de carpeta: lo de allá ya no está a la vista. */
   const [elegidos, setElegidos] = useState<Set<string>>(() => new Set());
   const [ocupado, setOcupado] = useState(false);
@@ -319,6 +321,7 @@ export default function ExploradorDoc({
 
       {lote && elegidos.size > 0 && (
         <div
+          role="group"
           aria-label="Acciones para los archivos elegidos"
           className="border-t border-[var(--rule-base)] bg-primary p-2 text-white "
         >
@@ -367,12 +370,17 @@ export default function ExploradorDoc({
               <Star className="h-3 w-3" /> Favorito
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 // Borrar varios de una es justo lo que no se puede deshacer de
                 // memoria: se dice cuántos y cuáles antes de tocar nada.
                 const nombres = elegidosDocs.slice(0, 4).map((d) => d.name).join(", ");
                 const resto = elegidosDocs.length > 4 ? ` y ${elegidosDocs.length - 4} más` : "";
-                if (!confirm(`¿Eliminar ${elegidos.size} archivo(s)?\n\n${nombres}${resto}`)) return;
+                if (!(await confirm({
+                  title: `¿Eliminar ${elegidos.size} archivo(s)?`,
+                  description: `${nombres}${resto}`,
+                  intent: "danger",
+                  confirmLabel: "Sí, eliminar",
+                }))) return;
                 conLote(() => lote.onEliminar([...elegidos]));
               }}
               disabled={ocupado}

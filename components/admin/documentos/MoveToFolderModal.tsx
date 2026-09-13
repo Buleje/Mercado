@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-import { FolderInput, Folder, X, Check, CornerUpLeft } from "@buleje/design-system/icons";
+import { FolderInput, Folder, Check, CornerUpLeft } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenAll } from "@/lib/documentos/folder-tree";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 /**
  * Picker para mover UN documento a cualquier carpeta (o a la raíz). Muestra el
@@ -22,12 +22,6 @@ export function MoveToFolderModal({
   onMove: (folderId: string | null) => void | Promise<void>;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   const rows = flattenAll(buildChildrenMap(folders));
   const currentFolderId = doc.folderId ?? null;
 
@@ -37,16 +31,7 @@ export function MoveToFolderModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-[30rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><FolderInput className="h-5 w-5" /></span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-extrabold text-[var(--text-primary)]">Mover a carpeta</p>
-            <p className="truncate text-xs text-[var(--text-tertiary)]">{doc.name}</p>
-          </div>
-          <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
-        </div>
+    <AdminModal open onClose={onClose} title="Mover a carpeta" description={doc.name} icon={FolderInput}>
         <div className="max-h-[60vh] overflow-y-auto p-2">
           <button
             onClick={() => move(null)}
@@ -81,7 +66,6 @@ export function MoveToFolderModal({
             );
           })}
         </div>
-      </div>
-    </div>
+    </AdminModal>
   );
 }

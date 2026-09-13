@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { FolderArchive, X, Link2, Copy, Check, Loader2, MessageCircle, Lock } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -60,13 +61,17 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
     window.open(`https://wa.me/?text=${encodeURIComponent(`Te comparto la carpeta "${folder.name}": ${link}`)}`, "_blank", "noopener");
   };
 
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose, cerrarConEscape: false });
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-[32rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="w-full max-w-[32rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><FolderArchive className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-extrabold text-[var(--text-primary)]">Compartir carpeta</p>
+            <p id={titleId} className="text-sm font-extrabold text-[var(--text-primary)]">Compartir carpeta</p>
             <p className="truncate text-xs text-[var(--text-tertiary)]">{folder.name}</p>
           </div>
           <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>

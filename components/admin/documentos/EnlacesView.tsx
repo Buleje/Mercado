@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   Link2, Folder, FileText, Ban, Copy, Check, ExternalLink, Loader2, Lock, Eye, ShieldAlert,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { DbSharedLink } from "@/lib/types/documents";
 import { fetchSharedLinks, revokeAllSharedLinks, revokeSharedLink } from "@/hooks/use-documents";
 
@@ -56,6 +58,7 @@ function fechaCorta(iso: string): string {
  * (documentos y carpetas), quién lo abrió y el botón para cortarlo.
  */
 export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void }) {
+  const { confirm } = useConfirm();
   const [links, setLinks] = useState<DbSharedLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,13 +95,18 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
 
   const cortar = async (l: DbSharedLink) => {
     const que = l.kind === "folder" ? "de la carpeta" : "del documento";
-    if (!confirm(`¿Cortar el enlace ${que} "${l.targetName}"?\n\nQuien lo tenga deja de ver el archivo al instante. No se puede reactivar: hay que compartirlo de nuevo.`)) return;
+    if (!(await confirm({
+      title: `¿Cortar el enlace ${que} "${l.targetName}"?`,
+      description: "Quien lo tenga deja de ver el archivo al instante. No se puede reactivar: hay que compartirlo de nuevo.",
+      intent: "danger",
+      confirmLabel: "Sí, cortar",
+    }))) return;
     setCortando(l.id);
     try {
       await revokeSharedLink(l.id, l.kind);
       setLinks((prev) => prev.map((x) => (x.id === l.id ? { ...x, revokedAt: new Date().toISOString() } : x)));
     } catch (e) {
-      alert(`No se pudo cortar el enlace: ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`No se pudo cortar el enlace: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setCortando(null);
     }
@@ -106,13 +114,18 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
 
   const cortarTodos = async () => {
     if (activos.length === 0) return;
-    if (!confirm(`¿Cortar los ${activos.length} enlaces activos?\n\nTodo lo que compartiste deja de abrirse al instante. Es irreversible.`)) return;
+    if (!(await confirm({
+      title: `¿Cortar los ${activos.length} enlaces activos?`,
+      description: "Todo lo que compartiste deja de abrirse al instante. Es irreversible.",
+      intent: "danger",
+      confirmLabel: "Sí, cortar todos",
+    }))) return;
     setCortando("all");
     try {
       await revokeAllSharedLinks();
       load();
     } catch (e) {
-      alert(`No se pudieron cortar: ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`No se pudieron cortar: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setCortando(null);
     }

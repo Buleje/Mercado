@@ -13,6 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronDown } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   CTP_PERIOD_OPTIONS,
   ctpPeriodShortLabel,
@@ -45,6 +46,7 @@ export default function CtpPeriodPicker({
 }: CtpPeriodPickerProps) {
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const incompleto = periodKey === "custom" && (!custom.from || !custom.to);
 
   useEffect(() => {
@@ -53,6 +55,8 @@ export default function CtpPeriodPicker({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
+
+  useModalAccesible(popoverRef, { onCerrar: () => setOpen(false), cerrarConEscape: false, activo: open });
 
   const opcion = CTP_PERIOD_OPTIONS.find((o) => o.key === periodKey);
 
@@ -82,8 +86,10 @@ export default function CtpPeriodPicker({
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
+            ref={popoverRef}
             role="dialog"
             aria-label="Período del libro"
+            tabIndex={-1}
             className="absolute right-0 z-50 mt-2 w-[17rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
           >
             {CTP_PERIOD_OPTIONS.map((o) => (

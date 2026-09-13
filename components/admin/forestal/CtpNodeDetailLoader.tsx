@@ -71,7 +71,7 @@ export default function CtpNodeDetailLoader({
 
   if (error) {
     return (
-      <div className="fixed inset-x-0 bottom-4 z-[70] mx-auto flex max-w-md items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] shadow-xl">
+      <div role="alert" className="fixed inset-x-0 bottom-4 z-[70] mx-auto flex max-w-md items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] shadow-xl">
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
         <div className="flex-1">
           <strong>No se pudo abrir la ficha:</strong> {error}
@@ -86,7 +86,7 @@ export default function CtpNodeDetailLoader({
   if (!entry) {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30">
-        <div className="flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-4 text-sm font-bold text-[var(--text-primary)] shadow-xl">
+        <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-4 text-sm font-bold text-[var(--text-primary)] shadow-xl">
           <Loader2 className="h-5 w-5 animate-spin text-[var(--accent)]" /> Abriendo la ficha…
         </div>
       </div>

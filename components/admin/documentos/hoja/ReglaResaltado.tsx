@@ -11,8 +11,9 @@
  * Excel, que se recalcula solo): promete lo que hace y se deshace con Ctrl+Z.
  */
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { Check, Paintbrush, X } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   celdasQueCumplen, COLORES_REGLA, describirRegla, type Comparador, type Regla,
 } from "@/lib/documentos/hoja-reglas";
@@ -46,15 +47,24 @@ export default function ReglaResaltado({
   const pideValor = COMPARADORES.find((c) => c.valor === comparador)?.pideValor ?? true;
   const listo = coincidencias.length > 0 && (!pideValor || valor.trim() !== "");
 
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar });
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={onCerrar}>
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-[26rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         <div className="flex items-center gap-2 border-b border-[var(--rule-base)] px-4 py-3">
           <Paintbrush className="h-4 w-4 text-[var(--accent)]" />
-          <p className="flex-1 text-sm font-extrabold text-[var(--text-primary)]">Resaltar por regla</p>
+          <p id={titleId} className="flex-1 text-sm font-extrabold text-[var(--text-primary)]">Resaltar por regla</p>
           <button onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
             <X className="h-4 w-4" />
           </button>
@@ -69,6 +79,7 @@ export default function ReglaResaltado({
             <select
               value={comparador}
               onChange={(e) => setComparador(e.target.value as Comparador)}
+              aria-label="Condición de la regla"
               className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary"
             >
               {COMPARADORES.map((c) => <option key={c.valor} value={c.valor}>{c.etiqueta}</option>)}

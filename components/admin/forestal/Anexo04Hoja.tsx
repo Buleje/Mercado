@@ -71,7 +71,11 @@ export type CampoEditable = "cantidad" | "espesor" | "ancho" | "largo";
  * viejo a mitad de tecleo. Recién sincroniza con el valor de afuera al perder
  * el foco.
  */
-function CeldaEditable({ valor, onCommit }: { valor: number; onCommit: (n: number) => void }) {
+const CAMPO_LABEL: Record<CampoEditable, string> = {
+  cantidad: "Cantidad", espesor: "Espesor", ancho: "Ancho", largo: "Largo",
+};
+
+function CeldaEditable({ valor, onCommit, etiqueta }: { valor: number; onCommit: (n: number) => void; etiqueta: string }) {
   const [texto, setTexto] = useState(String(valor));
   const enfocado = useRef(false);
   useEffect(() => { if (!enfocado.current) setTexto(String(valor)); }, [valor]);
@@ -104,6 +108,7 @@ function CeldaEditable({ valor, onCommit }: { valor: number; onCommit: (n: numbe
       type="text"
       inputMode="decimal"
       autoComplete="off"
+      aria-label={etiqueta}
       value={texto}
       onFocus={(e) => { enfocado.current = true; e.currentTarget.select(); }}
       onBlur={(e) => {
@@ -190,7 +195,11 @@ const Bloques = memo(function Bloques({ hoja, compacto, editando, onEditarCelda 
                     return (
                       <div key={j} className={`anx-b anx-cell${j === 5 ? " r" : ""}${editable ? " ed" : ""}`} style={{ width: px(g.cols[j]) }}>
                         {editable
-                          ? <CeldaEditable valor={valor} onCommit={(n) => onEditarCelda(fila!.id, campo, campo === "cantidad" ? Math.round(n) : n)} />
+                          ? <CeldaEditable
+                              valor={valor}
+                              onCommit={(n) => onEditarCelda(fila!.id, campo, campo === "cantidad" ? Math.round(n) : n)}
+                              etiqueta={`${CAMPO_LABEL[campo]}, fila ${f + 1}${b?.especie ? `, ${b.especie}` : ""}`}
+                            />
                           : texto}
                       </div>
                     );

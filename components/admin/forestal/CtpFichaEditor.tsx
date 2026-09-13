@@ -216,11 +216,11 @@ export default function CtpFichaEditor() {
                     </p>
                   )}
                   <div className="flex flex-wrap items-center gap-2">
-                    <select className={`${I} max-w-[13rem]`} value={t.tipo} onChange={(e) => setTitulo(i, { tipo: e.target.value })} title="Tipo de título — es también el casillero (5) de la GTF">
+                    <select aria-label={`Tipo del título ${i + 1}`} className={`${I} max-w-[13rem]`} value={t.tipo} onChange={(e) => setTitulo(i, { tipo: e.target.value })} title="Tipo de título — es también el casillero (5) de la GTF">
                       {CTP_TITULO_TIPOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                     <input className={`${I} min-w-[10rem] flex-1`} value={t.codigo} onChange={(e) => setTitulo(i, { codigo: e.target.value })} placeholder="N° del título habilitante — casillero (6)" />
-                    <input type="date" className={`${I} max-w-[10rem]`} value={t.vencimiento} onChange={(e) => setTitulo(i, { vencimiento: e.target.value })} title="Vencimiento" />
+                    <input aria-label={`Vencimiento del título ${i + 1}`} type="date" className={`${I} max-w-[10rem]`} value={t.vencimiento} onChange={(e) => setTitulo(i, { vencimiento: e.target.value })} title="Vencimiento" />
                     {i > 0 && (
                       <button type="button" onClick={() => subirTitulo(i)} title="Subir — el primero es el que declara la GTF" aria-label="Subir este título" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><ArrowUp className="h-4 w-4" /></button>
                     )}
@@ -269,8 +269,8 @@ export default function CtpFichaEditor() {
                 <div key={i} className="flex flex-wrap items-center gap-2">
                   <input className={`${I} min-w-[9rem] flex-1`} value={p.especie} onChange={(e) => setCites(i, { especie: e.target.value })} placeholder="Especie (ej. Shihuahuaco)" />
                   <input className={`${I} min-w-[9rem] flex-1`} value={p.numero} onChange={(e) => setCites(i, { numero: e.target.value })} placeholder="N° de permiso CITES" />
-                  <input type="date" className={`${I} max-w-[10rem]`} value={p.vencimiento} onChange={(e) => setCites(i, { vencimiento: e.target.value })} title="Vencimiento" />
-                  <button type="button" onClick={() => removeCites(i)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
+                  <input aria-label={`Vencimiento del permiso CITES ${i + 1}`} type="date" className={`${I} max-w-[10rem]`} value={p.vencimiento} onChange={(e) => setCites(i, { vencimiento: e.target.value })} title="Vencimiento" />
+                  <button aria-label="Eliminar" type="button" onClick={() => removeCites(i)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
                 </div>
               ))}
             </div>

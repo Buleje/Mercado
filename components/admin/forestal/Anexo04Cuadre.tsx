@@ -194,7 +194,7 @@ export default function Anexo04Cuadre({
                   <>
                     <p className="mt-0.5 flex items-baseline gap-1.5 font-mono text-sm tabular-nums">
                       <span className="text-[var(--text-tertiary)] line-through">{fmtMedida(a.actual)}</span>
-                      <span className="text-[var(--text-tertiary)]" aria-label="pasa a">→</span>
+                      <span role="img" className="text-[var(--text-tertiary)]" aria-label="pasa a">→</span>
                       <span className="text-base font-bold text-[var(--text-primary)]">{fmtMedida(a.sugerido)}</span>
                     </p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
@@ -248,7 +248,7 @@ export default function Anexo04Cuadre({
               </span>
               <span className="flex items-baseline gap-1.5 font-mono text-sm tabular-nums">
                 <span className="text-[var(--text-tertiary)] line-through">{fmtMedida(p.actual)}</span>
-                <span className="text-[var(--text-tertiary)]" aria-label="pasa a">→</span>
+                <span role="img" className="text-[var(--text-tertiary)]" aria-label="pasa a">→</span>
                 <span className="font-bold text-[var(--text-primary)]">{fmtMedida(p.sugerido)}</span>
                 <span className="text-[length:var(--ts-2xs)] font-sans font-normal text-[var(--text-tertiary)]">
                   {DIMENSION_ANEXO[p.campo].unidad} · {p.cambioPct} %

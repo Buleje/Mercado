@@ -160,7 +160,11 @@ export default function CacaoTablaConversion({
                     key={r.key}
                     onClick={() => setBaseKey(r.key)}
                     title="Fijar esta fila como base de comparación"
-                    className={`cursor-pointer border-t border-[var(--rule-soft)] transition-colors ${esUlt ? "bg-[var(--data-success-100)]/50" : esBase ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"}`}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Fijar ${r.label} como fila base de comparación`}
+                    onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setBaseKey(r.key); } }}
+                    className={`cursor-pointer border-t border-[var(--rule-soft)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${esUlt ? "bg-[var(--data-success-100)]/50" : esBase ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"}`}
                   >
                     <td className="px-3 py-2.5 font-bold text-[var(--text-primary)]">
                       {r.label}

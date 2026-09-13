@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Sparkles, Send, FileText, Loader2, User, Bot, PenLine, Share2, CheckCircle2, History, Plus, X, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { askDocAssistantStream, type DocAssistantAnswer } from "@/hooks/use-documents";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 
 type Turn = { q: string; a: DocAssistantAnswer | null; partial?: string; error?: boolean };
 
@@ -51,6 +52,7 @@ export function AssistantView({
   reindexableCount: number;
   onReindexAll: (onProgress: (done: number, total: number) => void) => Promise<void>;
 }) {
+  const { confirm } = useConfirm();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -88,7 +90,12 @@ export function AssistantView({
 
   const runIndex = async (mode: "new" | "all") => {
     if (indexing) return;
-    if (mode === "all" && !confirm(`¿Re-describir los ${reindexableCount} documentos con IA? Los ya analizados también se actualizan con la descripción rica.`)) return;
+    if (mode === "all" && !(await confirm({
+      title: `¿Re-describir los ${reindexableCount} documentos con IA?`,
+      description: "Los ya analizados también se actualizan con la descripción rica.",
+      intent: "warning",
+      confirmLabel: "Sí, re-describir",
+    }))) return;
     setIndexing({ done: 0, total: mode === "all" ? reindexableCount : indexableCount });
     try {
       await (mode === "all" ? onReindexAll : onIndexAll)((done, total) => setIndexing({ done, total }));

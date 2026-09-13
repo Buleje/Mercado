@@ -338,7 +338,7 @@ export default function PresupuestoMensualTab() {
                     className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </Field>
-                <button
+                <button aria-label="Quitar"
                   onClick={() => removeDraftCat(i)}
                   className="p-1.5 rounded-xl hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                 >

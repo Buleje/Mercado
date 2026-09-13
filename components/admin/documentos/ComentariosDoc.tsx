@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from "react";
 import { MessageCircle, Check, Loader2, RotateCcw, User, Trash2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 
 interface Comentario {
   id: string;
@@ -42,6 +43,7 @@ export default function ComentariosDoc({ docId }: { docId: string }) {
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [verResueltos, setVerResueltos] = useState(false);
+  const { confirm } = useConfirm();
 
   const base = `/api/admin/documents/${docId}/comentarios`;
 
@@ -77,7 +79,7 @@ export default function ComentariosDoc({ docId }: { docId: string }) {
   };
 
   const borrar = async (id: string) => {
-    if (!confirm("¿Borrar esta observación?")) return;
+    if (!(await confirm({ title: "¿Borrar esta observación?", intent: "danger", confirmLabel: "Sí, borrar" }))) return;
     const r = await fetch(`${base}?comentarioId=${encodeURIComponent(id)}`, {
       method: "DELETE", credentials: "include", headers: csrfHeaders(),
     });

@@ -307,7 +307,7 @@ export default function CtpEudrPanel({
         <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><FileText className="h-4 w-4" /> Generar Declaración de Diligencia Debida (DDS)</CardTitle>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">Elegí un despacho del período: el DDS camina su cadena de custodia, adjunta la geolocalización de cada origen y evalúa el riesgo (solo «negligible» si traza + geo + sin-deforestación).</p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
-          <select value={selDesp} onChange={(e) => setSelDesp(e.target.value)} className="h-12 min-w-[16rem] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-bold text-[var(--text-primary)] focus:border-[var(--accent)]">
+          <select value={selDesp} onChange={(e) => setSelDesp(e.target.value)} aria-label="Elegir despacho para generar la DDS" className="h-12 min-w-[16rem] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-bold text-[var(--text-primary)] focus:border-[var(--accent)]">
             <option value="">Elegí un despacho…</option>
             {despachos.map((d) => (
               <option key={d.id} value={d.id}>#{d.lineNo} · {d.productType ?? "—"} · {d.speciesCommon ?? "—"}{d.gtfNumber ? ` · ${d.gtfNumber}` : ""}{d.destino ? ` → ${d.destino}` : ""}</option>

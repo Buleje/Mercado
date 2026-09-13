@@ -1,7 +1,9 @@
 "use client";
 
+import { useId, useRef } from "react";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { X, Printer, Store } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { DbOrder } from "@/lib/jsondb";
 import { STATUS_LABELS } from "./types";
 
@@ -21,6 +23,9 @@ export function OrdersPrintPreview({
   onClose,
 }: OrdersPrintPreviewProps) {
   const selectedOrders = orders.filter(o => selectedOrderIds.has(o.id));
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose });
 
   return (
     <div
@@ -28,18 +33,23 @@ export function OrdersPrintPreview({
       onClick={onClose}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className="bg-[var(--surface-raised)] rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Vista previa de impresión</CardTitle>
+            <CardTitle id={titleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Vista previa de impresión</CardTitle>
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
               {selectedOrderIds.size} pedido{selectedOrderIds.size > 1 ? "s" : ""} seleccionado{selectedOrderIds.size > 1 ? "s" : ""}
             </p>
           </div>
-          <button
+          <button aria-label="Cerrar"
             onClick={onClose}
             className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
           >

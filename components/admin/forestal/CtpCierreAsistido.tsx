@@ -148,13 +148,13 @@ export default function CtpCierreAsistido({ onIr, cierres }: {
           <ul className="mt-1.5 space-y-1 text-[length:var(--ts-2xs)]">
             {revision.impedimentos.map((t) => (
               <li key={t} className="flex gap-1.5 font-bold">
-                <span aria-label="Impide cerrar" title="Impide cerrar">⛔</span>
+                <span role="img" aria-label="Impide cerrar" title="Impide cerrar">⛔</span>
                 <span>{t}</span>
               </li>
             ))}
             {revision.observaciones.map((t) => (
               <li key={t} className="flex gap-1.5">
-                <span aria-label="No frena el cierre" title="No frena el cierre, pero conviene mirarlo">⚠️</span>
+                <span role="img" aria-label="No frena el cierre" title="No frena el cierre, pero conviene mirarlo">⚠️</span>
                 <span>{t}</span>
               </li>
             ))}

@@ -178,6 +178,14 @@ export default function TablaAdelantos({
                   <tr
                     key={a.id}
                     onClick={() => onVerDetalle(a)}
+                    tabIndex={0}
+                    aria-label={`Ver detalle del adelanto de ${a.beneficiario?.nombre ?? "este beneficiario"}`}
+                    onKeyDown={(e) => { if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onVerDetalle(a);
+                      }
+                    }}
                     className="cursor-pointer transition-colors hover:bg-[var(--surface-sunken)]/50"
                   >
                     {/* El código, en su propia columna y ordenable: es como se

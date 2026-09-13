@@ -3,7 +3,8 @@
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   AlertOctagon,
   Calendar,
@@ -118,10 +119,14 @@ export default function ExpiredBatchesWidget() {
     });
   };
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     if (modal.submitting) return;
     setModal((prev) => ({ ...prev, open: false }));
-  };
+  }, [modal.submitting]);
+
+  const mermaModalRef = useRef<HTMLDivElement>(null);
+  const mermaModalTitleId = useId();
+  useModalAccesible(mermaModalRef, { onCerrar: closeModal, activo: modal.open });
 
   const toggleBatch = (id: string) => {
     setModal((prev) => {
@@ -481,6 +486,11 @@ export default function ExpiredBatchesWidget() {
           >
             <m.div
               key="merma-modal"
+              ref={mermaModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={mermaModalTitleId}
+              tabIndex={-1}
               initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -491,12 +501,13 @@ export default function ExpiredBatchesWidget() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <div className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
-                  <SectionTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                  <SectionTitle id={mermaModalTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     Registrar merma
                   </SectionTitle>
                 </div>
                 <button
                   type="button"
+                  aria-label="Cerrar"
                   onClick={closeModal}
                   disabled={modal.submitting}
                   className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-40"

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertCircle, CheckCircle, ChevronDown, Download, Edit2, MapPin, MessageCircle, Phone, Plus, Save, Search, Star, Trash2, Truck, Users, X } from "@buleje/design-system/icons";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon, vehicleKind, vehicleLabel, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
 import { Field } from "@/components/admin/shared/Field";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 const NetworkToggleCard = dynamic(
   () => import("@/components/admin/delivery/NetworkToggleCard"),
@@ -55,6 +56,10 @@ function PartnerModal({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // El propio Escape de abajo ya cierra el modal — el hook sólo aporta foco
+  // inicial + trampa de Tab (por eso cerrarConEscape: false).
+  useModalAccesible(panelRef, { cerrarConEscape: false });
 
   // FIX 2026-05-06 (audit team): a11y modal — Esc cierra
   useEffect(() => {
@@ -87,11 +92,13 @@ function PartnerModal({
       role="presentation"
     >
       <div
+        ref={panelRef}
         className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-md shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="partner-modal-title"
+        tabIndex={-1}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
           <CardTitle id="partner-modal-title" className="font-extrabold text-[var(--text-primary)]">
@@ -575,6 +582,7 @@ export function RepartidoresTab() {
           </div>
 
           <select
+            aria-label="Filtrar por zona"
             value={zoneFilter}
             onChange={(e) => setZoneFilter(e.target.value)}
             className="h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
@@ -586,6 +594,7 @@ export function RepartidoresTab() {
           </select>
 
           <select
+            aria-label="Filtrar por vehículo"
             value={vehicleFilter}
             onChange={(e) => setVehicleFilter(e.target.value)}
             className="h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
@@ -671,7 +680,7 @@ export function RepartidoresTab() {
             <AlertCircle className="h-4 w-4 text-[var(--data-error-500)]" />
           </span>
           <p className="text-sm font-bold text-[var(--data-error-500)] flex-1">{error}</p>
-          <button
+          <button aria-label="Quitar"
             type="button"
             onClick={() => setError(null)}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 shrink-0"

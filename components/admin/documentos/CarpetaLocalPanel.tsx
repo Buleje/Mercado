@@ -13,7 +13,7 @@
  * son válidas y sólo el dueño sabe cuál quería.
  */
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import {
   AlertTriangle, Check, FolderOpen, HardDriveDownload, HardDriveUpload, Link2Off,
   Loader2, Lock, Pause, Play, RefreshCw, Trash2, TriangleAlert, Info,
@@ -74,6 +74,7 @@ export default function CarpetaLocalPanel({
 }) {
   const c = useCarpetaLocal({ tenantId, documentos, carpetas, onCambios });
   const [destino, setDestino] = useState<string | null>(null);
+  const destinoId = useId();
   const filas = useMemo(() => flattenAll(buildChildrenMap(carpetas)), [carpetas]);
   const carpetaDestino = c.vinculo?.folderIdRaiz
     ? carpetas.find((f) => f.id === c.vinculo!.folderIdRaiz)
@@ -115,10 +116,11 @@ export default function CarpetaLocalPanel({
           un lado pasa al otro. No hay que instalar nada — sincroniza mientras tengas el panel abierto.
         </p>
 
-        <label className="mt-3 block text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <label htmlFor={destinoId} className="mt-3 block text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           Emparejar con
         </label>
         <select
+          id={destinoId}
           value={destino ?? ""}
           onChange={(e) => setDestino(e.target.value || null)}
           className="mt-1 h-12 w-full max-w-md rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)]"

@@ -17,6 +17,7 @@ import {
   Webhook, Plus, Trash2, Play, Loader2, ExternalLink, Power,
 } from "@buleje/design-system/icons";
 import { CardTitle, InfoAlert, WarningAlert, EmptyState, LoadingState, BadgeStatus, PrimaryButton } from "@buleje/design-system";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useCopiar } from "./shared";
 import TokenEntranteCard from "./TokenEntranteCard";
@@ -44,6 +45,7 @@ const API = "/api/admin/n8n/flows";
 
 
 export default function N8nPanel() {
+  const { confirm } = useConfirm();
   const [config, setConfig] = useState<ConfigN8n | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,14 +122,19 @@ export default function N8nPanel() {
   }, [enviar, cargar]);
 
   const rotarToken = useCallback(async () => {
-    if (!confirm("Al rotar, el token viejo deja de funcionar al instante y hay que pegarlo de nuevo en n8n. ¿Rotar?")) return;
+    if (!(await confirm({
+      title: "¿Rotar el token?",
+      description: "El token viejo deja de funcionar al instante y hay que pegarlo de nuevo en n8n.",
+      intent: "warning",
+      confirmLabel: "Sí, rotar",
+    }))) return;
     try {
       await enviar({ accion: "rotar-token" });
       await cargar();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [enviar, cargar]);
+  }, [confirm, enviar, cargar]);
 
   if (cargando) return <LoadingState message="Cargando automatizaciones…" />;
 
@@ -270,10 +277,14 @@ export default function N8nPanel() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`¿Borrar el flujo "${f.nombre}"? El flujo sigue existiendo en n8n; sólo se borra el acceso desde acá.`)) {
-                          void enviar({ id: f.id }, "DELETE").then(cargar).catch((e) => setError(String(e)));
-                        }
+                      onClick={async () => {
+                        if (!(await confirm({
+                          title: `¿Borrar el flujo "${f.nombre}"?`,
+                          description: "El flujo sigue existiendo en n8n; sólo se borra el acceso desde acá.",
+                          intent: "danger",
+                          confirmLabel: "Sí, borrar",
+                        }))) return;
+                        void enviar({ id: f.id }, "DELETE").then(cargar).catch((e) => setError(String(e)));
                       }}
                       title="Borrar"
                       aria-label={`Borrar ${f.nombre}`}

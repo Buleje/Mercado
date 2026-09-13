@@ -97,9 +97,9 @@ export default function CacaoCampoSanidad({ parcelas, onOpenParcela, onChanged }
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => setShowReg(true)} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Registrar foco</button>
         <div className="mr-auto" />
-        <select value={fPlaga} onChange={(e) => setFPlaga(e.target.value)} className={S}><option value="todas">Todas las plagas</option>{CACAO_PLAGAS.map((p) => <option key={p.tipo} value={p.tipo}>{p.label}</option>)}</select>
-        <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} className={S}><option value="activos">Activos + en control</option><option value="activo">Solo activos</option><option value="controlado">En control</option><option value="resuelto">Resueltos</option><option value="todos">Todos</option></select>
-        <button type="button" onClick={load} className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" /></button>
+        <select aria-label="Filtrar por plaga" value={fPlaga} onChange={(e) => setFPlaga(e.target.value)} className={S}><option value="todas">Todas las plagas</option>{CACAO_PLAGAS.map((p) => <option key={p.tipo} value={p.tipo}>{p.label}</option>)}</select>
+        <select aria-label="Filtrar por estado" value={fEstado} onChange={(e) => setFEstado(e.target.value)} className={S}><option value="activos">Activos + en control</option><option value="activo">Solo activos</option><option value="controlado">En control</option><option value="resuelto">Resueltos</option><option value="todos">Todos</option></select>
+        <button aria-label="Actualizar" type="button" onClick={load} className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" /></button>
       </div>
 
       {loading && focos.length === 0 ? (

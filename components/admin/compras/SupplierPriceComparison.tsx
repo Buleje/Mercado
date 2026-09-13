@@ -1,9 +1,10 @@
 "use client";
 
 import { CardTitle, DataTable } from "@buleje/design-system";
-import { useState, useEffect } from "react";
+import { useId, useRef, useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, AlertTriangle, BarChart3, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 type Comparacion = {
   supplierId: string;
@@ -37,6 +38,9 @@ export function QuotationComparator({ orders, suppliers }: {
 }) {
   const [open, setOpen] = useState(false);
   const [selectedOCIds, setSelectedOCIds] = useState<string[]>([]);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: () => setOpen(false), activo: open });
 
   if (!open) {
     return (
@@ -101,12 +105,12 @@ export function QuotationComparator({ orders, suppliers }: {
 
   return (
     <div className="modal-backdrop p-4" onClick={() => setOpen(false)}>
-      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+          <CardTitle id={titleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparar cotizaciones completas
           </CardTitle>
-          <button onClick={() => setOpen(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
+          <button aria-label="Cerrar" onClick={() => setOpen(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         </div>

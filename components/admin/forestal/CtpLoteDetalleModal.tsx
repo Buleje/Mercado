@@ -303,6 +303,7 @@ export default function CtpLoteDetalleModal({
               value={motivoForzado}
               onChange={(e) => setMotivoForzado(e.target.value)}
               placeholder="Motivo (se guarda en el historial): se armó por error, especie equivocada…"
+              aria-label="Motivo de la eliminación"
               className={I}
             />
             {corridaConSalida && (

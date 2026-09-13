@@ -16,6 +16,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { StatCard } from "@buleje/design-system";
 import { Check, Coins, Loader2, Pencil, Plus, Trash2, Truck, Wallet } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -53,6 +54,7 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
   const [cola, setCola] = useState<CandidatoFlete[]>([]);
   const [colaInfo, setColaInfo] = useState<{ total: number; nombre: string } | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
+  const { confirm } = useConfirm();
 
   const cuentasTransportista = useMemo(() => porTransportista(fletes), [fletes]);
   const cuentasProveedor = useMemo(() => porProveedor(fletes), [fletes]);
@@ -201,8 +203,13 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
           ocupado={ocupado}
           onEditar={(f) => abrirIndividual({ flete: f })}
           onPago={(f) => void conBloqueo(f.id, () => marcarPago(f.id, f.estadoPago === "pagado" ? "pendiente" : "pagado"))}
-          onBorrar={(f) => {
-            if (!window.confirm(`¿Borrar el viaje del ${fecha(f.fecha)}? El gasto deja de contarse en el período.`)) return;
+          onBorrar={async (f) => {
+            if (!(await confirm({
+              title: `¿Borrar el viaje del ${fecha(f.fecha)}?`,
+              description: "El gasto deja de contarse en el período.",
+              intent: "danger",
+              confirmLabel: "Sí, borrar",
+            }))) return;
             void conBloqueo(f.id, () => eliminar(f.id));
           }}
         />

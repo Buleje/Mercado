@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { X, Check, Ban } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import { FOLDER_COLORS, FOLDER_ICON_OPTIONS, FolderGlyph } from "./folder-visuals";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 /**
  * Editar una carpeta: nombre + color + ícono. Persiste vía PATCH
@@ -23,12 +24,10 @@ export function FolderEditModal({
   const [color, setColor] = useState<string | null>(folder.color);
   const [icon, setIcon] = useState<string | null>(folder.icon);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const nombreId = useId();
+  useModalAccesible(panelRef, { onCerrar: onClose });
 
   const save = async () => {
     const trimmed = name.trim();
@@ -44,20 +43,29 @@ export function FolderEditModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-[28rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-full max-w-[28rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-sunken)]">
             <FolderGlyph folder={{ icon, color }} className="h-5 w-5" active />
           </span>
-          <p className="flex-1 text-sm font-extrabold text-[var(--text-primary)]">Editar carpeta</p>
+          <p id={titleId} className="flex-1 text-sm font-extrabold text-[var(--text-primary)]">Editar carpeta</p>
           <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
         <div className="space-y-5 p-5">
           {/* Nombre */}
           <div>
-            <label className="mb-1.5 block text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Nombre</label>
+            <label htmlFor={nombreId} className="mb-1.5 block text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Nombre</label>
             <input
+              id={nombreId}
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") save(); }}

@@ -488,13 +488,13 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
         )}
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {conPoligono.length > 0 && (
-            <select value="" onChange={(e) => { if (e.target.value) flyTo(e.target.value); }} title="Ir a una sección" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+            <select value="" onChange={(e) => { if (e.target.value) flyTo(e.target.value); }} title="Ir a una sección" aria-label="Ir a una sección" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
               <option value="">Ir a sección…</option>
               {conPoligono.map((p) => <option key={p.id} value={p.id}>{p.codigo}</option>)}
             </select>
           )}
           <button type="button" onClick={locate} disabled={locating} title="Centrar el mapa en mi ubicación (GPS)" className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Mi ubicación</span></button>
-          <select value={colorBy} onChange={(e) => setColorBy(e.target.value as ColorBy)} title="Colorear las secciones por" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+          <select value={colorBy} onChange={(e) => setColorBy(e.target.value as ColorBy)} title="Colorear las secciones por" aria-label="Colorear las secciones por" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
             <option value="estado">Color: Estado</option>
             <option value="sanidad">Color: Sanidad</option>
           </select>
@@ -533,7 +533,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
         {cursor && <div className="pointer-events-none absolute bottom-3 right-3 z-[500] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{Number(cursor.lat).toFixed(5)}, {Number(cursor.lng).toFixed(5)}</div>}
       </div>
       {editErr && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{editErr}</p>}
-      {mapMsg && <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-700)]">{mapMsg}<button type="button" onClick={() => setMapMsg(null)} className="shrink-0 text-[var(--data-warning-700)]"><X className="h-4 w-4" /></button></p>}
+      {mapMsg && <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-700)]">{mapMsg}<button aria-label="Quitar" type="button" onClick={() => setMapMsg(null)} className="shrink-0 text-[var(--data-warning-700)]"><X className="h-4 w-4" /></button></p>}
       {!fullscreen && !editing && !measuring && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una sección dibujada para ver y registrar sus labores. Dibujá con al menos 3 puntos.</p>}
       {!fullscreen && editing && <p className="text-xs text-[var(--text-tertiary)]"><Edit3 className="mr-1 inline h-3 w-3" />Arrastrá los puntos azules para mover los límites; el área en hectáreas se recalcula sola. Guardá para aplicar.</p>}
       {!fullscreen && measuring && <p className="text-xs text-[var(--text-tertiary)]"><Route className="mr-1 inline h-3 w-3" />Tocá puntos en el mapa para medir distancia; con 3+ puntos también calcula el área. No crea ninguna sección.</p>}

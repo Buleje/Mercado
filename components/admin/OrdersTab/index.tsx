@@ -214,6 +214,7 @@ export default function OrdersTab() {
             <select
               value={selectedDriverFilter}
               onChange={e => setSelectedDriverFilter(e.target.value)}
+              aria-label="Filtrar por delivery"
               className="px-3 py-1.5 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--surface-raised)] outline-none focus:border-primary"
             >
               <option value="">Todos los deliverys</option>

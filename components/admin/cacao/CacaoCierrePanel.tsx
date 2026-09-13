@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, CheckCircle2, ChevronDown, Loader2, Lock, RotateCcw, ShieldCheck } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { CacaoCierrePeriodo } from "@/lib/cacao/cacao-cierre-types";
 
 const URL = "/api/admin/cacao/cierre";
@@ -29,6 +30,7 @@ function buildMonths(): MonthOpt[] {
 }
 
 export default function CacaoCierrePanel() {
+  const { prompt } = useConfirm();
   const [cierres, setCierres] = useState<CacaoCierrePeriodo[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +73,12 @@ export default function CacaoCierrePanel() {
   }
 
   async function reabrir(c: CacaoCierrePeriodo) {
-    const motivo = window.prompt(`Reabrir ${c.label}. Vuelve a admitir ediciones.\n\nMotivo (obligatorio, queda auditado):`);
+    const motivo = await prompt({
+      title: `Reabrir ${c.label}`,
+      description: "Vuelve a admitir ediciones. El motivo queda auditado.",
+      label: "Motivo",
+      required: true,
+    });
     if (!motivo || !motivo.trim()) return;
     setBusy(true); setError(null); setOkMsg(null);
     try {

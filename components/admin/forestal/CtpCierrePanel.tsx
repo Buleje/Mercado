@@ -11,6 +11,7 @@
  */
 
 import { useState } from "react";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   AlertCircle,
   CheckCircle2,
@@ -30,12 +31,19 @@ const fmtFecha = (iso: string) => {
 };
 
 export default function CtpCierrePanel({ estado }: { estado: CtpCierresState }) {
+  const { prompt } = useConfirm();
   const { cierres, error, busy } = estado;
   const [okMsg, setOkMsg] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   async function reabrir(c: CtpCierrePeriodo) {
-    const motivo = window.prompt(`Reabrir ${c.label}. Los costos ya congelados siguen congelados; el período vuelve a admitir ediciones.\n\nMotivo (obligatorio, queda auditado):`);
+    const motivo = await prompt({
+      title: `Reabrir ${c.label}`,
+      description: "Los costos ya congelados siguen congelados; el período vuelve a admitir ediciones.",
+      label: "Motivo (obligatorio, queda auditado)",
+      inputType: "textarea",
+      required: true,
+    });
     if (!motivo || !motivo.trim()) return;
     setOkMsg(null);
     const r = await estado.reabrir(c, motivo.trim());

@@ -666,7 +666,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
                     <td className="text-right font-mono tabular-nums">{x.diamMenorM?.toFixed(2) ?? "—"}</td>
                     <td className="text-right font-mono tabular-nums">{x.lengthM?.toFixed(2) ?? "—"}</td>
                     <td className="text-right font-mono tabular-nums font-bold">{x.volumeM3 != null ? fmtM3(x.volumeM3) : "—"}</td>
-                    <td className="text-right"><button type="button" onClick={() => setItems((arr) => arr.filter((_, j) => j !== i))} className="text-[var(--data-error-600)]"><Trash2 className="h-3.5 w-3.5" /></button></td>
+                    <td className="text-right"><button aria-label="Eliminar" type="button" onClick={() => setItems((arr) => arr.filter((_, j) => j !== i))} className="text-[var(--data-error-600)]"><Trash2 className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 ))}
                 <tr className="border-t-2 border-[var(--rule-base)] font-bold"><td colSpan={5} className="py-1.5 text-right">Volumen total</td><td className="text-right font-mono tabular-nums text-[var(--data-success-700)]">{fmtM3(totalVol)}</td><td></td></tr>

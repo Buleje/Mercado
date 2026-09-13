@@ -17,7 +17,8 @@ import { SectionTitle } from "@buleje/design-system";
  *  - Contraste garantizado por clases Tailwind verificadas
  */
 
-import { useEffect, useRef, useId } from "react";
+import { useRef, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { MeteringSnapshot } from "@/components/admin/unified/MeteringCard/types";
 import {
   computeTrafficLight,
@@ -140,27 +141,10 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
   const titleId = useId();
   const descId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
-
-  // Focus al montar
-  useEffect(() => {
-    closeRef.current?.focus();
-  }, []);
-
-  // Cerrar con Escape
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
-  // Bloquear scroll del body mientras está abierto
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Foco al abrir + trampa de Tab + Escape + scroll bloqueado, todo en uno
+  // (reemplaza los tres useEffect manuales que hacían lo mismo por separado).
+  useModalAccesible(dialogRef, { onCerrar: onClose });
 
   const showUpgrade = snapshot.plan === "free" || snapshot.plan === "starter";
 
@@ -175,10 +159,12 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
 
       {/* Dialog */}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
+        tabIndex={-1}
         className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
       >
         <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]">
@@ -206,7 +192,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <button
               ref={closeRef}
               onClick={onClose}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               aria-label="Cerrar modal de detalles de cuota"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5" aria-hidden="true">
@@ -236,7 +222,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+                className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 Cerrar
               </button>
@@ -244,7 +230,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
               {showUpgrade && (
                 <a
                   href={upgradeHref}
-                  className="min-h-[44px] inline-flex items-center px-4 py-2 rounded-lg bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+                  className="min-h-[44px] inline-flex items-center px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   aria-label="Mejorar plan de facturación"
                 >
                   Mejorar plan

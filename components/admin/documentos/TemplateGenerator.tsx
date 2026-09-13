@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { X, Sparkles, ChevronRight, FileText, Check, User, Search, MessageCircle } from "@buleje/design-system/icons";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { fetchTemplates, generateFromTemplate } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentTemplate } from "@/lib/types/documents";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
@@ -26,6 +28,11 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
   const [clientes, setClientes] = useState<{ nombre: string; telefono: string; documento?: string; direccion?: string }[]>([]);
   const [buscaCliente, setBuscaCliente] = useState("");
   const [telefonoCliente, setTelefonoCliente] = useState("");
+  const panelRef = useRef<HTMLDivElement>(null);
+  const tituloId = useId();
+  // Escape lo maneja el hook (y cede si hay una confirmación encima). El
+  // listener propio en `window` que convivía con éste se quitó: cerraba igual.
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   useEffect(() => {
     fetchTemplates().then((t) => { setTemplates(t); setLoading(false); }).catch(() => setLoading(false));
@@ -72,12 +79,6 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
     setTelefonoCliente(c.telefono);
   }
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   /** Al elegir una plantilla, las fechas arrancan en hoy (es lo que se pone). */
   function elegirPlantilla(t: DbDocumentTemplate) {
     setSelected(t);
@@ -97,7 +98,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
     // Validar required
     for (const f of selected.fields) {
       if (f.required && !values[f.name]) {
-        alert(`Faltan datos: ${f.label}`);
+        toast.error(`Faltan datos: ${f.label}`);
         return;
       }
     }
@@ -113,7 +114,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
       setGenerado(doc);
       onGenerated();
     } catch (e) {
-      alert("Error generando: " + (e instanceof Error ? e.message : String(e)));
+      toast.error("Error generando: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setGenerating(false);
     }
@@ -122,6 +123,11 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
       >
@@ -131,11 +137,11 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
               <Sparkles className="h-5 w-5 text-[var(--accent)]" />
             </span>
             <div>
-              <p className="text-base font-extrabold text-[var(--text-primary)]">Generador de plantillas</p>
+              <p id={tituloId} className="text-base font-extrabold text-[var(--text-primary)]">Generador de plantillas</p>
               <p className="text-xs text-[var(--text-secondary)]">Contratos, recibos, cotizaciones y acuerdos listos en 1 minuto.</p>
             </div>
           </div>
-          <button onClick={onClose} className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--rule-soft)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-slate-900">
+          <button aria-label="Cerrar" onClick={onClose} className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--rule-soft)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-slate-900">
             <X className="h-4 w-4" />
           </button>
         </header>

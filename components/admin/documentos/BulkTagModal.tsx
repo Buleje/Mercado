@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Tag, X, Loader2, Check } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { EtiquetaAutocomplete } from "./EtiquetaAutocomplete";
 
 /**
@@ -25,6 +26,9 @@ export function BulkTagModal({
   // sin que la segunda quede bloqueada esperando a que termine la primera.
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [aplicadas, setAplicadas] = useState<string[]>([]);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useModalAccesible(modalRef, { onCerrar: onClose });
 
   const apply = async (tag: string) => {
     // Sin lowercase: un chip existente ("GTF") se aplica TAL CUAL aparece en
@@ -44,13 +48,18 @@ export function BulkTagModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className="flex max-h-[85vh] w-full max-w-[26rem] flex-col overflow-visible rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Tag className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-extrabold text-[var(--text-primary)]">Etiquetar {count} documento{count === 1 ? "" : "s"}</p>
+            <p id={titleId} className="text-sm font-extrabold text-[var(--text-primary)]">Etiquetar {count} documento{count === 1 ? "" : "s"}</p>
             <p className="text-xs text-[var(--text-tertiary)]">Elegí una etiqueta existente o creá una nueva</p>
           </div>
           <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>

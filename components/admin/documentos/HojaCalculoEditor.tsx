@@ -19,6 +19,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, Download, Loader2, Printer, Save, Table } from "@buleje/design-system/icons";
 import { LoadingState } from "@buleje/design-system";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { leerXlsxConFormato, numeroALetra, type HojaFormato } from "@/lib/documentos/xlsx-formato";
 import { abrirPaquete, guardarCambios } from "@/lib/documentos/xlsx-escritura";
@@ -162,6 +163,10 @@ function EditorCargado({
   autoguardadoMs: number;
 }) {
   const editor = useEditorHoja(inicial);
+  /* Acá y no en el padre: `confirm` suelto en este componente era
+     `window.confirm` recibiendo un objeto (eliminar una hoja explotaba en el
+     `.then`). Lo atrapó tsgo tras la migración del 2026-09-12. */
+  const { confirm } = useConfirm();
   const { hojas, activa, setActiva, sucio, ejecutar, deshacer, rehacer, puede } = editor;
   const [seleccion, setSeleccion] = useState<Seleccion>({ fila: 0, columna: 0 });
   const [rango, setRango] = useState<Rango>({ ancla: { fila: 0, columna: 0 }, foco: { fila: 0, columna: 0 } });
@@ -479,19 +484,22 @@ function EditorCargado({
       }),
       eliminar: (i: number) => {
         const nombre = hojas[i]?.nombre ?? "";
-        const seguro = window.confirm(
-          `¿Eliminar la hoja "${nombre}"? Sus datos se pierden y esto no se puede deshacer. ` +
-          "Si otra hoja la usa en una fórmula, esa fórmula queda rota.",
-        );
-        if (!seguro) return;
-        void conZip(async (zip) => {
-          await eliminarHoja(zip, i);
-          editor.quitarHoja(i);
-          resetSeleccion();
+        void confirm({
+          title: `¿Eliminar la hoja "${nombre}"?`,
+          description: "Sus datos se pierden y esto no se puede deshacer. Si otra hoja la usa en una fórmula, esa fórmula queda rota.",
+          intent: "danger",
+          confirmLabel: "Sí, eliminar",
+        }).then((seguro) => {
+          if (!seguro) return;
+          void conZip(async (zip) => {
+            await eliminarHoja(zip, i);
+            editor.quitarHoja(i);
+            resetSeleccion();
+          });
         });
       },
     };
-  }, [editor, hojas, paquete, resetSeleccion, setActiva]);
+  }, [confirm, editor, hojas, paquete, resetSeleccion, setActiva]);
 
   const accionesGrilla = useMemo(() => ({
     editar: (celdas: { fila: number; columna: number; valor: string }[]) =>

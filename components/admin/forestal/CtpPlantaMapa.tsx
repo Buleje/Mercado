@@ -738,7 +738,7 @@ export default function CtpPlantaMapa({
         <span aria-hidden className="mx-0.5 hidden h-6 w-px shrink-0 bg-[var(--rule-base)] lg:block" />
         <div className="flex flex-wrap items-center gap-1.5">
           {conGeom.length > 0 && (
-            <select value="" onChange={(e) => { if (e.target.value) flyTo(e.target.value); }} title="Ir a una zona" className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+            <select value="" onChange={(e) => { if (e.target.value) flyTo(e.target.value); }} title="Ir a una zona" aria-label="Ir a una zona" className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
               <option value="">Ir a zona…</option>
               {conGeom.map((z) => <option key={z.id} value={z.id}>{z.codigo}</option>)}
             </select>
@@ -818,7 +818,7 @@ export default function CtpPlantaMapa({
         )}
       </div>
       {editErr && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{editErr}</p>}
-      {mapMsg && <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-700)]">{mapMsg}<button type="button" onClick={() => setMapMsg(null)} className="shrink-0 text-[var(--data-warning-700)]"><X className="h-4 w-4" /></button></p>}
+      {mapMsg && <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-700)]">{mapMsg}<button aria-label="Quitar" type="button" onClick={() => setMapMsg(null)} className="shrink-0 text-[var(--data-warning-700)]"><X className="h-4 w-4" /></button></p>}
       {!fullscreen && !editing && !measuring && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una zona para ver/editar su ficha. Dibujá el contorno con al menos 3 puntos.</p>}
 
       {/* Estilos de las chapitas del mapa. Van acá y no en el módulo de iconos

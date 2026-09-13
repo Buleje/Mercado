@@ -159,6 +159,7 @@ export default function RamaCarpeta({
               if (e.key === "Enter") arbol.renombrar(carpeta.id);
               if (e.key === "Escape") arbol.cancelarEdicion();
             }}
+            aria-label={`Nuevo nombre de ${carpeta.name}`}
             className="min-w-0 flex-1 rounded border border-primary bg-[var(--surface-raised)] px-1 py-0.5 text-sm text-[var(--text-primary)] outline-none"
           />
         ) : (

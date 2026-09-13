@@ -420,6 +420,13 @@ function DraggableOrderCard(props: OrderCardProps & { shake?: boolean }) {
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      /* dnd-kit pone `role="button"` en el envoltorio, pero la tarjeta adentro
+         tiene checkbox, botón de detalle y acciones: un botón que contiene
+         botones (axe 2026-09-12: 18 «nested-interactive» en Pedidos). `group`
+         conserva el foco y el arrastre con teclado sin mentir el rol. */
+      role="group"
+      aria-roledescription="tarjeta arrastrable"
+      aria-label={`Pedido de ${props.order.customer.name}`}
       className={cn(
         "outline-none touch-none",
         isDragging ? "opacity-30 cursor-grabbing" : "cursor-grab",
@@ -520,7 +527,7 @@ const KanbanColumn = memo(function KanbanColumn({
         <p className="flex-1 truncate text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] leading-none">
           {label}
         </p>
-        <span
+        <span role="img"
           className="font-mono tabular-nums text-[length:var(--ts-sm)] font-extrabold text-[var(--text-primary)] leading-none"
           aria-label={`${orders.length} pedidos en ${label}`}
         >

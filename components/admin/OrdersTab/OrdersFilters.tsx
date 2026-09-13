@@ -1,8 +1,10 @@
 "use client";
 
+import { useId, useRef } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { X, Search } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import type { OrderFilters, FiltersAction, OrderSource } from "./types";
 import { STATUS_LABELS } from "./types";
@@ -20,22 +22,33 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
     onClose();
   };
 
+  const titleId = useId();
+  const dateFromId = useId();
+  const dateToId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose });
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
       onClick={onClose}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Filtros Avanzados</CardTitle>
+            <CardTitle id={titleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Filtros Avanzados</CardTitle>
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">Afina tu búsqueda de pedidos</p>
           </div>
-          <button
+          <button aria-label="Cerrar"
             onClick={onClose}
             className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
           >
@@ -123,8 +136,9 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
           {/* Date range */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha desde</p>
+              <label htmlFor={dateFromId} className="block text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha desde</label>
               <input
+                id={dateFromId}
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => dispatch({ type: "SET_DATE_FROM", value: e.target.value })}
@@ -132,8 +146,9 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
               />
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha hasta</p>
+              <label htmlFor={dateToId} className="block text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha hasta</label>
               <input
+                id={dateToId}
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => dispatch({ type: "SET_DATE_TO", value: e.target.value })}

@@ -243,7 +243,7 @@ export default function FiadoFormModal({
                             className="object-cover rounded-xl border border-[var(--rule-base)] "
                             unoptimized
                           />
-                          <button
+                          <button aria-label="Quitar"
                             type="button"
                             onClick={() => setDniPhoto(null)}
                             className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-[var(--data-error-500)] text-white rounded-full flex items-center justify-center text-xs hover:bg-[var(--data-error-500)] transition-colors"

@@ -24,8 +24,9 @@ import { csrfHeaders } from "@/lib/csrf-client";
  * autónomo — gestiona su propio polling, estado y modales.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useId, useRef } from "react";
 import { AlertTriangle, CheckCircle2, XCircle, Loader2, Clock } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 interface PendingApproval {
   id: string;
@@ -53,6 +54,15 @@ export default function HITLApprovalsBanner() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const detalleRef = useRef<HTMLDivElement>(null);
+  const detalleTituloId = useId();
+  const resolvingRef = useRef(resolving);
+  useEffect(() => { resolvingRef.current = resolving; }, [resolving]);
+  const cerrarDetalle = useCallback(() => {
+    if (resolvingRef.current) return;
+    setSelected(null);
+  }, []);
+  useModalAccesible(detalleRef, { onCerrar: cerrarDetalle, activo: !!selected });
 
   // ── Fetch pendientes ───────────────────────────────────────────────────────
   const fetchApprovals = useCallback(async () => {
@@ -184,17 +194,22 @@ export default function HITLApprovalsBanner() {
       {selected && (
         <div
           className="modal-backdrop flex items-center justify-center p-4"
-          onClick={(e) => e.target === e.currentTarget && !resolving && setSelected(null)}
-          role="dialog"
-          aria-modal="true"
+          onClick={(e) => e.target === e.currentTarget && cerrarDetalle()}
         >
-          <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl max-w-lg w-full p-6">
+          <div
+            ref={detalleRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={detalleTituloId}
+            tabIndex={-1}
+            className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl max-w-lg w-full p-6"
+          >
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
               </div>
               <div className="flex-1">
-                <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">
+                <SectionTitle id={detalleTituloId} className="text-lg font-bold text-[var(--text-primary)]">
                   Aprobar acción del agente
                 </SectionTitle>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">

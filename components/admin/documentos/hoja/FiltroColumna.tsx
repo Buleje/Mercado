@@ -9,9 +9,10 @@
  * un problema clásico de las planillas.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Check, Search, X } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { valoresDeColumna } from "@/lib/documentos/hoja-analisis";
 import type { CeldaHoja } from "@/lib/documentos/xlsx-formato";
 
@@ -51,13 +52,20 @@ export default function FiltroColumna({
 
   const todosElegidos = elegidos.size === valores.length;
 
+  // Se monta/desmonta desde el padre (no hay prop `open`): el hook está
+  // siempre activo mientras el componente vive.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onMouseDown={onCerrar}>
       <div
+        ref={panelRef}
         onMouseDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-label={`Filtrar la columna ${etiqueta}`}
-        className="flex max-h-[80vh] w-full max-w-[24rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+        tabIndex={-1}
+        className="flex max-h-[80vh] w-full max-w-[24rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)] outline-none"
       >
         <div className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-4 py-3">
           <CardTitle as="h2">Filtrar por la columna {etiqueta}</CardTitle>

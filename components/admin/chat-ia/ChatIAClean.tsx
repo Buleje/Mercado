@@ -1180,7 +1180,7 @@ function processInline(text: string): string {
 
 function StreamingDots() {
   return (
-    <div className="flex items-center gap-1 py-2" aria-label="Generando respuesta">
+    <div className="flex items-center gap-1 py-2" role="status" aria-label="Generando respuesta">
       {[0, 1, 2].map((i) => (
         <span
           key={i}

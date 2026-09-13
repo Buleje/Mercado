@@ -90,6 +90,7 @@ export default function CtpConsumosPicker({
                     type="number" step="0.0001" min="0" max={c.disponible}
                     value={c.volumeM3}
                     onChange={(e) => onChangeVolume(c.woodEntryId, e.target.value)}
+                    aria-label={`Volumen a consumir de ${c.code ?? "la guía"} en m³`}
                     className={`h-9 w-28 shrink-0 rounded-xl border bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none transition-colors focus:ring-1 ${overDisponible ? "border-[var(--data-error-500)] focus:border-[var(--data-error-600)] focus:ring-[var(--data-error-600)]/20" : "border-[var(--rule-base)] focus:border-[var(--data-success-600)] focus:ring-[var(--data-success-600)]/20"}`}
                   />
                   <button type="button" onClick={() => onRemove(c.woodEntryId)} aria-label={`Quitar ${c.code ?? "guía"}`} className="shrink-0 rounded-xl p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)]">

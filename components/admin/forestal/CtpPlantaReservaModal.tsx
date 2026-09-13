@@ -150,6 +150,9 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
                   <tr
                     key={f.uid}
                     onClick={() => alternar(f.uid)}
+                    tabIndex={0}
+                    aria-label={`Elegir ${f.codigo ?? `corrida #${f.lineNo}`}`}
+                    onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternar(f.uid); } }}
                     className={`cursor-pointer border-b border-[var(--rule-soft)] transition ${on ? "bg-primary/10 dark:bg-[var(--accent)]/12" : "hover:bg-[var(--surface-sunken)]"}`}
                   >
                     <td className="py-2">

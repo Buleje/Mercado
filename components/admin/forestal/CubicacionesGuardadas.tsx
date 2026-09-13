@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Calculator, Copy, FileText, Loader2, Search, Table, Trash2, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { filtrarCubicaciones, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { m3DesdePt } from "@/lib/forestal/cubicacion";
@@ -32,6 +33,7 @@ export default function CubicacionesGuardadas({
   /** Cambia cuando se guardó algo nuevo, para refrescar la lista. */
   recargarToken?: number;
 }) {
+  const { confirm } = useConfirm();
   const [lista, setLista] = useState<CubicacionRegistro[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +74,12 @@ export default function CubicacionesGuardadas({
   useEffect(() => { void cargar(); }, [cargar, recargarToken]);
 
   const borrar = async (c: CubicacionRegistro) => {
-    if (!window.confirm(`¿Borrar la cubicación "${c.nombre}"? No se puede deshacer.`)) return;
+    if (!(await confirm({
+      title: `¿Borrar la cubicación "${c.nombre}"?`,
+      description: "No se puede deshacer.",
+      intent: "danger",
+      confirmLabel: "Sí, borrar",
+    }))) return;
     setBorrando(c.id);
     try {
       const r = await fetch(`/api/admin/forestal/cubicaciones?id=${encodeURIComponent(c.id)}`, {

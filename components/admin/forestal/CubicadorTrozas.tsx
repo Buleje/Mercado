@@ -609,9 +609,9 @@ export default function CubicadorTrozas() {
                     }`}
                   >
                     <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{i + 1}</td>
-                    <td className="px-3 py-2"><CeldaNum value={r.d1} onChange={(v) => editar(r.id, "d1", v)} /></td>
-                    <td className="px-3 py-2"><CeldaNum value={r.d2} onChange={(v) => editar(r.id, "d2", v)} /></td>
-                    <td className="px-3 py-2"><CeldaNum value={r.largo} onChange={(v) => editar(r.id, "largo", v)} /></td>
+                    <td className="px-3 py-2"><CeldaNum value={r.d1} onChange={(v) => editar(r.id, "d1", v)} etiqueta={`Diámetro 1 de la troza ${i + 1}`} /></td>
+                    <td className="px-3 py-2"><CeldaNum value={r.d2} onChange={(v) => editar(r.id, "d2", v)} etiqueta={`Diámetro 2 de la troza ${i + 1}`} /></td>
+                    <td className="px-3 py-2"><CeldaNum value={r.largo} onChange={(v) => editar(r.id, "largo", v)} etiqueta={`Largo de la troza ${i + 1}`} /></td>
                     {colsVisibles.especie && <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie ?? "—"}</td>}
                     {colsVisibles.m3 && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(r.m3)}</td>}
                     <td className="px-3 py-2">
@@ -766,7 +766,7 @@ function CampoNum({ label, value, onChange, placeholder }: { label: string; valu
  * CubicadorMadera.tsx — cada cubicador define su propia celda, pero el bug y
  * la solución son los mismos).
  */
-function CeldaNum({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function CeldaNum({ value, onChange, etiqueta }: { value: number; onChange: (v: number) => void; etiqueta?: string }) {
   const [texto, setTexto] = useState(String(value));
   const enfocado = useRef(false);
   useEffect(() => { if (!enfocado.current) setTexto(String(value)); }, [value]);
@@ -776,6 +776,7 @@ function CeldaNum({ value, onChange }: { value: number; onChange: (v: number) =>
       type="text"
       inputMode="decimal"
       autoComplete="off"
+      aria-label={etiqueta}
       value={texto}
       onFocus={(e) => { enfocado.current = true; e.currentTarget.select(); }}
       onBlur={() => { enfocado.current = false; setTexto(String(value)); }}

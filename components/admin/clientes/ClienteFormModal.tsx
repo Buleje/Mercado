@@ -695,6 +695,8 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                   <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Activar credito</span>
                   <button
                     type="button"
+                    aria-label="Activar credito"
+                    aria-pressed={form.creditoActivo}
                     onClick={() => set('creditoActivo', !form.creditoActivo)}
                     className={cn(
                       "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
@@ -732,6 +734,8 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                       <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Alertas WhatsApp (recordatorios)</span>
                       <button
                         type="button"
+                        aria-label="Alertas WhatsApp (recordatorios)"
+                        aria-pressed={form.alertasWhatsapp}
                         onClick={() => set('alertasWhatsapp', !form.alertasWhatsapp)}
                         className={cn(
                           "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",

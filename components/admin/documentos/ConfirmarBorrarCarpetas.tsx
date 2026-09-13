@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Trash2, X, FolderX, FileWarning, Loader2, Undo2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 export interface BorradoCarpetas {
   /** Llevarse los documentos de adentro a la papelera. */
@@ -44,12 +45,9 @@ export function ConfirmarBorrarCarpetas({
 }) {
   const [incluirSubcarpetas, setIncluirSubcarpetas] = useState(true);
   const [ocupado, setOcupado] = useState<"papelera" | "sueltos" | null>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !ocupado) onCancelar(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancelar, ocupado]);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const cerrar = useCallback(() => { if (!ocupado) onCancelar(); }, [ocupado, onCancelar]);
+  useModalAccesible(modalRef, { onCerrar: cerrar });
 
   const conSub = subcarpetas > 0 && incluirSubcarpetas;
   const documentos = documentosDirectos + (conSub ? documentosEnSubcarpetas : 0);
@@ -71,13 +69,15 @@ export function ConfirmarBorrarCarpetas({
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4"
-      onClick={() => { if (!ocupado) onCancelar(); }}
+      onClick={cerrar}
       role="presentation"
     >
       <div
+        ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-label={`Eliminar ${nombres.length} carpeta(s)`}
+        tabIndex={-1}
         className="w-full max-w-[34rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >

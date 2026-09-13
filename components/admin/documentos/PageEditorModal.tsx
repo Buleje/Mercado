@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, RotateCw, Trash2, ChevronLeft, ChevronRight, Loader2, Save, FileText } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { RotateCw, Trash2, ChevronLeft, ChevronRight, Loader2, Save, FileText } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { fetchPageCount, editPages } from "@/hooks/use-documents";
 import type { DbDocument } from "@/lib/types/documents";
 
@@ -53,48 +53,14 @@ export function PageEditorModal({ doc, onClose, onDone }: { doc: DbDocument; onC
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="flex max-h-[90vh] w-full max-w-[46rem] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[var(--rule-base)] p-4">
-          <CardTitle as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><FileText className="h-5 w-5 text-primary" /> Editar páginas</CardTitle>
-          <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4">
-          <p className="mb-3 text-xs text-[var(--text-secondary)]">Reordená con ‹ ›, rotá o eliminá páginas. Se guarda como una nueva versión de <span className="font-semibold">{doc.name}</span>.</p>
-          {loading ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando páginas…</div>
-          ) : pages.length === 0 ? (
-            <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">No quedan páginas. Agregá al menos una o cancelá.</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {pages.map((pg, i) => (
-                <div key={`${pg.origIndex}-${i}`} className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-                  <div className="relative aspect-[3/4] overflow-hidden bg-[var(--surface-raised)]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/api/admin/documents/${doc.id}/thumbnail?page=${pg.origIndex + 1}`}
-                      alt={`Página ${pg.origIndex + 1}`}
-                      loading="lazy"
-                      className="h-full w-full object-contain transition-transform"
-                      style={{ transform: `rotate(${pg.rotate}deg)` }}
-                    />
-                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 text-[length:var(--ts-2xs,11px)] font-bold text-white tabular-nums">{i + 1}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-0.5 p-1.5">
-                    <button onClick={() => move(i, -1)} disabled={i === 0} className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-primary disabled:opacity-30" aria-label="Mover izquierda"><ChevronLeft className="h-4 w-4" /></button>
-                    <button onClick={() => rotate(i)} className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-primary" aria-label="Rotar"><RotateCw className="h-4 w-4" /></button>
-                    <button onClick={() => remove(i)} className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--data-error-700)]" aria-label="Eliminar página"><Trash2 className="h-4 w-4" /></button>
-                    <button onClick={() => move(i, 1)} disabled={i === pages.length - 1} className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-primary disabled:opacity-30" aria-label="Mover derecha"><ChevronRight className="h-4 w-4" /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {error && <p className="mt-3 text-xs font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
-        </div>
-
-        <div className="flex items-center justify-between border-t border-[var(--rule-base)] p-4">
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Editar páginas"
+      icon={FileText}
+      variant="wide"
+      footer={
+        <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-[var(--text-tertiary)]">{pages.length} página(s)</span>
           <div className="flex gap-2">
             <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
@@ -104,7 +70,41 @@ export function PageEditorModal({ doc, onClose, onDone }: { doc: DbDocument; onC
             </button>
           </div>
         </div>
+      }
+    >
+      <div className={MODAL_BODY}>
+        <p className="mb-3 text-xs text-[var(--text-secondary)]">Reordena con ‹ ›, rota o elimina páginas. Se guarda como una nueva versión de <span className="font-semibold">{doc.name}</span>.</p>
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando páginas…</div>
+        ) : pages.length === 0 ? (
+          <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">No quedan páginas. Agregá al menos una o cancelá.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {pages.map((pg, i) => (
+              <div key={`${pg.origIndex}-${i}`} className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+                <div className="relative aspect-[3/4] overflow-hidden bg-[var(--surface-raised)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/api/admin/documents/${doc.id}/thumbnail?page=${pg.origIndex + 1}`}
+                    alt={`Página ${pg.origIndex + 1}`}
+                    loading="lazy"
+                    className="h-full w-full object-contain transition-transform"
+                    style={{ transform: `rotate(${pg.rotate}deg)` }}
+                  />
+                  <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 text-[length:var(--ts-2xs,11px)] font-bold text-white tabular-nums">{i + 1}</span>
+                </div>
+                <div className="flex items-center justify-between gap-0.5 p-1.5">
+                  <button onClick={() => move(i, -1)} disabled={i === 0} className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-primary disabled:opacity-30" aria-label="Mover izquierda"><ChevronLeft className="h-4 w-4" /></button>
+                  <button onClick={() => rotate(i)} className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-primary" aria-label="Rotar"><RotateCw className="h-4 w-4" /></button>
+                  <button onClick={() => remove(i)} className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--data-error-700)]" aria-label="Eliminar página"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => move(i, 1)} disabled={i === pages.length - 1} className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-primary disabled:opacity-30" aria-label="Mover derecha"><ChevronRight className="h-4 w-4" /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {error && <p className="mt-3 text-xs font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
       </div>
-    </div>
+    </AdminModal>
   );
 }

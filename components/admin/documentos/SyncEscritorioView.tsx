@@ -27,6 +27,7 @@ import {
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import CarpetaLocalPanel from "./CarpetaLocalPanel";
 
@@ -111,6 +112,7 @@ export default function SyncEscritorioView({
   const [claveNueva, setClaveNueva] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
   const [copiado, setCopiado] = useState<string | null>(null);
+  const { confirm } = useConfirm();
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -158,7 +160,12 @@ export default function SyncEscritorioView({
   }
 
   async function revocar(id: string) {
-    if (!confirm("¿Revocar esta clave?\n\nEl agente que la use va a dejar de sincronizar hasta que le pongas una nueva.")) return;
+    if (!(await confirm({
+      title: "¿Revocar esta clave?",
+      description: "El agente que la use va a dejar de sincronizar hasta que le pongas una nueva.",
+      intent: "danger",
+      confirmLabel: "Sí, revocar",
+    }))) return;
     await fetch(`${URL_SYNC}?keyId=${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: csrfHeaders({}),

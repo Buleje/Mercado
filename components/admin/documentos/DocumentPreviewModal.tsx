@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
+import { toast } from "sonner";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { esHojaEditable, esHojaLegible } from "@/lib/documentos/hoja-calculo";
 import { esTextoEditable, esTextoLegible } from "@/lib/documentos/texto-docx";
 import { esPresentacion } from "@/lib/documentos/presentacion";
@@ -112,6 +115,12 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   const [loading, setLoading] = useState(true);
   /** Mandar ESTE archivo por WhatsApp sin volver a la grilla. */
   const [enviando, setEnviando] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  // El Escape ya lo maneja el listener global de abajo — acá sólo se pide el
+  // foco atrapado y la semántica de diálogo.
+  // `activo`: el primer render no tiene `doc` y devuelve otro árbol sin el ref.
+  useModalAccesible(panelRef, { onCerrar: onClose, cerrarConEscape: false, activo: !!doc });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -209,7 +218,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   if (!doc) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-        <div className="bg-[var(--surface-raised)] rounded-3xl p-8 text-sm text-[var(--text-tertiary)]">{loading ? "Cargando…" : "No disponible"}</div>
+        <div role="dialog" aria-modal="true" aria-label={loading ? "Cargando" : "No disponible"} className="bg-[var(--surface-raised)] rounded-3xl p-8 text-sm text-[var(--text-tertiary)]">{loading ? "Cargando…" : "No disponible"}</div>
       </div>
     );
   }
@@ -235,6 +244,11 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
           grandes, y la barra de herramientas de la derecha necesita su lugar
           sin comerle ancho al documento. */}
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className="flex h-[96vh] w-full max-w-[1800px] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
@@ -246,7 +260,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
               <FileText className="h-5 w-5 text-[var(--text-secondary)]" />
             </span>
             <div className="min-w-0">
-              <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
+              <p id={titleId} className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 {/* Dónde vive el archivo: se ve sin cambiar de pestaña y se
                     puede mover desde acá mismo. */}
@@ -588,6 +602,7 @@ function VersionsTab({
         <p className="text-xs text-[var(--text-tertiary)] mb-3">Reemplaza el archivo activo y guarda la versión actual como histórico.</p>
         <input
           type="text"
+          aria-label="Nota del cambio"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Nota del cambio (opcional)…"
@@ -825,6 +840,7 @@ function RelatedSection({ doc, allDocs, onChanged }: { doc: DbDocument; allDocs:
       {adding ? (
         <select
           autoFocus
+          aria-label="Elegir documento para vincular"
           defaultValue=""
           onChange={(e) => { if (e.target.value) toggle(e.target.value, true); }}
           disabled={busy}
@@ -1078,6 +1094,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
         <div className="flex items-center gap-2 flex-wrap">
           <input
             type="date"
+            aria-label="Fecha de vencimiento"
             defaultValue={expiryValue}
             onChange={(e) => save("expiry", { expiresAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
             className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
@@ -1160,6 +1177,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
   const [usePwd, setUsePwd] = useState(false);
   const [creating, setCreating] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const { prompt } = useConfirm();
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -1186,7 +1204,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
       setTimeout(() => setCopied(null), 1500);
     } catch {
       // fallback
-      window.prompt("Copiá este link:", url);
+      await prompt({ title: "Copia este link", label: "Link", defaultValue: url, inputType: "text" });
     }
   }
 
@@ -1362,7 +1380,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
       setResult({ versionNumber: r.version.versionNumber, sha: r.originalSha256 });
       onSigned();
     } catch (e) {
-      alert("Error al firmar: " + (e instanceof Error ? e.message : String(e)));
+      toast.error("Error al firmar: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setSigning(false);
     }

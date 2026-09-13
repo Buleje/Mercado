@@ -11,10 +11,11 @@
  * un panel que empuja la vista hacia abajo cada vez que se pregunta algo.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Sparkles, Send, Loader2, X as XIcon } from "@buleje/design-system/icons";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 const EJEMPLOS = [
   "¿Cuánto queda de cada especie?",
@@ -30,6 +31,9 @@ export default function CtpAsistente() {
   const [answer, setAnswer] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const cerrar = useCallback(() => setOpen(false), []);
+  useModalAccesible(panelRef, { onCerrar: cerrar, activo: open });
 
   // No mostrar un botón para una función rota: probamos si hay IA configurada.
   useEffect(() => {
@@ -88,8 +92,10 @@ export default function CtpAsistente() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
+            ref={panelRef}
             role="dialog"
             aria-label="Asistente del Libro"
+            tabIndex={-1}
             className="absolute right-0 z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]"
           >
             <div className="mb-3 flex items-center justify-between">

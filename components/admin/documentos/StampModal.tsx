@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { X, Stamp, Loader2 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { Stamp, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { stampDoc } from "@/hooks/use-documents";
 import type { DbDocument } from "@/lib/types/documents";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 /**
  * Modal para aplicar un sello / marca de agua sobre un PDF. Presets client-safe
@@ -43,14 +43,23 @@ export function StampModal({ doc, onClose, onDone }: { doc: DbDocument; onClose:
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-[28rem] rounded-2xl bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex items-center justify-between">
-          <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
-            <Stamp className="h-5 w-5 text-primary" /> Poner sello
-          </CardTitle>
-          <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Poner sello"
+      icon={Stamp}
+      variant="default"
+      footer={
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button onClick={apply} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-10 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-60">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Stamp className="h-4 w-4" />}
+            {busy ? "Aplicando…" : "Aplicar sello"}
+          </button>
         </div>
+      }
+    >
+      <div className={MODAL_BODY}>
         <p className="mb-3 text-xs text-[var(--text-secondary)]">
           Se estampa una marca de agua diagonal en todas las páginas de <span className="font-semibold">{doc.name}</span> y se guarda como una nueva versión.
         </p>
@@ -83,15 +92,7 @@ export function StampModal({ doc, onClose, onDone }: { doc: DbDocument; onClose:
         </label>
 
         {error && <p className="mt-2 text-xs font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
-
-        <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button onClick={apply} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-10 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-60">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Stamp className="h-4 w-4" />}
-            {busy ? "Aplicando…" : "Aplicar sello"}
-          </button>
-        </div>
       </div>
-    </div>
+    </AdminModal>
   );
 }

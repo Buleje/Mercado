@@ -28,6 +28,7 @@ import {
   type TipoMov,
 } from "@/lib/forestal/cuenta-corriente";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Flete } from "@/lib/forestal/fletes";
 import { Btn, I, IconAction, TablaSkeleton } from "./ctp-shared";
@@ -37,6 +38,7 @@ const fecha = (iso: string) => new Date(iso).toLocaleDateString("es-PE", { day: 
 const hoy = () => new Date().toISOString().slice(0, 10);
 
 export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
+  const { confirm } = useConfirm();
   const dir = useDirectorioForestal();
   const [movs, setMovs] = useState<MovimientoCuenta[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -104,7 +106,7 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
   }
 
   async function borrar(id: string) {
-    if (!window.confirm("¿Borrar el movimiento? El saldo se recalcula solo.")) return;
+    if (!(await confirm({ title: "¿Borrar el movimiento?", description: "El saldo se recalcula solo.", intent: "danger", confirmLabel: "Sí, borrar" }))) return;
     setOcupado(id);
     try {
       const r = await fetch(`/api/admin/forestal/cuenta?id=${encodeURIComponent(id)}`, {

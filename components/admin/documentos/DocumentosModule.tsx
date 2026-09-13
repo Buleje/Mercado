@@ -19,6 +19,8 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import {
   Upload, Search, Grid3x3, List, FolderArchive,
@@ -302,6 +304,7 @@ const SIDEBAR_MAX_W = 400;
 const SIDEBAR_DEFAULT_W = 240;
 
 export default function DocumentosModule() {
+  const { confirm, prompt } = useConfirm();
   // Vista (grilla/lista), ancho de sidebar y KPIs: preferencias por-dispositivo,
   // no por-tenant — cada persona que abre el drive en su compu puede querer
   // algo distinto. Los KPIs arrancan OCULTOS (Brandon 2026-08-30): el resumen
@@ -927,10 +930,17 @@ export default function DocumentosModule() {
       // Duplicados: mismo nombre base que algo ya subido → avisar ANTES.
       const base = (n: string) => n.replace(/\.[^.]+$/, "").trim().toLowerCase();
       const existentes = new Set(documents.map((d) => base(d.name)));
-      const aSubir = arr.filter((f) => {
-        if (!existentes.has(base(f.name))) return true;
-        return window.confirm(`"${f.name}" ya existe en el drive. ¿Subirlo igual? Quedará duplicado.`);
-      });
+      const aSubir: File[] = [];
+      for (const f of arr) {
+        if (!existentes.has(base(f.name))) { aSubir.push(f); continue; }
+        const seguir = await confirm({
+          title: `"${f.name}" ya existe en el drive`,
+          description: "¿Subirlo igual? Quedará duplicado.",
+          intent: "warning",
+          confirmLabel: "Sí, subir igual",
+        });
+        if (seguir) aSubir.push(f);
+      }
       if (aSubir.length === 0) return;
       setUploadProgress({ done: 0, total: aSubir.length });
       setEstadoSubida(new Map(aSubir.map((f) => [f.name, { estado: "en-cola" as EstadoArchivo }])));
@@ -958,7 +968,7 @@ export default function DocumentosModule() {
         }, 2500);
       }
     },
-    [upload, activeFolderId, documents]
+    [upload, activeFolderId, documents, confirm]
   );
 
   const onDrop = useCallback(
@@ -1018,7 +1028,11 @@ export default function DocumentosModule() {
   };
   const bulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`¿Eliminar ${selectedIds.size} documento(s)?`)) return;
+    if (!(await confirm({
+      title: `¿Eliminar ${selectedIds.size} documento(s)?`,
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
     await correrLote(() => bulk("delete", Array.from(selectedIds)));
   };
   const bulkFavorite = async (fav: boolean) => {
@@ -1107,15 +1121,15 @@ export default function DocumentosModule() {
         return d && (d.mimeType === "application/pdf" || d.mimeType.startsWith("image/"));
       });
       if (ids.length < 2) {
-        alert("Elegí al menos 2 PDFs o imágenes para combinar.");
+        toast.error("Elige al menos 2 PDFs o imágenes para combinar.");
         return;
       }
       const res = await mergeDocs(ids);
       clearSelection();
       await refresh();
-      if (res.skipped.length) alert(`Combinado en ${res.pageCount} páginas. Se saltaron ${res.skipped.length} archivo(s) no compatibles.`);
+      if (res.skipped.length) toast.info(`Combinado en ${res.pageCount} páginas. Se saltaron ${res.skipped.length} archivo(s) no compatibles.`);
     } catch (err) {
-      alert("No se pudo combinar: " + (err instanceof Error ? err.message.slice(0, 120) : "error"));
+      toast.error("No se pudo combinar: " + (err instanceof Error ? err.message.slice(0, 120) : "error"));
     } finally {
       setMerging(false);
     }
@@ -1127,19 +1141,22 @@ export default function DocumentosModule() {
       await rotateDoc(doc.id, 90);
       await refresh();
     } catch (err) {
-      alert("No se pudo rotar: " + (err instanceof Error ? err.message.slice(0, 120) : "error"));
+      toast.error("No se pudo rotar: " + (err instanceof Error ? err.message.slice(0, 120) : "error"));
     }
   };
 
   // Dividir un PDF en un documento por página.
   const handleSplit = async (doc: DbDocument) => {
-    if (!confirm(`¿Dividir "${doc.name}" en un documento por página?`)) return;
+    if (!(await confirm({
+      title: `¿Dividir "${doc.name}" en un documento por página?`,
+      confirmLabel: "Sí, dividir",
+    }))) return;
     try {
       const res = await splitDoc(doc.id);
       await refresh();
-      alert(`Listo: se crearon ${res.count} documento(s), uno por página.`);
+      toast.success(`Listo: se crearon ${res.count} documento(s), uno por página.`);
     } catch (err) {
-      alert("No se pudo dividir: " + (err instanceof Error ? err.message.slice(0, 120) : "error"));
+      toast.error("No se pudo dividir: " + (err instanceof Error ? err.message.slice(0, 120) : "error"));
     }
   };
 
@@ -1229,7 +1246,7 @@ export default function DocumentosModule() {
       document.body.removeChild(a);
     } catch (e) {
       console.error(e);
-      alert("No se pudo generar el link de descarga.");
+      toast.error("No se pudo generar el link de descarga.");
     }
   };
 
@@ -1673,7 +1690,7 @@ export default function DocumentosModule() {
                 placeholder="Nombre de la carpeta…"
                 className="flex-1 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-xs outline-none focus:border-primary"
               />
-              <button onClick={handleCreateFolder} className="px-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark"><Check className="h-3 w-3" /></button>
+              <button aria-label="Confirmar" onClick={handleCreateFolder} className="px-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark"><Check className="h-3 w-3" /></button>
             </div>
           )}
 
@@ -1845,7 +1862,7 @@ export default function DocumentosModule() {
                         placeholder="Subcarpeta…"
                         className="flex-1 min-w-0 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-xs outline-none focus:border-primary"
                       />
-                      <button onClick={handleCreateFolder} className="px-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark shrink-0"><Check className="h-3 w-3" /></button>
+                      <button aria-label="Confirmar" onClick={handleCreateFolder} className="px-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark shrink-0"><Check className="h-3 w-3" /></button>
                     </div>
                   )}
                 </li>
@@ -1876,7 +1893,7 @@ export default function DocumentosModule() {
                     </span>
                   </button>
                   <button onClick={() => setSmartModal(sf)} className="px-1 text-[var(--text-tertiary)] opacity-0 group-hover/sf:opacity-100 hover:text-primary" aria-label="Editar" title="Editar"><Pencil className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => { if (confirm(`¿Borrar la carpeta inteligente "${sf.name}"?`)) { persistSmart(smartFolders.filter((x) => x.id !== sf.id)); if (activeSmartId === sf.id) { setActiveSmartId(null); setFilterMode("all"); } } }} className="px-1 text-[var(--text-tertiary)] opacity-0 group-hover/sf:opacity-100 hover:text-[var(--data-error-700)]" aria-label="Borrar" title="Borrar"><Trash2 className="h-3.5 w-3.5" /></button>
+                  <button onClick={async () => { if (await confirm({ title: `¿Borrar la carpeta inteligente "${sf.name}"?`, intent: "danger", confirmLabel: "Sí, borrar" })) { persistSmart(smartFolders.filter((x) => x.id !== sf.id)); if (activeSmartId === sf.id) { setActiveSmartId(null); setFilterMode("all"); } } }} className="px-1 text-[var(--text-tertiary)] opacity-0 group-hover/sf:opacity-100 hover:text-[var(--data-error-700)]" aria-label="Borrar" title="Borrar"><Trash2 className="h-3.5 w-3.5" /></button>
                 </li>
               );
             })}
@@ -2413,7 +2430,7 @@ export default function DocumentosModule() {
                   onWhatsApp={() => setWhatsappDoc([doc])}
                   onSetStatus={(s) => patch(doc.id, { status: s })}
                   onRemove={async () => {
-                    if (!confirm(`¿Eliminar "${doc.name}"?`)) return;
+                    if (!(await confirm({ title: `¿Eliminar "${doc.name}"?`, intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
                     // Acá había un `patch(doc.id, {})` "para calentar el
                     // camino": un PATCH sin campos que el servidor rechaza, y
                     // que reventaba el borrado con un error en pantalla antes
@@ -2443,6 +2460,7 @@ export default function DocumentosModule() {
                     <th className="text-left px-3 py-3 w-10">
                       <input
                         type="checkbox"
+                        aria-label="Seleccionar todos"
                         checked={selectedIds.size > 0 && selectedIds.size === displayDocs.length}
                         onChange={(e) => (e.target.checked ? selectAll() : clearSelection())}
                         className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
@@ -2499,6 +2517,7 @@ export default function DocumentosModule() {
                         <td className="px-3 py-3">
                           <input
                             type="checkbox"
+                            aria-label={`Seleccionar ${doc.name}`}
                             checked={selectedIds.has(doc.id)}
                             onChange={() => toggleSelect(doc.id)}
                             className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
@@ -2597,7 +2616,7 @@ export default function DocumentosModule() {
                             isPdf={doc.mimeType === "application/pdf"}
                             onDownload={() => handleDownload(doc)}
                             onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
-                            onDelete={() => { if (confirm(`¿Eliminar "${doc.name}"?`)) bulk("delete", [doc.id]); }}
+                            onDelete={async () => { if (await confirm({ title: `¿Eliminar "${doc.name}"?`, intent: "danger", confirmLabel: "Sí, eliminar" })) bulk("delete", [doc.id]); }}
                           />
                         </td>
                       </tr>
@@ -2673,15 +2692,20 @@ export default function DocumentosModule() {
               onSetStatus: (s: string) => patch(preview.id, { status: s }),
               onToggleFav: () => patch(preview.id, { favorite: !preview.favorite }),
               onPrint: () => window.open(`/api/admin/documents/${preview.id}/raw`, "_blank", "noopener"),
-              onRename: () => {
-                const nuevo = prompt("Nuevo nombre del archivo:", preview.name);
+              onRename: async () => {
+                const nuevo = await prompt({ title: "Nuevo nombre del archivo", label: "Nombre", defaultValue: preview.name, inputType: "text" });
                 if (nuevo && nuevo.trim() && nuevo.trim() !== preview.name) {
                   patch(preview.id, { name: nuevo.trim() });
                 }
               },
               onTag: () => setTagDocId(preview.id),
-              onDelete: () => {
-                if (!confirm(`¿Eliminar "${preview.name}"?\n\nVa a la papelera: se puede restaurar.`)) return;
+              onDelete: async () => {
+                if (!(await confirm({
+                  title: `¿Eliminar "${preview.name}"?`,
+                  description: "Va a la papelera: se puede restaurar.",
+                  intent: "danger",
+                  confirmLabel: "Sí, eliminar",
+                }))) return;
                 // Igual que al borrar varios: se pasa al siguiente en vez de
                 // cerrar. Cerrar te sacaba de la carpeta y había que volver a
                 // entrar para seguir limpiando.
@@ -3251,6 +3275,7 @@ function DocCard({
         {isRenaming ? (
           <input
             type="text"
+            aria-label={`Renombrar ${doc.name}`}
             value={renameValue}
             onChange={(e) => onRenameChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") onCommitRename(); if (e.key === "Escape") onCancelRename(); }}

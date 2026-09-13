@@ -232,7 +232,7 @@ export default function CacaoInventario() {
           Cacao seco disponible, valorizado a costo y a precio internacional en vivo.
         </p>
         <div className="flex items-center gap-2">
-          <button
+          <button aria-label="Actualizar"
             type="button"
             onClick={load}
             disabled={loading}

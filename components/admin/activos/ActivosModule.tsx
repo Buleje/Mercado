@@ -270,7 +270,7 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onC
   return (
     <div className="flex flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-md)]">
       <div className="flex items-start gap-3">
-        <button type="button" onClick={onDetail} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2} /></button>
+        <button type="button" onClick={onDetail} aria-label={`Ver detalle de ${asset.name}`} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2} /></button>
         <div className="min-w-0 flex-1">
           <button type="button" onClick={onDetail} className="block truncate text-base font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)]">{asset.name}</button>
           <p className="text-xs font-medium text-[var(--text-tertiary)]">{typeLabel(asset.type)}{asset.plate ? ` · ${asset.plate}` : ""}</p>
@@ -644,7 +644,7 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
               </div>
               <div className="mt-2 flex gap-1.5">
                 <button type="button" onClick={() => complete(m)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary/10 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:brightness-95"><CheckCircle className="h-3.5 w-3.5" /> Marcar hecho</button>
-                <button type="button" onClick={() => del(m)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-600)]"><X className="h-3.5 w-3.5" /></button>
+                <button type="button" onClick={() => del(m)} aria-label={`Eliminar mantenimiento: ${m.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-600)]"><X className="h-3.5 w-3.5" /></button>
               </div>
             </li>
           ))}</ul>}

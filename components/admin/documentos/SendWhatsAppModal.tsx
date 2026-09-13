@@ -22,7 +22,8 @@
  *     puede adjuntar (archivos enormes) y para pedir una firma, que ES un link.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   MessageCircle, X, Search, User, Link2, Copy, Check, Send, Loader2, PenLine, FileWarning,
   Paperclip, Share2, AlertCircle, Lock,
@@ -157,6 +158,10 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
       ? `Hola, te pido que firmes este documento "${doc?.name ?? ""}". Podés firmarlo desde este enlace:`
       : ""
   );
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Escape ya lo maneja el efecto de más abajo (window keydown).
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true, cerrarConEscape: false });
 
   const problemas = useMemo(
     () => docs.map((d) => ({ doc: d, motivo: noEntraComoArchivo(d) })).filter((x) => x.motivo),
@@ -330,6 +335,11 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -339,7 +349,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
             {isSign ? <PenLine className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-extrabold text-[var(--text-primary)]">{isSign ? "Solicitar firma" : multi ? `Enviar ${docs.length} documentos por WhatsApp` : "Enviar por WhatsApp"}</p>
+            <p id={titleId} className="text-sm font-extrabold text-[var(--text-primary)]">{isSign ? "Solicitar firma" : multi ? `Enviar ${docs.length} documentos por WhatsApp` : "Enviar por WhatsApp"}</p>
             <p className="truncate text-xs text-[var(--text-tertiary)]">{multi ? docs.map((d) => d.name).join(" · ") : doc?.name}</p>
           </div>
           <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>

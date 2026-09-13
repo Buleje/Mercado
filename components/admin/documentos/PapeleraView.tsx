@@ -13,6 +13,7 @@
 
 import { useMemo, useState } from "react";
 import { Trash2, RotateCcw, HardDrive, AlertTriangle, Loader2 } from "@buleje/design-system/icons";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { DbDocument } from "@/lib/types/documents";
 import { cn } from "@/lib/utils";
 import { formatBytes, getFileIcon } from "./archivo-visual";
@@ -42,6 +43,7 @@ export function PapeleraView({
   onRestoreMany: (ids: string[]) => Promise<number>;
   onPurgeMany: (ids?: string[]) => Promise<number>;
 }) {
+  const { confirm } = useConfirm();
   const [elegidos, setElegidos] = useState<Set<string>>(new Set());
   const [trabajando, setTrabajando] = useState<null | "restaurar" | "eliminar" | "vaciar">(null);
 
@@ -118,11 +120,15 @@ export function PapeleraView({
           </p>
         </div>
         <button
-          onClick={() =>
-            confirm(
-              `¿Vaciar la papelera?\n\nSe eliminan ${enPapelera.length} documento(s) y se liberan ${formatBytes(pesoTotal)}.\nNo se puede deshacer.`,
-            ) && correr("vaciar", () => onPurgeMany())
-          }
+          onClick={async () => {
+            if (!(await confirm({
+              title: "¿Vaciar la papelera?",
+              description: `Se eliminan ${enPapelera.length} documento(s) y se liberan ${formatBytes(pesoTotal)}. No se puede deshacer.`,
+              intent: "danger",
+              confirmLabel: "Sí, vaciar",
+            }))) return;
+            correr("vaciar", () => onPurgeMany());
+          }}
           disabled={ocupado}
           className="inline-flex items-center gap-1.5 px-3.5 min-h-10 rounded-xl border-2 border-[var(--data-error-500)]/40 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] text-sm font-semibold hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 transition-colors"
         >
@@ -154,11 +160,15 @@ export function PapeleraView({
               Restaurar
             </button>
             <button
-              onClick={() =>
-                confirm(
-                  `¿Eliminar ${elegidos.size} documento(s) definitivamente?\n\nSe liberan ${formatBytes(pesoElegido)}. No se puede deshacer.`,
-                ) && correr("eliminar", () => onPurgeMany([...elegidos]))
-              }
+              onClick={async () => {
+                if (!(await confirm({
+                  title: `¿Eliminar ${elegidos.size} documento(s) definitivamente?`,
+                  description: `Se liberan ${formatBytes(pesoElegido)}. No se puede deshacer.`,
+                  intent: "danger",
+                  confirmLabel: "Sí, eliminar",
+                }))) return;
+                correr("eliminar", () => onPurgeMany([...elegidos]));
+              }}
               disabled={ocupado}
               aria-label={`Eliminar definitivamente los ${elegidos.size} elegidos`}
               className="text-xs px-2.5 py-1 rounded-lg bg-[var(--data-error-500)] hover:brightness-110 font-bold inline-flex items-center gap-1 disabled:opacity-50"
@@ -238,8 +248,14 @@ export function PapeleraView({
                   <RotateCcw className="h-3.5 w-3.5" /> Restaurar
                 </button>
                 <button
-                  onClick={() => {
-                    if (confirm(`¿Eliminar "${d.name}" definitivamente? No se puede deshacer.`)) onPurge(d.id);
+                  onClick={async () => {
+                    if (!(await confirm({
+                      title: `¿Eliminar "${d.name}" definitivamente?`,
+                      description: "No se puede deshacer.",
+                      intent: "danger",
+                      confirmLabel: "Sí, eliminar",
+                    }))) return;
+                    onPurge(d.id);
                   }}
                   disabled={ocupado}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] text-xs font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"

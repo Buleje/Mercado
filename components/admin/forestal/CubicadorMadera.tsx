@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Columns3, ChevronDown, Maximize2, Minimize2 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, ESPECIES_MADERA,
   esEco, leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza, PT_POR_M3, recubicarPiezas, m3DesdePt,
@@ -247,6 +248,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   onImportado?: (cuantas: number) => void;
 }) {
   const [rows, setRows] = useState<PiezaCubicada[]>([]);
+  const { confirm } = useConfirm();
   /* Lo cubicado, hacia afuera: quien monta el cubicador dentro de otro flujo
      necesita saber qué hay sin volver a leer localStorage. */
   useEffect(() => { onLote?.(rows); }, [rows, onLote]);
@@ -1561,8 +1563,13 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   };
 
   /** Carga una cubicación guardada en la tabla para seguir o re-exportar. */
-  const abrirCubicacion = (c: CubicacionRegistro) => {
-    if (rows.length > 0 && !cubicacionActual && !window.confirm("Vas a reemplazar el lote que tenés en pantalla y no está guardado. ¿Seguir?")) return;
+  const abrirCubicacion = async (c: CubicacionRegistro) => {
+    if (rows.length > 0 && !cubicacionActual && !(await confirm({
+      title: "Vas a reemplazar el lote que tienes en pantalla",
+      description: "No está guardado. ¿Seguir?",
+      intent: "warning",
+      confirmLabel: "Sí, reemplazar",
+    }))) return;
     persist(recubicarPiezas(c.piezas));
     setEspecie(c.especie ?? "");
     setPrecioPt(c.precioPt ? String(c.precioPt) : "");
@@ -1574,8 +1581,13 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   };
 
   /** Arranca un lote en blanco (lo guardado queda en el historial). */
-  const nuevaCubicacion = () => {
-    if (rows.length > 0 && !cubicacionActual && !window.confirm("El lote actual no está guardado y se va a borrar. ¿Seguir?")) return;
+  const nuevaCubicacion = async () => {
+    if (rows.length > 0 && !cubicacionActual && !(await confirm({
+      title: "El lote actual no está guardado y se va a borrar",
+      description: "¿Seguir?",
+      intent: "danger",
+      confirmLabel: "Sí, borrar",
+    }))) return;
     limpiar();
     setCubicacionActual(null);
     setForm({ nombre: "", fecha: hoyISO(), cliente: "", notas: "" });

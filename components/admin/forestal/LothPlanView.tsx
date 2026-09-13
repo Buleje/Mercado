@@ -280,6 +280,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
         <select
           value={planId ?? ""}
           onChange={(e) => setPlanId(e.target.value || null)}
+          aria-label="Elegir plan de manejo"
           className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none"
         >
           {plans.length === 0 && <option value="">Sin planes</option>}
@@ -663,10 +664,10 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
         {species.map((s) => editingId === s.id ? (
           <tr key={s.id} className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
             <Cell><span className="font-medium text-[var(--text-primary)]">{s.speciesCommon}</span>{s.cites && <CitesPill />}</Cell>
-            <Cell right><input type="number" step="0.0001" value={edit.volumenAutorizadoM3} onChange={(e) => setE("volumenAutorizadoM3", e.target.value)} className={editCls} /></Cell>
-            <Cell right><input type="number" value={edit.arbolesAutorizados} onChange={(e) => setE("arbolesAutorizados", e.target.value)} className={editCls} /></Cell>
-            <Cell right><input type="number" step="0.01" value={edit.precioVentaSoles} onChange={(e) => setE("precioVentaSoles", e.target.value)} className={editCls} /></Cell>
-            <Cell right><input type="number" step="0.01" value={edit.valorEstadoNaturalSoles} onChange={(e) => setE("valorEstadoNaturalSoles", e.target.value)} className={editCls} /></Cell>
+            <Cell right><input type="number" step="0.0001" value={edit.volumenAutorizadoM3} onChange={(e) => setE("volumenAutorizadoM3", e.target.value)} aria-label={`Volumen autorizado de ${s.speciesCommon}`} className={editCls} /></Cell>
+            <Cell right><input type="number" value={edit.arbolesAutorizados} onChange={(e) => setE("arbolesAutorizados", e.target.value)} aria-label={`Número de árboles autorizados de ${s.speciesCommon}`} className={editCls} /></Cell>
+            <Cell right><input type="number" step="0.01" value={edit.precioVentaSoles} onChange={(e) => setE("precioVentaSoles", e.target.value)} aria-label={`Precio de venta por m³ de ${s.speciesCommon}`} className={editCls} /></Cell>
+            <Cell right><input type="number" step="0.01" value={edit.valorEstadoNaturalSoles} onChange={(e) => setE("valorEstadoNaturalSoles", e.target.value)} aria-label={`Valor en estado natural por m³ de ${s.speciesCommon}`} className={editCls} /></Cell>
             <Cell right>
               <span className="inline-flex items-center gap-2">
                 <button onClick={() => saveEdit(s.id)} disabled={busy} title="Guardar" className="text-[var(--data-success-700)] hover:opacity-80 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</button>
@@ -865,13 +866,13 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
               className={`${cls} pl-9`}
             />
           </div>
-          <select value={estadoFilter} onChange={(e) => setEstadoFilter(e.target.value)} className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
+          <select value={estadoFilter} onChange={(e) => setEstadoFilter(e.target.value)} aria-label="Filtrar por estado del árbol" className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
             <option value="todos">Todos los estados</option>
             <option value="en_pie">En pie</option>
             <option value="talado">Talado</option>
             <option value="descartado">Descartado</option>
           </select>
-          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
+          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} aria-label="Filtrar por categoría POA" className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
             <option value="todas">Toda categoría POA</option>
             <option value="aprovechable">Aprovechables</option>
             <option value="semillero">Semilleros</option>
