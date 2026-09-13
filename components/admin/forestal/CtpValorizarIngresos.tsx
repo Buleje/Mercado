@@ -118,6 +118,85 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
 
   const pendientes = Object.keys(draft).length;
 
+  /**
+   * Lo que falta valorizar, agrupado por proveedor.
+   *
+   * En el patio el precio se acuerda **por proveedor y por m³** («S/ 360 el
+   * metro»), no ingreso por ingreso: medido en el tenant real, 24 ingresos sin
+   * costo repartidos en 3 proveedores, uno solo con 21. Cargarlos de a uno son
+   * 24 formularios para 3 precios.
+   */
+  const porProveedor = useMemo(() => {
+    const m = new Map<string, { proveedor: string; ids: string[]; m3: number }>();
+    for (const e of ingresos ?? []) {
+      if (num(e.costoTotal) != null) continue;
+      const p = (e.providerName ?? "").trim() || "(sin proveedor)";
+      const acc = m.get(p) ?? { proveedor: p, ids: [], m3: 0 };
+      acc.ids.push(e.id);
+      acc.m3 += num(e.volumeM3) ?? 0;
+      m.set(p, acc);
+    }
+    return [...m.values()].sort((a, b) => b.m3 - a.m3);
+  }, [ingresos]);
+
+  const [provElegido, setProvElegido] = useState("");
+  const [precioM3, setPrecioM3] = useState("");
+  const [aplicando, setAplicando] = useState<{ hechos: number; total: number } | null>(null);
+
+  const grupo = porProveedor.find((p) => p.proveedor === provElegido) ?? null;
+  const precioNum = num(precioM3);
+
+  /**
+   * Aplicar un precio por m³ a todos los ingresos sin costo de un proveedor.
+   *
+   * El costo que se guarda sigue siendo el TOTAL de cada ingreso —es lo que el
+   * libro almacena y lo que el COGS lee—: acá sólo se multiplica por su volumen.
+   * Se guarda de a uno con el mismo endpoint de siempre, para no abrir una
+   * segunda forma de escribir el costo.
+   */
+  async function aplicarAlProveedor() {
+    if (!grupo || precioNum == null || precioNum < 0) return;
+    setError(null);
+    setAplicando({ hechos: 0, total: grupo.ids.length });
+    const fallidos: string[] = [];
+    for (const [i, id] of grupo.ids.entries()) {
+      const e = (ingresos ?? []).find((x) => x.id === id);
+      const v = num(e?.volumeM3) ?? 0;
+      /* Un ingreso sin volumen no se puede valorizar por m³: multiplicar por
+         cero guardaría «costó 0», que es una afirmación falsa y distinta de
+         «no sé cuánto costó». Se saltea y se dice. */
+      if (!(v > 0)) {
+        fallidos.push(e?.gtfNumber ?? id);
+        setAplicando({ hechos: i + 1, total: grupo.ids.length });
+        continue;
+      }
+      try {
+        const r = await fetch(`${API}/${id}`, {
+          method: "PATCH",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          credentials: "include",
+          body: JSON.stringify({ action: "set_costo", costoTotal: Math.round(precioNum * v * 100) / 100 }),
+        });
+        if (!r.ok) {
+          const j = await r.json().catch(() => ({}));
+          fallidos.push(`${e?.gtfNumber ?? id} (${j.message ?? j.error ?? r.status})`);
+        }
+      } catch (err) {
+        fallidos.push(`${e?.gtfNumber ?? id} (${err instanceof Error ? err.message : String(err)})`);
+      }
+      setAplicando({ hechos: i + 1, total: grupo.ids.length });
+    }
+    setAplicando(null);
+    setPrecioM3("");
+    setProvElegido("");
+    if (fallidos.length > 0) {
+      setError(
+        `No se pudo valorizar ${fallidos.length} de ${grupo.ids.length}: ${fallidos.slice(0, 3).join(", ")}${fallidos.length > 3 ? "…" : ""}. El resto sí quedó cargado.`,
+      );
+    }
+    await load();
+  }
+
   // Igual que el panel de ventas: un número a medio tipear no debe convertirse
   // en el costo del mes, pero perderlo por cambiar de pestaña tampoco.
   useEffect(() => {
@@ -197,6 +276,86 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
         <p className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
           {resumen.sinCosto} {resumen.sinCosto === 1 ? "ingreso no tiene" : "ingresos no tienen"} costo cargado. Lo que sale de esa madera no puede mostrar margen — no se inventa un costo. Cargá la factura acá cuando llegue.
         </p>
+      )}
+
+      {/**
+       * Un precio para todo un proveedor.
+       *
+       * El precio se acuerda por proveedor y por m³, no ingreso por ingreso: en
+       * el tenant real son 24 ingresos sin costo en 3 proveedores, uno solo con
+       * 21. Cargarlos de a uno son 24 formularios para 3 precios.
+       */}
+      {porProveedor.length > 0 && (
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+          <p className="text-sm font-bold text-[var(--text-primary)]">Cargar un precio por m³ a todo un proveedor</p>
+          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
+            Se multiplica por el volumen de cada ingreso y se guarda el total, como si lo cargaras uno
+            por uno.
+          </p>
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <label className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-sm">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                Proveedor
+              </span>
+              <select
+                value={provElegido}
+                onChange={(e) => setProvElegido(e.target.value)}
+                aria-label="Proveedor a valorizar"
+                className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              >
+                <option value="">Elegí uno…</option>
+                {porProveedor.map((p) => (
+                  <option key={p.proveedor} value={p.proveedor}>
+                    {p.proveedor} — {p.ids.length} ingreso{p.ids.length === 1 ? "" : "s"} · {m3(p.m3)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex w-40 flex-col gap-1">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                Precio por m³
+              </span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                inputMode="decimal"
+                value={precioM3}
+                onChange={(e) => setPrecioM3(e.target.value)}
+                placeholder="360.00"
+                aria-label="Precio por metro cúbico"
+                className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => void aplicarAlProveedor()}
+              disabled={!grupo || precioNum == null || precioNum < 0 || aplicando !== null}
+              title={
+                !grupo
+                  ? "Elegí un proveedor"
+                  : precioNum == null
+                    ? "Poné el precio por m³"
+                    : `Se van a valorizar ${grupo.ids.length} ingresos por ${soles(precioNum * grupo.m3, resumen.moneda)}`
+              }
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
+            >
+              {aplicando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Coins className="h-4 w-4" aria-hidden />}
+              {aplicando ? `Cargando ${aplicando.hechos}/${aplicando.total}…` : "Aplicar"}
+            </button>
+          </div>
+          {/* Lo que va a quedar guardado, ANTES de tocar el botón: son 24
+              escrituras y conviene verlas como una cifra de plata. */}
+          {grupo && precioNum != null && precioNum >= 0 && (
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              {grupo.ids.length} ingreso{grupo.ids.length === 1 ? "" : "s"} · {m3(grupo.m3)} ·{" "}
+              <b className="font-mono tabular-nums text-[var(--text-primary)]">
+                {soles(precioNum * grupo.m3, resumen.moneda)}
+              </b>{" "}
+              en total.
+            </p>
+          )}
+        </div>
       )}
 
       {pendientes > 0 && (

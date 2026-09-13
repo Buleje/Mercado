@@ -142,10 +142,28 @@ export default function CtpCierreAsistido({ onIr, cierres }: {
             {revision.veredicto === "listo" ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertTriangle className="h-4 w-4 shrink-0" />}
             {revision.titulo}
           </p>
+          {/* Lo que IMPIDE cerrar y lo que sólo advierte iban en la misma
+              lista, con el mismo punto: había que leer las tres para saber
+              cuál frena el mes. Ahora se ven de un vistazo. */}
           <ul className="mt-1.5 space-y-1 text-[length:var(--ts-2xs)]">
-            {revision.impedimentos.map((t) => <li key={t}>· {t}</li>)}
-            {revision.observaciones.map((t) => <li key={t}>· {t}</li>)}
-            {revision.nota.map((t) => <li key={t} className="opacity-75">· {t}</li>)}
+            {revision.impedimentos.map((t) => (
+              <li key={t} className="flex gap-1.5 font-bold">
+                <span aria-label="Impide cerrar" title="Impide cerrar">⛔</span>
+                <span>{t}</span>
+              </li>
+            ))}
+            {revision.observaciones.map((t) => (
+              <li key={t} className="flex gap-1.5">
+                <span aria-label="No frena el cierre" title="No frena el cierre, pero conviene mirarlo">⚠️</span>
+                <span>{t}</span>
+              </li>
+            ))}
+            {revision.nota.map((t) => (
+              <li key={t} className="flex gap-1.5 opacity-75">
+                <span aria-hidden>·</span>
+                <span>{t}</span>
+              </li>
+            ))}
           </ul>
           {lista.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -171,6 +189,16 @@ export default function CtpCierreAsistido({ onIr, cierres }: {
           {cerrando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
           {cerrando ? "Cerrando…" : yaCerrado ? `${mes.label} ya está cerrado` : `Cerrar ${mes.label}`}
         </button>
+        {/* Cerrar congela `setCosto`: la factura que llegue después ya no entra
+            sin reabrir. Decirlo con el número —y no como una línea más de la
+            lista— es la diferencia entre una advertencia y un dato. */}
+        {!yaCerrado && (datos.ingresosSinCosto ?? 0) > 0 && (
+          <span className="text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            Vas a congelar {datos.ingresosSinCosto} ingreso{datos.ingresosSinCosto === 1 ? "" : "s"} sin costo
+            {(datos.m3SinCosto ?? 0) > 0 && ` · ${(datos.m3SinCosto ?? 0).toFixed(2)} m³`}: el margen de esa
+            madera queda en «no sé».
+          </span>
+        )}
         {resultado && (
           <span className={`text-xs font-bold ${resultado.ok
             ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
