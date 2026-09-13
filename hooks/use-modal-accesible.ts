@@ -25,7 +25,7 @@
  * No usa Radix a propósito: migrar quince modales a otro componente es un
  * refactor que nadie termina. Esto son tres líneas por modal.
  */
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 /** Lo que el navegador considera enfocable, en el orden en que lo tabula. */
 const ENFOCABLES =
@@ -36,6 +36,22 @@ export function useModalAccesible(
   opciones: { onCerrar?: () => void; cerrarConEscape?: boolean; activo?: boolean } = {},
 ) {
   const { onCerrar, cerrarConEscape = true, activo = true } = opciones;
+
+  /**
+   * La ÚLTIMA versión de `onCerrar`, sin que sea dependencia del efecto.
+   *
+   * Antes el efecto dependía de `onCerrar`: un llamador que lo pasaba inline
+   * (`onClose={() => setX(null)}`) creaba una función nueva en cada render del
+   * padre, el efecto se desmontaba y se volvía a montar, y el foco saltaba al
+   * primer control **mientras el usuario tipeaba** (revisión 2026-09-12: el
+   * motivo de anulación de un adelanto, el filtro de columna de la hoja, las
+   * carpetas inteligentes). Pedirle `useCallback` a cada llamador es una regla
+   * que se olvida; guardarla en un ref la vuelve imposible de romper.
+   */
+  const onCerrarRef = useRef(onCerrar);
+  useEffect(() => {
+    onCerrarRef.current = onCerrar;
+  });
 
   useEffect(() => {
     if (!activo) return;
@@ -58,9 +74,13 @@ export function useModalAccesible(
      * El criterio es el orden del DOM: un diálogo que se abre después se monta
      * después —un portal de Radix se agrega al final de `body`— así que el
      * último es el de arriba. Si el último NO es éste, éste se calla.
+     *
+     * `alertdialog` cuenta igual: la confirmación del panel (`useConfirm`) es un
+     * AlertDialog de Radix. Sin él, un «¿Eliminar?» abierto desde un modal a
+     * mano perdía el Tab y su Escape cerraba el modal de abajo.
      */
     const hayOtroDialogoEncima = () => {
-      const dialogos = document.querySelectorAll<HTMLElement>('[role="dialog"]');
+      const dialogos = document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]');
       const ultimo = dialogos[dialogos.length - 1];
       return !!ultimo && ultimo !== caja;
     };
@@ -80,9 +100,9 @@ export function useModalAccesible(
     const onKey = (e: KeyboardEvent) => {
       /* Hay otro modal arriba: el teclado es suyo. */
       if (hayOtroDialogoEncima()) return;
-      if (e.key === "Escape" && cerrarConEscape && onCerrar) {
+      if (e.key === "Escape" && cerrarConEscape && onCerrarRef.current) {
         e.stopPropagation();
-        onCerrar();
+        onCerrarRef.current();
         return;
       }
       if (e.key !== "Tab") return;
@@ -123,5 +143,5 @@ export function useModalAccesible(
          borró la fila que lo abrió, forzarlo tira un error silencioso. */
       if (previo && document.contains(previo)) previo.focus?.();
     };
-  }, [ref, onCerrar, cerrarConEscape, activo]);
+  }, [ref, cerrarConEscape, activo]);
 }

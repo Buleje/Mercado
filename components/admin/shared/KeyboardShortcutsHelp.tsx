@@ -24,6 +24,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X, Keyboard } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { usePanelTokens } from "./use-panel-tokens";
 
 interface Shortcut {
   keys: string[];
@@ -80,11 +81,15 @@ interface Props {
 }
 
 export function KeyboardShortcutsHelp({ open, onClose, sections = DEFAULT_SECTIONS }: Props) {
+  /* Portal a <body> y además montado FUERA de [data-area=admin] (providers):
+     sin esto el acento era coral y los grises los de la tienda (1/8 tokens). */
+  const panelTokens = usePanelTokens(open);
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="modal-backdrop" />
         <Dialog.Content
+          style={panelTokens}
           className={cn(
             "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50",
             "max-w-2xl w-[calc(100vw-2rem)] max-h-[85vh]",

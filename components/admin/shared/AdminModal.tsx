@@ -27,36 +27,11 @@
  *   · centered-sm — max-w-sm (confirmaciones)
  */
 
-import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { X, type LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-
-/**
- * El tema de acento del admin (que puede diferir del root del tenant) vive en un
- * wrapper inline bajo <body>. El modal se portalea a <body>, FUERA de ese wrapper,
- * así que sin esto heredaría el acento del root (a veces otro color). Copiamos los
- * tokens de acento del wrapper al contenido del modal para que matchee su panel.
- */
-function useAdminAccent(open: boolean): React.CSSProperties {
-  const [vars, setVars] = useState<React.CSSProperties>({});
-  useEffect(() => {
-    if (!open || typeof document === "undefined") return;
-    const wrap = Array.from(document.body.children).find((el) =>
-      (el.getAttribute("style") || "").includes("--accent"),
-    );
-    if (!wrap) return;
-    const cs = getComputedStyle(wrap);
-    const next: Record<string, string> = {};
-    for (const v of ["--accent", "--accent-dark", "--accent-soft", "--accent-muted"]) {
-      const val = cs.getPropertyValue(v).trim();
-      if (val) next[v] = val;
-    }
-    setVars(next as React.CSSProperties);
-  }, [open]);
-  return vars;
-}
+import { usePanelTokens } from "./use-panel-tokens";
 
 type Variant = "default" | "fullscreen" | "side" | "wide" | "centered-sm" | "pos" | "info";
 
@@ -163,7 +138,8 @@ export default function AdminModal({
   aboveModals = false,
   footerBare = false,
 }: AdminModalProps) {
-  const accentVars = useAdminAccent(open);
+  /* Portal a <body>: sin esto el modal hereda los tokens de la tienda. */
+  const panelTokens = usePanelTokens(open);
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <Dialog.Portal>
@@ -178,7 +154,7 @@ export default function AdminModal({
         />
         <Dialog.Content
           aria-describedby={description ? undefined : undefined}
-          style={accentVars}
+          style={panelTokens}
           className={cn(
             "fixed z-50 bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-[var(--shadow-xl)] outline-none",
             VARIANT_POSITION[variant],

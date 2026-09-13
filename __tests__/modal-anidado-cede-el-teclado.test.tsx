@@ -19,7 +19,15 @@ import { render, fireEvent, cleanup } from "@testing-library/react";
 import { useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
-function ModalDeAbajo({ onCerrar, conModalEncima }: { onCerrar: () => void; conModalEncima: boolean }) {
+function ModalDeAbajo({
+  onCerrar,
+  conModalEncima,
+  rolDeArriba = "dialog",
+}: {
+  onCerrar: () => void;
+  conModalEncima: boolean;
+  rolDeArriba?: "dialog" | "alertdialog";
+}) {
   const caja = useRef<HTMLDivElement>(null);
   useModalAccesible(caja, { onCerrar });
   return (
@@ -29,13 +37,37 @@ function ModalDeAbajo({ onCerrar, conModalEncima }: { onCerrar: () => void; conM
       </div>
       {/* El de arriba se monta DESPUÉS en el DOM, como un portal de Radix. */}
       {conModalEncima && (
-        <div role="dialog" aria-modal="true" aria-label="El de arriba">
+        <div role={rolDeArriba} aria-modal="true" aria-label="El de arriba">
           <input aria-label="Campo del de arriba" />
         </div>
       )}
     </>
   );
 }
+
+/**
+ * La confirmación del panel (`useConfirm`) es un AlertDialog de Radix:
+ * `role="alertdialog"`, no `dialog`. Al reemplazar los `confirm()` nativos
+ * dentro de modales a mano, un «¿Eliminar?» abierto encima perdía el Tab y su
+ * Escape cerraba el modal de abajo (2026-09-12).
+ */
+describe("una confirmación (alertdialog) encima también manda", () => {
+  it("Escape NO cierra el de abajo", () => {
+    const cerrar = vi.fn();
+    render(<ModalDeAbajo onCerrar={cerrar} conModalEncima rolDeArriba="alertdialog" />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(cerrar).not.toHaveBeenCalled();
+    cleanup();
+  });
+
+  it("Tab NO se lo lleva de vuelta", () => {
+    render(<ModalDeAbajo onCerrar={vi.fn()} conModalEncima rolDeArriba="alertdialog" />);
+    const evento = new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true });
+    document.dispatchEvent(evento);
+    expect(evento.defaultPrevented).toBe(false);
+    cleanup();
+  });
+});
 
 describe("con otro modal encima, el de abajo cede el teclado", () => {
   it("Escape NO cierra el de abajo", () => {
