@@ -12,7 +12,7 @@
  * Budget total: <8s. Si algún paso tarda más, lo dispara fire-and-forget.
  * Exit 0 always (non-blocking).
  */
-import { existsSync, writeFileSync, readdirSync, openSync } from "node:fs";
+import { existsSync, writeFileSync, readdirSync, openSync, readFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -223,6 +223,22 @@ async function main() {
   }
 
   log(`Chromium: ${chromiumStatus()}`);
+
+  // Tope de RAM del kernel para Bash/Monitor (CLAUDE_CODE_TOOL_MEMORY_LIMIT en settings.json).
+  // Solo aplica si claude corre en un scope de usuario delegado (función `claude` de ~/.bashrc):
+  // en /init.scope el CLI no puede crear el cgroup (EACCES) y corre sin tope. Medido 2026-09-14.
+  const topeRam = process.env.CLAUDE_CODE_TOOL_MEMORY_LIMIT;
+  if (topeRam) {
+    let enInit = false;
+    try {
+      enInit = readFileSync("/proc/self/cgroup", "utf8").trim().endsWith("/init.scope");
+    } catch { /* sin /proc: no se sabe, no se avisa */ }
+    log(
+      enInit
+        ? `Tope RAM Bash: ⚠️ inactivo — claude corre en /init.scope; abrilo desde una terminal nueva (función en ~/.bashrc)`
+        : `Tope RAM Bash: 🧱 ${topeRam} compartido (kernel; un comando que lo pase muere con exit 137 sin mensaje)`,
+    );
+  }
 
   // Watchdog: mata Chromiums/tsc huerfanos cada 60s. Previene bloqueo total de WSL.
   try {

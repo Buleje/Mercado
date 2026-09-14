@@ -7,6 +7,18 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ---
 
+## Aplicadas en sesión 2026-09-14 (harness contra Claude Code v2.1.270)
+
+### [applied] 2026-09-14 — 8 agent defs reescritos: `model: inherit`, `skills:` precargadas, `frontend`/`tester` con MCP Playwright, sin `maxTurns`/`permissionMode` en constructores, `experimental.cacheTtl: 1h`, rutas absolutas a las memorias de Brandon. Motivo medido: 0 despachos de los defs vs ~110 `general-purpose` con nombre en 11 días.
+### [applied] 2026-09-14 — Hook `SubagentStart` (`subagent-start-context.mjs`): todo subagente recibe perfil/tenant/reglas/gates/reporte. Hook `StopFailure` → aviso toast+Telegram cuando el turno muere por error de API. `SessionStart` `compact` re-inyecta branch/handoff.
+### [applied] 2026-09-14 — `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0` (los nombrados vuelven a ser subagentes en background), `CLAUDE_CODE_RESUME_INTERRUPTED_TURN=1`, `language: spanish`, `bashOutputMaxChars`/`taskOutputMaxChars` 24000, `bashEditDiffEnabled`; user: `autoContinueAtUsageLimit`, `cleanupPeriodDays: 90`.
+### [applied] 2026-09-14 — Skill `verify` → `gates` (libera el `/verify` bundled); `TaskCreate/TaskUpdate` fuera de 6 skills y 4 permisos (Task tools no existen en Fable desde 2.1.268). `team-templates/CONTRACTS/REPORTS/REVIEWS` → `_archive-swarm/`. `AGENTS.md` reescrito al estado real.
+### [applied] 2026-09-14 — Ubuntu: `git maintenance` con timers systemd (hourly/daily/weekly); `fsmonitor` no existe en Linux.
+### [applied] 2026-09-14 — Ubuntu/WSL: tope de RAM del kernel de 13G para los Bash/Monitor de Claude (`CLAUDE_CODE_TOOL_MEMORY_LIMIT` + `function claude` en `~/.bashrc` que lo lanza en un scope de systemd delegado). Antes: `tool cgroup: disabled (EACCES)`. Un tsc/build desbocado muere con exit 137 en vez de congelar WSL; el boot de sesión muestra si está activo. Rige desde la próxima terminal.
+### [pending] 2026-09-14 — **TypeScript 7.0.2 GA está publicado** (`latest`): `npx -p typescript@7.0.2 tsc --noEmit` = 22 s, 2 errores (ambos WIP en `AdminOverlaysLayer.tsx:114-115`). Migrar `typescript@5.9` + `@typescript/native-preview` → `typescript@7` como gate único (`tsc` = nativo Go). Riesgo: divergencias tipo TS2869/TS2783 medidas el 09-09; hacerlo en commit propio con `build-gate` verde.
+### [pending] 2026-09-14 — Deps del harness atrás: `@playwright/mcp` 0.0.68 → 0.0.76 (MCP de `frontend`/`tester`), `prisma` 7.4.2 → 7.8.0, `next` 16.2.6 → 16.2.10, `vitest` 4 → 5 (major, VRT). Un commit por dep con gates.
+### [pending] 2026-09-14 — Brandon: correr `/skill-doctor` (skills sin uso y su costo de contexto) y `/doctor` (pendiente desde 08-03). Ambos son comandos de la CLI, no invocables por el modelo.
+
 ## Aplicadas en sesión 2026-09-11 (reconfiguración: perfil de Brandon + propuestas con lentes)
 
 ### [applied] 2026-09-11 — Perfil del usuario (no existía: 291 memorias, 0 de tipo `user`)
@@ -327,3 +339,29 @@ Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
 
 ### [pending] Sweep fire-and-forget → after() en app/api/** (2026-07-17)
 El patrón `.catch(() => {})` de la casa MUERE en Vercel serverless (lambda congelada al responder). Ya mordió: webhook WhatsApp perdía TODOS los mensajes entrantes en prod (fix b58a2f34). Grep `\.catch\(` en routes con side-effects post-respuesta (notificaciones, logs de actividad, envíos) y envolver en `after()` de next/server los críticos.
+
+---
+
+## Skills sugeridos por compound-learning (auto, 2026-09-13)
+
+Detectados 14 patrones con ≥5 co-edits sin skill creado.
+Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
+
+### [pending] pat-coedit-1789273483843-29r4
+- **Tipo:** `co_edit_cluster` (5 occurrences)
+- **Files:** `components/admin/CashAuditTab.tsx`, `components/admin/ContratosModule.tsx`, `components/admin/FiadosModule.tsx`, `components/admin/ReceivingTab.tsx`, `components/admin/adelantos/lista/TablaAdelantos.tsx`, `components/admin/dashboard/ExpiredBatchesWidget.tsx`, `components/admin/documentos/BulkTagModal.tsx`, `components/admin/documentos/ConfirmarBorrarCarpetas.tsx`, `components/admin/forestal/CubicacionesGuardadas.tsx`, `components/admin/forestal/PlantacionVerticesTabla.tsx`, `components/admin/layout/AdminSidebar.tsx`, `components/admin/pos/OCPrintPreviewModal.tsx`, `components/admin/pos/POSCrossSell.tsx`, `components/admin/pos/POSCustomerSearch.tsx`, `components/admin/pos/POSExpressMode.tsx`, `components/admin/recetas/RecetarioAdminTab.tsx`, `components/admin/shared/AdminCommandPalette.tsx`, `components/admin/shared/AdminDateFilter.tsx`
+- **Sugerencia:** Files [components/admin/CashAuditTab.tsx, components/admin/ContratosModule.tsx, components/admin/FiadosModule.tsx, components/admin/ReceivingTab.tsx, components/admin/adelantos/lista/TablaAdelantos.tsx, components/admin/dashboard/ExpiredBatchesWidget.tsx, components/admin/documentos/BulkTagModal.tsx, components/admin/documentos/ConfirmarBorrarCarpetas.tsx, components/admin/forestal/CubicacionesGuardadas.tsx, components/admin/forestal/PlantacionVerticesTabla.tsx, components/admin/layout/AdminSidebar.tsx, components/admin/pos/OCPrintPreviewModal.tsx, components/admin/pos/POSCrossSell.tsx, components/admin/pos/POSCustomerSearch.tsx, components/admin/pos/POSExpressMode.tsx, components/admin/recetas/RecetarioAdminTab.tsx, components/admin/shared/AdminCommandPalette.tsx, components/admin/shared/AdminDateFilter.tsx] are always edited together. Consider creating a skill that pre-loads all 18 files.
+- **Last seen:** 2026-09-13T04:24:36.458Z
+
+### [pending] pat-coedit-1789273483843-j0nd
+- **Tipo:** `co_edit_cluster` (5 occurrences)
+- **Files:** `components/admin/AdminModals.tsx`, `components/admin/CashAuditTab.tsx`, `components/admin/ContratosModule.tsx`, `components/admin/adelantos/lista/AnularAdelantoModal.tsx`, `components/admin/adelantos/lista/TablaAdelantos.tsx`, `components/admin/clientes/ClienteFormModal.tsx`, `components/admin/dashboard/ExpiredBatchesWidget.tsx`, `components/admin/documentos/BulkTagModal.tsx`, `components/admin/documentos/ConfirmarBorrarCarpetas.tsx`, `components/admin/forestal/PlantacionVerticesTabla.tsx`, `components/admin/layout/AdminSidebar.tsx`, `components/admin/pos/InvoiceScannerModal.tsx`, `components/admin/pos/OCPrintPreviewModal.tsx`, `components/admin/pos/POSCrossSell.tsx`, `components/admin/pos/POSCustomerSearch.tsx`, `components/admin/recetas/RecetarioAdminTab.tsx`, `components/admin/shared/AdminCommandPalette.tsx`
+- **Sugerencia:** Files [components/admin/AdminModals.tsx, components/admin/CashAuditTab.tsx, components/admin/ContratosModule.tsx, components/admin/adelantos/lista/AnularAdelantoModal.tsx, components/admin/adelantos/lista/TablaAdelantos.tsx, components/admin/clientes/ClienteFormModal.tsx, components/admin/dashboard/ExpiredBatchesWidget.tsx, components/admin/documentos/BulkTagModal.tsx, components/admin/documentos/ConfirmarBorrarCarpetas.tsx, components/admin/forestal/PlantacionVerticesTabla.tsx, components/admin/layout/AdminSidebar.tsx, components/admin/pos/InvoiceScannerModal.tsx, components/admin/pos/OCPrintPreviewModal.tsx, components/admin/pos/POSCrossSell.tsx, components/admin/pos/POSCustomerSearch.tsx, components/admin/recetas/RecetarioAdminTab.tsx, components/admin/shared/AdminCommandPalette.tsx] are always edited together. Consider creating a skill that pre-loads all 17 files.
+- **Last seen:** 2026-09-13T04:24:21.617Z
+
+### [pending] pat-coedit-1789273483843-51xr
+- **Tipo:** `co_edit_cluster` (5 occurrences)
+- **Files:** `components/admin/AdminModals.tsx`, `components/admin/BudgetVsRealTab.tsx`, `components/admin/CouponsTab.tsx`, `components/admin/StoreCustomizer.tsx`, `components/admin/SupplierComparator.tsx`, `components/admin/TurnosModule.tsx`, `components/admin/documentos/ComentariosDoc.tsx`, `components/admin/documentos/MoveToFolderModal.tsx`, `components/admin/documentos/TemplateGenerator.tsx`, `components/admin/forestal/CtpTrozasDeIngreso.tsx`, `components/admin/forestal/DistribucionesGuardadas.tsx`, `components/admin/forestal/PlantacionPasoBloques.tsx`, `components/admin/forestal/TramiteRelacionGuias.tsx`, `components/admin/marketplace/tabs/ProductosTab.tsx`, `components/admin/store-page/CatalogoTiendaTab.tsx`
+- **Sugerencia:** Files [components/admin/AdminModals.tsx, components/admin/BudgetVsRealTab.tsx, components/admin/CouponsTab.tsx, components/admin/StoreCustomizer.tsx, components/admin/SupplierComparator.tsx, components/admin/TurnosModule.tsx, components/admin/documentos/ComentariosDoc.tsx, components/admin/documentos/MoveToFolderModal.tsx, components/admin/documentos/TemplateGenerator.tsx, components/admin/forestal/CtpTrozasDeIngreso.tsx, components/admin/forestal/DistribucionesGuardadas.tsx, components/admin/forestal/PlantacionPasoBloques.tsx, components/admin/forestal/TramiteRelacionGuias.tsx, components/admin/marketplace/tabs/ProductosTab.tsx, components/admin/store-page/CatalogoTiendaTab.tsx] are always edited together. Consider creating a skill that pre-loads all 15 files.
+- **Last seen:** 2026-09-13T04:22:30.507Z
+

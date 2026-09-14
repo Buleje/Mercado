@@ -47,8 +47,8 @@ const KEYWORD_HINTS = {
   responsive: ["bsm-design-system", "bsm-typography-rules"],
   ui: ["bsm-design-system", "bsm-typography-rules"],
   // operativos
-  deploy: ["deploy", "verify"],
-  test: ["verify"],
+  deploy: ["deploy", "gates"],
+  test: ["gates"],
   commit: ["commit", "review"],
   pr: ["pr-describer", "review"],
   // agentic

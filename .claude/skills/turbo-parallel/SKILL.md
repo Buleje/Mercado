@@ -1,10 +1,10 @@
 ---
 name: turbo-parallel
-description: Modo TURBO de paralelismo agresivo. Fuerza dispatch de N agentes + N tool calls en 1 solo mensaje con run_in_background=true e isolation=worktree cuando aplique. Usar cuando Brandon diga "rapido", "turbo", "mas velocidad", "en paralelo", "no lento" o cuando hay 3+ sub-tareas independientes.
+description: Modo TURBO de paralelismo agresivo. Fuerza dispatch de N agentes + N tool calls en 1 solo mensaje en background, sobre el checkout principal (nunca worktree: en ramas largas branchea de base vieja), con archivos disjuntos por agente. Usar cuando Brandon diga "rapido", "turbo", "mas velocidad", "en paralelo", "no lento" o cuando hay 3+ sub-tareas independientes.
 user-invocable: true
 model: opus
 context: main
-allowed-tools: Read, Edit, Write, Grep, Glob, Bash, Agent, TaskCreate, TaskUpdate
+allowed-tools: Read, Edit, Write, Grep, Glob, Bash, Agent
 ---
 
 # /turbo-parallel — Paralelismo agresivo (ADR-061)
@@ -14,7 +14,7 @@ Reemplaza el patron "ejecutar 1 cosa, esperar, ejecutar la siguiente" por **exec
 ## Principios duros
 
 1. **Batch-first ABSOLUTO.** Cada mensaje de Claude debe maximizar tool calls paralelos. Si hay 5 reads pendientes, los 5 van en el MISMO mensaje. Nunca 1+1+1+1+1.
-2. **Multi-Agent en 1 mensaje.** Cuando hay 3+ sub-tareas independientes, los 3+ Agent() se despachan en el mismo bloque con `run_in_background: true` + `isolation: "worktree"`.
+2. **Multi-Agent en 1 mensaje.** Cuando hay 3+ sub-tareas independientes, los 3+ Agent() se despachan en el mismo bloque (los subagentes ya corren en background por default) sobre el checkout principal, **cada uno dueño de archivos distintos** — dos agentes en el mismo archivo se pisan (memoria `write-pisa-archivos-de-otro-agente`). Nada de `isolation: "worktree"`: en esta rama larga branchea de una base vieja y se pierde lógica (code-quality §5.2).
 3. **Especializar sobre secuencial.** N Agent() con `subagent_type` especializado en paralelo > el mismo agente ejecutando N tareas en serie. Si cada resultado necesita verificacion (auditorias, migraciones), preferir **Workflow** (`audit-verificado`) sobre agentes sueltos.
 4. **8 max** agentes en paralelo. Mas que eso satura disco/red.
 
@@ -22,7 +22,7 @@ Reemplaza el patron "ejecutar 1 cosa, esperar, ejecutar la siguiente" por **exec
 
 | Escenario | Accion |
 |-----------|--------|
-| 3+ frentes independientes (DB, BE, FE) | 3 Agent() con isolation=worktree, run_in_background, en 1 mensaje |
+| 3+ frentes independientes (DB, BE, FE) | 3 Agent() con `name`, archivos disjuntos, en 1 mensaje |
 | 5+ reads para context loading | Todos en 1 mensaje |
 | Lint + tsc + test + build (independientes) | 4 Bash() en paralelo, 1 mensaje |
 | 2 Edit + 1 Write + 1 Bash (archivos distintos) | Los 4 en 1 mensaje |
@@ -38,10 +38,10 @@ Reemplaza el patron "ejecutar 1 cosa, esperar, ejecutar la siguiente" por **exec
 
 ```
 [1 mensaje de Claude]:
-  Agent(subagent_type: database, isolation: worktree, run_in_background: true)
-  Agent(subagent_type: backend, isolation: worktree, run_in_background: true)
-  Agent(subagent_type: frontend, isolation: worktree, run_in_background: true)
-  Agent(subagent_type: tester, isolation: worktree, run_in_background: true)
+  Agent(subagent_type: database, name: "database-<tarea>")
+  Agent(subagent_type: backend, name: "backend-<tarea>")
+  Agent(subagent_type: frontend, name: "frontend-<tarea>")
+  Agent(subagent_type: tester, name: "tester-<tarea>")
   Read(CLAUDE.md)
   Read(ROADMAP)
   Read(session-state.json)
@@ -64,7 +64,7 @@ Reemplaza el patron "ejecutar 1 cosa, esperar, ejecutar la siguiente" por **exec
 
 ## Beneficio medido
 
-Con 4 agentes en worktree paralelos vs secuenciales:
+Con 4 agentes en paralelo (archivos disjuntos) vs secuenciales:
 - Sesion secuencial: 4 × 90s = 360s
 - Sesion turbo: max(agent) + sync ≈ 110s
 - **Ganancia ~3x** sin perder calidad (cada agente usa Opus en fork)

@@ -1,11 +1,18 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "language": "spanish",
+  "bashOutputMaxChars": 24000,
+  "taskOutputMaxChars": 24000,
+  "bashEditDiffEnabled": true,
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "0",
     "BSM_PROJECT_ROOT": "/home/usuario/proyectos/Mercado",
     "BSM_HOOKS_DEBUG": "0",
     "BSM_AUTOKILL": "1",
-    "SLASH_COMMAND_TOOL_CHAR_BUDGET": "20000"
+    "SLASH_COMMAND_TOOL_CHAR_BUDGET": "20000",
+    "CLAUDE_CODE_RESUME_INTERRUPTED_TURN": "1",
+    "CLAUDE_CODE_TOOL_MEMORY_LIMIT": "13G",
+    "CLAUDE_CODE_TOOL_MEMORY_CGROUP_EXCLUDE": "mcp,lsp,hooks"
   },
   "hooks": {
     "PreToolUse": [
@@ -133,6 +140,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start-context.mjs",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -227,6 +244,35 @@
           }
         ]
       }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/subagent-start-context.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/avisar-terminado.mjs",
+            "timeout": 10,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/mantener-pantalla-despierta.mjs soltar",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   },
   "permissions": {
@@ -301,10 +347,6 @@
       "Grep(*)",
       "Read(${CLAUDE_PROJECT_DIR}/**)",
       "Skill(*)",
-      "TaskCreate",
-      "TaskGet",
-      "TaskList",
-      "TaskUpdate",
       "WebFetch(domain:anthropic.com)",
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:code.claude.com)",

@@ -1,13 +1,13 @@
 ---
-name: verify
-description: Gate obligatorio antes de reportar "listo". Corre tsc + lint + tests del área + curl de endpoints tocados. Si alguno falla, bloquea el reporte con una tabla de qué arreglar. Usar al cerrar una tarea, antes de decir "consolidado", "integrado", "terminado". Complementa a /deploy check (que es pre-deploy full).
+name: gates
+description: Gates del repo antes de reportar "listo": tsc + lint + tests del área + curl de endpoints tocados (distinto del /verify del CLI, que arranca la app y prueba el cambio como usuario). Si alguno falla, bloquea el reporte con una tabla de qué arreglar. Usar al cerrar una tarea, antes de decir "consolidado", "integrado", "terminado". Complementa a /deploy check (que es pre-deploy full).
 user-invocable: true
 model: haiku
 allowed-tools: Bash, Read, Grep, Glob
 argument-hint: "[quick|full|api-route|component]"
 ---
 
-# /verify — Gate de "antes de decir listo"
+# /gates — Gate de "antes de decir listo"
 
 **Qué hace (Feynman):** Maneja el auto una cuadra antes de entregarlo al cliente. Corre los chequeos mínimos para que lo que dije "listo" sea realmente "listo".
 
@@ -19,14 +19,14 @@ argument-hint: "[quick|full|api-route|component]"
 
 ## Modos
 
-### `/verify quick` (~15s) — DEFAULT si tocó 1-2 archivos
+### `/gates quick` (~15s) — DEFAULT si tocó 1-2 archivos
 
 | Check | Qué valida | Exit criterion |
 |---|---|---|
 | `npx tsc --noEmit` | Tipos en todo el proyecto | 0 errores |
 | `git diff --name-only` | Muestra qué archivos cambiaron | Info |
 
-### `/verify full` (~2 min) — SI tocó 5+ archivos o zona peligrosa
+### `/gates full` (~2 min) — SI tocó 5+ archivos o zona peligrosa
 
 | Check | Qué valida | Exit criterion |
 |---|---|---|
@@ -35,13 +35,13 @@ argument-hint: "[quick|full|api-route|component]"
 | `npx vitest run <files>` | Tests relacionados al cambio | 100% pasan |
 | `curl` endpoints afectados | Runtime sin 500 | HTTP < 500 |
 
-### `/verify api-route` — SI toqué un `app/api/**/route.ts`
+### `/gates api-route` — SI toqué un `app/api/**/route.ts`
 
 Como `full` + además:
 - `curl -s -o /dev/null -w "%{http_code}"` sobre el endpoint
 - Verifica que no devuelve 500
 
-### `/verify component` — SI toqué un `components/**/*.tsx`
+### `/gates component` — SI toqué un `components/**/*.tsx`
 
 Como `quick` + además:
 - Arranca dev server si no está vivo (`curl http://localhost:3000 || npm run dev &`)
@@ -53,7 +53,7 @@ Como `quick` + además:
   forestal entero no podía guardar). Exit 1 = hay mutaciones sin token, con
   archivo:línea.
 
-### `/verify build` — SI toqué páginas server, layouts, sitemap, lib usada en prerender
+### `/gates build` — SI toqué páginas server, layouts, sitemap, lib usada en prerender
 
 **`tsc --noEmit` NO atrapa errores de prerender** (ej. `Date.now()` en server bajo
 Cache Components, cache `.next/dev` corrupto) — lección 2026-07-02: dos "listo"
@@ -86,7 +86,7 @@ Cuándo es OBLIGATORIO: cambios en `app/**/page.tsx` server, `app/**/layout.tsx`
 ## Reporte esperado
 
 ```markdown
-## ✅ /verify — listo
+## ✅ /gates — listo
 
 | Check | Resultado | Tiempo |
 |---|---|---|
@@ -101,7 +101,7 @@ Total: 17s. Seguro decir listo.
 O si falla:
 
 ```markdown
-## ❌ /verify — NO listo
+## ❌ /gates — NO listo
 
 | Check | Resultado | Qué arreglar |
 |---|---|---|
@@ -113,22 +113,22 @@ NO reportar "listo" hasta que queden 0 fails.
 
 ## Regla de oro
 
-**NUNCA decir "listo" / "consolidado" / "integrado" sin haber corrido `/verify`.**
+**NUNCA decir "listo" / "consolidado" / "integrado" sin haber corrido `/gates`.**
 
-Si un check falla, leer el error, arreglar, y re-correr `/verify`. Si después de 3 intentos sigue fallando, escalar al agente `healer`.
+Si un check falla, leer el error, arreglar, y re-correr `/gates`. Si después de 3 intentos sigue fallando, escalar al agente `healer`.
 
 ## Complemento
 
 - `/deploy check` — más exhaustivo, para PRE-DEPLOY real (build-gate + SLO gates, sin push)
-- `/verify` — intra-sesión, barato, constante, antes de cada "listo"
-- agente `healer` — cuando `/verify` falla repetido y hay que depurar
+- `/gates` — intra-sesión, barato, constante, antes de cada "listo"
+- agente `healer` — cuando `/gates` falla repetido y hay que depurar
 
 ## Ejemplo de invocación
 
 Tras editar `lib/db/marketplace.db.ts` y `app/marketplace/[slug]/page.tsx`:
 
 ```
-/verify full
+/gates full
 ```
 
 Esperar output. Si todo verde, recién ahí reportar al usuario con la tabla como prueba.

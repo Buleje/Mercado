@@ -89,7 +89,15 @@ async function main() {
   // El hook Stop se re-dispara a sí mismo; sin esto suena dos veces por turno.
   if (input?.stop_hook_active) return;
 
-  const resumen = resumenDelTurno(input);
+  // StopFailure (corre EN LUGAR de Stop, nunca los dos): el turno murió por error de API.
+  // Payload oficial: `error` (rate_limit|overloaded|server_error…), `error_details`
+  // opcional, y `last_assistant_message` = el texto del error, no una respuesta.
+  // Sin este aviso, una corrida autónoma se queda muda hasta que Brandon vuelve
+  // a mirar la terminal.
+  const resumen =
+    input?.hook_event_name === "StopFailure"
+      ? `⚠️ Claude se detuvo por error de API: ${input.error ?? "unknown"}${input.error_details ? ` (${String(input.error_details).slice(0, 60)})` : ""}. Revisá la terminal.`
+      : resumenDelTurno(input);
   const mensaje = psEscape(resumen);
 
   // Corre en paralelo con el toast local — no esperar a Telegram para sonar.
@@ -113,7 +121,7 @@ try {
   [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom, ContentType = WindowsRuntime] > $null
   $xml = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
   $t = $xml.GetElementsByTagName('text')
-  $t.Item(0).AppendChild($xml.CreateTextNode('Claude Code - listo')) > $null
+  $t.Item(0).AppendChild($xml.CreateTextNode('Claude Code')) > $null
   $t.Item(1).AppendChild($xml.CreateTextNode('${mensaje}')) > $null
   $audio = $xml.CreateElement('audio')
   $audio.SetAttribute('silent', 'true')
@@ -124,7 +132,7 @@ try {
   Add-Type -AssemblyName System.Windows.Forms
   $n = New-Object System.Windows.Forms.NotifyIcon
   $n.Icon = [System.Drawing.SystemIcons]::Information
-  $n.BalloonTipTitle = 'Claude Code - listo'
+  $n.BalloonTipTitle = 'Claude Code'
   $n.BalloonTipText = '${mensaje}'
   $n.Visible = $true
   $n.ShowBalloonTip(6000)

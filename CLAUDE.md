@@ -1,6 +1,6 @@
 # CLAUDE.md — Buleje (Bodega San Martín)
 
-> **Última verificación:** 2026-09-11 · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
+> **Última verificación:** 2026-09-14 · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
 
 **Idioma:** español. **Estilo de respuesta:** Feynman + tablas, ≤100 palabras de prosa.
 
@@ -119,12 +119,12 @@ Vitest 4 · Playwright 1.59 + `@playwright/mcp` · `@axe-core/playwright` · k6 
 
 | Tier | Criterio | Dispatch | Modelo/effort subagentes | Gates |
 |---|---|---|---|---|
-| **HOTFIX** | 1 archivo, <20 líneas | Subagente directo | `haiku`/`sonnet` (mecánico = barato) | lint + tsc |
-| **FEATURE** | 2-5 archivos, 1 área | Team slim (2-3) | default (heredar) | lint + tsc + test |
-| **DANGER** | Zona peligrosa | Squad + security | `opus`/effort alto | Full pipeline |
-| **INITIATIVE** | 5+ archivos, ≥2 áreas | Hub BUILD→QUALITY→OPS o **Workflow** (`audit-verificado` como template) | mixto por fase | Todos los gates |
+| **HOTFIX** | 1 archivo, <20 líneas | Inline o 1 subagente (`healer` si es gate rojo) | `model: haiku`/`sonnet` **en la invocación** | lint + tsc |
+| **FEATURE** | 2-5 archivos, 1 área | 1-2 subagentes con `name` (`backend`/`frontend`/`database`) + `reviewer` con contexto fresco | heredar | lint + tsc + test + navegador |
+| **DANGER** | Zona peligrosa | subagente de dominio + `security` (audit) antes del merge | heredar, effort alto | Full pipeline |
+| **INITIATIVE** | 5+ archivos, ≥2 áreas | **Workflow** por fases (construir → verificar con refutador); `audit-verificado` para auditorías | mixto por fase | Todos los gates |
 
-Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md`. **8 agent defs activos** en `.claude/agents/` (poda 2026-09-03 por telemetría de 3 meses): `architect` · `backend` · `frontend` · `database` · `healer` · `reviewer` · `security` · `tester`. El router es el hilo principal (no hay `director`); QA visual/tipografía/dark se hacen inline con Playwright + skills `bsm-*`. 45 defs legacy en `.claude/_agents-archive/`, NO se cargan.
+Arquitectura real y decisiones de frontmatter en `AGENTS.md` (reescrito 2026-09-14). **8 agent defs activos** en `.claude/agents/`: `architect` · `backend` · `frontend` · `database` · `healer` · `reviewer` · `security` · `tester` — todos `model: inherit` (salvo `healer` sonnet), `memory: project`, `skills:` precargadas, sin `maxTurns` en constructores; `frontend`/`tester` traen el MCP de Playwright. El router es el hilo principal (no hay `director`). Todo subagente recibe el contexto de Brandon vía hook `SubagentStart`. Agent teams OFF (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0`): un subagente con `name` es subagente, no teammate. Legacy en `.claude/_agents-archive/` y `.claude/_archive-swarm/`, NO se cargan.
 
 ---
 
@@ -172,7 +172,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 2. **No matar `node.exe` ni wipear `.next`**: restarts de Turbopack son caros (30-90s). Solo `dev:clean` si hay lock corrupto; `dev:nuke` solo si caché realmente corrupto.
 3. **Grep/Glob antes que `Explore` agent**: Explore es para preguntas open-ended. Target conocido = Grep directo (más rápido, menos tokens).
 4. **Batch reads**: leer N screenshots o N archivos en una sola tanda paralela, no secuencial.
-5. **Worktrees para trabajos >50 files**: `isolation: "worktree"` en Agent. Deja el dev server principal intacto.
+5. **Nunca `isolation: "worktree"`** (tampoco para >50 archivos): en esta rama larga branchea de una base vieja y se pierde lógica (medido 2026-08-03). Trabajo grande = varios agentes con archivos disjuntos sobre el checkout principal.
 6. **Scripts bulk**: antes de auto-inyectar imports a `.tsx`, detectar `"use client"` y poner imports DESPUÉS del directive.
 7. **Pre-refactor primitive**: grep `function <X>|const <X> =` en todo el repo para evitar shadowing (ej. PrestamosModule tenía SparklineKPICard interno clonado).
 8. **Visual verify focused**: no correr los 34 tabs cada vez. `scripts/visual-verify-admin-focused.mjs` cubre los 9 críticos (~30s).
@@ -182,7 +182,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 12. **Credenciales QA admin** (Playwright visual verify): `qaadmin` / `Qa-admin-1234` en tenant `main`. Crear con `node -r dotenv/config scripts/create-qa-admin-raw.mjs`.
 13. **Onboarding modal**: localStorage key real = `onboarding-completed-${tenantSlug}`. Setear a `"1"` en Playwright antes de screenshots.
 14. **Prisma schema drift** (suppliers `ColumnNotFound`): requiere `prisma migrate deploy` con DIRECT_URL accesible. DNS de Supabase directo puede fallar en algunas redes — correr desde red con acceso o aplicar la migration sobrante manualmente.
-15. **Claude Code CLI** (v2.1.259 al 2026-09-03): subagentes en background por default y anidados hasta profundidad 3; `/verify` y `/code-review` NO se auto-invocan (dispararlos a mano); `/goal` para corridas autónomas; `/doctor` quincenal. **Context resets + estado en archivos > compaction** en corridas largas. Detalle y changelog → memoria `claude-code-novedades-2026-07`.
+15. **Claude Code CLI** (v2.1.270 al 2026-09-14): subagentes en background por default, anidados hasta profundidad 3, 20 concurrentes; `/verify` (bundled: arranca la app y prueba el cambio) y `/code-review` NO se auto-invocan; nuestro gate de repo es `/gates`; `/goal` para corridas autónomas; `/skill-doctor` y `/doctor` quincenales (los dispara Brandon). Task tools (`TaskCreate`…) ya no existen en Fable/Opus 4.8+. Prompt cache 1 h en el hilo principal (`/cost` muestra hit ratio). **Context resets + estado en archivos > compaction** en corridas largas. Detalle y changelog → memoria `claude-code-novedades-2026-07`.
 16. **Reglas path-scoped en `.claude/rules/`** — cargan solo al tocar archivos que matchean (db-classes, ui-components, danger-zone, agentic-style, **code-quality** = estándar enterprise fijo: tipos/DS/errores/refactor/verificación/commits). Gotchas nuevos de capa → ahí, NO inflar este archivo.
 17. **Workflow `audit-verificado`** — auditorías con verificación adversarial integrada (cada hallazgo pasa por un refutador). Usar para "auditá X" en vez de N agentes sueltos.
 
@@ -192,7 +192,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 
 | Archivo | Para qué |
 |---|---|
-| `AGENTS.md` | Arquitectura Hub & Spoke v2 y protocolos de handoff (8 agentes activos desde 2026-09-03; el resto archivado) |
+| `AGENTS.md` | Cómo se despacha hoy (medido), los 8 agent defs y sus decisiones de frontmatter, hook `SubagentStart`, gates (reescrito 2026-09-14) |
 | `MEMORIA-PROYECTO.md` | Memoria viva del proyecto (decisiones, operación crítica, gaps) |
 | `docs/HISTORY.md` | Snapshot histórico de tabs/fases/batches (archivo histórico) |
 | `README.md` | Quick start, deployment Vercel, API endpoints |

@@ -164,7 +164,7 @@ try {
   // Payload fantasma (sin nombre, sin transcript legible, sin tokens): descartar
   // la línea y dejar muestra del raw en el errors.log para diagnóstico.
   if (agent === "unknown" && !tx && !tokens && durationMs == null) {
-    logErr("payload sin datos, línea descartada", raw.slice(0, 400));
+    logErr("payload sin datos, línea descartada (claves)", Object.keys(parsed).join(","));
     process.exit(0);
   }
 
