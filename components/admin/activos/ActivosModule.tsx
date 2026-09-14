@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useState, useRef } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { toast } from "sonner";
 import {
@@ -75,6 +76,7 @@ const FIELD = "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surf
 const LABEL = "block text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5";
 
 type View = "flota" | "cobrar" | "calendario" | "ranking";
+const VISTAS: readonly View[] = ["flota", "cobrar", "calendario", "ranking"];
 
 // Sub-tabs top-level: coherencia con el resto del admin (AdminTabBar da
 // reorden por drag + registro en sidebar). Los badges son dinámicos (alertas
@@ -85,7 +87,9 @@ const ACTIVOS_MODULE_ID = "activos";
 export default function ActivosModule() {
   const [assets, setAssets] = useState<AssetStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<View>("flota");
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: view, irA: setView } = useSubvistaModulo<View>("activos", VISTAS, "flota");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<AssetStats | null>(null);
   const [moveFor, setMoveFor] = useState<{ asset: AssetStats; kind: "income" | "expense" } | null>(null);
@@ -122,10 +126,10 @@ export default function ActivosModule() {
     const rows = assets.map(a => ({
       Maquina: a.name, Tipo: typeLabel(a.type), Placa: a.plate ?? "",
       Estado: STATUS_META[a.status]?.label ?? a.status,
-      Ingresos: a.totalIncome.toFixed(2), Gastos: a.totalExpense.toFixed(2), Ganancia: a.profit.toFixed(2),
-      "Por cobrar": a.pendingAmount.toFixed(2),
-      [`Costo/${a.rateUnit}`]: a.costPerUnit != null ? a.costPerUnit.toFixed(2) : "",
-      [`Ingreso/${a.rateUnit}`]: a.incomePerUnit != null ? a.incomePerUnit.toFixed(2) : "",
+      Ingresos: Number(a.totalIncome ?? 0).toFixed(2), Gastos: Number(a.totalExpense ?? 0).toFixed(2), Ganancia: Number(a.profit ?? 0).toFixed(2),
+      "Por cobrar": Number(a.pendingAmount ?? 0).toFixed(2),
+      [`Costo/${a.rateUnit}`]: a.costPerUnit != null ? Number(a.costPerUnit).toFixed(2) : "",
+      [`Ingreso/${a.rateUnit}`]: a.incomePerUnit != null ? Number(a.incomePerUnit).toFixed(2) : "",
       "Utilizacion%": a.utilizationPct != null ? Math.round(a.utilizationPct) : "",
       Horometro: a.currentHours ?? "",
     }));
@@ -373,6 +377,17 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
   });
   const [saving, setSaving] = useState(false);
   const Preview = typeIcon(form.type === "__new__" ? "otro" : form.type);
+  // Foco explícito en vez de `autoFocus` (jsx-a11y/no-autofocus): el nombre al abrir y el
+  // campo de categoría nueva cuando se elige «+ Nueva categoría…».
+  const nombreRef = useRef<HTMLInputElement>(null);
+  const nuevaCategoriaRef = useRef<HTMLInputElement>(null);
+  // En un requestAnimationFrame: useModalAccesible (en ModalShell) enfoca el primer control en
+  // su propio rAF, que se programa antes que este; así el nombre queda con el foco al abrir.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => nombreRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, []);
+  useEffect(() => { if (form.type === "__new__") nuevaCategoriaRef.current?.focus(); }, [form.type]);
 
   const save = async () => {
     if (!form.name.trim()) { toast.error("Ponle un nombre a la máquina"); return; }
@@ -410,13 +425,13 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
         </div>
 
         <FormSection title="Identificación">
-          <Field label="Nombre *" labelClassName={LABEL} className="sm:col-span-2"><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Cargador frontal CAT 938" className={FIELD} autoFocus /></Field>
+          <Field label="Nombre *" labelClassName={LABEL} className="sm:col-span-2"><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Cargador frontal CAT 938" className={FIELD} ref={nombreRef} /></Field>
           <Field label="Categoría" labelClassName={LABEL} className="sm:col-span-2">{(id) => (<>
             <select id={id} value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className={FIELD}>
               {knownTypes.map(v => <option key={v} value={v}>{typeLabel(v)}</option>)}
               <option value="__new__">+ Nueva categoría…</option>
             </select>
-            {form.type === "__new__" && <input value={form.newType} onChange={e => setForm(f => ({ ...f, newType: e.target.value }))} placeholder="Nombre de la categoría (ej. Motoniveladora)" className={cn(FIELD, "mt-2")} autoFocus />}
+            {form.type === "__new__" && <input value={form.newType} onChange={e => setForm(f => ({ ...f, newType: e.target.value }))} placeholder="Nombre de la categoría (ej. Motoniveladora)" className={cn(FIELD, "mt-2")} ref={nuevaCategoriaRef} />}
           </>)}</Field>
           <Field label="Placa / serie" labelClassName={LABEL}><input value={form.plate} onChange={e => setForm(f => ({ ...f, plate: e.target.value }))} placeholder="ABC-123" className={FIELD} /></Field>
           <Field label="Estado" labelClassName={LABEL}><select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={FIELD}>{Object.entries(STATUS_META).map(([v, m]) => <option key={v} value={v}>{m.label}</option>)}</select></Field>
@@ -605,6 +620,8 @@ function Center({ children }: { children: React.ReactNode }) {
 function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged: () => void }) {
   const [items, setItems] = useState<Maintenance[] | null>(null);
   const [adding, setAdding] = useState(false);
+  const tituloRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (adding) tituloRef.current?.focus(); }, [adding]);
   const [form, setForm] = useState({ title: "", mode: "hours" as "hours" | "days", interval: "", lastDoneHours: asset.currentHours != null ? String(asset.currentHours) : "" });
 
   const load = useCallback(() => {
@@ -651,7 +668,7 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
 
       {adding ? (
         <div className="rounded-xl border-2 border-[var(--accent)]/30 bg-[var(--surface-raised)] p-3 space-y-2">
-          <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Cambio de aceite" className={FIELD} autoFocus />
+          <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Cambio de aceite" className={FIELD} ref={tituloRef} />
           <div className="flex gap-1 rounded-lg bg-[var(--surface-sunken)] p-1">
             {([["hours", "Por horas"], ["days", "Por días"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setForm(f => ({ ...f, mode: v }))} className={cn("flex-1 rounded-lg px-2 py-1.5 text-xs font-bold", form.mode === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
           </div>
@@ -966,9 +983,12 @@ function ChecklistModal({ asset, onClose, onSaved }: { asset: AssetStats; onClos
 
 // ── Shells reutilizables ────────────────────────────────────────────────────
 function ModalShell({ title, subtitle, onClose, children, icon: Icon = Construction }: { title: string; subtitle: string; onClose: () => void; children: React.ReactNode; icon?: React.ComponentType<{ className?: string; strokeWidth?: number }> }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra (mismo arreglo que AssetDetailDrawer). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] sm:max-w-2xl sm:rounded-2xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] sm:max-w-2xl sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-start gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-5">
           <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2.1} /></span>
           <div className="min-w-0 flex-1">

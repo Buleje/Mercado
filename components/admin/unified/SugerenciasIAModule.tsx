@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import dynamic from "next/dynamic";
 import { Sparkles, GitMerge, ShoppingCart, Megaphone, Users, Home, Calendar } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -28,13 +28,16 @@ const TABS = [
   { id: "estrategias",  label: "Estrategias",    icon: Calendar },
   { id: "clientes",     label: "Para clientes",  icon: Users },
 ];
+const TAB_IDS = TABS.map((t) => t.id);
 
 interface Props {
   tenantId?: string;
 }
 
 export default function SugerenciasIAModule({ tenantId: _tenantId }: Props) {
-  const [tab, setTab] = useState<string>(TABS[0].id);
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
 
   return (
     <div className="space-y-4">

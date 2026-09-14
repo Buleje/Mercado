@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { DataTable } from "@buleje/design-system";
 import {
   HeartHandshake,
@@ -339,6 +340,7 @@ const TABS = [
   { id: "miembros", label: "Miembros", icon: Users },
   { id: "ofertas", label: "Ofertas exclusivas", icon: Package },
 ];
+const TAB_IDS = TABS.map((t) => t.id);
 
 // ── Server → SocioMember mapper (ADR-078) ─────────────────────────────────────
 
@@ -388,7 +390,9 @@ function serverToLegacyMember(m: ServerMember): SocioMember {
 }
 
 export default function SocioMembersAdminModule() {
-  const [tab, setTab] = useState(TABS[0].id);
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
   const [members, setMembers] = useState<SocioMember[]>(MOCK_MEMBERS);
   const [selected, setSelected] = useState<SocioMember | null>(null);
   const [serverStats, setServerStats] = useState<ServerStats>(null);

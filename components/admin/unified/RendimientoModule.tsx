@@ -10,7 +10,7 @@
  * compu del admin con CLS/FID clavados en 0 — se retiró.
  */
 
-import { useState } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import dynamic from "next/dynamic";
 import { Gauge, HeartPulse, BarChart3, Wrench } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -29,9 +29,12 @@ const TABS = [
   { id: "salud", label: "Salud del Sistema", icon: HeartPulse },
   { id: "soporte", label: "Soporte técnico", icon: Wrench },
 ];
+const TAB_IDS = TABS.map((t) => t.id);
 
 export default function RendimientoModule() {
-  const [sub, setSub] = useState(TABS[0].id);
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: sub, irA: setSub } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
 
   return (
     <div className="space-y-4">

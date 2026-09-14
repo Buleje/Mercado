@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { escapeHtml } from "@/lib/safe-html";
@@ -523,13 +524,18 @@ const PRESTAMOS_TAB_ITEMS: AdminTab[] = [
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+type PrestamosVista = "dashboard" | "activos" | "cobros" | "calculadora" | "historial";
+const PRESTAMOS_VISTAS: readonly PrestamosVista[] = ["dashboard", "activos", "cobros", "calculadora", "historial"];
+
 export default function PrestamosModule() {
   const { businessName, storeTheme } = useSettings();
   const storeName = (storeTheme as { storeName?: string } | null)?.storeName?.trim()
     || businessName?.trim()
     || "Tu Tienda";
   const storeLocation = (storeTheme as { address?: string } | null)?.address || "Pucallpa, Perú";
-  const [activeTab, setActiveTab] = useState<"dashboard" | "activos" | "cobros" | "calculadora" | "historial">("dashboard");
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<PrestamosVista>("prestamos", PRESTAMOS_VISTAS, "dashboard");
 
   // Mejora nueva: Filtro por estado en prestamos
   const [prestamoStatusFilter, setPrestamoStatusFilter] = useState<"" | PrestamoStatus>("");

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import dynamic from "next/dynamic";
 import { Receipt, FileCheck, Calculator, CreditCard, Landmark, Cable } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -27,9 +27,12 @@ const TABS = [
   { id: "cxp", label: "Cuentas x Pagar", icon: CreditCard },
   { id: "conexion", label: "Conexión SUNAT", icon: Cable },
 ];
+const TAB_IDS = TABS.map((t) => t.id);
 
 export default function FacturacionModule() {
-  const [sub, setSub] = useState(TABS[0].id);
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: sub, irA: setSub } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
   return (
     <div className="space-y-4">
       {/* El título va DENTRO de la barra de pestañas (patrón acordado con

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useId } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Image from "next/image";
 import Link from "next/link";
@@ -34,6 +35,7 @@ import { Field } from "@/components/admin/shared/Field";
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
 type Tab = "identidad" | "marca" | "colores" | "secciones" | "hero" | "promos" | "contacto" | "estilos" | "contenido" | "catalogo" | "avanzado";
+const TAB_IDS_CUSTOMIZER: readonly Tab[] = ["identidad", "marca", "colores", "secciones", "hero", "promos", "contacto", "estilos", "contenido", "catalogo", "avanzado"];
 
 export interface StoreTheme {
   logo: string;
@@ -1523,7 +1525,9 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function StoreCustomizer() {
-  const [activeTab, setActiveTab] = useState<Tab>("identidad");
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<Tab>(MODULE_ID, TAB_IDS_CUSTOMIZER, "identidad");
   const [theme, setTheme] = useState<StoreTheme>(DEFAULT_THEME);
   const [savedTheme, setSavedTheme] = useState<StoreTheme>(DEFAULT_THEME);
   const [loading, setLoading] = useState(true);
