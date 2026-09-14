@@ -237,6 +237,9 @@ export interface WoodEntryListFilters {
   /** true = solo ingresos SIN código de origen. Son los que dejan el EUDR
    *  incompleto: sin código no hay parcela que geolocalizar (Reg. 2023/1115). */
   sinOrigenCode?: boolean;
+  /** true = sólo ingresos SIN costo cargado: los que dejan al margen sin base
+   *  (ADR-135). Es el filtro de la pastilla «sin costo» de Ingresos. */
+  sinCosto?: boolean;
   /**
    * El título habilitante / contrato que ampara la madera (`originCode`) —
    * «el permiso» (ADR-400).
@@ -321,6 +324,12 @@ export function buildListWhere(
       { OR: [{ originCode: null }, { originCode: "" }] },
     ];
   }
+  if (filters.sinCosto) {
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+      { costoTotal: null },
+    ];
+  }
   if (filters.fromDate || filters.toDate) {
     where.entryDate = {};
     if (filters.fromDate) where.entryDate.gte = filters.fromDate;
@@ -380,6 +389,7 @@ function buildLateConditions(
   if (filters.sinOrigenCode) {
     conditions.push(Prisma.sql`("originCode" IS NULL OR "originCode" = '')`);
   }
+  if (filters.sinCosto) conditions.push(Prisma.sql`"costoTotal" IS NULL`);
   if (filters.fromDate) conditions.push(Prisma.sql`"entryDate" >= ${filters.fromDate}`);
   if (filters.toDate) conditions.push(Prisma.sql`"entryDate" <= ${filters.toDate}`);
   if (filters.search) {
@@ -400,14 +410,19 @@ function buildLateConditions(
  * UTC, así que epoch e isodow se calculan sobre el valor guardado (UTC), igual
  * que el JS. Vive suelta porque la usan el CONTEO (stats) y el FILTRO (lateIds).
  */
-const FUERA_DE_PLAZO_SQL = Prisma.sql`(
+/** Los días HÁBILES de la operación al registro, por fila. La usan el
+ *  predicado de «fuera de plazo» y el promedio de `stats()`: un solo cálculo,
+ *  así el conteo y el promedio no pueden discrepar. */
+const DIAS_HABILES_REGISTRO_SQL = Prisma.sql`(
         (GREATEST(0, floor(extract(epoch from ("createdAt" - "entryDate")) / 86400)::int) / 7) * 5
         + (
           SELECT count(*)::int
           FROM generate_series(1, GREATEST(0, floor(extract(epoch from ("createdAt" - "entryDate")) / 86400)::int) % 7) AS gi
           WHERE ((extract(isodow from "entryDate")::int - 1 + gi) % 7) + 1 <= 5
         )
-      ) > ${PLAZO_REGISTRO_DIAS}`;
+      )`;
+
+const FUERA_DE_PLAZO_SQL = Prisma.sql`${DIAS_HABILES_REGISTRO_SQL} > ${PLAZO_REGISTRO_DIAS}`;
 
 /** Condiciones completas de "fuera de plazo": filtros del período + vigencia +
  *  la fórmula de días hábiles. Single source del predicado entre conteo y filtro. */
@@ -624,6 +639,19 @@ export interface WoodEntryStats {
    * uno.
    */
   sinConstanciaCount: number;
+  /** Ingresos vigentes CON costo, su volumen y lo que costaron (S/). */
+  valorizadoCount: number;
+  valorizadoM3: number;
+  costoTotal: number;
+  /** Trozas originales del período (sin pedazos de retrozado) y cuántas tienen volumen medido. */
+  trozasCount: number;
+  trozasConVolumen: number;
+  trozasVolumeM3: number;
+  /** m³ y asientos por día de ingreso — sólo los días que tuvieron. */
+  serieDiaria: { fecha: string; volumeM3: number; count: number }[];
+  /** Días hábiles de la operación al registro: promedio y el más lento (null sin ingresos). */
+  registroDiasHabilesProm: number | null;
+  registroDiasHabilesMax: number | null;
   byStatus: Record<WoodEntryStatus, number>;
   /** Especies / proveedores / productos presentes en el período (top 30 por volumen). */
   species: WoodEntryFacet[];
@@ -3030,6 +3058,10 @@ export class WoodEntriesDB {
       sinCostoAgg,
       conPiezasCount,
       sinConstanciaCount,
+      valorizadoAgg,
+      trozasAgg,
+      serieRows,
+      registroRows,
     ] = await Promise.all([
       prisma.woodEntry.aggregate({
         where: whereVigente,
@@ -3103,6 +3135,47 @@ export class WoodEntriesDB {
           OR: [{ serforNumeroRegistro: null }, { serforNumeroRegistro: "" }],
         },
       }),
+      /* Lo valorizado: la otra mitad de `sinCosto`. Con los dos se dice «S/ por
+         m³» sobre lo que TIENE precio, sin mezclar el volumen que no lo tiene. */
+      prisma.woodEntry.aggregate({
+        where: { ...whereVigente, costoTotal: { not: null } },
+        _count: { _all: true },
+        _sum: { volumeM3: true, costoTotal: true },
+      }),
+      /* Las trozas de verdad, sin los pedazos de un retrozado: la madre y sus
+         hijas son la misma madera dos veces (T1). El tamaño de la pieza sale de
+         SU volumen medido, no del de la guía dividido por un conteo. */
+      prisma.woodEntryTroza.aggregate({
+        where: { trozaOrigenId: null, entry: whereVigente },
+        _count: { _all: true, volumenM3: true },
+        _sum: { volumenM3: true },
+      }),
+      /* El ritmo: m³ por día de asiento. Una fila por día CON ingresos; los días
+         vacíos los completa la pantalla, que es la que conoce el período. */
+      prisma.woodEntry.groupBy({
+        by: ["entryDate"],
+        where: whereVigente,
+        _count: { _all: true },
+        _sum: { volumeM3: true },
+        orderBy: { entryDate: "asc" },
+      }),
+      /* Cuánto tarda una guía en llegar al libro, en días HÁBILES — la misma
+         expresión que decide «fuera de plazo». Tabla derivada y no la expresión
+         dentro del AVG: lleva una subconsulta correlacionada. */
+      prisma.$queryRaw<{ prom: number | null; max: number | null }[]>`
+        SELECT AVG(d)::float AS prom, MAX(d)::int AS max
+        FROM (
+          SELECT ${DIAS_HABILES_REGISTRO_SQL} AS d
+          FROM "WoodEntry"
+          WHERE ${Prisma.join(
+            [
+              ...buildLateConditions(tenantId, periodFilters),
+              Prisma.sql`"status" NOT IN (${Prisma.join(["rechazado", "anulado"])})`,
+            ],
+            " AND ",
+          )}
+        ) AS registro
+      `,
     ]);
 
     const byStatus: Record<WoodEntryStatus, number> = {
@@ -3177,6 +3250,20 @@ export class WoodEntriesDB {
       sinCostoM3: Number(sinCostoAgg._sum.volumeM3 ?? 0),
       conPiezasCount,
       sinConstanciaCount,
+      valorizadoCount: valorizadoAgg._count._all,
+      valorizadoM3: r4(valorizadoAgg._sum.volumeM3?.toNumber() ?? 0),
+      costoTotal: Math.round((valorizadoAgg._sum.costoTotal?.toNumber() ?? 0) * 100) / 100,
+      trozasCount: trozasAgg._count._all,
+      trozasConVolumen: trozasAgg._count.volumenM3,
+      trozasVolumeM3: r4(trozasAgg._sum.volumenM3?.toNumber() ?? 0),
+      serieDiaria: serieRows.map((r) => ({
+        fecha: r.entryDate.toISOString().slice(0, 10),
+        volumeM3: r4(r._sum.volumeM3?.toNumber() ?? 0),
+        count: r._count._all,
+      })),
+      registroDiasHabilesProm:
+        registroRows[0]?.prom == null ? null : Math.round(Number(registroRows[0].prom) * 10) / 10,
+      registroDiasHabilesMax: registroRows[0]?.max == null ? null : Number(registroRows[0].max),
       byStatus,
       species: faceta(speciesRows, (r) => r.speciesCommonName),
       providers: faceta(providerRows, (r) => r.providerName),

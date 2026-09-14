@@ -223,6 +223,23 @@ export interface WoodEntryStats {
   sinCostoCount?: number;
   /** Ingresos vigentes sin constancia del SNIFFS guardada (ADR-386). */
   sinConstanciaCount?: number;
+  /** m³ vigentes sin costo cargado — va con `sinCostoCount`. */
+  sinCostoM3?: number;
+  /** Ingresos vigentes con su lista de trozas cargada. */
+  conPiezasCount?: number;
+  /** Lo valorizado del período: asientos, m³ y soles. */
+  valorizadoCount?: number;
+  valorizadoM3?: number;
+  costoTotal?: number;
+  /** Trozas originales (sin pedazos de retrozado), y cuántas con volumen medido. */
+  trozasCount?: number;
+  trozasConVolumen?: number;
+  trozasVolumeM3?: number;
+  /** m³ por día de ingreso, sólo los días que tuvieron. */
+  serieDiaria?: { fecha: string; volumeM3: number; count: number }[];
+  /** Días hábiles de la operación al registro (RDE D000025-2023: plazo 2). */
+  registroDiasHabilesProm?: number | null;
+  registroDiasHabilesMax?: number | null;
   byStatus: Record<WoodEntryStatus, number>;
   /** Especies / proveedores / productos del período (top 30 por volumen). */
   species: WoodEntryFacet[];

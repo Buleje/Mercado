@@ -65,6 +65,8 @@ export interface CtpIngresosFiltros {
   late?: boolean;
   /** true = solo los que no tienen código de origen (bloquean el EUDR). */
   sinOrigen?: boolean;
+  /** true = solo los que no tienen costo cargado (el margen queda sin base). */
+  sinCosto?: boolean;
   /**
    * Estado de recepción (ADR-339): `pendiente` es la bandeja del patio,
    * `cerrada` el archivo de GTF ingresadas. Vacío = las dos.
@@ -154,7 +156,7 @@ export function useCtpIngresos({
   // Descarta respuestas de un fetch viejo que llega tarde y pisaría al nuevo.
   const requestSeq = useRef(0);
 
-  const { status, search, species, provider, product, permiso, cites, late, sinOrigen, recepcion } = filtros;
+  const { status, search, species, provider, product, permiso, cites, late, sinOrigen, sinCosto, recepcion } = filtros;
 
   /** Los parámetros del conjunto (sin paginación): los comparten la tabla y la
    *  descarga, así que "exportar" baja EXACTAMENTE lo que se está viendo. */
@@ -175,11 +177,12 @@ export function useCtpIngresos({
     if (cites !== undefined) params.set("cites", cites ? "1" : "0");
     if (late) params.set("late", "1");
     if (sinOrigen) params.set("sin_origen", "1");
+    if (sinCosto) params.set("sin_costo", "1");
     if (recepcion) params.set("recepcion", recepcion);
     params.set("sort", sort.by);
     params.set("dir", sort.dir);
     return params;
-  }, [status, search, species, provider, product, permiso, cites, late, sinOrigen, recepcion, sort.by, sort.dir]);
+  }, [status, search, species, provider, product, permiso, cites, late, sinOrigen, sinCosto, recepcion, sort.by, sort.dir]);
 
   const baseParams = useMemo(() => armarParams(period), [armarParams, period]);
 

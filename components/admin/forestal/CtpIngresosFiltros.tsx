@@ -47,6 +47,8 @@ export interface CtpFacetasActivas {
   late?: boolean;
   /** Sin código de origen: los ingresos que dejan el EUDR sin parcela. */
   sinOrigen?: boolean;
+  /** Sin costo cargado: la madera que deja al margen sin base (ADR-135). */
+  sinCosto?: boolean;
 }
 
 export interface CtpIngresosFiltrosProps {

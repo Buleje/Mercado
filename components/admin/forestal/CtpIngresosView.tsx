@@ -684,7 +684,7 @@ export default function CtpIngresosView({
   const hayFiltro = Boolean(
     statusFilter || search ||
     [facetas.species, facetas.provider, facetas.product, facetas.permiso].some((v) => listaDe(v).length > 0) ||
-    facetas.cites !== undefined || facetas.late || facetas.sinOrigen,
+    facetas.cites !== undefined || facetas.late || facetas.sinOrigen || facetas.sinCosto,
   );
   /** Qué está filtrando, con nombre: el vacío tiene que poder explicarse. */
   const filtrosActivos = useMemo(
@@ -699,6 +699,7 @@ export default function CtpIngresosView({
         facetas.cites !== undefined ? (facetas.cites ? "sólo CITES" : "sin CITES") : "",
         facetas.late ? "fuera de plazo" : "",
         facetas.sinOrigen ? "sin código de origen" : "",
+        facetas.sinCosto ? "sin costo" : "",
       ].filter(Boolean),
     [statusFilter, search, facetas],
   );
@@ -787,6 +788,10 @@ export default function CtpIngresosView({
         dashboardOn={showDashboard}
         sinOrigenOn={facetas.sinOrigen === true}
         onSinOrigen={() => setFacetas((f) => ({ ...f, sinOrigen: f.sinOrigen ? undefined : true }))}
+        sinCostoOn={facetas.sinCosto === true}
+        onSinCosto={() => setFacetas((f) => ({ ...f, sinCosto: f.sinCosto ? undefined : true }))}
+        /* El período completo, para dibujar el ritmo diario con los días vacíos. */
+        period={period}
         /* Los mismos filtros que recortan la tabla gobiernan las cifras
            (ADR-400): el servidor calcula los agregados con ese mismo `where`. */
         facetas={facetas}

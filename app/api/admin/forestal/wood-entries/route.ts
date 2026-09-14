@@ -219,6 +219,8 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   const cites = url.searchParams.get("cites");
   const late = url.searchParams.get("late") === "1";
   const sinOrigen = url.searchParams.get("sin_origen") === "1";
+  /* La pastilla «sin costo»: la madera que deja al margen sin base (ADR-135). */
+  const sinCosto = url.searchParams.get("sin_costo") === "1";
   /* `?recepcion=pendiente` es la bandeja del patio y `cerrada` el archivo de
      GTF ingresadas (ADR-339). Un valor raro no filtra en vez de romper. */
   const recepcionRaw = url.searchParams.get("recepcion");
@@ -258,6 +260,7 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
     cites: cites === "1" ? true : cites === "0" ? false : undefined,
     late: late || undefined,
     sinOrigenCode: sinOrigen || undefined,
+    sinCosto: sinCosto || undefined,
     recepcion,
     sortBy: sortParsed.success ? sortParsed.data : undefined,
     sortDir: dirParsed.success ? dirParsed.data : undefined,
