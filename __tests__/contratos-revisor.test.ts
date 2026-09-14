@@ -19,6 +19,7 @@ function contrato(over: Partial<DbContract> = {}): DbContract {
     clienteDoc: "45678912",
     customerId: null,
     supplierId: null,
+    colaboradorId: null,
     descripcion: "",
     resumen: "",
     monto: 500,

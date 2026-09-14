@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { ContractsDB } from "@/lib/db/contracts.db";
+import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -29,6 +30,8 @@ const CreateContratoSchema = z.object({
   lugarFirma: z.string().max(200).default("Pucallpa"),
   customerId: z.string().max(40).nullish(),
   supplierId: z.string().max(40).nullish(),
+  /** `Colaborador.id` (ADR-414) — se relee con tenantId antes de guardar (IDOR). */
+  colaboradorId: z.string().max(40).nullish(),
   renovadoDeId: z.string().max(40).nullish(),
 });
 
@@ -85,6 +88,7 @@ export async function GET(req: NextRequest) {
       search: url.searchParams.get("search") ?? undefined,
       from: url.searchParams.get("from") ?? undefined,
       to: url.searchParams.get("to") ?? undefined,
+      colaboradorId: url.searchParams.get("colaboradorId") ?? undefined,
     });
 
     return NextResponse.json({ contratos, kpis: calcularKpis(contratos) });
@@ -129,6 +133,9 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+  if (data.colaboradorId && !(await ColaboradoresDB.existe(auth.tenantId, data.colaboradorId))) {
+    return NextResponse.json({ error: "colaborador_no_encontrado" }, { status: 422 });
+  }
 
   try {
     const simbolo = data.moneda === "USD" ? "US$" : "S/";
@@ -139,6 +146,7 @@ export async function POST(req: NextRequest) {
       clienteDoc: data.clienteDoc,
       customerId: data.customerId ?? null,
       supplierId: data.supplierId ?? null,
+      colaboradorId: data.colaboradorId ?? null,
       descripcion: data.descripcion,
       resumen: data.resumen,
       monto: data.monto,

@@ -74,6 +74,7 @@ function mapContract(c: PContractFull): DbContract {
     clienteDoc: c.clienteDoc,
     customerId: c.customerId,
     supplierId: c.supplierId,
+    colaboradorId: c.colaboradorId,
     descripcion: c.descripcion,
     resumen: c.resumen,
     monto: Number(c.monto),
@@ -135,6 +136,7 @@ export const ContractsDB = {
     if (filters.tipo) where.tipo = filters.tipo;
     if (filters.estado) where.estado = filters.estado;
     if (filters.customerId) where.customerId = filters.customerId;
+    if (filters.colaboradorId) where.colaboradorId = filters.colaboradorId;
     if (filters.from || filters.to) {
       where.fechaInicio = {
         ...(filters.from ? { gte: new Date(`${filters.from}T00:00:00.000Z`) } : {}),
@@ -186,6 +188,7 @@ export const ContractsDB = {
             clienteDoc: input.clienteDoc ?? "",
             customerId: input.customerId ?? null,
             supplierId: input.supplierId ?? null,
+            colaboradorId: input.colaboradorId ?? null,
             descripcion: input.descripcion ?? "",
             resumen: input.resumen ?? "",
             monto: new Prisma.Decimal(input.monto ?? 0),
@@ -230,6 +233,7 @@ export const ContractsDB = {
     if (input.clienteDoc !== undefined) data.clienteDoc = input.clienteDoc;
     if (input.customerId !== undefined) data.customerId = input.customerId;
     if (input.supplierId !== undefined) data.supplierId = input.supplierId;
+    if (input.colaboradorId !== undefined) data.colaboradorId = input.colaboradorId;
     if (input.descripcion !== undefined) data.descripcion = input.descripcion;
     if (input.resumen !== undefined) data.resumen = input.resumen;
     if (input.monto !== undefined) data.monto = new Prisma.Decimal(input.monto);

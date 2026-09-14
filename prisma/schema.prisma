@@ -1925,6 +1925,9 @@ model Contract {
   clienteDoc    String  @default("")
   customerId    String?
   supplierId    String?
+  /// `Colaborador.id` (ADR-414) — texto sin FK, igual que customerId/supplierId,
+  /// siempre releído con tenantId. `null` en todos los contratos existentes.
+  colaboradorId String?
 
   descripcion String  @default("")
   resumen     String  @default("")
@@ -1964,6 +1967,7 @@ model Contract {
   @@index([tenantId, fechaVencimiento])
   @@index([tenantId, tipo])
   @@index([tenantId, createdAt])
+  @@index([tenantId, colaboradorId])
 }
 
 model ContractSigner {
@@ -2014,6 +2018,160 @@ model ContractEvent {
 
   @@index([contractId, createdAt])
   @@index([tenantId, createdAt])
+}
+
+// ─── Recursos Humanos (ADR-414) ──────────────────────────
+// Personal, puestos, tarifa de referencia versionada y asistencia diaria.
+// Los índices únicos parciales y el funcional viven sólo en el SQL de la
+// migración (Prisma igual traduce su violación a P2002); ver ADR-414 §9.
+
+enum ColaboradorEstado {
+  ACTIVO
+  VACACIONES
+  LICENCIA
+  SUSPENDIDO
+  CESADO
+}
+
+enum AsistenciaEstado {
+  PRESENTE
+  TARDANZA
+  MEDIO_DIA
+  FALTA
+  PERMISO
+  DESCANSO
+  VACACIONES
+}
+
+enum TarifaModalidad {
+  HORA
+  DIA
+  SEMANA
+  MES
+  SIN_PAGO
+}
+
+/// Puesto de trabajo del negocio (ADR-414). La tarifa es SUGERIDA: sólo prellena
+/// la de la persona al darla de alta, nunca entra al cálculo de lo ganado.
+/// Único parcial sin mayúsculas `(tenantId, lower(btrim(nombre)))` entre vivos: sólo en SQL.
+model Puesto {
+  id              String           @id @default(cuid())
+  tenantId        String
+  nombre          String
+  descripcion     String?
+  tarifaModalidad TarifaModalidad?
+  tarifaMonto     Decimal?         @db.Decimal(12, 2)
+  horasJornada    Decimal          @default(8) @db.Decimal(4, 2)
+  orden           Int              @default(0)
+  createdBy       String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+
+  colaboradores Colaborador[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, deletedAt])
+}
+
+/// Una persona que trabaja en el negocio (ADR-414). No es un usuario del panel ni
+/// una contraparte de plata: se vincula por id a su `AdelantoBeneficiario` (su
+/// cuenta) y, si entra al sistema, a su `AdminUser`. Nunca por nombre.
+/// Únicos parciales entre vivos (sólo en SQL): `(tenantId, documento)`,
+/// `(tenantId, beneficiarioId)`, `(tenantId, adminUserId)`.
+model Colaborador {
+  id                        String            @id @default(cuid())
+  tenantId                  String
+  nombre                    String
+  apodo                     String?
+  /// DNI | CE | PASAPORTE | OTRO
+  tipoDocumento             String?
+  /// Sólo letras y dígitos, en mayúsculas.
+  documento                 String?
+  celular                   String?
+  direccion                 String?
+  contactoEmergenciaNombre  String?
+  contactoEmergenciaCelular String?
+  puestoId                  String?
+  estado                    ColaboradorEstado @default(ACTIVO)
+  /// `null` = no se sabe. Date-only: formatear con timeZone "UTC".
+  fechaIngreso              DateTime?         @db.Date
+  fechaCese                 DateTime?         @db.Date
+  motivoCese                String?
+  observaciones             String?
+  /// `AdelantoBeneficiario.id` — texto sin FK, siempre leído con tenantId.
+  beneficiarioId            String?
+  /// `AdminUser.id` — texto sin FK, siempre leído con tenantId.
+  adminUserId               String?
+  createdBy                 String
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+  deletedAt                 DateTime?
+
+  /// FK compuesta: no usar connect/disconnect (disconnect intentaría anular tenantId).
+  puesto      Puesto?             @relation(fields: [tenantId, puestoId], references: [tenantId, id], onDelete: Restrict)
+  tarifas     ColaboradorTarifa[]
+  asistencias Asistencia[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, estado])
+  @@index([tenantId, nombre])
+  @@index([tenantId, puestoId])
+}
+
+/// Referencia de lo que gana una persona, versionada por fecha (ADR-414 §3). Las
+/// filas no se editan: corregir = baja lógica + fila nueva. `SIN_PAGO` (monto 0)
+/// = desde esa fecha no gana (cese, suspensión sin goce).
+/// Único parcial `(tenantId, colaboradorId, vigenteDesde)` entre vivas: sólo en SQL.
+model ColaboradorTarifa {
+  id            String          @id @default(cuid())
+  tenantId      String
+  colaboradorId String
+  modalidad     TarifaModalidad
+  monto         Decimal         @db.Decimal(12, 2)
+  moneda        String          @default("PEN")
+  horasJornada  Decimal         @default(8) @db.Decimal(4, 2)
+  vigenteDesde  DateTime        @db.Date
+  motivo        String?
+  createdBy     String
+  createdAt     DateTime        @default(now())
+  deletedAt     DateTime?
+  deletedBy     String?
+
+  colaborador Colaborador @relation(fields: [tenantId, colaboradorId], references: [tenantId, id], onDelete: Restrict)
+
+  @@index([tenantId, colaboradorId, vigenteDesde])
+}
+
+/// Una marca de asistencia por persona y día (ADR-414 §4). Corregir = la viva se
+/// da de baja con `reemplazadaPorId` y nace otra: el historial del día son sus filas.
+/// Único parcial `(tenantId, colaboradorId, fecha)` entre vivas: sólo en SQL.
+model Asistencia {
+  id               String           @id @default(cuid())
+  tenantId         String
+  colaboradorId    String
+  fecha            DateTime         @db.Date
+  estado           AsistenciaEstado
+  /// Minutos desde las 00:00 de Lima (hora de pared, sin zona).
+  entradaMin       Int?
+  salidaMin        Int?
+  refrigerioMin    Int              @default(0)
+  /// La escribe el servidor: (salida − entrada − refrigerio)/60, o la tipeada.
+  horas            Decimal?         @db.Decimal(4, 2)
+  nota             String?
+  /// manual | masivo
+  origen           String           @default("manual")
+  marcadoPor       String
+  createdAt        DateTime         @default(now())
+  deletedAt        DateTime?
+  deletedBy        String?
+  reemplazadaPorId String?
+  motivoCorreccion String?
+
+  colaborador Colaborador @relation(fields: [tenantId, colaboradorId], references: [tenantId, id], onDelete: Restrict)
+
+  @@index([tenantId, fecha])
+  @@index([tenantId, colaboradorId, fecha])
 }
 
 // ─── Message Templates ───────────────────────────────────

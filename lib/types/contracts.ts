@@ -114,6 +114,8 @@ export interface DbContract {
   clienteDoc: string;
   customerId: string | null;
   supplierId: string | null;
+  /** `Colaborador.id` (ADR-414) — texto sin FK, siempre releído con tenantId. */
+  colaboradorId: string | null;
   descripcion: string;
   resumen: string;
   monto: number;
@@ -143,6 +145,8 @@ export interface ContractListFilters {
   estado?: string;
   search?: string;
   customerId?: string;
+  /** `Colaborador.id` — filtra los contratos de UNA persona (ADR-414). */
+  colaboradorId?: string;
   from?: string;
   to?: string;
   limit?: number;
@@ -155,6 +159,8 @@ export interface CreateContractInput {
   clienteDoc?: string;
   customerId?: string | null;
   supplierId?: string | null;
+  /** `Colaborador.id` (ADR-414) — texto sin FK, releído con tenantId antes de guardar. */
+  colaboradorId?: string | null;
   descripcion?: string;
   resumen?: string;
   monto?: number;
@@ -178,6 +184,8 @@ export interface UpdateContractInput {
   clienteDoc?: string;
   customerId?: string | null;
   supplierId?: string | null;
+  /** `Colaborador.id` (ADR-414). */
+  colaboradorId?: string | null;
   descripcion?: string;
   resumen?: string;
   monto?: number;

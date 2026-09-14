@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { ContractsDB } from "@/lib/db/contracts.db";
+import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -29,6 +30,8 @@ const UpdateContratoSchema = z.object({
   lugarFirma: z.string().max(200).optional(),
   customerId: z.string().max(40).nullish(),
   supplierId: z.string().max(40).nullish(),
+  /** `Colaborador.id` (ADR-414) — se relee con tenantId antes de guardar (IDOR). */
+  colaboradorId: z.string().max(40).nullish(),
 });
 
 function fechaValida(v: string): Date | null {
@@ -135,6 +138,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       }
     }
 
+    if (updates.colaboradorId && !(await ColaboradoresDB.existe(auth.tenantId, updates.colaboradorId))) {
+      return NextResponse.json({ error: "colaborador_no_encontrado" }, { status: 422 });
+    }
+
     const contrato = await ContractsDB.update(auth.tenantId, id, {
       tipo: updates.tipo,
       estado: nuevoEstado,
@@ -142,6 +149,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       clienteDoc: updates.clienteDoc,
       customerId: updates.customerId,
       supplierId: updates.supplierId,
+      colaboradorId: updates.colaboradorId,
       descripcion: updates.descripcion,
       resumen: updates.resumen,
       monto: updates.monto,
