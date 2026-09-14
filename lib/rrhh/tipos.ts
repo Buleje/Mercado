@@ -209,6 +209,27 @@ export interface GanadoDTO {
   total: number;
 }
 
+// ── Traer personas desde Adelantos ───────────────────────────────────────────
+
+export interface CandidatoDesdeAdelantosDTO {
+  beneficiarioId: string;
+  nombre: string;
+  tipoDocumento: "DNI" | "RUC" | "CE" | "PASAPORTE" | null;
+  documentoEnmascarado: string | null;
+  tieneCelular: boolean;
+  saldoAbierto: number;
+  esEmpresa: boolean;
+}
+
+export interface ResultadoTraerDesdeAdelantosDTO {
+  creados: ColaboradorDTO[];
+  omitidos: {
+    beneficiarioId: string;
+    nombre: string;
+    motivo: "ya_vinculado" | "documento_duplicado" | "no_encontrado" | "es_empresa";
+  }[];
+}
+
 // ── Motivos de rechazo de una marca ─────────────────────────────────────────
 
 export type MotivoRechazo =

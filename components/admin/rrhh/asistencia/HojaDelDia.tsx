@@ -10,14 +10,16 @@
  */
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Lock, UserPlus, Users } from "@buleje/design-system/icons";
+import { ChevronLeft, ChevronRight, Lock, Plus, UserPlus, Users } from "@buleje/design-system/icons";
 import { LoadingState, EmptyState } from "@buleje/design-system";
 import { avisarFallos, useRrhhAsistencia } from "@/hooks/use-rrhh-asistencia";
+import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
 import { etiquetaDia, sumarDias } from "@/lib/rrhh/fechas";
 import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, dentroDeVentana, estaIncluidoEseDia, motivoFueraDeVentana, motivoNoIncluido } from "../rrhh-ui";
 import FilaMarcaDelDia from "./FilaMarcaDelDia";
 import HistorialMarcaModal from "./HistorialMarcaModal";
 import ColaboradorFormModal from "../personal/ColaboradorFormModal";
+import TraerDesdeAdelantosModal from "../personal/TraerDesdeAdelantosModal";
 import { cn } from "@/lib/utils";
 import type { ColaboradorMinDTO, EstadoAsistencia, NivelRrhh } from "@/lib/rrhh/tipos";
 
@@ -33,6 +35,10 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
   const [reemplazar, setReemplazar] = useState(false);
   const [historialDe, setHistorialDe] = useState<ColaboradorMinDTO | null>(null);
   const [altaAbierta, setAltaAbierta] = useState(false);
+  const [traerAbierta, setTraerAbierta] = useState(false);
+  // «Estrenar RRHH con tu gente» (Brandon 2026-09-14) — mismo criterio de
+  // nivel que en PersonalView.
+  const { candidatos: candidatosAdelantos } = useRrhhDesdeAdelantos();
 
   const puedeGestionar = nivel === "gestion" || nivel === "completo";
   const hoy = hoja?.hoy ?? fecha;
@@ -91,7 +97,33 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
           icon={Users}
           title="Agrega a tu primera persona"
           description="Nombre, puesto y desde cuándo trabaja contigo — el resto se completa después."
-          action={puedeGestionar ? { label: "Agregar persona", onClick: () => setAltaAbierta(true) } : undefined}
+          action={
+            puedeGestionar
+              ? {
+                  label: "Agregar persona",
+                  node: (
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      {nivel === "completo" && candidatosAdelantos.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setTraerAbierta(true)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border-2 border-primary px-4 py-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]"
+                        >
+                          <UserPlus className="h-4 w-4" /> Traer de Adelantos ({candidatosAdelantos.length})
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setAltaAbierta(true)}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:brightness-110"
+                      >
+                        <Plus className="h-4 w-4" /> Agregar persona
+                      </button>
+                    </div>
+                  ),
+                }
+              : undefined
+          }
         />
         {altaAbierta && (
           <ColaboradorFormModal
@@ -99,6 +131,14 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
             onClose={() => setAltaAbierta(false)}
             nivel={nivel}
             onGuardado={() => { setAltaAbierta(false); recargar(); onCambioPersonal?.(); }}
+          />
+        )}
+        {traerAbierta && (
+          <TraerDesdeAdelantosModal
+            open={traerAbierta}
+            onClose={() => setTraerAbierta(false)}
+            nivel={nivel}
+            onCambio={() => { recargar(); onCambioPersonal?.(); }}
           />
         )}
       </>

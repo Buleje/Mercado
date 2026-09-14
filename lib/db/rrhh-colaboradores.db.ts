@@ -2,11 +2,20 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 import { limaDateKey } from "@/lib/utils";
 import { AdelantosDB, type DbBeneficiario } from "@/lib/db/adelantos.db";
+import type { ResumenPersona } from "@/lib/adelantos/saldo-persona";
 import { ContractsDB } from "@/lib/db/contracts.db";
 import { estadoVisible, diasParaVencer, type DbContract } from "@/lib/types/contracts";
-import { mismoDocumento, normalizarDocumento } from "@/lib/rrhh/documento";
+import {
+  enmascararDocumento,
+  esRucEmpresa,
+  mismoDocumento,
+  normalizarDocumento,
+  tipoDocumentoCandidato,
+  tipoDocumentoPorFormato,
+} from "@/lib/rrhh/documento";
 import { dateDeFechaKey, etiquetaCorta, fechaKeyDeDate, mesDe, rangoDeDias, sumarDias } from "@/lib/rrhh/fechas";
 import { tarifaVigente as tarifaVigentePura } from "@/lib/rrhh/ganado";
 import {
@@ -17,9 +26,10 @@ import {
   type ColaboradorRow as DtoColaboradorRow,
   type TarifaRow as DtoTarifaRow,
 } from "@/lib/rrhh/dto";
-import type { ColaboradorCrearInput, TarifaInput, TarifaGuardarInput } from "@/lib/rrhh/schemas";
+import type { ColaboradorCrearInput, TarifaInput, TarifaGuardarInput, TraerDesdeAdelantosInput } from "@/lib/rrhh/schemas";
 import type {
   AsistenciaDTO,
+  CandidatoDesdeAdelantosDTO,
   ColaboradorDTO,
   ContratoDeColaboradorDTO,
   EstadoAsistencia,
@@ -28,6 +38,7 @@ import type {
   FichaColaboradorDTO,
   Modalidad,
   NivelRrhh,
+  ResultadoTraerDesdeAdelantosDTO,
   ResumenRrhhDTO,
   TarifaDTO,
 } from "@/lib/rrhh/tipos";
@@ -1144,4 +1155,141 @@ export const ColaboradoresDB = {
       contratos: { porVencer, vencidos, activosSinContrato },
     };
   },
+
+  /**
+   * Beneficiarios VIVOS de Adelantos que todavía no tienen un `Colaborador`
+   * vivo vinculado — «Traer del negocio real». `esEmpresa` es informativo acá
+   * (la pantalla ya lo puede usar para atenuar la fila); el filtro de verdad
+   * lo aplica `traerDesdeAdelantos`.
+   */
+  async candidatosDesdeAdelantos(tenantId: string): Promise<{ candidatos: CandidatoDesdeAdelantosDTO[]; yaVinculados: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [beneficiarios, vinculados] = await Promise.all([
+      AdelantosDB.listBeneficiarios(tenantId),
+      prisma.colaborador.findMany({
+        where: { tenantId, deletedAt: null, beneficiarioId: { not: null } },
+        select: { beneficiarioId: true },
+      }),
+    ]);
+    const usados = new Set(vinculados.map((v) => v.beneficiarioId as string));
+    const candidatos = beneficiarios
+      .filter((b) => b.activo !== false && !usados.has(b.id))
+      .map((b) => aCandidatoDesdeAdelantosDTO(b));
+    return { candidatos, yaVinculados: usados.size };
+  },
+
+  /**
+   * Crea un `Colaborador` por cada `beneficiarioId`, copiando EN EL SERVIDOR
+   * nombre/documento/celular — nunca lo que mande el cliente. Cada persona es
+   * independiente (no todo-o-nada): una que choca con una carrera no tumba a
+   * las demás del lote. `esEmpresa` (RUC-20) se omite salvo que venga en
+   * `incluirEmpresas` — un `Colaborador` es una PERSONA, no una empresa.
+   */
+  async traerDesdeAdelantos(
+    tenantId: string,
+    input: TraerDesdeAdelantosInput,
+    usuario: string,
+  ): Promise<ResultadoTraerDesdeAdelantosDTO> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const idsUnicos = [...new Set(input.beneficiarioIds)];
+    const incluirEmpresas = new Set(input.incluirEmpresas ?? []);
+
+    const [beneficiarios, vinculados, colaboradoresConDoc] = await Promise.all([
+      AdelantosDB.listBeneficiarios(tenantId),
+      prisma.colaborador.findMany({
+        where: { tenantId, deletedAt: null, beneficiarioId: { not: null } },
+        select: { beneficiarioId: true },
+      }),
+      prisma.colaborador.findMany({
+        where: { tenantId, deletedAt: null, documento: { not: null } },
+        select: { documento: true },
+      }),
+    ]);
+    const porId = new Map(beneficiarios.filter((b) => b.activo !== false).map((b) => [b.id, b]));
+    const yaVinculados = new Set(vinculados.map((v) => v.beneficiarioId as string));
+    // Set mutable: reserva documentos DENTRO del lote para que dos candidatos
+    // con el mismo número no se cuelen los dos en la misma pasada.
+    const documentosUsados = new Set(colaboradoresConDoc.map((c) => c.documento as string));
+
+    const creados: ColaboradorDTO[] = [];
+    const omitidos: ResultadoTraerDesdeAdelantosDTO["omitidos"] = [];
+
+    for (const beneficiarioId of idsUnicos) {
+      const b = porId.get(beneficiarioId);
+      if (!b) {
+        omitidos.push({ beneficiarioId, nombre: "—", motivo: "no_encontrado" });
+        continue;
+      }
+      if (yaVinculados.has(beneficiarioId)) {
+        omitidos.push({ beneficiarioId, nombre: b.nombre, motivo: "ya_vinculado" });
+        continue;
+      }
+      if (esRucEmpresa(b.documento) && !incluirEmpresas.has(beneficiarioId)) {
+        omitidos.push({ beneficiarioId, nombre: b.nombre, motivo: "es_empresa" });
+        continue;
+      }
+      const documento = normalizarDocumento(b.documento);
+      if (documento && documentosUsados.has(documento)) {
+        omitidos.push({ beneficiarioId, nombre: b.nombre, motivo: "documento_duplicado" });
+        continue;
+      }
+
+      try {
+        const row = await prisma.colaborador.create({
+          data: {
+            tenantId,
+            nombre: b.nombre,
+            tipoDocumento: tipoDocumentoPorFormato(documento),
+            documento,
+            celular: b.telefono?.trim() || null,
+            estado: "ACTIVO",
+            fechaIngreso: input.fechaIngreso ? dateDeFechaKey(input.fechaIngreso) : null,
+            beneficiarioId,
+            createdBy: usuario,
+          },
+          include: COLABORADOR_INCLUDE,
+        });
+        if (documento) documentosUsados.add(documento);
+        creados.push(aColaboradorDTO(mapColaborador(row), "completo"));
+        // Sin valores: el nombre lo trae la propia lista del panel; acá sólo
+        // queda "de dónde salió" (ADR-414 §8).
+        logActivity(
+          "rrhh_colaborador_crear",
+          "Colaborador",
+          "Creó desde Adelantos",
+          row.id,
+          usuario,
+          undefined,
+          tenantId,
+        ).catch((err) =>
+          logger.error("[rrhh] no se pudo registrar la actividad de traer desde Adelantos", {
+            error: String(err),
+          }),
+        );
+      } catch (e) {
+        if (!isUniqueViolation(e)) throw e;
+        // Carrera entre la relectura de arriba y este create: releo cuál de
+        // los dos únicos parciales chocó, en vez de adivinar.
+        const yaEsSuyo = await prisma.colaborador.findFirst({
+          where: { tenantId, deletedAt: null, beneficiarioId },
+          select: { id: true },
+        });
+        omitidos.push({ beneficiarioId, nombre: b.nombre, motivo: yaEsSuyo ? "ya_vinculado" : "documento_duplicado" });
+      }
+    }
+
+    return { creados, omitidos };
+  },
 };
+
+function aCandidatoDesdeAdelantosDTO(b: DbBeneficiario & ResumenPersona): CandidatoDesdeAdelantosDTO {
+  return {
+    beneficiarioId: b.id,
+    nombre: b.nombre,
+    tipoDocumento: tipoDocumentoCandidato(b.documento, b.tipoDocumento),
+    documentoEnmascarado: enmascararDocumento(b.documento ?? null),
+    tieneCelular: Boolean(b.telefono?.trim()),
+    saldoAbierto: b.saldoPendiente.PEN ?? 0,
+    esEmpresa: esRucEmpresa(b.documento ?? null),
+  };
+}

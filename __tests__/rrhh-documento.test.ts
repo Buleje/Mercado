@@ -7,7 +7,14 @@
  * dos veces, y un documento vacío nunca une nada.
  */
 import { describe, expect, it } from "vitest";
-import { enmascararDocumento, esDniValido, mismoDocumento, normalizarDocumento } from "@/lib/rrhh/documento";
+import {
+  enmascararDocumento,
+  esDniValido,
+  esRucEmpresa,
+  mismoDocumento,
+  normalizarDocumento,
+  tipoDocumentoPorFormato,
+} from "@/lib/rrhh/documento";
 
 describe("normalizarDocumento", () => {
   it("saca separadores y pasa a mayúsculas", () => {
@@ -58,5 +65,42 @@ describe("esDniValido", () => {
     expect(esDniValido("1234567")).toBe(false);
     expect(esDniValido("123456789")).toBe(false);
     expect(esDniValido("1234567A")).toBe(false);
+  });
+});
+
+/**
+ * ADR: «Traer desde Adelantos» — el tipoDocumento de un Colaborador sale del
+ * FORMATO del número, no de lo que Adelantos tenga guardado en su propio
+ * campo (que admite "RUC", un valor que `Colaborador` no acepta).
+ */
+describe("tipoDocumentoPorFormato", () => {
+  it("8 dígitos → DNI", () => {
+    expect(tipoDocumentoPorFormato("12345678")).toBe("DNI");
+  });
+  it("RUC de persona natural (10, 11 dígitos) → OTRO, no DNI", () => {
+    expect(tipoDocumentoPorFormato("10456789012")).toBe("OTRO");
+  });
+  it("RUC de empresa (20, 11 dígitos) → OTRO también (esEmpresa se decide aparte)", () => {
+    expect(tipoDocumentoPorFormato("20456789012")).toBe("OTRO");
+  });
+  it("vacío → null", () => {
+    expect(tipoDocumentoPorFormato(null)).toBeNull();
+    expect(tipoDocumentoPorFormato("")).toBeNull();
+  });
+});
+
+describe("esRucEmpresa", () => {
+  it("RUC que empieza con 20 (11 dígitos) → true", () => {
+    expect(esRucEmpresa("20456789012")).toBe(true);
+  });
+  it("CONTROL NEGATIVO: RUC-10 (persona natural) → false, NO es empresa", () => {
+    expect(esRucEmpresa("10456789012")).toBe(false);
+  });
+  it("un DNI de 8 dígitos → false", () => {
+    expect(esRucEmpresa("12345678")).toBe(false);
+  });
+  it("vacío → false", () => {
+    expect(esRucEmpresa(null)).toBe(false);
+    expect(esRucEmpresa("")).toBe(false);
   });
 });

@@ -10,15 +10,17 @@
  */
 
 import { useMemo, useState } from "react";
-import { Plus, Search } from "@buleje/design-system/icons";
+import { Plus, Search, UserPlus } from "@buleje/design-system/icons";
 import { DataTable, EmptyState, LoadingState, StatCard } from "@buleje/design-system";
 import { Users } from "@buleje/design-system/icons";
 import { useRrhhColaboradores } from "@/hooks/use-rrhh-colaboradores";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
+import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
 import { CLASE_FOCUS_FILA, COLABORADOR_ESTADO_META, filaClicableProps } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
 import ColaboradorFormModal from "./ColaboradorFormModal";
 import FichaColaboradorModal from "./FichaColaboradorModal";
+import TraerDesdeAdelantosModal from "./TraerDesdeAdelantosModal";
 import type { EstadoColaborador, NivelRrhh } from "@/lib/rrhh/tipos";
 
 const CHIPS_ESTADO: { id: EstadoColaborador | "TODOS"; label: string }[] = [
@@ -35,6 +37,7 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   const [puestoId, setPuestoId] = useState("");
   const [chip, setChip] = useState<EstadoColaborador | "TODOS">("ACTIVO");
   const [altaAbierta, setAltaAbierta] = useState(false);
+  const [traerAbierta, setTraerAbierta] = useState(false);
   const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
 
   const { colaboradores, loading, error, recargar } = useRrhhColaboradores(
@@ -42,6 +45,11 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
     false,
   );
   const { puestos } = useRrhhPuestos();
+  // «Estrenar RRHH con tu gente» (Brandon 2026-09-14): traer personas ya
+  // conocidas desde Adelantos en vez de tipearlas de cero. Sólo nivel
+  // completo — el vínculo con la cuenta de Adelantos es territorio de admin/
+  // owner (mismo criterio que `vincular_beneficiario`, ADR-414 §1).
+  const { candidatos: candidatosAdelantos } = useRrhhDesdeAdelantos();
 
   const kpis = useMemo(() => {
     const base: Record<EstadoColaborador, number> = { ACTIVO: 0, VACACIONES: 0, LICENCIA: 0, SUSPENDIDO: 0, CESADO: 0 };
@@ -89,6 +97,17 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           <option value="">Todos los puestos</option>
           {puestos.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
         </select>
+        {/* nivel completo → puedeEditar YA es true; el `ml-auto` de "Persona"
+            de abajo empuja a todo el grupo a la derecha. */}
+        {nivel === "completo" && candidatosAdelantos.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setTraerAbierta(true)}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-primary px-3 text-sm font-bold text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]"
+          >
+            <UserPlus className="h-4 w-4" /> Traer de Adelantos ({candidatosAdelantos.length})
+          </button>
+        )}
         {puedeEditar && (
           <button
             type="button"
@@ -123,7 +142,33 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           icon={Users}
           title={colaboradores.length === 0 ? "Agrega a tu primera persona" : "Nadie coincide"}
           description={colaboradores.length === 0 ? "Nombre, puesto y desde cuándo trabaja contigo." : "Prueba con otro filtro o busca otro nombre."}
-          action={puedeEditar && colaboradores.length === 0 ? { label: "Agregar persona", onClick: () => setAltaAbierta(true) } : undefined}
+          action={
+            puedeEditar && colaboradores.length === 0
+              ? {
+                  label: "Agregar persona",
+                  node: (
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      {nivel === "completo" && candidatosAdelantos.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setTraerAbierta(true)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border-2 border-primary px-4 py-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]"
+                        >
+                          <UserPlus className="h-4 w-4" /> Traer de Adelantos ({candidatosAdelantos.length})
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setAltaAbierta(true)}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:brightness-110"
+                      >
+                        <Plus className="h-4 w-4" /> Agregar persona
+                      </button>
+                    </div>
+                  ),
+                }
+              : undefined
+          }
         />
       ) : (
         <DataTable zebra>
@@ -170,6 +215,14 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           onClose={() => setAltaAbierta(false)}
           nivel={nivel}
           onGuardado={() => { setAltaAbierta(false); recargar(); }}
+        />
+      )}
+      {traerAbierta && (
+        <TraerDesdeAdelantosModal
+          open={traerAbierta}
+          onClose={() => setTraerAbierta(false)}
+          nivel={nivel}
+          onCambio={recargar}
         />
       )}
       {fichaAbierta && (

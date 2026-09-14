@@ -130,3 +130,11 @@ export type MasivoInput = z.infer<typeof masivoSchema>;
 
 export const rangoSchema = z.object({ desde: fechaKey, hasta: fechaKey, colaboradorId: id.optional() });
 export type RangoInput = z.infer<typeof rangoSchema>;
+
+export const traerDesdeAdelantosSchema = z.object({
+  beneficiarioIds: z.array(id).min(1).max(100),
+  fechaIngreso: fechaKey.optional(),
+  /** Empresas (RUC-20) que SÍ se quieren traer, a pesar del filtro por defecto. */
+  incluirEmpresas: z.array(id).max(100).optional(),
+});
+export type TraerDesdeAdelantosInput = z.infer<typeof traerDesdeAdelantosSchema>;

@@ -213,6 +213,48 @@ período cerrado → 409 `periodo_cerrado`.
 - La remuneración del contrato y la tarifa de referencia **no se sincronizan**: una es el papel firmado, la otra la
   cuenta del patio. La ficha muestra las dos.
 
+### 6b. Traer desde Adelantos («Estrenar RRHH con tu gente»)
+
+Pedido de Brandon (2026-09-14): RRHH nace con 0 personas y Adelantos ya tiene 3 beneficiarios (2 sin documento ni
+teléfono) — hay que poder traerlos de una, no tipearlos de nuevo. Mismo criterio que el resto del ADR: **nunca se
+vincula solo**, y lo que se guarda lo decide el servidor, no lo que mande el cliente.
+
+**Candidatos** (`GET .../desde-adelantos`, nivel completo): beneficiarios VIVOS (`activo = true`) del tenant que
+todavía NO tienen un `Colaborador` vivo con ese `beneficiarioId`. Por cada uno, `saldoAbierto` sale de
+`resumirPersona` (la misma cuenta que gobierna el tope de crédito de Adelantos — nunca una suma aparte que pueda
+desalinearse) y `esEmpresa` es informativo (la pantalla lo puede usar para atenuar la fila; el filtro real es al
+traer).
+
+**`esEmpresa` = RUC que empieza con 20** (persona jurídica). Un RUC-10 es una persona natural con RUC — no es una
+empresa y se trae como cualquier otra persona. No se inventa otra regla (ni por nombre, ni por el `tipoDocumento`
+que Adelantos tenga guardado).
+
+**El `tipoDocumento` de un `Colaborador` sale del FORMATO del número, no de lo que Adelantos tenga escrito en el
+suyo.** Adelantos admite `"RUC"` como `tipoDocumento`, un valor que `Colaborador` no acepta (§1: sólo
+`DNI · CE · PASAPORTE · OTRO`). Confiar en la etiqueta guardada podría copiar `"RUC"` tal cual y violar el CHECK de
+la base, o peor, clasificar mal un documento mal tipeado. La regla (`tipoDocumentoPorFormato`, puro): 8 dígitos
+exactos → `DNI`; cualquier otro número no vacío → `OTRO`; vacío → `null`. Un RUC (10 u 11 dígitos empezando en 10
+o 20) siempre cae en `OTRO` — es el catch-all seguro, nunca inventa un CE o un PASAPORTE que nadie confirmó.
+
+**Traer** (`POST .../desde-adelantos`, nivel completo, CSRF, `MODERATE`): hasta 100 `beneficiarioId` por request.
+Cada persona es **independiente** — una que choca con una carrera o ya está vinculada no tumba a las demás del
+lote (nunca todo-o-nada). Por cada `beneficiarioId`:
+
+1. Se relee el beneficiario con `tenantId` (nunca se confía en lo que mandó el cliente sobre él) — si no aparece
+   en la lista de ESTE tenant → `no_encontrado` (defensa IDOR, igual criterio que `Contract.colaboradorId`).
+2. Si ya tiene un `Colaborador` vivo vinculado → `ya_vinculado`.
+3. Si es una empresa (RUC-20) y su id no viene en `incluirEmpresas` (lista aparte, opt-in explícito) → `es_empresa`
+   — un `Colaborador` es una PERSONA que trabaja en el negocio, no una razón social.
+4. Si su documento normalizado ya lo tiene otro `Colaborador` vivo → `documento_duplicado`.
+5. Si nada de eso aplica: crea con `nombre`, `documento`/`tipoDocumento` (regla de arriba), `celular` ← `telefono`,
+   `estado: ACTIVO`, `fechaIngreso` (la que mandó el request, o `null`), `beneficiarioId` — **sin tarifa**: no se
+   inventa un sueldo que nadie puso. Un P2002 de carrera (otro request coló el mismo vínculo entre la relectura y
+   el `create`) se relee para decir CUÁL de los dos únicos parciales chocó, en vez de adivinar.
+
+`ResultadoTraerDesdeAdelantosDTO.creados` trae la ficha completa (nivel completo) de cada persona creada;
+`omitidos` la razón de cada una que no se trajo, para que la pantalla explique fila por fila, no un contador solo.
+Auditoría `rrhh_colaborador_crear` por persona, «Creó desde Adelantos» — sin valores (§8).
+
 ### 7. Pantalla y roles
 
 **Barra lateral.** Categoría nueva `recursos-humanos` «Recursos Humanos» (icono `Users`) con una sola pestaña
@@ -842,6 +884,8 @@ exportar `STRICT` `rrhh-exportar`.
 | `GET /api/rrhh/colaboradores/[id]/tarifas` | completo | — | `{ tarifas: TarifaDTO[] }` | 404 |
 | `PUT /api/rrhh/colaboradores/[id]/tarifas` | completo | `tarifaGuardarSchema` | `{ tarifas: TarifaDTO[] }` | 404 · 422 `tarifa_invalida { message }` |
 | `DELETE /api/rrhh/colaboradores/[id]/tarifas?tarifaId=` | completo | — | `{ tarifas: TarifaDTO[] }` | 404 |
+| `GET /api/rrhh/colaboradores/desde-adelantos` | completo | — | `{ candidatos: CandidatoDesdeAdelantosDTO[], yaVinculados: number }` | — |
+| `POST /api/rrhh/colaboradores/desde-adelantos` | completo | `traerDesdeAdelantosSchema` | `ResultadoTraerDesdeAdelantosDTO` | 422 `validation_error` |
 | `GET /api/rrhh/asistencia` | marcar | `?desde=&hasta=` (≤ 62 días; default hoy) | `HojaAsistenciaDTO` | 422 `rango_invalido` |
 | `PUT /api/rrhh/asistencia` | marcar | `guardarMarcasSchema` | `{ guardadas: AsistenciaDTO[], quitadas, sinCambio }` | 422 `marcas_invalidas { errores: { colaboradorId, fecha, motivo, message }[] }` · 403 `fuera_de_ventana` |
 | `POST /api/rrhh/asistencia/masivo` | marcar | `masivoSchema` | `{ creadas, reemplazadas, omitidos: { colaboradorId, nombre, motivo: "ya_marcado" \| "no_activo" \| "no_ingresado" \| "cesado" }[] }` | 422 · 403 `fuera_de_ventana` |
