@@ -209,11 +209,12 @@ export default function CategoriesEditorTab() {
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const { confirm } = useConfirm();
 
-  // El modal ya cierra con Escape por su propio onKeyDown (cerrarConEscape:
-  // false) — el hook agrega la trampa de Tab y devuelve el foco al cerrar.
+  // El rol de diálogo va en el MISMO elemento que el hook: con el rol en el
+  // fondo y el ref en el panel, el hook veía «otro diálogo» (el fondo) y cedía
+  // el teclado — Tab se escapaba y Escape no cerraba (smoke 2026-09-13).
   const newFormPanelRef = useRef<HTMLDivElement>(null);
   const cerrarNewForm = useCallback(() => { setShowNewForm(false); setNewCatName(""); }, []);
-  useModalAccesible(newFormPanelRef, { onCerrar: cerrarNewForm, cerrarConEscape: false, activo: showNewForm });
+  useModalAccesible(newFormPanelRef, { onCerrar: cerrarNewForm, activo: showNewForm });
 
   // Reordena moviendo el item `from` a la posición `to` (drag & drop).
   const moveTo = useCallback((from: number, to: number) => {
@@ -386,17 +387,14 @@ export default function CategoriesEditorTab() {
       {/* Modal nueva categoría — overlay centrado con backdrop */}
       {showNewForm && (
         <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="new-cat-title"
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
-          onClick={() => { setShowNewForm(false); setNewCatName(""); }}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") { setShowNewForm(false); setNewCatName(""); }
-          }}
+          onClick={cerrarNewForm}
         >
           <div
             ref={newFormPanelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-cat-title"
             tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden outline-none"

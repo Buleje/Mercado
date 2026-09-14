@@ -497,10 +497,12 @@ export default function GuiasRemisionModule() {
     return () => document.removeEventListener("keydown", handler);
   }, [showNew, selected, showAnular]);
 
-  // El Escape de estos dos modales ya lo maneja el listener global de arriba
-  // (coordina con showAnular) — acá sólo se pide el foco atrapado.
+  // El detalle deja Escape al listener global de arriba: coordina con «Anular»,
+  // que se abre encima. La guía NUEVA no: ese listener ignora las teclas que
+  // vienen de un campo, y el hook deja el foco justo en el primer campo — Escape
+  // no cerraba nunca (smoke 2026-09-13). El hook la cierra desde cualquier foco.
   useModalAccesible(detailPanelRef, { onCerrar: cerrarSelected, activo: !!selected, cerrarConEscape: false });
-  useModalAccesible(newPanelRef, { onCerrar: cerrarNew, activo: showNew, cerrarConEscape: false });
+  useModalAccesible(newPanelRef, { onCerrar: cerrarNew, activo: showNew });
 
   // ── Fetch guias ──
   const fetchGuias = useCallback(async () => {

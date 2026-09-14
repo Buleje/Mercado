@@ -2249,13 +2249,14 @@ export default function PuntoCompraView() {
           onClick={cerrarNuevoProveedor}
           role="dialog"
           aria-modal="true"
+          aria-labelledby="punto-compra-nuevo-proveedor"
           ref={nuevoProveedorModalRef}
           tabIndex={-1}
         >
           <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle as="h3" className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
+                <CardTitle as="h3" id="punto-compra-nuevo-proveedor" className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                   Se guarda en tu lista de proveedores y se selecciona en esta orden.
                 </p>
