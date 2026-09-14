@@ -3,11 +3,10 @@
 /**
  * HojaDelMes — personas × días del mes, una letra por celda (ADR-414 §7).
  *
- * Es una `<table>` normal a propósito: el shell del admin ya convierte toda
- * tabla en tarjetas por fila bajo los 640px (`useMobileTableCards`, memoria
- * `admin-tablas-cards-mobile-automatico`) — con una fila por PERSONA y una
- * columna por DÍA, esa conversión automática YA ES «lista por persona» sin
- * escribir un layout aparte.
+ * En escritorio es una `<table>`. Bajo 640 px la tabla se esconde y se pinta
+ * `MesPorPersona` (una persona a la vez, en calendario): la conversión
+ * automática de tablas a tarjetas (`useMobileTableCards`) apilaba los 31 días
+ * de cada persona y medía 1.490 px por persona (2026-09-14).
  */
 
 import { useMemo, useState, type ReactNode } from "react";
@@ -21,8 +20,10 @@ import { dentroDeVentana, ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, esta
 import CeldaMarcaPopover from "./CeldaMarcaPopover";
 import HistorialMarcaModal from "./HistorialMarcaModal";
 import LeyendaEstados from "./LeyendaEstados";
+import MesPorPersona from "./MesPorPersona";
 import NavegadorPeriodo from "./NavegadorPeriodo";
-import type { ColaboradorMinDTO, EstadoAsistencia } from "@/lib/rrhh/tipos";
+import { conteoDelMes } from "./conteo-mes";
+import type { ColaboradorMinDTO } from "@/lib/rrhh/tipos";
 
 const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"];
 /** Por `getUTCDay()`: 0 = domingo. */
@@ -76,91 +77,99 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
   } else {
     contenido = (
       <>
-        <DataTable zebra stickyHeader wrapperClassName="max-h-[70vh] rounded-2xl">
-          <thead>
-            <tr>
-              <th className="sticky left-0 z-10 bg-[var(--surface-sunken)]">
-                <span className="block w-48">Persona</span>
-              </th>
-              {dias.map((d) => {
-                const esHoy = d === hoy;
-                const diaSemana = dateDeFechaKey(d).getUTCDay();
-                const finde = diaSemana === 0 || diaSemana === 6;
+        <div className="hidden sm:block">
+          <DataTable zebra stickyHeader wrapperClassName="max-h-[70vh] rounded-2xl">
+            <thead>
+              <tr>
+                <th className="sticky left-0 z-10 bg-[var(--surface-sunken)]">
+                  <span className="block w-48">Persona</span>
+                </th>
+                {dias.map((d) => {
+                  const esHoy = d === hoy;
+                  const diaSemana = dateDeFechaKey(d).getUTCDay();
+                  const finde = diaSemana === 0 || diaSemana === 6;
+                  return (
+                    <th
+                      key={d}
+                      title={etiquetaDia(d, hoy)}
+                      className={cn(
+                        "px-1 text-center",
+                        esHoy && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+                        finde && !esHoy && "text-[var(--text-tertiary)]",
+                      )}
+                    >
+                      <span className="block text-xs font-semibold">{LETRA_DIA[diaSemana]}</span>
+                      <span className="block tabular-nums">{d.slice(8, 10)}</span>
+                    </th>
+                  );
+                })}
+                <th className="text-center">Totales</th>
+              </tr>
+            </thead>
+            <tbody>
+              {hoja.colaboradores.map((c) => {
+                const marcasDeLaPersona = hoja.marcas.filter((m) => m.colaboradorId === c.id);
+                const { conteo, sinMarcar } = conteoDelMes(c, marcasDeLaPersona, dias, hoy);
                 return (
-                  <th
-                    key={d}
-                    title={etiquetaDia(d, hoy)}
-                    className={cn(
-                      "px-1 text-center",
-                      esHoy && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
-                      finde && !esHoy && "text-[var(--text-tertiary)]",
-                    )}
-                  >
-                    <span className="block text-xs font-semibold">{LETRA_DIA[diaSemana]}</span>
-                    <span className="block tabular-nums">{d.slice(8, 10)}</span>
-                  </th>
+                  <tr key={c.id}>
+                    <td className="sticky left-0 z-10 bg-[var(--surface-raised)] font-semibold text-[var(--text-primary)]">
+                      <span className="block w-48 truncate" title={c.nombre}>
+                        {c.nombre}
+                      </span>
+                      {c.puesto && <span className="block w-48 truncate text-xs font-normal text-[var(--text-tertiary)]">{c.puesto.nombre}</span>}
+                    </td>
+                    {dias.map((d) => {
+                      const incluido = estaIncluidoEseDia(c, d) && d <= hoy;
+                      const editable = dentroDeVentana(d, hoja.ventana);
+                      return (
+                        <td key={d} className={cn("p-1 text-center", d === hoy && "bg-primary/5")}>
+                          <CeldaMarcaPopover
+                            colaborador={c}
+                            fecha={d}
+                            marca={marcasDeLaPersona.find((m) => m.fecha === d)}
+                            incluido={incluido}
+                            editable={editable}
+                            motivoNoEditable={editable ? undefined : motivoFueraDeVentana(hoja.ventana)}
+                            pendiente={pendientes.has(`${c.id}|${d}`)}
+                            errorMsg={erroresPorCelda.get(`${c.id}|${d}`)}
+                            onMarcar={(estado) => marcar({ colaboradorId: c.id, fecha: d, estado })}
+                            onVerHistorial={() => setHistorial({ colaborador: c, fecha: d })}
+                          />
+                        </td>
+                      );
+                    })}
+                    <td className="whitespace-nowrap text-center text-xs">
+                      <span className="inline-flex flex-wrap justify-center gap-1">
+                        {ORDEN_ESTADOS_ASISTENCIA.filter((e) => conteo[e] > 0).map((e) => (
+                          <span key={e} title={ESTADO_ASISTENCIA_META[e].label} className={cn("rounded-md px-1.5 py-0.5 font-bold tabular-nums", ESTADO_ASISTENCIA_META[e].claseChip)}>
+                            {ESTADO_ASISTENCIA_META[e].letra} {conteo[e]}
+                          </span>
+                        ))}
+                        {sinMarcar > 0 && (
+                          <span className="rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 font-bold tabular-nums text-[var(--text-secondary)]">{sinMarcar} sin marcar</span>
+                        )}
+                      </span>
+                    </td>
+                  </tr>
                 );
               })}
-              <th className="text-center">Totales</th>
-            </tr>
-          </thead>
-          <tbody>
-            {hoja.colaboradores.map((c) => {
-              const marcasDeLaPersona = hoja.marcas.filter((m) => m.colaboradorId === c.id);
-              const conteo: Record<EstadoAsistencia, number> = { PRESENTE: 0, TARDANZA: 0, MEDIO_DIA: 0, FALTA: 0, PERMISO: 0, DESCANSO: 0, VACACIONES: 0 };
-              let sinMarcar = 0;
-              for (const d of dias) {
-                if (d > hoy) continue; // el futuro no cuenta como "sin marcar"
-                if (!estaIncluidoEseDia(c, d)) continue;
-                const m = marcasDeLaPersona.find((x) => x.fecha === d);
-                if (m) conteo[m.estado] += 1;
-                else sinMarcar += 1;
-              }
-              return (
-                <tr key={c.id}>
-                  <td className="sticky left-0 z-10 bg-[var(--surface-raised)] font-semibold text-[var(--text-primary)]">
-                    <span className="block w-48 truncate" title={c.nombre}>
-                      {c.nombre}
-                    </span>
-                    {c.puesto && <span className="block w-48 truncate text-xs font-normal text-[var(--text-tertiary)]">{c.puesto.nombre}</span>}
-                  </td>
-                  {dias.map((d) => {
-                    const incluido = estaIncluidoEseDia(c, d) && d <= hoy;
-                    const editable = dentroDeVentana(d, hoja.ventana);
-                    return (
-                      <td key={d} className={cn("p-1 text-center", d === hoy && "bg-primary/5")}>
-                        <CeldaMarcaPopover
-                          colaborador={c}
-                          fecha={d}
-                          marca={marcasDeLaPersona.find((m) => m.fecha === d)}
-                          incluido={incluido}
-                          editable={editable}
-                          motivoNoEditable={editable ? undefined : motivoFueraDeVentana(hoja.ventana)}
-                          pendiente={pendientes.has(`${c.id}|${d}`)}
-                          errorMsg={erroresPorCelda.get(`${c.id}|${d}`)}
-                          onMarcar={(estado) => marcar({ colaboradorId: c.id, fecha: d, estado })}
-                          onVerHistorial={() => setHistorial({ colaborador: c, fecha: d })}
-                        />
-                      </td>
-                    );
-                  })}
-                  <td className="whitespace-nowrap text-center text-xs">
-                    <span className="inline-flex flex-wrap justify-center gap-1">
-                      {ORDEN_ESTADOS_ASISTENCIA.filter((e) => conteo[e] > 0).map((e) => (
-                        <span key={e} title={ESTADO_ASISTENCIA_META[e].label} className={cn("rounded-md px-1.5 py-0.5 font-bold tabular-nums", ESTADO_ASISTENCIA_META[e].claseChip)}>
-                          {ESTADO_ASISTENCIA_META[e].letra} {conteo[e]}
-                        </span>
-                      ))}
-                      {sinMarcar > 0 && (
-                        <span className="rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 font-bold tabular-nums text-[var(--text-secondary)]">{sinMarcar} sin marcar</span>
-                      )}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </DataTable>
+            </tbody>
+          </DataTable>
+        </div>
+
+        <div className="sm:hidden">
+          <MesPorPersona
+            colaboradores={hoja.colaboradores}
+            marcas={hoja.marcas}
+            dias={dias}
+            hoy={hoy}
+            ventana={hoja.ventana}
+            pendientes={pendientes}
+            erroresPorCelda={erroresPorCelda}
+            onMarcar={(colaboradorId, fecha, estado) => marcar({ colaboradorId, fecha, estado })}
+            onVerHistorial={(colaborador, fecha) => setHistorial({ colaborador, fecha })}
+          />
+        </div>
 
         <LeyendaEstados
           extra={

@@ -34,11 +34,13 @@ interface Props {
   motivoNoEditable?: string;
   onMarcar: (estado: EstadoAsistencia | null) => void;
   onVerHistorial: () => void;
+  /** `grande` = 36 px, para el calendario del celular. */
+  tamano?: "normal" | "grande";
 }
 
 const ANCHO = 256;
 
-export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente, errorMsg, incluido, editable, motivoNoEditable, onMarcar, onVerHistorial }: Props) {
+export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente, errorMsg, incluido, editable, motivoNoEditable, onMarcar, onVerHistorial, tamano = "normal" }: Props) {
   const [open, setOpen] = useState(false);
   const anclaRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -187,7 +189,8 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
         aria-label={`${colaborador.nombre}, ${fecha}: ${detalle}${!editable && motivoNoEditable ? ` — ${motivoNoEditable}` : ""}`}
         title={`${detalle}${!editable && motivoNoEditable ? ` — ${motivoNoEditable}` : ""}`}
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-md text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30",
+          "flex items-center justify-center rounded-md font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30",
+          tamano === "grande" ? "h-9 w-9 text-sm" : "h-8 w-8 text-xs",
           meta ? meta.claseChip : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]",
           errorMsg && "ring-2 ring-[var(--data-error-500)]",
           pendiente && "animate-pulse",

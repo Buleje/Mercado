@@ -117,7 +117,8 @@ export interface ColaboradorInput {
   /** Sólo nivel completo. */
   beneficiarioId?: string | null;
   /** Sólo nivel completo. */
-  tarifaInicial?: { modalidad: Modalidad; monto: number } | null;
+  /** `vigenteDesde` es obligatorio en el servidor (`tarifaInput`): sin él el alta con monto daba 422. */
+  tarifaInicial?: { modalidad: Exclude<Modalidad, "SIN_PAGO">; monto: number; vigenteDesde: FechaKey; horasJornada?: number } | null;
 }
 
 /**

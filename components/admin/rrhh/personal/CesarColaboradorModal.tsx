@@ -45,6 +45,7 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
   const [conTarifa, setConTarifa] = useState(false);
   const [modalidad, setModalidad] = useState<ModalidadPagada>("DIA");
   const [monto, setMonto] = useState("");
+  const [horas, setHoras] = useState("8");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<{ n: number; primera: string } | null>(null);
@@ -97,7 +98,11 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
         body: JSON.stringify({
           action: "reingresar",
           fecha,
-          tarifa: puedeTarifa && conTarifa ? { modalidad, monto: Number(monto) } : null,
+          // `vigenteDesde` es obligatorio en `tarifaInput`: sin él, reingresar con tarifa nueva daba 422.
+          tarifa:
+            puedeTarifa && conTarifa
+              ? { modalidad, monto: Number(monto), vigenteDesde: fecha, ...(modalidad === "HORA" ? { horasJornada: Number(horas) } : {}) }
+              : null,
         }),
         credentials: "include",
       });
@@ -129,6 +134,10 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
     }
     if (puedeTarifa && conTarifa && !(Number(monto) > 0)) {
       setError("Pon un monto mayor a 0 o desmarca la tarifa nueva.");
+      return;
+    }
+    if (puedeTarifa && conTarifa && modalidad === "HORA" && !(Number(horas) > 0 && Number(horas) <= 24)) {
+      setError("La jornada tiene que ser de más de 0 y hasta 24 horas.");
       return;
     }
     void enviarReingreso();
@@ -239,6 +248,13 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
                     />
                   )}
                 </Field>
+                {modalidad === "HORA" && (
+                  <Field label="Horas de la jornada" className="col-span-2">
+                    {(id) => (
+                      <input id={id} type="number" inputMode="decimal" min={1} max={24} step="0.5" value={horas} onChange={(e) => setHoras(e.target.value)} className={cn(CLASE_CAMPO, "tabular-nums")} />
+                    )}
+                  </Field>
+                )}
               </div>
             )}
           </div>

@@ -6,6 +6,10 @@
  * Las filas no se editan: guardar de nuevo la misma fecha da de baja la
  * anterior y nace una fila nueva (lo hace el servidor). `SIN_PAGO` es «desde
  * acá no gana» — no es un error, es la línea del cese o la suspensión.
+ *
+ * Por hora también se pide la jornada: el servidor la acepta desde siempre,
+ * pero la ficha nunca la mandaba y quedaba en 8 h. Es la que estima las horas
+ * de un día marcado sin entrada ni salida.
  */
 
 import { useState, type FormEvent } from "react";
@@ -32,11 +36,16 @@ function textoTarifa(t: Pick<TarifaDTO, "modalidad" | "monto">): string {
   return t.modalidad === "SIN_PAGO" ? "Sin pago" : `${formatearPEN(t.monto)} ${etiquetaModalidad(t.modalidad)}`;
 }
 
+function textoHoras(h: number): string {
+  return `${h.toLocaleString("es-PE", { maximumFractionDigits: 2 })} h`;
+}
+
 export default function FichaTarifas({ tarifas, guardando, onGuardar, onQuitar, onCambio }: Props) {
   const { confirm } = useConfirm();
   const [abierto, setAbierto] = useState(false);
   const [modalidad, setModalidad] = useState<Modalidad>("DIA");
   const [monto, setMonto] = useState("");
+  const [horas, setHoras] = useState("8");
   const [vigenteDesde, setVigenteDesde] = useState(() => limaDateKey());
   const [motivo, setMotivo] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +53,14 @@ export default function FichaTarifas({ tarifas, guardando, onGuardar, onQuitar, 
   const hoy = limaDateKey();
   const ordenadas = [...tarifas].sort((a, b) => (a.vigenteDesde < b.vigenteDesde ? 1 : -1));
   const vigenteId = ordenadas.find((t) => t.vigenteDesde <= hoy)?.id;
+  const porHora = modalidad === "HORA";
+
+  const abrir = () => {
+    // La jornada arranca con la de la tarifa vigente, si ya había una.
+    const vigente = ordenadas.find((t) => t.id === vigenteId);
+    if (vigente) setHoras(String(vigente.horasJornada));
+    setAbierto(true);
+  };
 
   const guardar = async (e?: FormEvent) => {
     e?.preventDefault();
@@ -52,12 +69,23 @@ export default function FichaTarifas({ tarifas, guardando, onGuardar, onQuitar, 
       setError("El monto tiene que ser mayor a 0.");
       return;
     }
+    const horasNum = Number(horas);
+    if (porHora && !(horasNum > 0 && horasNum <= 24)) {
+      setError("La jornada tiene que ser de más de 0 y hasta 24 horas.");
+      return;
+    }
     if (!vigenteDesde) {
       setError("Elige desde qué día vale.");
       return;
     }
     setError(null);
-    const res = await onGuardar({ modalidad, monto: montoNum, vigenteDesde, motivo: motivo.trim() || undefined });
+    const res = await onGuardar({
+      modalidad,
+      monto: montoNum,
+      vigenteDesde,
+      motivo: motivo.trim() || undefined,
+      ...(porHora ? { horasJornada: horasNum } : {}),
+    });
     if (!res.ok) {
       setError(res.error.message ?? "No se pudo guardar la tarifa.");
       return;
@@ -91,7 +119,7 @@ export default function FichaTarifas({ tarifas, guardando, onGuardar, onQuitar, 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-[var(--text-secondary)]">Cada cambio es una versión nueva desde una fecha. Las anteriores no se editan.</p>
         {!abierto && (
-          <button type="button" onClick={() => setAbierto(true)} className={BOTON.chico}>
+          <button type="button" onClick={abrir} className={BOTON.chico}>
             <Plus className="h-4 w-4" /> Nueva tarifa
           </button>
         )}
@@ -123,7 +151,14 @@ export default function FichaTarifas({ tarifas, guardando, onGuardar, onQuitar, 
             <Field label="Vale desde">
               {(id) => <input id={id} type="date" value={vigenteDesde} onChange={(e) => setVigenteDesde(e.target.value)} className={CLASE_CAMPO} />}
             </Field>
-            <Field label="Motivo" hint="Opcional. Ej. aumento por campaña." className="sm:col-span-3">
+            {porHora && (
+              <Field label="Horas de la jornada" hint="Estima las horas de los días sin entrada ni salida.">
+                {(id) => (
+                  <input id={id} type="number" inputMode="decimal" min={1} max={24} step="0.5" value={horas} onChange={(e) => setHoras(e.target.value)} className={cn(CLASE_CAMPO, "tabular-nums")} />
+                )}
+              </Field>
+            )}
+            <Field label="Motivo" hint="Opcional. Ej. aumento por campaña." className={porHora ? "sm:col-span-2" : "sm:col-span-3"}>
               {(id) => <input id={id} value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={300} className={CLASE_CAMPO} />}
             </Field>
           </div>
@@ -133,7 +168,14 @@ export default function FichaTarifas({ tarifas, guardando, onGuardar, onQuitar, 
             </p>
           )}
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => { setAbierto(false); setError(null); }} className={BOTON.chicoFantasma}>
+            <button
+              type="button"
+              onClick={() => {
+                setAbierto(false);
+                setError(null);
+              }}
+              className={BOTON.chicoFantasma}
+            >
               Cancelar
             </button>
             <button type="submit" disabled={guardando} className={BOTON.chicoPrimario}>
@@ -170,6 +212,7 @@ export default function FichaTarifas({ tarifas, guardando, onGuardar, onQuitar, 
                   </p>
                   <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                     Desde el {formatearFecha(t.vigenteDesde)}
+                    {t.modalidad === "HORA" && ` · jornada de ${textoHoras(t.horasJornada)}`}
                     {t.motivo && ` · ${t.motivo}`}
                   </p>
                 </div>

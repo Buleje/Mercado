@@ -21,7 +21,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { crearColaborador } from "@/hooks/use-rrhh-colaboradores";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { esDniValido } from "@/lib/rrhh/documento";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import { BOTON, CLASE_AREA, CLASE_CAMPO, SeccionForm } from "../rrhh-form";
 import { etiquetaModalidad, formatearPEN } from "../rrhh-ui";
 import type { ColaboradorDTO, Modalidad, NivelRrhh, PuestoDTO, TipoDocumento } from "@/lib/rrhh/tipos";
@@ -82,10 +82,13 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
   const [tarifaModalidad, setTarifaModalidad] = useState<ModalidadPagada>("DIA");
   const [tarifaMonto, setTarifaMonto] = useState("");
   const [tarifaTocada, setTarifaTocada] = useState(false);
+  const [tarifaHoras, setTarifaHoras] = useState("8");
   useEffect(() => {
     // Antes sólo prellenaba con el monto vacío: elegir un puesto y después
     // otro dejaba la tarifa del primero.
     if (!conTarifaInicial || tarifaTocada) return;
+    // La jornada sale del puesto (8 h por defecto en la base), tenga o no tarifa sugerida.
+    if (puestoElegido) setTarifaHoras(String(puestoElegido.horasJornada));
     if (!puestoElegido?.tarifaSugerida) {
       setTarifaMonto("");
       return;
@@ -163,6 +166,11 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
       setError("El monto de la tarifa tiene que ser mayor a 0.");
       return;
     }
+    const horasNum = Number(tarifaHoras);
+    if (conTarifaInicial && tarifaMonto && tarifaModalidad === "HORA" && !(horasNum > 0 && horasNum <= 24)) {
+      setError("La jornada tiene que ser de más de 0 y hasta 24 horas.");
+      return;
+    }
     setGuardando(true);
     setError(null);
     const campos = {
@@ -192,8 +200,19 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
           return;
         }
       } else {
-        const tarifaInicial = conTarifaInicial && tarifaMonto ? { modalidad: tarifaModalidad, monto: montoNum } : null;
-        const res = await crearColaborador({ ...campos, tarifaInicial });
+        // Dos fallas medidas el 2026-09-14: sin `vigenteDesde` el servidor respondía 422 y
+        // agregar a alguien con monto nunca guardaba; y la clave presente (aunque sea `null`)
+        // con un nivel que no es completo es 403 `tarifa_requiere_admin` — un manager no
+        // podía agregar a nadie. La tarifa vale desde el ingreso, o desde hoy si no se sabe.
+        const tarifaInicial = tarifaMonto
+          ? {
+              modalidad: tarifaModalidad,
+              monto: montoNum,
+              vigenteDesde: fechaIngreso || limaDateKey(),
+              ...(tarifaModalidad === "HORA" ? { horasJornada: horasNum } : {}),
+            }
+          : null;
+        const res = await crearColaborador({ ...campos, ...(conTarifaInicial ? { tarifaInicial } : {}) });
         if (!res.ok) {
           setError(res.error.error === "documento_duplicado" ? `Ese documento ya es de ${res.error.nombre}.` : (res.error.message ?? "No se pudo guardar."));
           return;
@@ -397,6 +416,26 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
                   />
                 )}
               </Field>
+              {tarifaModalidad === "HORA" && (
+                <Field label="Horas de la jornada" hint="Para estimar las horas de los días sin entrada ni salida.">
+                  {(id) => (
+                    <input
+                      id={id}
+                      type="number"
+                      inputMode="decimal"
+                      min={1}
+                      max={24}
+                      step="0.5"
+                      value={tarifaHoras}
+                      onChange={(e) => {
+                        setTarifaHoras(e.target.value);
+                        setTarifaTocada(true);
+                      }}
+                      className={cn(CLASE_CAMPO, "tabular-nums")}
+                    />
+                  )}
+                </Field>
+              )}
             </>
           )}
 
