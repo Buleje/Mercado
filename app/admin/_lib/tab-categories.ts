@@ -52,6 +52,7 @@ import {
   Megaphone,
   ClipboardList,
   Truck,
+  Users,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -308,6 +309,14 @@ export const MODULE_INFO: Partial<
     desc: "Notas de turno y recordatorios tipo sticky.",
     tip: "Deja anotado lo importante para el siguiente turno.",
   },
+  // ── Recursos Humanos (ADR-414) ──
+  rrhh: {
+    icon: Users,
+    iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    priority: "high",
+    desc: "Personal, asistencia del día y del mes, lo ganado de referencia y contratos vinculados.",
+    tip: "Marca la asistencia de hoy en un par de clics; el sueldo es sólo referencia, no reemplaza la boleta.",
+  },
   // ── Dropshipping (ADR-298) ──
   dropship: {
     icon: Truck,
@@ -526,6 +535,22 @@ export const BASIC_MODULES: TabCategory[] = [
     ],
   },
 
+  // ── 08b · RECURSOS HUMANOS (ADR-414) ─────────────
+  // Personal, asistencia, lo ganado de referencia y contratos vinculados.
+  // Categoría propia con UNA sola pestaña (§7 del ADR: "sin atajos a
+  // sub-tabs — un renglón por hub", auditoría 2026-08-02): las sub-vistas
+  // (Asistencia/Personal/Lo ganado/Contratos/Puestos) viven adentro del hub,
+  // filtradas por el `nivel` que devuelve el servidor. Va ANTES de "Equipo"
+  // (pedido explícito de Brandon en el ADR).
+  {
+    id: "recursos-humanos",
+    label: "Recursos Humanos",
+    icon: Users,
+    tabs: [
+      "rrhh",
+    ],
+  },
+
   // ── 09 · EQUIPO ──────────────────────────────────
   // Herramientas operativas internas (tareas + notas de turno). Abren el
   // MISMO EquipoHubModule con initialTab distinto — atajo redundante
@@ -689,6 +714,7 @@ export const TAB_CATEGORIES: TabCategory[] = [
   // Gestión — la plata, los números y el equipo
   byId("finanzas"),
   byId("graficos"),
+  byId("recursos-humanos"),
   byId("equipo"),
   // Canales — por dónde vende
   byId("marketplace-ops"),
@@ -722,6 +748,8 @@ export const EASY_MODE_TABS: ReadonlySet<Tab> = new Set<Tab>([
   "compras",
   // Clientes y Créditos
   "clientes", "fiados", "prestamos",
+  // Recursos Humanos — marcar asistencia es del día a día
+  "rrhh",
   // Marketplace
   "marketplace", "delivery-partners", "delivery-live",
   // Comunicación

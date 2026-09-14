@@ -63,6 +63,7 @@ import {
   CheckSquare,
   StickyNote,
   ChefHat,
+  Users,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -93,6 +94,8 @@ export const ALL_TABS = [
   // — EQUIPO (huérfanos montados) —
   { id: "tareas" as Tab,              label: "Tareas",              icon: CheckSquare },
   { id: "notas" as Tab,               label: "Notas",               icon: StickyNote },
+  // — RECURSOS HUMANOS (ADR-414) —
+  { id: "rrhh" as Tab,                label: "Recursos Humanos",    icon: Users },
   // — OPERACIONES —
   { id: "config" as Tab,              label: "Configuración",       icon: SlidersHorizontal },
   { id: "pedidos" as Tab,             label: "Pedidos",             icon: ClipboardCheck },

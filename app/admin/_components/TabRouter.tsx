@@ -40,6 +40,8 @@ const CrecimientoHubModule    = dynamic(() => import("@/components/admin/unified
 const SalesChannelsTab        = dynamic(() => import("@/components/admin/tabs/SalesChannelsTab"),           { loading: TabSpinner });
 // Equipo (tareas + notas) — huérfanos montados
 const EquipoHubModule         = dynamic(() => import("@/components/admin/unified/EquipoHubModule"),         { loading: TabSpinner });
+// Recursos Humanos (ADR-414): personal, asistencia, lo ganado, contratos vinculados
+const RecursosHumanosHubModule = dynamic(() => import("@/components/admin/unified/RecursosHumanosHubModule"), { loading: TabSpinner });
 const MarketplaceModule       = dynamic(() => import("@/components/admin/unified/MarketplaceModule"),       { loading: TabSpinner });
 const DocumentosHubModule     = dynamic(() => import("@/components/admin/unified/DocumentosHubModule"),    { loading: TabSpinner });
 const DeliveryPartnersModule  = dynamic(() => import("@/components/admin/unified/DeliveryPartnersModule"),  { loading: TabSpinner });
@@ -288,6 +290,9 @@ export function TabRouter({
   // ── Equipo (tareas + notas) ──
   if (tab === "tareas") return <EquipoHubModule key="tareas" initialTab="tareas" />;
   if (tab === "notas")  return <EquipoHubModule key="notas" initialTab="notas" />;
+
+  // ── Recursos Humanos (ADR-414) ──
+  if (tab === "rrhh") return <RecursosHumanosHubModule key="rrhh" />;
 
   // ── Marketplace & Delivery ──
   if (tab === "marketplace")       return <MarketplaceModule key="marketplace" />;

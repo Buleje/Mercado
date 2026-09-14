@@ -1616,6 +1616,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   clienteNombre={selected.clienteNombre}
                   customerId={(detalle ?? selected).customerId}
                   supplierId={(detalle ?? selected).supplierId}
+                  colaboradorId={(detalle ?? selected).colaboradorId}
                   onVinculado={(patch) => {
                     setDetalle(d => (d ? { ...d, ...patch } : d));
                     setContratos(prev => prev.map(c => (c.id === selected.id ? { ...c, ...patch } : c)));

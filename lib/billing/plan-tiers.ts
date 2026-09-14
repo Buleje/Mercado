@@ -154,6 +154,9 @@ export const PLAN_BASICO: PlanDefinition = {
     // visibles desde el free (sin costo asociado, igual que adelantos/activos).
     "tareas",
     "notas",
+    // Recursos Humanos (ADR-414) — herramienta interna, igual criterio que
+    // adelantos/tareas: sin costo asociado, visible desde el free.
+    "rrhh",
     // Config (siempre)
     "config",
     "plan",

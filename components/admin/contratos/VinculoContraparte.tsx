@@ -15,7 +15,7 @@
 
 import { useEffect, useState } from "react";
 import { BlockTitle } from "@buleje/design-system";
-import { Loader2, Link2, Check, X, User, Truck } from "@buleje/design-system/icons";
+import { Loader2, Link2, Check, X, User, Truck, Users } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 
@@ -30,14 +30,25 @@ interface Props {
   clienteNombre: string;
   customerId: string | null;
   supplierId: string | null;
-  onVinculado?: (patch: { customerId: string | null; supplierId: string | null }) => void;
+  /** ADR-414 §6: el tercer lado, «Trabajador» (un `Colaborador` de RRHH). */
+  colaboradorId?: string | null;
+  onVinculado?: (patch: { customerId: string | null; supplierId: string | null; colaboradorId: string | null }) => void;
 }
 
-/** Los dos lados posibles: a quién le vendés y a quién le comprás. */
-type Lado = "cliente" | "proveedor";
+/** Los tres lados posibles: a quién le vendés, a quién le comprás, o quién trabaja para vos. */
+type Lado = "cliente" | "proveedor" | "trabajador";
+
+/** Constante de módulo (no del componente): así el `useEffect` de abajo no la
+ *  necesita en sus dependencias — un objeto literal en el cuerpo del
+ *  componente es una identidad nueva en cada render. */
+const ENDPOINT_POR_LADO: Record<Lado, string> = {
+  cliente: "/api/customers",
+  proveedor: "/api/suppliers",
+  trabajador: "/api/rrhh/colaboradores?campos=min",
+};
 
 export default function VinculoContraparte({
-  contratoId, clienteNombre, customerId, supplierId, onVinculado,
+  contratoId, clienteNombre, customerId, supplierId, colaboradorId = null, onVinculado,
 }: Props) {
   const [abierto, setAbierto] = useState(false);
   const [lado, setLado] = useState<Lado>("proveedor");
@@ -47,14 +58,14 @@ export default function VinculoContraparte({
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
 
-  const vinculado = Boolean(customerId || supplierId);
+  const vinculado = Boolean(customerId || supplierId || colaboradorId);
 
   useEffect(() => {
     if (!abierto) return;
     let vigente = true;
     setCargando(true);
     setError(null);
-    fetch(lado === "cliente" ? "/api/customers" : "/api/suppliers", { credentials: "include" })
+    fetch(ENDPOINT_POR_LADO[lado], { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (!vigente) return;
@@ -64,11 +75,11 @@ export default function VinculoContraparte({
               ? Object.values(j).find((v) => Array.isArray(v)) ?? []
               : []);
         const lista = (crudo as Record<string, unknown>[]).map((x) => ({
-          // Los clientes se identifican por teléfono y los proveedores por id:
+          // Clientes por teléfono, proveedores por id, colaboradores por id:
           // se toma lo primero que exista en vez de asumir una sola forma.
           id: String(x.id ?? x.phone ?? ""),
-          nombre: String(x.name ?? x.razonSocial ?? "Sin nombre"),
-          detalle: String(x.ruc ?? x.phone ?? x.location ?? ""),
+          nombre: String(x.name ?? x.razonSocial ?? x.nombre ?? "Sin nombre"),
+          detalle: String(x.ruc ?? x.phone ?? x.location ?? (x.puesto as { nombre?: string } | undefined)?.nombre ?? ""),
         })).filter((p) => p.id);
         setGente(lista);
       })
@@ -83,10 +94,12 @@ export default function VinculoContraparte({
   const guardar = async (id: string | null) => {
     setGuardando(true);
     setError(null);
-    // Un contrato es con UNO: atarlo a un cliente lo desata del proveedor.
+    // Un contrato es con UNO: atarlo a un lado desata a los otros dos.
     const patch = lado === "cliente"
-      ? { customerId: id, supplierId: null }
-      : { supplierId: id, customerId: null };
+      ? { customerId: id, supplierId: null, colaboradorId: null }
+      : lado === "proveedor"
+        ? { supplierId: id, customerId: null, colaboradorId: null }
+        : { colaboradorId: id, customerId: null, supplierId: null };
     try {
       const res = await fetch(`/api/contratos/${contratoId}`, {
         method: "PUT",
@@ -124,7 +137,7 @@ export default function VinculoContraparte({
       {!abierto && (
         <p className="text-xs text-[var(--text-secondary)]">
           {vinculado
-            ? `Atado a la ficha de ${customerId ? "un cliente" : "un proveedor"}: desde ahí se ven sus contratos y lo comprometido.`
+            ? `Atado a la ficha de ${customerId ? "un cliente" : supplierId ? "un proveedor" : "un trabajador"}: desde ahí se ven sus contratos y lo comprometido.`
             : `Hoy dice "${clienteNombre}" como texto suelto. Vinculándolo a su ficha, sus contratos aparecen ahí.`}
         </p>
       )}
@@ -132,7 +145,7 @@ export default function VinculoContraparte({
       {abierto && (
         <div className="space-y-2 rounded-xl border border-[var(--rule-base)] p-2.5">
           <div className="flex gap-1.5">
-            {([["proveedor", "Proveedor", Truck], ["cliente", "Cliente", User]] as const).map(([v, texto, Icono]) => (
+            {([["proveedor", "Proveedor", Truck], ["cliente", "Cliente", User], ["trabajador", "Trabajador", Users]] as const).map(([v, texto, Icono]) => (
               <button
                 key={v}
                 onClick={() => setLado(v)}
@@ -151,7 +164,7 @@ export default function VinculoContraparte({
           <input
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre o RUC…"
+            placeholder={lado === "trabajador" ? "Buscar por nombre…" : "Buscar por nombre o RUC…"}
             className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 h-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
           />
 
@@ -160,14 +173,14 @@ export default function VinculoContraparte({
           {!cargando && filtrada.length === 0 && (
             <p className="py-3 text-center text-xs text-[var(--text-tertiary)]">
               {gente.length === 0
-                ? `Todavía no hay ${lado === "cliente" ? "clientes" : "proveedores"} cargados.`
+                ? `Todavía no hay ${lado === "cliente" ? "clientes" : lado === "proveedor" ? "proveedores" : "personas"} cargados.`
                 : "Ninguno coincide con lo que buscás."}
             </p>
           )}
 
           <ul className="max-h-52 space-y-1 overflow-y-auto">
             {filtrada.slice(0, 40).map((p) => {
-              const esteEsta = lado === "cliente" ? customerId === p.id : supplierId === p.id;
+              const esteEsta = lado === "cliente" ? customerId === p.id : lado === "proveedor" ? supplierId === p.id : colaboradorId === p.id;
               return (
                 <li key={p.id}>
                   <button

@@ -81,6 +81,7 @@ const MODULES: ModuleEntry[] = [
   { id: "fiados",           label: "Fiados",                 icon: "",  category: "Negocio" },
   { id: "turnos",           label: "Turnos de Caja",         icon: "",  category: "Negocio" },
   { id: "prestamos",        label: "Prestamos",              icon: "",  category: "Negocio" },
+  { id: "rrhh",             label: "Recursos Humanos",       icon: "",  category: "Negocio" },
   // ── Inventario ──
   { id: "inventario",       label: "Inventario & Almacenes", icon: "",  category: "Inventario" },
   { id: "productos",        label: "Productos & Precios",    icon: "",  category: "Inventario" },
@@ -143,6 +144,7 @@ export function useCommandItems(
       { id: "action-new-product",  label: "Nuevo producto", target: "productos" },
       { id: "action-new-customer", label: "Nuevo cliente",  target: "clientes" },
       { id: "action-inventario",   label: "Ver stock",      target: "inventario" },
+      { id: "action-marcar-asistencia", label: "Marcar asistencia", target: "rrhh" },
     ];
     for (const a of actions) {
       if (has(a.target)) {

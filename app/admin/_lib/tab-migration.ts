@@ -73,7 +73,7 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   actividad: "config", cumplimiento: "config",
   "salud-sistema": "config", "backup-restaurar": "config", webhooks: "config",
   sistema: "config", configuracion: "config", equipo: "config", seguridad: "config",
-  rrhh: "config", nomina: "config", sucursales: "config",
+  sucursales: "config",
   comunicaciones: "config", "hub-comunicaciones": "config",
   chat: "config", "plantillas-mensaje": "config", notificaciones: "config",
   // "tareas" ya NO migra a config: ahora es tab real del hub Equipo (TasksTab montado).
@@ -109,4 +109,9 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   turnos: "turnos",
   recetas: "recetas",
   prestamos: "prestamos",
+  // → Recursos Humanos (ADR-414). "rrhh" y "nomina" ya NO van a "config": son
+  // pestaña real. Alias de links viejos y de lo que una persona escribiría.
+  rrhh: "rrhh", nomina: "rrhh",
+  "recursos-humanos": "rrhh", personal: "rrhh", asistencia: "rrhh", asistencias: "rrhh",
+  colaboradores: "rrhh", trabajadores: "rrhh", empleados: "rrhh", planilla: "rrhh",
 };

@@ -58,6 +58,7 @@ const TAB_LOADERS: Record<string, Loader> = {
   campanas: () => import("@/components/admin/unified/CrecimientoHubModule"),
   equipo: () => import("@/components/admin/unified/EquipoHubModule"),
   tareas: () => import("@/components/admin/unified/EquipoHubModule"),
+  rrhh: () => import("@/components/admin/unified/RecursosHumanosHubModule"),
   metas: () => import("@/components/admin/unified/MetasLogrosModule"),
   analisis: () => import("@/components/admin/unified/AnalisisHubModule"),
   canales: () => import("@/components/admin/tabs/SalesChannelsTab"),

@@ -45,6 +45,8 @@ export type Tab =
   // Equipo (tareas + notas) — huérfanos montados
   | "tareas"
   | "notas"
+  // Recursos Humanos (ADR-414): personal, asistencia, lo ganado, contratos vinculados
+  | "rrhh"
   // Módulos de operaciones de marketplace y delivery
   | "marketplace"
   | "delivery-partners"
@@ -122,6 +124,7 @@ export const VALID_TABS: readonly Tab[] = [
   "canales",
   "tareas",
   "notas",
+  "rrhh",
   "dropship",
   "forecasting",
   "marketplace",

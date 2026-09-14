@@ -18,13 +18,25 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname, basename } from "node:path";
 
-const dirs = ["components/admin", "components/admin/forestal", "components/admin/pos", "components/admin/shared", "components/admin/layout"];
+/* Recorre `components/admin` ENTERO. Antes eran cinco carpetas fijas sin
+   recursión: un «verde» sobre `components/admin/rrhh/**` no había mirado nada
+   (revisión 2026-09-14). */
 const archivos = [];
-for (const d of dirs) { try { for (const f of readdirSync(d)) if (f.endsWith(".tsx")) archivos.push(join(d, f)); } catch {} }
+const recorrer = (d) => {
+  let entradas = [];
+  try { entradas = readdirSync(d, { withFileTypes: true }); } catch { return; }
+  for (const e of entradas) {
+    const p = join(d, e.name);
+    if (e.isDirectory()) recorrer(p);
+    else if (e.name.endsWith(".tsx")) archivos.push(p);
+  }
+};
+recorrer("components/admin");
 const src = new Map(archivos.map((f) => [f, readFileSync(f, "utf8")]));
 
 const resolver = (desde, spec) => {
-  if (spec.startsWith("./")) { const p = join(dirname(desde), spec.slice(2) + ".tsx"); return existsSync(p) ? p : null; }
+  // `./x` y `../carpeta/x`: los módulos por carpeta se importan entre hermanas.
+  if (spec.startsWith("./") || spec.startsWith("../")) { const p = join(dirname(desde), spec + ".tsx"); return existsSync(p) ? p : null; }
   if (spec.startsWith("@/")) { const p = spec.slice(2) + ".tsx"; return existsSync(p) ? p : null; }
   return null;
 };
