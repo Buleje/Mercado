@@ -5,6 +5,8 @@ import { Bell } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { shouldIgnoreShortcut } from "@/lib/keyboard-guards";
 import { cachedJson } from "@/lib/client-cache-fetch";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import { useNotificationCenter } from "./useNotificationCenter";
 import NotificationHub from "./NotificationHub";
 
@@ -12,6 +14,10 @@ import NotificationHub from "./NotificationHub";
 
 function useCriticalAlertCount() {
   const [count, setCount] = useState(0);
+  // /api/admin/stats sólo deja pasar a admin: el almacenero recibía 403 en cada
+  // carga del panel. Con el rol sin resolver (null) tampoco se pide.
+  const rol = useMiRol();
+  const puedeStats = puedePedir("/api/admin/stats", rol);
 
   useEffect(() => {
     let cancelled = false;
@@ -22,7 +28,9 @@ function useCriticalAlertCount() {
         // dashboard (antes cada uno disparaba su request). TTL 30s = el intervalo
         // de 2min re-chequea fresco. Perf 2026-05-29.
         const [stats, batches] = await Promise.all([
-          cachedJson<{ lowStockProducts?: number; pendingOrders?: number }>("/api/admin/stats", 30_000),
+          puedeStats
+            ? cachedJson<{ lowStockProducts?: number; pendingOrders?: number }>("/api/admin/stats", 30_000)
+            : Promise.resolve(null),
           cachedJson<{ items?: unknown[] } | unknown[]>("/api/batches/expiring", 30_000),
         ]);
 
@@ -52,7 +60,7 @@ function useCriticalAlertCount() {
     check();
     const interval = setInterval(check, 120_000); // Re-check every 2 min
     return () => { cancelled = true; clearInterval(interval); };
-  }, []);
+  }, [puedeStats]);
 
   return count;
 }

@@ -101,12 +101,6 @@ function AdminPage() {
   // cookie active-tenant-slug con el owner cacheado y limpia todo si cambia.
   useTenantCacheGuard();
 
-  // Prefetch global de APIs admin más usadas (products, suppliers, customers,
-  // sales, dashboard, goals) en background al montar. Resultado: cualquier
-  // sub-tab que el usuario abra después tiene los datos en localStorage —
-  // hidratación instantánea en lugar de esperar 5-7s al cold compile.
-  useAdminPrefetch();
-
   const {
     showShortcuts, setShowShortcuts,
     searchOpen, setSearchOpen,
@@ -139,6 +133,13 @@ function AdminPage() {
     userRole, userName, authReady, savedRolePerms,
     storeMode, setStoreModeState,
   } = useAdminAuth(onUnauth);
+
+  // Prefetch global de APIs admin más usadas (products, suppliers, customers,
+  // sales, dashboard, goals) en background. Resultado: cualquier sub-tab que el
+  // usuario abra después tiene los datos en localStorage — hidratación
+  // instantánea en lugar de esperar 5-7s al cold compile. Espera al rol real
+  // para no pedir rutas que ese rol no puede usar (403 del almacenero).
+  useAdminPrefetch(authReady, userRole);
 
   const {
     isSuperAdminImpersonating, activeTenantName, activeTenantSlug,
