@@ -43,6 +43,8 @@ export interface AvisoCajaAbierta {
   dias: number;
   severidad: "warning" | "urgent";
   titulo: string;
+  /** Resumen corto para la fila compacta del banner: «desde el jueves 11/06». */
+  desde: string;
   detalle: string;
 }
 
@@ -57,6 +59,7 @@ export function avisoCajaAbierta(desde: string | Date | null | undefined, ahora:
     dias,
     severidad: dias >= 7 ? "urgent" : "warning",
     titulo: dias === 1 ? "La caja quedó abierta desde ayer" : `La caja está abierta hace ${dias} días`,
+    desde: `desde el ${fechaCortaLima(d)}`,
     detalle: `Se abrió el ${fechaCortaLima(d)}. Cuenta el efectivo y ciérrala: las ventas, adelantos y liquidaciones siguen cayendo en ese cuadre.`,
   };
 }

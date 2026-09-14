@@ -63,6 +63,8 @@ interface Alert {
   icon: LucideIcon;
   count?: number;
   label: string;
+  /** Dato corto que acompaña al título en la fila compacta (p. ej. la fecha). */
+  resumen?: string;
   description: string;
   cta: string;
   href: string;
@@ -191,6 +193,7 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
         icon: Wallet,
         count: caja.dias,
         label: caja.titulo,
+        resumen: caja.desde,
         description: caja.detalle,
         cta: "Cuadrar caja",
         href: "/admin?tab=ventas-caja&vista=arqueo",
@@ -306,9 +309,10 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
             "hidden sm:block text-sm font-semibold truncate min-w-0 flex-1",
             toneFg,
           )}
-          title={first.label}
+          title={first.resumen ? `${first.label} · ${first.resumen}` : first.label}
         >
           {first.label}
+          {first.resumen && <span className="font-normal opacity-80"> · {first.resumen}</span>}
         </p>
 
         {/* CTA primera alerta */}

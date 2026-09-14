@@ -33,6 +33,7 @@ describe("caja abierta en días de Lima", () => {
     const aviso = avisoCajaAbierta("2026-06-11T07:41:00Z", new Date("2026-09-14T18:00:00Z"));
     expect(aviso).toMatchObject({ dias: 95, severidad: "urgent", titulo: "La caja está abierta hace 95 días", id: "caja-abierta-2026-06-11" });
     expect(aviso?.detalle).toContain("jueves 11/06");
+    expect(aviso?.desde).toBe("desde el jueves 11/06");
   });
 
   it("desde ayer es aviso, no urgencia", () => {
@@ -58,6 +59,8 @@ describe("AdminAlertsBanner con una caja abierta", () => {
     }));
     render(<AdminAlertsBanner userRole="admin" authReady={true} />);
     expect(await screen.findByText("La caja está abierta hace 10 días")).toBeTruthy();
+    // La fecha va en la misma fila compacta, no sólo al expandir.
+    expect(screen.getByText(`· desde el ${fechaCortaLima(desde)}`)).toBeTruthy();
     expect(screen.getByText("Cuadrar caja")).toBeTruthy();
   });
 });
