@@ -97,6 +97,10 @@ const CORE_BASE: ModuleId[] = [
      lateral de escritorio (medido 2026-09-14 en un negocio «bodega»), mientras
      el menú del celular, que no aplica este filtro, sí lo mostraba. */
   "rrhh",
+  /* Tareas del equipo: herramienta interna de cualquier negocio. La categoría
+     «Equipo» sólo la trae a ella; fuera de este núcleo el filtro vertical la
+     ocultaba de la barra de escritorio igual que a RRHH (medido 2026-09-14). */
+  "tareas",
 ];
 
 /** Set extendido — todos los tabs actuales (35). */
@@ -329,6 +333,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "compras",
         "dropship", // ADR-298 — tiendas dropshipping (gate real = Settings.dropshipEnabled)
         "rrhh", // ADR-414 — universal; «otro» no hereda CORE_BASE, así que va explícito
+        "tareas", // universal, misma razón que rrhh
       ],
       featured: [],
       hidden: [],

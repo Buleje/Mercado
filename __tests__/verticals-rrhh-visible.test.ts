@@ -23,3 +23,11 @@ describe("Recursos Humanos se ve en la barra lateral de todos los rubros", () =>
     }
   });
 });
+
+describe("Tareas se ve en la barra lateral de todos los rubros", () => {
+  // Misma causa que RRHH: la categoría «Equipo» sólo trae `tareas` y no estaba en
+  // ninguna lista del registro, así que el filtro vertical la ocultaba (2026-09-14).
+  it.each(SUPPORTED_INDUSTRIES)("rubro «%s»: tareas queda visible", (industry) => {
+    expect(filterTabsForVertical(industry, ["tareas"]).visible).toContain("tareas");
+  });
+});
