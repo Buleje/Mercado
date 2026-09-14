@@ -12,6 +12,7 @@ import {
   Plus,
   Search,
   Boxes,
+  Coins,
   Truck,
   AlertCircle,
   HelpCircle,
@@ -39,9 +40,14 @@ import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpProducirSinLoteModal from "./CtpProducirSinLoteModal";
 import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
+import CtpTarifaAserrioModal from "./CtpTarifaAserrioModal";
+import CtpCobrarAserrioModal from "./CtpCobrarAserrioModal";
+import CtpCobrarEnTandaModal from "./CtpCobrarEnTandaModal";
+import { podarSeleccion } from "@/lib/forestal/cobrar-en-tanda";
 import CtpSaldoPermisoModal from "./CtpSaldoPermisoModal";
 import type { CorridaSinOrigen } from "@/lib/forestal/saldo-por-permiso";
 import CtpVincularMateriaPrimaModal from "./CtpVincularMateriaPrimaModal";
+import CtpVincularEnTandaModal from "./CtpVincularEnTandaModal";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import CtpProduccionPendiente from "./CtpProduccionPendiente";
@@ -96,6 +102,62 @@ const n2m3 = (v: number) =>
 const M3_MENOR = 0.05;
 
 /**
+ * Un chip de la lista: hace las DOS cosas que se le piden.
+ *
+ * La casilla la marca para ir en tanda —«esas cinco salieron del mismo lote»— y
+ * el cuerpo abre el modal de a una, que es donde se eligen las trozas a mano.
+ * Son dos trabajos distintos y por eso son dos blancos distintos: tildar seis
+ * casillas es más rápido que abrir seis modales, y elegir troza por troza no se
+ * puede hacer en tanda.
+ *
+ * A nivel de módulo y no dentro del render del padre: definido adentro, React lo
+ * trata como un componente NUEVO en cada tilde y desmonta la lista entera — el
+ * foco del teclado se va al body y quien esté tabulando pierde el lugar. Medido
+ * en el navegador con seis chips reales (2026-09-13).
+ */
+function ChipSinOrigen({
+  e,
+  marcada,
+  onMarcar,
+  onVincular,
+}: {
+  e: CtpEntry;
+  marcada: boolean;
+  onMarcar: (ids: string[], marcar: boolean) => void;
+  onVincular: (id: string) => void;
+}) {
+  return (
+    <li
+      className={`inline-flex items-stretch overflow-hidden rounded-lg border border-[var(--accent)] transition ${
+        marcada ? "bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]" : "bg-[var(--surface-canvas)]"
+      }`}
+    >
+      <label
+        className="flex cursor-pointer items-center pl-2.5 pr-1"
+        title="Marcarla para ponerle el lote junto con las otras"
+      >
+        <input
+          type="checkbox"
+          checked={marcada}
+          onChange={(ev) => onMarcar([e.id], ev.target.checked)}
+          aria-label={`Marcar la corrida N° ${e.lineNo} para ponerle el lote en tanda`}
+          className="h-4 w-4 accent-[var(--accent)]"
+        />
+      </label>
+      <button
+        type="button"
+        onClick={() => onVincular(e.id)}
+        title="Abrirla sola y elegir las trozas una por una"
+        className="px-2 py-1.5 text-left text-xs font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
+      >
+        N° {e.lineNo} · {e.speciesCommon ?? "sin especie"} ·{" "}
+        <span className="font-mono font-normal">{Number(e.quantity ?? 0).toFixed(3)} m³</span>
+      </button>
+    </li>
+  );
+}
+
+/**
  * Las corridas sin materia prima, ordenadas y con las migajas plegadas.
  *
  * A nivel de módulo y no dentro del render: definido adentro se re-monta en
@@ -104,9 +166,16 @@ const M3_MENOR = 0.05;
 function ChipsSinOrigen({
   corridas,
   onVincular,
+  marcadas,
+  onMarcar,
+  onEnTanda,
 }: {
   corridas: CtpEntry[];
   onVincular: (id: string) => void;
+  /** Las que están marcadas para ir juntas al mismo lote. */
+  marcadas: Set<string>;
+  onMarcar: (ids: string[], marcar: boolean) => void;
+  onEnTanda: () => void;
 }) {
   const [verMenores, setVerMenores] = useState(false);
   const m3 = (e: CtpEntry) => Number(e.quantity ?? 0);
@@ -118,30 +187,38 @@ function ChipsSinOrigen({
      completa deja la pantalla diciendo «6 pendientes» y mostrando cero. */
   const visibles = grandes.length === 0 || verMenores ? ordenadas : grandes;
 
-  const Chip = ({ e }: { e: CtpEntry }) => (
-    <li>
-      <button
-        type="button"
-        onClick={() => onVincular(e.id)}
-        title="Elegir el lote que entró a la sierra y atribuirle esta producción"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-[var(--surface-canvas)] px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
-      >
-        N° {e.lineNo} · {e.speciesCommon ?? "sin especie"} ·{" "}
-        <span className="font-mono font-normal">{Number(e.quantity ?? 0).toFixed(3)} m³</span>
-        <span className="font-normal opacity-80">— vincular</span>
-      </button>
-    </li>
-  );
+  /* El total de lo marcado, para que el botón no pida firmar a ciegas. */
+  const visiblesIds = visibles.map((e) => e.id);
+  const nMarcadas = corridas.filter((e) => marcadas.has(e.id)).length;
+  const m3Marcadas = corridas.filter((e) => marcadas.has(e.id)).reduce((a, e) => a + m3(e), 0);
+  const todasMarcadas = visiblesIds.length > 0 && visiblesIds.every((id) => marcadas.has(id));
 
   return (
     <>
-      <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-        Elegí el lote que entró a la sierra para atribuirle cada producción. De mayor a menor
-        volumen.
-      </p>
+      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+          Marcá las que salieron del mismo lote y ponéselo a todas de una vez, o tocá una para
+          elegir sus trozas a mano. De mayor a menor volumen.
+        </p>
+        {visiblesIds.length > 1 && (
+          <button
+            type="button"
+            onClick={() => onMarcar(visiblesIds, !todasMarcadas)}
+            className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
+          >
+            {todasMarcadas ? "Desmarcar todas" : `Marcar las ${visiblesIds.length}`}
+          </button>
+        )}
+      </div>
       <ul className="flex flex-wrap gap-2">
         {visibles.slice(0, 12).map((e) => (
-          <Chip key={e.id} e={e} />
+          <ChipSinOrigen
+            key={e.id}
+            e={e}
+            marcada={marcadas.has(e.id)}
+            onMarcar={onMarcar}
+            onVincular={onVincular}
+          />
         ))}
         {visibles.length > 12 && (
           <li className="self-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
@@ -166,6 +243,35 @@ function ChipsSinOrigen({
           </li>
         )}
       </ul>
+
+      {/* La barra aparece sólo cuando hay algo marcado: una acción que no se
+          puede ejecutar no ocupa lugar permanente. */}
+      {nMarcadas > 0 && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2">
+          <p className="text-xs text-[var(--text-secondary)]">
+            <b className="text-[var(--text-primary)]">
+              {nMarcadas} producci{nMarcadas === 1 ? "ón marcada" : "ones marcadas"}
+            </b>{" "}
+            · <span className="font-mono tabular-nums">{m3Marcadas.toFixed(3)} m³</span> declarados
+          </p>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onMarcar([...marcadas], false)}
+              className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] underline underline-offset-2 hover:text-[var(--text-secondary)]"
+            >
+              Desmarcar
+            </button>
+            <button
+              type="button"
+              onClick={onEnTanda}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white transition hover:brightness-95"
+            >
+              <Layers className="h-3.5 w-3.5" aria-hidden /> Ponerles el lote
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -363,6 +469,12 @@ export function CtpEntriesView({
   const catalogoEspecies = useEspeciesCatalogo({ conLibro: section === "produccion" });
   const especiesDosFormas = catalogoEspecies.duplicadas;
   const [verEspecies, setVerEspecies] = useState(false);
+  /* La tarifa de aserrío (ADR-412): parámetros del servicio, se toca de vez en
+     cuando desde el menú de Opciones. */
+  const [verTarifa, setVerTarifa] = useState(false);
+  /* La corrida a la que se le está por cobrar el aserrío (ADR-412): ya
+     declarada, se le pone dueño y precio desde la fila. */
+  const [cobrarAserrioId, setCobrarAserrioId] = useState<string | null>(null);
   /* El apartado de simulación por permiso (ADR-409): no toca ninguna cifra de
      esta pestaña ni de las otras, así que su lectura se paga sólo al abrirlo. */
   const [saldoPermiso, setSaldoPermiso] = useState(false);
@@ -372,6 +484,24 @@ export function CtpEntriesView({
   const [vincularDelSaldo, setVincularDelSaldo] = useState<CorridaSinOrigen | null>(null);
   /** La corrida a la que se le va a vincular su materia prima. */
   const [vincularA, setVincularA] = useState<string | null>(null);
+  /**
+   * Las producciones sin lote marcadas para ir JUNTAS al mismo lote.
+   *
+   * Brandon lo pidió así (2026-09-13): «marco esas 5 y les pongo el lote». Las
+   * corridas no cambian —siguen siendo las mismas, con su fecha y su volumen—:
+   * lo único que ganan es de qué madera salieron, y el lote se va consumiendo
+   * hasta dejar su saldo.
+   */
+  const [marcadasSinOrigen, setMarcadasSinOrigen] = useState<Set<string>>(new Set());
+  const [vincularEnTanda, setVincularEnTanda] = useState(false);
+  /**
+   * Selección para «Cobrar aserrío» EN TANDA (ADR-412) — un `Set` propio, sin
+   * relación con `marcadasSinOrigen` (que es de "vincular en tanda"): son dos
+   * gestos distintos sobre la misma tabla y compartirlo mezclaría una fila
+   * marcada para un lote con una marcada para cobrar.
+   */
+  const [seleccionCobro, setSeleccionCobro] = useState<Set<string>>(new Set());
+  const [cobrarEnTanda, setCobrarEnTanda] = useState(false);
   /** Hoy, para la columna «Fecha consumo» de la lista vacía (no se re-calcula). */
   const hoy = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -659,6 +789,38 @@ export function CtpEntriesView({
         : [],
     [section, entries],
   );
+  /* Una vinculada deja de estar sin origen: su marca se va con ella. Podar y
+     nada más — volver a marcar las que quedan resucitaría lo que el operario
+     desmarcó a propósito. */
+  const idsSinOrigen = sinOrigen.map((e) => e.id).join("|");
+  useEffect(() => {
+    setMarcadasSinOrigen((prev) => {
+      if (prev.size === 0) return prev;
+      const vivas = new Set(idsSinOrigen ? idsSinOrigen.split("|") : []);
+      return [...prev].every((id) => vivas.has(id)) ? prev : new Set([...prev].filter((id) => vivas.has(id)));
+    });
+  }, [idsSinOrigen]);
+
+  /** Las marcadas, con lo que la pantalla sabe de cada una. */
+  const corridasEnTanda = useMemo(
+    () =>
+      sinOrigen
+        .filter((e) => marcadasSinOrigen.has(e.id))
+        .map((e) => ({
+          id: e.id,
+          lineNo: e.lineNo,
+          especie: e.speciesCommon,
+          producidoM3: Number(e.quantity ?? 0),
+          /* El listado no trae los paquetes; el modal los busca por corrida
+             para poder comprobar la regla del largo. */
+          largoMaxPiezaM: null,
+          fecha: e.entryDate,
+          /* Lo que la pantalla sabe; el servidor mira además consumos y lote. */
+          tieneMateriaPrima: e.volumeInputM3 != null && Number(e.volumeInputM3) > 0,
+        })),
+    [sinOrigen, marcadasSinOrigen],
+  );
+
   const enProceso = useMemo(
     () =>
       section === "produccion"
@@ -767,6 +929,29 @@ export function CtpEntriesView({
        venir a limpiar después. */
     window.setTimeout(() => setResaltarCertificado(false), 2200);
   }, []);
+
+  /** Marca o desmarca UNA corrida para «Cobrar aserrío en tanda» (ADR-412). */
+  const marcarCobro = useCallback((id: string, marcado: boolean) => {
+    setSeleccionCobro((prev) => {
+      const n = new Set(prev);
+      if (marcado) n.add(id);
+      else n.delete(id);
+      return n;
+    });
+  }, []);
+
+  /**
+   * Cambiar período, búsqueda, filtro o página cambia qué corridas se VEN —
+   * una marcada que ya no está en la página actual se cae de la selección
+   * (MEDIO, revisión 2026-09-14: la barra decía 8 y el modal cobraba 5, o
+   * peor, cobraba una corrida que el operador ya no tenía a la vista). Mismo
+   * patrón que `marcadasSinOrigen` arriba: podar y nada más, nunca resucitar
+   * lo que el operador desmarcó a propósito.
+   */
+  const idsEnPagina = filasEnPagina.map((e) => e.id).join("|");
+  useEffect(() => {
+    setSeleccionCobro((prev) => podarSeleccion(prev, idsEnPagina ? idsEnPagina.split("|") : []));
+  }, [idsEnPagina]);
 
   /**
    * Al cerrar un ANEXO N° 04, ofrecer el siguiente que falta — de a UNO.
@@ -955,6 +1140,7 @@ export function CtpEntriesView({
         /* Sólo Producción: en Despacho la tabla sigue en la pantalla y una
            opción que abriera lo mismo en un modal sería un segundo camino. */
         onLibro: section === "produccion" ? () => setVerLibro(true) : undefined,
+        onTarifa: section === "produccion" ? () => setVerTarifa(true) : undefined,
       }),
     // `descargarCsv` se redefine en cada render (cierra sobre `visible`): lo que
     // realmente cambia el menú es la sección, lo filtrado y lo que está en curso.
@@ -1072,7 +1258,21 @@ export function CtpEntriesView({
         hint: kpis.sinOrigen > 0 ? `+ ${n2m3(kpis.sinOrigen)} m³ sin guía` : undefined,
         tono: "error",
         title: "Declararon producto y no dicen de qué madera salió",
-        contenido: <ChipsSinOrigen corridas={sinOrigen} onVincular={setVincularA} />,
+        contenido: (
+          <ChipsSinOrigen
+            corridas={sinOrigen}
+            onVincular={setVincularA}
+            marcadas={marcadasSinOrigen}
+            onMarcar={(ids, marcar) =>
+              setMarcadasSinOrigen((prev) => {
+                const n = new Set(prev);
+                for (const id of ids) if (marcar) n.add(id); else n.delete(id);
+                return n;
+              })
+            }
+            onEnTanda={() => setVincularEnTanda(true)}
+          />
+        ),
       });
     }
     return items;
@@ -1083,6 +1283,7 @@ export function CtpEntriesView({
     kpis.sinOrigen,
     idsAmpliables,
     sinOrigen,
+    marcadasSinOrigen,
     sinAnexo,
     soloSinAnexo,
     setSoloSinAnexo,
@@ -1326,6 +1527,21 @@ export function CtpEntriesView({
           );
         })()}
 
+      {/* Ponerle el lote a varias de una vez: el reparto se ve antes de firmar. */}
+      {vincularEnTanda && corridasEnTanda.length > 0 && (
+        <CtpVincularEnTandaModal
+          corridas={corridasEnTanda}
+          lotes={lotes.lotes}
+          onCerrar={() => setVincularEnTanda(false)}
+          onListo={(msg) => {
+            setVincularEnTanda(false);
+            setMarcadasSinOrigen(new Set());
+            setToProductMsg(msg);
+            void load();
+          }}
+        />
+      )}
+
       {/* El apartado de simulación por permiso — sólo lee (ADR-409). */}
       {section === "produccion" && (
         <CtpSaldoPermisoModal
@@ -1374,6 +1590,40 @@ export function CtpEntriesView({
              existía (auditoría 2026-09-11). */
           onCambio={() => {
             void catalogoEspecies.recargar();
+            void load();
+          }}
+        />
+      )}
+
+      {verTarifa && <CtpTarifaAserrioModal open onClose={() => setVerTarifa(false)} />}
+
+      {section === "produccion" && cobrarAserrioId && (() => {
+        const corrida = entries.find((e) => e.id === cobrarAserrioId);
+        if (!corrida) return null;
+        return (
+          <CtpCobrarAserrioModal
+            entry={corrida}
+            onCerrar={() => setCobrarAserrioId(null)}
+            onListo={(msg, detalle) => {
+              pushToast({ tono: "success", msg, detail: detalle });
+              setCobrarAserrioId(null);
+              void load();
+            }}
+          />
+        );
+      })()}
+
+      {section === "produccion" && cobrarEnTanda && (
+        <CtpCobrarEnTandaModal
+          corridas={entries.filter((e) => seleccionCobro.has(e.id) && e.status === "registrado")}
+          onCerrar={() => setCobrarEnTanda(false)}
+          onListo={(msg, detalle, idsSinCobrar, cobradas) => {
+            pushToast({ tono: cobradas > 0 ? "success" : "warning", msg, detail: detalle });
+            setCobrarEnTanda(false);
+            /* Las que no se cobraron —incluidas las cortadas por tiempo—
+               quedan marcadas: es un reintento a un click, no volver a
+               buscarlas en la tabla (MEDIO, revisión 2026-09-14). */
+            setSeleccionCobro(new Set(idsSinCobrar));
             void load();
           }}
         />
@@ -1790,6 +2040,33 @@ export function CtpEntriesView({
           onCerrarMensaje={() => setToProductMsg(null)}
         />
 
+        {/* Barra de «Cobrar aserrío en tanda» (ADR-412): sólo aparece con algo
+            marcado, para no ocupar sitio en el día a día. */}
+        {section === "produccion" && seleccionCobro.size > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2">
+            <span className="text-sm font-bold text-[var(--text-primary)]">
+              {seleccionCobro.size} {seleccionCobro.size === 1 ? "corrida marcada" : "corridas marcadas"}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSeleccionCobro(new Set())}
+                className="text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              >
+                Vaciar
+              </button>
+              <button
+                type="button"
+                onClick={() => setCobrarEnTanda(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95"
+              >
+                <Coins className="h-4 w-4" aria-hidden /> Cobrar aserrío a {seleccionCobro.size}{" "}
+                {seleccionCobro.size === 1 ? "corrida" : "corridas"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Las filas viven aparte (CtpEntriesTabla): acá quedan el estado, los
           KPIs, los filtros y los modales. */}
         <CtpEntriesTabla
@@ -1809,6 +2086,8 @@ export function CtpEntriesView({
           ampliables={idsAmpliables}
           onPapeles={setPapelesEntry}
           onGuia={setGuiaEntry}
+          seleccionCobro={section === "produccion" ? seleccionCobro : undefined}
+          onSeleccionCobro={section === "produccion" ? marcarCobro : undefined}
           onAmpliar={(id) => {
             /* Un solo panel arriba de la tabla: abrir éste cierra el del lote y el
              de la corrida sin declarar, como entre ellos dos. */
@@ -1816,6 +2095,7 @@ export function CtpEntriesView({
             setCorridaAbiertaId(null);
             setAmpliarId((actual) => (actual === id ? null : id));
           }}
+          onCobrarAserrio={section === "produccion" ? (e) => setCobrarAserrioId(e.id) : undefined}
           totalesVista={totalesVista}
           colsProduccion={colsProduccion}
           filtrosColumna={filtrosColumna}

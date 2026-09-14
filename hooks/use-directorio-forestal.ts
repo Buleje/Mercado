@@ -12,7 +12,7 @@
  * parte del mismo gesto: tipeo el RUC → completo → guardo en la libreta.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   fuenteAutocompletado,
@@ -25,6 +25,7 @@ import {
   type Vehiculo,
   type VehiculoInput,
 } from "@/lib/forestal/directorio";
+import { candidatoAInputParte, type CandidatoParte, type ConflictoDirectorio } from "@/lib/forestal/directorio-desde-guias";
 
 /** Lo que devuelve una consulta a SUNAT/RENIEC, ya traducido a campos de la parte. */
 export interface DatosDeDocumento {
@@ -151,6 +152,56 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
 
   const vehiculosActivos = useMemo(() => ordenarPorUso(vehiculos.filter((v) => v.activo)), [vehiculos]);
 
+  /**
+   * Proveedores que están en las guías de ingreso y todavía no en la libreta
+   * (ADR-357 §proveedor), para ofrecerlos en el selector de dueño del cobro
+   * (ADR-412) sin obligar a pasar por Gestión → Directorio.
+   *
+   * Se pide UNA vez por instancia del hook, sólo cuando alguien lo pide (el
+   * selector de dueño lo dispara al abrirse, no al montarse — un cobro que
+   * nunca abre el selector no necesita esta lectura). Un error no cuenta como
+   * "ya pedido": puede reintentarse la próxima vez que se abra el selector.
+   */
+  const [candidatosProveedor, setCandidatosProveedor] = useState<CandidatoParte[]>([]);
+  const [conflictosProveedor, setConflictosProveedor] = useState<ConflictoDirectorio[]>([]);
+  const [cargandoCandidatos, setCargandoCandidatos] = useState(false);
+  const [candidatosProveedorError, setCandidatosProveedorError] = useState<string | null>(null);
+  const candidatosPedidos = useRef(false);
+
+  const cargarCandidatosProveedor = useCallback(async () => {
+    if (candidatosPedidos.current) return;
+    candidatosPedidos.current = true;
+    setCargandoCandidatos(true);
+    setCandidatosProveedorError(null);
+    try {
+      const r = await fetch("/api/admin/forestal/directorio/candidatos", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!r.ok) throw new Error(`No se pudieron leer los proveedores de tus guías (${r.status})`);
+      const j = (await r.json()) as { candidatos?: CandidatoParte[]; conflictos?: ConflictoDirectorio[] };
+      setCandidatosProveedor(j.candidatos ?? []);
+      setConflictosProveedor(j.conflictos ?? []);
+    } catch (e) {
+      setCandidatosProveedorError(e instanceof Error ? e.message : String(e));
+      candidatosPedidos.current = false;
+    } finally {
+      setCargandoCandidatos(false);
+    }
+  }, []);
+
+  /** Da de alta al candidato y lo saca de la lista de sugeridos: ya está en la libreta. */
+  const agregarCandidatoProveedor = useCallback(
+    async (c: CandidatoParte): Promise<Parte> => {
+      const conflicto = conflictosProveedor.find((x) => x.candidato.clave === c.clave)?.parte;
+      const parte = await guardarParte(candidatoAInputParte(c, { conflictoDirectorio: conflicto }));
+      setCandidatosProveedor((prev) => prev.filter((x) => x.clave !== c.clave));
+      setConflictosProveedor((prev) => prev.filter((x) => x.candidato.clave !== c.clave));
+      return parte;
+    },
+    [conflictosProveedor, guardarParte],
+  );
+
   return {
     partes,
     vehiculos,
@@ -164,6 +215,12 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
     guardarVehiculo,
     eliminarVehiculo,
     marcarUso,
+    candidatosProveedor,
+    conflictosProveedor,
+    cargandoCandidatos,
+    candidatosProveedorError,
+    cargarCandidatosProveedor,
+    agregarCandidatoProveedor,
   };
 }
 

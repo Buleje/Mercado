@@ -19,6 +19,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Archive, Boxes, Layers, Loader2, PackageOpen, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import type { ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
+import { mensajeCobroAserrio } from "./hooks/guardar-produccion-corrida";
 import { corridasAMedioDeclarar, origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
 import { cuposDeGuia, motivoDeCupo } from "@/lib/forestal/consumo-trozas";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
@@ -175,6 +177,11 @@ export default function CtpProduccionDeLote({
             unit: c.unit,
             status: c.status,
             materiaPrimaRef: lote.code,
+            // ADR-412: sin esto, "ampliar" mandaba `duenoParteId` en blanco y
+            // el nuevo contrato ("ausente = mantener") no llegaba a aplicar
+            // porque la pantalla ni sabía que había un dueño que mantener.
+            duenoParteId: c.duenoParteId ?? null,
+            aserrioPrecioManualPt: c.aserrioPrecioManualPt ?? null,
           })),
       ),
     [lote.corridas, lote.code, lote.speciesCommon],
@@ -361,9 +368,15 @@ export default function CtpProduccionDeLote({
             largoM: p.largoM,
             observations: p.observations || null,
           })),
+          // ADR-412: sin dueño elegido, `null` — no manda nada a cobrar.
+          ...(datos.aserrio ? { aserrio: datos.aserrio } : {}),
         }),
       });
-      const json = await r.json().catch(() => ({}));
+      const json = (await r.json().catch(() => ({}))) as {
+        message?: string;
+        error?: string;
+        aserrio?: ResultadoCobro;
+      };
       if (!r.ok) {
         throw new Error(
           `${json?.message ?? json?.error ?? `El servidor respondió ${r.status}`} ` +
@@ -389,7 +402,8 @@ export default function CtpProduccionDeLote({
           (quedan.length > 0
             ? ` Quedan ${quedan.length} troza${quedan.length === 1 ? "" : "s"} (${fmtM3(volumenQueda)} m³) ` +
               `en el lote para la corrida siguiente.`
-            : ` El lote quedó consumido.`),
+            : ` El lote quedó consumido.`) +
+          (mensajeCobroAserrio(json.aserrio) ? ` ${mensajeCobroAserrio(json.aserrio)}` : ""),
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

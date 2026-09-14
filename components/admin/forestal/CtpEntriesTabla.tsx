@@ -17,7 +17,7 @@
  */
 
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, AlertCircle, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown, Boxes, Download, FileText, Link2, MoreHorizontal, PackagePlus, Paperclip, Truck, X as XIcon } from "@buleje/design-system/icons";
+import { AlertTriangle, AlertCircle, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown, Boxes, Coins, Download, FileText, HandCoins, Link2, MoreHorizontal, PackagePlus, Paperclip, Truck, X as XIcon } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
@@ -29,6 +29,7 @@ import {
   Th,
   Td,
   estadoSalida,
+  puedeMarcarseParaCobro,
   UNIT_LABELS,
 } from "./ctp-section-shared";
 import { IconAction, productLabel } from "./ctp-shared";
@@ -107,6 +108,16 @@ export interface CtpEntriesTablaProps {
   onPapeles?: (e: CtpEntry) => void;
   /** Abrir la guía de transporte de esa línea (borrador editable o emitida). */
   onGuia?: (e: CtpEntry) => void;
+  /** Ponerle o cambiarle dueño y precio a una corrida ya declarada (ADR-412). */
+  onCobrarAserrio?: (e: CtpEntry) => void;
+  /**
+   * Selección para «Cobrar aserrío» EN TANDA (ADR-412) — sólo Producción,
+   * sólo filas `registrado`. Un `Set` propio, sin relación con la selección
+   * de «vincular en tanda» (`marcadasSinOrigen` en `CtpEntriesView`): son dos
+   * gestos distintos sobre la misma tabla y no pueden compartir estado.
+   */
+  seleccionCobro?: Set<string>;
+  onSeleccionCobro?: (id: string, marcado: boolean) => void;
   /** Totales de lo que se está viendo — los calcula la vista, para que el pie de
    *  la tabla y los KPIs de arriba no puedan decir números distintos. */
   totalesVista: ReturnType<typeof totalesDeSeccion>;
@@ -146,6 +157,28 @@ function AtribucionBadge({ entry }: { entry: CtpEntry }) {
     >
       <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
       {estado.aviso}
+    </div>
+  );
+}
+
+/**
+ * Lo que se le cargó al dueño de la madera por asierrar esta corrida (ADR-412).
+ * Silencioso cuando la corrida no tiene cobro: la mayoría de las corridas de
+ * antes de esta feature no lo tienen y no están "mal" por eso, sólo no cobran.
+ *
+ * Silencioso TAMBIÉN si la corrida está anulada: el servidor deja el importe
+ * escrito en la línea como historia, pero el cargo en la cuenta ya se dio de
+ * baja — mostrar el chip acá diría que sigue cobrado cuando no.
+ */
+function AserrioChip({ entry }: { entry: CtpEntry }) {
+  if (entry.aserrioImporte == null || entry.status !== "registrado") return null;
+  return (
+    <div
+      title="Ya se cargó este importe a la cuenta del dueño de la madera — «Cambiar dueño o precio del aserrío» en el menú de la fila lo corrige."
+      className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+    >
+      <Coins className="h-3 w-3 shrink-0" aria-hidden />
+      Aserrío S/ {Number(entry.aserrioImporte).toFixed(2)}
     </div>
   );
 }
@@ -414,6 +447,9 @@ export default function CtpEntriesTabla({
   onAmpliar,
   onPapeles,
   onGuia,
+  onCobrarAserrio,
+  seleccionCobro,
+  onSeleccionCobro,
   totalesVista,
   colsProduccion = COLS_PRODUCCION_DEFECTO,
   filtrosColumna,
@@ -424,6 +460,8 @@ export default function CtpEntriesTabla({
      repetía la misma pastilla verde en las ocho filas: una columna entera para
      un dato constante. Cuando aparece un anulado, vuelve sola. */
   const hayAnulados = visible.some((e) => e.status === "anulado");
+  const mostrarCheckboxCobro = section === "produccion" && Boolean(onSeleccionCobro);
+  const registradasVisibles = mostrarCheckboxCobro ? visible.filter(puedeMarcarseParaCobro) : [];
 
   /**
    * Lo que se hace de vez en cuando, plegado — y lo que borra, separado.
@@ -462,6 +500,17 @@ export default function CtpEntriesTabla({
         onSelect: () => onPapeles(e),
       });
     }
+    if (section === "produccion" && onCobrarAserrio) {
+      lista.push({
+        id: "cobrar-aserrio",
+        label: e.duenoParteId ? "Cambiar dueño o precio del aserrío" : "Cobrar aserrío",
+        hint: e.aserrioImporte != null
+          ? `Ya se cargó S/ ${Number(e.aserrioImporte).toFixed(2)} a su cuenta`
+          : "Pon quién es el dueño de esta madera y a qué precio se le asierra",
+        icon: HandCoins,
+        onSelect: () => onCobrarAserrio(e),
+      });
+    }
     /* Última y en rojo: borra una línea del libro. Estaba en el riel, del mismo
        tamaño y a un centímetro de «ver la guía». */
     lista.push({
@@ -485,6 +534,18 @@ export default function CtpEntriesTabla({
               filtro tienen que quedar arriba y no centradas contra los selects. */}
           <thead className="bg-[var(--surface-sunken)] text-left align-top">
             <tr>
+              {mostrarCheckboxCobro && (
+                <Th className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={registradasVisibles.length > 0 && registradasVisibles.every((e) => seleccionCobro?.has(e.id))}
+                    onChange={(ev) => registradasVisibles.forEach((e) => onSeleccionCobro?.(e.id, ev.target.checked))}
+                    disabled={registradasVisibles.length === 0}
+                    aria-label="Marcar todas las corridas registradas de esta página para cobrar aserrío"
+                    className="h-4 w-4 accent-[var(--accent)]"
+                  />
+                </Th>
+              )}
               <Th className="w-12 text-right">#</Th>
               <SortTh label="Fecha" by="fecha" sort={sort} onSort={onSort} />
               <ThFiltro label="Especie" filtro={fc.species} />
@@ -508,6 +569,19 @@ export default function CtpEntriesTabla({
           <tbody>
             {visible.map((e) => (
               <tr key={e.id} className={`border-t border-[var(--rule-soft)] hover:bg-[var(--surface-canvas)]/40 ${e.status === "anulado" ? "opacity-50" : ""}`}>
+                {mostrarCheckboxCobro && (
+                  <Td>
+                    {puedeMarcarseParaCobro(e) && (
+                      <input
+                        type="checkbox"
+                        checked={seleccionCobro?.has(e.id) ?? false}
+                        onChange={(ev) => onSeleccionCobro?.(e.id, ev.target.checked)}
+                        aria-label={`Marcar la corrida N° ${e.lineNo} para cobrar aserrío`}
+                        className="h-4 w-4 accent-[var(--accent)]"
+                      />
+                    )}
+                  </Td>
+                )}
                 <Td className="text-right font-mono text-xs text-[var(--text-tertiary)]">{e.lineNo}</Td>
                 <Td className="font-medium text-[var(--text-primary)]">{fmtDate(e.entryDate)}</Td>
                 <Td>
@@ -545,7 +619,10 @@ export default function CtpEntriesTabla({
                         <OrigenBadge entry={e} />
                       </Td>
                     )}
-                    <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n4(e.quantity, e.unit)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span></Td>
+                    <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {n4(e.quantity, e.unit)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span>
+                      <AserrioChip entry={e} />
+                    </Td>
                     {cv.piezas && (
                       <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{e.pieces ?? "—"}</Td>
                     )}
@@ -648,7 +725,7 @@ export default function CtpEntriesTabla({
           {visible.length > 0 && (
             <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
               <tr>
-                <td colSpan={4} className="px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
+                <td colSpan={mostrarCheckboxCobro ? 5 : 4} className="px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
                   {totalesVista.lineas} {totalesVista.lineas === 1 ? "línea vigente" : "líneas vigentes"} en pantalla
                 </td>
                 {section === "produccion" ? (
@@ -696,6 +773,13 @@ export default function CtpEntriesTabla({
               onAmpliar={onAmpliar}
               onPapeles={section === "despacho" ? onPapeles : undefined}
               onGuia={section === "despacho" ? onGuia : undefined}
+              onCobrarAserrio={section === "produccion" ? onCobrarAserrio : undefined}
+              /* Sólo `registrado` se puede cobrar (ADR-412 no cobra anuladas)
+                 — la fila de escritorio ya lo respeta (línea ~573); la card
+                 mobile lo recibía sin filtrar y marcaba anuladas (MEDIO,
+                 revisión 2026-09-14). */
+              marcadaCobro={mostrarCheckboxCobro && puedeMarcarseParaCobro(e) ? (seleccionCobro?.has(e.id) ?? false) : undefined}
+              onMarcarCobro={mostrarCheckboxCobro && puedeMarcarseParaCobro(e) ? onSeleccionCobro : undefined}
             />
           ))}
         </div>

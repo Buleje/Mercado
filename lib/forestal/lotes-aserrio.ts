@@ -129,6 +129,15 @@ export interface CorridaDelLote {
   /** Marcada a mano como "ya usada": sale de Productos disponibles (Brandon, 2026-09-01). */
   usadoAt?: string | null;
   usadoMotivo?: string | null;
+  /** A quién se le cobra el aserrío (ADR-412). `null` = a nadie. Opcional: lo
+   *  arman sólo las lecturas que alimentan una pantalla de declarar o cobrar. */
+  duenoParteId?: string | null;
+  /** El precio a mano pactado, si se cobró así (`precioManualDelDetalle`). */
+  aserrioPrecioManualPt?: number | null;
+  /** El nombre del acta — se usa si el dueño se dio de baja del directorio.
+   *  Todavía no lo trae esta lectura (`forest-lote-aserrio.db.ts`): ausente
+   *  hasta que se agregue ahí, y el bloque de cobro se degrada con gracia. */
+  titularNombre?: string | null;
 }
 
 export interface LoteAserrio {

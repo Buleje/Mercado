@@ -108,13 +108,21 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
   async function borrar(id: string) {
     if (!(await confirm({ title: "¿Borrar el movimiento?", description: "El saldo se recalcula solo.", intent: "danger", confirmLabel: "Sí, borrar" }))) return;
     setOcupado(id);
+    setError(null);
     try {
       const r = await fetch(`/api/admin/forestal/cuenta?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
         credentials: "include",
         headers: csrfHeaders(),
       });
-      if (!r.ok) throw new Error("No se pudo borrar.");
+      if (!r.ok) {
+        /* Un cargo nacido de una corrida (ADR-412) responde 409 explicando POR
+           QUÉ no se borra desde acá — «se corrige desde la corrida N° X, con
+           Cobrar aserrío» — y ese mensaje se muestra TAL CUAL, no un "no se
+           pudo" genérico que esconde la salida real. */
+        const j = (await r.json().catch(() => ({}))) as { message?: string; error?: string };
+        throw new Error(j.message ?? j.error ?? `No se pudo borrar (${r.status}).`);
+      }
       setMovs((p) => p.filter((m) => m.id !== id));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -286,7 +294,18 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
                         <span className="w-24 shrink-0 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
                           {soles(m.acumulado)}
                         </span>
-                        {ocupado === m.id ? (
+                        {m.ctpEntryId ? (
+                          /* Nació de una corrida del Libro (ADR-412): no se
+                             edita ni se borra desde la cuenta — cambiar dueño o
+                             precio, o anular la corrida, es lo que actualiza
+                             este mismo movimiento. */
+                          <span
+                            title="Este cargo nació de una corrida del Libro de Producción. Cambiarlo se hace desde ahí, con «Cobrar aserrío» — o anulando la corrida."
+                            className="w-24 shrink-0 text-right text-[length:var(--ts-2xs)] font-medium leading-tight text-[var(--text-tertiary)]"
+                          >
+                            Se corrige desde la corrida{m.referencia ? ` · ${m.referencia}` : ""}
+                          </span>
+                        ) : ocupado === m.id ? (
                           <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
                         ) : (
                           <IconAction icon={Trash2} label="Borrar movimiento" tone="danger" onClick={() => void borrar(m.id)} />

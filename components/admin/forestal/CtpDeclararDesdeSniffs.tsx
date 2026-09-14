@@ -27,6 +27,7 @@ import type { PaquetePrevio } from "./CtpMaterialPanel";
 import CtpRegistrarProduccionModal, { type ProduccionRegistrada } from "./CtpRegistrarProduccionModal";
 import {
   guardarProduccionDeCorrida,
+  mensajeCobroAserrio,
   paquetesYaDeclarados,
   type ModoDeclaracion,
 } from "./hooks/guardar-produccion-corrida";
@@ -138,7 +139,7 @@ export default function CtpDeclararDesdeSniffs({
       setGuardando(true);
       setError(null);
       try {
-        await guardarProduccionDeCorrida(corrida.id, modo, datos);
+        const { aserrio } = await guardarProduccionDeCorrida(corrida.id, modo, datos);
         /* La foto del SNIFFS se guarda DESPUÉS del asiento y sin poder
            romperlo: si falla, la producción ya quedó declarada y lo único que
            se pierde es el cotejo, que se puede volver a pegar. */
@@ -161,9 +162,11 @@ export default function CtpDeclararDesdeSniffs({
         }
         const total = Math.round((yaDeclarado + datos.volumen) * 10_000) / 10_000;
         const rend = entrada > 0 ? ` · rendimiento ${Math.round((total / entrada) * 1000) / 10} %` : "";
+        const avisoCobro = mensajeCobroAserrio(aserrio);
         onListo(
           `Lote ${lote.code}: la corrida N° ${corrida.lineNo} declara ${fmtM3(total)} m³ en ` +
-            `${datos.paquetes.length} paquete(s)${rend}. Ya se puede despachar de esta corrida.`,
+            `${datos.paquetes.length} paquete(s)${rend}. Ya se puede despachar de esta corrida.` +
+            (avisoCobro ? ` ${avisoCobro}` : ""),
         );
         onClose();
       } catch (e) {
@@ -184,7 +187,14 @@ export default function CtpDeclararDesdeSniffs({
     <CtpRegistrarProduccionModal
       lote={lote}
       material={{
-        especie: corrida.speciesCommon?.trim() || lote.speciesCommon,
+        /* Sólo la especie de la CORRIDA — nunca la del lote. El servidor
+           cotiza el aserrío con `corrida.speciesCommon`: si acá se completaba
+           con la del lote, la vista previa podía mostrar un precio por
+           especie que el servidor jamás iba a aplicar (BAJO, revisión
+           2026-09-14). `"Sin especie"` no calza con ninguna fila de la tarifa,
+           así que cae al precio general — igual que hacen las otras puertas
+           de este mismo formulario. */
+        especie: corrida.speciesCommon?.trim() || "Sin especie",
         especieCientifica: lote.speciesScientific,
         piezas: piezas.length,
         volumenM3: entrada,
@@ -193,6 +203,16 @@ export default function CtpDeclararDesdeSniffs({
       }}
       trozas={piezas}
       fecha={diaIso(corrida.entryDate)}
+      /* La corrida YA existe: se cotiza con SU fecha, no con la que se edite
+         acá. */
+      fechaCorridaFija={diaIso(corrida.entryDate)}
+      cobroInicial={{
+        duenoParteId: corrida.duenoParteId ?? null,
+        precioManualPt: corrida.aserrioPrecioManualPt ?? null,
+        // `CorridaDelLote` todavía no trae `titularNombre` desde el lector de
+        // lotes-aserrio: se degrada solo mostrando «Dueño (dado de baja)».
+        nombreGuardado: corrida.titularNombre ?? null,
+      }}
       guardando={guardando}
       error={error}
       yaDeclaradoM3={yaDeclarado}

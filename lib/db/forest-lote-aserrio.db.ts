@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { precioManualDelDetalle } from "@/lib/forestal/aserrio-cobro";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { CtpInvariantError, ForestCtpConsumoDB } from "./forest-ctp-consumo.db";
@@ -311,6 +312,11 @@ export class ForestLoteAserrioDB {
               speciesCommon: true,
               usadoAt: true,
               usadoMotivo: true,
+              /* A quién se le cobra y con qué trato (ADR-412): «Producción de
+                 lote» y «Declarar desde SNIFFS» muestran lo que la corrida
+                 tiene en vez de suponer que no se cobra. */
+              duenoParteId: true,
+              aserrioDetalle: true,
               /* El detalle de productos de la corrida (ADR-349): una corrida
                  declarada con el formulario oficial casi siempre trae más de
                  un tipo, y sin esto la Ficha del Lote sólo mostraba el total
@@ -386,6 +392,8 @@ export class ForestLoteAserrioDB {
       })),
       usadoAt: c.usadoAt ? c.usadoAt.toISOString() : null,
       usadoMotivo: c.usadoMotivo,
+      duenoParteId: c.duenoParteId ?? null,
+      aserrioPrecioManualPt: precioManualDelDetalle(c.aserrioDetalle),
     });
 
     return lotes.map((l) => {

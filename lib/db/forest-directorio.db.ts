@@ -178,6 +178,26 @@ export const ForestDirectorioDB = {
     return row ? aParte(row) : null;
   },
 
+  /**
+   * La parte AUNQUE esté dada de baja, y qué persona de Adelantos la tiene
+   * vinculada a mano — lo que valida el estado de cuenta (ADR-412 §5).
+   * `getParte` excluye las borradas, pero «Cuenta por persona» las sigue
+   * mostrando mientras tengan plata viva: con `getParte`, el WhatsApp y el PDF
+   * de esa misma fila daban 404.
+   */
+  async getParteParaEstadoCuenta(
+    tenantId: string,
+    id: string,
+  ): Promise<{ parte: Parte; borrada: boolean; vinculadaA: string | null } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [row, vinculo] = await Promise.all([
+      prisma.forestParty.findFirst({ where: { id, tenantId } }),
+      prisma.adelantoBeneficiario.findFirst({ where: { tenantId, forestPartyId: id }, select: { id: true } }),
+    ]);
+    if (!row) return null;
+    return { parte: aParte(row), borrada: row.deletedAt !== null, vinculadaA: vinculo?.id ?? null };
+  },
+
   /** Busca por documento — el camino del autocompletado: "¿este RUC ya lo tengo?". */
   async buscarPorDocumento(tenantId: string, docTipo: DocTipo, docNumero: string): Promise<Parte | null> {
     if (!tenantId) throw new Error("tenantId is required");

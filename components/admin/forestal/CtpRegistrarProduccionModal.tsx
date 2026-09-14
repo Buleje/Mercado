@@ -50,6 +50,8 @@ import {
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { tenantDeLaClave } from "@/lib/forestal/sembrar-reparto";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
+import { bloquesDeCorrida, type CobroAserrioValor } from "@/lib/forestal/tarifa-aserrio";
+import CtpCobroAserrio from "./CtpCobroAserrio";
 
 /** Lo que se va a consumir: las piezas elegidas del lote. */
 export interface MaterialAConsumir {
@@ -76,6 +78,18 @@ export interface ProduccionRegistrada {
   observaciones: string | null;
   paquetes: PaqueteBorrador[];
   volumen: number;
+  /**
+   * A quién se le asierra y a qué precio (ADR-412). Contrato de la PATCH
+   * (revisión adversarial, corregido): `undefined`/ausente = no toca el cobro
+   * que la corrida ya tenía (el servidor recotiza con el dueño existente si lo
+   * hay); `{ duenoParteId: null }` = dejar de cobrar; `precioManualPt` ausente
+   * = mantiene el trato actual, `null` = usar la tarifa, número = precio a
+   * mano. `duenoParteId` ausente = mantiene el dueño actual (ADR-412,
+   * replanteo tras revisión adversarial): los flujos que no conocen el dueño
+   * de antemano (producción de lote, declarar desde SNIFFS) no pueden pisarlo
+   * sólo por tocar el precio.
+   */
+  aserrio?: { duenoParteId?: string | null; precioManualPt?: number | null };
 }
 
 const CAMPO =
@@ -197,6 +211,8 @@ export default function CtpRegistrarProduccionModal({
   productoInicial,
   sniffsInicial,
   onSniffsLeido,
+  cobroInicial,
+  fechaCorridaFija,
   onConfirmar,
   onClose,
 }: {
@@ -256,6 +272,23 @@ export default function CtpRegistrarProduccionModal({
    * leer: leer y descartar no es haberlo declarado.
    */
   onSniffsLeido?: (detalle: DetalleProduccionSniffs) => void;
+  /**
+   * El dueño que esta corrida YA tiene, si existe (ADR-412). El bloque de
+   * cobro arranca ahí — no en «Madera del centro» — para que "no toqué nada"
+   * y "elegí que no tenga dueño" no se confundan (ALTO, revisión adversarial:
+   * ampliar sin tocar el bloque le seguía cobrando de más al dueño viejo
+   * porque en verdad no se le seguía cobrando NADA, ver `confirmar`).
+   */
+  cobroInicial?: { duenoParteId: string | null; precioManualPt?: number | null; nombreGuardado?: string | null };
+  /**
+   * La fecha REAL e inmutable de una corrida que YA EXISTE. `declarar_produccion`
+   * / `ampliar_produccion` no reescriben `entryDate` — el `día` de abajo es sólo
+   * un dato del asiento, no algo que declarar cambie — así que cotizar el
+   * aserrío con él mostraría una tarifa distinta de la que el servidor aplica
+   * de verdad. Ausente = la corrida todavía NO existe y el `día` editado ACÁ
+   * es el que se va a usar para crearla (`CtpProduccionDeLote`).
+   */
+  fechaCorridaFija?: string;
   onConfirmar: (datos: ProduccionRegistrada) => void;
   onClose: () => void;
 }) {
@@ -267,6 +300,20 @@ export default function CtpRegistrarProduccionModal({
   const [linea, setLinea] = useState("LP");
   const [observaciones, setObservaciones] = useState("");
   const [paquetes, setPaquetes] = useState<PaqueteBorrador[]>([]);
+  /* Quién es el dueño de esta madera y a qué precio se le asierra (ADR-412).
+     Arranca con el dueño que la corrida YA tiene (`cobroInicial`) — no en
+     blanco — para que "no toqué nada" y "elegí sacarle el dueño" sean cosas
+     distintas (ver `duenoTocado`/`precioTocado` y el comentario en `confirmar`). */
+  const [aserrio, setAserrio] = useState<CobroAserrioValor>({
+    duenoParteId: cobroInicial?.duenoParteId ?? null,
+    precioManualPt: cobroInicial?.precioManualPt ?? null,
+  });
+  const [duenoTocado, setDuenoTocado] = useState(false);
+  const [precioTocado, setPrecioTocado] = useState(false);
+  /* "A mano" con el campo vacío mientras el botón sigue en "a mano" no se
+     puede guardar (ver `CtpCobroAserrio`): sin esto el Ctrl+Enter/botón
+     guardaba igual y mandaba `null` (tarifa) sin que nadie lo eligiera. */
+  const [aserrioValido, setAserrioValido] = useState(true);
 
   // ── El formulario de «Agregar producción» ──
   const [codigo, setCodigo] = useState("");
@@ -530,7 +577,39 @@ export default function CtpRegistrarProduccionModal({
     () => repartirEntreOrigenes(acumulado, material.origenes ?? []),
     [acumulado, material.origenes],
   );
-  const listo = motivos.length === 0 && !guardando;
+  const listo = motivos.length === 0 && !guardando && aserrioValido;
+
+  /**
+   * Los bloques a cotizar (ADR-412): los paquetes YA declarados en tandas
+   * anteriores más los de esta tanda — ampliar recotiza sobre TODO, no sólo lo
+   * nuevo (ADR-412 §4). Comparten la especie de la corrida: el Libro admite una
+   * sola por asiento.
+   */
+  const bloquesAserrio = useMemo(
+    () =>
+      bloquesDeCorrida(
+        { lineNo: null, speciesCommon: material.especie, productType: paquetes[0]?.productType ?? productoInicial ?? null, quantity: acumulado },
+        [
+          ...(paquetesPrevios ?? []).map((p) => ({
+            codigo: p.codigo,
+            productType: p.productType ?? undefined,
+            volumenM3: Number(p.volumenM3) || 0,
+            espesorCm: p.espesorCm != null ? Number(p.espesorCm) : null,
+            anchoCm: p.anchoCm != null ? Number(p.anchoCm) : null,
+            largoM: p.largoM != null ? Number(p.largoM) : null,
+          })),
+          ...paquetes.map((p) => ({
+            codigo: p.codigo,
+            productType: p.productType,
+            volumenM3: p.volumenM3,
+            espesorCm: p.espesorCm,
+            anchoCm: p.anchoCm,
+            largoM: p.largoM,
+          })),
+        ],
+      ),
+    [material.especie, paquetes, paquetesPrevios, productoInicial, acumulado],
+  );
 
   /**
    * Guardar: se limpia el borrador y se entrega.
@@ -549,8 +628,20 @@ export default function CtpRegistrarProduccionModal({
       observaciones: observaciones.trim() || null,
       paquetes,
       volumen: totales.volumen,
+      /* Ausente si no se tocó nada: el contrato de la PATCH dice que eso NO
+         cambia el cobro que la corrida ya tenía. Cada clave viaja SÓLO si se
+         tocó ESA parte — `duenoParteId` ausente no toca al dueño (los flujos
+         que no lo conocen de antemano no pueden borrarlo por tocar sólo el
+         precio) y `precioManualPt` ausente no toca el trato de precio. */
+      aserrio:
+        !duenoTocado && !precioTocado
+          ? undefined
+          : {
+              ...(duenoTocado ? { duenoParteId: aserrio.duenoParteId } : {}),
+              ...(precioTocado ? { precioManualPt: aserrio.precioManualPt } : {}),
+            },
     });
-  }, [listo, claveBorrador, onConfirmar, dia, linea, observaciones, paquetes, totales.volumen]);
+  }, [listo, claveBorrador, onConfirmar, dia, linea, observaciones, paquetes, totales.volumen, aserrio, duenoTocado, precioTocado]);
 
   /* Ctrl+Enter guarda desde cualquier campo: con veinte paquetes cargados,
      buscar el botón con el mouse es el último peaje de la jornada. */
@@ -1037,6 +1128,23 @@ export default function CtpRegistrarProduccionModal({
             </Campo>
           </div>
 
+          {/* De quién es esta madera y a qué precio se le asierra (ADR-412).
+              Sobre TODOS los bloques declarados, no sólo los de esta tanda: es
+              lo mismo que mide el rendimiento acumulado de arriba. */}
+          <div className="mt-3 border-t border-[var(--rule-soft)] pt-3">
+            <CtpCobroAserrio
+              fecha={fechaCorridaFija ?? dia}
+              bloques={bloquesAserrio}
+              valor={aserrio}
+              nombreGuardado={cobroInicial?.nombreGuardado}
+              onValidez={setAserrioValido}
+              onChange={(v, tocado) => {
+                setAserrio(v);
+                if (tocado.dueno) setDuenoTocado(true);
+                if (tocado.precio) setPrecioTocado(true);
+              }}
+            />
+          </div>
         </Bloque>
         </div>
 

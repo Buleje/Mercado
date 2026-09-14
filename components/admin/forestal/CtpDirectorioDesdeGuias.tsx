@@ -16,16 +16,22 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Check, Loader2, Plus, Users } from "@buleje/design-system/icons";
+import { AlertTriangle, Check, Loader2, Plus, Users } from "@buleje/design-system/icons";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
-import { claveDeParte, descubrirEnGuias, normalizarPlaca, type CandidatoParte, type GuiaConPartes } from "@/lib/forestal/directorio-desde-guias";
-import { ROL_LABEL, type Parte, type ParteInput, type RolParte, type Vehiculo } from "@/lib/forestal/directorio";
+import {
+  candidatoAInputParte,
+  claveDeParte,
+  conflictosConDirectorio,
+  descubrirEnGuias,
+  normalizarPlaca,
+  type CandidatoParte,
+  type GuiaConPartes,
+} from "@/lib/forestal/directorio-desde-guias";
+import { ROL_LABEL, type Parte, type ParteInput, type Vehiculo } from "@/lib/forestal/directorio";
 import { Btn } from "./ctp-shared";
 
 /** El tope del listado: una libreta se arma con las guías que hay, no con mil. */
 const GUIAS_A_LEER = 500;
-
-const DOC_VALIDOS = new Set(["RUC", "DNI", "CE", "PASAPORTE"]);
 
 export default function CtpDirectorioDesdeGuias({
   partes,
@@ -75,6 +81,16 @@ export default function CtpDirectorioDesdeGuias({
     [guias, yaEstan, placas],
   );
 
+  /**
+   * Candidatos que se PARECEN a una parte que ya está en la libreta pero con
+   * OTRO documento (evidencia real: la comunidad tiene un RUC en la libreta y
+   * otro en las guías). Se avisa; no se fusiona ni se descarta solo.
+   */
+  const conflictoPorClave = useMemo(() => {
+    const conflictos = descubierto ? conflictosConDirectorio(descubierto.partes, partes) : [];
+    return new Map(conflictos.map((c) => [c.candidato.clave, c.parte]));
+  }, [descubierto, partes]);
+
   const pendientes = useMemo(
     () => (descubierto?.partes ?? []).filter((p) => !listos.has(p.clave)),
     [descubierto, listos],
@@ -89,16 +105,7 @@ export default function CtpDirectorioDesdeGuias({
       setGuardando(c.clave);
       setError(null);
       try {
-        await onGuardarParte({
-          roles: c.roles as RolParte[],
-          nombre: c.nombre,
-          /* El tipo de documento sólo viaja si es uno de los que el libro
-             admite: mandar «—» haría fallar el Zod del endpoint entero. */
-          ...(c.docNumero && c.docTipo && DOC_VALIDOS.has(c.docTipo.toUpperCase())
-            ? { docTipo: c.docTipo.toUpperCase() as ParteInput["docTipo"], docNumero: c.docNumero }
-            : {}),
-          notas: `Tomado de la guía ${c.ejemplos[0] ?? "—"}${c.guias > 1 ? ` y ${c.guias - 1} más` : ""}.`,
-        });
+        await onGuardarParte(candidatoAInputParte(c, { conflictoDirectorio: conflictoPorClave.get(c.clave) }));
         setListos((prev) => new Set(prev).add(c.clave));
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
@@ -106,7 +113,7 @@ export default function CtpDirectorioDesdeGuias({
         setGuardando(null);
       }
     },
-    [onGuardarParte],
+    [onGuardarParte, conflictoPorClave],
   );
 
   const altaVehiculo = useCallback(
@@ -180,6 +187,18 @@ export default function CtpDirectorioDesdeGuias({
                   en {c.guias} guía{c.guias === 1 ? "" : "s"}
                   {c.ejemplos.length > 0 && ` · ${c.ejemplos.join(", ")}`}
                 </span>
+                {c.otrosNombres?.length ? (
+                  <span className="flex items-start gap-1 text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                    Revisar: el mismo documento también aparece como «{c.otrosNombres.join(", ")}».
+                  </span>
+                ) : null}
+                {conflictoPorClave.has(c.clave) ? (
+                  <span className="flex items-start gap-1 text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                    Revisar: ya existe «{conflictoPorClave.get(c.clave)?.nombre}» con otro documento.
+                  </span>
+                ) : null}
               </span>
               <Btn variant="secondary" onClick={() => void alta(c)} disabled={guardando === c.clave}>
                 {guardando === c.clave ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}

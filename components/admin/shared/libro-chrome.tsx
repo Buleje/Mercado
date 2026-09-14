@@ -21,7 +21,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { createPortal } from "react-dom";
 import { Keyboard, SlidersHorizontal, X, type LucideIcon } from "@buleje/design-system/icons";
 import { Kicker, PageTitle } from "@buleje/design-system";
-import ActionMenu, { type MenuAccion } from "./action-menu";
+import ActionMenu, { marcoDeFixed, type MenuAccion } from "./action-menu";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
@@ -376,6 +376,10 @@ function HerramientasDelLibro({ children }: { children: ReactNode }) {
   const anclaRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  /* Mismo patrón que `ActionMenu` (ver su comentario): con la cabina abierta
+     DENTRO de un `AdminModal`, portalear siempre a `body` deja el panel bajo
+     el `pointer-events: none` que Radix le pone al body — se ve, no se toca. */
+  const portalARef = useRef<HTMLElement | null>(null);
   // Escape ya lo maneja el listener de la ventana de abajo; el hook agrega
   // la trampa de Tab (sin ella se escapa al resto de la página) y devuelve
   // el foco al botón que lo abrió.
@@ -383,9 +387,25 @@ function HerramientasDelLibro({ children }: { children: ReactNode }) {
   useModalAccesible(panelRef, { onCerrar: cerrarHerramientas, cerrarConEscape: false, activo: open });
 
   const ubicar = useCallback(() => {
-    const b = anclaRef.current?.getBoundingClientRect();
-    if (!b) return;
-    setPos({ top: b.bottom + 8, right: Math.max(12, window.innerWidth - b.right) });
+    const ancla = anclaRef.current;
+    const b = ancla?.getBoundingClientRect();
+    if (!b || !ancla) return;
+    const dialogo = ancla.closest<HTMLElement>('[role="dialog"]');
+    portalARef.current = dialogo;
+    const marco = marcoDeFixed(dialogo);
+    const base = marco ?? { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+    const bTop = b.top - base.top;
+    const bBottom = b.bottom - base.top;
+    /* Dentro de un diálogo con transform, este panel queda recortado a SU
+       caja (transform + overflow-hidden juntos, como `Dialog.Content` de
+       Radix): si no entra abajo, se abre arriba en vez de cortarse contra el
+       borde inferior. Fuera de un diálogo (el caso de siempre) `base` es el
+       viewport entero y esto nunca dispara. */
+    const entraAbajo = bBottom + 8 + 200 <= base.height;
+    setPos({
+      top: entraAbajo ? bBottom + 8 : Math.max(12, bTop - 8 - 200),
+      right: Math.max(12, base.width - (b.right - base.left)),
+    });
   }, []);
 
   useLayoutEffect(() => {
@@ -453,7 +473,7 @@ function HerramientasDelLibro({ children }: { children: ReactNode }) {
         <SlidersHorizontal className="h-4 w-4" aria-hidden />
         <span className="max-sm:sr-only">Herramientas</span>
       </button>
-      {typeof document !== "undefined" && panel ? createPortal(panel, document.body) : null}
+      {typeof document !== "undefined" && panel ? createPortal(panel, portalARef.current ?? document.body) : null}
     </>
   );
 }

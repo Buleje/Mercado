@@ -5135,6 +5135,9 @@ model AdelantoBeneficiario {
   /// Baja lógica: el DELETE se bloquea (bien) si la persona tiene adelantos,
   /// así que sin esto la libreta sólo podía crecer.
   activo             Boolean              @default(true)
+  /// Esta persona es tal parte del directorio forestal (ADR-412): con esto su
+  /// cuenta junta adelantos y aserríos en una sola fila.
+  forestPartyId      String?
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -5146,6 +5149,7 @@ model AdelantoBeneficiario {
   @@index([tenantId, nombre])
   @@index([tenantId, documento])
   @@index([tenantId, activo])
+  @@index([tenantId, forestPartyId])
 }
 
 // ADR-118: plantilla de adelantos recurrentes (materializados por cron diario)
@@ -5260,12 +5264,18 @@ model AdelantoEntrega {
   sumadoAStock   Boolean                 @default(false)
   notas          String?
   comprobanteUrl String? // ADR-118: foto/comprobante de la entrega
+  /// De qué liquidación salió la entrega (ADR-413). Texto sin FK.
+  liquidacionId  String?
+  /// Baja lógica al anular su liquidación: NULL en toda fila vieja, así que
+  /// ninguna lectura actual cambia hasta que se filtre (ADR-413 §7).
+  anuladaAt      DateTime?
   createdAt      DateTime                @default(now())
   adelanto       Adelanto                @relation(fields: [adelantoId], references: [id], onDelete: Cascade)
   pactada        AdelantoEntregaPactada?
 
   @@index([adelantoId])
   @@index([adelantoId, fecha])
+  @@index([liquidacionId])
 }
 
 model AdelantoEntregaPactada {
@@ -5282,6 +5292,46 @@ model AdelantoEntregaPactada {
   entrega             AdelantoEntrega? @relation(fields: [entregaId], references: [id], onDelete: SetNull)
 
   @@index([adelantoId])
+}
+
+/// Liquidar la cuenta de una persona (ADR-413): una cabecera con código LIQ que
+/// agrupa las entregas de adelanto y los movimientos forestales de un mismo
+/// acto (cruzar y/o pagar). Sin relación con Tenant, como ForestCuentaMov; los
+/// ids de persona y parte son texto y siempre se leen con tenantId.
+model LiquidacionCuenta {
+  id               String    @id @default(cuid())
+  tenantId         String
+  /// «LIQ-2026-0001»: el número del papel firmado. Único total — una anulada lo conserva.
+  codigo           String
+  /// Lo genera la pantalla al abrir el modal: el doble clic devuelve la misma liquidación.
+  idempotencyKey   String
+  beneficiarioId   String?
+  parteId          String?
+  personaNombre    String
+  personaDocumento String?
+  fecha            DateTime
+  montoCompensado  Decimal   @default(0) @db.Decimal(12, 2)
+  pagoDireccion    String?   // recibido | hecho
+  pagoMonto        Decimal?  @db.Decimal(12, 2)
+  metodoPago       String?
+  moverCaja        Boolean   @default(false)
+  cajaMovimientoId String?
+  cajaResultado    String?   // movida | sin_caja | no_mover | fallo
+  /// Acta congelada (DetalleLiquidacion v1): el comprobante sale de acá, nunca de recalcular.
+  detalle          Json
+  notas            String?
+  createdBy        String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  anuladaAt        DateTime?
+  anuladaPor       String?
+  motivoAnulacion  String?
+  cajaReversionId  String?
+
+  @@unique([tenantId, codigo])
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, beneficiarioId, createdAt(sort: Desc)])
+  @@index([tenantId, parteId, createdAt(sort: Desc)])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -5956,6 +6006,27 @@ model ForestCtpEntry {
   /// `lib/forestal/ctp-gtf-datos.ts`.
   gtfDatos             Json?
 
+  /// De QUIÉN es la madera de esta corrida (ADR-412): 'propia' | 'tercero'.
+  /// NULL es "no se declaró", que NO es lo mismo que "es propia": una corrida
+  /// vieja no eligió nada y no se le inventa una respuesta.
+  ///
+  /// El lote comercial ya lo dice con `ForestProdLote.titularNombre` (ADR-327);
+  /// esto es lo mismo para una corrida que no tiene lote del cual heredarlo —
+  /// el hueco que ADR-402 tapó con `originCode` para el permiso.
+  duenoMadera    String?
+  /// Quién, cuando es de tercero. El nombre tal como se certificó: acta, igual
+  /// que en el lote — corregir la ficha del directorio no cambia lo emitido.
+  titularNombre  String?
+  /// A quién se le asierra, por id del directorio (ADR-412). `titularNombre`
+  /// sigue siendo el nombre certificado; esto es lo que permite cobrarle.
+  duenoParteId   String?
+  /// Lo que se le cobró por el aserrío, congelado al declarar (ADR-412): la
+  /// tarifa de mañana no toca lo cobrado hoy. `null` = no se cobró.
+  aserrioImporte Decimal? @db.Decimal(12, 2)
+  /// La cotización entera (líneas, versión de la tarifa, avisos) —
+  /// `Cotizacion` de `lib/forestal/tarifa-aserrio.ts`.
+  aserrioDetalle Json?
+
   observations   String?
   status         String    @default("registrado") // registrado | anulado
   annulledReason String?
@@ -6017,6 +6088,7 @@ model ForestCtpEntry {
   @@index([tenantId, section, entryDate(sort: Desc)])
   @@index([tenantId, gtfNumber])
   @@index([deletedAt])
+  @@index([tenantId, duenoParteId])
 }
 
 /// ForestCtpDespachoOrigen — puente N:M entre una línea de DESPACHO y las
@@ -6661,6 +6733,13 @@ model ForestCuentaMov {
   referencia String?
   /// Si nació de un flete, su id — evita cargarlo dos veces.
   fleteId    String?
+  /// Si nació de una corrida de producción (aserrío por encargo, ADR-412), su
+  /// id. Único entre los vivos con un índice PARCIAL en SQL
+  /// (`ForestCuentaMov_tenantId_ctpEntryId_vivo_key`), que Prisma no expresa.
+  ctpEntryId String?
+  /// De qué liquidación salió el movimiento (ADR-413). Texto sin FK, como
+  /// `ctpEntryId`; siempre se lee junto con `tenantId`.
+  liquidacionId String?
 
   notas     String?
   createdBy String
@@ -6672,6 +6751,7 @@ model ForestCuentaMov {
   @@index([tenantId, parteId, fecha(sort: Desc)])
   @@index([tenantId, fecha(sort: Desc)])
   @@index([deletedAt])
+  @@index([tenantId, liquidacionId])
 }
 
 // ─── Registro Nacional de Plantaciones Forestales — RNPF (ADR-380) ────────────

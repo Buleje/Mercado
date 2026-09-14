@@ -18,7 +18,9 @@
  * PURO y client-safe.
  */
 
-import type { RolParte } from "./directorio";
+import type { ParteInput, RolParte } from "./directorio";
+
+const DOC_VALIDOS = new Set(["RUC", "DNI", "CE", "PASAPORTE"]);
 
 /** Un ingreso, en lo que este descubrimiento necesita de él. */
 export interface GuiaConPartes {
@@ -42,6 +44,16 @@ export interface CandidatoParte {
   guias: number;
   /** Las primeras guías donde aparece — para que el operador lo reconozca. */
   ejemplos: string[];
+  /**
+   * Nombres DISTINTOS vistos bajo el MISMO documento (evidencia real: el mismo
+   * RUC llegó como «COMUNIDAD NATIVA SANTA ROSA DE CHIVIS» en dos guías y como
+   * «QUINCHUNLLA PEREZ, NELLY» en una tercera). Antes esto se fundía en
+   * silencio bajo el primer nombre visto — dos identidades, un RUC tipeado
+   * igual, y la segunda desaparecía de la propuesta sin dejar rastro. Con esto
+   * puesto, `nombre` sigue siendo la mejor apuesta pero el operador VE que hay
+   * algo para revisar antes de confirmar.
+   */
+  otrosNombres?: string[];
 }
 
 export interface CandidatoVehiculo {
@@ -134,6 +146,12 @@ export function descubrirEnGuias(
       fila.docNumero = docNumero;
       fila.docTipo = docTipo;
     }
+    // El mismo documento con OTRO nombre no se pisa: se guarda aparte para que
+    // la pantalla lo muestre como "revisar" en vez de perder la segunda identidad.
+    if (normalizarNombre(nombre) !== normalizarNombre(fila.nombre)) {
+      fila.otrosNombres = fila.otrosNombres ?? [];
+      if (!fila.otrosNombres.includes(nombre)) fila.otrosNombres.push(nombre);
+    }
     fila.guias += 1;
     if (gtf && fila.ejemplos.length < MAX_EJEMPLOS && !fila.ejemplos.includes(gtf)) fila.ejemplos.push(gtf);
     partes.set(clave, fila);
@@ -208,6 +226,108 @@ function fundirPorNombre(filas: CandidatoParte[]): CandidatoParte[] {
     for (const e of f.ejemplos) {
       if (dueño.ejemplos.length < MAX_EJEMPLOS && !dueño.ejemplos.includes(e)) dueño.ejemplos.push(e);
     }
+    // El "revisar" de la fila sin documento no puede perderse en la fusión.
+    for (const n of f.otrosNombres ?? []) {
+      dueño.otrosNombres = dueño.otrosNombres ?? [];
+      if (!dueño.otrosNombres.includes(n)) dueño.otrosNombres.push(n);
+    }
   }
   return resultado;
+}
+
+/** Palabras que no distinguen una entidad de otra: sobran en la comparación. */
+const PALABRAS_VACIAS = new Set(["DE", "DEL", "LA", "LAS", "EL", "LOS", "Y"]);
+
+function palabrasSignificativas(nombre: string): Set<string> {
+  return new Set(
+    normalizarNombre(nombre)
+      .split(" ")
+      .filter((w) => w.length >= 3 && !PALABRAS_VACIAS.has(w)),
+  );
+}
+
+/**
+ * ¿Son el mismo lugar/persona con un adjetivo de más?
+ *
+ * «COMUNIDAD SANTA ROSA DE CHIVIS» y «COMUNIDAD NATIVA SANTA ROSA DE CHIVIS»
+ * son la misma comunidad — una viene con «NATIVA» y la otra sin ella, no dos
+ * comunidades distintas. Se compara por CONTENCIÓN de palabras significativas
+ * (la más corta tiene que estar completa dentro de la más larga) y no por
+ * igualdad exacta, y se exige al menos 2 palabras de cada lado para no matchear
+ * por una sola palabra suelta («SAN» solo).
+ */
+export function mismaEntidadPorNombre(a: string, b: string): boolean {
+  const pa = palabrasSignificativas(a);
+  const pb = palabrasSignificativas(b);
+  if (pa.size < 2 || pb.size < 2) return false;
+  const [corta, larga] = pa.size <= pb.size ? [pa, pb] : [pb, pa];
+  return [...corta].every((w) => larga.has(w));
+}
+
+/** Un candidato descubierto en las guías que se PARECE a una parte que ya
+ *  está en la libreta, pero con OTRO documento — nunca se fusionan solos. */
+export interface ConflictoDirectorio {
+  candidato: CandidatoParte;
+  parte: { id: string; nombre: string; docTipo: string | null; docNumero: string | null };
+}
+
+/**
+ * Candidatos que probablemente YA están en el directorio con otro documento.
+ *
+ * Evidencia real: la libreta tiene «COMUNIDAD SANTA ROSA DE CHIVIS» con un RUC,
+ * y las guías traen «COMUNIDAD NATIVA SANTA ROSA DE CHIVIS» con OTRO. Dar de
+ * alta a ciegas duplicaría a la misma comunidad; fusionar a ciegas podría unir
+ * a dos entidades legales distintas. Se avisa, no se decide.
+ *
+ * Sin documento de un lado no hay con qué distinguir a dos tocayos: esos casos
+ * no entran acá (los cubre `fundirPorNombre`, que exige nombre EXACTO).
+ */
+export function conflictosConDirectorio(
+  candidatos: readonly CandidatoParte[],
+  partes: readonly { id: string; nombre: string; docTipo: string | null; docNumero: string | null }[],
+): ConflictoDirectorio[] {
+  const salida: ConflictoDirectorio[] = [];
+  for (const c of candidatos) {
+    const nombres = [c.nombre, ...(c.otrosNombres ?? [])];
+    for (const p of partes) {
+      if (!p.docNumero || !c.docNumero) continue;
+      if (p.docNumero === c.docNumero) continue; // mismo documento: es la misma parte, no un conflicto
+      if (nombres.some((n) => mismaEntidadPorNombre(n, p.nombre))) {
+        salida.push({ candidato: c, parte: p });
+        break; // un conflicto por candidato alcanza para avisar
+      }
+    }
+  }
+  return salida;
+}
+
+/**
+ * El candidato descubierto, ya en la forma que pide el alta del directorio.
+ *
+ * Single source de esa traducción: la usan tanto la tarjeta general (todos los
+ * roles) como el selector de dueño del cobro (sólo proveedores) para que
+ * "Agregar" arme EXACTAMENTE el mismo `ParteInput` en los dos lugares.
+ */
+export function candidatoAInputParte(
+  c: CandidatoParte,
+  opts: { conflictoDirectorio?: ConflictoDirectorio["parte"] } = {},
+): ParteInput {
+  const notaBase = `Tomado de la guía ${c.ejemplos[0] ?? "—"}${c.guias > 1 ? ` y ${c.guias - 1} más` : ""}.`;
+  const notaMismoDoc = c.otrosNombres?.length
+    ? ` Ojo: el mismo documento también aparece como "${c.otrosNombres.join('", "')}" en otras guías — revisar cuál es el correcto.`
+    : "";
+  const otro = opts.conflictoDirectorio;
+  const notaDirectorio = otro
+    ? ` Ojo: ya existe "${otro.nombre}" (${otro.docTipo ?? "doc"} ${otro.docNumero ?? "sin documento"}) con un nombre parecido y OTRO documento — revisar si es la misma parte.`
+    : "";
+  return {
+    roles: c.roles,
+    nombre: c.nombre,
+    /* El tipo de documento sólo viaja si es uno de los que el libro admite:
+       mandar «—» haría fallar el Zod del endpoint entero. */
+    ...(c.docNumero && c.docTipo && DOC_VALIDOS.has(c.docTipo.toUpperCase())
+      ? { docTipo: c.docTipo.toUpperCase() as ParteInput["docTipo"], docNumero: c.docNumero }
+      : {}),
+    notas: `${notaBase}${notaMismoDoc}${notaDirectorio}`,
+  };
 }

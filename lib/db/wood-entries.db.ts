@@ -2702,6 +2702,39 @@ export class WoodEntriesDB {
   }
 
   /**
+   * Los proveedores tal como quedaron tipeados en las guías de ingreso: sólo
+   * los cuatro campos que el descubrimiento del directorio necesita (ADR-357),
+   * NADA de `gtfDatos` — ese blob es lo que pesa de una guía y acá no hace
+   * falta (el descubrimiento de destinatario/transportista/conductor sigue
+   * yendo por `list()`, que sí lo trae, desde la tarjeta general).
+   *
+   * Sin filtro de `status`: un ingreso rechazado igual lo tipeó un proveedor
+   * real, y es el mismo criterio que ya usa `list()` sin filtros (regla
+   * "verificar por el camino del usuario": dos lecturas del mismo dato no
+   * pueden discrepar en qué cuentan).
+   */
+  static async proveedoresParaDirectorio(
+    tenantId: string,
+  ): Promise<
+    Array<{
+      gtfNumber: string;
+      providerName: string;
+      providerDocument: string | null;
+      providerDocumentType: DocumentType | null;
+    }>
+  > {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.woodEntry.findMany({
+      where: { tenantId, deletedAt: null },
+      select: { gtfNumber: true, providerName: true, providerDocument: true, providerDocumentType: true },
+      orderBy: { entryDate: "desc" },
+      // Tope: el descubrimiento propone, no lista el libro entero — un patio
+      // real no tiene más ingresos que esto entre altas de directorio.
+      take: 5000,
+    });
+  }
+
+  /**
    * El mismo listado, pero la unidad es la GUÍA (ADR-346).
    *
    * Una GTF con dos especies son dos asientos —el formato oficial pide una línea

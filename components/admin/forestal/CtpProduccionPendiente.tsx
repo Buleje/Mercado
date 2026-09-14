@@ -24,7 +24,7 @@
 import { useCallback, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Boxes, Gauge, Layers, Loader2 } from "@buleje/design-system/icons";
-import { guardarProduccionDeCorrida, paquetesYaDeclarados } from "./hooks/guardar-produccion-corrida";
+import { guardarProduccionDeCorrida, mensajeCobroAserrio, paquetesYaDeclarados } from "./hooks/guardar-produccion-corrida";
 import {
   RENDIMIENTO_TOPE_PCT,
   origenesDeTrozas,
@@ -116,9 +116,10 @@ export default function CtpProduccionPendiente({
     setGuardando(true);
     setError(null);
     try {
-      await guardarProduccionDeCorrida(abierta.id, "ampliar", datos);
+      const { aserrio } = await guardarProduccionDeCorrida(abierta.id, "ampliar", datos);
       const total = Math.round((abierta.declaradoM3 + datos.volumen) * 10_000) / 10_000;
       const queda = Math.round((abierta.topeM3 - total) * 10_000) / 10_000;
+      const avisoCobro = mensajeCobroAserrio(aserrio);
       setAbierta(null);
       onListo(
         `Corrida N° ${abierta.lineNo} ampliada`,
@@ -127,7 +128,8 @@ export default function CtpProduccionPendiente({
           `(${Math.round((total / abierta.entradaM3) * 1000) / 10} %).` +
           (queda >= 0.001
             ? ` Todavía admite ${fmtM3(queda)} m³ más hasta el tope del ${RENDIMIENTO_TOPE_PCT} %.`
-            : ` Llegó al tope del ${RENDIMIENTO_TOPE_PCT} %.`),
+            : ` Llegó al tope del ${RENDIMIENTO_TOPE_PCT} %.`) +
+          (avisoCobro ? ` ${avisoCobro}` : ""),
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -241,6 +243,14 @@ export default function CtpProduccionPendiente({
           /* Las piezas que esa corrida se comió: acá son sólo para mirar. */
           trozas={piezasDe(abierta.id)}
           fecha={diaIso(abierta.entryDate)}
+          /* La corrida YA existe: ampliar no reescribe su fecha, así que el
+             aserrío se cotiza con ELLA, no con lo que se edite acá. */
+          fechaCorridaFija={diaIso(abierta.entryDate)}
+          cobroInicial={{
+            duenoParteId: abierta.duenoParteId,
+            precioManualPt: abierta.aserrioPrecioManualPt,
+            nombreGuardado: abierta.titularNombre,
+          }}
           guardando={guardando}
           error={error}
           yaDeclaradoM3={abierta.declaradoM3}

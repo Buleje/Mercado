@@ -63,6 +63,24 @@ export interface CtpEntry {
    * campo: dos guías de dos permisos distintos pueden aserrarse juntas.
    */
   permisoOrigen?: string[];
+  /**
+   * Sólo en producción (ADR-412): a quién se le asierra esta corrida y cuánto
+   * se le cargó. `null` en las dos = madera del centro o corrida sin cobrar
+   * todavía — «Cobrar aserrío» en la fila lo resuelve.
+   */
+  duenoParteId?: string | null;
+  aserrioImporte?: number | null;
+  /** El precio a mano pactado, si se cobró así; `null` = con tarifa o sin
+   *  cobro. Con esto el bloque de cobro arranca en modo «a mano» de verdad,
+   *  no siempre en «según la tarifa» (ADR-412, revisión 2026-09-14). */
+  aserrioPrecioManualPt?: number | null;
+  /**
+   * El nombre del dueño tal como quedó en el acta (ADR-412). Una parte se
+   * puede dar de baja DEL TODO (`deletedAt`) y desaparecer del directorio
+   * incluso pidiéndolo con `?inactivos=1` — con este nombre, esa corrida sigue
+   * diciendo a quién se le cobra en vez de leerse como «Madera del centro».
+   */
+  titularNombre?: string | null;
 }
 
 /**
@@ -89,6 +107,17 @@ export type ColsProduccionVisibles = Record<ColProduccionKey, boolean>;
  * dos deja "pt" crudo en pantalla.
  */
 export const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
+
+/**
+ * Sólo una corrida `registrado` admite marcarse para «Cobrar aserrío en
+ * tanda» (ADR-412 no cobra corridas anuladas). Desktop y mobile comparten
+ * este chequeo a propósito: la fila de escritorio ya lo respetaba, pero la
+ * card mobile lo recibía sin filtrar y dejaba marcar una anulada (MEDIO,
+ * revisión 2026-09-14).
+ */
+export function puedeMarcarseParaCobro(e: Pick<CtpEntry, "status">): boolean {
+  return e.status === "registrado";
+}
 
 /**
  * En qué anda el paquete: sigue en el patio, salió a medias o ya se fue.

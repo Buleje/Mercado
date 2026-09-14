@@ -6,6 +6,20 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { logger } from "@/lib/logger";
+import {
+  MOTIVO_TITULAR_DEL_CENTRO,
+  esDuenoMadera,
+  revisarDueno,
+  titularQueQueda,
+} from "@/lib/forestal/dueno-de-la-madera";
+import {
+  MOTIVO_TITULAR_COBRADO,
+  debeDejarDeCobrar,
+  precioManualDelDetalle,
+  titularBloqueadoPorCobro,
+} from "@/lib/forestal/aserrio-cobro";
+import type { ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { esCampoSinDato, marcadorDeAusencia } from "@/lib/forestal/campo-sin-dato";
 import {
@@ -17,6 +31,9 @@ import {
 import { ORIGEN_VIGENTE, ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestEspeciesDB } from "./forest-especies.db";
+/* El cobro del aserrío (ADR-412) no importa este archivo: la dependencia va en
+   un solo sentido, igual que con `wood-entries.db`. */
+import { ForestAserrioDB } from "./forest-aserrio.db";
 import { saldosDeCorridas } from "./forest-ctp-saldo-corrida";
 /* Las trozas de una corrida se leen SIEMPRE por acá (ADR-326 §6: las tres
    lecturas dicen lo mismo). `wood-entries.db` no importa este archivo, así que
@@ -119,6 +136,10 @@ export const CAMPOS_COMPLETABLES = [
   "speciesCommon",
   "speciesScientific",
   "productType",
+  /* De quién es la madera (ADR-412). Va acá y no en los «del registro»: no
+     cambia qué se produjo ni cuánto, así que ningún saldo depende de él. */
+  "duenoMadera",
+  "titularNombre",
 ] as const;
 export type CampoCompletable = (typeof CAMPOS_COMPLETABLES)[number];
 
@@ -139,6 +160,8 @@ export const CAMPOS_CORREGIBLES = [
   "quantity",
   "volumeInputM3",
   "originCode",
+  "duenoMadera",
+  "titularNombre",
 ] as const;
 export type CampoCorregible = (typeof CAMPOS_CORREGIBLES)[number];
 
@@ -162,6 +185,8 @@ const CAMPOS_CORREGIBLES_DEL_REGISTRO: readonly CampoCorregible[] = [
 
 const ETIQUETA_CAMPO_CORREGIBLE: Record<CampoCorregible, string> = {
   originCode: "N° de permiso",
+  duenoMadera: "dueño de la madera",
+  titularNombre: "titular de la madera",
   observations: "observaciones",
   presentacion: "presentación",
   materiaPrimaRef: "referencia de materia prima",
@@ -183,6 +208,8 @@ const CAMPOS_DEL_REGISTRO: readonly CampoCompletable[] = [
 /** Cómo se llama cada campo en el detalle de auditoría, en el idioma del libro. */
 const ETIQUETA_CAMPO: Record<CampoCompletable, string> = {
   observations: "observaciones",
+  duenoMadera: "dueño de la madera",
+  titularNombre: "titular de la madera",
   presentacion: "presentación",
   materiaPrimaRef: "referencia de materia prima",
   speciesCommon: "especie",
@@ -264,6 +291,16 @@ export interface CtpEntryInput {
    * `originCode` del ingreso; acá no se pisa nada, se llena un hueco.
    */
   originCode?: string | null;
+  /**
+   * De quién es la madera (ADR-412): `"propia"` | `"tercero"` | `null`.
+   *
+   * Mismo hueco que `originCode`: una corrida sin lote no tiene de dónde
+   * heredar el titular, y un centro que asierra por encargo produce madera que
+   * no es suya. `null` es «no se declaró», no «es propia».
+   */
+  duenoMadera?: string | null;
+  /** Quién, cuando es de tercero. Acta: se guarda tal como se certificó. */
+  titularNombre?: string | null;
   speciesCommon?: string | null;
   speciesScientific?: string | null;
   cites?: boolean;
@@ -635,6 +672,15 @@ export class ForestCtpDB {
           gtfIngreso: input.gtfIngreso?.trim() || null,
           materiaPrimaRef: input.materiaPrimaRef?.trim() || null,
           originCode: input.originCode?.trim() || null,
+          /* Lo que llegue se normaliza con las reglas del libro: «de tercero»
+             sin nombre y «propia» con titular no se guardan a medias. */
+          ...(() => {
+            const d = revisarDueno({
+              dueno: esDuenoMadera(input.duenoMadera) ? input.duenoMadera : null,
+              titularNombre: input.titularNombre ?? null,
+            }).normalizado;
+            return { duenoMadera: d.dueno, titularNombre: d.titularNombre };
+          })(),
           speciesCommon: especie.nombre || null,
           speciesScientific: cientifico,
           cites: input.cites ?? false,
@@ -920,6 +966,12 @@ export class ForestCtpDB {
                  misma corrida (dos guías de dos concesiones aserradas
                  juntas): se listan todos, no se elige uno. */
               permisoOrigen: permisoDeCorrida.get(e.id) ?? [],
+              /* Lo cobrado por el aserrío (ADR-412) como número: el Decimal
+                 viajaría como texto. El dueño y el trato van explícitos para
+                 que la pantalla de cobrar muestre lo que la corrida TIENE. */
+              duenoParteId: e.duenoParteId ?? null,
+              aserrioImporte: e.aserrioImporte != null ? Number(e.aserrioImporte) : null,
+              aserrioPrecioManualPt: precioManualDelDetalle(e.aserrioDetalle),
             }
           : e.section === "despacho"
             ? { ...e, atribuidoQty: atribuido.get(e.id) ?? 0 }
@@ -2086,6 +2138,18 @@ export class ForestCtpDB {
       where: { tenantId, despachadaEnId: id },
       data: { despachadaEnId: null, fechaDespacho: null },
     });
+    /* Si a esta corrida se le cobraba el aserrío (ADR-412 §4), ese cargo deja
+       de deberse. Awaited para que el saldo de la cuenta ya no lo muestre al
+       volver, pero sin poder tumbar la anulación: el libro manda. */
+    try {
+      await ForestAserrioDB.alAnular(tenantId, id, user);
+    } catch (err) {
+      logger.error("[forest-ctp.annul] no se pudo dar de baja el cargo de aserrío", {
+        error: String(err),
+        tenantId,
+        entryId: id,
+      });
+    }
     // Anular saca la línea del balance: quién y por qué es dato de fiscalización.
     auditCtp({
       tenantId,
@@ -2209,6 +2273,34 @@ export class ForestCtpDB {
    * declarar producción (`declarar_produccion`), que ya tiene su propia puerta
    * con sus propias reglas.
    */
+  /**
+   * El libro dejó de decir que la madera es de un tercero: no hay a quién
+   * cobrarle el aserrío (ADR-412 §4). Baja lógica del cargo y la corrida sin
+   * dueño de cobro — si no, la corrida diría «propia» mientras la cuenta de
+   * otro sigue debiendo por ella.
+   *
+   * Corre DESPUÉS de guardar la corrección y no la puede tumbar: el asiento del
+   * libro manda. `null` = no había nada que soltar.
+   */
+  private static async dejarDeCobrarSiNoEsDeTercero(
+    tenantId: string,
+    id: string,
+    d: { escribioDueno: boolean; duenoMadera: string | null; duenoParteId: string | null },
+    user: string,
+  ): Promise<ResultadoCobro | null> {
+    if (!debeDejarDeCobrar(d)) return null;
+    try {
+      return await ForestAserrioDB.cobrarCorrida(tenantId, id, { duenoParteId: null }, user);
+    } catch (err) {
+      logger.error("[forest-ctp] el dueño se corrigió pero el cobro de aserrío no se soltó", {
+        error: String(err),
+        tenantId,
+        entryId: id,
+      });
+      return null;
+    }
+  }
+
   static async completarLinea(
     tenantId: string,
     id: string,
@@ -2224,6 +2316,7 @@ export class ForestCtpDB {
         id: true, lineNo: true, section: true, status: true, entryDate: true,
         observations: true, presentacion: true, materiaPrimaRef: true,
         speciesCommon: true, speciesScientific: true, productType: true,
+        duenoMadera: true, titularNombre: true, duenoParteId: true,
       },
     });
     if (!actual) throw new CtpInvariantError("Esa línea no existe.", "LOTE_NO_ENCONTRADO");
@@ -2256,6 +2349,32 @@ export class ForestCtpDB {
       : enLote > 0 ? "es miembro de un lote de producción"
       : null;
 
+    /* Mismo candado que `corregirLinea`: completar un titular vacío de una
+       corrida que se cobra (quedó así al cobrarla en un mes cerrado) también
+       escribiría un nombre distinto del de la cuenta. El dueño sólo cuenta como
+       cambio si estaba vacío: completar no pisa lo que ya dice. */
+    const duenoCompleta = esCampoSinDato(actual.duenoMadera) ? (campos.duenoMadera ?? "").trim() : "";
+    const titularAtado = titularBloqueadoPorCobro({
+      escribioDueno: duenoCompleta !== "",
+      duenoMadera: duenoCompleta || actual.duenoMadera,
+      duenoParteId: actual.duenoParteId,
+    });
+    /* El par dueño/titular se completa entero (misma regla que `corregirLinea`):
+       «de tercero» sin nombre no se guarda, y «del centro» no lleva titular —
+       completar «propia» sobre un titular escrito lo deja en `null`. El titular
+       ya escrito no se pisa: completar sólo llena huecos. */
+    const titularPedido = titularAtado ? "" : (campos.titularNombre ?? "").trim();
+    const parDueno = duenoCompleta
+      ? revisarDueno({
+          dueno: esDuenoMadera(duenoCompleta) ? duenoCompleta : null,
+          titularNombre: esCampoSinDato(actual.titularNombre) ? titularPedido || null : actual.titularNombre,
+        })
+      : null;
+    const rechazoDueno =
+      parDueno && !parDueno.valido && parDueno.normalizado.dueno === "tercero"
+        ? (parDueno.problema ?? "falta el titular")
+        : null;
+
     const aplicados: string[] = [];
     const omitidos: { campo: string; motivo: string }[] = [];
     const data: Record<string, string> = {};
@@ -2271,6 +2390,20 @@ export class ForestCtpDB {
         omitidos.push({ campo, motivo: `ya dice «${previo}»` });
         continue;
       }
+      if (campo === "titularNombre" && titularAtado) {
+        omitidos.push({ campo, motivo: MOTIVO_TITULAR_COBRADO });
+        continue;
+      }
+      if (campo === "duenoMadera" && rechazoDueno) {
+        omitidos.push({ campo, motivo: rechazoDueno });
+        continue;
+      }
+      /* Si se completa el dueño, el titular va con el par (después del bucle). */
+      if (campo === "titularNombre" && duenoCompleta) continue;
+      if (campo === "titularNombre" && actual.duenoMadera === "propia") {
+        omitidos.push({ campo, motivo: MOTIVO_TITULAR_DEL_CENTRO });
+        continue;
+      }
       if (CAMPOS_DEL_REGISTRO.includes(campo) && atado) {
         omitidos.push({ campo, motivo: `la corrida ${atado}` });
         continue;
@@ -2282,11 +2415,23 @@ export class ForestCtpDB {
       aplicados.push(`${ETIQUETA_CAMPO[campo]} ${marcador ? `«${marcador}» ` : ""}→ ${valor}`);
     }
 
+    if (parDueno && data.duenoMadera) {
+      const titularFinal = titularQueQueda(parDueno.normalizado.dueno, parDueno.normalizado.titularNombre);
+      if (titularFinal !== (actual.titularNombre ?? null)) {
+        data.titularNombre = titularFinal ?? "";
+        aplicados.push(`${ETIQUETA_CAMPO.titularNombre} ${actual.titularNombre ?? "—"} → ${titularFinal ?? "—"}`);
+      }
+    }
+
     if (aplicados.length === 0) {
       return { ok: false as const, aplicados: [], omitidos };
     }
 
-    await prisma.forestCtpEntry.update({ where: { id, tenantId }, data });
+    await prisma.forestCtpEntry.update({
+      where: { id, tenantId },
+      /* `""` = el titular que el par vació («del centro»): se guarda `null`. */
+      data: { ...data, ...(data.titularNombre === "" ? { titularNombre: null } : {}) },
+    });
     auditCtp({
       tenantId,
       action: "ctp_linea_completar",
@@ -2302,7 +2447,20 @@ export class ForestCtpDB {
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
-    return { ok: true as const, aplicados, omitidos };
+    const aserrio = await ForestCtpDB.dejarDeCobrarSiNoEsDeTercero(
+      tenantId,
+      id,
+      { escribioDueno: "duenoMadera" in data, duenoMadera: data.duenoMadera ?? actual.duenoMadera, duenoParteId: actual.duenoParteId },
+      user,
+    );
+    return {
+      ok: true as const,
+      aplicados,
+      omitidos,
+      /** Los campos que de verdad se escribieron: decide si hay que recotizar. */
+      camposAplicados: Object.keys(data) as CampoCompletable[],
+      ...(aserrio ? { aserrio } : {}),
+    };
   }
 
   /**
@@ -2343,6 +2501,7 @@ export class ForestCtpDB {
         observations: true, presentacion: true, materiaPrimaRef: true,
         speciesCommon: true, speciesScientific: true, productType: true,
         unit: true, quantity: true, volumeInputM3: true, originCode: true,
+        duenoMadera: true, titularNombre: true, duenoParteId: true,
       },
     });
     if (!actual) throw new CtpInvariantError("Esa línea no existe.", "LOTE_NO_ENCONTRADO");
@@ -2390,6 +2549,17 @@ export class ForestCtpDB {
     /** Materia prima ya atribuida a esta corrida (I1). */
     const atribuidoM3 = Number(consumido._sum.volumeM3 ?? 0);
 
+    /* El titular de una corrida que se cobra (ADR-412) no se reescribe a mano:
+       el libro nombraría a uno y la cuenta le cobraría a otro. Se libera sólo
+       si esta misma corrección saca a la madera de «de tercero». */
+    const duenoPedido = (campos.duenoMadera ?? "").trim();
+    const cambiaDueno = duenoPedido !== "" && duenoPedido !== (actual.duenoMadera ?? "");
+    const titularAtado = titularBloqueadoPorCobro({
+      escribioDueno: cambiaDueno,
+      duenoMadera: cambiaDueno ? duenoPedido : actual.duenoMadera,
+      duenoParteId: actual.duenoParteId,
+    });
+
     const cambios: string[] = [];
     const rechazados: { campo: string; motivo: string }[] = [];
     const data: Record<string, string | number> = {};
@@ -2407,6 +2577,16 @@ export class ForestCtpDB {
       const previo = actual[campo];
       const previoTexto = previo == null ? "—" : String(previo);
       if (previoTexto === valor) continue;
+      if (campo === "titularNombre" && titularAtado) {
+        rechazados.push({ campo, motivo: MOTIVO_TITULAR_COBRADO });
+        continue;
+      }
+      /* Si esta corrección cambia el dueño, el titular va con el par (abajo). */
+      if (campo === "titularNombre" && cambiaDueno) continue;
+      if (campo === "titularNombre" && actual.duenoMadera === "propia") {
+        rechazados.push({ campo, motivo: MOTIVO_TITULAR_DEL_CENTRO });
+        continue;
+      }
 
       if (campo === "quantity" || campo === "volumeInputM3") {
         const n = Number(valor);
@@ -2442,11 +2622,50 @@ export class ForestCtpDB {
       cambios.push(`${ETIQUETA_CAMPO_CORREGIBLE[campo]} ${previoTexto} → ${valor}`);
     }
 
+    /* Las dos mitades del dueño tienen que quedar contándose la misma historia
+       (ADR-412). Pasar a «propia» sin borrar el titular dejaría la corrida
+       diciendo que la madera es del centro Y de la CC.NN. San Luis — y por acá
+       no se puede vaciar un campo, porque un valor vacío se saltea. Así que al
+       corregir el dueño se corrige el par entero. */
+    if (data.duenoMadera != null) {
+      /* El titular pedido sale de `campos`: el bucle lo dejó para acá. */
+      const titularPedido = titularAtado ? "" : (campos.titularNombre ?? "").trim();
+      const d = revisarDueno({
+        dueno: esDuenoMadera(String(data.duenoMadera)) ? (String(data.duenoMadera) as "propia" | "tercero") : null,
+        titularNombre: titularPedido || actual.titularNombre || null,
+      });
+      if (!d.valido && d.normalizado.dueno === "tercero") {
+        /* «De tercero» sin nombre: no se guarda a medias. Y se saca su renglón
+           de `cambios`, que el bucle ya había escrito: el rastro no puede
+           narrar un cambio que no se guardó. */
+        rechazados.push({ campo: "duenoMadera", motivo: d.problema ?? "falta el titular" });
+        delete data.duenoMadera;
+        delete data.titularNombre;
+        const renglon = cambios.findIndex((c) => c.startsWith(`${ETIQUETA_CAMPO_CORREGIBLE.duenoMadera} `));
+        if (renglon >= 0) cambios.splice(renglon, 1);
+      } else {
+        /* «Propia» deja el titular en `null` explícito: `normalizado` conserva
+           el nombre y guardarlo dejaría «propia» + «CC.NN. San Luis». */
+        const titularFinal = titularQueQueda(d.normalizado.dueno, d.normalizado.titularNombre);
+        if (titularFinal !== (actual.titularNombre ?? null)) {
+          data.titularNombre = titularFinal ?? "";
+          cambios.push(
+            `${ETIQUETA_CAMPO_CORREGIBLE.titularNombre} ${actual.titularNombre ?? "—"} → ${titularFinal ?? "—"}`,
+          );
+        }
+      }
+    }
+
     if (cambios.length === 0) {
       return { ok: false as const, cambios: [], rechazados };
     }
 
-    await prisma.forestCtpEntry.update({ where: { id, tenantId }, data });
+    await prisma.forestCtpEntry.update({
+      where: { id, tenantId },
+      /* El único campo que se puede VACIAR por esta vía, y sólo como
+         consecuencia de la regla de arriba: `""` se guarda como `null`. */
+      data: { ...data, ...(data.titularNombre === "" ? { titularNombre: null } : {}) },
+    });
     auditCtp({
       tenantId,
       action: "ctp_linea_update",
@@ -2460,7 +2679,24 @@ export class ForestCtpDB {
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
-    return { ok: true as const, cambios, rechazados };
+    const aserrio = await ForestCtpDB.dejarDeCobrarSiNoEsDeTercero(
+      tenantId,
+      id,
+      {
+        escribioDueno: "duenoMadera" in data,
+        duenoMadera: typeof data.duenoMadera === "string" ? data.duenoMadera : actual.duenoMadera,
+        duenoParteId: actual.duenoParteId,
+      },
+      user,
+    );
+    return {
+      ok: true as const,
+      cambios,
+      rechazados,
+      /** Los campos que de verdad se escribieron: decide si hay que recotizar. */
+      camposCambiados: Object.keys(data) as CampoCorregible[],
+      ...(aserrio ? { aserrio } : {}),
+    };
   }
 
 
@@ -2564,6 +2800,16 @@ export class ForestCtpDB {
       where: { tenantId, despachadaEnId: id },
       data: { despachadaEnId: null, fechaDespacho: null },
     });
+    /* Mismo criterio que al anular: el aserrío de una corrida borrada no se debe. */
+    try {
+      await ForestAserrioDB.alAnular(tenantId, id, user);
+    } catch (err) {
+      logger.error("[forest-ctp.softDelete] no se pudo dar de baja el cargo de aserrío", {
+        error: String(err),
+        tenantId,
+        entryId: id,
+      });
+    }
     auditCtp({
       tenantId,
       action: "ctp_linea_delete",
@@ -2743,6 +2989,17 @@ export class ForestCtpDB {
              alcanza para que la pantalla distinga un paquete importado de uno
              que salió hoy de la sierra, sin columna nueva en el schema. */
           observations: c.observations,
+          /** De quién es la madera (ADR-412). Va en la foto del depósito porque
+           *  es lo que decide si ese producto se puede vender: lo que se asierra
+           *  por encargo no es del centro. `null` = la corrida no lo declaró. */
+          duenoMadera: c.duenoMadera,
+          titularNombre: c.titularNombre,
+          /** A quién se le cobra el aserrío y cuánto quedó cobrado (ADR-412).
+           *  `aserrioImporte: null` = no se le cobró (sin dueño o sin precio). */
+          duenoParteId: c.duenoParteId ?? null,
+          aserrioImporte: c.aserrioImporte != null ? Number(c.aserrioImporte) : null,
+          /** El precio a mano pactado, si se cobró así. `null` = con tarifa o sin cobro. */
+          aserrioPrecioManualPt: precioManualDelDetalle(c.aserrioDetalle),
           /** Marcado a mano como "ya usado" (Brandon, 2026-09-01): `null` = sigue disponible como siempre. */
           usadoAt: c.usadoAt ? c.usadoAt.toISOString() : null,
           /** Existencia de apertura declarada a mano (ADR-394); lo importado se reconoce por su nota. */

@@ -343,6 +343,13 @@ export interface CorridaParaTope {
   materiaPrimaRef?: string | null;
   /** Una corrida anulada no declara nada: su madera volvió al patio. */
   status?: string | null;
+  /** A quién se le asierra, si ya lo tiene (ADR-412) — la pantalla de ampliar
+   *  arranca con ESTE dueño, no en blanco. */
+  duenoParteId?: string | null;
+  /** El precio a mano pactado, si lo tiene. */
+  aserrioPrecioManualPt?: number | null;
+  /** El nombre del acta — se usa si el dueño se dio de baja del directorio. */
+  titularNombre?: string | null;
 }
 
 export interface CorridaSobreTope {
@@ -393,6 +400,12 @@ export interface CorridaAMedioDeclarar {
   /** Cuánto más se puede declarar sobre esta misma materia prima. */
   margenM3: number;
   rendimientoPct: number;
+  /** A quién se le asierra, si ya lo tiene (ADR-412). */
+  duenoParteId: string | null;
+  /** El precio a mano pactado, si lo tiene; `null` = con tarifa o sin cobro. */
+  aserrioPrecioManualPt: number | null;
+  /** El nombre del acta — se usa si el dueño se dio de baja del directorio. */
+  titularNombre: string | null;
 }
 
 /**
@@ -432,6 +445,9 @@ export function corridasAMedioDeclarar(
         topeM3: tope,
         margenM3: margen,
         rendimientoPct: Math.round((declarado / entrada) * 1000) / 10,
+        duenoParteId: c.duenoParteId ?? null,
+        aserrioPrecioManualPt: c.aserrioPrecioManualPt ?? null,
+        titularNombre: c.titularNombre ?? null,
       } satisfies CorridaAMedioDeclarar;
     })
     .filter((c): c is CorridaAMedioDeclarar => c !== null)

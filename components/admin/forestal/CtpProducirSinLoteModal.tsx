@@ -46,8 +46,16 @@ import { unificarPorMedida, type PiezaCubicada } from "@/lib/forestal/cubicacion
 import { tipoDePieza } from "@/lib/forestal/cubicacion-tipo";
 import { productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import {
+  etiquetaDeDueno,
+  revisarDueno,
+  type DuenoMadera,
+} from "@/lib/forestal/dueno-de-la-madera";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { guardarProduccionDeCorrida } from "./hooks/guardar-produccion-corrida";
+import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
+import { bloquesDeCorrida, type CobroAserrioValor, type ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
+import CtpCobroAserrio from "./CtpCobroAserrio";
+import { guardarProduccionDeCorrida, mensajeCobroAserrio } from "./hooks/guardar-produccion-corrida";
 import { useSaldoPermisos } from "./hooks/use-saldo-permisos";
 import { SIN_PERMISO, simularCorrida } from "@/lib/forestal/saldo-por-permiso";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
@@ -156,6 +164,18 @@ export default function CtpProducirSinLoteModal({
      troza cargada, y rechazarlo obligaría a anotar la jornada sin él. */
   const [permiso, setPermiso] = useState("");
   const [observaciones, setObservaciones] = useState("");
+  /* De quién es la madera (ADR-412). Arranca sin elegir a propósito: un centro
+     que asierra por encargo no es el dueño de lo que produce, y suponer que sí
+     es la respuesta que después nadie revisa. */
+  const [dueno, setDueno] = useState<DuenoMadera | null>(null);
+  const [titular, setTitular] = useState("");
+  /* A quién se le cobra y a qué precio (ADR-412) — sólo tiene sentido cuando la
+     madera es «de un tercero»: el centro no se cobra a sí mismo. */
+  const [aserrio, setAserrio] = useState<CobroAserrioValor>({ duenoParteId: null, precioManualPt: null });
+  /* "A mano" con el campo vacío mientras el botón sigue en "a mano" no se
+     puede registrar (ver `CtpCobroAserrio`). */
+  const [aserrioValido, setAserrioValido] = useState(true);
+  const directorioParaCobro = useDirectorioForestal();
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /* Foco adentro, Tab que no se escapa, Escape que cierra y foco devuelto. */
@@ -201,6 +221,23 @@ export default function CtpProducirSinLoteModal({
   const especies = useMemo(
     () => [...new Set(paquetes.map((p) => p.especie).filter(Boolean))],
     [paquetes],
+  );
+
+  /** Los mismos paquetes cubicados, en la forma que pide `cotizarAserrio` (ADR-412). */
+  const bloquesAserrio = useMemo(
+    () =>
+      bloquesDeCorrida(
+        { lineNo: null, speciesCommon: especies[0] ?? null, productType: paquetes[0]?.productType ?? null, quantity: total.m3 },
+        paquetes.map((p) => ({
+          codigo: p.codigo,
+          productType: p.productType,
+          volumenM3: p.volumenM3,
+          espesorCm: p.espesorCm,
+          anchoCm: p.anchoCm,
+          largoM: p.largoM,
+        })),
+      ),
+    [especies, paquetes, total.m3],
   );
 
   /* El saldo por permiso se pide recién en el paso «declarar»: es la lectura
@@ -256,6 +293,13 @@ export default function CtpProducirSinLoteModal({
     };
   }, [saldo.datos, permiso, total.m3, fecha, especiePrincipal]);
 
+  /* Lo declarado tiene que decir algo: «de tercero» sin nombre no dice de quién
+     es la madera, y un titular colgado de «propia» dice dos cosas a la vez. */
+  const revisionDueno = useMemo(
+    () => revisarDueno({ dueno, titularNombre: titular }),
+    [dueno, titular],
+  );
+
   const registrar = async () => {
     if (paquetes.length === 0) return;
     setGuardando(true);
@@ -274,6 +318,8 @@ export default function CtpProducirSinLoteModal({
           /* El permiso DECLARADO del asiento: sólo vale porque esta corrida no
              consume ninguna guía de la que heredarlo (ADR-402). */
           originCode: permiso.trim() || null,
+          duenoMadera: revisionDueno.normalizado.dueno,
+          titularNombre: revisionDueno.normalizado.titularNombre,
           observations: observaciones.trim() || null,
         }),
       });
@@ -294,11 +340,18 @@ export default function CtpProducirSinLoteModal({
             ya tomado— y es peor que no haberla registrado. Mismo criterio que
             el POST de despacho con trozas. */
       const entryId = j.entry.id;
+      let aserrioCobrado: ResultadoCobro | undefined;
       try {
-        await guardarProduccionDeCorrida(entryId, "declarar", {
+        ({ aserrio: aserrioCobrado } = await guardarProduccionDeCorrida(entryId, "declarar", {
           fecha,
           lineaProduccion: linea,
           observaciones: observaciones.trim() || null,
+          // Sólo tiene sentido cuando la madera es de un tercero — «Es del
+          // centro» no se cobra a sí mismo.
+          // Corrida NUEVA: no hay trato previo que preservar, así que acá
+          // "nada elegido" y "ausente" dan lo mismo — no como en declarar/
+          // ampliar una corrida existente, donde ausente == no tocar.
+          aserrio: dueno === "tercero" && aserrio.duenoParteId ? aserrio : undefined,
           paquetes: paquetes.map((p) => ({
             /* `id` es del borrador de la UI (React key), no del Libro: el
              servidor sólo lee código, producto, cantidad y medidas. */
@@ -316,7 +369,7 @@ export default function CtpProducirSinLoteModal({
             observations: "",
           })),
           volumen: r4(total.m3),
-        });
+        }));
       } catch (e) {
         await fetch(`/api/admin/forestal/ctp?id=${entryId}`, {
           method: "DELETE",
@@ -338,8 +391,10 @@ export default function CtpProducirSinLoteModal({
         );
       }
       invalidarCtp();
+      const avisoCobro = mensajeCobroAserrio(aserrioCobrado);
       onListo(
-        `Producción registrada sin lote: ${fmtPiezas(total.piezas)} piezas · ${fmtM3(total.m3)} m³ en ${paquetes.length} paquete(s). Falta vincularle su materia prima.`,
+        `Producción registrada sin lote: ${fmtPiezas(total.piezas)} piezas · ${fmtM3(total.m3)} m³ en ${paquetes.length} paquete(s). Falta vincularle su materia prima.` +
+          (avisoCobro ? ` ${avisoCobro}` : ""),
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -568,6 +623,91 @@ export default function CtpProducirSinLoteModal({
                 </div>
               </div>
 
+              {/* De quién es la madera (ADR-412). Un aserradero que presta
+                  servicio de maquila produce madera que NO es suya, y el
+                  certificado tiene que decirlo. Sin elegir queda sin declarar:
+                  es más honesto que suponerle un dueño al asiento. */}
+              <div>
+                <span className={LABEL}>Dueño de la madera</span>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  {([
+                    { v: "propia" as const, t: "Es del centro" },
+                    { v: "tercero" as const, t: "Es de un tercero" },
+                  ]).map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      aria-pressed={dueno === o.v}
+                      onClick={() => {
+                        /* Volver a tocar la misma opción la suelta: así se puede
+                           dejar sin declarar después de haber elegido. */
+                        setDueno((d) => (d === o.v ? null : o.v));
+                        if (o.v === "propia") {
+                          setTitular("");
+                          // El centro no se cobra a sí mismo: sin esto, elegir
+                          // "Es del centro" DESPUÉS de haber picado un dueño
+                          // dejaba el cobro colgado, listo para mandarse igual.
+                          setAserrio({ duenoParteId: null, precioManualPt: null });
+                        }
+                      }}
+                      className={`h-10 rounded-xl border px-3.5 text-sm font-semibold transition ${
+                        dueno === o.v
+                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                          : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]"
+                      }`}
+                    >
+                      {o.t}
+                    </button>
+                  ))}
+                  {dueno === "tercero" && (
+                    <input
+                      value={titular}
+                      onChange={(e) => setTitular(e.target.value)}
+                      placeholder="CC.NN. San Luis · servicio de maquila"
+                      aria-label="Titular de la madera"
+                      className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                    />
+                  )}
+                </div>
+                <p
+                  className={`mt-1 text-xs ${
+                    revisionDueno.problema
+                      ? "font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                      : "text-[var(--text-tertiary)]"
+                  }`}
+                >
+                  {revisionDueno.problema ??
+                    etiquetaDeDueno(revisionDueno.normalizado) ??
+                    "Si no lo eliges, la corrida queda sin declararlo — y eso es lo que va a decir el libro."}
+                </p>
+              </div>
+
+              {/* Cobrarle el aserrío a ese tercero (ADR-412): elegilo de la
+                  libreta y el nombre declarado se copia solo — dos casillas
+                  que dicen lo mismo no pueden quedar desincronizadas. */}
+              {dueno === "tercero" && (
+                <div className="rounded-xl border border-[var(--rule-base)] p-3">
+                  <CtpCobroAserrio
+                    fecha={fecha}
+                    bloques={bloquesAserrio}
+                    valor={aserrio}
+                    onValidez={setAserrioValido}
+                    onChange={(v) => {
+                      setAserrio(v);
+                      const elegido = v.duenoParteId
+                        ? directorioParaCobro.partes.find((p) => p.id === v.duenoParteId)
+                        : null;
+                      if (elegido) setTitular(elegido.nombre);
+                    }}
+                  />
+                  {!aserrio.duenoParteId && titular.trim() && (
+                    <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+                      No está en la libreta: se declara, pero no se le puede cobrar.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <label className="block">
                 <span className={LABEL}>Observaciones</span>
                 <textarea
@@ -698,7 +838,7 @@ export default function CtpProducirSinLoteModal({
             <button
               type="button"
               onClick={() => void registrar()}
-              disabled={guardando || paquetes.length === 0}
+              disabled={guardando || paquetes.length === 0 || !revisionDueno.valido || !aserrioValido}
               className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
             >
               {guardando ? (

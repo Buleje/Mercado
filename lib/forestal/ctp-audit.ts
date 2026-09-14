@@ -68,6 +68,10 @@ export type CtpAuditEntity =
   | "ForestFlete"
   /** Movimiento de cuenta corriente con una parte del directorio (ADR-322). */
   | "ForestCuentaMov"
+  // KV (como ForestEspecieCatalogo): la tarifa del servicio de aserrío por
+  // encargo (ADR-412). Es lo que después se le cobra a un tercero, así que
+  // quién la puso y desde qué día rige queda con nombre.
+  | "ForestTarifaAserrio"
   // KV: ANEXO N° 04 emitido (lista de productos transformados de la GTF). No es
   // modelo Prisma: es el PAPEL que se entregó, guardado para poder re-imprimir
   // el mismo documento ante una fiscalización.
@@ -251,6 +255,17 @@ export type CtpAuditAction =
   | "ctp_cuenta_create"
   | "ctp_cuenta_update"
   | "ctp_cuenta_delete"
+  // Aserrío por encargo (ADR-412): la tarifa versionada por fecha y el cargo
+  // que cada corrida deja en la cuenta de su dueño. Van aparte de
+  // `ctp_cuenta_*` porque los escribe el servidor al declarar, no alguien
+  // anotando a mano — y el fiscalizador de la plata tiene que distinguirlos.
+  | "ctp_tarifa_aserrio_guardar"
+  | "ctp_tarifa_aserrio_quitar"
+  | "ctp_aserrio_cobrar"
+  | "ctp_aserrio_quitar"
+  /** Un renglón por tanda, además de los individuales: quién cobró cuántas
+   *  corridas de una vez y por cuánto (ADR-412). */
+  | "ctp_aserrio_cobrar_tanda"
   | "ctp_cubicacion_update"
   | "ctp_cubicacion_delete"
   // Distribuciones de rolliza guardadas (Brandon, 2026-09-01): los bloques
@@ -295,6 +310,34 @@ export function auditCtp(params: {
       tenantId: params.tenantId,
     }),
   );
+}
+
+/**
+ * Igual que `auditCtp`, pero se espera. Para el renglón que tiene que quedar
+ * escrito ANTES de responder: en Vercel lo que sigue corriendo después de la
+ * respuesta puede no terminar, y el resumen de una tanda de cobros no puede
+ * perderse así. Nunca tira: auditar no tumba la operación, pero el fallo se loguea.
+ */
+export async function auditCtpEsperando(params: Parameters<typeof auditCtp>[0]): Promise<void> {
+  try {
+    await logActivity(
+      params.action,
+      params.entity,
+      params.detail,
+      params.entityId,
+      params.user || "unknown",
+      undefined,
+      params.tenantId,
+    );
+  } catch (err) {
+    logger.error("[ctp-audit] no se pudo registrar el evento", {
+      error: String(err),
+      action: params.action,
+      entity: params.entity,
+      entityId: params.entityId,
+      tenantId: params.tenantId,
+    });
+  }
 }
 
 /** m³ con la precisión forestal del módulo, para los detalles del log. */

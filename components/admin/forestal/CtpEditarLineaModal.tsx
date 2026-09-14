@@ -51,6 +51,9 @@ export interface LineaEditable {
   speciesCommon: string | null;
   speciesScientific: string | null;
   productType: string | null;
+  /** De quién es la madera (ADR-412): "propia" | "tercero" | null. */
+  duenoMadera?: string | null;
+  titularNombre?: string | null;
   unit: string | null;
   /** Producción declarada de la corrida (`quantity`). */
   quantity: number | null;
@@ -108,6 +111,8 @@ export default function CtpEditarLineaModal({
       unit: linea.unit,
       volumeInputM3: linea.volumeInputM3,
       materiaPrimaRef: linea.materiaPrimaRef,
+      duenoMadera: linea.duenoMadera ?? null,
+      titularNombre: linea.titularNombre ?? null,
       observations: linea.observations,
     }),
     [linea],
@@ -272,6 +277,18 @@ export default function CtpEditarLineaModal({
           placeholder={placeholder}
           className={`${INPUT} text-right font-mono tabular-nums`}
         />
+      );
+    }
+    if (c.control === "dueno") {
+      /* Dos opciones y un «sin declarar» que se puede elegir de vuelta: una
+         corrida vieja no eligió nada, y forzarla a decir «propia» para poder
+         guardar otra cosa sería ponerle un dueño que nadie declaró. */
+      return (
+        <select value={valor} disabled={off} onChange={(e) => set(e.target.value)} className={INPUT}>
+          <option value="">— sin declarar —</option>
+          <option value="propia">Es del centro</option>
+          <option value="tercero">Es de un tercero</option>
+        </select>
       );
     }
     if (c.control === "producto" || c.control === "presentacion" || c.control === "unidad") {

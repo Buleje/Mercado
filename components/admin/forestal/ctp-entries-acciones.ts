@@ -15,6 +15,7 @@ import {
   Boxes,
   Calculator,
   ClipboardList,
+  Coins,
   Download,
   FileText,
   Layers,
@@ -51,6 +52,7 @@ export function accionesDeSeccion({
   onParteDeTurno,
   onAnexos,
   onLibro,
+  onTarifa,
 }: {
   section: CtpSection;
   /** Cuántas líneas hay bajo el filtro actual (es lo que se descarga). */
@@ -69,6 +71,10 @@ export function accionesDeSeccion({
    * necesita ocupar el lugar donde se decide.
    */
   onLibro?: () => void;
+  /** La tarifa de aserrío (ADR-412): precio por PT, con sus variaciones. Se
+   *  toca de vez en cuando, no en cada corrida — por eso va acá y no en la
+   *  barra. */
+  onTarifa?: () => void;
 }): MenuAccion[] {
   const lista: MenuAccion[] = [
     {
@@ -118,6 +124,15 @@ export function accionesDeSeccion({
         onSelect: onParteDeTurno,
       },
     );
+    if (onTarifa) {
+      lista.push({
+        id: "tarifa-aserrio",
+        label: "Tarifa de aserrío",
+        hint: "Precio por pie tablar, con sus variaciones por especie, tipo y largo",
+        icon: Coins,
+        onSelect: onTarifa,
+      });
+    }
   } else {
     lista.push({
       id: "anexos",

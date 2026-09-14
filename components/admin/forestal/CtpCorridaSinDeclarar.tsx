@@ -25,7 +25,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Boxes, Loader2, MinusCircle, X } from "@buleje/design-system/icons";
-import { guardarProduccionDeCorrida } from "./hooks/guardar-produccion-corrida";
+import { guardarProduccionDeCorrida, mensajeCobroAserrio } from "./hooks/guardar-produccion-corrida";
 import { origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
 import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
@@ -175,14 +175,16 @@ export default function CtpCorridaSinDeclarar({
     setGuardando(true);
     setError(null);
     try {
-      await guardarProduccionDeCorrida(corrida.id, "declarar", datos);
+      const { aserrio } = await guardarProduccionDeCorrida(corrida.id, "declarar", datos);
 
       setAbierto(false);
       const rend = entrada > 0 ? ` · rendimiento ${Math.round((datos.volumen / entrada) * 1000) / 10} %` : "";
+      const avisoCobro = mensajeCobroAserrio(aserrio);
       onListo(
         `Corrida N° ${corrida.lineNo} cerrada`,
         `Declaró ${fmtM3(datos.volumen)} m³ en ${datos.paquetes.length} paquete(s)${rend}. ` +
-          "Ya se puede despachar de esta corrida.",
+          "Ya se puede despachar de esta corrida." +
+          (avisoCobro ? ` ${avisoCobro}` : ""),
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -448,6 +450,14 @@ export default function CtpCorridaSinDeclarar({
           /* Las piezas que esta corrida se comió, a mano dentro del modal. */
           trozas={trozas}
           fecha={corrida.entryDate.slice(0, 10)}
+          /* La corrida YA existe: el aserrío se cotiza con SU fecha, no con la
+             que se edite acá (declarar no la reescribe). */
+          fechaCorridaFija={corrida.entryDate.slice(0, 10)}
+          cobroInicial={{
+            duenoParteId: corrida.duenoParteId ?? null,
+            precioManualPt: corrida.aserrioPrecioManualPt ?? null,
+            nombreGuardado: corrida.titularNombre ?? null,
+          }}
           guardando={guardando}
           error={error}
           titulo={`Declarar la producción de la corrida N° ${corrida.lineNo}`}

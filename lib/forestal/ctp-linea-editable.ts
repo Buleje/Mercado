@@ -29,6 +29,8 @@ export type CampoEditable =
   | "unit"
   | "volumeInputM3"
   | "materiaPrimaRef"
+  | "duenoMadera"
+  | "titularNombre"
   | "observations";
 
 export interface DefCampoEditable {
@@ -37,7 +39,7 @@ export interface DefCampoEditable {
   /** Del REGISTRO: sólo se toca si NADA depende del asiento (ADR-401 §2). */
   registro: boolean;
   /** Con qué control se pide el dato. */
-  control: "texto" | "textarea" | "numero" | "producto" | "presentacion" | "unidad";
+  control: "texto" | "textarea" | "numero" | "producto" | "presentacion" | "unidad" | "dueno";
   /**
    * Si estando vacío se llena por `completar_linea`. Los numéricos NO: ponerle
    * valor a un hueco de cantidad o de volumen mueve saldos, así que aunque esté
@@ -83,6 +85,27 @@ export const CAMPOS_EDITABLES: DefCampoEditable[] = [
     registro: false,
     control: "texto",
     completable: true,
+  },
+  /* De quién es la madera (ADR-412). Descriptivos los dos: no cambian qué se
+     produjo ni cuánto, así que ningún saldo ni invariante depende de ellos —
+     por eso se tocan con el período abierto aunque la corrida ya esté
+     despachada. Que el titular quede coherente con el dueño lo resuelve la DB
+     class, que es donde viven las dos mitades juntas. */
+  {
+    key: "duenoMadera",
+    label: "Dueño de la madera",
+    registro: false,
+    control: "dueno",
+    completable: true,
+    ayuda: "Un centro que asierra por encargo produce madera que no es suya, y el certificado lo dice.",
+  },
+  {
+    key: "titularNombre",
+    label: "Titular de la madera",
+    registro: false,
+    control: "texto",
+    completable: true,
+    ayuda: "Sólo cuando es de un tercero. Se guarda tal como se certifica.",
   },
   { key: "observations", label: "Observaciones", registro: false, control: "textarea", completable: true },
 ];

@@ -58,6 +58,10 @@ export interface CorridaConSaldo {
   disponible: number;
   paquetes: PaqueteDeLote[];
   observations: string | null;
+  /** De quién es la madera (ADR-412): "propia" | "tercero" | null. */
+  duenoMadera?: string | null;
+  /** Quién, cuando es de tercero. */
+  titularNombre?: string | null;
   titularOrigen: string[];
   gtfOrigen: string[];
   /** Marcado a mano como «ya usado» (consumo local, merma, uso propio). */

@@ -17,6 +17,7 @@
 
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import type { ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
 import type { ProduccionRegistrada } from "../CtpRegistrarProduccionModal";
 
 export type ModoDeclaracion = "declarar" | "ampliar";
@@ -40,7 +41,7 @@ export async function guardarProduccionDeCorrida(
   corridaId: string,
   modo: ModoDeclaracion,
   datos: ProduccionRegistrada,
-): Promise<void> {
+): Promise<{ aserrio?: ResultadoCobro }> {
   const body =
     modo === "declarar"
       ? {
@@ -55,12 +56,16 @@ export async function guardarProduccionDeCorrida(
           presentacion: datos.paquetes[0]?.presentacion ?? null,
           codigoProducto: datos.paquetes[0]?.codigo ?? null,
           paquetes: paquetesParaServidor(datos),
+          // ADR-412: ausente = no toca el cobro que la corrida ya tenía (nada
+          // que el operador no haya tocado en `CtpCobroAserrio` viaja acá).
+          ...(datos.aserrio ? { aserrio: datos.aserrio } : {}),
         }
       : {
           action: "ampliar_produccion",
           id: corridaId,
           observations: datos.observaciones,
           paquetes: paquetesParaServidor(datos),
+          ...(datos.aserrio ? { aserrio: datos.aserrio } : {}),
         };
 
   const r = await fetch("/api/admin/forestal/ctp", {
@@ -69,9 +74,23 @@ export async function guardarProduccionDeCorrida(
     credentials: "include",
     body: JSON.stringify(body),
   });
-  const json = await r.json().catch(() => ({}));
+  const json = (await r.json().catch(() => ({}))) as { message?: string; error?: string; aserrio?: ResultadoCobro };
   if (!r.ok) throw new Error(json?.message ?? json?.error ?? `El servidor respondió ${r.status}`);
   invalidarCtp("/forestal/");
+  return { aserrio: json.aserrio };
+}
+
+/**
+ * Lo que se le dice al operador después de declarar (ADR-412 §4): si se cargó
+ * algo a la cuenta de alguien, o por qué no. `null` = no hubo intento de cobro
+ * (no se eligió dueño) y no hace falta decir nada.
+ */
+export function mensajeCobroAserrio(aserrio: ResultadoCobro | null | undefined): string | null {
+  if (!aserrio) return null;
+  if (aserrio.cobrado) {
+    return `Se cargaron S/ ${(aserrio.importe ?? 0).toFixed(2)} a la cuenta de ${aserrio.parteNombre ?? "el dueño de la madera"}.`;
+  }
+  return aserrio.motivo ? `Aserrío no cobrado: ${aserrio.motivo}` : null;
 }
 
 /**

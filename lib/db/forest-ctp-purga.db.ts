@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { ForestCtpCierreDB } from "@/lib/db/forest-ctp-cierre.db";
+import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 
@@ -289,10 +290,23 @@ export class ForestCtpPurgaDB {
       const borrado = await ForestCtpPurgaDB.contar(tenantId, scope);
       const candidatas = await corridasSinTocar(tenantId, scope === "madera_disponible");
       const ids = candidatas.map((c) => c.id);
+      /* Los cargos de aserrío de esas corridas (ADR-412) caen con ellas y en la
+         MISMA transacción: una deuda viva por una corrida que ya no existe no se
+         explica desde ningún lado. Baja lógica, como toda la cuenta (ADR-322) —
+         el movimiento no cuelga por FK, así que el `deleteMany` no lo alcanza. */
+      let cargosDeBaja = 0;
       if (ids.length > 0) {
         await prisma.$transaction(async (tx) => {
           await tx.forestCtpConsumo.deleteMany({ where: { tenantId, ctpEntryId: { in: ids } } });
           await tx.forestCtpEntry.deleteMany({ where: { tenantId, id: { in: ids } } });
+          /* DESPUÉS del borrado: si un cobro tenía la corrida bloqueada, el
+             `deleteMany` espera a que confirme, y recién esta sentencia ve el
+             cargo que ese cobro acaba de crear. Antes del borrado se escapaba. */
+          const cargos = await tx.forestCuentaMov.updateMany({
+            where: { tenantId, ctpEntryId: { in: ids }, deletedAt: null },
+            data: { deletedAt: new Date() },
+          });
+          cargosDeBaja = cargos.count;
         });
       }
       auditCtp({
@@ -303,18 +317,28 @@ export class ForestCtpPurgaDB {
         detail:
           `VACIÓ ${scope === "madera_disponible" ? "madera aserrada disponible" : "Consumos"}: ${borrado.produccion} ` +
           `corrida(s) de producción, ${borrado.consumos} consumo(s) atribuido(s). ` +
-          `${borrado.saltadas ?? 0} corrida(s) se salvaron por tener despacho, reproceso o lote de producción encima.`,
+          `${borrado.saltadas ?? 0} corrida(s) se salvaron por tener despacho, reproceso o lote de producción encima. ` +
+          `${cargosDeBaja} cargo(s) de aserrío dado(s) de baja en la cuenta corriente.`,
         user: usuario,
       });
       try { invalidateByPrefix(`forest-ctp:${tenantId}`); } catch (e) {
         logger.error("[forest-ctp-purga] no se pudo invalidar el caché", { error: String(e) });
       }
+      if (cargosDeBaja > 0) ForestCuentaDB.invalidar(tenantId);
       return { ok: true, borrado };
     }
 
     const borrado = await ForestCtpPurgaDB.contar(tenantId, "todo");
 
+    let cargosDeBaja = 0;
     await prisma.$transaction(async (tx) => {
+      /* Los cargos de aserrío (ADR-412) no cuelgan por FK: se juntan los ids de
+         las corridas ANTES de borrarlas —después no queda a qué apuntar— y se
+         dan de baja DESPUÉS del borrado, en la misma transacción (ver abajo).
+         Una deuda viva por una corrida que ya no existe no se explica. */
+      const idsCorridas = (
+        await tx.forestCtpEntry.findMany({ where: { tenantId }, select: { id: true } })
+      ).map((c) => c.id);
       /* Orden: primero lo que cuelga, después los padres. Las cascadas ya se
          encargarían, pero borrar explícitamente los puentes deja claro en el
          código qué se lleva la purga — y no depende de que nadie afloje un
@@ -323,6 +347,15 @@ export class ForestCtpPurgaDB {
       await tx.forestCtpConsumo.deleteMany({ where: { tenantId } });
       await tx.forestCtpReproceso.deleteMany({ where: { tenantId } });
       await tx.forestCtpEntry.deleteMany({ where: { tenantId } });
+      /* Después del borrado: si un cobro tenía una corrida bloqueada, el
+         `deleteMany` esperó a que confirmara y esta sentencia ya ve su cargo. */
+      if (idsCorridas.length > 0) {
+        const cargos = await tx.forestCuentaMov.updateMany({
+          where: { tenantId, ctpEntryId: { in: idsCorridas }, deletedAt: null },
+          data: { deletedAt: new Date() },
+        });
+        cargosDeBaja = cargos.count;
+      }
       /* Los retrozos primero: cuelgan de otra troza y borrar la madre antes
          dispararía la cascada sobre filas que ya no están. */
       await tx.woodEntryTroza.deleteMany({ where: { tenantId, trozaOrigenId: { not: null } } });
@@ -338,7 +371,7 @@ export class ForestCtpPurgaDB {
       detail:
         `VACIÓ EL LIBRO DE OPERACIONES COMPLETO: ${borrado.ingresos} ingresos, ${borrado.trozas} trozas, ` +
         `${borrado.produccion} corridas, ${borrado.despachos} despachos, ${borrado.consumos} consumos atribuidos, ` +
-        `${borrado.origenes} orígenes de despacho.`,
+        `${borrado.origenes} orígenes de despacho, ${cargosDeBaja} cargo(s) de aserrío dado(s) de baja en la cuenta corriente.`,
       user: usuario,
     });
 
@@ -348,6 +381,7 @@ export class ForestCtpPurgaDB {
     } catch (e) {
       logger.error("[forest-ctp-purga] no se pudo invalidar el caché", { error: String(e) });
     }
+    if (cargosDeBaja > 0) ForestCuentaDB.invalidar(tenantId);
 
     return { ok: true, borrado };
   }

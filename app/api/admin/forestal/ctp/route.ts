@@ -18,6 +18,8 @@ import { LINEAS_PRODUCCION } from "@/lib/forestal/loctp-resumenes";
 import { sincronizarPartesDeGuia } from "@/lib/forestal/ctp-sincronizar-partes";
 import { agregarRolliza } from "@/lib/forestal/saldo-por-permiso";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
+import { ForestAserrioDB } from "@/lib/db/forest-aserrio.db";
+import type { ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
 
 /**
  * /api/admin/forestal/ctp — Libro CTP: producción + despacho + saldos (ADR-127)
@@ -44,6 +46,14 @@ const createSchema = z.object({
    * escribirse. Donde hay consumos, la guía sigue mandando.
    */
   originCode: z.string().trim().max(120).nullable().optional(),
+  /**
+   * De quién es la madera de esta corrida (ADR-412): un centro que asierra por
+   * encargo produce madera que no es suya, y el certificado tiene que decirlo.
+   * Mismo hueco que `originCode`: una corrida sin lote no lo hereda de ningún
+   * lado. `null` es «no se declaró», no «es propia».
+   */
+  duenoMadera: z.enum(["propia", "tercero"]).nullable().optional(),
+  titularNombre: z.string().trim().max(160).nullable().optional(),
   /**
    * El LOTE DE ASERRÍO que produjo esta corrida (ADR-334).
    *
@@ -127,6 +137,26 @@ const createSchema = z.object({
    */
   trozas: z.array(z.string().trim().min(1).max(60)).max(500).optional(),
 });
+/**
+ * A quién se le cobra el aserrío de la corrida y, si se pactó, a qué precio
+ * único (ADR-412 §4). Viaja con la declaración porque se elige en el mismo
+ * formulario. `duenoParteId: null` = madera del centro, no se le cobra a nadie.
+ * El importe NO viaja: lo calcula el servidor (regla 6).
+ *
+ * `precioManualPt` tiene TRES estados y no dos: ausente = mantener el trato que
+ * la corrida ya tiene · `null` = con la tarifa · número = a mano. Por eso es
+ * `.optional()` sin `.default()`: Zod deja la clave ausente y el servidor la
+ * distingue del `null` (`precioManualAUsar`).
+ */
+/* `duenoParteId` también tiene tres estados: ausente = mantener el dueño de la
+   corrida · `null` = dejar de cobrar · id = ese dueño. Hay pantallas que no
+   conocen el dueño y sólo tocan el precio: no pueden borrarlo por omisión. */
+const aserrioPedidoSchema = z.object({
+  duenoParteId: z.string().trim().min(1).max(40).nullable().optional(),
+  precioManualPt: z.number().positive().max(1000).nullable().optional(),
+});
+type AserrioPedido = z.infer<typeof aserrioPedidoSchema>;
+
 const patchSchema = z.discriminatedUnion("action", [
   z.object({
     id: z.string().trim().min(1),
@@ -152,6 +182,9 @@ const patchSchema = z.discriminatedUnion("action", [
   z.object({
     id: z.string().trim().min(1),
     action: z.literal("ampliar_produccion"),
+    /* Sin esto, si la corrida ya se le cobraba a alguien, se recotiza igual:
+       los paquetes nuevos también se asierran. */
+    aserrio: aserrioPedidoSchema.optional(),
     observations: z.string().trim().max(1000).nullable().optional(),
     paquetes: z
       .array(
@@ -178,6 +211,7 @@ const patchSchema = z.discriminatedUnion("action", [
   z.object({
     id: z.string().trim().min(1),
     action: z.literal("declarar_produccion"),
+    aserrio: aserrioPedidoSchema.optional(),
     productType: z.string().trim().max(80).nullable().optional(),
     presentacion: z.string().trim().max(80).nullable().optional(),
     quantity: z.coerce.number().positive().max(9999999),
@@ -209,6 +243,33 @@ const patchSchema = z.discriminatedUnion("action", [
       .optional(),
   }),
   /**
+   * Cobrar (o dejar de cobrar) el aserrío de una corrida ya declarada
+   * (ADR-412 §4): el cobro que falló al declarar, el dueño que se supo
+   * después, o el precio que se renegoció. Actualiza el mismo cargo.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("cobrar_aserrio"),
+    duenoParteId: aserrioPedidoSchema.shape.duenoParteId,
+    precioManualPt: aserrioPedidoSchema.shape.precioManualPt,
+  }),
+  /**
+   * Cobrar el aserrío de VARIAS corridas de una vez (ADR-412): estrenar el
+   * cobro con la producción ya declarada sin abrirlas de a una. Mismo contrato
+   * que `cobrar_aserrio` («ausente = mantener»); cada corrida en su propia
+   * transacción, y la respuesta dice corrida por corrida qué pasó.
+   */
+  z.object({
+    action: z.literal("cobrar_aserrio_tanda"),
+    ids: z
+      .array(z.string().trim().min(1).max(40))
+      .min(1, "Elige al menos una corrida.")
+      .max(200, "Una tanda llega hasta 200 corridas.")
+      .refine((ids) => new Set(ids).size === ids.length, "Hay corridas repetidas en la tanda."),
+    duenoParteId: aserrioPedidoSchema.shape.duenoParteId,
+    precioManualPt: aserrioPedidoSchema.shape.precioManualPt,
+  }),
+  /**
    * Marcar (o desmarcar) una corrida como "ya se usó" (Brandon, 2026-09-01):
    * sale de Productos disponibles sin despacharse ni reprocesarse. Reversible.
    */
@@ -235,6 +296,10 @@ const patchSchema = z.discriminatedUnion("action", [
         speciesCommon: z.string().trim().max(120).optional(),
         speciesScientific: z.string().trim().max(160).optional(),
         productType: z.string().trim().max(120).optional(),
+        /* El dueño de la madera (ADR-412): una corrida vieja no declaró
+           ninguno, así que llenar ese hueco es COMPLETAR, no corregir. */
+        duenoMadera: z.enum(["propia", "tercero"]).optional(),
+        titularNombre: z.string().trim().max(160).optional(),
       })
       .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
         message: "Mandá al menos un campo con contenido.",
@@ -263,6 +328,10 @@ const patchSchema = z.discriminatedUnion("action", [
            donde no hay guía de la que heredarlo; la pantalla lo sabe y manda
            uno u otro camino. */
         originCode: z.string().trim().max(120).optional(),
+        /* El dueño de la madera (ADR-412). Se corrige como cualquier otro campo
+           del asiento; la DB class mantiene coherente el par dueño/titular. */
+        duenoMadera: z.enum(["propia", "tercero"]).optional(),
+        titularNombre: z.string().trim().max(160).optional(),
         unit: z.string().trim().max(20).optional(),
         quantity: z
           .string()
@@ -325,6 +394,41 @@ async function ensureSpec(tenantId: string) {
         },
         { status: 403 },
       );
+}
+
+/**
+ * Cobra el aserrío DESPUÉS de que el asiento se guardó, sin poder tumbarlo
+ * (ADR-412 §4): el libro es lo que se fiscaliza, y un cargo que falló se
+ * vuelve a pedir desde la corrida con `cobrar_aserrio`.
+ *
+ * Con `pedido` cobra lo elegido. Sin él y con `recotizar`, recalcula sólo si
+ * la corrida ya se le cobraba a alguien. `null` = no había nada que cobrar.
+ * El error real va al log; al cliente, un texto que no filtra la base.
+ */
+async function cobrarSinRomper(
+  tenantId: string,
+  id: string,
+  pedido: AserrioPedido | undefined,
+  opts: { recotizar: boolean; user: string; ctx: string },
+): Promise<ResultadoCobro | null> {
+  try {
+    if (pedido) return await ForestAserrioDB.cobrarCorrida(tenantId, id, pedido, opts.user);
+    return opts.recotizar ? await ForestAserrioDB.recotizarSiCobrada(tenantId, id, opts.user) : null;
+  } catch (err) {
+    logger.error(`[${opts.ctx}] la corrida se guardó pero el aserrío no se cargó en la cuenta`, {
+      error: String(err),
+      tenantId,
+      entryId: id,
+    });
+    return {
+      cobrado: false,
+      motivo: "No se pudo cargar en la cuenta: la corrida quedó guardada, cóbrala de nuevo desde la corrida.",
+      importe: null,
+      parteNombre: null,
+      movimientoId: null,
+      cotizacion: null,
+    };
+  }
 }
 
 export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) => {
@@ -726,17 +830,23 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
   if (!parsed.success) return ctpValidationResponse(parsed.error);
   try {
     if (parsed.data.action === "ampliar_produccion") {
-      const { id, action: _amp, ...campos } = parsed.data;
+      /* `aserrio` sale antes: los campos del libro no lo conocen. */
+      const { id, action: _amp, aserrio: pedido, ...campos } = parsed.data;
       const entry = await ForestCtpDB.ampliarProduccion(
         auth.tenantId,
         id,
         campos,
         auth.username ?? "unknown",
       );
-      return NextResponse.json({ entry });
+      const aserrio = await cobrarSinRomper(auth.tenantId, id, pedido, {
+        recotizar: true,
+        user: auth.username ?? "unknown",
+        ctx: "ctp.PATCH.ampliar_produccion",
+      });
+      return NextResponse.json({ entry, aserrio });
     }
     if (parsed.data.action === "declarar_produccion") {
-      const { id, action: _a, ...campos } = parsed.data;
+      const { id, action: _a, aserrio: pedido, ...campos } = parsed.data;
       const entry = await ForestCtpDB.declararProduccion(
         auth.tenantId,
         id,
@@ -744,7 +854,39 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         auth.username ?? "unknown",
       );
       if (!entry) return NextResponse.json({ error: "not_found" }, { status: 404 });
-      return NextResponse.json({ entry });
+      /* Sin `aserrio` también se recotiza: a una corrida abierta se le puede
+         haber puesto dueño antes de declarar (`cobrar_aserrio`), y recién
+         ahora tiene volumen que cobrarle. Sin dueño es una lectura y `null`. */
+      const aserrio = await cobrarSinRomper(auth.tenantId, id, pedido, {
+        recotizar: true,
+        user: auth.username ?? "unknown",
+        ctx: "ctp.PATCH.declarar_produccion",
+      });
+      return NextResponse.json({ entry, aserrio });
+    }
+    if (parsed.data.action === "cobrar_aserrio_tanda") {
+      const { ids, duenoParteId, precioManualPt } = parsed.data;
+      return NextResponse.json(
+        await ForestAserrioDB.cobrarTanda(
+          auth.tenantId,
+          ids,
+          { duenoParteId, precioManualPt },
+          auth.username ?? "unknown",
+        ),
+      );
+    }
+    if (parsed.data.action === "cobrar_aserrio") {
+      const { id, duenoParteId, precioManualPt } = parsed.data;
+      if (!(await ForestCtpDB.getById(auth.tenantId, id))) {
+        return NextResponse.json({ error: "not_found", message: "Esa corrida no existe." }, { status: 404 });
+      }
+      const aserrio = await ForestAserrioDB.cobrarCorrida(
+        auth.tenantId,
+        id,
+        { duenoParteId, precioManualPt },
+        auth.username ?? "unknown",
+      );
+      return NextResponse.json({ aserrio });
     }
     if (parsed.data.action === "gtf_datos") {
       const r = await ForestCtpDespachoDB.guardarGtfDatos(
@@ -832,7 +974,19 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         parsed.data.campos,
         auth.username ?? "unknown",
       );
-      return NextResponse.json(r);
+      /* Completar la especie o el producto cambia el precio del aserrío igual
+         que corregirlos (la cantidad no es completable). Se decide con lo que
+         de verdad se APLICÓ: un campo omitido no cambió nada. */
+      const tocaElPrecio =
+        r.ok && r.camposAplicados.some((c) => c === "speciesCommon" || c === "productType");
+      const aserrio = tocaElPrecio
+        ? await cobrarSinRomper(auth.tenantId, parsed.data.id, undefined, {
+            recotizar: true,
+            user: auth.username ?? "unknown",
+            ctx: "ctp.PATCH.completar_linea",
+          })
+        : null;
+      return NextResponse.json(aserrio ? { ...r, aserrio } : r);
     }
     if (parsed.data.action === "corregir_linea") {
       const r = await ForestCtpDB.corregirLinea(
@@ -841,7 +995,20 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         parsed.data.campos,
         auth.username ?? "unknown",
       );
-      return NextResponse.json(r);
+      /* Corregir cuánto salió, la especie o el producto cambia el precio del
+         aserrío: si la corrida ya se le cobraba a alguien, el cargo tiene que
+         seguir al libro (ADR-412 §4). */
+      const tocaElPrecio =
+        r.ok &&
+        r.camposCambiados.some((c) => c === "quantity" || c === "speciesCommon" || c === "productType");
+      const aserrio = tocaElPrecio
+        ? await cobrarSinRomper(auth.tenantId, parsed.data.id, undefined, {
+            recotizar: true,
+            user: auth.username ?? "unknown",
+            ctx: "ctp.PATCH.corregir_linea",
+          })
+        : null;
+      return NextResponse.json(aserrio ? { ...r, aserrio } : r);
     }
     if (parsed.data.action === "asignar_permiso_masivo") {
       return NextResponse.json(

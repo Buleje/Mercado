@@ -26,6 +26,7 @@ import {
   Search,
   TreePine,
   Truck,
+  Users,
 } from "@buleje/design-system/icons";
 import CtpKpi, { DesgloseSimple, type FilaDesglose } from "./CtpKpi";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -86,6 +87,9 @@ interface CorridaDisponible {
   producto: string | null;
   presentacion: string | null;
   unidad: string | null;
+  /** De quién es la madera (ADR-412): "propia" | "tercero" | null. */
+  duenoMadera?: string | null;
+  titularNombre?: string | null;
   lote: string | null;
   /** `quantity` del asiento — lo que el editor corrige (ADR-401). */
   cantidad: number | null;
@@ -954,6 +958,23 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                       <Download className="h-3 w-3 shrink-0" aria-hidden /> Importado
                     </span>
                   )}
+                  {/* Madera de tercero (ADR-412): lo que el centro asierra por
+                      encargo NO es suyo. Va en la fila del producto porque es
+                      ahí donde se decide despacharlo, y despachar lo ajeno como
+                      propio es el error que este chip existe para evitar. */}
+                  {c.duenoMadera === "tercero" && (
+                    <span
+                      title={
+                        c.titularNombre
+                          ? `La madera es de ${c.titularNombre} — el centro la asierra por encargo`
+                          : "Madera de un tercero: el centro la asierra por encargo"
+                      }
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+                    >
+                      <Users className="h-3 w-3 shrink-0" aria-hidden />
+                      {c.titularNombre ?? "De tercero"}
+                    </span>
+                  )}
                   {c.usadoAt && (
                     <span
                       title={
@@ -1038,6 +1059,8 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                         observations: c.observations,
                         presentacion: c.presentacion,
                         materiaPrimaRef: c.lote,
+                        duenoMadera: c.duenoMadera ?? null,
+                        titularNombre: c.titularNombre ?? null,
                         speciesCommon: c.especie,
                         speciesScientific: c.especieCientifica,
                         productType: c.producto,

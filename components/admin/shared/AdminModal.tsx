@@ -27,6 +27,7 @@
  *   · centered-sm — max-w-sm (confirmaciones)
  */
 
+import { useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { X, type LucideIcon } from "@buleje/design-system/icons";
@@ -140,6 +141,12 @@ export default function AdminModal({
 }: AdminModalProps) {
   /* Portal a <body>: sin esto el modal hereda los tokens de la tienda. */
   const panelTokens = usePanelTokens(open);
+  /* Para `onEscapeKeyDown`: Radix invoca ese callback con el KeyboardEvent
+     NATIVO tal como llegó a su propio listener en `document` — su
+     `currentTarget` ahí es `document`, no el content. Un ref propio es la
+     única forma confiable de preguntarle a ESTE diálogo si tiene un menú
+     marcado como abierto. */
+  const contentRef = useRef<HTMLDivElement>(null);
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <Dialog.Portal>
@@ -153,6 +160,7 @@ export default function AdminModal({
           )}
         />
         <Dialog.Content
+          ref={contentRef}
           aria-describedby={description ? undefined : undefined}
           style={panelTokens}
           className={cn(
@@ -163,6 +171,15 @@ export default function AdminModal({
             aboveModals && "z-[70]",
             className,
           )}
+          /* Un `ActionMenu` (u otro menú de fila) abierto DENTRO de este
+             diálogo se marca a sí mismo con `data-menu-abierto` mientras dura
+             (ver `action-menu.tsx`). Escape con ese menú abierto tiene que
+             cerrar SÓLO esa capa de arriba — el menú ya se cierra solo con su
+             propio listener; acá sólo se evita que Radix ADEMÁS cierre el
+             diálogo entero (medido: Escape se llevaba las dos capas). */
+          onEscapeKeyDown={(e) => {
+            if (contentRef.current?.hasAttribute("data-menu-abierto")) e.preventDefault();
+          }}
         >
           {/* a11y fix 2026-05-09: Radix exige Dialog.Title presente. Cuando no
               hay title visible, lo renderizamos dentro de VisuallyHidden para

@@ -10,7 +10,7 @@
  * inventario / Anular) full-width. Misma data y mismos handlers que la tabla.
  */
 
-import { AlertCircle, Boxes, Calendar, Download, FileText, Link2, Paperclip, PackagePlus, Truck } from "@buleje/design-system/icons";
+import { AlertCircle, Boxes, Calendar, Coins, Download, FileText, HandCoins, Link2, Paperclip, PackagePlus, Truck } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
@@ -38,6 +38,12 @@ interface CtpSeccionCardMobileProps {
   onPapeles?: (e: CtpEntry) => void;
   /** Abrir la guía de transporte de esa línea — borrador editable o emitida (solo despachos). */
   onGuia?: (e: CtpEntry) => void;
+  /** Ponerle o cambiarle dueño y precio a una corrida ya declarada (ADR-412, solo producción). */
+  onCobrarAserrio?: (e: CtpEntry) => void;
+  /** Selección para «Cobrar aserrío» EN TANDA (ADR-412, solo producción,
+   *  sólo `registrado`) — `undefined` = esta corrida no puede marcarse. */
+  marcadaCobro?: boolean;
+  onMarcarCobro?: (id: string, marcado: boolean) => void;
 }
 
 const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
@@ -46,7 +52,7 @@ const fmtDate = (iso: string) => {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; }
 };
 
-export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul, ampliable, onAmpliar, onPapeles, onGuia }: CtpSeccionCardMobileProps) {
+export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul, ampliable, onAmpliar, onPapeles, onGuia, onCobrarAserrio, marcadaCobro, onMarcarCobro }: CtpSeccionCardMobileProps) {
   const anulado = e.status === "anulado";
   const KindIcon = section === "produccion" ? Boxes : Truck;
   const rend = section === "produccion" ? evaluarRendimiento(e.productType, e.rendimientoPct != null ? Number(e.rendimientoPct) : null) : null;
@@ -66,7 +72,17 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
     <article className={`rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 ${anulado ? "opacity-60" : ""}`}>
       {/* Encabezado: especie + CITES · estado */}
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-start gap-2">
+          {marcadaCobro != null && onMarcarCobro && (
+            <input
+              type="checkbox"
+              checked={marcadaCobro}
+              onChange={(ev) => onMarcarCobro(e.id, ev.target.checked)}
+              aria-label={`Marcar la corrida N° ${e.lineNo} para cobrar aserrío`}
+              className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
+            />
+          )}
+          <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[length:var(--ts-2xs)] font-mono font-bold text-[var(--text-tertiary)]">#{e.lineNo}</span>
             <CardTitle as="h3" className="truncate text-base font-bold text-[var(--text-primary)]">{e.speciesCommon ?? "—"}</CardTitle>
@@ -86,6 +102,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             )}
           </div>
           {e.speciesScientific && <p className="truncate text-xs italic text-[var(--text-tertiary)]">{e.speciesScientific}</p>}
+          </div>
         </div>
         {anulado ? (
           <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]">Anulado</span>
@@ -151,7 +168,19 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
         <Row icon={Calendar} label="Fecha" value={fmtDate(e.entryDate)} />
         <Row label="Producto" value={e.productType ?? "—"} />
         {section === "produccion" ? (
-          <Row label="Consumido" value={`${e.volumeInputM3 == null ? "—" : fmtM3(Number(e.volumeInputM3))} m³`} />
+          <>
+            <Row label="Consumido" value={`${e.volumeInputM3 == null ? "—" : fmtM3(Number(e.volumeInputM3))} m³`} />
+            {/* No en corridas anuladas: el importe queda escrito como historia,
+                pero el cargo en la cuenta ya se dio de baja (mismo criterio que
+                el chip de escritorio). */}
+            {e.aserrioImporte != null && !anulado && (
+              <Row
+                icon={Coins}
+                label="Aserrío cobrado"
+                value={`S/ ${Number(e.aserrioImporte).toFixed(2)}`}
+              />
+            )}
+          </>
         ) : (
           <>
             <Row label="GTF salida" value={e.gtfNumber ?? "—"} mono />
@@ -225,6 +254,15 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
               className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               <Paperclip className="h-3.5 w-3.5" /> Papeles
+            </button>
+          )}
+          {section === "produccion" && onCobrarAserrio && (
+            <button
+              type="button"
+              onClick={() => onCobrarAserrio(e)}
+              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              <HandCoins className="h-3.5 w-3.5" /> {e.duenoParteId ? "Cambiar aserrío" : "Cobrar aserrío"}
             </button>
           )}
           <button
