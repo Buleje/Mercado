@@ -230,6 +230,12 @@ interface DailyGoalTrackerProps {
 export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAILY_GOAL }: DailyGoalTrackerProps) {
   const [dailyGoal, setDailyGoal] = useState<number>(initialGoal);
   const [editing, setEditing] = useState(false);
+  // Foco al entrar en edición, sin `autoFocus` (jsx-a11y/no-autofocus): el foco
+  // lo pide la acción explícita de «Editar meta», no la aparición del campo.
+  const goalInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editing) goalInputRef.current?.focus();
+  }, [editing]);
   const [tempGoal, setTempGoal] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
   const [allSales, setAllSales] = useState<Sale[]>([]);
@@ -486,7 +492,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
                   onKeyDown={(e) => e.key === "Enter" && saveGoal()}
                   min={1}
                   max={MAX_DAILY_GOAL}
-                  autoFocus
+                  ref={goalInputRef}
                   aria-label="Meta diaria en soles"
                   aria-invalid={!!editError}
                   aria-describedby={editError ? "daily-goal-error" : undefined}

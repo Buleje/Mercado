@@ -220,12 +220,18 @@ function AdminPage() {
   // Find active category based on current tab — drives the sub-sidebar
   const activeCategory = visibleCategories.find(cat => cat.tabs.includes(tab));
   const hasSubSidebar = !focusMode && !presentationMode && activeCategory && activeCategory.tabs.length > 1;
-  const subSidebarTabs = hasSubSidebar
-    ? activeCategory.tabs
-        .map(tabId => ALL_TABS.find(t => t.id === tabId))
-        .filter(Boolean)
-        .map(t => ({ id: t!.id, label: t!.label, icon: t!.icon }))
-    : [];
+  // useMemo: sin él era un array nuevo en cada render y el efecto de teclado de
+  // abajo (que lo tiene en sus deps) se re-suscribía a keydown en cada render.
+  const subSidebarTabs = React.useMemo(
+    () =>
+      hasSubSidebar && activeCategory
+        ? activeCategory.tabs
+            .map(tabId => ALL_TABS.find(t => t.id === tabId))
+            .filter(Boolean)
+            .map(t => ({ id: t!.id, label: t!.label, icon: t!.icon }))
+        : [],
+    [hasSubSidebar, activeCategory],
+  );
 
   // Sub-tabs now render inline inside the main sidebar — no more collapsing
   const effectiveFocusMode = focusMode;
