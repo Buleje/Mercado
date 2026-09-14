@@ -22,7 +22,7 @@ argument-hint: "[check|quick|full]"
 
 ```bash
 npm run lint
-npx tsc --noEmit             # pre-check rápido alternativo: tsgo --noEmit
+npx tsc --noEmit             # pre-check rápido alternativo: npm run typecheck:fast
 npm run test
 node scripts/build-gate.mjs  # gate autoritativo: mata dev → build limpio → veredicto → re-levanta dev
 ```

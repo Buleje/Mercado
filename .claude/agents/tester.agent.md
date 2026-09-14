@@ -42,8 +42,8 @@ experimental:
    (memoria `modal-gutter-lo-pone-el-modal`).
 4. Nombres describen el QUÉ en español («rechaza un beneficiario de otro tenant»).
 5. Un test que pasa sin el fix no es red de regresión: verificá que **falla** con el bug y pasa con el fix.
-6. Fixtures `Partial<X> & {…}` disparan `TS2783` en `tsc` (tsgo no lo ve): correr `tsc --noEmit`
-   sobre los tests nuevos.
+6. Fixtures `Partial<X> & {…}` disparan `TS2783`: el gate que cuenta es `npx tsc --noEmit` (5.9),
+   no el pre-check `npm run typecheck:fast`.
 
 ## Verificación
 - `npx vitest run <archivo>` con la salida pegada; Playwright MCP con `onboarding-completed-main=1`,

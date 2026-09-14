@@ -46,6 +46,6 @@ migraciones solo con `DIRECT_URL`.
    `serializador-whitelist-desactualizada`): columna nueva ⇒ whitelist nueva.
 
 ## Verificación
-- `npx prisma validate` + `tsgo --noEmit`; `npm run db:sanity` para el modelo tocado.
+- `npx prisma validate` + `npm run typecheck:fast`; `npm run db:sanity` para el modelo tocado.
 - Un SELECT real sobre el tenant real que muestre la fila afectada (`DOTENV_CONFIG_PATH=.env.local
   node -r dotenv/config` + pg), pegado en el reporte.

@@ -70,7 +70,7 @@ Para memoria: patrón o gotcha que un futuro agente no sabría (si no tiene memo
 
 | Momento | Gate | Si falla |
 |---|---|---|
-| durante | `tsgo --noEmit` (pre-check) · `npm run lint:fast` | el propio agente |
+| durante | `npm run typecheck:fast` (TypeScript 7 nativo) · `npm run lint:fast` | el propio agente |
 | antes de «listo» | `tsc --noEmit` · `npm run lint` · `npx vitest run <área>` · navegador/curl | `healer` (3 intentos) → hilo principal |
 | Stop del hilo principal | `stop-evidence-gate.mjs` (determinista): edits sin evidencia ⇒ bloquea | volver a verificar |
 | zona de peligro | `security` en modo audit antes del merge | veto |

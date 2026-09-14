@@ -1,7 +1,7 @@
 ---
 name: healer
 description: >
-  Reparación mecánica de gates rojos: tsc/tsgo, eslint/oxlint, vitest, tokens del DS.
+  Reparación mecánica de gates rojos: tsc/typecheck:fast, eslint/oxlint, vitest, tokens del DS.
   Fix mínimo, máximo 3 intentos, después escala con el error completo. Usar cuando un gate
   falla y el arreglo es local y obvio; no para bugs de lógica (eso es reviewer/diagnose).
 model: sonnet
@@ -32,8 +32,8 @@ color: green
    la hipótesis — el hilo principal decide.
 
 ## Gotchas de los gates de este repo
-- `tsgo --noEmit` (rápido) y `tsc --noEmit` (autoritativo) **no son superset**: tsgo flagea `TS2869`
-  que tsc no; tsc flagea `TS2783` (spread que pisa una prop en fixtures) que tsgo no. Corré el que falló.
+- `npm run typecheck:fast` (TypeScript 7 nativo) y `npx tsc --noEmit` (5.9, autoritativo) no están
+  probados como superset (el 09-09 divergieron en `TS2869`/`TS2783`). Corré el que falló y cerrá con `tsc`.
 - `npm run lint:fast` = oxlint (1 s); `npm run lint` = eslint con reglas custom de tokens (gate real).
 - `.next/dev` stale da parse errors fantasma: borrar `.next` entero (hub `hub-next-dev-cache`), no el código.
 - Tokens: `tsx scripts/lint-design-tokens.ts <archivo>`; un hex se reemplaza por su token, no se comenta.

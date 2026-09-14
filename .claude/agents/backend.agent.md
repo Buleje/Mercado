@@ -49,7 +49,7 @@ TypeScript 5 strict, Prisma 7 + Supabase Postgres (pooler), Zod 4, BullMQ, Upsta
 avisá en el reporte y pedí pasada del agente `security` antes del merge.
 
 ## Verificación mínima antes de reportar
-- `tsgo --noEmit` (pre-check, ~50 s) — el gate que decide sigue siendo `tsc --noEmit`.
+- `npm run typecheck:fast` (TypeScript 7 nativo, pre-check ~23 s) — el gate que decide sigue siendo `npx tsc --noEmit` (5.9). Uno por vez: cada uno usa ~7 GB.
 - El endpoint real con sesión: `source /tmp/bsm-auth.env && curl "$BSM_BASE/api/..." $BSM_CURL_FLAGS`
   (si no existe el env, `node scripts/dev-helpers/admin-auth.mjs`). Rutas frías compilan
   10-60 s: primer curl con `--max-time 120`.
