@@ -37,9 +37,11 @@ import {
   X,
   Bell,
   type LucideIcon,
+  Wallet,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { puedePedir, type RutaPanel } from "@/lib/auth/roles-rutas-panel";
+import { avisoCajaAbierta } from "@/lib/caja/caja-abierta";
 import type { AdminRole } from "@/lib/session";
 
 const RUTA: RutaPanel = "/api/admin/alerts-summary";
@@ -50,6 +52,7 @@ interface Summary {
   partnersOnline: number;
   recentExpiredOffers: number;
   trialDaysLeft: number | null;
+  cajaAbiertaDesde?: string | null;
 }
 
 type Severity = "urgent" | "warning" | "info";
@@ -176,6 +179,21 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
         description: "Te quedan pocos días del trial gratuito.",
         cta: "Ver planes",
         href: "/admin?tab=plan",
+      });
+    }
+
+    // Caja abierta desde un día anterior: un arqueo que no se hizo (2026-09-14).
+    const caja = avisoCajaAbierta(summary.cajaAbiertaDesde);
+    if (caja) {
+      list.push({
+        id: caja.id,
+        severity: caja.severidad,
+        icon: Wallet,
+        count: caja.dias,
+        label: caja.titulo,
+        description: caja.detalle,
+        cta: "Cuadrar caja",
+        href: "/admin?tab=ventas-caja&vista=arqueo",
       });
     }
 
