@@ -91,6 +91,12 @@ const CORE_BASE: ModuleId[] = [
      viviera sólo en la vertical maderera, el sidebar la ocultaría en silencio
      en todas las demás (el filtro vertical no avisa, simplemente no dibuja). */
   "camaras",
+  /* Recursos Humanos (ADR-414): universal por la misma razón que Cámaras — toda
+     bodega, restaurante o aserradero tiene gente que marca asistencia y cobra.
+     Fuera de este núcleo, el filtro vertical lo ocultaba EN SILENCIO de la barra
+     lateral de escritorio (medido 2026-09-14 en un negocio «bodega»), mientras
+     el menú del celular, que no aplica este filtro, sí lo mostraba. */
+  "rrhh",
 ];
 
 /** Set extendido — todos los tabs actuales (35). */
@@ -322,6 +328,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "plan",
         "compras",
         "dropship", // ADR-298 — tiendas dropshipping (gate real = Settings.dropshipEnabled)
+        "rrhh", // ADR-414 — universal; «otro» no hereda CORE_BASE, así que va explícito
       ],
       featured: [],
       hidden: [],
