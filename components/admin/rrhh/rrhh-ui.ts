@@ -21,6 +21,8 @@ export interface VentanaMarcado {
 export interface EstadoAsistenciaMeta {
   letra: string;
   label: string;
+  /** «6 presentes», no «6 presente» — el contador del día lo decía en singular. */
+  labelPlural: string;
   /** Texto — AA en claro y oscuro (`-700` claro, `-500` oscuro, memoria hub-ui-tokens-dark). */
   claseTexto: string;
   /** Chip: fondo suave + texto, para la hoja del mes y los badges. */
@@ -31,42 +33,49 @@ export const ESTADO_ASISTENCIA_META: Record<EstadoAsistencia, EstadoAsistenciaMe
   PRESENTE: {
     letra: "P",
     label: "Presente",
+    labelPlural: "Presentes",
     claseTexto: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
     claseChip: "bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
   },
   TARDANZA: {
     letra: "T",
     label: "Tardanza",
+    labelPlural: "Tardanzas",
     claseTexto: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
     claseChip: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
   },
   MEDIO_DIA: {
     letra: "½",
     label: "Medio día",
+    labelPlural: "Medios días",
     claseTexto: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
     claseChip: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
   },
   FALTA: {
     letra: "F",
     label: "Falta",
+    labelPlural: "Faltas",
     claseTexto: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     claseChip: "bg-[var(--data-error-500)]/10 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
   },
   PERMISO: {
     letra: "Pe",
     label: "Permiso",
+    labelPlural: "Permisos",
     claseTexto: "text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",
     claseChip: "bg-[var(--data-info-500)]/10 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",
   },
   DESCANSO: {
     letra: "D",
     label: "Descanso",
+    labelPlural: "Descansos",
     claseTexto: "text-[var(--text-secondary)]",
     claseChip: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
   },
   VACACIONES: {
     letra: "V",
     label: "Vacaciones",
+    labelPlural: "Vacaciones",
     claseTexto: "text-[var(--accent-ink)] dark:text-[var(--accent)]",
     claseChip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   },
@@ -203,4 +212,23 @@ export function dentroDeVentana(fecha: FechaKey, ventana: VentanaMarcado): boole
 export function motivoFueraDeVentana(ventana: VentanaMarcado): string {
   if (!ventana.desde) return "Fuera del rango permitido.";
   return `Sólo puedes corregir desde el ${etiquetaDia(ventana.desde)}`;
+}
+
+/** `"2026-09-08"` → `"08/09/2026"`. Las fechas date-only del módulo se mostraban crudas en ISO. */
+export function formatearFecha(key: string | null | undefined): string {
+  if (!key || key.length < 10) return "";
+  return `${key.slice(8, 10)}/${key.slice(5, 7)}/${key.slice(0, 4)}`;
+}
+
+/** «6 presentes», «1 falta» — contador de un estado de asistencia. */
+export function contarEstado(n: number, estado: EstadoAsistencia): string {
+  const meta = ESTADO_ASISTENCIA_META[estado];
+  return `${n} ${(n === 1 ? meta.label : meta.labelPlural).toLowerCase()}`;
+}
+
+/** «Juan Pérez Ríos» → «JP». Para el avatar de la ficha; sin nombre, «?». */
+export function iniciales(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return "?";
+  return partes.slice(0, 2).map((p) => p[0]!.toUpperCase()).join("");
 }

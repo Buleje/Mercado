@@ -4,19 +4,27 @@
  * ColaboradorFormModal — alta y edición de una persona (ADR-414 §1/§7).
  *
  * Alta: `POST /api/rrhh/colaboradores` (con tarifa inicial si nivel completo).
- * Edición: `PATCH .../[id]` con `action: "editar"` — sólo los campos que
- * cambiaron, no el objeto entero (ausente = mantener, ADR-412).
+ * Edición: `PATCH .../[id]` con `action: "editar"` (ausente = mantener, ADR-412).
+ *
+ * Tres bloques —quién es, contacto, trabajo— en lugar de trece campos
+ * seguidos pegados al borde (Brandon 2026-09-14: «muy apegados y mal
+ * distribuidos»). El documento va primero: con un DNI, la lupa de RENIEC
+ * completa el nombre.
  */
 
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, Search, UserPlus } from "@buleje/design-system/icons";
-import AdminModal from "@/components/admin/shared/AdminModal";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { Loader2, Pencil, Plus, Search, UserPlus } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { crearColaborador } from "@/hooks/use-rrhh-colaboradores";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { esDniValido } from "@/lib/rrhh/documento";
-import { etiquetaModalidad } from "../rrhh-ui";
-import type { ColaboradorDTO, Modalidad, NivelRrhh, TipoDocumento } from "@/lib/rrhh/tipos";
+import { cn } from "@/lib/utils";
+import { BOTON, CLASE_AREA, CLASE_CAMPO, SeccionForm } from "../rrhh-form";
+import { etiquetaModalidad, formatearPEN } from "../rrhh-ui";
+import type { ColaboradorDTO, Modalidad, NivelRrhh, PuestoDTO, TipoDocumento } from "@/lib/rrhh/tipos";
 
 interface Props {
   open: boolean;
@@ -29,12 +37,13 @@ interface Props {
   aboveModals?: boolean;
 }
 
-const input = "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]";
-const label = "mb-1 block text-xs font-bold text-[var(--text-secondary)]";
+const FORM_ID = "rrhh-form-colaborador";
+type ModalidadPagada = Exclude<Modalidad, "SIN_PAGO">;
+const MODALIDADES: ModalidadPagada[] = ["HORA", "DIA", "SEMANA", "MES"];
 
 export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado, colaboradorId, initial, aboveModals }: Props) {
   const editando = Boolean(colaboradorId);
-  const puedeCompleto = nivel === "completo";
+  const conTarifaInicial = nivel === "completo" && !editando;
   const { puestos, crear: crearPuesto } = useRrhhPuestos();
 
   const [nombre, setNombre] = useState(initial?.nombre ?? "");
@@ -48,58 +57,112 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
   const [puestoId, setPuestoId] = useState(initial?.puesto?.id ?? "");
   const [fechaIngreso, setFechaIngreso] = useState(initial?.fechaIngreso ?? "");
   const [observaciones, setObservaciones] = useState(initial?.observaciones ?? "");
-  const [nuevoPuesto, setNuevoPuesto] = useState("");
-  const [creandoPuesto, setCreandoPuesto] = useState(false);
-
-  const puestoElegido = useMemo(() => puestos.find((p) => p.id === puestoId), [puestos, puestoId]);
-  const [tarifaModalidad, setTarifaModalidad] = useState<Exclude<Modalidad, "SIN_PAGO">>("DIA");
-  const [tarifaMonto, setTarifaMonto] = useState("");
-  // Prellenar la tarifa con la sugerida del puesto — sólo si la persona no tipeó nada todavía.
-  useEffect(() => {
-    if (editando || !puestoElegido?.tarifaSugerida || tarifaMonto) return;
-    setTarifaModalidad(puestoElegido.tarifaSugerida.modalidad);
-    setTarifaMonto(String(puestoElegido.tarifaSugerida.monto));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [puestoElegido]);
-
-  const [dniLoading, setDniLoading] = useState(false);
-  const [dniMsg, setDniMsg] = useState("");
-  const buscarDni = async () => {
-    if (!esDniValido(documento)) return;
-    setDniLoading(true);
-    setDniMsg("");
-    try {
-      const res = await fetch(`/api/reniec/lookup?dni=${documento}`);
-      const data = (await res.json()) as { nombreCompleto?: string; error?: string; _mock?: boolean };
-      if (!res.ok || data.error) { setDniMsg(data.error ?? "No se pudo consultar"); return; }
-      if (data.nombreCompleto) {
-        setNombre(data.nombreCompleto);
-        setDniMsg(data._mock ? "Dato de prueba" : "Nombre completado automáticamente");
-      }
-    } catch { setDniMsg("No se pudo consultar"); } finally { setDniLoading(false); }
-  };
-
-  const crearPuestoEnLinea = async () => {
-    if (!nuevoPuesto.trim()) return;
-    setCreandoPuesto(true);
-    const res = await crearPuesto({ nombre: nuevoPuesto.trim() });
-    setCreandoPuesto(false);
-    if (res.ok) {
-      setNuevoPuesto("");
-      // El puesto recién creado aparece en `puestos` tras recargar el hook; se
-      // selecciona por nombre porque el POST no devuelve el row acá.
-      const encontrado = puestos.find((p) => p.nombre.toLowerCase() === nuevoPuesto.trim().toLowerCase());
-      if (encontrado) setPuestoId(encontrado.id);
-    } else {
-      setError(res.error.message ?? "No se pudo crear el puesto");
-    }
-  };
-
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const guardar = async () => {
-    if (nombre.trim().length < 2) { setError("El nombre es muy corto"); return; }
+  // ── Puesto, con alta en línea ─────────────────────────────────────────────
+  const [puestoRecien, setPuestoRecien] = useState<PuestoDTO | null>(null);
+  const [nuevoPuestoAbierto, setNuevoPuestoAbierto] = useState(false);
+  const [nuevoPuesto, setNuevoPuesto] = useState("");
+  const [creandoPuesto, setCreandoPuesto] = useState(false);
+  const nuevoPuestoRef = useRef<HTMLInputElement>(null);
+  // El puesto recién creado llega en la recarga de la lista un momento
+  // después: se ofrece igual para que el select no vuelva a «Sin puesto».
+  const opcionesPuesto = useMemo(
+    () => (puestoRecien && !puestos.some((p) => p.id === puestoRecien.id) ? [...puestos, puestoRecien] : puestos),
+    [puestos, puestoRecien],
+  );
+  const puestoElegido = useMemo(() => opcionesPuesto.find((p) => p.id === puestoId), [opcionesPuesto, puestoId]);
+
+  useEffect(() => {
+    if (nuevoPuestoAbierto) nuevoPuestoRef.current?.focus();
+  }, [nuevoPuestoAbierto]);
+
+  // ── Tarifa inicial: la sugiere el puesto mientras nadie la toque ──────────
+  const [tarifaModalidad, setTarifaModalidad] = useState<ModalidadPagada>("DIA");
+  const [tarifaMonto, setTarifaMonto] = useState("");
+  const [tarifaTocada, setTarifaTocada] = useState(false);
+  useEffect(() => {
+    // Antes sólo prellenaba con el monto vacío: elegir un puesto y después
+    // otro dejaba la tarifa del primero.
+    if (!conTarifaInicial || tarifaTocada) return;
+    if (!puestoElegido?.tarifaSugerida) {
+      setTarifaMonto("");
+      return;
+    }
+    setTarifaModalidad(puestoElegido.tarifaSugerida.modalidad);
+    setTarifaMonto(String(puestoElegido.tarifaSugerida.monto));
+  }, [conTarifaInicial, tarifaTocada, puestoElegido]);
+
+  // ── RENIEC ────────────────────────────────────────────────────────────────
+  const [dni, setDni] = useState<{ cargando: boolean; msg: string; esError: boolean }>({ cargando: false, msg: "", esError: false });
+  const dniListo = tipoDocumento === "DNI" && esDniValido(documento);
+
+  const buscarDni = async () => {
+    if (!dniListo) return;
+    setDni({ cargando: true, msg: "", esError: false });
+    try {
+      const res = await fetch(`/api/reniec/lookup?dni=${encodeURIComponent(documento.trim())}`);
+      const data = (await res.json().catch(() => ({}))) as { nombreCompleto?: string; error?: string; _mock?: boolean };
+      if (!res.ok || data.error || !data.nombreCompleto) {
+        setDni({ cargando: false, msg: data.error ?? "RENIEC no devolvió un nombre para ese DNI.", esError: true });
+        return;
+      }
+      setNombre(data.nombreCompleto);
+      setDni({ cargando: false, msg: data._mock ? "Nombre de prueba: RENIEC no está conectado." : "Nombre traído de RENIEC.", esError: false });
+    } catch {
+      setDni({ cargando: false, msg: "No se pudo consultar RENIEC. Escribe el nombre a mano.", esError: true });
+    }
+  };
+
+  const crearPuestoEnLinea = async () => {
+    const nombrePuesto = nuevoPuesto.trim();
+    if (nombrePuesto.length < 2 || creandoPuesto) return;
+    setCreandoPuesto(true);
+    setError(null);
+    const res = await crearPuesto({ nombre: nombrePuesto });
+    setCreandoPuesto(false);
+    if (!res.ok) {
+      setError(
+        res.error.error === "nombre_duplicado"
+          ? `Ya existe el puesto «${nombrePuesto}»: elígelo en la lista.`
+          : (res.error.message ?? "No se pudo crear el puesto."),
+      );
+      return;
+    }
+    // Antes se buscaba el puesto nuevo en la lista vieja (la de antes de
+    // recargar) y nunca se encontraba: quedaba creado pero sin elegir.
+    if (res.puesto) {
+      setPuestoRecien(res.puesto);
+      setPuestoId(res.puesto.id);
+    }
+    setNuevoPuesto("");
+    setNuevoPuestoAbierto(false);
+  };
+
+  const teclaPuestoNuevo = (e: KeyboardEvent<HTMLInputElement>) => {
+    // Enter crea el puesto, no manda el formulario entero.
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    void crearPuestoEnLinea();
+  };
+
+  const guardar = async (e?: FormEvent) => {
+    e?.preventDefault();
+    if (guardando) return;
+    if (nombre.trim().length < 2) {
+      setError("Escribe el nombre (mínimo 2 letras).");
+      return;
+    }
+    if (tipoDocumento === "DNI" && documento.trim() && !esDniValido(documento)) {
+      setError("El DNI tiene 8 dígitos: revisa el número.");
+      return;
+    }
+    const montoNum = Number(tarifaMonto);
+    if (conTarifaInicial && tarifaMonto && !(montoNum > 0)) {
+      setError("El monto de la tarifa tiene que ser mayor a 0.");
+      return;
+    }
     setGuardando(true);
     setError(null);
     const campos = {
@@ -124,15 +187,15 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
           credentials: "include",
         });
         if (!res.ok) {
-          const e = (await res.json().catch(() => ({}))) as { error?: string; message?: string; colaboradorId?: string; nombre?: string };
-          setError(e.error === "documento_duplicado" ? `Ya está registrado como ${e.nombre}.` : (e.message ?? "No se pudo guardar"));
+          const err = (await res.json().catch(() => ({}))) as { error?: string; message?: string; nombre?: string };
+          setError(err.error === "documento_duplicado" ? `Ese documento ya es de ${err.nombre}.` : (err.message ?? "No se pudo guardar."));
           return;
         }
       } else {
-        const tarifaInicial = puedeCompleto && tarifaMonto ? { modalidad: tarifaModalidad, monto: Number(tarifaMonto) } : null;
+        const tarifaInicial = conTarifaInicial && tarifaMonto ? { modalidad: tarifaModalidad, monto: montoNum } : null;
         const res = await crearColaborador({ ...campos, tarifaInicial });
         if (!res.ok) {
-          setError(res.error.error === "documento_duplicado" ? `Ya está registrado como ${res.error.nombre}.` : (res.error.message ?? "No se pudo guardar"));
+          setError(res.error.error === "documento_duplicado" ? `Ese documento ya es de ${res.error.nombre}.` : (res.error.message ?? "No se pudo guardar."));
           return;
         }
       }
@@ -147,110 +210,211 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
       open={open}
       onClose={onClose}
       title={editando ? "Editar persona" : "Agregar persona"}
-      icon={UserPlus}
+      description={editando ? initial?.nombre : "Lo único obligatorio es el nombre; el resto se completa cuando quieras."}
+      icon={editando ? Pencil : UserPlus}
       variant="wide"
       aboveModals={aboveModals}
       footer={
-        <div className="flex items-center justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-sm font-semibold text-[var(--text-secondary)]">Cancelar</button>
-          <button
-            type="button"
-            onClick={guardar}
-            disabled={guardando || nombre.trim().length < 2}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-          >
-            {guardando && <Loader2 className="h-4 w-4 animate-spin" />} {editando ? "Guardar cambios" : "Agregar"}
+        <ModalFooter error={error}>
+          <button type="button" onClick={onClose} className={BOTON.fantasma}>
+            Cancelar
           </button>
-        </div>
+          <button type="submit" form={FORM_ID} disabled={guardando} className={BOTON.primario}>
+            {guardando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {editando ? "Guardar cambios" : "Agregar persona"}
+          </button>
+        </ModalFooter>
       }
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <label htmlFor="rrhh-nombre" className={label}>Nombre *</label>
-          <input id="rrhh-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} className={input} placeholder="Como se le conoce" />
-        </div>
-        <div>
-          <label htmlFor="rrhh-apodo" className={label}>Apodo</label>
-          <input id="rrhh-apodo" value={apodo} onChange={(e) => setApodo(e.target.value)} className={input} />
-        </div>
-        <div>
-          <label htmlFor="rrhh-puesto" className={label}>Puesto</label>
-          <select id="rrhh-puesto" value={puestoId} onChange={(e) => setPuestoId(e.target.value)} className={input}>
-            <option value="">Sin puesto</option>
-            {puestos.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-          </select>
-        </div>
-        <div className="sm:col-span-2 flex items-end gap-2">
-          <div className="flex-1">
-            <label htmlFor="rrhh-puesto-nuevo" className={label}>…o crea un puesto nuevo</label>
-            <input id="rrhh-puesto-nuevo" value={nuevoPuesto} onChange={(e) => setNuevoPuesto(e.target.value)} className={input} />
-          </div>
-          <button type="button" onClick={crearPuestoEnLinea} disabled={creandoPuesto || !nuevoPuesto.trim()} className="h-10 shrink-0 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold disabled:opacity-50">
-            {creandoPuesto ? <Loader2 className="h-4 w-4 animate-spin" /> : "Crear"}
-          </button>
-        </div>
-
-        <div>
-          <label htmlFor="rrhh-documento" className={label}>Documento</label>
-          <div className="flex gap-1.5">
-            <label className="sr-only" htmlFor="rrhh-tipo-documento">Tipo de documento</label>
-            <select id="rrhh-tipo-documento" value={tipoDocumento} onChange={(e) => setTipoDocumento(e.target.value as TipoDocumento)} className="h-10 w-24 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-xs">
-              <option value="DNI">DNI</option>
-              <option value="CE">CE</option>
-              <option value="PASAPORTE">Pasaporte</option>
-              <option value="OTRO">Otro</option>
-            </select>
-            <input id="rrhh-documento" value={documento} onChange={(e) => setDocumento(e.target.value)} className={input} />
-            {tipoDocumento === "DNI" && (
-              <button type="button" onClick={buscarDni} disabled={!esDniValido(documento) || dniLoading} className="h-10 w-10 shrink-0 rounded-xl border border-[var(--rule-base)] disabled:opacity-40" title="Buscar en RENIEC">
-                {dniLoading ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : <Search className="mx-auto h-4 w-4" />}
-              </button>
+      <form id={FORM_ID} onSubmit={guardar} noValidate className={cn(MODAL_BODY, "space-y-8")}>
+        <SeccionForm titulo="Quién es">
+          <Field
+            label="Documento"
+            className="sm:col-span-2"
+            error={dni.esError ? dni.msg : undefined}
+            hint={!dni.esError && dni.msg ? dni.msg : tipoDocumento === "DNI" ? "Con los 8 dígitos, el botón RENIEC trae el nombre." : undefined}
+          >
+            {(id) => (
+              <div className="flex gap-2">
+                <select
+                  aria-label="Tipo de documento"
+                  value={tipoDocumento}
+                  onChange={(e) => setTipoDocumento(e.target.value as TipoDocumento)}
+                  className={cn(CLASE_CAMPO, "w-28 shrink-0 sm:w-32")}
+                >
+                  <option value="DNI">DNI</option>
+                  <option value="CE">CE</option>
+                  <option value="PASAPORTE">Pasaporte</option>
+                  <option value="OTRO">Otro</option>
+                </select>
+                <input
+                  id={id}
+                  value={documento}
+                  onChange={(e) => {
+                    setDocumento(e.target.value);
+                    if (dni.msg) setDni({ cargando: false, msg: "", esError: false });
+                  }}
+                  inputMode={tipoDocumento === "DNI" ? "numeric" : "text"}
+                  maxLength={tipoDocumento === "DNI" ? 8 : 20}
+                  autoComplete="off"
+                  placeholder={tipoDocumento === "DNI" ? "8 dígitos" : undefined}
+                  className={cn(CLASE_CAMPO, "tabular-nums")}
+                />
+                {tipoDocumento === "DNI" && (
+                  <button
+                    type="button"
+                    onClick={buscarDni}
+                    disabled={!dniListo || dni.cargando}
+                    className={BOTON.secundario}
+                    aria-label="Traer el nombre de RENIEC"
+                  >
+                    {dni.cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    <span className="hidden sm:inline">RENIEC</span>
+                  </button>
+                )}
+              </div>
             )}
-          </div>
-          {dniMsg && <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{dniMsg}</p>}
-        </div>
-        <div>
-          <label htmlFor="rrhh-celular" className={label}>Celular</label>
-          <input id="rrhh-celular" value={celular} onChange={(e) => setCelular(e.target.value)} className={input} />
-        </div>
-        <div className="sm:col-span-2">
-          <label htmlFor="rrhh-direccion" className={label}>Dirección</label>
-          <input id="rrhh-direccion" value={direccion} onChange={(e) => setDireccion(e.target.value)} className={input} />
-        </div>
-        <div>
-          <label htmlFor="rrhh-contacto-nombre" className={label}>Contacto de emergencia</label>
-          <input id="rrhh-contacto-nombre" value={contactoNombre} onChange={(e) => setContactoNombre(e.target.value)} className={input} placeholder="Nombre" />
-        </div>
-        <div>
-          <label htmlFor="rrhh-contacto-celular" className={label}>Celular del contacto</label>
-          <input id="rrhh-contacto-celular" value={contactoCelular} onChange={(e) => setContactoCelular(e.target.value)} className={input} placeholder="Celular" />
-        </div>
-        <div>
-          <label htmlFor="rrhh-fecha-ingreso" className={label}>Fecha de ingreso</label>
-          <input id="rrhh-fecha-ingreso" type="date" value={fechaIngreso} onChange={(e) => setFechaIngreso(e.target.value)} className={input} />
-        </div>
+          </Field>
+          <Field label="Nombre y apellidos" required>
+            {(id) => (
+              <input id={id} value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoComplete="off" className={CLASE_CAMPO} placeholder="Ej. María Torres Ramírez" />
+            )}
+          </Field>
+          <Field label="Apodo" hint="Cómo le dicen en el trabajo.">
+            {(id) => (
+              <input id={id} value={apodo} onChange={(e) => setApodo(e.target.value)} maxLength={40} autoComplete="off" className={CLASE_CAMPO} placeholder="Ej. Mari" />
+            )}
+          </Field>
+        </SeccionForm>
 
-        {puedeCompleto && !editando && (
-          <>
-            <div>
-              <label htmlFor="rrhh-tarifa-modalidad" className={label}>Tarifa inicial</label>
-              <select id="rrhh-tarifa-modalidad" value={tarifaModalidad} onChange={(e) => setTarifaModalidad(e.target.value as Exclude<Modalidad, "SIN_PAGO">)} className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm">
-                {(["HORA", "DIA", "SEMANA", "MES"] as const).map((m) => <option key={m} value={m}>{etiquetaModalidad(m)}</option>)}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="rrhh-tarifa-monto" className={label}>Monto (S/)</label>
-              <input id="rrhh-tarifa-monto" type="number" min={0} step="0.01" value={tarifaMonto} onChange={(e) => setTarifaMonto(e.target.value)} className={input} placeholder="0.00" />
-            </div>
-          </>
-        )}
+        <SeccionForm titulo="Contacto">
+          <Field label="Celular">
+            {(id) => (
+              <input id={id} type="tel" inputMode="tel" value={celular} onChange={(e) => setCelular(e.target.value)} maxLength={20} autoComplete="off" className={CLASE_CAMPO} placeholder="Ej. 987 654 321" />
+            )}
+          </Field>
+          <Field label="Dirección">
+            {(id) => (
+              <input id={id} value={direccion} onChange={(e) => setDireccion(e.target.value)} maxLength={300} autoComplete="off" className={CLASE_CAMPO} placeholder="Jr., Av., caserío…" />
+            )}
+          </Field>
+          <Field label="Contacto de emergencia">
+            {(id) => (
+              <input id={id} value={contactoNombre} onChange={(e) => setContactoNombre(e.target.value)} maxLength={120} autoComplete="off" className={CLASE_CAMPO} placeholder="Nombre y parentesco" />
+            )}
+          </Field>
+          <Field label="Celular del contacto">
+            {(id) => (
+              <input id={id} type="tel" inputMode="tel" value={contactoCelular} onChange={(e) => setContactoCelular(e.target.value)} maxLength={20} autoComplete="off" className={CLASE_CAMPO} />
+            )}
+          </Field>
+        </SeccionForm>
 
-        <div className="sm:col-span-2">
-          <label htmlFor="rrhh-observaciones" className={label}>Observaciones</label>
-          <textarea id="rrhh-observaciones" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} rows={2} maxLength={2000} className={`${input} h-auto py-2`} />
-        </div>
-      </div>
-      {error && <p className="mt-3 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
+        <SeccionForm titulo="Trabajo">
+          <Field
+            label="Puesto"
+            hint={
+              conTarifaInicial && puestoElegido?.tarifaSugerida
+                ? `Sugiere ${formatearPEN(puestoElegido.tarifaSugerida.monto)} ${etiquetaModalidad(puestoElegido.tarifaSugerida.modalidad)}.`
+                : undefined
+            }
+          >
+            {(id) => (
+              <div className="space-y-2">
+                <select id={id} value={puestoId} onChange={(e) => setPuestoId(e.target.value)} className={CLASE_CAMPO}>
+                  <option value="">Sin puesto</option>
+                  {opcionesPuesto.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre}
+                    </option>
+                  ))}
+                </select>
+                {nuevoPuestoAbierto ? (
+                  <div className="flex gap-2">
+                    <input
+                      ref={nuevoPuestoRef}
+                      aria-label="Nombre del puesto nuevo"
+                      value={nuevoPuesto}
+                      onChange={(e) => setNuevoPuesto(e.target.value)}
+                      onKeyDown={teclaPuestoNuevo}
+                      maxLength={80}
+                      autoComplete="off"
+                      placeholder="Ej. Motosierrista"
+                      className={CLASE_CAMPO}
+                    />
+                    <button type="button" onClick={crearPuestoEnLinea} disabled={creandoPuesto || nuevoPuesto.trim().length < 2} className={BOTON.secundario}>
+                      {creandoPuesto ? <Loader2 className="h-4 w-4 animate-spin" /> : "Crear"}
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => setNuevoPuestoAbierto(true)} className={cn(BOTON.chicoFantasma, "-ml-2 text-[var(--accent-ink)] dark:text-[var(--accent)]")}>
+                    <Plus className="h-4 w-4" /> Crear un puesto nuevo
+                  </button>
+                )}
+              </div>
+            )}
+          </Field>
+          <Field label="Fecha de ingreso" hint="Desde cuándo trabaja contigo.">
+            {(id) => <input id={id} type="date" value={fechaIngreso} onChange={(e) => setFechaIngreso(e.target.value)} className={CLASE_CAMPO} />}
+          </Field>
+
+          {conTarifaInicial && (
+            <>
+              <Field label="Se le paga">
+                {(id) => (
+                  <select
+                    id={id}
+                    value={tarifaModalidad}
+                    onChange={(e) => {
+                      setTarifaModalidad(e.target.value as ModalidadPagada);
+                      setTarifaTocada(true);
+                    }}
+                    className={CLASE_CAMPO}
+                  >
+                    {MODALIDADES.map((m) => (
+                      <option key={m} value={m}>
+                        {etiquetaModalidad(m)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              <Field label="Monto (S/)" hint="Opcional. Se cambia después desde la ficha.">
+                {(id) => (
+                  <input
+                    id={id}
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step="0.01"
+                    value={tarifaMonto}
+                    onChange={(e) => {
+                      setTarifaMonto(e.target.value);
+                      setTarifaTocada(true);
+                    }}
+                    placeholder="0.00"
+                    className={cn(CLASE_CAMPO, "tabular-nums")}
+                  />
+                )}
+              </Field>
+            </>
+          )}
+
+          <Field label="Observaciones" className="sm:col-span-2">
+            {(id) => (
+              <textarea
+                id={id}
+                value={observaciones}
+                onChange={(e) => setObservaciones(e.target.value)}
+                rows={3}
+                maxLength={2000}
+                placeholder="Algo que convenga saber (opcional)."
+                className={CLASE_AREA}
+              />
+            )}
+          </Field>
+        </SeccionForm>
+      </form>
     </AdminModal>
   );
 }

@@ -10,7 +10,9 @@ import { Briefcase, Loader2, Pencil, Plus, Trash2 } from "@buleje/design-system/
 import { EmptyState, LoadingState } from "@buleje/design-system";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
+import { BOTON, CLASE_CHIP, claseChipFiltro } from "../rrhh-form";
 import { etiquetaModalidad, formatearPEN, pluralizar } from "../rrhh-ui";
+import { cn } from "@/lib/utils";
 import PuestoFormModal from "./PuestoFormModal";
 import type { NivelRrhh, PuestoDTO } from "@/lib/rrhh/tipos";
 
@@ -42,58 +44,69 @@ export default function PuestosView({ nivel }: { nivel: NivelRrhh }) {
     }
   };
 
-  if (loading) return <LoadingState message="Cargando puestos..." />;
+  // Sólo la primera carga tapa la vista: tras crear, editar o borrar, `recargar()` hacía parpadear la grilla entera.
+  if (loading && puestos.length === 0) return <LoadingState message="Cargando puestos..." />;
   if (error) return <div className="rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</div>;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-[var(--text-secondary)]">La tarifa del puesto sólo PRELLENA la de la persona — cambiarla acá no toca a nadie.</p>
-        <button type="button" onClick={() => setFormAbierto({ editar: null })} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-bold text-white hover:brightness-110">
-          <Plus className="h-4 w-4" /> Puesto
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-prose text-sm text-[var(--text-secondary)]">
+          La tarifa del puesto sólo <strong className="text-[var(--text-primary)]">prellena</strong> la de la persona — cambiarla acá no le toca el sueldo a nadie ya contratado.
+        </p>
+        <button type="button" onClick={() => setFormAbierto({ editar: null })} className={cn(BOTON.primario, "shrink-0")}>
+          <Plus className="h-4 w-4" /> Nuevo puesto
         </button>
       </div>
 
-      {puestos.length === 0 && (
+      {puestos.length === 0 ? (
         <>
-          <EmptyState icon={Briefcase} title="Sin puestos todavía" description="Elige uno de un clic o crea el tuyo con «+ Puesto»." />
-          <div className="flex flex-wrap gap-1.5">
+          <EmptyState icon={Briefcase} title="Sin puestos todavía" description="Elige uno de un clic o crea el tuyo con «Nuevo puesto»." />
+          <div className="flex flex-wrap gap-2">
             {CHIPS.map((nombre) => (
               <button
                 key={nombre}
                 type="button"
                 disabled={creandoChip !== null}
                 onClick={() => crearDeChip(nombre)}
-                className="inline-flex items-center gap-1 rounded-full border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary disabled:opacity-50"
+                className={claseChipFiltro(false)}
               >
-                {creandoChip === nombre ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />} {nombre}
+                {creandoChip === nombre ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {nombre}
               </button>
             ))}
           </div>
         </>
-      )}
-
-      <ul className="space-y-2">
-        {puestos.map((p) => (
-          <li key={p.id} className="flex items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] p-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{p.nombre} <span className="font-normal text-[var(--text-tertiary)]">· {pluralizar(p.personas, "persona", "personas")}</span></p>
-              {p.descripcion && <p className="truncate text-xs text-[var(--text-tertiary)]">{p.descripcion}</p>}
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {puestos.map((p) => (
+            <div key={p.id} className="flex flex-col gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="flex items-start justify-between gap-2">
+                <p className="min-w-0 truncate text-base font-semibold text-[var(--text-primary)]">{p.nombre}</p>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button type="button" onClick={() => setFormAbierto({ editar: p })} className={BOTON.icono} aria-label={`Editar «${p.nombre}»`}>
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => borrar(p)}
+                    className={cn(BOTON.icono, "hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]")}
+                    aria-label={`Eliminar «${p.nombre}»`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <span className={cn(CLASE_CHIP, "w-fit bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>{pluralizar(p.personas, "persona", "personas")}</span>
+              {p.descripcion && <p className="text-sm text-[var(--text-tertiary)]">{p.descripcion}</p>}
               {nivel === "completo" && p.tarifaSugerida && (
-                <p className="text-xs text-[var(--text-secondary)]">Sugerida: {formatearPEN(p.tarifaSugerida.monto)} {etiquetaModalidad(p.tarifaSugerida.modalidad)}</p>
+                <p className="text-sm font-medium text-[var(--text-secondary)]">
+                  Sugerida: <span className="text-[var(--text-primary)]">{formatearPEN(p.tarifaSugerida.monto)}</span> {etiquetaModalidad(p.tarifaSugerida.modalidad)}
+                </p>
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-1">
-              <button type="button" onClick={() => setFormAbierto({ editar: p })} className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]" title="Editar" aria-label={`Editar «${p.nombre}»`}>
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button type="button" onClick={() => borrar(p)} className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]" title="Eliminar" aria-label={`Eliminar «${p.nombre}»`}>
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+      )}
 
       {formAbierto && (
         <PuestoFormModal

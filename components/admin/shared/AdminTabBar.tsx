@@ -406,7 +406,7 @@ export default function AdminTabBar({
       )}
     >
       {bandaConTitulo && heading && (
-        <div className={cn("flex min-w-0 items-start gap-2.5 pb-2", !tituloEnLinea && "basis-full")}>
+        <div className={cn("flex min-w-0 items-start gap-2.5 pb-2", tituloEnLinea ? "flex-1" : "basis-full")}>
           {heading.icon && (
             <heading.icon
               className="mt-1 h-5 w-5 shrink-0 text-[var(--text-tertiary)] "
@@ -461,7 +461,7 @@ export default function AdminTabBar({
             ? cn(
                 "min-w-0",
                 tituloEnLinea
-                  ? "order-2 flex-1 justify-end @max-[60rem]:order-3 @max-[60rem]:basis-full @max-[60rem]:justify-start"
+                  ? "order-2 max-w-full flex-none @max-[60rem]:order-3 @max-[60rem]:basis-full @max-[60rem]:justify-start"
                   : "basis-full",
               )
             : "border-b border-[var(--rule-base)]",

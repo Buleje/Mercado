@@ -8,14 +8,17 @@
  * el panel se porta DENTRO del `[role=dialog]` — afuera hereda
  * `pointer-events: none` del overlay de Radix y se ve pero no se puede tocar.
  * Escape cierra sólo el popover (`preventDefault` + `marcarMenuAbierto`),
- * nunca el diálogo de abajo.
+ * nunca el diálogo de abajo. Al abrir, el foco va al estado; al cerrar,
+ * vuelve a la celda (antes quedaba perdido en el `body`).
  */
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { History, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { etiquetaDia } from "@/lib/rrhh/fechas";
 import { marcarMenuAbierto, marcoDeFixed } from "@/components/admin/shared/action-menu";
+import { BOTON } from "../rrhh-form";
 import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA } from "../rrhh-ui";
 import type { AsistenciaDTO, ColaboradorMinDTO, EstadoAsistencia, FechaKey } from "@/lib/rrhh/tipos";
 
@@ -33,9 +36,12 @@ interface Props {
   onVerHistorial: () => void;
 }
 
+const ANCHO = 256;
+
 export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente, errorMsg, incluido, editable, motivoNoEditable, onMarcar, onVerHistorial }: Props) {
   const [open, setOpen] = useState(false);
   const anclaRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const portalARef = useRef<HTMLElement | null>(null);
 
@@ -47,11 +53,15 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
     portalARef.current = dialogo;
     const marco = marcoDeFixed(dialogo);
     const base = marco ?? { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
-    const ANCHO = 224;
     setPos({
       top: b.bottom - base.top + 6,
       left: Math.min(Math.max(8, b.left - base.left), base.width - ANCHO - 8),
     });
+  }, []);
+
+  const cerrar = useCallback((devolverFoco = true) => {
+    setOpen(false);
+    if (devolverFoco) anclaRef.current?.focus();
   }, []);
 
   useLayoutEffect(() => {
@@ -75,34 +85,55 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       e.preventDefault();
-      setOpen(false);
+      cerrar();
     };
     window.addEventListener("keydown", onKey, true);
     return () => {
       if (dialogo) marcarMenuAbierto(dialogo, false);
       window.removeEventListener("keydown", onKey, true);
     };
-  }, [open]);
+  }, [open, cerrar]);
+
+  // Foco al estado marcado (o al primero) apenas el panel está ubicado.
+  useEffect(() => {
+    if (!open || !pos) return;
+    const id = requestAnimationFrame(() => {
+      const panel = panelRef.current;
+      const destino =
+        panel?.querySelector<HTMLButtonElement>('[data-estado][aria-pressed="true"]:not([disabled])') ??
+        panel?.querySelector<HTMLButtonElement>("[data-estado]:not([disabled])") ??
+        panel?.querySelector<HTMLButtonElement>("[data-historial]");
+      destino?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open, pos]);
 
   const meta = marca ? ESTADO_ASISTENCIA_META[marca.estado] : null;
+  const detalle = errorMsg ?? meta?.label ?? (incluido ? "Sin marcar" : "No trabaja este día");
 
   const panel = open && pos && (
     <>
-      <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} aria-hidden="true" />
+      <div className="fixed inset-0 z-[60]" onClick={() => cerrar()} aria-hidden="true" />
       <div
-        style={{ top: pos.top, left: pos.left }}
-        className="fixed z-[61] w-56 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2.5 shadow-[var(--shadow-lg)]"
+        ref={panelRef}
+        role="dialog"
+        aria-label={`${colaborador.nombre}, ${etiquetaDia(fecha)}`}
+        style={{ top: pos.top, left: pos.left, width: ANCHO }}
+        className="fixed z-[61] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]"
       >
-        <div className="mb-1.5 flex items-center justify-between">
-          <p className="truncate text-xs font-bold text-[var(--text-primary)]">{colaborador.nombre}</p>
-          <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar" className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
-            <X className="h-3.5 w-3.5" />
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{colaborador.nombre}</p>
+            <p className="text-xs text-[var(--text-tertiary)] first-letter:uppercase">
+              {etiquetaDia(fecha)} · {detalle}
+            </p>
+          </div>
+          <button type="button" onClick={() => cerrar()} aria-label="Cerrar" className={cn(BOTON.icono, "-mr-1.5 -mt-1.5 h-8 w-8")}>
+            <X className="h-4 w-4" />
           </button>
         </div>
-        {!editable && motivoNoEditable && (
-          <p className="mb-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{motivoNoEditable}</p>
-        )}
-        <div className="grid grid-cols-4 gap-1">
+        {!editable && motivoNoEditable && <p className="mb-2 text-xs text-[var(--text-tertiary)]">{motivoNoEditable}</p>}
+        <div className="grid grid-cols-4 gap-1.5">
           {ORDEN_ESTADOS_ASISTENCIA.map((estado) => {
             const m = ESTADO_ASISTENCIA_META[estado];
             const activo = marca?.estado === estado;
@@ -110,29 +141,35 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
               <button
                 key={estado}
                 type="button"
+                data-estado={estado}
                 disabled={!editable}
                 title={m.label}
                 aria-pressed={activo}
                 onClick={() => {
                   onMarcar(activo ? null : estado);
-                  setOpen(false);
+                  cerrar();
                 }}
                 className={cn(
-                  "flex h-8 items-center justify-center rounded-lg border-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40",
-                  activo ? cn("border-transparent", m.claseChip) : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--rule-strong)]",
+                  "flex h-10 items-center justify-center rounded-lg border-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40",
+                  activo ? cn("border-current", m.claseChip) : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
                 )}
               >
-                {m.letra}
+                <span aria-hidden>{m.letra}</span>
+                <span className="sr-only">{m.label}</span>
               </button>
             );
           })}
         </div>
         <button
           type="button"
-          onClick={() => { setOpen(false); onVerHistorial(); }}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border-t border-[var(--rule-soft)] pt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+          data-historial
+          onClick={() => {
+            cerrar(false);
+            onVerHistorial();
+          }}
+          className={cn(BOTON.chicoFantasma, "mt-2 w-full")}
         >
-          <History className="h-3 w-3" /> Ver historial del día
+          <History className="h-4 w-4" /> Ver historial del día
         </button>
       </div>
     </>
@@ -145,10 +182,12 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={!incluido && !marca}
-        aria-label={`${colaborador.nombre}, ${fecha}: ${errorMsg ?? meta?.label ?? (incluido ? "sin marcar" : "no incluido")}${!editable && motivoNoEditable ? ` — ${motivoNoEditable}` : ""}`}
-        title={`${errorMsg ?? meta?.label ?? (incluido ? "Sin marcar" : "No incluido")}${!editable && motivoNoEditable ? ` — ${motivoNoEditable}` : ""}`}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={`${colaborador.nombre}, ${fecha}: ${detalle}${!editable && motivoNoEditable ? ` — ${motivoNoEditable}` : ""}`}
+        title={`${detalle}${!editable && motivoNoEditable ? ` — ${motivoNoEditable}` : ""}`}
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-30",
+          "flex h-8 w-8 items-center justify-center rounded-md text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30",
           meta ? meta.claseChip : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]",
           errorMsg && "ring-2 ring-[var(--data-error-500)]",
           pendiente && "animate-pulse",

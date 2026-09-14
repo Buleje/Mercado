@@ -17,7 +17,7 @@
  * PURO: sin Prisma, React ni fetch.
  */
 
-import { diasDelMes, mesDe, sumarDias } from "./fechas";
+import { diasDelMes, etiquetaCorta, mesDe, sumarDias } from "./fechas";
 import type { EstadoAsistencia, FechaKey, GanadoPersona, Modalidad, TramoGanado } from "./tipos";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -266,10 +266,13 @@ function fmtFactor(n: number): string {
 export function explicarGanado(g: GanadoPersona): string[] {
   return g.tramos.map((t) => {
     if (t.modalidad === "SIN_PAGO") {
-      return `Sin pago del ${t.desde} al ${t.hasta} (${t.dias} día${t.dias === 1 ? "" : "s"}).`;
+      return `Sin pago del ${etiquetaCorta(t.desde)} al ${etiquetaCorta(t.hasta)} (${t.dias} día${t.dias === 1 ? "" : "s"}).`;
     }
     if (t.modalidad === "DIA") {
-      return `${t.dias} día${t.dias === 1 ? "" : "s"} × S/ ${fmt(t.monto)} = S/ ${fmt(t.importe)}`;
+      // `t.dias` son los días de CALENDARIO del tramo (con o sin marca); lo que
+      // se multiplica es `t.factor`, los días que suman. Con `t.dias` la línea
+      // decía «14 días × S/ 45.00 = S/ 270.00» — una cuenta que no da.
+      return `${fmtFactor(t.factor)} día${t.factor === 1 ? "" : "s"} × S/ ${fmt(t.monto)} = S/ ${fmt(t.importe)}`;
     }
     if (t.modalidad === "HORA") {
       const estimado = t.horasEstimadas ? " (algunas horas estimadas)" : "";

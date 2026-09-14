@@ -8,13 +8,16 @@
  * Las marcas NO se borran — quedan «fuera de período», no suman.
  */
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { AlertTriangle, Ban, Loader2, RotateCcw } from "@buleje/design-system/icons";
-import AdminModal from "@/components/admin/shared/AdminModal";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { cn } from "@/lib/utils";
-import { etiquetaModalidad } from "../rrhh-ui";
-import { limaDateKey } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
+import { etiquetaCorta } from "@/lib/rrhh/fechas";
+import { AvisoRrhh, BOTON, CLASE_AREA, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
+import { COLABORADOR_ESTADO_META, etiquetaModalidad, formatearFecha, iniciales, pluralizar } from "../rrhh-ui";
 import type { ColaboradorDTO, Modalidad, NivelRrhh } from "@/lib/rrhh/tipos";
 
 interface Props {
@@ -27,6 +30,10 @@ interface Props {
   onGuardado: () => void;
 }
 
+const FORM_ID = "rrhh-form-cese";
+type ModalidadPagada = Exclude<Modalidad, "SIN_PAGO">;
+const MODALIDADES: ModalidadPagada[] = ["HORA", "DIA", "SEMANA", "MES"];
+
 export default function CesarColaboradorModal({ open, onClose, colaboradorId, colaborador, nivel, aboveModals, onGuardado }: Props) {
   const cesando = colaborador.estado !== "CESADO";
   // Poner una tarifa nueva en el reingreso pide nivel completo en el servidor
@@ -36,11 +43,19 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
   const [fecha, setFecha] = useState(() => limaDateKey());
   const [motivo, setMotivo] = useState("");
   const [conTarifa, setConTarifa] = useState(false);
-  const [modalidad, setModalidad] = useState<Exclude<Modalidad, "SIN_PAGO">>("DIA");
+  const [modalidad, setModalidad] = useState<ModalidadPagada>("DIA");
   const [monto, setMonto] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<{ n: number; primera: string } | null>(null);
+
+  const cambiarFecha = (valor: string) => {
+    setFecha(valor);
+    // El aviso contaba las marcas de la fecha ANTERIOR. Si quedaba, «Cesar
+    // igual» mandaba `confirmar: true` con la fecha nueva y el servidor ya no
+    // volvía a avisar (revisión 2026-09-14).
+    setAviso(null);
+  };
 
   const enviarCese = async (confirmar: boolean) => {
     setGuardando(true);
@@ -53,17 +68,17 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
         credentials: "include",
       });
       if (res.status === 409) {
-        const e = (await res.json()) as { error: string; n?: number; primera?: string };
+        const e = (await res.json().catch(() => ({}))) as { error?: string; n?: number; primera?: string };
         if (e.error === "marcas_despues_del_cese" && e.n && e.primera) {
           setAviso({ n: e.n, primera: e.primera });
           return;
         }
-        setError("No se pudo cesar a la persona");
+        setError("No se pudo cesar a la persona.");
         return;
       }
       if (!res.ok) {
         const e = (await res.json().catch(() => ({}))) as { message?: string };
-        setError(e.message ?? "No se pudo cesar a la persona");
+        setError(e.message ?? "No se pudo cesar a la persona.");
         return;
       }
       onGuardado();
@@ -82,13 +97,13 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
         body: JSON.stringify({
           action: "reingresar",
           fecha,
-          tarifa: conTarifa && monto ? { modalidad, monto: Number(monto) } : null,
+          tarifa: puedeTarifa && conTarifa ? { modalidad, monto: Number(monto) } : null,
         }),
         credentials: "include",
       });
       if (!res.ok) {
         const e = (await res.json().catch(() => ({}))) as { message?: string };
-        setError(e.message ?? "No se pudo reingresar a la persona");
+        setError(e.message ?? "No se pudo reingresar a la persona.");
         return;
       }
       onGuardado();
@@ -97,72 +112,147 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
     }
   };
 
+  const enviar = (e?: FormEvent) => {
+    e?.preventDefault();
+    if (guardando) return;
+    if (!fecha) {
+      setError(cesando ? "Elige el último día de trabajo." : "Elige el día en que vuelve.");
+      return;
+    }
+    if (cesando) {
+      if (motivo.trim().length < 3) {
+        setError("Escribe el motivo (mínimo 3 letras).");
+        return;
+      }
+      void enviarCese(Boolean(aviso));
+      return;
+    }
+    if (puedeTarifa && conTarifa && !(Number(monto) > 0)) {
+      setError("Pon un monto mayor a 0 o desmarca la tarifa nueva.");
+      return;
+    }
+    void enviarReingreso();
+  };
+
+  const estado = COLABORADOR_ESTADO_META[colaborador.estado];
+  const detalle = [
+    colaborador.puesto?.nombre,
+    colaborador.fechaIngreso && `ingresó el ${formatearFecha(colaborador.fechaIngreso)}`,
+    !cesando && colaborador.fechaCese && `cesó el ${formatearFecha(colaborador.fechaCese)}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <AdminModal
       open={open}
       onClose={onClose}
-      title={cesando ? `Cesar a ${colaborador.nombre}` : `Reingresar a ${colaborador.nombre}`}
+      title={cesando ? "Cesar a una persona" : "Reingresar a una persona"}
       icon={cesando ? Ban : RotateCcw}
-      variant="centered-sm"
       aboveModals={aboveModals}
       footer={
-        <div className="flex items-center justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-sm font-semibold text-[var(--text-secondary)]">Cancelar</button>
-          <button
-            type="button"
-            disabled={guardando || (cesando && motivo.trim().length < 3)}
-            onClick={() => (aviso ? enviarCese(true) : cesando ? enviarCese(false) : enviarReingreso())}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold text-white disabled:opacity-50",
-              cesando ? "bg-[var(--data-error-700)]" : "bg-primary",
-            )}
-          >
-            {guardando && <Loader2 className="h-4 w-4 animate-spin" />}
-            {aviso ? `Cesar igual (${aviso.n} marcas quedan)` : cesando ? "Cesar" : "Reingresar"}
+        <ModalFooter error={error}>
+          <button type="button" onClick={onClose} className={BOTON.fantasma}>
+            Cancelar
           </button>
-        </div>
+          <button type="submit" form={FORM_ID} disabled={guardando} className={cesando ? BOTON.peligro : BOTON.primario}>
+            {guardando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {cesando ? (aviso ? "Cesar igual" : "Cesar") : "Reingresar"}
+          </button>
+        </ModalFooter>
       }
     >
-      <div className="space-y-3">
-        <div>
-          <label htmlFor="rrhh-cese-fecha" className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">{cesando ? "Fecha de cese" : "Fecha de reingreso"}</label>
-          <input id="rrhh-cese-fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]" />
+      <form id={FORM_ID} onSubmit={enviar} noValidate className={cn(MODAL_BODY, "space-y-5")}>
+        <div className="flex items-center gap-3 rounded-xl bg-[var(--surface-sunken)] p-3">
+          <span
+            aria-hidden
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          >
+            {iniciales(colaborador.nombre)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{colaborador.nombre}</p>
+            {detalle && <p className="truncate text-xs text-[var(--text-tertiary)]">{detalle}</p>}
+          </div>
+          <span className={cn(CLASE_CHIP, estado.claseChip)}>{estado.label}</span>
         </div>
 
+        <Field
+          label={cesando ? "Último día de trabajo" : "Día en que vuelve"}
+          required
+          hint={cesando ? "Desde el día siguiente ya no entra en la asistencia ni suma en lo ganado." : "Desde ese día vuelve a entrar en la asistencia."}
+        >
+          {(id) => <input id={id} type="date" value={fecha} onChange={(e) => cambiarFecha(e.target.value)} className={CLASE_CAMPO} />}
+        </Field>
+
         {cesando ? (
-          <div>
-            <label htmlFor="rrhh-cese-motivo" className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">Motivo</label>
-            <textarea id="rrhh-cese-motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={2} maxLength={300} className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)]" placeholder="Por qué se va" />
-          </div>
+          <Field label="Motivo" required hint="Queda anotado en su ficha.">
+            {(id) => (
+              <textarea
+                id={id}
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                rows={3}
+                maxLength={300}
+                className={CLASE_AREA}
+                placeholder="Ej. Terminó la temporada de aserrío"
+              />
+            )}
+          </Field>
         ) : puedeTarifa ? (
-          <div>
-            <label className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
-              <input type="checkbox" checked={conTarifa} onChange={(e) => setConTarifa(e.target.checked)} className="h-4 w-4 rounded border-[var(--rule-base)]" />
-              Poner una tarifa nueva desde el reingreso
+          <div className="space-y-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+            <label className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3">
+              <input
+                type="checkbox"
+                checked={conTarifa}
+                onChange={(e) => setConTarifa(e.target.checked)}
+                className="row-span-2 mt-0.5 h-4 w-4 accent-[var(--accent)]"
+              />
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Vuelve con otra tarifa</span>
+              <span className="mt-0.5 text-xs leading-relaxed text-[var(--text-tertiary)]">Sin marcar, sigue con la última tarifa que tenía antes del cese.</span>
             </label>
             {conTarifa && (
-              <div className="mt-2 flex gap-2">
-                <label className="sr-only" htmlFor="rrhh-reingreso-modalidad">Modalidad de la tarifa</label>
-                <select id="rrhh-reingreso-modalidad" value={modalidad} onChange={(e) => setModalidad(e.target.value as Exclude<Modalidad, "SIN_PAGO">)} className="h-10 w-32 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm">
-                  {(["HORA", "DIA", "SEMANA", "MES"] as const).map((m) => <option key={m} value={m}>{etiquetaModalidad(m)}</option>)}
-                </select>
-                <input type="number" min={0} step="0.01" value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0.00" aria-label="Monto de la tarifa" className="h-10 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]" />
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Se le paga">
+                  {(id) => (
+                    <select id={id} value={modalidad} onChange={(e) => setModalidad(e.target.value as ModalidadPagada)} className={CLASE_CAMPO}>
+                      {MODALIDADES.map((m) => (
+                        <option key={m} value={m}>
+                          {etiquetaModalidad(m)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+                <Field label="Monto (S/)">
+                  {(id) => (
+                    <input
+                      id={id}
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="0.01"
+                      value={monto}
+                      onChange={(e) => setMonto(e.target.value)}
+                      placeholder="0.00"
+                      className={cn(CLASE_CAMPO, "tabular-nums")}
+                    />
+                  )}
+                </Field>
               </div>
             )}
-            {!conTarifa && <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sin tocar el checkbox, sigue con la última tarifa pagada de antes del cese.</p>}
           </div>
         ) : (
-          <p className="text-xs text-[var(--text-tertiary)]">Sigue con la última tarifa pagada de antes del cese. Sólo admin/owner pueden ponerle una nueva acá.</p>
+          <AvisoRrhh tono="neutro">Sigue con la última tarifa que tenía antes del cese. Sólo un administrador puede ponerle una nueva.</AvisoRrhh>
         )}
 
         {aviso && (
-          <div className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/5 p-3 text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Tiene {aviso.n} marcas después del {aviso.primera.slice(8, 10)}/{aviso.primera.slice(5, 7)}. Se conservan, pero dejan de sumar en lo ganado.</span>
-          </div>
+          <AvisoRrhh tono="aviso" icono={AlertTriangle}>
+            Tiene {pluralizar(aviso.n, "marca", "marcas")} de asistencia desde el {etiquetaCorta(aviso.primera)}. Se conservan, pero dejan de sumar en lo
+            ganado. Si está bien, confirma con «Cesar igual».
+          </AvisoRrhh>
         )}
-        {error && <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
-      </div>
+      </form>
     </AdminModal>
   );
 }

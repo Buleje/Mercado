@@ -44,7 +44,8 @@ export interface UseRrhhPuestosResult {
   loading: boolean;
   error: string | null;
   recargar: () => void;
-  crear: (input: PuestoInput) => Promise<{ ok: true } | { ok: false; error: RrhhApiError }>;
+  /** Devuelve el puesto creado: quien lo crea en línea (alta de persona) lo selecciona sin esperar la recarga de la lista. */
+  crear: (input: PuestoInput) => Promise<{ ok: true; puesto: PuestoDTO | null } | { ok: false; error: RrhhApiError }>;
   actualizar: (id: string, input: Partial<PuestoInput>) => Promise<{ ok: true } | { ok: false; error: RrhhApiError }>;
   eliminar: (id: string) => Promise<{ ok: true } | { ok: false; error: RrhhApiError }>;
 }
@@ -89,8 +90,15 @@ export function useRrhhPuestos(): UseRrhhPuestosResult {
       credentials: "include",
     });
     if (!res.ok) return { ok: false as const, error: await leerError(res) };
+    let puesto: PuestoDTO | null = null;
+    try {
+      puesto = ((await res.json()) as { puesto?: PuestoDTO }).puesto ?? null;
+    } catch (err) {
+      // El alta ya se guardó: sin el cuerpo sólo se pierde elegirlo solo en el formulario.
+      console.warn("[rrhh/puestos] el alta no devolvió el puesto", err);
+    }
     recargar();
-    return { ok: true as const };
+    return { ok: true as const, puesto };
   }, [recargar]);
 
   const actualizar = useCallback(async (id: string, input: Partial<PuestoInput>) => {

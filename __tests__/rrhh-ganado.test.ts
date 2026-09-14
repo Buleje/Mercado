@@ -7,7 +7,7 @@
  * como S/ 0.
  */
 import { describe, expect, it } from "vitest";
-import { calcularGanado, factorDe, tarifaVigente, type CalcularGanadoInput, type MarcaParaGanado, type TarifaParaGanado } from "@/lib/rrhh/ganado";
+import { calcularGanado, explicarGanado, factorDe, tarifaVigente, type CalcularGanadoInput, type MarcaParaGanado, type TarifaParaGanado } from "@/lib/rrhh/ganado";
 import { rangoDeDias } from "@/lib/rrhh/fechas";
 
 const colaborador = (p: Partial<CalcularGanadoInput["colaborador"]> = {}): CalcularGanadoInput["colaborador"] => ({
@@ -228,5 +228,38 @@ describe("calcularGanado — suspendido con sin pago y reactivado (BAJO 8)", () 
 
     // 14 días pagados (01-14) + 0 (15-19, sin pago) + 12 días pagados (20-31).
     expect(resultado.total).toBe(14 * 60 + 12 * 60);
+  });
+});
+
+describe("explicarGanado — la cuenta que se muestra tiene que dar", () => {
+  it("DIA: multiplica los días que suman, no los días de calendario del tramo", () => {
+    // 14 días de período, 6 con marca PRESENTE: se pagan 6 (medido 2026-09-14,
+    // la línea decía «14 días × S/ 45.00 = S/ 270.00»).
+    const trabajados = ["2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-14"];
+    const resultado = calcularGanado({
+      colaborador: colaborador(),
+      tarifas: [tarifa({ modalidad: "DIA", monto: 45 })],
+      marcas: trabajados.map((fecha) => ({ fecha, estado: "PRESENTE", horas: null })),
+      desde: "2026-09-01",
+      hasta: "2026-09-30",
+      hoy: "2026-09-14",
+    });
+    expect(resultado.tramos[0]).toMatchObject({ dias: 14, factor: 6, importe: 270 });
+    expect(explicarGanado(resultado)).toEqual(["6 días × S/ 45.00 = S/ 270.00"]);
+  });
+
+  it("CONTROL: con medio día el factor es decimal y la cuenta sigue cerrando", () => {
+    const resultado = calcularGanado({
+      colaborador: colaborador(),
+      tarifas: [tarifa({ modalidad: "DIA", monto: 60 })],
+      marcas: [
+        { fecha: "2026-09-01", estado: "PRESENTE", horas: null },
+        { fecha: "2026-09-02", estado: "MEDIO_DIA", horas: null },
+      ],
+      desde: "2026-09-01",
+      hasta: "2026-09-02",
+      hoy: "2026-09-02",
+    });
+    expect(explicarGanado(resultado)).toEqual(["1.5 días × S/ 60.00 = S/ 90.00"]);
   });
 });

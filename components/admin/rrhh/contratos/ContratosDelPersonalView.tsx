@@ -8,10 +8,12 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { FileSignature } from "@buleje/design-system/icons";
+import { FileSignature, FileText } from "@buleje/design-system/icons";
 import { DataTable, EmptyState, LoadingState } from "@buleje/design-system";
 import { useRrhhColaboradores } from "@/hooks/use-rrhh-colaboradores";
-import { ESTADO_VISIBLE_LABELS, TIPO_LABELS, estadoVisible, type DbContract } from "@/lib/types/contracts";
+import { BOTON, CLASE_CHIP } from "../rrhh-form";
+import { formatearFecha, pluralizar } from "../rrhh-ui";
+import { ESTADO_VISIBLE_LABELS, TIPO_LABELS, estadoVisible, type DbContract, type EstadoVisible } from "@/lib/types/contracts";
 import { cn } from "@/lib/utils";
 
 /** Salta al hub de Documentos, sub-pestaña Contratos (mismo patrón que `PorCobrarDashboard`). */
@@ -19,10 +21,11 @@ function irAContratos() {
   window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab: "contratos" } }));
 }
 
-const CLASE_ESTADO: Record<string, string> = {
+const CLASE_ESTADO: Partial<Record<EstadoVisible, string>> = {
   VIGENTE: "bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
   POR_VENCER: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
   VENCIDO: "bg-[var(--data-error-500)]/10 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+  PENDIENTE_FIRMA: "bg-[var(--data-info-500)]/10 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",
 };
 
 export default function ContratosDelPersonalView() {
@@ -69,13 +72,19 @@ export default function ContratosDelPersonalView() {
 
   return (
     <div className="space-y-3">
-      <button type="button" onClick={irAContratos} className="text-xs font-bold text-primary hover:underline">Crear o editar en Contratos →</button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">{pluralizar(delPersonal.length, "contrato", "contratos")} del personal</p>
+        <button type="button" onClick={irAContratos} className={BOTON.chico}>
+          <FileText className="h-4 w-4" /> Crear o editar en Contratos
+        </button>
+      </div>
       <DataTable zebra>
         <thead>
           <tr>
             <th>Número</th>
             <th>Tipo</th>
             <th>Persona</th>
+            <th>Vencimiento</th>
             <th>Estado</th>
           </tr>
         </thead>
@@ -87,7 +96,8 @@ export default function ContratosDelPersonalView() {
                 <td className="font-semibold text-[var(--text-primary)]">{c.numero}</td>
                 <td>{TIPO_LABELS[c.tipo] ?? c.tipo}</td>
                 <td>{c.colaboradorId ? (nombrePorId.get(c.colaboradorId) ?? "Persona eliminada") : <span className="text-[var(--text-tertiary)]">Sin vincular</span>}</td>
-                <td><span className={cn("rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold", CLASE_ESTADO[estado] ?? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")}>{ESTADO_VISIBLE_LABELS[estado]}</span></td>
+                <td>{c.fechaVencimiento ? formatearFecha(c.fechaVencimiento) : <span className="text-[var(--text-tertiary)]">Sin fecha</span>}</td>
+                <td><span className={cn(CLASE_CHIP, CLASE_ESTADO[estado] ?? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")}>{ESTADO_VISIBLE_LABELS[estado]}</span></td>
               </tr>
             );
           })}

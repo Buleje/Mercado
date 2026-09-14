@@ -4,11 +4,19 @@
  * PuestoFormModal — alta/edición de un puesto (ADR-414 §2). La tarifa
  * sugerida sólo la ve/edita nivel completo — para gestión es un catálogo de
  * nombres, sin plata.
+ *
+ * Gestión NO manda la clave `tarifaSugerida`, ni siquiera como `null`: la ruta
+ * responde 403 `tarifa_requiere_admin` a cualquier valor presente, y así un
+ * manager no podía crear ni editar ningún puesto (revisión 2026-09-14).
  */
 
-import { useState } from "react";
-import { Briefcase, Loader2 } from "@buleje/design-system/icons";
-import AdminModal from "@/components/admin/shared/AdminModal";
+import { useState, type FormEvent } from "react";
+import { Briefcase, Loader2, Pencil } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { cn } from "@/lib/utils";
+import { BOTON, CLASE_CAMPO } from "../rrhh-form";
 import { etiquetaModalidad } from "../rrhh-ui";
 import { useRrhhPuestos, type PuestoInput } from "@/hooks/use-rrhh-puestos";
 import type { Modalidad, NivelRrhh, PuestoDTO } from "@/lib/rrhh/tipos";
@@ -21,29 +29,50 @@ interface Props {
   onGuardado: () => void;
 }
 
+const FORM_ID = "rrhh-form-puesto";
+type ModalidadPagada = Exclude<Modalidad, "SIN_PAGO">;
+const MODALIDADES: ModalidadPagada[] = ["HORA", "DIA", "SEMANA", "MES"];
+
 export default function PuestoFormModal({ open, onClose, puesto, nivel, onGuardado }: Props) {
   const { crear, actualizar } = useRrhhPuestos();
+  const puedeTarifa = nivel === "completo";
   const [nombre, setNombre] = useState(puesto?.nombre ?? "");
   const [descripcion, setDescripcion] = useState(puesto?.descripcion ?? "");
   const [conTarifa, setConTarifa] = useState(Boolean(puesto?.tarifaSugerida));
-  const [modalidad, setModalidad] = useState<Exclude<Modalidad, "SIN_PAGO">>(puesto?.tarifaSugerida?.modalidad ?? "DIA");
+  const [modalidad, setModalidad] = useState<ModalidadPagada>(puesto?.tarifaSugerida?.modalidad ?? "DIA");
   const [monto, setMonto] = useState(puesto?.tarifaSugerida ? String(puesto.tarifaSugerida.monto) : "");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const guardar = async () => {
-    if (nombre.trim().length < 2) { setError("El nombre es muy corto"); return; }
+  const guardar = async (e?: FormEvent) => {
+    e?.preventDefault();
+    if (guardando) return;
+    if (nombre.trim().length < 2) {
+      setError("Escribe el nombre del puesto (mínimo 2 letras).");
+      return;
+    }
+    const montoNum = Number(monto);
+    if (puedeTarifa && conTarifa && !(montoNum > 0)) {
+      setError("Pon un monto mayor a 0 o desmarca la tarifa sugerida.");
+      return;
+    }
     setGuardando(true);
     setError(null);
     const input: PuestoInput = {
       nombre: nombre.trim(),
       descripcion: descripcion.trim() || null,
-      tarifaSugerida: nivel === "completo" && conTarifa && monto ? { modalidad, monto: Number(monto) } : null,
+      ...(puedeTarifa ? { tarifaSugerida: conTarifa ? { modalidad, monto: montoNum } : null } : {}),
     };
     const res = puesto ? await actualizar(puesto.id, input) : await crear(input);
     setGuardando(false);
     if (!res.ok) {
-      setError(res.error.error === "nombre_duplicado" ? "Ya existe un puesto con ese nombre." : (res.error.message ?? "No se pudo guardar"));
+      setError(
+        res.error.error === "nombre_duplicado"
+          ? "Ya existe un puesto con ese nombre."
+          : res.error.error === "tarifa_requiere_admin"
+            ? "Sólo un administrador puede poner la tarifa sugerida."
+            : (res.error.message ?? "No se pudo guardar el puesto."),
+      );
       return;
     }
     onGuardado();
@@ -54,45 +83,78 @@ export default function PuestoFormModal({ open, onClose, puesto, nivel, onGuarda
       open={open}
       onClose={onClose}
       title={puesto ? `Editar «${puesto.nombre}»` : "Nuevo puesto"}
-      icon={Briefcase}
-      variant="centered-sm"
+      icon={puesto ? Pencil : Briefcase}
       footer={
-        <div className="flex items-center justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-sm font-semibold text-[var(--text-secondary)]">Cancelar</button>
-          <button type="button" disabled={guardando || nombre.trim().length < 2} onClick={guardar} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
-            {guardando && <Loader2 className="h-4 w-4 animate-spin" />} Guardar
+        <ModalFooter error={error}>
+          <button type="button" onClick={onClose} className={BOTON.fantasma}>
+            Cancelar
           </button>
-        </div>
+          <button type="submit" form={FORM_ID} disabled={guardando} className={BOTON.primario}>
+            {guardando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {puesto ? "Guardar cambios" : "Crear puesto"}
+          </button>
+        </ModalFooter>
       }
     >
-      <div className="space-y-3">
-        <div>
-          <label htmlFor="rrhh-puesto-nombre" className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">Nombre</label>
-          <input id="rrhh-puesto-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]" placeholder="Ej. Motosierrista" />
-        </div>
-        <div>
-          <label htmlFor="rrhh-puesto-descripcion" className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">Descripción</label>
-          <input id="rrhh-puesto-descripcion" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]" />
-        </div>
-        {nivel === "completo" && (
-          <div>
-            <label className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
-              <input type="checkbox" checked={conTarifa} onChange={(e) => setConTarifa(e.target.checked)} className="h-4 w-4 rounded border-[var(--rule-base)]" />
-              Tarifa sugerida (sólo prellena, nunca entra al cálculo)
+      <form id={FORM_ID} onSubmit={guardar} noValidate className={cn(MODAL_BODY, "space-y-5")}>
+        <Field label="Nombre del puesto" required>
+          {(id) => (
+            <input id={id} value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={80} autoComplete="off" className={CLASE_CAMPO} placeholder="Ej. Motosierrista" />
+          )}
+        </Field>
+        <Field label="Descripción" hint="Opcional: qué hace, en una línea.">
+          {(id) => (
+            <input id={id} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={300} autoComplete="off" className={CLASE_CAMPO} />
+          )}
+        </Field>
+
+        {puedeTarifa && (
+          <div className="space-y-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+            <label className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3">
+              <input
+                type="checkbox"
+                checked={conTarifa}
+                onChange={(e) => setConTarifa(e.target.checked)}
+                className="row-span-2 mt-0.5 h-4 w-4 accent-[var(--accent)]"
+              />
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Tarifa sugerida</span>
+              <span className="mt-0.5 text-xs leading-relaxed text-[var(--text-tertiary)]">
+                Sólo prellena la tarifa de quien entra a este puesto. Cambiarla acá no toca a nadie.
+              </span>
             </label>
             {conTarifa && (
-              <div className="mt-2 flex gap-2">
-                <label className="sr-only" htmlFor="rrhh-puesto-modalidad">Modalidad de la tarifa sugerida</label>
-                <select id="rrhh-puesto-modalidad" value={modalidad} onChange={(e) => setModalidad(e.target.value as Exclude<Modalidad, "SIN_PAGO">)} className="h-10 w-32 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm">
-                  {(["HORA", "DIA", "SEMANA", "MES"] as const).map((m) => <option key={m} value={m}>{etiquetaModalidad(m)}</option>)}
-                </select>
-                <input type="number" min={0} step="0.01" value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0.00" aria-label="Monto de la tarifa sugerida" className="h-10 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]" />
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Se paga">
+                  {(id) => (
+                    <select id={id} value={modalidad} onChange={(e) => setModalidad(e.target.value as ModalidadPagada)} className={CLASE_CAMPO}>
+                      {MODALIDADES.map((m) => (
+                        <option key={m} value={m}>
+                          {etiquetaModalidad(m)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+                <Field label="Monto (S/)">
+                  {(id) => (
+                    <input
+                      id={id}
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="0.01"
+                      value={monto}
+                      onChange={(e) => setMonto(e.target.value)}
+                      placeholder="0.00"
+                      className={cn(CLASE_CAMPO, "tabular-nums")}
+                    />
+                  )}
+                </Field>
               </div>
             )}
           </div>
         )}
-        {error && <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
-      </div>
+      </form>
     </AdminModal>
   );
 }

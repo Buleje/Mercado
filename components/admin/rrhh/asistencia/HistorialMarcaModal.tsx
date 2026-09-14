@@ -9,9 +9,11 @@
  */
 
 import { useEffect, useState } from "react";
-import { History } from "@buleje/design-system/icons";
-import AdminModal from "@/components/admin/shared/AdminModal";
+import { Clock, History, StickyNote } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { LoadingState } from "@buleje/design-system";
+import { cn } from "@/lib/utils";
+import { CLASE_CHIP, AvisoRrhh } from "../rrhh-form";
 import { ESTADO_ASISTENCIA_META } from "../rrhh-ui";
 import { etiquetaDia } from "@/lib/rrhh/fechas";
 import type { AsistenciaDTO, ColaboradorMinDTO, FechaKey } from "@/lib/rrhh/tipos";
@@ -24,6 +26,8 @@ interface Props {
   /** Este modal se abrió DESDE otro modal (ej. la ficha). */
   aboveModals?: boolean;
 }
+
+const FECHA_HORA: Intl.DateTimeFormatOptions = { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" };
 
 export default function HistorialMarcaModal({ open, onClose, colaborador, fecha, aboveModals }: Props) {
   const [versiones, setVersiones] = useState<AsistenciaDTO[] | null>(null);
@@ -60,37 +64,63 @@ export default function HistorialMarcaModal({ open, onClose, colaborador, fecha,
       icon={History}
       aboveModals={aboveModals}
     >
-      {versiones === null && !error && <LoadingState message="Cargando historial..." />}
-      {error && <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
-      {versiones && versiones.length === 0 && (
-        <p className="text-sm text-[var(--text-tertiary)]">Sin correcciones — es la marca original.</p>
-      )}
-      {versiones && versiones.length > 0 && (
-        <ol className="space-y-2">
-          {versiones.map((v) => {
-            const meta = ESTADO_ASISTENCIA_META[v.estado];
-            return (
-              <li key={v.id} className="rounded-xl border border-[var(--rule-base)] p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className={`text-sm font-bold ${meta.claseTexto}`}>{meta.letra} {meta.label}</span>
-                  <span className="text-xs text-[var(--text-tertiary)]">{new Date(v.marcadoEn).toLocaleString("es-PE")}</span>
-                </div>
-                {(v.entrada || v.salida) && (
-                  <p className="mt-1 text-xs text-[var(--text-secondary)]">{v.entrada ?? "—"} – {v.salida ?? "—"}</p>
-                )}
-                {v.nota && <p className="mt-1 text-xs text-[var(--text-secondary)]">«{v.nota}»</p>}
-                <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Marcado por {v.marcadoPor} · {v.origen === "masivo" ? "acción masiva" : "manual"}</p>
-                {v.reemplazada && (
-                  <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    Reemplazada el {new Date(v.reemplazada.en).toLocaleString("es-PE")}
-                    {v.reemplazada.motivo && <> — {v.reemplazada.motivo}</>}
-                  </p>
-                )}
-              </li>
-            );
-          })}
-        </ol>
-      )}
+      <div className={MODAL_BODY}>
+        {versiones === null && !error && <LoadingState message="Cargando historial..." />}
+        {error && <AvisoRrhh tono="error">{error}</AvisoRrhh>}
+        {versiones && versiones.length === 0 && (
+          <AvisoRrhh tono="neutro" icono={History}>Nadie marcó este día todavía.</AvisoRrhh>
+        )}
+        {versiones && versiones.length > 0 && (
+          <ol className="relative space-y-3 border-l-2 border-[var(--rule-soft)] pl-5">
+            {/* La consulta llega de la más vieja a la más nueva; se muestra al revés, la vigente arriba. */}
+            {[...versiones].reverse().map((v) => {
+              const meta = ESTADO_ASISTENCIA_META[v.estado];
+              const vigente = !v.reemplazada;
+              return (
+                <li key={v.id} className="relative">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute -left-[1.6rem] top-4 h-3 w-3 rounded-full border-2 border-[var(--surface-raised)]",
+                      vigente ? "bg-primary" : "bg-[var(--rule-base)]",
+                    )}
+                  />
+                  <div className={cn("rounded-xl border p-3.5", vigente ? "border-[var(--rule-base)] bg-[var(--surface-raised)]" : "border-[var(--rule-soft)] bg-[var(--surface-sunken)]")}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="flex items-center gap-2">
+                        <span className={cn(CLASE_CHIP, meta.claseChip)}>{meta.letra} · {meta.label}</span>
+                        {vigente && <span className="text-xs font-semibold text-[var(--text-secondary)]">Vigente</span>}
+                      </span>
+                      <time className="text-xs tabular-nums text-[var(--text-tertiary)]" dateTime={v.marcadoEn}>
+                        {new Date(v.marcadoEn).toLocaleString("es-PE", FECHA_HORA)}
+                      </time>
+                    </div>
+                    {(v.entrada || v.salida) && (
+                      <p className="mt-2 flex items-center gap-1.5 text-sm tabular-nums text-[var(--text-primary)]">
+                        <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /> {v.entrada ?? "—"} a {v.salida ?? "—"}
+                      </p>
+                    )}
+                    {v.nota && (
+                      <p className="mt-1.5 flex items-start gap-1.5 text-sm text-[var(--text-secondary)]">
+                        <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" /> {v.nota}
+                      </p>
+                    )}
+                    <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+                      Marcado por {v.marcadoPor} · {v.origen === "masivo" ? "acción masiva" : "a mano"}
+                    </p>
+                    {v.reemplazada && (
+                      <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                        Reemplazada el {new Date(v.reemplazada.en).toLocaleString("es-PE", FECHA_HORA)}
+                        {v.reemplazada.motivo && <> — {v.reemplazada.motivo}</>}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </div>
     </AdminModal>
   );
 }

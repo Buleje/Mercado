@@ -10,6 +10,7 @@
  * botón que 403 al tocarlo.
  */
 
+import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import { CalendarDays, Users, Wallet, FileSignature, Briefcase } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
@@ -40,22 +41,17 @@ const TODAS_LAS_VISTAS = [
 export default function RecursosHumanosHubModule({ initialTab }: { initialTab?: string } = {}) {
   const { resumen, loading, error, recargar } = useRrhhResumen();
 
-  // Mientras no sabemos el nivel, sólo se ofrece Asistencia (la que ve todo
-  // el mundo) — ofrecer las 5 y recortar de golpe cuando llega la respuesta
-  // se ve como que el menú "parpadea".
-  const nivel: NivelRrhh = resumen?.nivel ?? "marcar";
-  const tabs = TODAS_LAS_VISTAS.filter((v) => NIVEL_ORDEN[nivel] >= NIVEL_ORDEN[v.nivelMin]);
-  const tabIds = tabs.map((t) => t.id);
+  // Sólo la PRIMERA carga tapa la pantalla. `recargar()` lo llaman la hoja
+  // del día (tras «Todos presentes» o un alta) y antes volvía a pintar este
+  // loader: desmontaba Asistencia y te devolvía a HOY aunque estuvieras
+  // corrigiendo el 10/09 (memoria: guard `loading && !X`).
+  if (loading && !resumen) return <LoadingState message="Cargando Recursos Humanos..." />;
 
-  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, tabIds, "asistencia", initialTab);
-
-  if (loading) return <LoadingState message="Cargando Recursos Humanos..." />;
-
-  if (error) {
+  if (!resumen) {
     return (
       <ErrorAlert
         title="No se pudo abrir Recursos Humanos"
-        description={error}
+        description={error ?? "Intenta de nuevo en un momento."}
         action={
           <button
             type="button"
@@ -69,6 +65,23 @@ export default function RecursosHumanosHubModule({ initialTab }: { initialTab?: 
     );
   }
 
+  return <HubConNivel nivel={resumen.nivel} initialTab={initialTab} onCambioPersonal={recargar} />;
+}
+
+/**
+ * Las pestañas y la vista activa, montadas recién cuando el nivel ya se sabe.
+ *
+ * `useVistaModulo` valida la vista de la URL UNA vez, al montar. Llamado
+ * mientras el resumen cargaba, sólo conocía «asistencia» (el nivel por
+ * defecto): un link a `?vista=personal` se reescribía a `?vista=asistencia` y
+ * la memoria de «donde quedaste» tampoco sobrevivía (medido 2026-09-14).
+ */
+function HubConNivel({ nivel, initialTab, onCambioPersonal }: { nivel: NivelRrhh; initialTab?: string; onCambioPersonal: () => void }) {
+  const tabs = useMemo(() => TODAS_LAS_VISTAS.filter((v) => NIVEL_ORDEN[nivel] >= NIVEL_ORDEN[v.nivelMin]), [nivel]);
+  const tabIds = useMemo(() => tabs.map((t) => t.id), [tabs]);
+
+  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, tabIds, "asistencia", initialTab);
+
   return (
     <div className="space-y-4">
       <AdminTabBar
@@ -78,7 +91,7 @@ export default function RecursosHumanosHubModule({ initialTab }: { initialTab?: 
         onTabChange={setSub}
         moduleId={MODULE_ID}
       >
-        {sub === "asistencia" && <AsistenciaView nivel={nivel} onCambioPersonal={recargar} />}
+        {sub === "asistencia" && <AsistenciaView nivel={nivel} onCambioPersonal={onCambioPersonal} />}
         {sub === "personal" && <PersonalView nivel={nivel} />}
         {sub === "ganado" && nivel === "completo" && <GanadoView />}
         {sub === "contratos" && <ContratosDelPersonalView />}

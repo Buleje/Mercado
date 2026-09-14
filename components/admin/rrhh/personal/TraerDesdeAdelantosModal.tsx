@@ -14,9 +14,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, CalendarDays, Check, Loader2, UserPlus } from "@buleje/design-system/icons";
-import AdminModal from "@/components/admin/shared/AdminModal";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { LoadingState, EmptyState } from "@buleje/design-system";
 import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
+import { AvisoRrhh, BOTON, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
 import { formatearPEN, pluralizar } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
 import FichaColaboradorModal from "./FichaColaboradorModal";
@@ -69,6 +72,9 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
     });
   };
 
+  const todasMarcadas = candidatos.length > 0 && seleccion.size === candidatos.length;
+  const alternarTodas = () => setSeleccion(todasMarcadas ? new Set() : new Set(candidatos.map((c) => c.beneficiarioId)));
+
   const confirmarTraer = async () => {
     setEnviando(true);
     setErrorEnvio(null);
@@ -79,7 +85,7 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
     const res = await traer(idsSeleccionados, fechaIngreso || undefined, idsEmpresaSeleccionados);
     setEnviando(false);
     if (!res.ok) {
-      setErrorEnvio(res.error.message ?? "No se pudo traer a las personas");
+      setErrorEnvio(res.error.message ?? "No se pudo traer a las personas.");
       return;
     }
     setResultado(res);
@@ -94,162 +100,156 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
   // `creados` es `ColaboradorDTO[]` completo — «falta» se deriva de sus
   // propios campos nulos, no de una bandera aparte del servidor.
   const conFaltantes = resultado?.creados.filter((c) => !c.documento || !c.celular) ?? [];
+  const hayLista = !resultado && !loading && !error && candidatos.length > 0;
 
   return (
     <AdminModal
       open={open}
       onClose={cerrarTodo}
       title={resultado ? "Personas traídas" : "Traer de Adelantos"}
+      description={resultado ? undefined : "Crea en Recursos Humanos a quienes ya tienen cuenta en Adelantos."}
       icon={UserPlus}
       variant="wide"
       aboveModals={aboveModals}
       footer={
         resultado ? (
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <button type="button" onClick={cerrarTodo} className="rounded-lg px-3 py-2 text-sm font-semibold text-[var(--text-secondary)]">Cerrar</button>
-            <button
-              type="button"
-              onClick={() => { irAAsistenciaDeHoy(); cerrarTodo(); }}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:brightness-110"
-            >
+          <ModalFooter>
+            <button type="button" onClick={cerrarTodo} className={BOTON.fantasma}>
+              Cerrar
+            </button>
+            <button type="button" onClick={() => { irAAsistenciaDeHoy(); cerrarTodo(); }} className={BOTON.primario}>
               <CalendarDays className="h-4 w-4" /> Marcar la asistencia de hoy
             </button>
-          </div>
+          </ModalFooter>
         ) : (
-          <div className="flex items-center justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-sm font-semibold text-[var(--text-secondary)]">Cancelar</button>
-            <button
-              type="button"
-              disabled={enviando || seleccion.size === 0}
-              onClick={confirmarTraer}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-            >
-              {enviando && <Loader2 className="h-4 w-4 animate-spin" />} Traer {seleccion.size} {seleccion.size === 1 ? "persona" : "personas"}
+          <ModalFooter error={errorEnvio} nota={hayLista ? `${seleccion.size} de ${candidatos.length} marcadas` : undefined}>
+            <button type="button" onClick={cerrarTodo} className={BOTON.fantasma}>
+              Cancelar
             </button>
-          </div>
+            {hayLista && (
+              <button type="button" disabled={enviando || seleccion.size === 0} onClick={confirmarTraer} className={BOTON.primario}>
+                {enviando && <Loader2 className="h-4 w-4 animate-spin" />} Traer {pluralizar(seleccion.size, "persona", "personas")}
+              </button>
+            )}
+          </ModalFooter>
         )
       }
     >
-      {resultado ? (
-        <div className="space-y-4">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">
-            {pluralizar(resultado.creados.length, "persona creada", "personas creadas")}
-          </p>
+      <div className={cn(MODAL_BODY, "space-y-5")}>
+        {resultado ? (
+          <>
+            <div className="flex items-center gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                <Check className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-base font-semibold text-[var(--text-primary)]">{pluralizar(resultado.creados.length, "persona creada", "personas creadas")}</p>
+                <p className="text-sm text-[var(--text-tertiary)]">Ya aparecen en Personal, vinculadas a su cuenta de Adelantos.</p>
+              </div>
+            </div>
 
-          {conFaltantes.length > 0 && (
-            <div className="rounded-xl border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/5 p-3">
-              <p className="flex items-center gap-1.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                <AlertTriangle className="h-3.5 w-3.5" /> Faltan datos de {pluralizar(conFaltantes.length, "persona", "personas")}
-              </p>
-              <ul className="mt-2 space-y-1.5">
-                {conFaltantes.map((c) => (
-                  <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="text-[var(--text-primary)]">
-                      {c.nombre}{" "}
-                      <span className="text-xs text-[var(--text-tertiary)]">
-                        (falta {[!c.documento && "documento", !c.celular && "celular"].filter(Boolean).join(" y ")})
+            {conFaltantes.length > 0 && (
+              <AvisoRrhh tono="aviso" icono={AlertTriangle}>
+                <p className="font-semibold">Faltan datos de {pluralizar(conFaltantes.length, "persona", "personas")}</p>
+                <ul className="mt-2 space-y-2">
+                  {conFaltantes.map((c) => (
+                    <li key={c.id} className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-[var(--text-primary)]">
+                        {c.nombre}{" "}
+                        <span className="text-xs text-[var(--text-tertiary)]">
+                          (falta {[!c.documento && "documento", !c.celular && "celular"].filter(Boolean).join(" y ")})
+                        </span>
                       </span>
-                    </span>
-                    <button type="button" onClick={() => setFichaAbierta(c.id)} className="shrink-0 text-xs font-bold text-primary hover:underline">
-                      Completar datos
-                    </button>
+                      <button type="button" onClick={() => setFichaAbierta(c.id)} className={BOTON.chico}>
+                        Completar datos
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </AvisoRrhh>
+            )}
+
+            {resultado.omitidos.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-[var(--text-secondary)]">No se trajeron ({resultado.omitidos.length})</p>
+                <ul className="mt-2 space-y-1.5 text-sm text-[var(--text-tertiary)]">
+                  {resultado.omitidos.map((o) => (
+                    <li key={o.beneficiarioId}>
+                      <span className="text-[var(--text-primary)]">{o.nombre}</span> — {MOTIVO_OMITIDO_LABEL[o.motivo] ?? o.motivo}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        ) : loading ? (
+          <LoadingState message="Buscando personas en Adelantos..." />
+        ) : error ? (
+          <AvisoRrhh tono="error">{error}</AvisoRrhh>
+        ) : candidatos.length === 0 ? (
+          <EmptyState icon={UserPlus} title="No hay nadie nuevo en Adelantos" description="Todas las personas de Adelantos ya están en Recursos Humanos, o Adelantos está vacío." />
+        ) : (
+          <>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <Field label="Fecha de ingreso para todas" hint="Opcional. Cada una se puede cambiar después." className="w-full sm:w-64">
+                {(id) => <input id={id} type="date" value={fechaIngreso} onChange={(e) => setFechaIngreso(e.target.value)} className={CLASE_CAMPO} />}
+              </Field>
+              <button type="button" onClick={alternarTodas} className={BOTON.chicoFantasma}>
+                {todasMarcadas ? "Desmarcar todas" : "Marcar todas"}
+              </button>
+            </div>
+
+            <ul className="space-y-2" aria-label="Personas de Adelantos">
+              {candidatos.map((c) => {
+                const marcada = seleccion.has(c.beneficiarioId);
+                return (
+                  <li key={c.beneficiarioId}>
+                    <label
+                      className={cn(
+                        "flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3.5 transition-colors has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-[var(--accent)]",
+                        marcada ? "border-primary bg-primary/5" : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)]",
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
+                          marcada ? "border-primary bg-primary text-white" : "border-[var(--rule-base)] bg-[var(--surface-raised)]",
+                        )}
+                      >
+                        {marcada && <Check className="h-3.5 w-3.5" />}
+                      </span>
+                      <input type="checkbox" className="sr-only" checked={marcada} onChange={() => toggle(c.beneficiarioId)} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold text-[var(--text-primary)]">{c.nombre}</span>
+                        <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          {!c.documentoEnmascarado && <span className={cn(CLASE_CHIP, "bg-[var(--surface-sunken)] font-semibold text-[var(--text-secondary)]")}>Sin documento</span>}
+                          {!c.tieneCelular && <span className={cn(CLASE_CHIP, "bg-[var(--surface-sunken)] font-semibold text-[var(--text-secondary)]")}>Sin celular</span>}
+                          {c.esEmpresa && (
+                            <span className={cn(CLASE_CHIP, "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]")}>
+                              Tiene RUC de empresa: ¿es una persona?
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                      {c.saldoAbierto > 0 && (
+                        <span className="shrink-0 text-right text-xs text-[var(--text-tertiary)]">
+                          <span className="block text-sm font-semibold tabular-nums text-[var(--text-primary)]">{formatearPEN(c.saldoAbierto)}</span>
+                          abiertos
+                        </span>
+                      )}
+                    </label>
                   </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {resultado.omitidos.length > 0 && (
-            <div>
-              <p className="text-xs font-bold text-[var(--text-secondary)]">No se trajeron ({resultado.omitidos.length})</p>
-              <ul className="mt-1 space-y-1 text-xs text-[var(--text-tertiary)]">
-                {resultado.omitidos.map((o) => (
-                  <li key={o.beneficiarioId}>{o.nombre} — {MOTIVO_OMITIDO_LABEL[o.motivo] ?? o.motivo}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      ) : loading ? (
-        <LoadingState message="Buscando personas en Adelantos..." />
-      ) : error ? (
-        <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>
-      ) : candidatos.length === 0 ? (
-        <EmptyState icon={UserPlus} title="No hay nadie nuevo en Adelantos" description="Todas las personas de Adelantos ya están en Recursos Humanos, o Adelantos está vacío." />
-      ) : (
-        <div className="space-y-3">
-          <p className="text-xs text-[var(--text-tertiary)]">
-            De Adelantos, {pluralizar(candidatos.length, "persona", "personas")}. Las de RUC de empresa arrancan sin marcar.
-          </p>
-          <div>
-            <label htmlFor="rrhh-desde-adelantos-ingreso" className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">Fecha de ingreso (opcional, para todas)</label>
-            <input
-              id="rrhh-desde-adelantos-ingreso"
-              type="date"
-              value={fechaIngreso}
-              onChange={(e) => setFechaIngreso(e.target.value)}
-              className="h-10 w-48 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
-            />
-          </div>
-          <ul className="max-h-[50vh] space-y-2 overflow-y-auto">
-            {candidatos.map((c) => {
-              const marcada = seleccion.has(c.beneficiarioId);
-              return (
-                <li key={c.beneficiarioId}>
-                  <label
-                    className={cn(
-                      "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors",
-                      marcada ? "border-primary bg-primary/5" : "border-[var(--rule-base)] hover:border-[var(--rule-strong)]",
-                    )}
-                  >
-                    <span className={cn(
-                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2",
-                      marcada ? "border-primary bg-primary text-white" : "border-[var(--rule-base)]",
-                    )}>
-                      {marcada && <Check className="h-3.5 w-3.5" />}
-                    </span>
-                    <input type="checkbox" className="sr-only" checked={marcada} onChange={() => toggle(c.beneficiarioId)} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold text-[var(--text-primary)]">{c.nombre}</span>
-                      <span className="mt-1 flex flex-wrap items-center gap-1.5">
-                        {!c.documentoEnmascarado && <Chip texto="Sin documento" />}
-                        {!c.tieneCelular && <Chip texto="Sin celular" />}
-                        {c.esEmpresa && (
-                          <span className="rounded-full bg-[var(--data-warning-500)]/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                            Tiene RUC de empresa — ¿es una persona?
-                          </span>
-                        )}
-                        {c.saldoAbierto > 0 && (
-                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatearPEN(c.saldoAbierto)} abiertos en Adelantos</span>
-                        )}
-                      </span>
-                    </span>
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
-          {errorEnvio && <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{errorEnvio}</p>}
-        </div>
-      )}
+                );
+              })}
+            </ul>
+          </>
+        )}
+      </div>
 
       {fichaAbierta && (
-        <FichaColaboradorModal
-          open
-          colaboradorId={fichaAbierta}
-          onClose={() => setFichaAbierta(null)}
-          nivel={nivel}
-          onCambio={onCambio}
-        />
+        <FichaColaboradorModal open colaboradorId={fichaAbierta} onClose={() => setFichaAbierta(null)} nivel={nivel} onCambio={onCambio} aboveModals />
       )}
     </AdminModal>
-  );
-}
-
-function Chip({ texto }: { texto: string }) {
-  return (
-    <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
-      {texto}
-    </span>
   );
 }

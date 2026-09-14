@@ -7,16 +7,23 @@
  * CLIENTE sobre una lista ya traída con `incluirCesados=1` — así los chips de
  * estado no disparan un fetch por click, y los KPIs de arriba (que cuentan
  * TODO el personal) no dependen de qué chip esté activo.
+ *
+ * BUG arreglado (2026-09-14): `useRrhhColaboradores` pone `loading=true` en
+ * cada cambio de `q`, y `if (loading) return <LoadingState/>` desmontaba TODA
+ * la vista — el buscador perdía el foco en cada tecla. Ahora `qInput` (lo que
+ * se tipea) vive aparte de `q` (lo que llega al hook), con 250ms de debounce
+ * entre ambos; y el `LoadingState` de pantalla entera sólo corre en la
+ * primera carga — en recargas la barra queda montada y la tabla se atenúa.
  */
 
-import { useMemo, useState } from "react";
-import { Plus, Search, UserPlus } from "@buleje/design-system/icons";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Search, UserPlus, Users } from "@buleje/design-system/icons";
 import { DataTable, EmptyState, LoadingState, StatCard } from "@buleje/design-system";
-import { Users } from "@buleje/design-system/icons";
 import { useRrhhColaboradores } from "@/hooks/use-rrhh-colaboradores";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
-import { CLASE_FOCUS_FILA, COLABORADOR_ESTADO_META, filaClicableProps } from "../rrhh-ui";
+import { BOTON, CLASE_CAMPO, CLASE_CHIP, claseChipFiltro } from "../rrhh-form";
+import { CLASE_FOCUS_FILA, COLABORADOR_ESTADO_META, filaClicableProps, formatearFecha } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
 import ColaboradorFormModal from "./ColaboradorFormModal";
 import FichaColaboradorModal from "./FichaColaboradorModal";
@@ -33,12 +40,20 @@ const CHIPS_ESTADO: { id: EstadoColaborador | "TODOS"; label: string }[] = [
 ];
 
 export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
+  const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
   const [puestoId, setPuestoId] = useState("");
   const [chip, setChip] = useState<EstadoColaborador | "TODOS">("ACTIVO");
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [traerAbierta, setTraerAbierta] = useState(false);
   const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
+
+  // El input nunca se desmonta: `qInput` cambia en cada tecla, `q` (lo que
+  // dispara el fetch) recién 250ms después de la última tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setQ(qInput), 250);
+    return () => clearTimeout(t);
+  }, [qInput]);
 
   const { colaboradores, loading, error, recargar } = useRrhhColaboradores(
     { q: q || undefined, puestoId: puestoId || undefined, incluirCesados: true },
@@ -58,10 +73,18 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   }, [colaboradores]);
 
   const filtrados = chip === "TODOS" ? colaboradores : colaboradores.filter((c) => c.estado === chip);
-
   const puedeEditar = nivel === "gestion" || nivel === "completo";
+  // «Primera carga» es sólo la primera. Con `colaboradores.length === 0` como
+  // señal, una búsqueda sin resultados volvía a desmontar el buscador en la
+  // tecla siguiente y se perdía el foco otra vez.
+  const [cargoUnaVez, setCargoUnaVez] = useState(false);
+  useEffect(() => {
+    if (!loading) setCargoUnaVez(true);
+  }, [loading]);
+  const cargaInicial = loading && !cargoUnaVez;
+  const recargando = loading && cargoUnaVez;
 
-  if (loading) return <LoadingState message="Cargando el personal..." />;
+  if (cargaInicial) return <LoadingState message="Cargando el personal..." />;
   if (error) {
     return (
       <div className="rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
@@ -80,59 +103,47 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-40 flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+        <div className="relative min-w-[12rem] flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+            value={qInput}
+            onChange={(e) => setQInput(e.target.value)}
             placeholder="Buscar por nombre..."
-            className="h-9 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-8 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+            aria-label="Buscar personal por nombre"
+            className={cn(CLASE_CAMPO, "pl-10")}
           />
         </div>
         <select
           value={puestoId}
           onChange={(e) => setPuestoId(e.target.value)}
-          className="h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)]"
+          aria-label="Filtrar por puesto"
+          className={cn(CLASE_CAMPO, "w-auto")}
         >
           <option value="">Todos los puestos</option>
           {puestos.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
         </select>
-        {/* nivel completo → puedeEditar YA es true; el `ml-auto` de "Persona"
-            de abajo empuja a todo el grupo a la derecha. */}
         {nivel === "completo" && candidatosAdelantos.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setTraerAbierta(true)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-primary px-3 text-sm font-bold text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]"
-          >
+          <button type="button" onClick={() => setTraerAbierta(true)} className={BOTON.secundario}>
             <UserPlus className="h-4 w-4" /> Traer de Adelantos ({candidatosAdelantos.length})
           </button>
         )}
         {puedeEditar && (
-          <button
-            type="button"
-            onClick={() => setAltaAbierta(true)}
-            className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-white hover:brightness-110"
-          >
-            <Plus className="h-4 w-4" /> Persona
+          <button type="button" onClick={() => setAltaAbierta(true)} className={cn(BOTON.primario, "ml-auto")}>
+            <Plus className="h-4 w-4" /> Agregar persona
           </button>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
+      <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-1.5">
         {CHIPS_ESTADO.map((c) => (
           <button
             key={c.id}
             type="button"
+            aria-pressed={chip === c.id}
             onClick={() => setChip(c.id)}
-            className={cn(
-              "rounded-full border px-3 py-1 text-xs font-bold transition-colors",
-              chip === c.id
-                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]",
-            )}
+            className={claseChipFiltro(chip === c.id)}
           >
-            {c.label}
+            {c.label} <span className="tabular-nums opacity-80">{c.id === "TODOS" ? colaboradores.length : kpis[c.id]}</span>
           </button>
         ))}
       </div>
@@ -149,19 +160,11 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
                   node: (
                     <div className="flex flex-wrap items-center justify-center gap-2">
                       {nivel === "completo" && candidatosAdelantos.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setTraerAbierta(true)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border-2 border-primary px-4 py-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]"
-                        >
+                        <button type="button" onClick={() => setTraerAbierta(true)} className={BOTON.secundario}>
                           <UserPlus className="h-4 w-4" /> Traer de Adelantos ({candidatosAdelantos.length})
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setAltaAbierta(true)}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:brightness-110"
-                      >
+                      <button type="button" onClick={() => setAltaAbierta(true)} className={BOTON.primario}>
                         <Plus className="h-4 w-4" /> Agregar persona
                       </button>
                     </div>
@@ -171,42 +174,44 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           }
         />
       ) : (
-        <DataTable zebra>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Puesto</th>
-              <th>Estado</th>
-              <th>Documento</th>
-              <th>Celular</th>
-              <th>Ingreso</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtrados.map((c) => {
-              const meta = COLABORADOR_ESTADO_META[c.estado];
-              return (
-                <tr
-                  key={c.id}
-                  onClick={() => setFichaAbierta(c.id)}
-                  {...filaClicableProps(() => setFichaAbierta(c.id))}
-                  aria-label={`Abrir la ficha de ${c.nombre}`}
-                  className={cn("cursor-pointer", CLASE_FOCUS_FILA)}
-                >
-                  <td className="font-semibold text-[var(--text-primary)]">
-                    {c.nombre}
-                    {c.apodo && <span className="ml-1 font-normal text-[var(--text-tertiary)]">«{c.apodo}»</span>}
-                  </td>
-                  <td>{c.puesto?.nombre ?? <span className="text-[var(--text-tertiary)]">Sin puesto</span>}</td>
-                  <td><span className={cn("rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold", meta.claseChip)}>{meta.label}</span></td>
-                  <td className="font-mono text-xs">{c.documento ?? "—"}</td>
-                  <td>{c.celular ?? "—"}</td>
-                  <td>{c.fechaIngreso ?? <span className="text-[var(--text-tertiary)]">No se sabe</span>}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </DataTable>
+        <div aria-busy={recargando} className={cn("transition-opacity", recargando && "opacity-60")}>
+          <DataTable zebra>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Puesto</th>
+                <th>Estado</th>
+                <th>Documento</th>
+                <th>Celular</th>
+                <th>Ingreso</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtrados.map((c) => {
+                const meta = COLABORADOR_ESTADO_META[c.estado];
+                return (
+                  <tr
+                    key={c.id}
+                    onClick={() => setFichaAbierta(c.id)}
+                    {...filaClicableProps(() => setFichaAbierta(c.id))}
+                    aria-label={`Abrir la ficha de ${c.nombre}`}
+                    className={cn("cursor-pointer", CLASE_FOCUS_FILA)}
+                  >
+                    <td className="font-semibold text-[var(--text-primary)]">
+                      {c.nombre}
+                      {c.apodo && <span className="ml-1 font-normal text-[var(--text-tertiary)]">«{c.apodo}»</span>}
+                    </td>
+                    <td>{c.puesto?.nombre ?? <span className="text-[var(--text-tertiary)]">Sin puesto</span>}</td>
+                    <td><span className={cn(CLASE_CHIP, meta.claseChip)}>{meta.label}</span></td>
+                    <td className="font-mono text-xs">{c.documento ? `${c.tipoDocumento ?? ""} ${c.documento}`.trim() : <span className="font-sans text-[var(--text-tertiary)]">—</span>}</td>
+                    <td>{c.celular ?? <span className="text-[var(--text-tertiary)]">—</span>}</td>
+                    <td>{c.fechaIngreso ? formatearFecha(c.fechaIngreso) : <span className="text-[var(--text-tertiary)]">No se sabe</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </DataTable>
+        </div>
       )}
 
       {altaAbierta && (
