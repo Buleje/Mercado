@@ -16,6 +16,12 @@
  *   - Dismiss individual por alerta (key-per-alert en localStorage).
  *
  * Polling cada 30s al endpoint /api/admin/alerts-summary.
+ *
+ * Gate de rol (2026-09-14): /api/admin/alerts-summary sólo deja pasar
+ * admin/manager/cajero (requireAdmin) — almacenero recibía 403 en cada
+ * carga. `userRole`/`authReady` los pasa app/admin/page.tsx (ya los tenía
+ * de useAdminAuth, sin fetch extra); si no se pasan (otro caller futuro),
+ * el banner no pollea — falla cerrado, no manda el 403.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -33,6 +39,10 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { puedePedir, type RutaPanel } from "@/lib/auth/roles-rutas-panel";
+import type { AdminRole } from "@/lib/session";
+
+const RUTA: RutaPanel = "/api/admin/alerts-summary";
 
 interface Summary {
   solicitudesPendientes: number;
@@ -83,8 +93,14 @@ function writeDismissed(id: string) {
   }
 }
 
-export default function AdminAlertsBanner() {
+interface AdminAlertsBannerProps {
+  userRole?: AdminRole | null;
+  authReady?: boolean;
+}
+
+export default function AdminAlertsBanner({ userRole = null, authReady = false }: AdminAlertsBannerProps) {
   const router = useRouter();
+  const puede = authReady && puedePedir(RUTA, userRole);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState(false);
@@ -99,6 +115,9 @@ export default function AdminAlertsBanner() {
   }, []);
 
   useEffect(() => {
+    // Rol sin permiso (p.ej. almacenero) o auth sin resolver todavía → ni
+    // intentarlo, requireAdmin lo rechaza siempre con 403.
+    if (!puede) return;
     let cancelled = false;
     const load = async () => {
       try {
@@ -130,7 +149,7 @@ export default function AdminAlertsBanner() {
       if (id) clearInterval(id);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [puede]);
 
   const alerts = useMemo<Alert[]>(() => {
     if (!summary) return [];

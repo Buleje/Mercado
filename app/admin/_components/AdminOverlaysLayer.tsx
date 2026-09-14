@@ -23,6 +23,7 @@ const AIStatusBanner = dynamic(() => import("@/components/admin/AIStatusBanner")
 });
 import type { useOnboarding } from "@/hooks/use-onboarding";
 import type { Tab } from "../_lib/tabs.types";
+import type { AdminRole } from "@/lib/session";
 
 // 2026-05-26: MorningSummaryModal (overlay bloqueante "¡Buenos días!") removido.
 // Reemplazado por MorningBriefingCard embebido en el tab Inicio — no bloquea la
@@ -52,7 +53,14 @@ export interface AdminOverlaysLayerProps {
   onCloseShortcuts: () => void;
 
   // Mobile bottom bar
-  userRole: string;
+  // Mismo tipo que entrega useAdminAuth: AIStatusBanner/SSEListener lo exigen para el gate de rol.
+  userRole: AdminRole;
+  // Gate de rol para AIStatusBanner/SSEListener (2026-09-14): ambos pegan a
+  // rutas con allowedRoles acotado (ai-assistant/health, admin/sse) — antes
+  // se montaban sin saber si el rol logueado podía pedirlas y almacenero
+  // recibía 403 en cada carga. `false` hasta que useAdminAuth resuelva el
+  // rol real evita pedir con el "admin" optimista por default.
+  authReady: boolean;
   tab: Tab;
   filteredTabs: FilteredTabs;
   alerts: Record<string, number>;
@@ -74,6 +82,7 @@ export function AdminOverlaysLayer({
   showShortcuts,
   onCloseShortcuts,
   userRole,
+  authReady,
   tab,
   filteredTabs,
   alerts,
@@ -104,8 +113,8 @@ export function AdminOverlaysLayer({
         onOpenMobileNav={onOpenMobileNav}
       />
 
-      <AIStatusBanner />
-      <SSEListener />
+      <AIStatusBanner userRole={userRole} authReady={authReady} />
+      <SSEListener userRole={userRole} authReady={authReady} />
       {/* Burbuja flotante de chat (Brandon 2026-06-06): cliente escribe →
           avatar + badge abajo-derecha; responde sin salir del tab actual. */}
       <AdminChatHead />

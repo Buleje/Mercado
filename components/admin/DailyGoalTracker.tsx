@@ -7,6 +7,8 @@ import {
   Target, TrendingUp, TrendingDown, RefreshCw, Pencil, Check, X,
   ShoppingCart, Activity, Clock, Sparkles,
 } from "@buleje/design-system/icons";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 
 interface Sale {
   id: string;
@@ -240,6 +242,11 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
   // (caso: dueño abre el panel a las 18h y ya superó la meta).
   const prevTotalRef = useRef<number | null>(null);
   const fetchAbortRef = useRef<AbortController | null>(null);
+  // Gate de rol (2026-09-14): /api/sales deja pasar admin/cajero/owner/manager/
+  // tienda_owner (requireAdmin) — un rol fuera de esa lista (p.ej. almacenero,
+  // si llega a montar esta tarjeta) recibía 403 en cada poll de 30s.
+  const rol = useMiRol();
+  const puedeSales = puedePedir("/api/sales", rol);
 
   // Cargar meta diaria persistida (FIX B2: key tenant-scoped)
   useEffect(() => {
@@ -268,6 +275,10 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
   };
 
   const fetchSales = useCallback(async () => {
+    // Rol sin permiso (p.ej. almacenero) → ni intentarlo, requireAdmin lo
+    // rechaza siempre con 403. Sin ventas que mostrar, no un error — el rol
+    // simplemente no tiene esta métrica.
+    if (!puedeSales) { setLoading(false); return; }
     // FIX 2026-05-07 (S3 + B8): cancelar request en curso antes de iniciar uno
     // nuevo. Previene race conditions y handlers de unmount.
     fetchAbortRef.current?.abort();
@@ -296,7 +307,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [puedeSales]);
 
   // FIX 2026-05-07 (B1): polling pausa con visibilitychange. Antes consumía
   // requests cada 30s aunque el dueño tuviera la pestaña minimizada.

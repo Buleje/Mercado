@@ -186,7 +186,7 @@ function AdminPage() {
   useOnboardingTourTrigger(onboarding);
 
   const fuzzyMatch = useFuzzyMatch();
-  const { alerts, quickStats } = useAdminAlerts(authReady);
+  const { alerts, quickStats } = useAdminAlerts(authReady, userRole);
 
   useNewOrderNotification(quickStats, permission, sendNotification);
   useNewWaMessageNotification(quickStats, permission, sendNotification);
@@ -401,7 +401,7 @@ function AdminPage() {
             dashboard ya muestran lo mismo (eran 3 zonas de alertas en la
             misma vista). En otras tabs / desktop se mantiene. */}
         <div className={tab === "vendor-dashboard" ? "hidden sm:block" : ""}>
-          <AdminAlertsBanner />
+          <AdminAlertsBanner userRole={userRole} authReady={authReady} />
         </div>
 
         <AdminTopHeader
@@ -475,6 +475,7 @@ function AdminPage() {
           showShortcuts={showShortcuts}
           onCloseShortcuts={() => setShowShortcuts(false)}
           userRole={userRole}
+          authReady={authReady}
           tab={tab}
           filteredTabs={filteredTabs}
           alerts={alerts}

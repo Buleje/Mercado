@@ -9,6 +9,7 @@ import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
@@ -67,7 +68,7 @@ const SaleSchema = z.object({
  * del tenant sin limit (perf issue audit ventas-caja P2 #11).
  */
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/sales"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -164,7 +165,7 @@ export async function POST(req: NextRequest) {
   const rl = await applyRateLimit(req, "STRICT", "sales-post");
   if (rl) return rl;
 
-  const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/sales"]);
   if (auth instanceof NextResponse) return auth;
   // MODO GRACIA 2026-07-08 (decisión Brandon, reporte ventas-caja bug 1): el
   // POS NUNCA se bloquea por trial expirado — una bodega real necesita seguir

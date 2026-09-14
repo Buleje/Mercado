@@ -1,15 +1,32 @@
 "use client";
 
 import { useEffect } from "react";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
+import type { AdminRole } from "@/lib/session";
+
+interface SSEListenerProps {
+  /** Rol logueado — gatea /api/admin/sse (allowedRoles: admin, cajero). */
+  userRole?: AdminRole | null;
+  /** false mientras useAdminAuth resuelve el rol real. Default true = no
+   *  rompe a los pocos callers que todavía no pasan estas props. */
+  authReady?: boolean;
+}
 
 /**
  * Escucha eventos SSE en tiempo real y lanza refetchers globales.
  * Montarlo en el administrador global o dashboard.
+ *
+ * Gate de rol (2026-09-14): almacenero no puede pedir /api/admin/sse
+ * (requireAdmin sólo deja admin/cajero) — antes se conectaba igual y el
+ * navegador recibía un 403 en cada carga del panel.
  */
-export default function SSEListener() {
+export default function SSEListener({ userRole = null, authReady = true }: SSEListenerProps) {
+  const puede = authReady && puedePedir("/api/admin/sse", userRole);
+
   useEffect(() => {
     // Evitamos montar múltiples en SSR
     if (typeof window === "undefined") return;
+    if (!puede) return;
 
     let es: EventSource | null = null;
     let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
@@ -52,7 +69,7 @@ export default function SSEListener() {
       if (es) es.close();
       if (fallbackTimer) clearTimeout(fallbackTimer);
     };
-  }, []);
+  }, [puede]);
 
   return null;
 }

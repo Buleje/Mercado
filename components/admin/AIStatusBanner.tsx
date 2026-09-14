@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import Link from "next/link";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
+import type { AdminRole } from "@/lib/session";
 
 const DISMISS_KEY = "ai-banner-dismissed-until";
 const DISMISS_HOURS = 6;
@@ -13,17 +15,32 @@ interface AIStatus {
   checks?: Array<{ name: string; status: string; detail: string }>;
 }
 
+interface AIStatusBannerProps {
+  /** Rol logueado — gatea /api/ai-assistant/health (allowedRoles: admin, owner). */
+  userRole?: AdminRole | null;
+  /** false mientras useAdminAuth resuelve el rol real. Default true = no
+   *  rompe a los pocos callers que todavía no pasan estas props. */
+  authReady?: boolean;
+}
+
 /**
  * Banner discreto que aparece arriba del admin cuando el sistema IA está caído.
  * - Sondea `/api/ai-assistant/health` cada 60s.
  * - Se puede cerrar; queda oculto por DISMISS_HOURS.
  * - Solo aparece si status === "critical" (sin provider configurado o key inválida).
+ *
+ * Gate de rol (2026-09-14): almacenero/cajero no pueden pedir
+ * /api/ai-assistant/health (requireAdmin sólo deja admin/owner) — antes se
+ * sondeaba igual y el navegador recibía un 403 en cada carga del panel.
  */
-export default function AIStatusBanner() {
+export default function AIStatusBanner({ userRole = null, authReady = true }: AIStatusBannerProps) {
   const [status, setStatus] = useState<AIStatus | null>(null);
   const [dismissed, setDismissed] = useState(true);
+  const puede = authReady && puedePedir("/api/ai-assistant/health", userRole);
 
   useEffect(() => {
+    if (!puede) return;
+
     // Check dismiss state
     try {
       const until = parseInt(localStorage.getItem(DISMISS_KEY) ?? "0", 10);
@@ -56,7 +73,7 @@ export default function AIStatusBanner() {
       alive = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [puede]);
 
   const dismiss = () => {
     try {

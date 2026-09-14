@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 import { Field } from "@/components/admin/shared/Field";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 
 type GoalPeriod = "diario" | "semanal" | "mensual";
 // FIX 2026-05-07 (C): nuevas categorías auto-trackeables.
@@ -316,6 +318,12 @@ export default function GoalsTab() {
   const [filter, setFilter] = useState<FilterKey>("todas");
   const [autoStats, setAutoStats] = useState<AutoStats>(ZERO_STATS);
   const [showTemplates, setShowTemplates] = useState(false);
+  // Gate de rol (2026-09-14): /api/customers sólo deja pasar admin; /api/sales
+  // deja pasar admin/cajero/owner/manager/tienda_owner (requireAdmin). Un
+  // cajero abriendo esta tab pedía ambas igual — customers le tiraba 403.
+  const rol = useMiRol();
+  const puedeSales = puedePedir("/api/sales", rol);
+  const puedeCustomers = puedePedir("/api/customers", rol);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -326,18 +334,21 @@ export default function GoalsTab() {
     setLoading(false);
   }, []);
 
-  // Auto-track: cargar ventas + clientes + dashboard para sincronización auto
+  // Auto-track: cargar ventas + clientes + dashboard para sincronización auto.
+  // Cada fetch se gatea por separado (rol todavía en carga → null → ninguno
+  // de los dos pide todavía): un rol como cajero puede leer ventas pero no
+  // clientes, y no tiene sentido pedir la que igual va a 403.
   const loadAutoStats = useCallback(async () => {
     try {
       const [salesRes, customersRes] = await Promise.all([
-        fetch("/api/sales?limit=500", { credentials: "include" }),
-        fetch("/api/customers", { credentials: "include" }),
+        puedeSales ? fetch("/api/sales?limit=500", { credentials: "include" }) : Promise.resolve(null),
+        puedeCustomers ? fetch("/api/customers", { credentials: "include" }) : Promise.resolve(null),
       ]);
 
-      const sales: Array<{ total?: number; createdAt?: string }> = salesRes.ok
+      const sales: Array<{ total?: number; createdAt?: string }> = salesRes?.ok
         ? await salesRes.json()
         : [];
-      const customers: Array<{ createdAt?: string }> = customersRes.ok
+      const customers: Array<{ createdAt?: string }> = customersRes?.ok
         ? await customersRes.json().then((d) => Array.isArray(d) ? d : (d.customers ?? []))
         : [];
 
@@ -399,7 +410,7 @@ export default function GoalsTab() {
         retencionMes, retencionSemana, retencionDia,
       });
     } catch { /* silent */ }
-  }, []);
+  }, [puedeSales, puedeCustomers]);
 
   useEffect(() => { void load(); void loadAutoStats(); }, [load, loadAutoStats]);
 

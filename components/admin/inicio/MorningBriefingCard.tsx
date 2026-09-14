@@ -13,6 +13,8 @@ import {
   Plus,
   Wallet,
 } from "@buleje/design-system/icons";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 
 /**
  * MorningBriefingCard — rediseño del antiguo "¡Buenos días!" modal (2026-05-26).
@@ -66,9 +68,16 @@ const TONE: Record<Tone, { bg: string; fg: string }> = {
 export default function MorningBriefingCard() {
   const [stats, setStats] = useState<BriefingStats | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  // Gate de rol (2026-09-14): /api/admin/stats sólo deja pasar admin
+  // (requireAdmin) — almacenero/cajero recibían 403 en cada carga del panel.
+  const rol = useMiRol();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Rol todavía no resuelto (null = cargando) o resuelto sin permiso → ni
+    // intentarlo. La tarjeta simplemente no aparece (ya es su comportamiento
+    // cuando no hay nada accionable — no deja hueco).
+    if (!puedePedir("/api/admin/stats", rol)) return;
     try {
       if (localStorage.getItem("superadmin-impersonate-tenant")) return;
       const dateKey = `briefing-dismissed-${new Date().toISOString().slice(0, 10)}`;
@@ -108,7 +117,7 @@ export default function MorningBriefingCard() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [rol]);
 
   const dismiss = () => {
     setDismissed(true);

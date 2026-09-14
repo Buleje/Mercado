@@ -23,6 +23,9 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { MessageCircle, ShieldCheck } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { laPaginaSeEstaYendo } from "@/lib/navegacion";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
+import type { AdminRole } from "@/lib/session";
 
 interface AdminMensajesMenuProps {
   /** Mismo caso que NotificationBell: fondo oscuro del header (temas
@@ -30,9 +33,14 @@ interface AdminMensajesMenuProps {
   onDarkHeader?: boolean;
 }
 
+const RUTA_PLATFORM_CHAT = "/api/admin/platform-chat" as const;
+
 export default function AdminMensajesMenu({ onDarkHeader = false }: AdminMensajesMenuProps) {
   const [chatUnread, setChatUnread] = useState(0);
   const [plataformaUnread, setPlataformaUnread] = useState(0);
+  // Gate de rol (2026-09-14): platform-chat sólo deja pasar admin/owner/manager
+  // (requireAdmin) — cajero/almacenero recibían 403 en cada carga del panel.
+  const rol: AdminRole | null = useMiRol();
 
   // Chat: no pollea acá — AdminChatHead ya lo hace y emite el total.
   useEffect(() => {
@@ -51,6 +59,11 @@ export default function AdminMensajesMenu({ onDarkHeader = false }: AdminMensaje
      desarrollo) — ruido que no es una falla: nadie pidió ese dato ya. Se sigue
      avisando cuando el pedido falla DE VERDAD. */
   useEffect(() => {
+    // Rol todavía no resuelto, o resuelto y sin permiso (cajero/almacenero) →
+    // ni intentarlo, requireAdmin lo rechaza siempre con 403. El chat con
+    // clientes sigue funcionando igual: ese contador llega por el evento
+    // `buleje:admin-chat-unread`, no por este fetch.
+    if (!puedePedir(RUTA_PLATFORM_CHAT, rol)) return;
     const corte = new AbortController();
     fetch("/api/admin/platform-chat", { credentials: "include", signal: corte.signal })
       .then((r) => (r.ok ? r.json() : null))
@@ -62,7 +75,7 @@ export default function AdminMensajesMenu({ onDarkHeader = false }: AdminMensaje
         console.warn("[AdminMensajesMenu] platform-chat fetch failed:", String(err));
       });
     return () => corte.abort();
-  }, []);
+  }, [rol]);
 
   const total = chatUnread + plataformaUnread;
 
