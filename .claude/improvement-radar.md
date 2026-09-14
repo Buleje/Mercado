@@ -7,6 +7,15 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ---
 
+## Aplicadas en sesión 2026-09-14 (tarde: producto verificado en navegador)
+
+### [applied] 2026-09-14 (`560cb51b`) — Aviso de caja abierta: `lib/caja/caja-abierta.ts` (días de calendario de Lima) + `AlertsDB.cajaAbiertaDesde` + banner «Cuadrar caja» → `?tab=ventas-caja&vista=arqueo` (clic medido: 0,4 s). Abrir/cerrar caja invalida el resumen. El negocio real tiene 1 caja abierta desde el jueves 11/06 (95 días).
+### [applied] 2026-09-14 (`08c18c45`) — Almacenero sin 403: la precarga del panel y la campana/hub de notificaciones gatean con `puedePedir`. Navegador QA: 3 × 403 + 3 errores de consola → 0 y 0; admin sigue con 200.
+### [applied] 2026-09-14 (`85e5a3ef`, `3ba47215`) — 0 avisos de eslint en page.tsx, DailyGoalTracker y MetasLogrosModule (foco explícito en vez de `autoFocus`, fallas registradas en logger). Metas, Inicio del vendedor, Catálogo y Repartidores recuerdan su vista en `?vista=` (link directo, clic y «atrás» verificados).
+### [pending] 2026-09-14 — **Producción está 2.696 commits atrás** (`origin/master` último commit 2026-05-09): 6.463 archivos, 20 migraciones Prisma + 70 SQL sueltos, 166 → 248 modelos, 55 → 87 crons. El cron que cerraría la caja de 95 días sólo existe en esta rama (master hace `getAll("main")`). Requiere plan de merge/deploy decidido por Brandon.
+### [pending] 2026-09-14 — 10 módulos anidados en hubs guardan su vista en `useState` y necesitan `useSubvistaModulo` (`?sub=`): Préstamos, Fiados, Activos (Finanzas) · Sugerencias IA (Asistente) · Analytics BI (Analytics Pro) · Suscripciones, Socios (Crecimiento) · Rendimiento (Sistema) · Facturación (Documentos) · StoreCustomizer (Mi Tienda). `ForestalTramites` y `MarketplaceModule` necesitan diseño aparte.
+### [pending] 2026-09-14 — Errores tragados: 41 `.catch(() => null)` en 31 archivos de `components/admin` (150 en todo el código); registrar con `logger.warn` salvo `AbortError`, como `MetasLogrosModule`.
+
 ## Aplicadas en sesión 2026-09-14 (harness contra Claude Code v2.1.270)
 
 ### [applied] 2026-09-14 — 8 agent defs reescritos: `model: inherit`, `skills:` precargadas, `frontend`/`tester` con MCP Playwright, sin `maxTurns`/`permissionMode` en constructores, `experimental.cacheTtl: 1h`, rutas absolutas a las memorias de Brandon. Motivo medido: 0 despachos de los defs vs ~110 `general-purpose` con nombre en 11 días.
