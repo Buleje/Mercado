@@ -82,14 +82,14 @@ export default function CtpDuenoSugeridos({
                   {c.docNumero ? ` · ${c.docTipo ?? "Doc"} ${c.docNumero}` : " · sin documento"}
                 </span>
                 {c.otrosNombres?.length ? (
-                  <span className="flex items-start gap-1 text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                  <span className="flex items-start gap-1 text-xs font-medium text-[var(--text-primary)]">
+                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
                     Revisar: el mismo documento también aparece como «{c.otrosNombres.join(", ")}».
                   </span>
                 ) : null}
                 {enConflicto ? (
-                  <span className="flex items-start gap-1 text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                  <span className="flex items-start gap-1 text-xs font-medium text-[var(--text-primary)]">
+                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
                     Revisar: ya existe «{enConflicto.nombre}» con otro documento.
                   </span>
                 ) : null}

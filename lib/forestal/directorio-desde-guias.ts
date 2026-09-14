@@ -125,6 +125,12 @@ export function descubrirEnGuias(
 ): DescubiertoEnGuias {
   const partes = new Map<string, CandidatoParte>();
   const vehiculos = new Map<string, CandidatoVehiculo>();
+  /* Cuántas veces llega cada nombre bajo la misma clave. El nombre que queda es
+     el de la mayoría, no el de la primera guía que llegó: con fechas empatadas
+     la base devolvió primero la guía minoritaria y se proponía «PEREZ, NELLY»
+     (1 de 3 guías) en vez de la comunidad (2 de 3) — QA 2026-09-14. */
+  const nombresPorClave = new Map<string, Map<string, { nombre: string; veces: number; orden: number }>>();
+  let llegada = 0;
 
   const sumar = (
     rol: RolParte,
@@ -146,12 +152,13 @@ export function descubrirEnGuias(
       fila.docNumero = docNumero;
       fila.docTipo = docTipo;
     }
-    // El mismo documento con OTRO nombre no se pisa: se guarda aparte para que
-    // la pantalla lo muestre como "revisar" en vez de perder la segunda identidad.
-    if (normalizarNombre(nombre) !== normalizarNombre(fila.nombre)) {
-      fila.otrosNombres = fila.otrosNombres ?? [];
-      if (!fila.otrosNombres.includes(nombre)) fila.otrosNombres.push(nombre);
-    }
+    // El mismo documento con OTRO nombre no se pisa: se cuenta aparte y, al
+    // final, la mayoría queda como nombre y el resto va a "revisar".
+    const nombres = nombresPorClave.get(clave) ?? new Map<string, { nombre: string; veces: number; orden: number }>();
+    const visto = nombres.get(normalizarNombre(nombre)) ?? { nombre, veces: 0, orden: llegada++ };
+    visto.veces += 1;
+    nombres.set(normalizarNombre(nombre), visto);
+    nombresPorClave.set(clave, nombres);
     fila.guias += 1;
     if (gtf && fila.ejemplos.length < MAX_EJEMPLOS && !fila.ejemplos.includes(gtf)) fila.ejemplos.push(gtf);
     partes.set(clave, fila);
@@ -187,6 +194,17 @@ export function descubrirEnGuias(
         vehiculos.set(placa, fila);
       }
     }
+  }
+
+  /* Nombre = el que más veces llegó bajo la clave; empate → el que llegó
+     primero (las guías vienen de la más reciente a la más vieja). */
+  for (const fila of partes.values()) {
+    const vistos = [...(nombresPorClave.get(fila.clave)?.values() ?? [])].sort(
+      (a, b) => b.veces - a.veces || a.orden - b.orden,
+    );
+    if (vistos.length === 0) continue;
+    fila.nombre = vistos[0].nombre;
+    if (vistos.length > 1) fila.otrosNombres = vistos.slice(1).map((v) => v.nombre);
   }
 
   const porFrecuencia = <T extends { guias: number }>(a: T, b: T) => b.guias - a.guias;

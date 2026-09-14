@@ -2727,7 +2727,9 @@ export class WoodEntriesDB {
     return prisma.woodEntry.findMany({
       where: { tenantId, deletedAt: null },
       select: { gtfNumber: true, providerName: true, providerDocument: true, providerDocumentType: true },
-      orderBy: { entryDate: "desc" },
+      // `id` desempata las guías del mismo día: sin él Postgres no garantiza el
+      // orden y el nombre que gana un empate cambiaba entre lecturas.
+      orderBy: [{ entryDate: "desc" }, { id: "desc" }],
       // Tope: el descubrimiento propone, no lista el libro entero — un patio
       // real no tiene más ingresos que esto entre altas de directorio.
       take: 5000,

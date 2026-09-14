@@ -184,10 +184,15 @@ export default function CtpCobroAserrio({
    * que desplazar el CUERPO del modal para verlo (medido a 1440×900,
    * revisión 2026-09-14). `"nearest"` mueve lo mínimo: si ya se ve entero, no
    * hace nada.
+   *
+   * Se repite cuando llegan los proveedores sugeridos: vienen por fetch DESPUÉS
+   * de abrir y alargan el panel, y el primer desplazamiento ya había pasado —
+   * el aviso «Revisar» quedaba bajo el pie (medido: y=612 con el pie en y=568).
    */
+  const sugeridosCargados = directorio.candidatosProveedor.length;
   useEffect(() => {
     if (abierto) panelDueno.current?.scrollIntoView({ block: "nearest" });
-  }, [abierto]);
+  }, [abierto, sugeridosCargados]);
 
   /* `directorio.partes` trae inactivas (`?inactivos=1`) — pero NO las que se
      dieron de baja DEL TODO (`deletedAt`), que `forest-directorio.db.ts` sigue

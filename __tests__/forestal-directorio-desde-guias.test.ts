@@ -165,6 +165,29 @@ describe("descubrirEnGuias — proveedores reales del tenant (evidencia medida)"
     expect(fila?.otrosNombres).toEqual(["QUINCHUNLLA PEREZ, NELLY"]);
   });
 
+  it("el nombre principal es el de la mayoría aunque la guía minoritaria llegue primero", () => {
+    // Caso de la QA 2026-09-14: la base devolvió primero la guía de Nelly y se
+    // proponía su nombre para el RUC de la comunidad, que tiene 2 de 3 guías.
+    const guias = [
+      guiaProveedor({ gtfNumber: "3", providerName: "QUINCHUNLLA PEREZ, NELLY", providerDocument: "20562836927", providerDocumentType: "RUC" }),
+      guiaProveedor({ gtfNumber: "1", providerName: "COMUNIDAD NATIVA SANTA ROSA DE CHIVIS", providerDocument: "20562836927", providerDocumentType: "RUC" }),
+      guiaProveedor({ gtfNumber: "2", providerName: "COMUNIDAD NATIVA SANTA ROSA DE CHIVIS", providerDocument: "20562836927", providerDocumentType: "RUC" }),
+    ];
+    const fila = descubrirEnGuias(guias).partes.find((p) => p.docNumero === "20562836927");
+    expect(fila?.nombre).toBe("COMUNIDAD NATIVA SANTA ROSA DE CHIVIS");
+    expect(fila?.otrosNombres).toEqual(["QUINCHUNLLA PEREZ, NELLY"]);
+    expect(fila?.guias).toBe(3);
+  });
+
+  it("empate de nombres: gana el que llegó primero (la guía más reciente)", () => {
+    const guias = [
+      guiaProveedor({ gtfNumber: "B", providerName: "MADERERA B", providerDocument: "20111111111", providerDocumentType: "RUC" }),
+      guiaProveedor({ gtfNumber: "A", providerName: "MADERERA A", providerDocument: "20111111111", providerDocumentType: "RUC" }),
+    ];
+    const fila = descubrirEnGuias(guias).partes[0];
+    expect(fila).toMatchObject({ nombre: "MADERERA B", otrosNombres: ["MADERERA A"] });
+  });
+
   it("candidatos ordenados por guías: el que más se repite va primero", () => {
     const guias = [
       ...Array.from({ length: 21 }, (_, i) =>
