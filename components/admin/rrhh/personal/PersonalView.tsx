@@ -64,7 +64,7 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   // conocidas desde Adelantos en vez de tipearlas de cero. Sólo nivel
   // completo — el vínculo con la cuenta de Adelantos es territorio de admin/
   // owner (mismo criterio que `vincular_beneficiario`, ADR-414 §1).
-  const { candidatos: candidatosAdelantos } = useRrhhDesdeAdelantos();
+  const { candidatos: candidatosAdelantos } = useRrhhDesdeAdelantos(nivel === "completo");
 
   const kpis = useMemo(() => {
     const base: Record<EstadoColaborador, number> = { ACTIVO: 0, VACACIONES: 0, LICENCIA: 0, SUSPENDIDO: 0, CESADO: 0 };

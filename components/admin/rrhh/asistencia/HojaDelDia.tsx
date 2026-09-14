@@ -42,7 +42,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [traerAbierta, setTraerAbierta] = useState(false);
   // «Estrenar RRHH con tu gente» (Brandon 2026-09-14) — mismo criterio de nivel que en PersonalView.
-  const { candidatos: candidatosAdelantos } = useRrhhDesdeAdelantos();
+  const { candidatos: candidatosAdelantos } = useRrhhDesdeAdelantos(nivel === "completo");
 
   const puedeGestionar = nivel === "gestion" || nivel === "completo";
   const hoy = hoja?.hoy ?? limaDateKey();

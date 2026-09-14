@@ -96,7 +96,12 @@ export default function PuestosView({ nivel }: { nivel: NivelRrhh }) {
                   </button>
                 </div>
               </div>
-              <span className={cn(CLASE_CHIP, "w-fit bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>{pluralizar(p.personas, "persona", "personas")}</span>
+              <div className="flex flex-wrap gap-1.5">
+                <span className={cn(CLASE_CHIP, "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>{pluralizar(p.personas, "persona", "personas")}</span>
+                <span className={cn(CLASE_CHIP, "bg-[var(--surface-sunken)] font-semibold tabular-nums text-[var(--text-secondary)]")}>
+                  Jornada de {p.horasJornada.toLocaleString("es-PE", { maximumFractionDigits: 2 })} h
+                </span>
+              </div>
               {p.descripcion && <p className="text-sm text-[var(--text-tertiary)]">{p.descripcion}</p>}
               {nivel === "completo" && p.tarifaSugerida && (
                 <p className="text-sm font-medium text-[var(--text-secondary)]">

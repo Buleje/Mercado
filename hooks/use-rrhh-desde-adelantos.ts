@@ -32,14 +32,24 @@ export interface UseRrhhDesdeAdelantosResult {
   ) => Promise<({ ok: true } & ResultadoTraerDesdeAdelantosDTO) | { ok: false; error: RrhhApiError }>;
 }
 
-export function useRrhhDesdeAdelantos(): UseRrhhDesdeAdelantosResult {
+/**
+ * `activo=false` no pide nada. La lista es sólo del nivel completo y la ruta
+ * responde 403 al resto: la hoja del día la pedía igual para almacenero,
+ * cajero y manager, y cada apertura dejaba un 403 en la red (medido 2026-09-14).
+ */
+export function useRrhhDesdeAdelantos(activo = true): UseRrhhDesdeAdelantosResult {
   const [candidatos, setCandidatos] = useState<CandidatoDesdeAdelantosDTO[]>([]);
   const [yaVinculados, setYaVinculados] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(activo);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
+    if (!activo) {
+      setCandidatos([]);
+      setLoading(false);
+      return;
+    }
     let vigente = true;
     setLoading(true);
     setError(null);
@@ -63,7 +73,7 @@ export function useRrhhDesdeAdelantos(): UseRrhhDesdeAdelantosResult {
     return () => {
       vigente = false;
     };
-  }, [tick]);
+  }, [tick, activo]);
 
   const recargar = useCallback(() => setTick((t) => t + 1), []);
 

@@ -41,6 +41,7 @@ export default function PuestoFormModal({ open, onClose, puesto, nivel, onGuarda
   const [conTarifa, setConTarifa] = useState(Boolean(puesto?.tarifaSugerida));
   const [modalidad, setModalidad] = useState<ModalidadPagada>(puesto?.tarifaSugerida?.modalidad ?? "DIA");
   const [monto, setMonto] = useState(puesto?.tarifaSugerida ? String(puesto.tarifaSugerida.monto) : "");
+  const [horas, setHoras] = useState(String(puesto?.horasJornada ?? 8));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,11 +57,18 @@ export default function PuestoFormModal({ open, onClose, puesto, nivel, onGuarda
       setError("Pon un monto mayor a 0 o desmarca la tarifa sugerida.");
       return;
     }
+    const horasNum = Number(horas);
+    if (!(horasNum > 0 && horasNum <= 24)) {
+      setError("La jornada tiene que ser de más de 0 y hasta 24 horas.");
+      return;
+    }
     setGuardando(true);
     setError(null);
     const input: PuestoInput = {
       nombre: nombre.trim(),
       descripcion: descripcion.trim() || null,
+      // No tiene guard de nivel en la ruta (sólo `tarifaSugerida` lo tiene): un manager también la ajusta.
+      horasJornada: horasNum,
       ...(puedeTarifa ? { tarifaSugerida: conTarifa ? { modalidad, monto: montoNum } : null } : {}),
     };
     const res = puesto ? await actualizar(puesto.id, input) : await crear(input);
@@ -105,6 +113,12 @@ export default function PuestoFormModal({ open, onClose, puesto, nivel, onGuarda
         <Field label="Descripción" hint="Opcional: qué hace, en una línea.">
           {(id) => (
             <input id={id} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={300} autoComplete="off" className={CLASE_CAMPO} />
+          )}
+        </Field>
+        {/* Hasta hoy todos los puestos quedaban en 8 h: el servidor aceptaba otra jornada pero ningún formulario la pedía. */}
+        <Field label="Horas de la jornada" hint="Prellena la jornada de las tarifas por hora de quien entra a este puesto.">
+          {(id) => (
+            <input id={id} type="number" inputMode="decimal" min={1} max={24} step="0.5" value={horas} onChange={(e) => setHoras(e.target.value)} className={cn(CLASE_CAMPO, "w-32 tabular-nums")} />
           )}
         </Field>
 
