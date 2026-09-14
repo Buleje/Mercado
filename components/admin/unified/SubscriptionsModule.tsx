@@ -21,6 +21,8 @@ import { DataTable, LoadingState } from "@buleje/design-system";
  */
 
 import { useEffect, useState, useMemo } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { toast } from "sonner";
 import {
   Repeat,
@@ -283,6 +285,7 @@ const TABS = [
   { id: "pausadas", label: "Pausadas", icon: Pause },
   { id: "canceladas", label: "Canceladas", icon: X },
 ];
+const TAB_IDS = TABS.map((t) => t.id);
 
 const ACTION_TO_STATUS: Record<"pausar" | "reanudar" | "cancelar", SubStatus> = {
   pausar: "paused",
@@ -291,7 +294,9 @@ const ACTION_TO_STATUS: Record<"pausar" | "reanudar" | "cancelar", SubStatus> = 
 };
 
 export default function SubscriptionsModule() {
-  const [tab, setTab] = useState(TABS[0].id);
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [stats, setStats] = useState<SubscriptionStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -331,7 +336,7 @@ export default function SubscriptionsModule() {
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => null);
+        const body = await leerJson<{ message?: string; error?: string }>(res);
         throw new Error(body?.message ?? body?.error ?? `HTTP ${res.status}`);
       }
       toast.success(

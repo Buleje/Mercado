@@ -18,6 +18,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { descartarEsperado } from "@/lib/errores/sin-dato";
 import {
   X,
   ZoomIn,
@@ -134,7 +135,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
       fetch(`/api/marketplace/orders/${encodeURIComponent(orderId)}/proof-url`)
         .then((r) => (r.ok ? r.json() : null))
         .then((data: { url: string; expiresAt: string } | null) => data?.url ?? null)
-        .catch(() => null), // fallback silencioso: si falla, usa imageUrl del proof
+        .catch(descartarEsperado), // fallback silencioso: si falla, usa imageUrl del proof
     ])
       .then(([proofData, freshUrl]) => {
         if (!cancelled) {
@@ -321,32 +322,38 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
 
       {lightbox && (
         <div
-          ref={lightboxRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Comprobante ampliado"
-          tabIndex={-1}
-          className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setLightbox(false)}
+          role="presentation"
+          className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm"
+          onClick={(e) => e.target === e.currentTarget && setLightbox(false)}
         >
-          <button
-            type="button"
-            aria-label="Cerrar"
-            className="absolute top-4 right-4 inline-flex items-center justify-center h-11 w-11 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              setLightbox(false);
-            }}
+          {/* El diálogo deja pasar los clics (`pointer-events-none`): tocar fuera de la
+              foto llega al fondo y cierra, como antes; la X y la foto sí los reciben. */}
+          <div
+            ref={lightboxRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Comprobante ampliado"
+            tabIndex={-1}
+            className="pointer-events-none absolute inset-0 flex items-center justify-center p-4"
           >
-            <X className="h-5 w-5" strokeWidth={2} />
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={proof.imageUrl}
-            alt="Comprobante de pago ampliado"
-            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-[var(--shadow-xl)]"
-            onClick={(e) => e.stopPropagation()}
-          />
+            <button
+              type="button"
+              aria-label="Cerrar"
+              className="pointer-events-auto absolute top-4 right-4 inline-flex items-center justify-center h-11 w-11 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightbox(false);
+              }}
+            >
+              <X className="h-5 w-5" strokeWidth={2} />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={proof.imageUrl}
+              alt="Comprobante de pago ampliado"
+              className="pointer-events-auto max-w-full max-h-[90vh] object-contain rounded-2xl shadow-[var(--shadow-xl)]"
+            />
+          </div>
         </div>
       )}
     </>

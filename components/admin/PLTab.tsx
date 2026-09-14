@@ -1,6 +1,7 @@
 "use client";
 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
@@ -116,7 +117,7 @@ export default function PLTab() {
          responde 403 y el P&L sigue siendo el de siempre. */
       fetch(`/api/admin/forestal/ctp?pnl=1&from=${mesFrom}&to=${mesTo}`, { credentials: "include" })
         .then(r => (r.ok ? r.json() : null))
-        .catch(() => null),
+        .catch(sinDato("P&L /api/admin/forestal/ctp")),
     ]).then(([orders, expenses, forestal]) => {
       if (!active) return;
       const ordersArr: { createdAt?: string; status?: string; total?: number }[] = Array.isArray(orders) ? orders : [];

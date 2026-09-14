@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useState, useRef } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { AlertTriangle, Pencil } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -58,7 +59,7 @@ export default function EditarNotasModal({
         onGuardado();
         return;
       }
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ error?: string }>(res);
       setErr(j?.error ?? "No se pudo guardar.");
     } catch (e) {
       logger.error("[adelantos] no se pudo editar notas", { error: String(e) });
@@ -69,9 +70,8 @@ export default function EditarNotasModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={cajaRef} tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Editar motivo / notas"
@@ -85,7 +85,6 @@ export default function EditarNotasModal({
         </div>
 
         <textarea
-          autoFocus
           value={notas}
           onChange={(e) => setNotas(e.target.value)}
           rows={4}

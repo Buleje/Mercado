@@ -16,7 +16,8 @@
  * que un dato imperfecto.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { AlertTriangle, Building2, CheckCircle, Info, Loader2, RefreshCw, User } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -51,6 +52,15 @@ export default function CrearPersonaModal({
   onCreated: () => void;
 }) {
   const editando = !!persona;
+  /* Al dar de alta, el foco va al DNI/RUC — sin `autoFocus` (jsx-a11y/no-autofocus).
+     En un rAF: useModalAccesible (en ModalShell) enfoca la X en el suyo,
+     que se programa antes (mismo arreglo que ActivosModule). */
+  const documentoRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editando) return;
+    const id = requestAnimationFrame(() => documentoRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [editando]);
   const [nombre, setNombre] = useState(persona?.nombre ?? "");
   const [documento, setDocumento] = useState(persona?.documento ?? "");
   const [telefono, setTelefono] = useState(persona?.telefono ?? "");
@@ -144,7 +154,7 @@ export default function CrearPersonaModal({
         onCreated();
         return;
       }
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ error?: string }>(res);
       setErr(j?.error ?? (editando ? "No se pudo guardar los cambios." : "No se pudo crear la persona."));
     } catch (e) {
       logger.error("[adelantos] no se pudo guardar la persona", { error: String(e) });
@@ -170,7 +180,7 @@ export default function CrearPersonaModal({
               value={documento}
               onChange={(e) => setDocumento(e.target.value)}
               inputMode="numeric"
-              autoFocus={!editando}
+              ref={documentoRef}
               placeholder="12345678"
               aria-label="DNI o RUC"
               className={`${inputCls} pr-12 text-lg tabular-nums ${avisoDoc ? "border-[var(--data-warning)]" : ""}`}

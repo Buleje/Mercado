@@ -17,7 +17,8 @@
  * escrita contra las que ya entraron).
  */
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { AlertTriangle, Boxes, CheckCircle2, Loader2, Play, RotateCcw, Trash2, X } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
@@ -112,6 +113,11 @@ export default function CtpLoteDetalleModal({
   const [error, setError] = useState<string | null>(null);
   const [confirmarBorrado, setConfirmarBorrado] = useState(false);
   const [confirmarBorradoForzado, setConfirmarBorradoForzado] = useState(false);
+  /* Al pedir el motivo del borrado, el foco va al campo — sin `autoFocus` (jsx-a11y/no-autofocus). */
+  const motivoForzadoRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (confirmarBorradoForzado) motivoForzadoRef.current?.focus();
+  }, [confirmarBorradoForzado]);
   const [motivoForzado, setMotivoForzado] = useState("");
   const [forzarConSalida, setForzarConSalida] = useState(false);
   /* "Ya se despachó / ya se usó" a mano (Brandon, 2026-09-01): saca la corrida
@@ -194,7 +200,7 @@ export default function CtpLoteDetalleModal({
         credentials: "include",
         body: JSON.stringify({ id: c.id, action: "marcar_usado", usado: false }),
       });
-      const data = (await r.json().catch(() => null)) as { message?: string; error?: string } | null;
+      const data = (await leerJson(r)) as { message?: string; error?: string } | null;
       if (!r.ok) throw new Error(data?.message ?? data?.error ?? `El servidor respondió ${r.status}`);
       invalidarCtp("/forestal/ctp");
       await onRecargar();
@@ -299,7 +305,7 @@ export default function CtpLoteDetalleModal({
               </p>
             )}
             <input
-              autoFocus
+              ref={motivoForzadoRef}
               value={motivoForzado}
               onChange={(e) => setMotivoForzado(e.target.value)}
               placeholder="Motivo (se guarda en el historial): se armó por error, especie equivocada…"
@@ -598,11 +604,11 @@ export default function CtpLoteDetalleModal({
                     <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {t.d1Cm != null || t.d2Cm != null
-                        ? `${t.d1Cm?.toFixed(0) ?? "—"} × ${t.d2Cm?.toFixed(0) ?? "—"}`
+                        ? `${t.d1Cm != null ? Number(t.d1Cm).toFixed(0) : "—"} × ${t.d2Cm != null ? Number(t.d2Cm).toFixed(0) : "—"}`
                         : "—"}
                     </td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                      {t.largoM != null ? t.largoM.toFixed(2) : "—"}
+                      {t.largoM != null ? Number(t.largoM).toFixed(2) : "—"}
                     </td>
                     <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                       {t.volumenM3 != null ? `${fmtM3(t.volumenM3)} m³` : "—"}

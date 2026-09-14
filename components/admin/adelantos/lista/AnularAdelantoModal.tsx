@@ -16,6 +16,7 @@
  */
 
 import { useRef, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { AlertTriangle, Ban } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -67,7 +68,7 @@ export default function AnularAdelantoModal({
         onAnulado();
         return;
       }
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ error?: string }>(res);
       setErr(j?.error ?? "No se pudo anular el adelanto.");
     } catch (e) {
       logger.error("[adelantos] no se pudo anular", { error: String(e) });
@@ -78,10 +79,9 @@ export default function AnularAdelantoModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div
         ref={modalRef}
-        onClick={(e) => e.stopPropagation()}
         role="alertdialog"
         aria-modal="true"
         aria-label="Anular adelanto"

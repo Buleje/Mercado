@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { FileText, Download, Loader2, RefreshCw, TrendingUp, Package, AlertTriangle } from "@buleje/design-system/icons";
@@ -100,9 +101,9 @@ export default function WeeklyReportCard() {
     setError(null);
     try {
       const [dashRes, salesRes, expRes] = await Promise.all([
-        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(sinDato("Reporte semanal /api/daily-report")),
         fetch("/api/sales").then(r => r.ok ? r.json() : []).catch(() => []),
-        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(sinDato("Reporte semanal /api/expenses/summary")),
       ]);
 
       const { monday, sunday } = getWeekRange();

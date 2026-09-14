@@ -21,6 +21,7 @@
  */
 
 import { useEffect, useId, useMemo, useState } from "react";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -178,7 +179,7 @@ export default function PlanCheckoutClient() {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ plan: targetPlan, method }),
         credentials: "include",
-      }).catch(() => null);
+      }).catch(sinDato("Plan checkout /api/admin/plan/checkout/confirm"));
       if (res && res.ok) {
         setCurrentPlan(targetPlan);
         setStep("success");

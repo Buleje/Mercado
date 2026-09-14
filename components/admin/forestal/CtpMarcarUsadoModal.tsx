@@ -10,7 +10,8 @@
  * ni su historia en el libro. Reversible desde la misma pantalla.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { CheckCircle2, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -31,6 +32,14 @@ export default function CtpMarcarUsadoModal({
   const [motivo, setMotivo] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* Foco en el motivo al abrir, sin `autoFocus` (jsx-a11y/no-autofocus). En un rAF: el
+     contenido de AdminModal (Radix) se monta en un portal DESPUÉS de este efecto y
+     enfoca la X; en el cuadro siguiente ya está montado y el motivo se queda el foco. */
+  const motivoRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => motivoRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   async function confirmar() {
     if (motivo.trim().length < 3) {
@@ -46,7 +55,7 @@ export default function CtpMarcarUsadoModal({
         credentials: "include",
         body: JSON.stringify({ id: corridaId, action: "marcar_usado", usado: true, motivo: motivo.trim() }),
       });
-      const data = (await r.json().catch(() => null)) as { message?: string; error?: string } | null;
+      const data = (await leerJson(r)) as { message?: string; error?: string } | null;
       if (!r.ok) throw new Error(data?.message ?? data?.error ?? `El servidor respondió ${r.status}`);
       invalidarCtp("/forestal/ctp");
       onListo(`Corrida N° ${lineNo ?? "—"} marcada como usada: ya no aparece en Productos disponibles.`);
@@ -84,7 +93,7 @@ export default function CtpMarcarUsadoModal({
           </label>
           <textarea
             id="marcar-usado-motivo"
-            autoFocus
+            ref={motivoRef}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             rows={3}

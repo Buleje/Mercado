@@ -8,8 +8,9 @@
  */
 
 import CtpCadenaLote from "./CtpCadenaLote";
+import { sinDato } from "@/lib/errores/sin-dato";
 import type { CadenaLote } from "@/lib/forestal/ctp-cadena-lote";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle, DataTable, SuccessAlert, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
 import {
@@ -85,6 +86,12 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
     }
   }, [loteId]);
   useEffect(() => { void load(); }, [load]);
+  /* Al abrir la confirmación de anulación, el foco va al motivo — sin `autoFocus`. */
+  const confirmandoAnulacion = annulReason !== null;
+  const annulReasonRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (confirmandoAnulacion) annulReasonRef.current?.focus();
+  }, [confirmandoAnulacion]);
 
   const unitLabel = lote?.unit ? (UNIT_LABELS[lote.unit] ?? lote.unit) : "";
 
@@ -157,7 +164,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
         await printEtiquetaLote(certData, traza?.totalCantidad ?? 0);
       } else {
         if (!traza?.completa) return;
-        const emisor = await fetch("/api/settings", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null) as { businessName?: string; ruc?: string } | null;
+        const emisor = await fetch("/api/settings", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(sinDato("Certificado de lote /api/settings")) as { businessName?: string; ruc?: string } | null;
         await printCertificadoLote(
           certData,
           {
@@ -349,7 +356,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
             {annulReason !== null && (
               <div className="space-y-2 rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3">
                 <p className="text-sm text-[var(--text-primary)]"><strong>Anular {lote.loteCode}:</strong> indicá el motivo (queda en el historial, no se borra).</p>
-                <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (mín. 3 caracteres)" className={`${I} border-[var(--data-error-500)]/40 focus:border-[var(--data-error-500)] focus:ring-[var(--data-error-500)]/20`} />
+                <input ref={annulReasonRef} value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (mín. 3 caracteres)" className={`${I} border-[var(--data-error-500)]/40 focus:border-[var(--data-error-500)] focus:ring-[var(--data-error-500)]/20`} />
                 <div className="flex justify-end gap-2">
                   <Btn variant="secondary" size="sm" onClick={() => setAnnulReason(null)} disabled={busy}>Cancelar</Btn>
                   <Btn variant="danger" size="sm" onClick={() => void changeStatus("anular", undefined, annulReason)} disabled={busy || annulReason.trim().length < 3}>{busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Confirmar anulación</Btn>

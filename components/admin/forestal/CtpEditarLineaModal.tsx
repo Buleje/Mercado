@@ -23,6 +23,7 @@
  */
 
 import { useMemo, useState, useRef } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { AlertTriangle, Check, Loader2, Lock, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
@@ -165,7 +166,7 @@ export default function CtpEditarLineaModal({
       headers: { "Content-Type": "application/json", ...csrfHeaders() },
       body: JSON.stringify(body),
     });
-    const j = (await r.json().catch(() => null)) as
+    const j = (await leerJson(r)) as
       | {
           message?: string;
           error?: string;

@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo, useRef, useId, type FormEvent } from "react";
 import dynamic from "next/dynamic";
@@ -192,7 +193,7 @@ function FleteTardio({
         body: JSON.stringify({ flete: monto }),
       });
       if (!res.ok) { onGuardado("No se pudo guardar el flete"); return; }
-      const data = await res.json().catch(() => null);
+      const data = await leerJson<{ productosRevaluados?: number }>(res);
       const n = data?.productosRevaluados ?? 0;
       onGuardado(
         n > 0
@@ -396,7 +397,9 @@ export default function PurchaseOrdersTab() {
 
   // Fecha del próximo pedido recurrente para el modal
   const nextRecurringDateLabel = useMemo(() => {
-     
+    /* Sólo se lee con el modal abierto. Mirarlo acá vuelve real la dependencia:
+       al abrir el modal se recalcula con la fecha de HOY. */
+    if (!showRecurringModal) return "";
     const baseMs = Date.now();
     return new Date(baseMs + recurringInterval * 86400000).toLocaleDateString("es-PE", {
       day: "2-digit",
@@ -428,6 +431,15 @@ export default function PurchaseOrdersTab() {
   const closeScannerModal = useCallback(() => setShowScanner(false), []);
   useModalAccesible(scannerModalRef, { onCerrar: closeScannerModal, activo: showScanner });
   const [addItemMode, setAddItemMode] = useState<"search" | "new">("search");
+  /* Foco en el buscador sin `autoFocus` (jsx-a11y/no-autofocus): al abrir y al volver
+     a «Buscar existente». En un rAF: useModalAccesible enfoca la X en el suyo,
+     que se programa antes (mismo arreglo que ActivosModule). */
+  const addItemSearchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!showAddItemModal || addItemMode !== "search") return;
+    const id = requestAnimationFrame(() => addItemSearchRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [showAddItemModal, addItemMode]);
   const [addItemSearch, setAddItemSearch] = useState("");
   const [addItemSel, setAddItemSel] = useState<DbProduct | null>(null);
   const [addItemQty, setAddItemQty] = useState(1);
@@ -469,7 +481,7 @@ export default function PurchaseOrdersTab() {
       setSupplierId(stash.id);
       setShowCreate(true);
     }
-  }, [suppliers]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [suppliers]);
 
   const addItemFromProduct = (p: DbProduct) => {
     setItems(prev => [...prev, { productId: p.id, name: p.name, quantity: 1, unitCost: p.costPrice ?? p.price, unit: p.unit }]);
@@ -605,7 +617,7 @@ export default function PurchaseOrdersTab() {
       // Marcar recibido mueve stock: recargar para ver los totales reales.
       if (status === "recibido" || status === "parcial") load();
       if (status === "cancelado") {
-        const detalle = await res.json().catch(() => null);
+        const detalle = await leerJson<{ cuentaPorPagar?: string }>(res);
         avisar(
           detalle?.cuentaPorPagar === "conservada_con_pagos"
             ? "Orden cancelada. La cuenta por pagar quedó abierta porque ya tenía pagos registrados."
@@ -1120,8 +1132,8 @@ export default function PurchaseOrdersTab() {
 
       {/* Mejora 15: Modal de configuración recurrente */}
       {showRecurringModal && (
-        <div className="modal-backdrop p-4" onClick={closeRecurringModal}>
-          <div ref={recurringModalRef} role="dialog" aria-modal="true" aria-labelledby={recurringTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && closeRecurringModal()}>
+          <div ref={recurringModalRef} role="dialog" aria-modal="true" aria-labelledby={recurringTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-6 space-y-4">
             <CardTitle id={recurringTitleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Hacer recurrente</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               OC para {suppliers.find(s => s.id === showRecurringModal.supplierId)?.name} · {showRecurringModal.items.length} productos
@@ -1301,15 +1313,17 @@ export default function PurchaseOrdersTab() {
       {/* ─── Create order modal (rediseñado 2026-05-17) ──────────────── */}
       {showCreate && (
         <div
-          ref={createModalRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="create-oc-title"
-          tabIndex={-1}
+          role="presentation"
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
           onClick={(e) => e.target === e.currentTarget && closeCreateModal()}
         >
-          <div className="bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
+          <div
+            ref={createModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-oc-title"
+            tabIndex={-1}
+            className="bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
             {/* Header */}
             <header className="px-5 sm:px-6 py-4 border-b-2 border-[var(--rule-base)] flex items-center gap-3 bg-linear-to-r from-primary/5 to-transparent">
               <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/15 border border-primary/30 shrink-0">
@@ -2041,6 +2055,7 @@ export default function PurchaseOrdersTab() {
       {/* Add item modal */}
       {showAddItemModal && (
         <div
+          role="presentation"
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
           onClick={(e) => e.target === e.currentTarget && setShowAddItemModal(false)}
         >
@@ -2069,7 +2084,7 @@ export default function PurchaseOrdersTab() {
               {addItemMode === "search" ? (
                 <div className="space-y-3">
                   <input
-                    autoFocus
+                    ref={addItemSearchRef}
                     value={addItemSearch}
                     onChange={(e) => { setAddItemSearch(e.target.value); setAddItemSel(null); }}
                     placeholder="Buscar por nombre o código de barras…"
@@ -2260,7 +2275,7 @@ export default function PurchaseOrdersTab() {
 
       {/* Barcode scanner modal */}
       {showScanner && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowScanner(false)}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" role="presentation" onClick={(e) => e.target === e.currentTarget && setShowScanner(false)}>
           <div ref={scannerModalRef} role="dialog" aria-modal="true" aria-label="Escanear código de barras" tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>

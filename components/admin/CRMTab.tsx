@@ -1,8 +1,9 @@
 "use client";
 
 import { DataTable, LoadingState } from "@buleje/design-system";
+import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Users, Search, X, Download, AlertCircle,
   Phone, Crown, Star, UserPlus, Moon,
@@ -117,6 +118,11 @@ export default function CRMTab() {
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [editingCreditLimit, setEditingCreditLimit] = useState<string | null>(null); // phone
   const [creditLimitInput, setCreditLimitInput] = useState("");
+  /* Foco en el límite al entrar en edición, sin `autoFocus` (jsx-a11y/no-autofocus). */
+  const creditLimitInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editingCreditLimit) creditLimitInputRef.current?.focus();
+  }, [editingCreditLimit]);
 
   // Mejora nueva 7: Frecuencia de compra
   type FrequencyFilter = "todos-freq" | "diario" | "semanal" | "quincenal" | "mensual" | "inactivo-freq";
@@ -150,8 +156,8 @@ export default function CRMTab() {
        */
       const [res, resPedidos, resVentas] = await Promise.all([
         fetch("/api/customers?limit=500"),
-        fetch("/api/orders?limit=500").catch(() => null),
-        fetch("/api/sales?limit=500").catch(() => null),
+        fetch("/api/orders?limit=500").catch(sinDato("CRM /api/orders")),
+        fetch("/api/sales?limit=500").catch(sinDato("CRM /api/sales")),
       ]);
       if (!res.ok) throw new Error("fetch failed");
       const data: Customer[] = await res.json();
@@ -169,7 +175,7 @@ export default function CRMTab() {
       };
       const leerLista = async (r: Response | null): Promise<unknown[]> => {
         if (!r?.ok) return [];
-        const j = await r.json().catch(() => null);
+        const j = await leerJson(r);
         if (Array.isArray(j)) return j;
         const cont = j as { orders?: unknown[]; sales?: unknown[]; items?: unknown[] } | null;
         return cont?.orders ?? cont?.sales ?? cont?.items ?? [];
@@ -826,7 +832,7 @@ export default function CRMTab() {
                           className="flex items-center gap-1"
                         >
                           <input
-                            autoFocus
+                            ref={creditLimitInputRef}
                             type="number"
                             min={0}
                             step={0.01}

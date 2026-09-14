@@ -16,7 +16,8 @@
  * que es la única cifra que no estaba en ninguna parte de la pantalla.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { AlertTriangle, CalendarDays, CheckCircle2, Circle, CreditCard, Info, Landmark, RotateCcw, Tag } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -151,6 +152,15 @@ export default function CrearAdelantoModal({
 
   /** Cambiar de persona o de monto invalida la autorización ya confirmada. */
   useEffect(() => setConfirmandoTope(false), [beneficiarioId, monto]);
+  /* Con la persona ya elegida, el foco va al monto — sin `autoFocus` (jsx-a11y/no-autofocus).
+     En un rAF: useModalAccesible (en ModalShell) enfoca la X en el suyo,
+     que se programa antes (mismo arreglo que ActivosModule). */
+  const montoRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!initialBeneficiarioId) return;
+    const id = requestAnimationFrame(() => montoRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [initialBeneficiarioId]);
 
   /**
    * Las 3 personas a las que más se les dio plata — acceso directo antes de
@@ -242,7 +252,7 @@ export default function CrearAdelantoModal({
         onCreated();
         return;
       }
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ error?: string }>(res);
       setErr(j?.error ?? "No se pudo crear el adelanto.");
     } catch (e) {
       logger.error("[adelantos] no se pudo crear el adelanto", { error: String(e) });
@@ -405,7 +415,7 @@ export default function CrearAdelantoModal({
                     value={monto}
                     onChange={(e) => setMonto(e.target.value)}
                     placeholder="500.00"
-                    autoFocus={!!initialBeneficiarioId}
+                    ref={montoRef}
                     className={`${inputCls} pl-11 text-lg tabular-nums`}
                   />
                 </div>

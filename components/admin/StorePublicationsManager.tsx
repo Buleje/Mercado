@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { Megaphone, Pin, Trash2, Send, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -60,7 +61,7 @@ export default function StorePublicationsManager() {
           pinned,
         }),
       });
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ error?: string }>(res);
       if (!res.ok) {
         setError(j?.error ?? "No se pudo publicar.");
         return;

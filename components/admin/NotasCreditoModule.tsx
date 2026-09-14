@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -725,7 +726,7 @@ export default function NotasCreditoModule() {
       confirmLabel: "Sí, emitir",
     }))) return;
     await Promise.all(borradores.map(nc =>
-      fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) }).catch(() => null)
+      fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) }).catch(sinDato("Notas de crédito PATCH /api/notas-credito"))
     ));
     fetchNotas(); setCheckedIds(new Set());
   };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
 import {
   Coins,
@@ -958,7 +959,7 @@ function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: Benefi
     const res = await fetch(`/api/adelantos/beneficiarios/${persona.id}`, { method: "DELETE", headers: jsonHeaders(), credentials: "include" });
     setSaving(false);
     if (res.ok) { onDeleted(); return; }
-    const body = await res.json().catch(() => null);
+    const body = await leerJson<{ error?: string }>(res);
     setErr(body?.error ?? "No se pudo eliminar la persona.");
   };
   return (
@@ -1216,7 +1217,7 @@ function CrearRecurrenteModal({ beneficiarios, onClose, onCreated }: { beneficia
     });
     setSaving(false);
     if (res.ok) onCreated();
-    else { const j = await res.json().catch(() => null); setErr(j?.error ?? "No se pudo crear la recurrente."); }
+    else { const j = await leerJson<{ error?: string }>(res); setErr(j?.error ?? "No se pudo crear la recurrente."); }
   };
 
   return (

@@ -13,7 +13,8 @@
  * accesos directos; este modal es el "buscar entre todas / crear nueva".
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { AlertTriangle, Plus, Search, UserPlus, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -38,6 +39,14 @@ export default function SeleccionarPersonaModal({
 }) {
   const [q, setQ] = useState("");
   const [creando, setCreando] = useState(false);
+  /* Foco en el buscador al abrir, sin `autoFocus` (jsx-a11y/no-autofocus).
+     En un rAF: useModalAccesible (en ModalShell) enfoca la X en el suyo,
+     que se programa antes (mismo arreglo que ActivosModule). */
+  const buscarRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => buscarRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   const filtradas = useMemo(() => {
     const t = sinTildes(q);
@@ -56,7 +65,7 @@ export default function SeleccionarPersonaModal({
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input
-            autoFocus
+            ref={buscarRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por nombre, documento o teléfono…"
@@ -193,6 +202,11 @@ function NuevaPersonaInline({
   onCreada: (id: string) => void;
 }) {
   const [nombre, setNombre] = useState(nombreSugerido?.trim() ?? "");
+  /* Aparece al tocar «Nueva persona»: el foco va al nombre, sin `autoFocus`. */
+  const nombreRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    nombreRef.current?.focus();
+  }, []);
   const [telefono, setTelefono] = useState("");
   const [limite, setLimite] = useState("");
   const [saving, setSaving] = useState(false);
@@ -216,7 +230,7 @@ function NuevaPersonaInline({
           limiteCredito: Number(limite) > 0 ? Number(limite) : undefined,
         }),
       });
-      const j = await r.json().catch(() => null);
+      const j = await leerJson<{ id?: string; error?: string }>(r);
       if (!r.ok || !j?.id) throw new Error(j?.error ?? `HTTP ${r.status}`);
       onCreada(j.id);
     } catch (e) {
@@ -233,7 +247,7 @@ function NuevaPersonaInline({
         Nueva persona — lo mínimo para adelantarle hoy. El resto se completa después en su ficha.
       </p>
       <input
-        autoFocus
+        ref={nombreRef}
         value={nombre}
         onChange={(e) => setNombre(e.target.value)}
         placeholder="Nombre y apellido"

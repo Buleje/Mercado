@@ -3,6 +3,8 @@
 import { toast } from "sonner";
 import { CardTitle, LoadingState, BlockTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useId, useRef, useMemo } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
@@ -205,6 +207,8 @@ function FiadoReliabilityBadge({ customerId, fiados }: { customerId: string; fia
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+const FIADO_VISTAS = ["resumen", "deudores", "cobranza", "analisis"] as const;
+
 export default function FiadosModule() {
   // List state
   const [fiados, setFiados] = useState<Fiado[]>([]);
@@ -271,17 +275,10 @@ export default function FiadosModule() {
   // pasa de un negocio a otro en la misma pestaña heredaba el tab/densidad/
   // ancho del negocio anterior.
   type FiadoTab = "resumen" | "deudores" | "cobranza" | "analisis";
-  const [activeTab, setActiveTab] = useState<FiadoTab>(() => {
-    try {
-      const stored = localStorage.getItem(tenantCacheKey("fiados-tab")) as FiadoTab | null;
-      if (stored === "resumen" || stored === "deudores" || stored === "cobranza" || stored === "analisis") return stored;
-    } catch { /* localStorage bloqueado */ }
-    return "resumen";
-  });
-  const setTab = (t: FiadoTab) => {
-    setActiveTab(t);
-    try { localStorage.setItem(tenantCacheKey("fiados-tab"), t); } catch { /* ignore */ }
-  };
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  // El id lleva el tenant (tenantCacheKey): la memoria de la pestaña sigue siendo por negocio.
+  const { vista: activeTab, irA: setTab } = useSubvistaModulo<FiadoTab>(tenantCacheKey("fiados"), FIADO_VISTAS, "resumen");
 
   // Conteos para badges de tabs (se actualizan en vivo con los filtros).
   const vencidosTotales = fiados.filter(f => f.status === "VENCIDO" || (f.fechaVence && new Date(f.fechaVence) < new Date() && f.status === "ACTIVO")).length;
@@ -368,7 +365,7 @@ export default function FiadosModule() {
           // creditLimit 0 = sin tope configurado → la UI lo muestra como "Sin tope".
           let limite = 0;
           try {
-            const cRes = await fetch(`/api/customers/${encodeURIComponent(cid)}`).catch(() => null);
+            const cRes = await fetch(`/api/customers/${encodeURIComponent(cid)}`).catch(sinDato("fiados límite del cliente"));
             if (cRes && cRes.ok) {
               const cData = await cRes.json();
               limite = Number(cData?.creditLimit ?? 0) || 0;
@@ -858,8 +855,8 @@ export default function FiadosModule() {
       return {
         Nombre: f.customerName || f.customerId,
         "Teléfono": f.customerId,
-        "Monto original (S/)": Number(f.total.toFixed(2)),
-        "Saldo pendiente (S/)": Number(f.saldo.toFixed(2)),
+        "Monto original (S/)": Number(Number(f.total ?? 0).toFixed(2)),
+        "Saldo pendiente (S/)": Number(Number(f.saldo ?? 0).toFixed(2)),
         "Fecha inicio": new Date(f.createdAt).toLocaleDateString("es-PE"),
         "Días": diasPasados,
         Estado: f.status === "VENCIDO" ? "Vencido" : "Activo",

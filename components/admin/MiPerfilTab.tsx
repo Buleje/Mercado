@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { leerJson } from "@/lib/errores/sin-dato";
 import React, { useState, useEffect } from "react";
 import { UserCircle, Mail, Phone, Shield, Key, Save, Loader2, CheckCircle } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -101,7 +102,7 @@ export default function MiPerfilTab() {
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        const d = await res.json().catch(() => null);
+        const d = await leerJson<{ error?: string }>(res);
         setPasswordError(d?.error ?? "Error al cambiar contraseña");
       }
     } catch {

@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, CheckCircle2, Loader2, Save, ShieldCheck } from "@buleje/design-system/icons";
@@ -92,7 +93,10 @@ export default function SunatConexionTab() {
         setIsProduction(Boolean(c.isProduction));
         setCorrelativos({ boleta: c.lastBoletaNum ?? 0, factura: c.lastFacturaNum ?? 0 });
       })
-      .catch(() => { /* sin config: el formulario arranca vacío, que es lo correcto */ })
+      /* Sin config el servidor no rechaza: `r.ok` en falso ya da null y el formulario
+         arranca vacío. Acá sólo llega el abort del desmontaje (no se registra) o
+         una falla de red real (se registra); en los dos casos el formulario queda vacío. */
+      .catch(sinDato("SUNAT /api/admin/sunat/config"))
       .finally(() => setCargando(false));
     return () => ac.abort();
   }, []);
@@ -131,7 +135,7 @@ export default function SunatConexionTab() {
           isProduction,
         }),
       });
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ error?: string }>(res);
       if (!res.ok) {
         setAviso({ tono: "error", texto: j?.error ?? "No se pudo guardar la configuración." });
         return;

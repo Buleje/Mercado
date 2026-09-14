@@ -9,6 +9,7 @@
  */
 
 import { useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -389,7 +390,7 @@ export function Comprobante({
     fd.append("folder", "media");
     try {
       const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ url?: string; error?: string }>(res);
       if (res.ok && j?.url) onChange(j.url);
       else setErr(j?.error ?? "No se pudo subir la imagen.");
     } catch (e2) {

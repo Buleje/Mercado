@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import {
   Boxes,
   CheckCircle2,
@@ -333,7 +334,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
           body: JSON.stringify({ id: c.id, action: "marcar_usado", usado: false }),
         });
         if (!r.ok) {
-          const data = (await r.json().catch(() => null)) as {
+          const data = (await leerJson(r)) as {
             message?: string;
             error?: string;
           } | null;

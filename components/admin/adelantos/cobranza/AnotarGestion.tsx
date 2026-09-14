@@ -13,6 +13,7 @@
  */
 
 import { useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { TIPOS_GESTION, type TipoGestion } from "@/lib/adelantos/gestion-cobranza";
@@ -77,7 +78,7 @@ export default function AnotarGestion({
         onGuardada();
         return;
       }
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ error?: string }>(res);
       setErr(j?.error ?? "No se pudo anotar la gestión.");
     } catch (e) {
       logger.error("[adelantos] no se pudo anotar la gestión", { error: String(e) });

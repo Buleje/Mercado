@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
+import { descartarEsperado, sinDato } from "@/lib/errores/sin-dato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Image from "next/image";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -492,7 +493,7 @@ export default function SettingsModule({
   useEffect(() => {
     Promise.all([
       fetch("/api/settings").then(r => r.ok ? r.json() : null),
-      fetch("/api/settings/feature-flags").then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch("/api/settings/feature-flags").then(r => r.ok ? r.json() : null).catch(sinDato("Ajustes /api/settings/feature-flags")),
     ]).then(([d, flags]) => {
       if (d) {
         if (d.mode) setMode(d.mode);
@@ -1055,7 +1056,7 @@ export default function SettingsModule({
               if (navigator.share) {
                 // navigator.share() rechaza la promesa si el user cancela
                 // el bottom-sheet del browser — silencio aceptable (best-effort).
-                navigator.share({ title: "Credenciales del Panel", text }).catch(() => { /* user cancelled share */ });
+                navigator.share({ title: "Credenciales del Panel", text }).catch(descartarEsperado);
               } else {
                 navigator.clipboard.writeText(text);
                 toast.success("Credenciales copiadas al portapapeles");
@@ -1083,7 +1084,7 @@ export default function SettingsModule({
           if (newPw !== confirmPw) { setPwChangeError("Las contraseñas no coinciden"); return; }
           const ok = await patch({ adminPassword: newPw });
           if (!ok) return;
-          const loginRes = await fetch("/api/auth/login", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ password: newPw }) }).catch(() => null);
+          const loginRes = await fetch("/api/auth/login", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ password: newPw }) }).catch(sinDato("Ajustes /api/auth/login"));
           if (!loginRes?.ok) {
             toast.error("La contraseña se guardó, pero no se pudo renovar tu sesión — volvé a iniciar sesión.");
             return;
@@ -1764,9 +1765,9 @@ export default function SettingsModule({
 
       {/* Restore modal */}
       {showRestoreModal && (
-        <div className="modal-backdrop p-4" onClick={() => !restoring && setShowRestoreModal(false)}>
+        <div className="modal-backdrop p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && !restoring && setShowRestoreModal(false)}>
           <div ref={restorePanelRef} role="dialog" aria-modal="true" aria-labelledby={restoreTitleId} tabIndex={-1}
-            className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <CardTitle id={restoreTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Restaurar Base de Datos</CardTitle>
               {!restoring && <button aria-label="Cerrar" onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]"><X className="h-5 w-5" /></button>}
@@ -2137,7 +2138,7 @@ export default function SettingsModule({
 
       {/* Map picker modal */}
       {showMapPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setShowMapPicker(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" role="presentation" onClick={() => setShowMapPicker(false)}>
           <m.div
             ref={mapPickerPanelRef}
             role="dialog"

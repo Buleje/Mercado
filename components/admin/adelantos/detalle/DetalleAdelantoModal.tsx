@@ -11,6 +11,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { CardTitle } from "@buleje/design-system";
 import { Ban, CheckCircle, FileText, Package, Pencil } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
@@ -131,7 +132,7 @@ export default function DetalleAdelantoModal({
         onChange();
         return;
       }
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ error?: string }>(res);
       setErr(j?.error ?? "No se pudo registrar la entrega.");
     } catch (e) {
       logger.error("[adelantos] no se pudo registrar la entrega", { error: String(e) });
@@ -388,7 +389,7 @@ function ComprobanteUpload({ url, onChange }: { url: string | null; onChange: (u
     fd.append("folder", "media");
     try {
       const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ url?: string; error?: string }>(res);
       if (res.ok && j?.url) onChange(j.url);
       else setErr(j?.error ?? "No se pudo subir la imagen.");
     } catch (e2) {

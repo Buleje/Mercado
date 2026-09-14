@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingState } from "@buleje/design-system";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { useState, useEffect, useCallback } from "react";
 import { DollarSign, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -74,8 +75,8 @@ export default function ProfitLossAutoCard() {
     setError(null);
     try {
       const [dashRes, expRes, salesRes] = await Promise.all([
-        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(sinDato("Ganancias del mes /api/daily-report")),
+        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(sinDato("Ganancias del mes /api/expenses/summary")),
         fetch("/api/sales").then(r => r.ok ? r.json() : []).catch(() => []),
       ]);
 

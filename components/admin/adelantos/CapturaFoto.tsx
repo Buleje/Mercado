@@ -18,6 +18,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { Camera, RefreshCw, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -107,7 +108,7 @@ export default function CapturaFoto({
         credentials: "include",
         body: fd,
       });
-      const j = await r.json().catch(() => null);
+      const j = await leerJson<{ url?: string; error?: string }>(r);
       if (!r.ok || !j?.url) throw new Error(j?.error ?? `HTTP ${r.status}`);
       onSubida(j.url);
       onCerrar();
@@ -121,9 +122,8 @@ export default function CapturaFoto({
 
   return (
     /* z-[60]: por encima del modal de alta (z-50), que sigue montado detrás. */
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={onCerrar}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onCerrar()}>
       <div ref={cajaRef} tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Tomar foto del comprobante"

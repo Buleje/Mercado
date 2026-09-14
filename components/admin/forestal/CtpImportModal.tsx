@@ -18,6 +18,7 @@
  */
 
 import { useRef, useState } from "react";
+import { descartarEsperado } from "@/lib/errores/sin-dato";
 import { DataTable } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { MODAL_BODY } from "./ctp-shared";
@@ -106,9 +107,9 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         // Parsear las 3 hojas por su NOMBRE (strict): sin fallback por contenido,
         // que en un libro multi-hoja cruzaría columnas comunes entre registros.
         const [ing, prod, sal] = await Promise.all([
-          parseWoodEntriesXlsx(buf, { strict: true }).catch(() => null),
-          parseProduccionXlsx(buf, { strict: true }).catch(() => null),
-          parseSalidaXlsx(buf, { strict: true }).catch(() => null),
+          parseWoodEntriesXlsx(buf, { strict: true }).catch(descartarEsperado),
+          parseProduccionXlsx(buf, { strict: true }).catch(descartarEsperado),
+          parseSalidaXlsx(buf, { strict: true }).catch(descartarEsperado),
         ]);
         const c: Combined = {
           ingresos: ing?.ok ? ing.ingresos : [],
