@@ -81,7 +81,7 @@
     "claude:dreaming": "node scripts/claude-dreaming-apply.mjs",
     "claude:dreaming:apply": "node scripts/claude-dreaming-apply.mjs --safe",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit",
-    "typecheck:fast": "tsgo --noEmit"
+    "typecheck:fast": "node_modules/@typescript/typescript-linux-x64/lib/tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.68",
@@ -191,7 +191,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
-    "@typescript/native-preview": "^7.0.0-dev.20260622.1",
     "@vitejs/plugin-react": "^5.2.0",
     "@vitest/browser-playwright": "^4.1.10",
     "@vitest/coverage-v8": "^4.0.18",
@@ -258,5 +257,8 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ]
+  ],
+  "optionalDependencies": {
+    "@typescript/typescript-linux-x64": "7.0.2"
+  }
 }
