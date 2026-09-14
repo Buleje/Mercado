@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { logger } from "@/lib/logger";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import dynamic from "next/dynamic";
 import {
   Target, Trophy, Flame, TrendingUp, TrendingDown, Pencil, Check, X, Calendar,
@@ -28,6 +30,7 @@ const WeeklyGoalCard = dynamic(() => import("@/components/admin/WeeklyGoalCard")
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 type TabId = "mis-metas" | "hoy" | "semana-mes" | "logros";
+const TAB_IDS: readonly TabId[] = ["mis-metas", "hoy", "semana-mes", "logros"];
 
 interface Goal {
   id: string;
@@ -191,6 +194,12 @@ function SemaMesTab() {
   const [editing, setEditing]         = useState(false);
   const [tempGoal, setTempGoal]       = useState("");
   const [editError, setEditError]     = useState<string | null>(null);
+  // Foco al entrar en edición, sin `autoFocus` (jsx-a11y/no-autofocus): lo pide
+  // el toque en «Editar», no la aparición del campo. Mismo patrón que DailyGoalTracker.
+  const monthlyInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editing) monthlyInputRef.current?.focus();
+  }, [editing]);
   const [sales, setSales]             = useState<SaleRecord[]>([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState<string | null>(null);
@@ -463,7 +472,7 @@ function SemaMesTab() {
                   onKeyDown={(e) => e.key === "Enter" && handleSave()}
                   min={1}
                   max={MAX_MONTHLY_GOAL}
-                  autoFocus
+                  ref={monthlyInputRef}
                   aria-label="Meta mensual en soles"
                   aria-invalid={!!editError}
                   aria-describedby={editError ? "monthly-goal-error" : undefined}
@@ -677,14 +686,22 @@ function LogrosTab() {
     fetchAbortRef.current = ctrl;
     try {
       const opts: RequestInit = { credentials: "include", cache: "no-store", signal: ctrl.signal };
+      // Cada fuente puede fallar sola sin tumbar el panel (null = sin ese dato),
+      // pero la falla queda registrada; el abort de un refetch no es una falla.
+      const sinDato = (ruta: string) => (err: unknown) => {
+        if (!(err instanceof DOMException && err.name === "AbortError")) {
+          logger.warn(`[metas-logros] ${ruta} no respondió`, { error: String(err) });
+        }
+        return null;
+      };
       const [dashRes, goalsRes, salesRes, fiadosRes, cashRes, reviewsRes] = await Promise.all([
-        fetch("/api/admin/dashboard", opts).catch(() => null),
-        fetch("/api/goals", opts).catch(() => null),
-        fetch("/api/sales?limit=200", opts).catch(() => null),
+        fetch("/api/admin/dashboard", opts).catch(sinDato("dashboard")),
+        fetch("/api/goals", opts).catch(sinDato("goals")),
+        fetch("/api/sales?limit=200", opts).catch(sinDato("sales")),
         // FIX 2026-05-07: enum FiadoStatus es UPPERCASE (PAGADO no pagado).
-        fetch("/api/fiados?status=PAGADO", opts).catch(() => null),
-        fetch("/api/cash-registers", opts).catch(() => null),
-        fetch("/api/reviews?limit=100", opts).catch(() => null),
+        fetch("/api/fiados?status=PAGADO", opts).catch(sinDato("fiados")),
+        fetch("/api/cash-registers", opts).catch(sinDato("cash-registers")),
+        fetch("/api/reviews?limit=100", opts).catch(sinDato("reviews")),
       ]);
 
       if (ctrl.signal.aborted) return;
@@ -795,7 +812,10 @@ function LogrosTab() {
           credentials: "include",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ achievements: next }),
-        }).catch(() => { /* silent — local persiste igual */ });
+        }).catch((err) =>
+          // No rompe nada (localStorage ya los tiene y el próximo mount reintenta), pero se registra.
+          logger.warn("[metas-logros] no se pudieron guardar los logros en el servidor", { error: String(err) }),
+        );
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
@@ -1075,7 +1095,10 @@ interface Props {
 }
 
 export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
-  const [tab, setTab] = useState<TabId>("mis-metas");
+  // La sub-vista vive en `?vista=` (useVistaModulo): link compartible, «atrás» del
+  // navegador y destino de avisos y del buscador. Antes era estado local y `?vista=`
+  // se ignoraba (medido 2026-09-14: `?tab=metas-logros&vista=hoy` abría «Mis Metas»).
+  const { vista: tab, irA: setTab } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, "mis-metas");
 
   const [goals, setGoals]   = useState<Goal[]>([]);
   const [streak, setStreak] = useState(0);

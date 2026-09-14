@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import type { VendorDashboardData } from "@/components/admin/vendor-dashboard/vendor-dashboard.types";
 import { usePlanTier } from "@/hooks/use-plan-tier";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
@@ -76,6 +77,7 @@ const MorningBriefingCard = dynamic(
 const MODULE_ID = "vendor-dashboard";
 
 type InicioTab = "general" | "ventas" | "caja" | "inventario" | "compras" | "clientes" | "marketplace";
+const INICIO_TABS: readonly InicioTab[] = ["general", "ventas", "caja", "inventario", "compras", "clientes", "marketplace"];
 
 // ── Prefetch map: preload tab chunks on hover ──────────────────────────────
 const TAB_PREFETCH: Record<InicioTab, () => void> = {
@@ -118,7 +120,10 @@ export default function VendorDashboardModule() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [tab, setTab] = useState<InicioTab>("general");
+  // La sub-vista vive en `?vista=` (useVistaModulo): link compartible, «atrás» del
+  // navegador y destino de avisos y del buscador. Antes era estado local y `?vista=`
+  // se ignoraba (medido 2026-09-14: `?vista=` se ignoraba en 16 módulos).
+  const { vista: tab, irA: setTab } = useVistaModulo<InicioTab>(MODULE_ID, INICIO_TABS, "general");
   const [storeSlug, setStoreSlug] = useState("main");
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange);
 
@@ -138,7 +143,7 @@ export default function VendorDashboardModule() {
   // Si el sub-tab activo dejó de estar disponible, volver a Resumen.
   useEffect(() => {
     if (!availableTabs.some((t) => t.id === tab)) setTab("general");
-  }, [availableTabs, tab]);
+  }, [availableTabs, tab, setTab]);
 
   useEffect(() => {
     let active = true;

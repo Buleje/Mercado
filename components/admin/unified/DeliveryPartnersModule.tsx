@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import dynamic from "next/dynamic";
 import { Truck, Users, ClipboardList, Shield, RefreshCw, MapPin, FileText, Trophy, Activity } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ const TABS = [
 ];
 
 type TabId = string;
+const TAB_IDS: readonly TabId[] = TABS.map((t) => t.id);
 
 // ─────────────────────────────────────────────
 // Modal para crear/editar repartidor
@@ -48,7 +50,10 @@ interface DeliveryKPIs {
 }
 
 export default function DeliveryPartnersModule({ initialTab }: { initialTab?: string } = {}) {
-  const [tab, setTab] = useState<TabId>(initialTab ?? TABS[0].id);
+  // La sub-vista vive en `?vista=` (useVistaModulo): link compartible, «atrás» del
+  // navegador y destino de avisos y del buscador. Antes era estado local y `?vista=`
+  // se ignoraba (medido 2026-09-14: `?vista=` se ignoraba en 16 módulos).
+  const { vista: tab, irA: setTab } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
   const [, setKpis] = useState<DeliveryKPIs>({
     activePartners: 0,
     deliveriesToday: 0,

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import dynamic from "next/dynamic";
 import { Tag } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -19,11 +19,15 @@ const TABS: AdminTab[] = [
   { id: "cupones",           label: "Cupones",           icon: Tag },
   { id: "historial-precios", label: "Historial precios", icon: Tag },
 ];
+const TAB_IDS = TABS.map((t) => t.id);
 
 // ── Componente principal ────────────────────────────────────────────────────
 
 export default function CatalogoTiendaModule() {
-  const [sub, setSub] = useState(TABS[0].id);
+  // La sub-vista vive en `?vista=` (useVistaModulo): link compartible, «atrás» del
+  // navegador y destino de avisos y del buscador. Antes era estado local y `?vista=`
+  // se ignoraba (medido 2026-09-14: `?vista=` se ignoraba en 16 módulos).
+  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
 
 
   return (
