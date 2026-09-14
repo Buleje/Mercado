@@ -39,6 +39,12 @@ export const CONCEPTOS = [
      este concepto, anotar una venta obligaba a elegir «otro» y el saldo de la
      cuenta no distinguía una compra de una venta. */
   "venta",
+  /* Liquidar la cuenta de una persona (ADR-413). `compensacion` es la pata
+     forestal de un cruce con sus adelantos: sin la otra pata queda a medias,
+     por eso NO entra al formulario manual (`CONCEPTOS_MANUALES`).
+     `pago_hecho` es plata que el negocio le entrega a la parte. */
+  "compensacion",
+  "pago_hecho",
   "otro",
 ] as const;
 export type Concepto = (typeof CONCEPTOS)[number];
@@ -51,8 +57,13 @@ export const CONCEPTO_LABEL: Record<Concepto, string> = {
   pago: "Pago recibido",
   madera: "Madera recibida",
   venta: "Venta de madera",
+  compensacion: "Cruce con adelantos",
+  pago_hecho: "Pago entregado",
   otro: "Otro",
 };
+
+/** Lo que se puede anotar a mano. El cruce sólo lo escribe una liquidación. */
+export const CONCEPTOS_MANUALES: readonly Concepto[] = CONCEPTOS.filter((c) => c !== "compensacion");
 
 /**
  * El tipo que corresponde a cada concepto. Se sugiere, no se impone: hay
@@ -68,6 +79,9 @@ export const TIPO_SUGERIDO: Record<Concepto, TipoMov> = {
   madera: "abono",
   /* Le vendimos: queda debiendo hasta que pague. */
   venta: "cargo",
+  /* Lleva un saldo a favor suyo hacia cero: se lo cruzamos o se lo pagamos. */
+  compensacion: "cargo",
+  pago_hecho: "cargo",
   otro: "cargo",
 };
 
@@ -83,6 +97,14 @@ export interface MovimientoCuenta {
   referencia: string | null;
   fleteId: string | null;
   notas: string | null;
+  /**
+   * La corrida de la que nació el cargo (aserrío por encargo, ADR-412). Con
+   * valor, el movimiento se corrige desde la corrida y no desde la cuenta.
+   * Opcional: los movimientos anteriores a ADR-412 no lo traen.
+   */
+  ctpEntryId?: string | null;
+  /** La liquidación de la que salió (ADR-413): se corrige anulándola. Opcional. */
+  liquidacionId?: string | null;
 }
 
 const texto = (max: number) => z.string().trim().max(max);

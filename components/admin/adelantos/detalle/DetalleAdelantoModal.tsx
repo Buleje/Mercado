@@ -219,7 +219,8 @@ export default function DetalleAdelantoModal({
                   <button onClick={() => setEditandoNotas(true)} className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)] hover:underline">
                     <Pencil className="h-4 w-4" /> Editar
                   </button>
-                  {a.status !== "CANCELADO" && (
+                  {/* Liquidado: se corrige anulando la liquidación (ADR-413); el servidor lo rechaza. */}
+                  {a.status !== "CANCELADO" && a.status !== "LIQUIDADO" && (
                     <button onClick={() => setAnulando(true)} className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-error)] hover:underline">
                       <Ban className="h-4 w-4" /> Anular
                     </button>

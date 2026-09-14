@@ -49,7 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: bizErr instanceof Error ? bizErr.message : "Error de validación" }, { status: 400 });
     }
     if (!adelanto) return NextResponse.json({ error: "Adelanto no encontrado" }, { status: 404 });
-    logActivity("Liquidar", "adelanto", `Entrega registrada en adelanto ${id} — saldo S/${adelanto.saldoPendiente.toFixed(2)}`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Liquidar", "adelanto", `Entrega registrada en adelanto ${id} — saldo S/${adelanto.saldoPendiente.toFixed(2)}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json(adelanto, { status: 201 });
   } catch (e) {
     logger.error("[adelantos/entregas] POST error", { err: e instanceof Error ? e.message : String(e) });

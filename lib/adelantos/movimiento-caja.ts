@@ -95,3 +95,13 @@ export function etiquetaIngreso(codigo: string | null | undefined, persona: stri
 export function etiquetaReversion(codigo: string | null | undefined, persona: string): string {
   return `Anulación de adelanto ${codigo ?? ""} · ${persona} (devolución)`.replace(/\s+/g, " ").trim();
 }
+
+/** Cómo se lee en el arqueo el pago de una liquidación de cuenta (ADR-413). */
+export function etiquetaLiquidacion(codigo: string, persona: string): string {
+  return `Liquidación ${codigo} · ${persona}`.replace(/\s+/g, " ").trim();
+}
+
+/** Cómo se lee la devolución cuando se anula una liquidación y se pide revertir la caja. */
+export function etiquetaAnulacionLiquidacion(codigo: string, persona: string): string {
+  return `Anulación de liquidación ${codigo} · ${persona}`.replace(/\s+/g, " ").trim();
+}

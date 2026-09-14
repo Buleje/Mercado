@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AdelantosDB } from "@/lib/db/adelantos.db";
+import { AdelantoNoCancelableError, AdelantosDB } from "@/lib/db/adelantos.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -47,13 +47,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
     }
+    /* Anular exige el MISMO rol que el DELETE, que hace lo mismo: un cajero
+       podía cancelar por acá lo que por el DELETE le estaba prohibido. Editar
+       las notas sigue abierto. Se reusa `requireAdmin` para no copiar la lista
+       de roles; el mensaje va legible porque el modal muestra `error` tal cual. */
+    if (parsed.data.cancelar && (await requireAdmin(req, ["admin"])) instanceof NextResponse) {
+      return NextResponse.json(
+        { error: "Solo un administrador o el dueño puede anular un adelanto.", code: "forbidden" },
+        { status: 403 },
+      );
+    }
     const updated = parsed.data.cancelar
       ? await AdelantosDB.cancel(auth.tenantId, id, parsed.data.devolucionCaja)
       : await AdelantosDB.updateNotas(auth.tenantId, id, parsed.data.notas ?? null);
     if (!updated) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-    logActivity(parsed.data.cancelar ? "Cancelar" : "Editar", "adelanto", `Adelanto ${id}`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity(parsed.data.cancelar ? "Cancelar" : "Editar", "adelanto", `Adelanto ${id}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json(updated);
   } catch (e) {
+    /* Ya anulado o ya liquidado: no hay saldo que devolver. El modal muestra `error` tal cual. */
+    if (e instanceof AdelantoNoCancelableError) return NextResponse.json({ error: e.message }, { status: 409 });
     logger.error("[adelantos/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
@@ -72,9 +84,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     // alguien puede decir por qué vía volvió la plata.
     const cancelled = await AdelantosDB.cancel(auth.tenantId, id);
     if (!cancelled) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-    logActivity("Cancelar", "adelanto", `Adelanto ${id} cancelado`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Cancelar", "adelanto", `Adelanto ${id} cancelado`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json({ ok: true });
   } catch (e) {
+    if (e instanceof AdelantoNoCancelableError) return NextResponse.json({ error: e.message }, { status: 409 });
     logger.error("[adelantos/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }

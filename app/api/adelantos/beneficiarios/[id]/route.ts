@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AdelantosDB } from "@/lib/db/adelantos.db";
+import { AdelantosDB, ParteDadaDeBajaError, ParteYaVinculadaError } from "@/lib/db/adelantos.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -8,11 +8,18 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
- * Dos formas de PATCH: editar la ficha, o anotar que se le mandó un
- * recordatorio. Van juntas porque son la misma persona; se distinguen por
- * `action` para que editar sin querer no pise el recordatorio ni al revés.
+ * Tres formas de PATCH: editar la ficha, anotar un recordatorio, o vincular la
+ * parte del directorio forestal (ADR-412 §5). Van juntas porque son la misma
+ * persona; se distinguen por `action` para que editar sin querer no pise el
+ * recordatorio ni el vínculo, ni al revés.
  */
 const RecordatorioSchema = z.object({ action: z.literal("recordatorio") });
+
+const VincularParteSchema = z.object({
+  action: z.literal("vincular_parte"),
+  /** `null` desvincula. Vacío no es válido: se manda `null` a propósito. */
+  forestPartyId: z.string().min(1).max(60).nullable(),
+});
 
 const UpdateSchema = z.object({
   nombre: z.string().min(1).max(200),
@@ -57,8 +64,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         // nada que hacer, y decirlo es más útil que fingir que se mandó.
         return NextResponse.json({ yaRecordadoHoy: true }, { status: 200 });
       }
-      logActivity("Recordatorio", "adelanto", `Cobranza recordada`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+      logActivity("Recordatorio", "adelanto", `Cobranza recordada`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
       return NextResponse.json(r);
+    }
+
+    const esVincularParte = VincularParteSchema.safeParse(body);
+    if (esVincularParte.success) {
+      try {
+        const benef = await AdelantosDB.vincularParte(auth.tenantId, id, esVincularParte.data.forestPartyId);
+        if (!benef) return NextResponse.json({ error: "Persona no encontrada" }, { status: 404 });
+        logActivity(
+          esVincularParte.data.forestPartyId ? "Vincular" : "Desvincular",
+          "adelanto",
+          `${esVincularParte.data.forestPartyId ? "Vinculó" : "Desvinculó"} a ${benef.nombre} con su parte del directorio forestal`,
+          benef.id,
+          auth.username,
+          undefined,
+          auth.tenantId,
+        ).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+        return NextResponse.json({ ok: true });
+      } catch (e) {
+        if (e instanceof ParteYaVinculadaError) return NextResponse.json({ error: e.message }, { status: 409 });
+        if (e instanceof ParteDadaDeBajaError) return NextResponse.json({ error: e.message }, { status: 409 });
+        if (e instanceof Error && /no existe/i.test(e.message)) return NextResponse.json({ error: e.message }, { status: 404 });
+        throw e;
+      }
     }
 
     const parsed = UpdateSchema.safeParse(body);
@@ -67,7 +97,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     const benef = await AdelantosDB.updateBeneficiario(auth.tenantId, id, parsed.data);
     if (!benef) return NextResponse.json({ error: "Persona no encontrada" }, { status: 404 });
-    logActivity("Actualizar", "adelanto", `Beneficiario ${benef.nombre}`, benef.id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Actualizar", "adelanto", `Beneficiario ${benef.nombre}`, benef.id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json(benef);
   } catch (e) {
     logger.error("[adelantos/beneficiarios/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
@@ -88,7 +118,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       if (res.reason === "not_found") return NextResponse.json({ error: "Persona no encontrada" }, { status: 404 });
       return NextResponse.json({ error: "No se puede eliminar: la persona tiene adelantos registrados." }, { status: 409 });
     }
-    logActivity("Eliminar", "adelanto", `Beneficiario ${id}`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Eliminar", "adelanto", `Beneficiario ${id}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[adelantos/beneficiarios/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });

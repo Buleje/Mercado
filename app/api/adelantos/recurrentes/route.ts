@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
     }
     const rec = await AdelantosDB.createRecurrente(auth.tenantId, parsed.data);
-    logActivity("Crear", "adelanto", `Adelanto recurrente ${rec.frecuencia} S/${parsed.data.monto.toFixed(2)}`, rec.id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Crear", "adelanto", `Adelanto recurrente ${rec.frecuencia} S/${parsed.data.monto.toFixed(2)}`, rec.id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json(rec, { status: 201 });
   } catch (e) {
     logger.error("[adelantos/recurrentes] POST error", { err: e instanceof Error ? e.message : String(e) });

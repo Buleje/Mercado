@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  PREFIJO_LIQUIDACION,
+  anioDeCodigo,
   formatearCodigo,
   leerCodigo,
   normalizarBusquedaCodigo,
@@ -77,5 +79,29 @@ describe("buscar por código como lo dicta una persona", () => {
     expect(normalizarBusquedaCodigo("Juana")).toBeNull();
     expect(normalizarBusquedaCodigo("")).toBeNull();
     expect(normalizarBusquedaCodigo("7")).toBeNull();
+  });
+});
+
+describe("el año del talonario es el de Lima", () => {
+  it("el 31/12 a las 20:00 de Lima sigue siendo el año que termina (en UTC ya es enero)", () => {
+    expect(anioDeCodigo(new Date("2027-01-01T01:00:00.000Z"))).toBe(2026);
+    expect(anioDeCodigo("2026-12-31T23:59:00-05:00")).toBe(2026);
+  });
+
+  it("la medianoche de Lima ya es el año nuevo", () => {
+    expect(anioDeCodigo(new Date("2027-01-01T05:00:00.000Z"))).toBe(2027);
+  });
+});
+
+describe("el mismo talonario con otro prefijo (LIQ, ADR-413)", () => {
+  it("arma, lee y numera por año sin mezclarse con los ADL", () => {
+    expect(formatearCodigo(2026, 1, PREFIJO_LIQUIDACION)).toBe("LIQ-2026-0001");
+    expect(leerCodigo("ADL-2026-0007", PREFIJO_LIQUIDACION)).toBeNull();
+    expect(siguienteCodigo(["LIQ-2026-0004", "ADL-2026-0099", "LIQ-2025-0120"], 2026, PREFIJO_LIQUIDACION)).toBe("LIQ-2026-0005");
+  });
+
+  it("la búsqueda tolera cómo se dicta", () => {
+    expect(normalizarBusquedaCodigo("liq-2026-7", PREFIJO_LIQUIDACION)).toBe("LIQ-2026-0007");
+    expect(normalizarBusquedaCodigo("2026-7", PREFIJO_LIQUIDACION)).toBe("LIQ-2026-0007");
   });
 });

@@ -5,9 +5,11 @@ import { logger } from "@/lib/logger";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import {
   PREFIJO_ADELANTO,
+  anioDeCodigo,
   normalizarBusquedaCodigo,
   siguienteCodigo,
 } from "@/lib/adelantos/codigo-operacion";
+import { estadoDelSaldo } from "@/lib/adelantos/saldo-adelanto";
 import { resumirPersona, type ResumenPersona } from "@/lib/adelantos/saldo-persona";
 import {
   etiquetaEgreso,
@@ -16,6 +18,9 @@ import {
   moverCaja,
   type MetodoPago,
 } from "@/lib/adelantos/movimiento-caja";
+// Sólo LECTURA de la parte: la clase forestal es dueña de `ForestParty`
+// (ADR-317); acá no se toca su tabla, sólo se confirma que exista en el tenant.
+import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
 
 /**
  * AdelantosDB — Adelantos de dinero a personas/proveedores por servicios,
@@ -65,6 +70,12 @@ export type DbBeneficiario = {
   cci?: string | null;
   /** Baja lógica: se deja de ofrecer sin borrar su historial. */
   activo: boolean;
+  /**
+   * Esta persona es tal parte del directorio forestal (ADR-412 §5): con esto
+   * su cuenta une adelantos y aserríos en una sola fila en `/api/adelantos/cuentas`.
+   * `null` = todavía sin vincular (se intenta por documento, nunca por nombre).
+   */
+  forestPartyId?: string | null;
   createdAt: string;
 };
 
@@ -131,6 +142,8 @@ export type DbAdelantoEntrega = {
   sumadoAStock: boolean;
   notas?: string | null;
   comprobanteUrl?: string | null;
+  /** La liquidación de cuenta de la que salió (ADR-413). */
+  liquidacionId?: string | null;
   createdAt: string;
 };
 
@@ -174,14 +187,61 @@ export type DbAdelanto = {
   updatedAt: string;
 };
 
+/**
+ * Se intentó vincular una parte del directorio forestal que YA es la cuenta de
+ * otra persona en Adelantos (ADR-412 §5: una parte ↔ una persona).
+ */
+export class ParteYaVinculadaError extends Error {
+  constructor(readonly forestPartyId: string, readonly deQuien: string) {
+    super(`Esa parte del directorio ya está vinculada a ${deQuien}. Desvincúlala ahí primero.`);
+    this.name = "ParteYaVinculadaError";
+  }
+}
+
+/**
+ * Se intentó vincular una parte que el directorio muestra «dada de baja»
+ * (`activo: false`). `getParte` sólo mira `deletedAt`, así que sin este guard
+ * pasaba: la cuenta de la persona terminaba unida a alguien con quien ya no se
+ * trabaja. Re-vincular la MISMA parte que ya tenía no se rechaza.
+ */
+/**
+ * Se intentó anular un adelanto que ya no tiene nada que anular: ya está
+ * anulado, o ya se liquidó entero. Anularlo otra vez devolvería a la caja un
+ * saldo que ya no existe.
+ */
+export class AdelantoNoCancelableError extends Error {
+  constructor(readonly status: "CANCELADO" | "LIQUIDADO") {
+    super(
+      status === "CANCELADO"
+        ? "Este adelanto ya está anulado."
+        : "Este adelanto ya se liquidó entero: no queda saldo que anular.",
+    );
+    this.name = "AdelantoNoCancelableError";
+  }
+}
+
+export class ParteDadaDeBajaError extends Error {
+  constructor(readonly forestPartyId: string, nombre: string) {
+    super(`${nombre} está dada de baja en el directorio: actívala ahí o elige otra parte.`);
+    this.name = "ParteDadaDeBajaError";
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
+/** Violación de unique constraint de Prisma (P2002) — mismo detector que juntas.db.ts. */
+function isUniqueViolation(err: unknown): boolean {
+  return typeof err === "object" && err !== null && (err as { code?: string }).code === "P2002";
+}
 const toNum = (d: Prisma.Decimal | number | null | undefined): number =>
   d == null ? 0 : Number(d);
 const iso = (d: Date | null | undefined): string | null => (d ? d.toISOString() : null);
 
 const INCLUDE_FULL = {
   beneficiario: true,
-  entregas: { orderBy: { fecha: "desc" } },
+  /* Una entrega de una liquidación anulada no existe para nadie (ADR-413 §7):
+     todos los lectores leen `DbAdelanto.entregas`, así que filtrar acá los
+     cubre a todos. */
+  entregas: { where: { anuladaAt: null }, orderBy: { fecha: "desc" } },
   entregasPactadas: { orderBy: { numero: "asc" } },
 } satisfies Prisma.AdelantoInclude;
 
@@ -195,7 +255,7 @@ type BeneficiarioRow = {
   departamento?: string | null; provincia?: string | null; distrito?: string | null;
   email?: string | null; estadoSunat?: string | null; condicionSunat?: string | null;
   verificadoEn?: Date | null; banco?: string | null; cuentaBancaria?: string | null;
-  cci?: string | null; activo?: boolean;
+  cci?: string | null; activo?: boolean; forestPartyId?: string | null;
 };
 
 function mapBeneficiario(b: BeneficiarioRow): DbBeneficiario {
@@ -219,6 +279,7 @@ function mapBeneficiario(b: BeneficiarioRow): DbBeneficiario {
     /* Los registros anteriores a la 330 no traen la columna en memoria: se
        asumen activos, que es lo que eran. */
     activo: b.activo ?? true,
+    forestPartyId: b.forestPartyId ?? null,
     createdAt: b.createdAt.toISOString(),
   };
 }
@@ -272,6 +333,7 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
       productId: e.productId, cantidad: e.cantidad == null ? null : toNum(e.cantidad),
       valor: toNum(e.valor), sumadoAStock: e.sumadoAStock, notas: e.notas,
       comprobanteUrl: e.comprobanteUrl,
+      liquidacionId: e.liquidacionId ?? null,
       createdAt: e.createdAt.toISOString(),
     })),
     entregasPactadas: row.entregasPactadas.map((p) => ({
@@ -376,6 +438,17 @@ export type AdelantoListFilters = {
   search?: string;
 };
 
+/** Una fila de `saldosPorPersona` — ya agregada, no un adelanto individual. */
+export type SaldoAdelantoGrupo = {
+  beneficiarioId: string;
+  status: AdelantoStatus;
+  moneda: string;
+  /** SUMA de saldoPendiente del grupo (beneficiario, status, moneda). */
+  saldoPendiente: number;
+  /** Cuántos adelantos individuales componen este grupo (`_count` del `groupBy`). */
+  cantidad: number;
+};
+
 /**
  * El próximo código de operación del tenant (ADR-329).
  *
@@ -387,7 +460,9 @@ export type AdelantoListFilters = {
  * simultáneas piden el mismo, la segunda falla en la base en vez de duplicar.
  */
 async function siguienteCodigoDeTenant(tenantId: string): Promise<string> {
-  const anio = new Date().getFullYear();
+  /* El año de LIMA: con el del servidor (UTC) un adelanto del 31/12 a las
+     20:00 salía con el número del año siguiente. */
+  const anio = anioDeCodigo();
   const emitidos = await prisma.adelanto.findMany({
     where: { tenantId, codigoOperacion: { startsWith: `${PREFIJO_ADELANTO}-${anio}-` } },
     select: { codigoOperacion: true },
@@ -400,6 +475,13 @@ async function siguienteCodigoDeTenant(tenantId: string): Promise<string> {
 // ── DB ───────────────────────────────────────────────────────────────────────
 export const AdelantosDB = {
   // ── Beneficiarios ──
+  /** Una persona sola — para armar su estado de cuenta (ADR-412 §5) sin traer el listado entero. */
+  async getBeneficiario(tenantId: string, id: string): Promise<DbBeneficiario | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const row = await prisma.adelantoBeneficiario.findFirst({ where: { id, tenantId } });
+    return row ? mapBeneficiario(row) : null;
+  },
+
   async listBeneficiarios(tenantId: string): Promise<(DbBeneficiario & ResumenPersona)[]> {
     const rows = await prisma.adelantoBeneficiario.findMany({
       where: { tenantId },
@@ -618,7 +700,7 @@ export const AdelantosDB = {
      * inexistente → 400 claro». Faltaba tirarlo.
      */
     if (!benef) {
-      throw new Error("Esa persona no existe en este negocio. Elegila de la lista de beneficiarios.");
+      throw new Error("Esa persona no existe en este negocio. Elígela de la lista de beneficiarios.");
     }
     /**
      * `limiteCredito` es UN número en soles (el formulario lo rotula "S/", sin
@@ -702,110 +784,185 @@ export const AdelantosDB = {
    * e incrementa stock si tipo=PRODUCTO && sumarAStock.
    */
   async registrarEntrega(tenantId: string, adelantoId: string, input: EntregaInput): Promise<DbAdelanto | null> {
-    const resultado = await prisma.$transaction(async (tx) => {
-      const adelanto = await tx.adelanto.findFirst({ where: { id: adelantoId, tenantId } });
-      if (!adelanto) return null;
-      if (adelanto.status === "CANCELADO") {
-        throw new Error("No se pueden registrar entregas en un adelanto cancelado");
-      }
-
-      // Valor SIEMPRE calculado en backend (anti-fraude).
-      let valor: number;
-      if (input.tipo === "PRODUCTO" && input.productId != null) {
-        if (input.valorManual != null && input.valorManual > 0) {
-          valor = input.valorManual;
-        } else {
-          const prod = await tx.product.findFirst({
-            where: { id: input.productId, tenantId },
-            select: { price: true, costPrice: true },
-          });
-          if (!prod) throw new Error("Producto no encontrado en este tenant");
-          const cantidad = input.cantidad ?? 1;
-          /**
-           * Se valúa al COSTO, no al precio de venta.
-           *
-           * Acá el negocio está RECIBIENDO mercadería para saldar una deuda: es
-           * una compra. Acreditarla al precio al que después la vende liquidaba
-           * el adelanto con menos producto del que corresponde — el margen se
-           * regalaba en cada liquidación, en silencio.
-           *
-           * Sin costo cargado se cae al precio de venta, que es lo único que
-           * hay; `valorManual` sigue pisando todo cuando se pacta otro valor.
-           */
-          const unitario = prod.costPrice != null ? toNum(prod.costPrice) : toNum(prod.price);
-          valor = unitario * cantidad;
-        }
-      } else {
-        valor = input.valorManual ?? 0;
-      }
-      valor = Math.round(valor * 100) / 100;
-      if (valor <= 0) throw new Error("El valor de la entrega debe ser mayor a 0");
-
-      const entrega = await tx.adelantoEntrega.create({
-        data: {
-          adelantoId,
-          fecha: input.fecha ? new Date(input.fecha) : new Date(),
-          tipo: input.tipo,
-          descripcion: input.descripcion?.trim() || null,
-          productId: input.tipo === "PRODUCTO" ? input.productId ?? null : null,
-          cantidad: input.cantidad ?? null,
-          valor,
-          sumadoAStock: Boolean(input.tipo === "PRODUCTO" && input.sumarAStock),
-          notas: input.notas?.trim() || null,
-          comprobanteUrl: input.comprobanteUrl?.trim() || null,
-        },
-      });
-
-      // Incrementar stock si corresponde (entrega de producto que entra al inventario).
-      if (input.tipo === "PRODUCTO" && input.sumarAStock && input.productId != null) {
-        const qty = Math.round(input.cantidad ?? 1);
-        if (qty > 0) {
-          await tx.product.updateMany({
-            where: { id: input.productId, tenantId },
-            data: { stock: { increment: qty } },
-          });
-        }
-      }
-
-      // Marcar cuota pactada cumplida (si se indicó y pertenece a este adelanto).
-      if (input.pactadaId) {
-        await tx.adelantoEntregaPactada.updateMany({
-          where: { id: input.pactadaId, adelantoId },
-          data: { cumplidaEn: new Date(), entregaId: entrega.id },
-        });
-      }
-
-      // Recalcular saldo desde la suma real de entregas (fuente de verdad).
-      const agg = await tx.adelantoEntrega.aggregate({
-        where: { adelantoId },
-        _sum: { valor: true },
-      });
-      const totalEntregado = toNum(agg._sum.valor);
-      const montoAdelantado = toNum(adelanto.montoAdelantado);
-      const saldo = Math.round((montoAdelantado - totalEntregado) * 100) / 100;
-      const nuevoStatus: AdelantoStatus =
-        saldo > 0.009 ? "ABIERTO" : saldo < -0.009 ? "EXCEDIDO" : "LIQUIDADO";
-
-      await tx.adelanto.update({
-        where: { id: adelantoId },
-        data: { saldoPendiente: saldo, status: nuevoStatus },
-      });
-
+    const hecho = await prisma.$transaction(async (tx) => {
+      const r = await AdelantosDB.registrarEntregaEnTx(tx, tenantId, adelantoId, input);
+      if (!r) return null;
       const full = await tx.adelanto.findFirst({ where: { id: adelantoId, tenantId }, include: INCLUDE_FULL });
-      return full ? mapAdelanto(full) : null;
+      return full ? { adelanto: mapAdelanto(full), valor: r.valor } : null;
     });
 
     // Fuera de la transacción: anotar el efectivo que entró no puede hacer
     // rollback de una liquidación ya asentada.
-    if (resultado && input.metodoCaja && input.tipo === "LIBRE") {
+    //
+    // El monto es el `valor` de ESTA entrega, calculado en la transacción. Antes
+    // se leía `entregas[0].valor`, y `INCLUDE_FULL` ordena por `fecha desc`: una
+    // entrega registrada con fecha PASADA no es la primera, y la caja anotaba el
+    // importe de otra entrega.
+    if (hecho && input.metodoCaja && input.tipo === "LIBRE") {
       await moverCaja(tenantId, {
         tipo: "ingreso",
-        monto: resultado.entregas[0]?.valor ?? 0,
+        monto: hecho.valor,
         metodo: input.metodoCaja,
-        etiqueta: etiquetaIngreso(resultado.codigoOperacion, resultado.beneficiario?.nombre ?? "—"),
+        etiqueta: etiquetaIngreso(hecho.adelanto.codigoOperacion, hecho.adelanto.beneficiario?.nombre ?? "—"),
       });
     }
-    return resultado;
+    return hecho?.adelanto ?? null;
+  },
+
+  /**
+   * El cuerpo de una entrega, dentro de la transacción de quien llama (ADR-413 §6).
+   *
+   * `registrarEntrega` es esto + la caja; la liquidación de una cuenta lo llama
+   * varias veces dentro de SU transacción. Esta clase sigue siendo la única que
+   * escribe `AdelantoEntrega`.
+   *
+   * Bloquea la fila del adelanto (`FOR UPDATE`): dos entregas simultáneas
+   * recalculaban el saldo con un `aggregate` que no veía a la otra, y la última
+   * en escribir pisaba el saldo con uno que no la contaba.
+   *
+   * No mueve la caja: eso va después del commit, una vez, en quien orquesta.
+   */
+  async registrarEntregaEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    adelantoId: string,
+    input: EntregaInput & { liquidacionId?: string },
+  ): Promise<{ entregaId: string; valor: number; saldo: number; status: AdelantoStatus } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const bloqueado = await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "Adelanto" WHERE "id" = ${adelantoId} AND "tenantId" = ${tenantId} FOR UPDATE
+    `;
+    if (bloqueado.length === 0) return null;
+    const adelanto = await tx.adelanto.findFirst({ where: { id: adelantoId, tenantId } });
+    if (!adelanto) return null;
+    if (adelanto.status === "CANCELADO") {
+      throw new Error("No se pueden registrar entregas en un adelanto cancelado");
+    }
+
+    // Valor SIEMPRE calculado en backend (anti-fraude).
+    let valor: number;
+    if (input.tipo === "PRODUCTO" && input.productId != null) {
+      if (input.valorManual != null && input.valorManual > 0) {
+        valor = input.valorManual;
+      } else {
+        const prod = await tx.product.findFirst({
+          where: { id: input.productId, tenantId },
+          select: { price: true, costPrice: true },
+        });
+        if (!prod) throw new Error("Producto no encontrado en este tenant");
+        const cantidad = input.cantidad ?? 1;
+        /**
+         * Se valúa al COSTO, no al precio de venta.
+         *
+         * Acá el negocio está RECIBIENDO mercadería para saldar una deuda: es
+         * una compra. Acreditarla al precio al que después la vende liquidaba
+         * el adelanto con menos producto del que corresponde — el margen se
+         * regalaba en cada liquidación, en silencio.
+         *
+         * Sin costo cargado se cae al precio de venta, que es lo único que
+         * hay; `valorManual` sigue pisando todo cuando se pacta otro valor.
+         */
+        const unitario = prod.costPrice != null ? toNum(prod.costPrice) : toNum(prod.price);
+        valor = unitario * cantidad;
+      }
+    } else {
+      valor = input.valorManual ?? 0;
+    }
+    valor = Math.round(valor * 100) / 100;
+    if (valor <= 0) throw new Error("El valor de la entrega debe ser mayor a 0");
+
+    const entrega = await tx.adelantoEntrega.create({
+      data: {
+        adelantoId,
+        fecha: input.fecha ? new Date(input.fecha) : new Date(),
+        tipo: input.tipo,
+        descripcion: input.descripcion?.trim() || null,
+        productId: input.tipo === "PRODUCTO" ? input.productId ?? null : null,
+        cantidad: input.cantidad ?? null,
+        valor,
+        sumadoAStock: Boolean(input.tipo === "PRODUCTO" && input.sumarAStock),
+        notas: input.notas?.trim() || null,
+        comprobanteUrl: input.comprobanteUrl?.trim() || null,
+        liquidacionId: input.liquidacionId ?? null,
+      },
+    });
+
+    // Incrementar stock si corresponde (entrega de producto que entra al inventario).
+    if (input.tipo === "PRODUCTO" && input.sumarAStock && input.productId != null) {
+      const qty = Math.round(input.cantidad ?? 1);
+      if (qty > 0) {
+        await tx.product.updateMany({
+          where: { id: input.productId, tenantId },
+          data: { stock: { increment: qty } },
+        });
+      }
+    }
+
+    // Marcar cuota pactada cumplida (si se indicó y pertenece a este adelanto).
+    if (input.pactadaId) {
+      await tx.adelantoEntregaPactada.updateMany({
+        where: { id: input.pactadaId, adelantoId },
+        data: { cumplidaEn: new Date(), entregaId: entrega.id },
+      });
+    }
+
+    // Recalcular saldo desde la suma real de entregas VIVAS (fuente de verdad):
+    // la de una liquidación anulada ya no descuenta nada.
+    const agg = await tx.adelantoEntrega.aggregate({
+      where: { adelantoId, anuladaAt: null },
+      _sum: { valor: true },
+    });
+    const { saldo, status } = estadoDelSaldo(toNum(adelanto.montoAdelantado), toNum(agg._sum.valor));
+
+    await tx.adelanto.update({
+      where: { id: adelantoId },
+      data: { saldoPendiente: saldo, status },
+    });
+
+    return { entregaId: entrega.id, valor, saldo, status };
+  },
+
+  /**
+   * Da de baja las entregas de una liquidación anulada y recalcula el saldo de
+   * cada adelanto tocado (ADR-413 §7), dentro de la tx de quien orquesta.
+   *
+   * Baja lógica (`anuladaAt`), no borrado: es plata con un tercero. Quitar un
+   * pago o un cruce sólo SUBE una deuda, así que ningún adelanto pasa a
+   * EXCEDIDO por anular. Un CANCELADO sigue CANCELADO.
+   *
+   * La entrega no tiene `tenantId`: se llega a ella por el adelanto del tenant.
+   */
+  async anularEntregasDeLiquidacionEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    liquidacionId: string,
+  ): Promise<{ adelantoIds: string[] }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const entregas = await tx.adelantoEntrega.findMany({
+      where: { liquidacionId, anuladaAt: null, adelanto: { tenantId } },
+      select: { adelantoId: true },
+    });
+    const adelantoIds = [...new Set(entregas.map((e) => e.adelantoId))].sort();
+    /* Bloqueo en orden de id: dos anulaciones que tocan los mismos adelantos
+       no se abrazan. */
+    for (const adelantoId of adelantoIds) {
+      await tx.$queryRaw`SELECT "id" FROM "Adelanto" WHERE "id" = ${adelantoId} AND "tenantId" = ${tenantId} FOR UPDATE`;
+    }
+    await tx.adelantoEntrega.updateMany({
+      where: { liquidacionId, anuladaAt: null, adelanto: { tenantId } },
+      data: { anuladaAt: new Date() },
+    });
+    for (const adelantoId of adelantoIds) {
+      const a = await tx.adelanto.findFirst({ where: { id: adelantoId, tenantId }, select: { montoAdelantado: true, status: true } });
+      if (!a) continue;
+      const agg = await tx.adelantoEntrega.aggregate({ where: { adelantoId, anuladaAt: null }, _sum: { valor: true } });
+      const { saldo, status } = estadoDelSaldo(toNum(a.montoAdelantado), toNum(agg._sum.valor));
+      await tx.adelanto.update({
+        where: { id: adelantoId },
+        data: { saldoPendiente: saldo, ...(a.status === "CANCELADO" ? {} : { status }) },
+      });
+    }
+    return { adelantoIds };
   },
 
   /**
@@ -821,26 +978,51 @@ export const AdelantosDB = {
     id: string,
     devolucionCaja?: MetodoPago | null,
   ): Promise<DbAdelanto | null> {
-    const existing = await prisma.adelanto.findFirst({
-      where: { id, tenantId },
-      include: { beneficiario: { select: { nombre: true } } },
+    if (!tenantId) throw new Error("tenantId is required");
+    /* Lock, relectura y update condicionado en UNA transacción. Antes el saldo
+       se leía sin lock y ESE número iba a la caja: si una liquidación de cuenta
+       (ADR-413) tenía el adelanto bloqueado y le bajó el saldo, la anulación
+       devolvía el saldo de antes y la plata entraba dos veces al cajón. */
+    const hecho = await prisma.$transaction(async (tx) => {
+      const bloqueado = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM "Adelanto" WHERE "id" = ${id} AND "tenantId" = ${tenantId} FOR UPDATE
+      `;
+      if (bloqueado.length === 0) return null;
+      const actual = await tx.adelanto.findFirst({
+        where: { id, tenantId },
+        select: { status: true, saldoPendiente: true, codigoOperacion: true, beneficiario: { select: { nombre: true } } },
+      });
+      if (!actual) return null;
+      if (actual.status === "CANCELADO" || actual.status === "LIQUIDADO") throw new AdelantoNoCancelableError(actual.status);
+      const { count } = await tx.adelanto.updateMany({
+        where: { id, tenantId, status: { notIn: ["CANCELADO", "LIQUIDADO"] } },
+        data: { status: "CANCELADO" },
+      });
+      if (count === 0) throw new AdelantoNoCancelableError("CANCELADO");
+      const row = await tx.adelanto.findFirst({ where: { id, tenantId }, include: INCLUDE_FULL });
+      if (!row) return null;
+      return {
+        adelanto: mapAdelanto(row),
+        saldo: toNum(actual.saldoPendiente),
+        codigo: actual.codigoOperacion,
+        nombre: actual.beneficiario?.nombre ?? "—",
+      };
     });
-    if (!existing) return null;
-    await prisma.adelanto.updateMany({ where: { id, tenantId }, data: { status: "CANCELADO" } });
+    if (!hecho) return null;
 
+    // La caja va DESPUÉS del commit, como en `registrarEntrega`, y con el saldo
+    // releído bajo el lock: se devuelve lo que todavía debía, no el monto
+    // original — si ya había liquidado la mitad, esa mitad nunca volvió como
+    // efectivo.
     if (devolucionCaja) {
-      // Se devuelve lo que todavía debía, no el monto original: si ya había
-      // liquidado la mitad, esa mitad nunca volvió como efectivo.
       await moverCaja(tenantId, {
         tipo: "ingreso",
-        monto: Number(existing.saldoPendiente),
+        monto: hecho.saldo,
         metodo: devolucionCaja,
-        etiqueta: etiquetaReversion(existing.codigoOperacion, existing.beneficiario?.nombre ?? "—"),
+        etiqueta: etiquetaReversion(hecho.codigo, hecho.nombre),
       });
     }
-
-    const row = await prisma.adelanto.findFirst({ where: { id, tenantId }, include: INCLUDE_FULL });
-    return row ? mapAdelanto(row) : null;
+    return hecho.adelanto;
   },
 
   async updateNotas(tenantId: string, id: string, notas: string | null): Promise<DbAdelanto | null> {
@@ -894,6 +1076,36 @@ export const AdelantosDB = {
     };
   },
 
+  /**
+   * Saldos por persona SIN TOPE DE FILAS (ADR-412 §5).
+   *
+   * `list()` trae como mucho 500 adelantos: para la cuenta unificada eso es
+   * una cifra que puede quedar corta sin avisar — el peor tipo de bug, porque
+   * parece un número real. Acá se agrega EN LA BASE con `groupBy`: una fila
+   * por (beneficiario, status, moneda), nunca una por adelanto, así que da
+   * igual si el tenant tiene 50 adelantos o 50.000.
+   *
+   * Sólo ABIERTO/EXCEDIDO: son los dos únicos estados que pesan en el neto de
+   * `unificarCuentas` — traer también LIQUIDADO/CANCELADO sería agregar en la
+   * base filas que la cuenta después descarta igual.
+   */
+  async saldosPorPersona(tenantId: string): Promise<SaldoAdelantoGrupo[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const grupos = await prisma.adelanto.groupBy({
+      by: ["beneficiarioId", "status", "moneda"],
+      where: { tenantId, status: { in: ["ABIERTO", "EXCEDIDO"] } },
+      _sum: { saldoPendiente: true },
+      _count: true,
+    });
+    return grupos.map((g) => ({
+      beneficiarioId: g.beneficiarioId,
+      status: g.status as AdelantoStatus,
+      moneda: g.moneda,
+      saldoPendiente: Math.round(toNum(g._sum.saldoPendiente) * 100) / 100,
+      cantidad: g._count,
+    }));
+  },
+
   // ── Beneficiarios: editar / eliminar ──
   async updateBeneficiario(tenantId: string, id: string, data: BeneficiarioInput): Promise<DbBeneficiario | null> {
     const existing = await prisma.adelantoBeneficiario.findFirst({ where: { id, tenantId } });
@@ -910,6 +1122,60 @@ export const AdelantosDB = {
       },
     });
     const row = await prisma.adelantoBeneficiario.findFirst({ where: { id, tenantId } });
+    return row ? mapBeneficiario(row) : null;
+  },
+
+  /**
+   * Vincula (o desvincula con `null`) a esta persona con una parte del
+   * directorio forestal — la unión explícita de ADR-412 §5, que
+   * `/api/adelantos/cuentas` prioriza sobre el match por documento.
+   *
+   * Dos guardas antes de escribir:
+   *  · la parte tiene que existir EN ESTE TENANT (mismo cuidado que el resto
+   *    del módulo con el beneficiario ajeno — memoria: IDOR beneficiario ajeno);
+   *  · nadie más de este tenant puede tenerla vinculada ya: una parte es UNA
+   *    cuenta, no puede blanquear la deuda de dos personas a la vez.
+   */
+  async vincularParte(tenantId: string, beneficiarioId: string, forestPartyId: string | null): Promise<DbBeneficiario | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const existente = await prisma.adelantoBeneficiario.findFirst({ where: { id: beneficiarioId, tenantId } });
+    if (!existente) return null;
+
+    if (forestPartyId) {
+      const parte = await ForestDirectorioDB.getParte(tenantId, forestPartyId);
+      if (!parte) throw new Error("Esa parte no existe en el directorio de este negocio.");
+      if (!parte.activo && existente.forestPartyId !== forestPartyId) {
+        throw new ParteDadaDeBajaError(forestPartyId, parte.nombre);
+      }
+
+      const yaVinculada = await prisma.adelantoBeneficiario.findFirst({
+        where: { tenantId, forestPartyId, id: { not: beneficiarioId } },
+        select: { nombre: true },
+      });
+      if (yaVinculada) throw new ParteYaVinculadaError(forestPartyId, yaVinculada.nombre);
+    }
+
+    try {
+      await prisma.adelantoBeneficiario.updateMany({ where: { id: beneficiarioId, tenantId }, data: { forestPartyId } });
+    } catch (e) {
+      /**
+       * Carrera: dos pedidos pasaron el chequeo de arriba (`yaVinculada`) antes
+       * de que cualquiera de los dos escribiera — el mismo patrón que el doble
+       * canje de puntos. El chequeo previo es sólo para el mensaje con nombre;
+       * lo que de verdad lo impide es el índice único parcial
+       * `(tenantId, forestPartyId) WHERE forestPartyId IS NOT NULL`. Acá sólo
+       * se traduce su P2002 al mismo error de negocio (→ 409).
+       */
+      if (forestPartyId && isUniqueViolation(e)) {
+        const dueño = await prisma.adelantoBeneficiario.findFirst({
+          where: { tenantId, forestPartyId, id: { not: beneficiarioId } },
+          select: { nombre: true },
+        });
+        throw new ParteYaVinculadaError(forestPartyId, dueño?.nombre ?? "otra persona");
+      }
+      throw e;
+    }
+    const row = await prisma.adelantoBeneficiario.findFirst({ where: { id: beneficiarioId, tenantId } });
     return row ? mapBeneficiario(row) : null;
   },
 
@@ -943,7 +1209,7 @@ export const AdelantosDB = {
       select: { id: true },
     });
     if (!benef) {
-      throw new Error("Esa persona no existe en este negocio. Elegila de la lista de beneficiarios.");
+      throw new Error("Esa persona no existe en este negocio. Elígela de la lista de beneficiarios.");
     }
     /* El día de semana sólo aplica a semanal/quincenal, igual que `diaMes` sólo
        a mensual: guardar el de la otra frecuencia dejaría un dato que nadie lee

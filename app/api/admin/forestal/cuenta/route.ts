@@ -5,7 +5,13 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { ForestCuentaDB, FleteYaCargadoError, GuiaYaAnotadaError } from "@/lib/db/forest-cuenta.db";
+import {
+  CargoDeCorridaError,
+  ForestCuentaDB,
+  FleteYaCargadoError,
+  GuiaYaAnotadaError,
+  MovimientoDeLiquidacionError,
+} from "@/lib/db/forest-cuenta.db";
 import { movimientoInputSchema } from "@/lib/forestal/cuenta-corriente";
 
 /**
@@ -42,7 +48,14 @@ export const GET = withApiHandler("forestal-cuenta-get", async (req: NextRequest
   }
 });
 
-const postSchema = movimientoInputSchema.extend({ id: z.string().trim().max(40).optional() });
+/* Un cruce con adelantos (ADR-413) sólo lo escribe una liquidación: anotado a
+   mano le falta la otra pata. */
+const postSchema = movimientoInputSchema
+  .extend({ id: z.string().trim().max(40).optional() })
+  .refine((d) => d.concepto !== "compensacion", {
+    message: "Un cruce con adelantos se hace desde «Liquidar cuenta»: anotado a mano le falta la otra pata.",
+    path: ["concepto"],
+  });
 
 /** La venta de una guía: dos movimientos en un acto, idempotente por N° de guía. */
 const ventaGuiaSchema = z.object({
@@ -103,6 +116,14 @@ export const POST = withApiHandler("forestal-cuenta-post", async (req: NextReque
     if (err instanceof FleteYaCargadoError) {
       return NextResponse.json({ error: "flete_ya_cargado", message: err.message }, { status: 409 });
     }
+    /* El cargo de una corrida (ADR-412) se corrige desde la corrida. */
+    if (err instanceof CargoDeCorridaError) {
+      return NextResponse.json({ error: "cargo_de_corrida", message: err.message }, { status: 409 });
+    }
+    /* Una pata de una liquidación (ADR-413) se corrige anulando la liquidación. */
+    if (err instanceof MovimientoDeLiquidacionError) {
+      return NextResponse.json({ error: "movimiento_de_liquidacion", message: err.message }, { status: 409 });
+    }
     if (err instanceof Error && err.message.startsWith("La fecha")) {
       return NextResponse.json({ error: "fecha_invalida", message: err.message }, { status: 422 });
     }
@@ -125,6 +146,12 @@ export const DELETE = withApiHandler("forestal-cuenta-delete", async (req: NextR
     if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404 });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof CargoDeCorridaError) {
+      return NextResponse.json({ error: "cargo_de_corrida", message: err.message }, { status: 409 });
+    }
+    if (err instanceof MovimientoDeLiquidacionError) {
+      return NextResponse.json({ error: "movimiento_de_liquidacion", message: err.message }, { status: 409 });
+    }
     logger.error("[cuenta.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

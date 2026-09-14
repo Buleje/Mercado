@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
     }
     const benef = await AdelantosDB.createBeneficiario(auth.tenantId, parsed.data);
-    logActivity("Crear", "adelanto", `Beneficiario ${benef.nombre}`, benef.id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Crear", "adelanto", `Beneficiario ${benef.nombre}`, benef.id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json(benef, { status: 201 });
   } catch (e) {
     logger.error("[adelantos/beneficiarios] POST error", { err: e instanceof Error ? e.message : String(e) });

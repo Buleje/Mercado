@@ -91,6 +91,8 @@ export async function POST(req: NextRequest) {
       `Adelanto S/${parsed.data.montoAdelantado.toFixed(2)} (${parsed.data.modalidad ?? "CUENTA_CORRIENTE"})`,
       adelanto.id,
       auth.username,
+      undefined,
+      auth.tenantId,
     ).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json(adelanto, { status: 201 });
   } catch (e) {

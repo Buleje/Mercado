@@ -5,6 +5,11 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import type { Concepto, MovimientoCuenta, MovimientoInput, TipoMov } from "@/lib/forestal/cuenta-corriente";
+import {
+  cargoSeCorrigeDesdeLaCorrida,
+  lineNoDeReferencia,
+  mensajeCargoDeCorrida,
+} from "@/lib/forestal/aserrio-cobro";
 
 /**
  * ForestCuentaDB — la cuenta corriente con las partes del directorio (ADR-322).
@@ -34,7 +39,52 @@ export class FleteYaCargadoError extends Error {
   }
 }
 
+/**
+ * El cargo nació de una corrida (aserrío por encargo, ADR-412): se corrige
+ * desde la corrida. Editarlo acá dejaría a la corrida y a la cuenta contando
+ * dos importes distintos por el mismo aserrío.
+ */
+export class CargoDeCorridaError extends Error {
+  constructor(readonly ctpEntryId: string, lineNo: number | null) {
+    super(mensajeCargoDeCorrida(lineNo));
+    this.name = "CargoDeCorridaError";
+  }
+}
+
+/**
+ * El movimiento es una pata de una liquidación de cuenta (ADR-413): se corrige
+ * anulando la liquidación. Editarlo suelto dejaría la otra libreta y el papel
+ * firmado contando otra historia.
+ */
+export class MovimientoDeLiquidacionError extends Error {
+  constructor(readonly codigo: string | null) {
+    super(`Este movimiento es parte de la liquidación ${codigo ?? ""}: se corrige anulando esa liquidación.`.replace(/\s+/g, " "));
+    this.name = "MovimientoDeLiquidacionError";
+  }
+}
+
 type Row = Prisma.ForestCuentaMovGetPayload<Record<string, never>>;
+
+/** Tira `MovimientoDeLiquidacionError` si el movimiento salió de una liquidación. */
+async function assertNoEsDeLiquidacion(tenantId: string, row: Pick<Row, "liquidacionId" | "referencia">): Promise<void> {
+  if (!row.liquidacionId) return;
+  const liq = await prisma.liquidacionCuenta.findFirst({
+    where: { id: row.liquidacionId, tenantId },
+    select: { codigo: true },
+  });
+  throw new MovimientoDeLiquidacionError(liq?.codigo ?? row.referencia);
+}
+
+/** Tira `CargoDeCorridaError` si el movimiento es el cargo de una corrida viva. */
+async function assertNoEsCargoDeCorrida(tenantId: string, row: Pick<Row, "ctpEntryId" | "referencia">): Promise<void> {
+  if (!row.ctpEntryId) return;
+  const corrida = await prisma.forestCtpEntry.findFirst({
+    where: { id: row.ctpEntryId, tenantId },
+    select: { lineNo: true, status: true, deletedAt: true },
+  });
+  if (!cargoSeCorrigeDesdeLaCorrida(row, corrida)) return;
+  throw new CargoDeCorridaError(row.ctpEntryId, corrida?.lineNo ?? lineNoDeReferencia(row.referencia));
+}
 
 function aMov(r: Row): MovimientoCuenta {
   return {
@@ -49,6 +99,8 @@ function aMov(r: Row): MovimientoCuenta {
     referencia: r.referencia,
     fleteId: r.fleteId,
     notas: r.notas,
+    ctpEntryId: r.ctpEntryId ?? null,
+    liquidacionId: r.liquidacionId ?? null,
   };
 }
 
@@ -177,6 +229,10 @@ export const ForestCuentaDB = {
     const existente = input.id
       ? await prisma.forestCuentaMov.findFirst({ where: { id: input.id, tenantId, deletedAt: null } })
       : null;
+    if (existente) {
+      await assertNoEsCargoDeCorrida(tenantId, existente);
+      await assertNoEsDeLiquidacion(tenantId, existente);
+    }
 
     const row = existente
       ? await prisma.forestCuentaMov.update({ where: { id: existente.id }, data: datos })
@@ -199,6 +255,8 @@ export const ForestCuentaDB = {
     if (!tenantId) throw new Error("tenantId is required");
     const row = await prisma.forestCuentaMov.findFirst({ where: { id, tenantId, deletedAt: null } });
     if (!row) return false;
+    await assertNoEsCargoDeCorrida(tenantId, row);
+    await assertNoEsDeLiquidacion(tenantId, row);
     await prisma.forestCuentaMov.update({ where: { id }, data: { deletedAt: new Date() } });
     auditCtp({
       tenantId,
@@ -210,6 +268,82 @@ export const ForestCuentaDB = {
     });
     this.invalidar(tenantId);
     return true;
+  },
+
+  // ── Liquidación de cuentas (ADR-413): primitivas dentro de la tx de otro ──
+
+  /**
+   * Los movimientos vivos de una parte, SIN tope: el saldo de una liquidación
+   * no puede salir de una lista cortada (el `take: 2000` de `listar`).
+   */
+  async movimientosDeParteEnTx(tx: Prisma.TransactionClient, tenantId: string, parteId: string): Promise<MovimientoCuenta[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await tx.forestCuentaMov.findMany({
+      where: { tenantId, parteId, deletedAt: null },
+      orderBy: [{ fecha: "asc" }, { createdAt: "asc" }],
+    });
+    return rows.map(aMov);
+  },
+
+  /** Saldo de una parte sumado en la base (cargos − abonos), sin tope de filas. */
+  async saldoDeParteEnTx(tx: Prisma.TransactionClient, tenantId: string, parteId: string): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const grupos = await tx.forestCuentaMov.groupBy({
+      by: ["tipo"],
+      where: { tenantId, parteId, deletedAt: null },
+      _sum: { monto: true },
+    });
+    let cargos = 0;
+    let abonos = 0;
+    for (const g of grupos) {
+      const v = Number(g._sum.monto ?? 0);
+      if (g.tipo === "cargo") cargos += v;
+      else abonos += v;
+    }
+    return Math.round((cargos - abonos) * 100) / 100;
+  },
+
+  /**
+   * Escribe una pata forestal de una liquidación. Sin auditoría suelta: la
+   * liquidación deja UN renglón por acto (ADR-413), y cinco `ctp_cuenta_create`
+   * por un solo momento frente a la persona esconderían el acto.
+   */
+  async crearDeLiquidacionEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: MovimientoInput & { liquidacionId: string },
+    usuario: string,
+  ): Promise<MovimientoCuenta> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const fecha = fechaUtc(input.fecha);
+    if (!fecha) throw new Error("La fecha del movimiento es obligatoria (YYYY-MM-DD).");
+    const row = await tx.forestCuentaMov.create({
+      data: {
+        tenantId,
+        parteId: input.parteId.trim(),
+        parteNombre: input.parteNombre.trim(),
+        fecha,
+        tipo: input.tipo,
+        concepto: input.concepto,
+        monto: new Prisma.Decimal(input.monto),
+        moneda: input.moneda?.trim() || "PEN",
+        referencia: input.referencia?.trim() || null,
+        notas: input.notas?.trim() || null,
+        liquidacionId: input.liquidacionId,
+        createdBy: usuario || "unknown",
+      },
+    });
+    return aMov(row);
+  },
+
+  /** Baja lógica de las patas forestales de una liquidación anulada. */
+  async bajaDeLiquidacionEnTx(tx: Prisma.TransactionClient, tenantId: string, liquidacionId: string): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { count } = await tx.forestCuentaMov.updateMany({
+      where: { tenantId, liquidacionId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return count;
   },
 
   invalidar(tenantId: string): void {

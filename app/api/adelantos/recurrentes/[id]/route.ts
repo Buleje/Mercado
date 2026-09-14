@@ -36,7 +36,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { id } = await params;
     const ok = await AdelantosDB.deleteRecurrente(auth.tenantId, id);
     if (!ok) return NextResponse.json({ error: "Recurrente no encontrado" }, { status: 404 });
-    logActivity("Eliminar", "adelanto", `Adelanto recurrente ${id}`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Eliminar", "adelanto", `Adelanto recurrente ${id}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[adelantos/recurrentes/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });

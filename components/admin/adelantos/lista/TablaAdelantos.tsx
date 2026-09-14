@@ -361,7 +361,9 @@ function FilaAcciones({
   onEditarNotas: () => void;
   onAnular: () => void;
 }) {
-  const bloqueado = adelanto.status === "CANCELADO";
+  /* Mismo criterio que `AdelantosDB.cancel` (ADR-413): uno liquidado ya salió
+     por una liquidación y se corrige anulando ESA liquidación, no el adelanto. */
+  const bloqueado = adelanto.status === "CANCELADO" || adelanto.status === "LIQUIDADO";
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
