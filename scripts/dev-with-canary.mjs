@@ -20,7 +20,7 @@
  * esa línea (y el archivo /tmp/buleje_app.env) → el dev vuelve a `postgres`.
  */
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, utimesSync } from "node:fs";
 import { join } from "node:path";
 
 const KEY = "BULEJE_APP_DATABASE_URL";
@@ -101,3 +101,64 @@ child.on("exit", (code) => process.exit(code ?? 0));
 for (const sig of ["SIGINT", "SIGTERM"]) {
   process.on(sig, () => child.kill(sig));
 }
+
+// ── Rutas /api con estado viejo tras reiniciar ─────────────────────────────
+// Medido 2026-09-14 (dos veces): al relanzar `next dev` sobre el `.next` de una
+// corrida anterior, algunas rutas /api ya compiladas responden el HTML de
+// not-found (404) aunque su `route.js` y sus chunks estén en disco — el guard de
+// arriba no ve nada roto. Tocar CUALQUIER route.ts las refrescó a todas. Se
+// sondea una ruta que sin sesión debe dar 401 en JSON (no pasa por el guard de
+// /api/admin de proxy.ts); si da HTML 404, se toca y se vuelve a sondear.
+// Apagar con DEV_SIN_SONDA=1.
+const PUERTO = process.env.PORT || "3000";
+const RUTA_SONDA = "/api/rrhh/colaboradores/desde-adelantos";
+const ARCHIVO_SONDA = "app/api/rrhh/colaboradores/desde-adelantos/route.ts";
+const esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function sondear() {
+  try {
+    const res = await fetch(`http://localhost:${PUERTO}${RUTA_SONDA}`, { signal: AbortSignal.timeout(90_000) });
+    return { status: res.status, html: (res.headers.get("content-type") ?? "").includes("text/html") };
+  } catch {
+    return null;
+  }
+}
+
+const estaVieja = (r) => r !== null && r.status === 404 && r.html;
+
+async function repararRutasViejas() {
+  // Esperar a que el servidor conteste ALGO (hasta 3 min). No se espera a
+  // /api/health: con el estado viejo, health también da 404 (medido 2026-09-14).
+  let r = null;
+  for (let i = 0; i < 90 && r === null; i++) {
+    r = await sondear();
+    if (r === null) await esperar(2000);
+  }
+  if (r === null) {
+    console.log("\x1b[33m[dev] la sonda de rutas /api no obtuvo respuesta del servidor en 3 min.\x1b[0m");
+    return;
+  }
+  if (!estaVieja(r)) {
+    console.log(`[dev] rutas /api al día (${RUTA_SONDA} → ${r?.status ?? "sin respuesta"}).`);
+    return;
+  }
+  console.log(`\x1b[33m[dev] ⚠️  ${RUTA_SONDA} responde 404 en HTML: rutas /api con estado viejo. Refrescando…\x1b[0m`);
+  for (let intento = 0; intento < 5; intento++) {
+    const ahora = new Date();
+    try {
+      utimesSync(ARCHIVO_SONDA, ahora, ahora);
+    } catch (err) {
+      console.log(`\x1b[31m[dev] no pude tocar ${ARCHIVO_SONDA}: ${err.message}\x1b[0m`);
+      return;
+    }
+    await esperar(2000);
+    r = await sondear();
+    if (!estaVieja(r)) {
+      console.log(`\x1b[32m[dev] ✅ rutas /api refrescadas (${RUTA_SONDA} → ${r?.status ?? "sin respuesta"}).\x1b[0m`);
+      return;
+    }
+  }
+  console.log("\x1b[31m[dev] las rutas /api siguen en 404: corre `npm run dev:nuke` (borra .next).\x1b[0m");
+}
+
+if (!process.env.DEV_SIN_SONDA) void repararRutasViejas();
