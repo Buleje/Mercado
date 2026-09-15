@@ -150,7 +150,7 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
         {ficha && c && meta && (
           <>
             <header className="flex flex-col gap-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:flex-row sm:items-center sm:p-5">
-              <FichaFoto nombre={c.nombre} fotoUrl={c.fotoUrl} puedeCambiar={puedeGestionar} accion={accion} onCambio={avisar} />
+              <FichaFoto colaboradorId={colaboradorId} nombre={c.nombre} fotoUrl={c.fotoUrl} puedeCambiar={puedeGestionar} accion={accion} onCambio={avisar} />
               <div className="min-w-0 flex-1 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={cn(CLASE_CHIP, meta.claseChip)}>{meta.label}</span>
