@@ -229,7 +229,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
           </div>
         }
       >
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} width="100%" height="100%">
           <BarChart data={daily} margin={{ top: 28, right: 16, left: 0, bottom: 4 }} barCategoryGap="14%">
             <XAxis
               dataKey="dia"

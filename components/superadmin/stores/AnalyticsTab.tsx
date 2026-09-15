@@ -424,7 +424,7 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
           // (200px mobile / 260px desktop) — ahorra ~60px scroll en mobile
           // sin perder legibilidad del area chart.
           <div className="h-[200px] sm:h-[260px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} width="100%" height="100%">
             <AreaChart data={trend} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
               <defs>
                 <linearGradient id="atRevGrad" x1="0" y1="0" x2="0" y2="1">

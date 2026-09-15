@@ -340,7 +340,7 @@ export function GastosDonut() {
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Gastos del Mes por Categoria</p>
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative w-45 h-45">
-          <ResponsiveContainer minWidth={0} width="100%" height="100%">
+          <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}

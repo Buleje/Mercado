@@ -713,7 +713,7 @@ function FinanzasDashboard() {
           {expensesByCategory.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="relative w-45 h-45 shrink-0">
-                <ResponsiveContainer minWidth={0} width="100%" height="100%">
+                <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
                   <PieChart>
                     <Pie data={expensesByCategory} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" stroke="none" className="cursor-pointer"
                       onClick={(_: unknown, idx: number) => setGastosPieFilter(prev => prev === expensesByCategory[idx]?.name ? null : expensesByCategory[idx]?.name ?? null)}>
@@ -756,7 +756,7 @@ function FinanzasDashboard() {
           {paymentMethods.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="relative w-45 h-45 shrink-0">
-                <ResponsiveContainer minWidth={0} width="100%" height="100%">
+                <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
                   <PieChart>
                     <Pie data={paymentMethods} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" stroke="none">
                       {paymentMethods.map((entry, index) => (

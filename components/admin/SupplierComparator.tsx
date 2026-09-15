@@ -128,7 +128,7 @@ function SupplierRadar({ supplier }: { supplier: SupplierWithScore }) {
   ];
   return (
     <div className="h-48">
-      <ResponsiveContainer minWidth={0} width="100%" height="100%">
+      <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
         <RadarChart data={data} outerRadius="70%">
           <PolarGrid stroke="var(--card-border, #e5e7eb)" />
           <PolarAngleAxis

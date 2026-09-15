@@ -58,7 +58,7 @@ export default function ExecutiveAnalyticsCharts({ mrrByPlan, aov }: Props) {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* MRR por plan — donut */}
       <div className="h-56">
-        <ResponsiveContainer minWidth={0} width="100%" height="100%">
+        <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
           <PieChart>
             <Pie
               data={mrrByPlan.filter((p) => p.mrr > 0)}
@@ -91,7 +91,7 @@ export default function ExecutiveAnalyticsCharts({ mrrByPlan, aov }: Props) {
 
       {/* AOV trend — ComposedChart */}
       <div className="h-56">
-        <ResponsiveContainer minWidth={0} width="100%" height="100%">
+        <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
           <ComposedChart data={aov} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" vertical={false} />
             <XAxis

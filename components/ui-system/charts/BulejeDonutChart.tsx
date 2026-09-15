@@ -77,7 +77,7 @@ export function BulejeDonutChart({
       {width ? (
         grafico
       ) : (
-        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} width="100%" height="100%" minWidth={0}>
           {grafico}
         </ResponsiveContainer>
       )}

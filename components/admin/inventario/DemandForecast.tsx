@@ -124,7 +124,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
       {hasChartData && (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
         <h4 className="text-sm font-medium text-[var(--text-primary)] dark:text-muted mb-3">Ventas diarias (últimos 30 días)</h4>
         <div className="h-48">
-          <ResponsiveContainer minWidth={0} width="100%" height="100%">
+          <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis

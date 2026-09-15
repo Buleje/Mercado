@@ -338,7 +338,7 @@ function ResumenView({
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 lg:col-span-2">
           <div className="flex flex-col items-center gap-5 sm:flex-row">
             <div className="relative h-[140px] w-[140px] shrink-0">
-              <ResponsiveContainer minWidth={0} width="100%" height="100%">
+              <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={donutData}

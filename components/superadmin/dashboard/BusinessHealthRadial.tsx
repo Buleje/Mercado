@@ -77,7 +77,7 @@ export function BusinessHealthRadial({
       <div className="flex flex-col gap-4">
         {/* Score + radial */}
         <div className="relative" style={{ width: "100%", height: 200, minHeight: 160 }}>
-          <ResponsiveContainer width="99%" height="99%" debounce={50}>
+          <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} width="99%" height="99%" debounce={50}>
             <RadialBarChart
               data={metrics}
               innerRadius="40%"

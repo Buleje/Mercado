@@ -11,7 +11,7 @@
  *
  * Uso:
  *   <ChartCard title="Ventas y Utilidad" Icon={TrendingUp} height={340}>
- *     <ResponsiveContainer minWidth={0} width="100%" height="100%">
+ *     <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
  *       <AreaChart data={data}>...</AreaChart>
  *     </ResponsiveContainer>
  *   </ChartCard>
