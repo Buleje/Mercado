@@ -28,6 +28,7 @@ import {
   MoreHorizontal,
   PackageCheck,
   Pencil,
+  Coins,
   Share2,
   ThumbsDown,
   TreePine,
@@ -37,6 +38,8 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { CtpSort, CtpSortField } from "@/hooks/use-ctp-ingresos";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
+import { faltaRecibirMadera, loQueFaltaRecibir } from "@/lib/forestal/recepcion-guias";
+import { tieneCosto } from "@/lib/forestal/costo-sugerido";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { PROVEEDOR_INVENTARIO_APERTURA } from "@/lib/forestal/ctp-serfor-a-libro";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
@@ -124,8 +127,6 @@ export interface CtpGuiasTableProps {
   /** Ids de asientos pendientes en la página — los que se pueden marcar. */
   pendingIds: string[];
   busy: string | null;
-  /** La vista está en la bandeja «por recepcionar» (ADR-339). */
-  modoBandeja: boolean;
   rejectingId: string | null;
   rejectReason: string;
   setRejectReason: (v: string) => void;
@@ -148,6 +149,8 @@ export interface CtpGuiasTableProps {
   onVerFicha: (guia: GuiaIngreso<WoodEntry>) => void;
   /** Abre el cuadre: la guía declara un volumen y sus piezas suman otro (ADR-353). */
   onCuadrar: (guia: GuiaIngreso<WoodEntry>) => void;
+  /** Carga lo que se pagó por la guía, sin pasar por Rentabilidad (ADR-135). */
+  onCostear: (guia: GuiaIngreso<WoodEntry>) => void;
   sort: CtpSort;
   onSort: (field: CtpSortField) => void;
 }
@@ -166,7 +169,6 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
     selectedIds,
     setSelectedIds,
     pendingIds,
-    modoBandeja,
     sort,
     onSort,
     onDetail,
@@ -286,7 +288,6 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                     primera={primera}
                     cols={cols}
                     fotosEspecie={fotosEspecie}
-                    modoBandeja={modoBandeja}
                     actionProps={actionProps}
                     onVerGuia={props.onVerGuia}
                     onVerDocumento={props.onVerDocumento}
@@ -294,6 +295,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                     onCuadrar={props.onCuadrar}
                     onValidarGuia={props.onValidarGuia}
                     onRecepcionarGuia={props.onRecepcionarGuia}
+                    onCostear={props.onCostear}
                     onAlternarDetalle={() => alternarDetalle(g.clave)}
                     onAlternarMarca={(v) => alternarGuia(g, v)}
                     onDetail={onDetail}
@@ -346,7 +348,6 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
               fotosEspecie={fotosEspecie}
               marcada={marcada(g)}
               onAlternarMarca={(v) => alternarGuia(g, v)}
-              modoBandeja={modoBandeja}
               onDetail={onDetail}
               onValidarGuia={props.onValidarGuia}
               onRecepcionarGuia={props.onRecepcionarGuia}
@@ -418,7 +419,6 @@ function FilaGuia({
   primera,
   cols,
   fotosEspecie,
-  modoBandeja,
   actionProps,
   onVerGuia,
   onVerDocumento,
@@ -426,6 +426,7 @@ function FilaGuia({
   onCuadrar,
   onValidarGuia,
   onRecepcionarGuia,
+  onCostear,
   onAlternarDetalle,
   onAlternarMarca,
   onDetail,
@@ -439,7 +440,6 @@ function FilaGuia({
   primera: WoodEntry;
   cols: ColsGuiasVisibles;
   fotosEspecie: ReturnType<typeof useEspeciesFotos>["indice"];
-  modoBandeja: boolean;
   actionProps: ActionProps;
   onVerGuia: (e: WoodEntry) => void;
   onVerDocumento: (g: GuiaIngreso<WoodEntry>) => void;
@@ -447,6 +447,7 @@ function FilaGuia({
   onCuadrar: (g: GuiaIngreso<WoodEntry>) => void;
   onValidarGuia: (g: GuiaIngreso<WoodEntry>) => void;
   onRecepcionarGuia: (g: GuiaIngreso<WoodEntry>) => void;
+  onCostear: (g: GuiaIngreso<WoodEntry>) => void;
   onAlternarDetalle: () => void;
   onAlternarMarca: (v: boolean) => void;
   onDetail: (e: WoodEntry) => void;
@@ -454,6 +455,23 @@ function FilaGuia({
   /* Rechazar/anular pide un motivo en la misma celda: mientras se escribe, la
      fila cede el lugar a ese formulario (es el flujo de `CtpEntryActions`). */
   const enRechazo = actionProps.rejectingId === primera.id;
+
+  /**
+   * ¿Queda madera de este papel por recibir? Lo contesta la GUÍA y no la
+   * pestaña en la que se la esté mirando (2026-09-15).
+   *
+   * Antes el botón salía sólo con `modoBandeja` —la bandeja con el chip «Por
+   * recepcionar» puesto—, así que la misma guía tenía o no tenía «Recepcionar»
+   * según desde dónde se llegara: no lo tenía en «GTF ingresadas», ni con el
+   * chip «Todas las del período», ni al saltar desde un aviso de Cumplimiento
+   * (ese salto limpia el chip a propósito). Y como VALIDAR alcanza para salir
+   * de la bandeja (ADR-339) pero no fecha nada, una guía validada a mano se iba
+   * al archivo con sus trozas sin fechar y ya no había pantalla donde
+   * recibirla — las trozas sin fecha no se pueden llevar a la sierra.
+   */
+  const faltaRecibir = faltaRecibirMadera(guia);
+  const queFalta = loQueFaltaRecibir(guia);
+  const sinCosto = !guia.lineas.some(tieneCosto);
 
   /**
    * Lo que NO se hace en cada guía. Sale del mismo tipo `MenuAccion` que la
@@ -476,6 +494,18 @@ function FilaGuia({
           onSelect: () => onVerGuia(primera),
         } satisfies MenuAccion]
       : []),
+    {
+      /* El costo, en la fila de la guía (ADR-135). Vivía sólo detrás de
+         recepcionar y dentro de Rentabilidad: medido el 2026-09-15, **24 de 24
+         asientos sin costo** y 197,65 m³ sin valorizar. */
+      id: "costo",
+      label: sinCosto ? "Cargar lo que costó" : "Corregir lo que costó",
+      hint: sinCosto
+        ? "Sin costo, esta madera no puede mostrar margen"
+        : "Reescribe el costo de los asientos de la guía",
+      icon: Coins,
+      onSelect: () => onCostear(guia),
+    },
     ...(!unaSola
       ? [{
           id: "asientos",
@@ -745,10 +775,12 @@ function FilaGuia({
             <div className="flex items-center justify-end gap-1">
               {/* La FICHA es donde se revisa y se recibe (ADR-350): queda visible. */}
               <BotonGuia icon={Eye} texto="Ficha" onClick={() => onVerFicha(guia)} />
-              {modoBandeja ? (
+              {faltaRecibir ? (
                 <BotonGuia
                   icon={PackageCheck}
+                  tono="accion"
                   texto={unaSola ? "Recepcionar" : "Recepcionar guía"}
+                  title={`Fecha la guía y sus piezas el día que bajó del camión${queFalta.length > 0 ? ` — hoy le falta: ${queFalta.join(", ")}` : ""}. Sin eso la madera no aparece en Consumos.`}
                   onClick={() => onRecepcionarGuia(guia)}
                   disabled={Boolean(actionProps.busy)}
                 />
@@ -822,19 +854,22 @@ function BotonGuia({
   onClick,
   disabled,
   tono = "neutro",
+  title,
 }: {
   icon: typeof PackageCheck;
   texto: string;
   onClick: () => void;
   disabled?: boolean;
   tono?: "neutro" | "accion";
+  /** Qué hace de verdad, cuando el texto del botón no alcanza para decirlo. */
+  title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={texto}
+      title={title ?? texto}
       className={`inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border-2 px-2 text-xs font-bold transition-colors disabled:opacity-40 ${
         tono === "accion"
           ? "border-[var(--data-success-600)] bg-[var(--data-success-600)] text-white hover:opacity-90"

@@ -11,6 +11,7 @@
 
 import { CheckCheck, Download, PackageCheck } from "@buleje/design-system/icons";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
+import { faltaRecibirMadera, loQueFaltaRecibir } from "@/lib/forestal/recepcion-guias";
 import { PROVEEDOR_INVENTARIO_APERTURA } from "@/lib/forestal/ctp-serfor-a-libro";
 import EspecieFoto from "./EspecieFoto";
 import type { useEspeciesFotos } from "./hooks/use-especies-fotos";
@@ -22,7 +23,6 @@ export default function CtpGuiaCardMobile({
   fotosEspecie,
   marcada,
   onAlternarMarca,
-  modoBandeja,
   onDetail,
   onValidarGuia,
   onRecepcionarGuia,
@@ -32,13 +32,16 @@ export default function CtpGuiaCardMobile({
   fotosEspecie: ReturnType<typeof useEspeciesFotos>["indice"];
   marcada: boolean;
   onAlternarMarca: (v: boolean) => void;
-  modoBandeja: boolean;
   onDetail: (e: WoodEntry) => void;
   onValidarGuia: (g: GuiaIngreso<WoodEntry>) => void;
   onRecepcionarGuia: (g: GuiaIngreso<WoodEntry>) => void;
   busy: string | null;
 }) {
   const pendientes = guia.lineas.filter((l) => l.status === "pendiente").length;
+  /* El botón sale si a ESTA guía le falta recibir madera, no según en qué
+     pestaña esté parado el teléfono (2026-09-15) — ver `CtpGuiasTable`. */
+  const faltaRecibir = faltaRecibirMadera(guia);
+  const queFalta = loQueFaltaRecibir(guia);
 
   return (
     <article
@@ -123,11 +126,12 @@ export default function CtpGuiaCardMobile({
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {modoBandeja && (
+        {faltaRecibir && (
           <button
             type="button"
             onClick={() => onRecepcionarGuia(guia)}
             disabled={Boolean(busy)}
+            title={queFalta.length > 0 ? `Le falta: ${queFalta.join(", ")}` : undefined}
             className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-3 text-sm font-semibold text-white disabled:opacity-40"
           >
             <PackageCheck className="h-4 w-4" aria-hidden /> Recepcionar

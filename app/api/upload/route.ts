@@ -21,6 +21,8 @@ const ALLOWED_FOLDERS = new Set([
   "hero",
   // Fotos de las personas para el fotocheck (ADR-416).
   "rrhh",
+  // Fotos de la madera al bajar del camión: el respaldo del ingreso del Libro CTP.
+  "forestal",
 ]);
 
 export async function POST(req: NextRequest) {

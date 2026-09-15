@@ -45,6 +45,8 @@ import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { tieneCosto } from "@/lib/forestal/costo-sugerido";
+import { faltaRecibirMadera } from "@/lib/forestal/recepcion-guias";
+import type { ResultadoBloque } from "@/hooks/use-recepcion-bloque";
 import { logger } from "@/lib/logger";
 
 /** Lo que el endpoint de trozas devuelve: lo usan el papel y la ficha. */
@@ -70,6 +72,7 @@ import CtpGuiasTable, { COLUMNAS_GUIAS_OPCIONALES } from "./CtpGuiasTable";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import CtpGuiaFichaModal from "./CtpGuiaFichaModal";
 import CtpCostoGuiaModal, { type GuiaACostear } from "./CtpCostoGuiaModal";
+import CtpRecepcionBloqueModal, { type GuiaParaBloque } from "./CtpRecepcionBloqueModal";
 import CtpTrozasIndividuales from "./CtpTrozasIndividuales";
 import CtpIngresosKpis from "./CtpIngresosKpis";
 import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros";
@@ -109,6 +112,19 @@ const textoDeFiltro = (
   const vs = listaDe(v);
   return vs.length === 0 ? "" : `${nombre} ${vs.map(etiqueta).join(" o ")}`;
 };
+
+/**
+ * La guía tal como la pide el modal de costo. Vive suelto porque se arma desde
+ * DOS caminos —al recepcionar (ADR-135) y desde la fila, sin pasar por
+ * Rentabilidad— y dos copias derivarían en dos repartos distintos.
+ */
+const costeableDeGuia = (guia: GuiaIngreso<WoodEntry>): GuiaACostear => ({
+  gtfNumber: guia.gtfNumber,
+  providerName: guia.lineas[0]?.providerName ?? null,
+  especie: guia.lineas[0]?.speciesCommonName ?? null,
+  volumenM3: guia.lineas.reduce((a, l) => a + (Number(l.volumeM3) || 0), 0),
+  lineas: guia.lineas.map((l) => ({ id: l.id, volumeM3: l.volumeM3 })),
+});
 
 /** La fecha de hoy como se escribe en el papel. */
 const hoyPE = () =>
@@ -189,6 +205,8 @@ export default function CtpIngresosView({
   const [fichaError, setFichaError] = useState<string | null>(null);
   /** La guía que se está CUADRANDO: declara un volumen y sus piezas suman otro (ADR-353). */
   const [cuadreGuia, setCuadreGuia] = useState<GuiaIngreso<WoodEntry> | null>(null);
+  /** Recibir varias guías en un acto: el caso real son 10 esperando hace días. */
+  const [bloqueAbierto, setBloqueAbierto] = useState(false);
   const [guiaHoja, setGuiaHoja] = useState(0);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -540,15 +558,7 @@ export default function CtpIngresosView({
     encolarArchivado(guia.lineas);
     /* Sólo si NO tiene costo: preguntar por algo ya contestado es ruido, y el
        operador aprende a cerrar el modal sin leerlo. */
-    if (!guia.lineas.some(tieneCosto)) {
-      setCostoGuia({
-        gtfNumber: guia.gtfNumber,
-        providerName: guia.lineas[0]?.providerName ?? null,
-        especie: guia.lineas[0]?.speciesCommonName ?? null,
-        volumenM3: guia.lineas.reduce((a, l) => a + (Number(l.volumeM3) || 0), 0),
-        lineas: guia.lineas.map((l) => ({ id: l.id, volumeM3: l.volumeM3 })),
-      });
-    }
+    if (!guia.lineas.some(tieneCosto)) setCostoGuia(costeableDeGuia(guia));
     return true;
   }
 
@@ -583,6 +593,38 @@ export default function CtpIngresosView({
       detail: "Ya cuenta para el margen y para el valor del patio.",
     });
     return true;
+  }
+
+  /**
+   * Qué pasó con la tanda, dicho por guía.
+   *
+   * «Fallaron 2» no sirve para nada parado en el patio: hay que poder ir a
+   * buscar CUÁLES. Por eso el resultado nombra las guías y separa las que se
+   * recibieron pero quedaron sin costo — ésas ya están en el libro y su plata
+   * se carga desde su propia fila.
+   */
+  function avisarDelBloque(r: ResultadoBloque) {
+    if (r.recibidas.length > 0) {
+      pushToast({
+        tono: "success",
+        msg: `${r.recibidas.length} guía${r.recibidas.length === 1 ? "" : "s"} recibida${r.recibidas.length === 1 ? "" : "s"}`,
+        detail: "Sus trozas quedaron fechadas: ya se pueden llevar a la sierra desde Consumos.",
+      });
+    }
+    if (r.fallaron.length > 0) {
+      pushToast({
+        tono: "error",
+        msg: `${r.fallaron.length} no entró${r.fallaron.length === 1 ? "" : "s"}`,
+        detail: r.fallaron.map((f) => `${f.gtfNumber}: ${f.motivo}`).join(" · "),
+      });
+    }
+    if (r.sinCosto.length > 0) {
+      pushToast({
+        tono: "warning",
+        msg: `${r.sinCosto.length} quedó sin costo`,
+        detail: `${r.sinCosto.map((f) => f.gtfNumber).join(", ")} — se recibieron igual; carga la plata desde «⋯ → Cargar lo que costó».`,
+      });
+    }
   }
 
   /**
@@ -714,6 +756,15 @@ export default function CtpIngresosView({
     () => camposDeIngresos({ stats, facetas, onFacetas: setFacetas, productLabel }),
     [stats, facetas],
   );
+
+  /**
+   * Las guías EN PANTALLA a las que todavía les falta recibir madera.
+   *
+   * Es lo que gobierna el aviso y el bloque. Se calcula sobre lo que se ve —no
+   * sobre todo el período— para que el número del aviso y las filas de abajo
+   * nunca digan cosas distintas; si hay más, se llega paginando o filtrando.
+   */
+  const porRecibir = useMemo(() => guias.filter((g) => faltaRecibirMadera(g)), [guias]);
 
   /** Saca TODO lo que filtra. El período no: ése se ve arriba y es otra decisión. */
   const limpiarFiltros = useCallback(() => {
@@ -859,6 +910,32 @@ export default function CtpIngresosView({
       {/* Puente monte→planta: guías emitidas en Títulos Habilitantes sin ingresar. */}
       {!esArchivo && (
       <CtpGuiasBandeja key={bandejaKey} onIngresar={(n) => { setFormPreset(undefined); setFormGtf(n); setShowForm(true); }} />
+      )}
+
+      {/* La madera que bajó pero que el libro todavía no fechó. No es un error:
+          es trabajo esperando, y hasta que se haga esas trozas NO aparecen en
+          Consumos para llevarlas a la sierra. */}
+      {porRecibir.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-3">
+          <PackageCheck className="h-5 w-5 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
+          <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
+            <b className="text-[var(--text-primary)]">
+              {porRecibir.length} guía{porRecibir.length === 1 ? "" : "s"} sin recibir
+            </b>{" "}
+            en pantalla ·{" "}
+            <span className="font-mono tabular-nums">
+              {porRecibir.reduce((a, g) => a + Math.max(0, g.trozasCount - g.trozasDecididas), 0)} trozas
+            </span>{" "}
+            sin fechar. Hasta que se reciban, esa madera no aparece en Consumos.
+          </p>
+          <button
+            type="button"
+            onClick={() => setBloqueAbierto(true)}
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition-opacity hover:opacity-90"
+          >
+            <PackageCheck className="h-4 w-4" aria-hidden /> Recibir en bloque
+          </button>
+        </div>
       )}
 
       {error && (
@@ -1021,7 +1098,6 @@ export default function CtpIngresosView({
         selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
         busy={busy}
-        modoBandeja={recepcionSel === "pendiente"}
         rejectingId={rejectingId}
         rejectReason={rejectReason}
         setRejectReason={setRejectReason}
@@ -1045,6 +1121,7 @@ export default function CtpIngresosView({
         onVerDocumento={(g) => void verDocumento(g)}
         onVerFicha={(g) => void verFicha(g)}
         onCuadrar={setCuadreGuia}
+        onCostear={(g) => setCostoGuia(costeableDeGuia(g))}
         sort={sort}
         onSort={ordenar}
       />
@@ -1104,6 +1181,23 @@ export default function CtpIngresosView({
           />
         );
       })()}
+
+      {bloqueAbierto && (
+        <CtpRecepcionBloqueModal
+          guias={porRecibir as unknown as GuiaParaBloque[]}
+          onClose={() => setBloqueAbierto(false)}
+          onListo={(r) => {
+            setBloqueAbierto(false);
+            invalidarCtp("wood-entries");
+            void reload();
+            /* Las recibidas se van al expediente solas, igual que al validar. */
+            encolarArchivado(
+              porRecibir.filter((g) => r.recibidas.includes(g.clave)).flatMap((g) => g.lineas),
+            );
+            avisarDelBloque(r);
+          }}
+        />
+      )}
 
       {costoGuia && (
         <CtpCostoGuiaModal

@@ -43,10 +43,33 @@ export function piezasDecididas(g: GuiaParaRecepcion): boolean {
   return total > 0 && Number(g.trozasDecididas ?? 0) >= total;
 }
 
-export function estaRecepcionada(g: GuiaParaRecepcion): boolean {
-  if (g.status === "validado") return true;
+/**
+ * La guía tiene EVIDENCIA FÍSICA de que la madera llegó: se fechó el ingreso
+ * (ADR-335) o se decidió pieza por pieza (ADR-325/336).
+ *
+ * Es el subconjunto «duro» de `estaRecepcionada()`: los dos actos que sólo
+ * puede hacer alguien que estuvo en el patio. Validar —el tercer acto— es una
+ * decisión del LIBRO: un tilde que se puede dar en bloque a veinte guías sin
+ * mirar un solo tronco.
+ *
+ * Por eso el **score de cumplimiento** pregunta por ésta y no por la otra
+ * (ADR-418): medido en el libro real, «Validar todas» pasaba 21 guías a
+ * validadas dejándolas con `fechaRecepcion NULL` y 0 piezas decididas, y el
+ * puntaje saltaba 25 puntos sin que la madera se hubiera tocado.
+ *
+ * La BANDEJA sigue usando `estaRecepcionada()`: ahí el criterio laxo es el
+ * correcto —una guía que el patio ya resolvió no puede volver a la cola— y es
+ * el que replica `RECEPCION_CERRADA_SQL` en `wood-entries.db.ts`. Las dos
+ * lecturas salen de las MISMAS piezas: `estaRecepcionada = validada ∨ ésta`.
+ */
+export function recepcionVerificada(g: GuiaParaRecepcion): boolean {
   if (g.fechaRecepcion) return true;
   return piezasDecididas(g);
+}
+
+export function estaRecepcionada(g: GuiaParaRecepcion): boolean {
+  if (g.status === "validado") return true;
+  return recepcionVerificada(g);
 }
 
 export function estadoRecepcion(g: GuiaParaRecepcion): EstadoRecepcion {
@@ -95,4 +118,63 @@ export function resumenRecepcion(guias: readonly GuiaParaRecepcion[]): ResumenRe
     porRecepcionar: guias.length - ingresadas,
     piezasDisponibles,
   };
+}
+
+// ─── Recibir la madera ≠ salir de la bandeja ───────────────────────────────
+
+/**
+ * `estaRecepcionada()` contesta *«¿sigue en la bandeja?»*. Esto contesta otra
+ * cosa: *«¿queda madera de este papel por recibir?»*.
+ *
+ * No son lo mismo y confundirlas dejó el patio trabado (medido el 2026-09-15 en
+ * el tenant forestal): **validar** alcanza para salir de la bandeja, pero NO
+ * fecha ni el ingreso ni las piezas — y una troza sin `fechaRecepcion` no se
+ * puede llevar a la sierra. Una guía validada a mano se iba a «GTF ingresadas»,
+ * donde el botón de recepcionar ni existía, y sus trozas quedaban atrapadas sin
+ * que ninguna pantalla lo dijera.
+ *
+ * Es exactamente lo que `WoodEntriesDB.recepcionar()` todavía tendría para
+ * hacer: fechar el ingreso si le falta, fechar las piezas sin decisión.
+ */
+export interface GuiaParaRecibir {
+  status?: string | null;
+  /** Los asientos del papel — una GTF de dos especies son dos (ADR-312). */
+  lineas?: readonly { fechaRecepcion?: string | Date | null }[];
+  trozasCount?: number | null;
+  trozasDecididas?: number | null;
+}
+
+/** Una guía anulada o rechazada no se recibe: se corrige con motivo. */
+const recibible = (status?: string | null) => status !== "anulado" && status !== "rechazado";
+
+export function faltaRecibirMadera(g: GuiaParaRecibir): boolean {
+  if (!recibible(g.status)) return false;
+  const lineas = g.lineas ?? [];
+  if (lineas.length > 0 && lineas.some((l) => !l.fechaRecepcion)) return true;
+  const total = Number(g.trozasCount ?? 0);
+  return total > 0 && Number(g.trozasDecididas ?? 0) < total;
+}
+
+/**
+ * Qué se va a fechar al apretar el botón, en palabras del patio. Vacío si no
+ * queda nada: el botón dice lo que hace, no «recepcionar» a secas.
+ */
+export function loQueFaltaRecibir(g: GuiaParaRecibir): string[] {
+  if (!faltaRecibirMadera(g)) return [];
+  const falta: string[] = [];
+  const sinFecha = (g.lineas ?? []).filter((l) => !l.fechaRecepcion).length;
+  if (sinFecha > 0) {
+    falta.push(
+      sinFecha === (g.lineas ?? []).length
+        ? "sin fecha de recepción"
+        : `${sinFecha} asiento${sinFecha === 1 ? "" : "s"} sin fecha`,
+    );
+  }
+  const total = Number(g.trozasCount ?? 0);
+  const decididas = Number(g.trozasDecididas ?? 0);
+  if (total > 0 && decididas < total) {
+    const n = total - decididas;
+    falta.push(`${n} troza${n === 1 ? "" : "s"} sin fechar`);
+  }
+  return falta;
 }

@@ -331,6 +331,12 @@ const recepcionGuiaSchema = z.object({
   /** Los asientos de la guía. Tope alto: una GTF no tiene 50 especies. */
   ids: z.array(z.string().trim().min(1).max(60)).min(1).max(50),
   fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD").optional(),
+  /**
+   * Qué se vio al recibir cuando lo que bajó no es lo que declara el papel
+   * (2026-09-15). Va al rastro de auditoría de cada asiento; no hay columna
+   * propia y no se inventa una — el libro es un formato oficial.
+   */
+  observacion: z.string().trim().max(300).optional(),
 });
 
 /**
@@ -414,6 +420,7 @@ export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: N
       parsed.data.ids,
       parsed.data.fecha,
       auth.username ?? "unknown",
+      parsed.data.observacion,
     );
     /* Un fallo parcial NO es un 200 silencioso: la guía quedó a medias y la
        pantalla tiene que poder decir cuál falta. */

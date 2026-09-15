@@ -224,6 +224,8 @@ const INITIAL: DraftData = {
 // COMPONENT
 // ═════════════════════════════════════════════════════════════════════════
 
+import CtpFotosDelIngreso from "./CtpFotosDelIngreso";
+
 export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, preset }: Props) {
   /* El picker ofrece las de fábrica MÁS las del catálogo de esta planta
      (ADR-410): «Panguana» y «Yacuchapana» entran por la GTF todas las semanas y
@@ -243,6 +245,10 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   const partesUsadas = useRef<Set<string>>(new Set());
   /** El uso se cuenta con el ingreso ya guardado, no al elegir de la lista. */
   /** Lista de trozas pegada a mano cuando SERFOR no la trajo (ADR-320). */
+  /* Las fotos del ingreso (hasta 10, ADR-336): la API y la ficha ya las
+     soportaban, pero acá se mandaba `photos: null` fijo y las 24 guías del
+     tenant real quedaron sin una sola. */
+  const [fotos, setFotos] = useState<string[]>([]);
   const [trozasManuales, setTrozasManuales] = useState<TrozaImportada[]>([]);
   const [importarTrozas, setImportarTrozas] = useState(false);
   /**
@@ -899,7 +905,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         defectsNotes: data.defectsNotes.trim() || null,
         // (H) El permiso CITES vinculado queda en el acta del ingreso (notes).
         notes: [data.notes.trim(), finalCites && citesPermiso.trim() ? `Permiso CITES: ${citesPermiso.trim()}` : ""].filter(Boolean).join(" · ") || null,
-        photos: null,
+        photos: fotos.length > 0 ? fotos : null,
         // El cuerpo del documento: propietario del producto, destinatario y
         // transportista (ADR-336). Se manda sólo si hay algo declarado — un
         // objeto de campos vacíos ensuciaría el libro sin decir nada.
@@ -1928,6 +1934,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   placeholder="ej: 3 piezas con nudos grandes"
                   className={I}
                 />
+              </Field>
+              <Field span={12} label="Fotos del ingreso">
+                <CtpFotosDelIngreso fotos={fotos} onCambio={setFotos} disabled={submitting} />
               </Field>
               <Field span={6} label="Notas adicionales">
                 <textarea

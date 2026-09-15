@@ -607,6 +607,16 @@ export interface WoodEntryStats {
   /** Ingresos vigentes sin código de origen — sin eso no hay EUDR posible. */
   sinOrigenCount: number;
   /**
+   * Ingresos vigentes cuya recepción NO está cerrada (ADR-339): la madera
+   * figura en el libro pero nadie declaró haberla visto bajar del camión.
+   *
+   * Es distinto de `byStatus.pendiente`: validar es un acto administrativo que
+   * se puede hacer en bloque desde el escritorio; recepcionar es mirar la pila.
+   * Medido el 2026-09-15 en el tenant real: 21 de 24 guías sin recepcionar
+   * dejaban 153 de 160 trozas (181 m³) fuera del alcance del cubicador.
+   */
+  sinRecepcionCount: number;
+  /**
    * Ingresos vigentes sin costo cargado. No traba nada del libro —el
    * compliance no pide precios— pero es lo que deja al COGS sin base: lo que
    * salga de esa madera no puede mostrar margen.
@@ -3092,6 +3102,7 @@ export class WoodEntriesDB {
       sinOrigenCount,
       sinCostoAgg,
       conPiezasCount,
+      sinRecepcionCount,
       sinConstanciaCount,
       valorizadoAgg,
       trozasAgg,
@@ -3161,6 +3172,12 @@ export class WoodEntriesDB {
       }),
       // Con su lista de piezas: el patio contable vs. el patio contable palo a palo.
       prisma.woodEntry.count({ where: { ...whereVigente, trozas: { some: {} } } }),
+      /* Sin recepcionar (ADR-339): pasa por el MISMO predicado que la bandeja y
+         el archivo (`withRecepcionFilter`), para que el contador no pueda decir
+         una cosa y la lista otra. */
+      withRecepcionFilter(tenantId, { ...filters, recepcion: "pendiente" }, whereVigente).then((w) =>
+        prisma.woodEntry.count({ where: w }),
+      ),
       /* Sin constancia del SNIFFS: `null` Y `""`, como `sinOrigenCount`. Un
          string vacío es un campo que alguien abrió y dejó igual — contarlo
          como verificado sería el falso verde más caro del libro. */
@@ -3284,6 +3301,7 @@ export class WoodEntriesDB {
       sinCostoCount: sinCostoAgg._count._all,
       sinCostoM3: Number(sinCostoAgg._sum.volumeM3 ?? 0),
       conPiezasCount,
+      sinRecepcionCount,
       sinConstanciaCount,
       valorizadoCount: valorizadoAgg._count._all,
       valorizadoM3: r4(valorizadoAgg._sum.volumeM3?.toNumber() ?? 0),
@@ -3953,7 +3971,18 @@ export class WoodEntriesDB {
    * - Validar es lo último y sólo si estaba pendiente: es lo que la convierte en
    *   materia prima computable.
    */
-  static async recepcionar(tenantId: string, id: string, fecha: string | undefined, user: string) {
+  static async recepcionar(
+    tenantId: string,
+    id: string,
+    fecha: string | undefined,
+    user: string,
+    /**
+     * Qué se vio al recibir, cuando lo que bajó no es lo que dice el papel
+     * (2026-09-15). No hay columna para esto y no se inventa una: va al rastro
+     * de auditoría, que es el registro oficial de quién hizo qué en el libro.
+     */
+    observacion?: string,
+  ) {
     if (!tenantId) throw new Error("tenantId is required");
     const actual = await prisma.woodEntry.findFirst({
       where: { id, tenantId, deletedAt: null },
@@ -4001,7 +4030,8 @@ export class WoodEntriesDB {
         `Recepcionó la guía ${actual.gtfNumber} el ${dia}` +
         (piezas > 0
           ? ` · ${piezas} pieza${piezas === 1 ? "" : "s"} fechada${piezas === 1 ? "" : "s"}`
-          : ""),
+          : "") +
+        (observacion?.trim() ? ` · observación: ${observacion.trim()}` : ""),
       user,
     });
     try {
@@ -4029,6 +4059,8 @@ export class WoodEntriesDB {
     ids: string[],
     fecha: string | undefined,
     user: string,
+    /** Lo que se vio al recibir; queda en el rastro de CADA asiento de la guía. */
+    observacion?: string,
   ): Promise<{
     recepcionados: number;
     piezas: number;
@@ -4046,7 +4078,7 @@ export class WoodEntriesDB {
        quinientos: la latencia no es el problema, la consistencia sí. */
     for (const id of [...ids].sort()) {
       try {
-        const r = await WoodEntriesDB.recepcionar(tenantId, id, dia, user);
+        const r = await WoodEntriesDB.recepcionar(tenantId, id, dia, user, observacion);
         if (r) {
           recepcionados += 1;
           piezas += r.piezas;

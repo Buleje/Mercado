@@ -219,6 +219,12 @@ export interface WoodEntryStats {
   lateCount: number;
   /** Ingresos vigentes sin código de origen — sin eso la pestaña EUDR queda inerte. */
   sinOrigenCount: number;
+  /**
+   * Guías cuya recepción no está cerrada (ADR-339). Es lo que el puntaje de
+   * cumplimiento cuenta desde el 2026-09-15: validar es un botón, recepcionar
+   * es mirar la pila.
+   */
+  sinRecepcionCount?: number;
   /** Ingresos vigentes sin costo cargado (ADR-135). */
   sinCostoCount?: number;
   /** Ingresos vigentes sin constancia del SNIFFS guardada (ADR-386). */
