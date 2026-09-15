@@ -10,6 +10,7 @@
 
 import { z } from "zod";
 import { ESTADOS_ASISTENCIA, GRUPOS_SANGUINEOS, MODALIDADES, TIPOS_DOCUMENTO } from "./tipos";
+import { MOTIVO_CORRECCION_MAX, revisarMotivoCorreccion } from "./motivo-correccion";
 
 const fechaKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha va como AAAA-MM-DD");
 const hora = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "La hora va como HH:MM");
@@ -123,9 +124,21 @@ export const marcaInputSchema = z.object({
 });
 export type MarcaInputWire = z.infer<typeof marcaInputSchema>;
 
+/**
+ * Por qué se corrige (ADR-417). `texto(300)` no alcanzaba: dejaba pasar «ok» y
+ * «.», que ante una fiscalización valen lo mismo que nada. La regla es la
+ * misma que usa el modal — `revisarMotivoCorreccion`, una sola definición.
+ * Sigue siendo opcional acá: una tanda de marcas nuevas no corrige nada.
+ */
+const motivoCorreccionSchema = z
+  .string()
+  .trim()
+  .max(MOTIVO_CORRECCION_MAX)
+  .refine((v) => revisarMotivoCorreccion(v).ok, "Eso no explica nada: escribe un motivo de verdad");
+
 export const guardarMarcasSchema = z.object({
   marcas: z.array(marcaInputSchema).min(1).max(200),
-  motivo: texto(300).optional(),
+  motivo: motivoCorreccionSchema.optional(),
 });
 export type GuardarMarcasInput = z.infer<typeof guardarMarcasSchema>;
 

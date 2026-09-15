@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Clock, History, StickyNote } from "@buleje/design-system/icons";
+import { Clock, History, PencilLine, StickyNote } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { LoadingState } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
@@ -110,10 +110,25 @@ export default function HistorialMarcaModal({ open, onClose, colaborador, fecha,
                       Marcado por {v.marcadoPor} · {v.origen === "masivo" ? "acción masiva" : "a mano"}
                     </p>
                     {v.reemplazada && (
-                      <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                        Reemplazada el {new Date(v.reemplazada.en).toLocaleString("es-PE", FECHA_HORA)}
-                        {v.reemplazada.motivo && <> — {v.reemplazada.motivo}</>}
-                      </p>
+                      <div className="mt-2 border-t border-[var(--rule-soft)] pt-2">
+                        <p className="text-xs text-[var(--text-tertiary)]">
+                          Reemplazada el {new Date(v.reemplazada.en).toLocaleString("es-PE", FECHA_HORA)}
+                        </p>
+                        {/* El motivo es lo que se mira en una fiscalización: línea propia,
+                            y si no está, se dice — hasta el 2026-09-15 ninguna corrección
+                            lo traía porque la pantalla nunca lo preguntaba (ADR-417). */}
+                        <p
+                          className={cn(
+                            "mt-1 flex items-start gap-1.5 text-sm",
+                            v.reemplazada.motivo
+                              ? "text-[var(--text-secondary)]"
+                              : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+                          )}
+                        >
+                          <PencilLine className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          {v.reemplazada.motivo ?? "Se corrigió sin anotar el motivo."}
+                        </p>
+                      </div>
                     )}
                   </div>
                 </li>

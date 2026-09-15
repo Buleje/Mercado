@@ -12,6 +12,14 @@
  *
  * El masivo («Todos presentes») es una llamada aparte, inmediata: no tiene
  * sentido acumularla con marcas sueltas.
+ *
+ * Corregir NO es marcar (ADR-417): si en la tanda hay marcas que YA estaban
+ * guardadas en el servidor, antes de mandarlas se pide el motivo por el buzón
+ * de `lib/rrhh/motivo-correccion` —lo contesta `MotivoCorreccionModal`, montado
+ * en `AsistenciaView`— y viaja en el mismo PUT, que lo escribe en
+ * `motivoCorreccion` de la fila que se da de baja. Las marcas nuevas de la
+ * misma tanda NO esperan a esa respuesta: salen igual, para que preguntar por
+ * una corrección no retenga las otras 19 marcas del día.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -20,6 +28,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { etiquetaDia } from "@/lib/rrhh/fechas";
 import type { AsistenciaDTO, EstadoAsistencia, FechaKey, HojaAsistenciaDTO } from "@/lib/rrhh/tipos";
 import type { RrhhApiError } from "./use-rrhh-puestos";
+import { pedirMotivoCorreccion, type CambioACorregir } from "@/lib/rrhh/motivo-correccion";
 import { sinDato } from "@/lib/errores/sin-dato";
 
 export interface MarcaInput {
@@ -52,6 +61,13 @@ export interface OmitidoMasivo {
 
 const DEBOUNCE_MS = 800;
 
+/**
+ * Prefijo del id de una marca que todavía NO existe en el servidor. Es lo que
+ * separa «primera marca del día» de «corrección»: si la marca previa tenía un
+ * id de verdad, ya está en la base y cambiarla se audita.
+ */
+const ID_OPTIMISTA = "optimista-";
+
 const clave = (colaboradorId: string, fecha: FechaKey) => `${colaboradorId}|${fecha}`;
 
 /** Lo que devuelve un flush: si algo falló, con qué motivo y de qué fecha — para que quien navegó lejos lo pueda avisar igual. */
@@ -59,6 +75,8 @@ export interface ResultadoFlush {
   ok: boolean;
   fallos: { fecha: FechaKey; motivo: string }[];
 }
+
+type Fallo = ResultadoFlush["fallos"][number];
 
 /**
  * «No se guardaron 2 marcas del jueves 11/09: <motivo>» — agrupa por
@@ -123,9 +141,21 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
    * sobreescribir el optimista (más nuevo) que dejó el segundo toque.
    */
   const versionRef = useRef<Map<string, number>>(new Map());
+  /**
+   * Cómo estaba cada celda ANTES del primer toque de la tanda: `null` si no
+   * había marca. Es lo que distingue «primera marca del día» de «corrección»
+   * (id del servidor vs. `optimista-`) y a lo que se vuelve si se cancela el
+   * motivo. Se borra cuando la celda ya viajó bien al servidor.
+   */
+  const previaRef = useRef<Map<string, AsistenciaDTO | null>>(new Map());
+  /** La hoja vigente, legible desde los callbacks sin volver a crearlos (los nombres del modal salen de acá). */
+  const hojaRef = useRef<HojaAsistenciaDTO | null>(null);
+  /** Envíos en vuelo: con dos lotes a la vez (marcas nuevas + correcciones) `guardando` no se apaga con el primero. */
+  const enVueloRef = useRef(0);
   /** `false` tras desmontar — el flush del cleanup (fire-and-forget, nadie lo espera) se avisa SOLO, con un toast. */
   const montadoRef = useRef(true);
   useEffect(() => () => { montadoRef.current = false; }, []);
+  useEffect(() => { hojaRef.current = hoja; }, [hoja]);
 
   useEffect(() => {
     let vigente = true;
@@ -140,6 +170,9 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
         if (!vigente) return;
         setHoja(data);
         setErroresPorCelda(new Map());
+        // Las fotos de celdas que ya se guardaron no valen contra la hoja
+        // nueva; las de lo que sigue en el buffer sí (todavía no se mandó).
+        for (const k of [...previaRef.current.keys()]) if (!bufferRef.current.has(k)) previaRef.current.delete(k);
       })
       .catch((err) => {
         sinDato("RRHH asistencia")(err);
@@ -160,11 +193,16 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
     setHoja((prev) => {
       if (!prev) return prev;
       const k = clave(input.colaboradorId, input.fecha);
+      const previa = prev.marcas.find((m) => clave(m.colaboradorId, m.fecha) === k) ?? null;
+      // La foto de cómo estaba la celda antes del PRIMER toque de esta tanda.
+      // Idempotente a propósito: ni el segundo toque ni el doble render de
+      // StrictMode la pisan — si no, «volver atrás en dos segundos» se leería
+      // como una corrección de algo que el servidor nunca vio.
+      if (!previaRef.current.has(k)) previaRef.current.set(k, previa);
       const sinEsta = prev.marcas.filter((m) => clave(m.colaboradorId, m.fecha) !== k);
       if (input.estado === null) return { ...prev, marcas: sinEsta };
-      const previa = prev.marcas.find((m) => clave(m.colaboradorId, m.fecha) === k);
       const nueva: AsistenciaDTO = {
-        id: previa?.id ?? `optimista-${k}`,
+        id: previa?.id ?? `${ID_OPTIMISTA}${k}`,
         colaboradorId: input.colaboradorId,
         fecha: input.fecha,
         estado: input.estado,
@@ -181,9 +219,13 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
     });
   }, []);
 
-  const flush = useCallback(async (): Promise<ResultadoFlush> => {
-    if (bufferRef.current.size === 0) return { ok: true, fallos: [] };
-    const marcas = [...bufferRef.current.values()];
+  /**
+   * Manda UN lote al servidor (con su motivo, si lo lleva) y acomoda el estado
+   * local con la respuesta. Sale de adentro de `flush` porque una misma tanda
+   * puede partirse en dos envíos: las marcas nuevas viajan YA y las
+   * correcciones esperan a que se conteste el motivo.
+   */
+  const enviarLote = useCallback(async (marcas: MarcaInput[], motivo?: string): Promise<Fallo[]> => {
     const claves = marcas.map((m) => clave(m.colaboradorId, m.fecha));
     // Fecha de cada clave, para poder armar el aviso «N marcas del jueves
     // 11/09» sin tener que reparsear la clave compuesta más abajo.
@@ -194,19 +236,22 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
     // tocar esa celda — el flush del toque más nuevo ya se encarga.
     const versionEnvio = new Map(claves.map((k) => [k, versionRef.current.get(k) ?? 0]));
     const sigueVigente = (k: string) => versionRef.current.get(k) === versionEnvio.get(k);
-    bufferRef.current.clear();
+    enVueloRef.current += 1;
     if (montadoRef.current) setGuardando(true);
-    const fallos: { fecha: FechaKey; motivo: string }[] = [];
+    const fallos: Fallo[] = [];
     try {
       const res = await fetch("/api/rrhh/asistencia", {
         method: "PUT",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ marcas }),
+        body: JSON.stringify(motivo ? { marcas, motivo } : { marcas }),
         credentials: "include",
       });
       if (res.ok) {
         const data = (await res.json()) as { guardadas: AsistenciaDTO[] };
         const vigentes = data.guardadas.filter((g) => sigueVigente(clave(g.colaboradorId, g.fecha)));
+        // Lo que ya está en el servidor no necesita su foto: el próximo toque
+        // vuelve a sacarla, y esa sí será una corrección de algo guardado.
+        for (const k of claves) if (sigueVigente(k)) previaRef.current.delete(k);
         if (montadoRef.current) {
           setHoja((prev) => {
             if (!prev) return prev;
@@ -252,6 +297,7 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
         });
       }
     } finally {
+      enVueloRef.current -= 1;
       if (montadoRef.current) {
         // Sólo se limpia `pendientes` de las claves que siguen vigentes: una
         // celda con un toque más nuevo todavía tiene SU flush por delante.
@@ -260,16 +306,98 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
           for (const k of claves) if (sigueVigente(k)) siguiente.delete(k);
           return siguiente;
         });
-        setGuardando(false);
+        setGuardando(enVueloRef.current > 0);
       }
-      // El flush del cleanup de desmontaje es fire-and-forget — nadie espera
-      // esta promesa, así que si algo falló, el ÚNICO lugar donde puede
-      // avisarse es acá mismo (ALTO 5: un error de un día/mes que ya no
-      // existe en pantalla no tiene dónde mostrarse).
-      if (!montadoRef.current && fallos.length > 0) avisarFallos(fallos);
     }
-    return { ok: fallos.length === 0, fallos };
+    return fallos;
   }, []);
+
+  /**
+   * Se canceló el motivo: la corrección NO se guarda y la celda vuelve a lo
+   * que el servidor tiene. Sube la versión de cada clave para que una
+   * respuesta vieja en vuelo tampoco la reviva.
+   */
+  const revertirCorrecciones = useCallback((marcas: MarcaInput[]) => {
+    const claves = marcas.map((m) => clave(m.colaboradorId, m.fecha));
+    const enJuego = new Set(claves);
+    // Las fotos se leen ACÁ, no adentro del updater: `setHoja` corre después
+    // del `for` que limpia `previaRef`, y ahí ya no quedaría nada que
+    // restaurar (la celda se borraba en vez de volver a su marca guardada).
+    const restauradas = claves
+      .map((k) => previaRef.current.get(k) ?? null)
+      .filter((m): m is AsistenciaDTO => m !== null);
+    setHoja((prev) => {
+      if (!prev) return prev;
+      const sinEsas = prev.marcas.filter((m) => !enJuego.has(clave(m.colaboradorId, m.fecha)));
+      return { ...prev, marcas: [...sinEsas, ...restauradas] };
+    });
+    setPendientes((prev) => {
+      const siguiente = new Set(prev);
+      for (const k of claves) siguiente.delete(k);
+      return siguiente;
+    });
+    for (const k of claves) {
+      previaRef.current.delete(k);
+      versionRef.current.set(k, (versionRef.current.get(k) ?? 0) + 1);
+    }
+  }, []);
+
+  const flush = useCallback(async (): Promise<ResultadoFlush> => {
+    if (bufferRef.current.size === 0) return { ok: true, fallos: [] };
+    const marcas = [...bufferRef.current.values()];
+    bufferRef.current.clear();
+
+    /**
+     * Corrección = la celda YA tenía una marca con id del servidor antes del
+     * primer toque de esta tanda. La primera marca del día no lo es; tocar dos
+     * veces la misma celda antes de que se guarde, tampoco.
+     */
+    const esCorreccion = (m: MarcaInput) => {
+      const previa = previaRef.current.get(clave(m.colaboradorId, m.fecha));
+      return !!previa && !previa.id.startsWith(ID_OPTIMISTA);
+    };
+    const correcciones = marcas.filter(esCorreccion);
+
+    if (correcciones.length === 0) {
+      const fallos = await enviarLote(marcas);
+      if (!montadoRef.current && fallos.length > 0) avisarFallos(fallos);
+      return { ok: fallos.length === 0, fallos };
+    }
+
+    // Lo que NO es corrección sale ya mismo: preguntar por una celda no puede
+    // retener las otras 19 marcas frescas del día.
+    const nuevas = marcas.filter((m) => !esCorreccion(m));
+    const enVuelo: Promise<Fallo[]> = nuevas.length > 0 ? enviarLote(nuevas) : Promise.resolve([]);
+
+    const cambios: CambioACorregir[] = correcciones.map((m) => {
+      const previa = previaRef.current.get(clave(m.colaboradorId, m.fecha)) ?? null;
+      return {
+        colaboradorId: m.colaboradorId,
+        fecha: m.fecha,
+        nombre: hojaRef.current?.colaboradores.find((c) => c.id === m.colaboradorId)?.nombre ?? "Esta persona",
+        antes: previa?.estado ?? null,
+        despues: m.estado,
+      };
+    });
+    const respuesta = await pedirMotivoCorreccion(cambios);
+
+    let fallosDeCorreccion: Fallo[] = [];
+    if (respuesta.tipo === "cancelado") {
+      revertirCorrecciones(correcciones);
+      // El flush del debounce no lo espera nadie: este toast es la única
+      // devolución posible de «no se guardó, y por qué».
+      const n = correcciones.length;
+      toast.error(`No se ${n === 1 ? "guardó la corrección" : `guardaron las ${n} correcciones`}: sin motivo no se puede corregir.`);
+    } else {
+      // `sin-host` (nadie montó el modal) va sin motivo: perder la corrección
+      // del usuario sería peor que perder el motivo.
+      fallosDeCorreccion = await enviarLote(correcciones, respuesta.tipo === "motivo" ? respuesta.motivo : undefined);
+    }
+
+    const fallos = [...(await enVuelo), ...fallosDeCorreccion];
+    if (!montadoRef.current && fallos.length > 0) avisarFallos(fallos);
+    return { ok: fallos.length === 0, fallos };
+  }, [enviarLote, revertirCorrecciones]);
 
   const guardarAhora = useCallback(async (): Promise<ResultadoFlush> => {
     if (timerRef.current) {
