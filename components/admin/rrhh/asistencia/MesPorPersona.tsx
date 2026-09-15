@@ -8,6 +8,12 @@
  * tarjetas apilaba los 31 días de cada persona uno debajo del otro — 1.490 px
  * por persona. En calendario, el mes entero entra en una pantalla y cada
  * casilla abre el mismo `CeldaMarcaPopover` que la tabla.
+ *
+ * La casilla mide 36 px por medida, no por costumbre: a 360 px de pantalla
+ * quedan 296 px útiles (32 del shell + 32 del borde de la tarjeta), y 7
+ * casillas con 6 espacios de 4 px dan 38,8 px de tope. Por eso el aviso de
+ * tardanza (ADR-417) entra como punto —10 px acá— y lo que se toca con el dedo
+ * es la casilla entera y, después, el botón de 44 px dentro del panel.
  */
 
 import { useState } from "react";
@@ -18,6 +24,7 @@ import { BOTON, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
 import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, contarEstado, dentroDeVentana, estaIncluidoEseDia, motivoFueraDeVentana, pluralizar, type VentanaMarcado } from "../rrhh-ui";
 import CeldaMarcaPopover from "./CeldaMarcaPopover";
 import { conteoDelMes } from "./conteo-mes";
+import type { HorarioDelPuesto } from "./semana";
 import type { AsistenciaDTO, ColaboradorMinDTO, EstadoAsistencia, FechaKey } from "@/lib/rrhh/tipos";
 
 interface Props {
@@ -29,6 +36,14 @@ interface Props {
   pendientes: ReadonlySet<string>;
   erroresPorCelda: ReadonlyMap<string, string>;
   onMarcar: (colaboradorId: string, fecha: FechaKey, estado: EstadoAsistencia | null) => void;
+  /** Horario del puesto de cada persona (ADR-417). Sin el mapa, ninguna casilla juzga la llegada. */
+  horarios?: ReadonlyMap<string, HorarioDelPuesto>;
+  /**
+   * Confirmar la tardanza del día. La arma el padre, que es quien tiene la
+   * marca completa: el buffer de `use-rrhh-asistencia` reemplaza la celda y
+   * mandar sólo el estado borraría la hora que delató la tardanza.
+   */
+  onAceptarTardanza?: (colaboradorId: string, fecha: FechaKey) => void;
   onVerHistorial: (colaborador: ColaboradorMinDTO, fecha: FechaKey) => void;
 }
 
@@ -36,7 +51,7 @@ interface Props {
 const DIAS_SEMANA = ["L", "M", "M", "J", "V", "S", "D"];
 const CLASE_FLECHA = cn(BOTON.icono, "h-11 w-11 border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]");
 
-export default function MesPorPersona({ colaboradores, marcas, dias, hoy, ventana, pendientes, erroresPorCelda, onMarcar, onVerHistorial }: Props) {
+export default function MesPorPersona({ colaboradores, marcas, dias, hoy, ventana, pendientes, erroresPorCelda, horarios, onMarcar, onAceptarTardanza, onVerHistorial }: Props) {
   const [indice, setIndice] = useState(0);
   if (colaboradores.length === 0 || dias.length === 0) return null;
 
@@ -106,7 +121,9 @@ export default function MesPorPersona({ colaboradores, marcas, dias, hoy, ventan
                 motivoNoEditable={editable ? undefined : motivoFueraDeVentana(ventana)}
                 pendiente={pendientes.has(`${persona.id}|${d}`)}
                 errorMsg={erroresPorCelda.get(`${persona.id}|${d}`)}
+                horario={horarios?.get(persona.id) ?? null}
                 onMarcar={(estado) => onMarcar(persona.id, d, estado)}
+                onAceptarTardanza={onAceptarTardanza ? () => onAceptarTardanza(persona.id, d) : undefined}
                 onVerHistorial={() => onVerHistorial(persona, d)}
               />
             </div>

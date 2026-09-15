@@ -7,12 +7,16 @@
  * `MesPorPersona` (una persona a la vez, en calendario): la conversión
  * automática de tablas a tarjetas (`useMobileTableCards`) apilaba los 31 días
  * de cada persona y medía 1.490 px por persona (2026-09-14).
+ *
+ * Tardanzas (ADR-417): mismo cableado que la hoja de la semana — el horario
+ * sale del puesto y la celda avisa con un punto, sin empujar la grilla.
  */
 
 import { useMemo, useState, type ReactNode } from "react";
 import { Users } from "@buleje/design-system/icons";
 import { LoadingState, EmptyState, DataTable } from "@buleje/design-system";
 import { avisarFallos, useRrhhAsistencia } from "@/hooks/use-rrhh-asistencia";
+import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { NOMBRES_MES, dateDeFechaKey, etiquetaDia, mesDe, rangoDeDias } from "@/lib/rrhh/fechas";
 import { cn, limaDateKey } from "@/lib/utils";
 import { AvisoRrhh, BOTON } from "../rrhh-form";
@@ -23,6 +27,7 @@ import LeyendaEstados from "./LeyendaEstados";
 import MesPorPersona from "./MesPorPersona";
 import NavegadorPeriodo from "./NavegadorPeriodo";
 import { conteoDelMes } from "./conteo-mes";
+import { horariosPorColaborador, marcaConTardanza } from "./semana";
 import type { ColaboradorMinDTO } from "@/lib/rrhh/tipos";
 
 /** Por `getUTCDay()`: 0 = domingo. */
@@ -45,12 +50,21 @@ function sumarMeses(mes: string, delta: number): string {
 
 export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorModo }: Props) {
   const { hoja, loading, error, pendientes, erroresPorCelda, marcar, guardarAhora, recargar } = useRrhhAsistencia(desde, hasta);
+  // El horario vive en el puesto y la hoja sólo trae `{ id, nombre }` del puesto
+  // de cada persona (ADR-417): sin el catálogo nadie queda con tardanza sugerida.
+  const { puestos } = useRrhhPuestos();
   const [historial, setHistorial] = useState<{ colaborador: ColaboradorMinDTO; fecha: string } | null>(null);
 
   const dias = useMemo(() => rangoDeDias(desde, hasta), [desde, hasta]);
+  const horarios = useMemo(() => horariosPorColaborador(puestos, hoja?.colaboradores ?? []), [puestos, hoja]);
   const hoy = hoja?.hoy ?? limaDateKey();
   const mesActual = mesDe(hoy);
   const puedeAvanzar = mes < mesActual;
+
+  // La marca viaja COMPLETA (`marcaConTardanza`): el buffer del hook reemplaza la
+  // celda, y con sólo el estado se perdería la hora que delató la tardanza.
+  const aceptarTardanza = (colaboradorId: string, fecha: string) =>
+    marcar(marcaConTardanza(hoja?.marcas.find((m) => m.colaboradorId === colaboradorId && m.fecha === fecha), colaboradorId, fecha));
 
   // Igual que en HojaDelDia: vaciar el buffer ANTES de irse del mes — si no,
   // un flush en vuelo termina aplicándose sobre el mes nuevo, o falla sin que
@@ -131,7 +145,9 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
                             motivoNoEditable={editable ? undefined : motivoFueraDeVentana(hoja.ventana)}
                             pendiente={pendientes.has(`${c.id}|${d}`)}
                             errorMsg={erroresPorCelda.get(`${c.id}|${d}`)}
+                            horario={horarios.get(c.id) ?? null}
                             onMarcar={(estado) => marcar({ colaboradorId: c.id, fecha: d, estado })}
+                            onAceptarTardanza={() => aceptarTardanza(c.id, d)}
                             onVerHistorial={() => setHistorial({ colaborador: c, fecha: d })}
                           />
                         </td>
@@ -165,7 +181,9 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
             ventana={hoja.ventana}
             pendientes={pendientes}
             erroresPorCelda={erroresPorCelda}
+            horarios={horarios}
             onMarcar={(colaboradorId, fecha, estado) => marcar({ colaboradorId, fecha, estado })}
+            onAceptarTardanza={aceptarTardanza}
             onVerHistorial={(colaborador, fecha) => setHistorial({ colaborador, fecha })}
           />
         </div>
