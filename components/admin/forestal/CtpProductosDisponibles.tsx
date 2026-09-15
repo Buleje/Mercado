@@ -15,9 +15,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
 import {
+  BookmarkPlus,
   Boxes,
   CheckCircle2,
+  Clock,
+  Coins,
   Download,
+  FileSpreadsheet,
   Layers,
   PackageOpen,
   Pencil,
@@ -41,7 +45,15 @@ import {
   useColumnasVisibles,
 } from "./ctp-shared";
 import CtpKpiFiltros from "./CtpKpiFiltros";
-import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
+import {
+  CtpPaginacion,
+  FilaVacia,
+  TablaCtp,
+  TbodyCtp,
+  TheadCtp,
+  ThOrdenable,
+  usePaginacion,
+} from "./ctp-tabla";
 import CtpPaqueteFicha from "./CtpPaqueteFicha";
 import CtpReprocesoModal from "./CtpReprocesoModal";
 import ReprocesoSugeridoBanda from "./reproceso-sugerido-banda";
@@ -63,7 +75,38 @@ import {
   type EscuadriaAGuardar,
 } from "@/lib/forestal/escuadria-guardar";
 import { CeldaEscuadria } from "./ctp-celda-escuadria";
+import { CeldaApartado } from "./ctp-celda-apartado";
+import { AvisosDelStock, type ClaveAviso } from "./ctp-disponibles-avisos";
+import {
+  compararDisponibles,
+  siguienteOrden,
+  type CampoOrden,
+} from "@/lib/forestal/disponibles-orden";
+import CtpApartarModal from "./CtpApartarModal";
 import CtpBarraSeleccion from "./ctp-barra-seleccion";
+import {
+  ETIQUETA_TRAMO,
+  TONO_TRAMO,
+  edadEnDias,
+  fmtEdad,
+  resumenDeEdad,
+  tramoDeEdad,
+  DIAS_VIEJO,
+  type TramoEdad,
+} from "@/lib/forestal/edad-del-patio";
+import {
+  resumenDeValor,
+  valorDeCorrida,
+  valorDeFila,
+  type ConsumoCosteable,
+  type GuiaCosteable,
+  type ValorDeCorrida,
+} from "@/lib/forestal/valor-del-patio";
+import {
+  disponiblesACsv,
+  nombreArchivoDisponibles,
+  type FilaDisponibleCsv,
+} from "@/lib/forestal/disponibles-csv";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { uidDeFila } from "@/lib/forestal/despacho-lista";
 import type { FilaDeclarada } from "@/lib/forestal/cubicacion-cuadre";
@@ -83,6 +126,17 @@ interface PaqueteDisponible {
   anchoCm: number | null;
   largoM: number | null;
   observations: string | null;
+  /** Reserva viva de ESTE paquete (ADR-418). `null` = libre. */
+  apartado: Apartado | null;
+}
+
+/** Una reserva viva: la madera sigue en el patio pero ya tiene dueño. */
+interface Apartado {
+  id: string;
+  para: string;
+  hasta: string | null;
+  nota: string | null;
+  creadoAt: string;
 }
 
 interface CorridaDisponible {
@@ -116,6 +170,13 @@ interface CorridaDisponible {
   /** Marcado a mano como "ya usado" (Brandon, 2026-09-01): `null` = disponible como siempre. */
   usadoAt: string | null;
   usadoMotivo: string | null;
+  /** Reserva viva de la corrida entera (fila sin paquete). `null` = libre. */
+  apartado?: Apartado | null;
+  /** Rendimiento declarado (0..100) — convierte costo de troza a costo de producto. */
+  rendimientoPct?: number | null;
+  /** Insumos para valorizar el patio (ADR-418). Ver `lib/forestal/valor-del-patio`. */
+  costoConsumos?: ConsumoCosteable[];
+  costoPorGtf?: GuiaCosteable[];
 }
 
 type FilaTabla = { corrida: CorridaDisponible; paquete: PaqueteDisponible | null };
@@ -125,6 +186,16 @@ type FilaTabla = { corrida: CorridaDisponible; paquete: PaqueteDisponible | null
    (`corridaId:paqueteId`, o `corridaId:corrida` sin paquete): así lo tildado
    acá entra DIRECTO a la lista de la guía sin traducir un formato por otro. */
 const claveFila = (f: FilaTabla) => uidDeFila(f.corrida.id, f.paquete?.id ?? null);
+
+/** El color de la pastilla de edad, por tramo. Clases enteras: ver `CHIP_TONO`. */
+const EDAD_TONO: Record<TramoEdad, string> = {
+  fresco:
+    "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+  maduro:
+    "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+  viejo:
+    "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+};
 
 const nf = (n: number) => n.toLocaleString("es-PE");
 const norm = (v: string | null | undefined) => (v ?? "").toLowerCase().trim();
@@ -190,6 +261,13 @@ const COLUMNAS_DISPONIBLES_OPCIONALES = [
   { key: "medidas", label: "Medidas" },
   { key: "lote", label: "Corrida / lote" },
   { key: "pieTablar", label: "Pie tablar" },
+  /* Hace cuánto que esa madera no se mueve. Va prendida: medido el 2026-09-15
+     en el libro real, un paquete lleva 331 días parado y la tabla no mostraba
+     una sola fecha. La madera aserrada parada se mancha y pierde precio. */
+  { key: "edad", label: "Parado hace" },
+  /* Cuánto vale la fila. Apagada por omisión: en Blas ninguna de las 24 guías
+     tiene costo cargado todavía, así que la columna arrancaría vacía. */
+  { key: "valor", label: "Valor (S/)", porDefecto: false },
   { key: "permiso", label: "N° Permiso", porDefecto: false },
 ] as const;
 
@@ -276,6 +354,28 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   const [ocultosPorUsado, setOcultosPorUsado] = useState<{
     corridas: number;
     volumen: number;
+  } | null>(null);
+  /**
+   * Hoy, tomado en el navegador y en un efecto.
+   *
+   * La edad de un paquete no se puede calcular en el server: lo renderizado
+   * allá y lo de acá darían días distintos y React lo marcaría como mismatch.
+   * Hasta que monte, las celdas de edad muestran «—», que es la verdad.
+   */
+  const [ahora, setAhora] = useState<Date | null>(null);
+  useEffect(() => setAhora(new Date()), []);
+  /** Orden de la tabla. Por omisión el mismo que traía el servidor: lo último
+   *  aserrado arriba (edad ascendente). Lo nuevo es poder cambiarlo. */
+  const [orden, setOrden] = useState<{ by: CampoOrden; dir: "asc" | "desc" }>({
+    by: "edad",
+    dir: "asc",
+  });
+  /** El aviso tildado, que acota la tabla. `null` = se ve todo. */
+  const [aviso, setAviso] = useState<ClaveAviso | null>(null);
+  /** Filas que se están apartando: una sola o toda la selección (ADR-418). */
+  const [apartando, setApartando] = useState<{
+    filas: { ctpEntryId: string; paqueteId: string | null; etiqueta: string; volumenM3: number; piezas: number | null }[];
+    apartadoActual: Apartado | null;
   } | null>(null);
 
   const recargar = useCallback(async () => {
@@ -458,19 +558,112 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     });
   }, [corridas, texto, especie, producto, permiso]);
 
+  /**
+   * Cuánto vale por m³ lo que salió de cada corrida (ADR-418).
+   *
+   * Se calcula una vez por corrida y no por fila: los quince paquetes de una
+   * corrida comparten la misma madera, el mismo costo y el mismo rendimiento.
+   */
+  const valorPorCorrida = useMemo(() => {
+    const m = new Map<string, ValorDeCorrida>();
+    for (const c of corridas) {
+      m.set(
+        c.id,
+        valorDeCorrida({
+          gtfOrigen: c.gtfOrigen ?? [],
+          costoConsumos: c.costoConsumos ?? [],
+          costoPorGtf: c.costoPorGtf ?? [],
+          rendimientoPct: c.rendimientoPct ?? null,
+          producido: c.producido,
+          volumenConsumidoM3: c.volumenConsumidoM3,
+        }),
+      );
+    }
+    return m;
+  }, [corridas]);
+
   /* La fila es el PAQUETE: es lo que se busca en la pila y lo que se cita en la
      guía de salida. Las corridas sin paquetes cargados —las viejas— entran como
-     una fila con su saldo, para que no desaparezca producto que existe. */
+     una fila con su saldo, para que no desaparezca producto que existe.
+
+     Cada fila llega ya con su edad, su valor y su reserva: ordenar, acotar por
+     aviso y exportar leen todas de acá, así que las tres dicen lo mismo. */
   const filas = useMemo(
     () =>
-      visibles.flatMap((c) =>
-        c.paquetes.length > 0
-          ? c.paquetes.map((p) => ({ corrida: c, paquete: p }))
-          : [{ corrida: c, paquete: null as PaqueteDisponible | null }],
-      ),
-    [visibles],
+      visibles.flatMap((c) => {
+        const dias = ahora ? edadEnDias(c.fecha, ahora) : null;
+        const base = {
+          corrida: c,
+          dias,
+          tramo: tramoDeEdad(dias),
+          valorCorrida: valorPorCorrida.get(c.id) ?? null,
+        };
+        const conValor = (
+          paquete: PaqueteDisponible | null,
+          volumenM3: number,
+          apartado: Apartado | null,
+        ) => ({
+          ...base,
+          paquete,
+          volumenM3,
+          apartado,
+          valorSoles: base.valorCorrida ? valorDeFila(base.valorCorrida, volumenM3) : null,
+        });
+        return c.paquetes.length > 0
+          ? c.paquetes.map((p) => conValor(p, p.volumenM3, p.apartado ?? null))
+          : [conValor(null, c.disponible, c.apartado ?? null)];
+      }),
+    [visibles, ahora, valorPorCorrida],
   );
-  const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(filas);
+
+  /** Cuántas filas hay detrás de cada aviso. Se cuenta sobre TODO lo filtrado
+   *  —no sobre lo ya acotado—, o el chip se apagaría solo al tildarlo. */
+  const cuentaAvisos = useMemo(
+    () => ({
+      "sin-escuadria": filas.filter(
+        (f) => f.paquete && !(f.paquete.espesorCm && f.paquete.anchoCm && f.paquete.largoM),
+      ).length,
+      "sin-piezas": filas.filter((f) => f.paquete && !f.paquete.cantidad).length,
+      viejos: filas.filter((f) => f.dias != null && f.dias > DIAS_VIEJO).length,
+      apartados: filas.filter((f) => f.apartado != null).length,
+    }),
+    [filas],
+  );
+
+  const acotadas = useMemo(() => {
+    if (!aviso) return filas;
+    if (aviso === "sin-escuadria")
+      return filas.filter(
+        (f) => f.paquete && !(f.paquete.espesorCm && f.paquete.anchoCm && f.paquete.largoM),
+      );
+    if (aviso === "sin-piezas") return filas.filter((f) => f.paquete && !f.paquete.cantidad);
+    if (aviso === "viejos") return filas.filter((f) => f.dias != null && f.dias > DIAS_VIEJO);
+    return filas.filter((f) => f.apartado != null);
+  }, [filas, aviso]);
+
+  /** El orden que pidió la cabecera. La comparación vive en un lib puro con
+   *  tests (`disponibles-orden`): los nulos van al final en los dos sentidos. */
+  const ordenadas = useMemo(() => {
+    const clave = (f: (typeof acotadas)[number]) => ({
+      codigo: f.paquete?.codigo ?? "",
+      producto: productLabel(f.paquete?.producto ?? f.corrida.producto ?? ""),
+      especie: f.corrida.especie ?? "",
+      piezas: f.paquete?.cantidad ?? null,
+      volumenM3: f.volumenM3,
+      pieTablar: pieTablarDe(f.volumenM3),
+      saldoCorridaM3: f.corrida.disponible,
+      diasParado: f.dias,
+      valorSoles: f.valorSoles,
+    });
+    return [...acotadas].sort((a, b) => compararDisponibles(clave(a), clave(b), orden));
+  }, [acotadas, orden]);
+
+  const ordenarPor = useCallback(
+    (campo: CampoOrden) => setOrden((prev) => siguienteOrden(prev, campo)),
+    [],
+  );
+
+  const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(ordenadas);
   /** Checkbox+Código+Producto+Especie+Piezas+Volumen+Saldo+Acciones (fijas) +
    *  las opcionales que estén prendidas — para que la fila vacía ocupe el
    *  ancho real de la tabla y no se vea descuadrada. */
@@ -515,8 +708,35 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   /** Piezas de TODO lo filtrado (no sólo la página): una fila es un paquete o
    *  una corrida sin paquetes, así que sumar acá no repite ninguna corrida. */
   const totalPiezas = useMemo(
-    () => filas.reduce((a, f) => a + (f.paquete?.cantidad ?? 0), 0),
-    [filas],
+    () => ordenadas.reduce((a, f) => a + (f.paquete?.cantidad ?? 0), 0),
+    [ordenadas],
+  );
+  /** Para quién se apartó antes: alimenta el `datalist` del modal, así el
+   *  segundo apartado del mismo cliente no se escribe con otra grafía. */
+  const destinatariosConocidos = useMemo(
+    () =>
+      [
+        ...new Set(
+          corridas
+            .flatMap((c) => [c.apartado?.para, ...c.paquetes.map((p) => p.apartado?.para)])
+            .filter((v): v is string => !!v && v.trim().length > 0)
+            .map((v) => v.trim()),
+        ),
+      ].sort((a, b) => a.localeCompare(b, "es-PE")),
+    [corridas],
+  );
+
+  /** Cuántas corridas distintas quedan representadas en lo que se muestra. */
+  const corridasALaVista = useMemo(
+    () => new Set(ordenadas.map((f) => f.corrida.id)).size,
+    [ordenadas],
+  );
+  /** m³ de lo que está a la vista. Con un aviso tildado no coincide con el KPI
+   *  —que describe el filtro y no el aviso—, y por eso la franja del aviso dice
+   *  en palabras cuántas filas de cuántas se están mostrando. */
+  const volumenALaVista = useMemo(
+    () => Math.round(ordenadas.reduce((a, f) => a + f.volumenM3, 0) * 10_000) / 10_000,
+    [ordenadas],
   );
 
   /**
@@ -527,11 +747,21 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
    * cifra que afirma lo contrario de lo que la columna de al lado muestra es
    * peor que no tener la cifra.
    */
-  const paquetesSinMedidas = useMemo(
+  const paquetesSinMedidas = cuentaAvisos["sin-escuadria"];
+
+  /** Cómo está repartida la edad del stock a la vista, para el desglose del KPI. */
+  const edadDelStock = useMemo(
+    () => resumenDeEdad(filas.map((f) => ({ dias: f.dias, volumenM3: f.volumenM3 }))),
+    [filas],
+  );
+  /** Qué vale el patio y cuántas guías faltan costear para poder decirlo. */
+  const valorDelStock = useMemo(
     () =>
-      filas.filter(
-        (f) => f.paquete && !(f.paquete.espesorCm && f.paquete.anchoCm && f.paquete.largoM),
-      ).length,
+      resumenDeValor(
+        filas.flatMap((f) =>
+          f.valorCorrida ? [{ valor: f.valorCorrida, volumenM3: f.volumenM3 }] : [],
+        ),
+      ),
     [filas],
   );
 
@@ -600,6 +830,74 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
       .filter((c) => c.disponible > 0 && norma(tipoComercialDelProducto(c.producto)) === buscado)
       .map((c) => ({ id: c.id, lineNo: c.lineNo, disponible: c.disponible }));
   }, [corridas, sugerido]);
+
+  /**
+   * El stock, tal como se está viendo, en un archivo.
+   *
+   * Despacho y Saldos exportan desde hace meses; esta pestaña —la que el
+   * vendedor tiene abierta cuando le preguntan por teléfono qué hay— no tenía
+   * ninguna salida. Se exporta lo ORDENADO y ACOTADO, con las columnas que
+   * están prendidas: un CSV que no coincide con la pantalla obliga a revisar
+   * cuál de los dos miente.
+   */
+  const exportar = useCallback(() => {
+    const columnas: (keyof FilaDisponibleCsv)[] = [
+      "codigo",
+      "producto",
+      "especie",
+      ...((colsVisibles.presentacion ? ["presentacion"] : []) as (keyof FilaDisponibleCsv)[]),
+      ...((colsVisibles.medidas
+        ? ["espesorCm", "anchoCm", "largoM"]
+        : []) as (keyof FilaDisponibleCsv)[]),
+      "piezas",
+      "volumenM3",
+      ...((colsVisibles.pieTablar ? ["pieTablar"] : []) as (keyof FilaDisponibleCsv)[]),
+      ...((colsVisibles.lote ? ["corrida", "lote"] : []) as (keyof FilaDisponibleCsv)[]),
+      "saldoCorridaM3",
+      ...((colsVisibles.edad ? ["diasParado"] : []) as (keyof FilaDisponibleCsv)[]),
+      ...((colsVisibles.valor ? ["valorSoles"] : []) as (keyof FilaDisponibleCsv)[]),
+      ...((colsVisibles.permiso ? ["permiso"] : []) as (keyof FilaDisponibleCsv)[]),
+      "gtf",
+      "apartadoPara",
+      "estado",
+    ];
+    const csv = disponiblesACsv(
+      ordenadas.map((f) => ({
+        codigo: f.paquete?.codigo ?? "",
+        producto: productLabel(f.paquete?.producto ?? f.corrida.producto ?? ""),
+        especie: f.corrida.especie ?? "",
+        presentacion: f.paquete?.presentacion ?? f.corrida.presentacion ?? "",
+        espesorCm: f.paquete?.espesorCm ?? null,
+        anchoCm: f.paquete?.anchoCm ?? null,
+        largoM: f.paquete?.largoM ?? null,
+        piezas: f.paquete?.cantidad ?? null,
+        volumenM3: f.volumenM3,
+        pieTablar: pieTablarDe(f.volumenM3),
+        corrida: f.corrida.lineNo != null ? `N° ${f.corrida.lineNo}` : "",
+        lote: f.corrida.lote ?? "",
+        permiso: (f.corrida.titularOrigen ?? []).join(" · "),
+        gtf: (f.corrida.gtfOrigen ?? []).join(" · "),
+        saldoCorridaM3: f.corrida.disponible,
+        diasParado: f.dias,
+        valorSoles: f.valorSoles,
+        apartadoPara: f.apartado?.para ?? null,
+        estado: f.corrida.usadoAt ? "Marcado como usado" : f.apartado ? "Apartado" : "Disponible",
+      })),
+      { columnas },
+    );
+    const nombre = nombreArchivoDisponibles(ahora ?? new Date());
+    /* BOM adelante: sin él Excel es-PE lee los acentos como símbolos. Mismo
+       gesto que `CtpSaldosView`, que ya exporta así. */
+    const url = URL.createObjectURL(
+      new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8;" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombre;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    setNota(`Exportadas ${ordenadas.length} fila${ordenadas.length === 1 ? "" : "s"} a ${nombre}.`);
+  }, [ordenadas, colsVisibles, ahora]);
 
   if (error) {
     return (
@@ -802,10 +1100,74 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             subValue="Producción que todavía no salió"
             icon={PackageOpen}
           />,
+          /**
+           * Hace cuánto que la madera más vieja no se mueve.
+           *
+           * El patio venía descrito sólo por su tamaño (m³, paquetes, piezas) y
+           * nunca por su edad: 85 m³ de Tornillo aserrado ayer y 85 m³ parados
+           * desde hace once meses se leían igual en esta pantalla, y valen
+           * cosas muy distintas — la aserrada parada se mancha de hongo azul.
+           */
+          <CtpKpi
+            key="edad"
+            label="Lo más viejo lleva"
+            value={edadDelStock.masViejoDias == null ? "—" : fmtEdad(edadDelStock.masViejoDias)}
+            subValue={
+              edadDelStock.porTramo.viejo.filas > 0
+                ? `${nf(edadDelStock.porTramo.viejo.filas)} fila${edadDelStock.porTramo.viejo.filas === 1 ? "" : "s"} · ${fmtM3(edadDelStock.porTramo.viejo.volumenM3)} m³ paradas hace más de ${DIAS_VIEJO} días`
+                : "Nada lleva más de 90 días parado"
+            }
+            icon={Clock}
+            emphasis={edadDelStock.porTramo.viejo.filas > 0 ? "error" : undefined}
+            desglose={
+              <DesgloseSimple
+                filas={(["viejo", "maduro", "fresco"] as TramoEdad[])
+                  .filter((t) => edadDelStock.porTramo[t].filas > 0)
+                  .map((t) => ({
+                    value: ETIQUETA_TRAMO[t],
+                    count: edadDelStock.porTramo[t].filas,
+                    volumeM3: edadDelStock.porTramo[t].volumenM3,
+                  }))}
+                onElegir={(v) =>
+                  setAviso(v === ETIQUETA_TRAMO.viejo ? (aviso === "viejos" ? null : "viejos") : null)
+                }
+              />
+            }
+            desgloseLabel="Cuánto hay de cada edad"
+          />,
+          /**
+           * Cuánto vale lo que está parado.
+           *
+           * El costo de la materia prima entra por guía (ADR-134) y muere en
+           * Ingresos: el stock nunca supo lo que costó. Medido el 2026-09-15,
+           * ninguna de las 24 guías de Blas tiene costo cargado, así que la
+           * tarjeta hoy no muestra una cifra falsa: muestra cuántas guías hay
+           * que costear para que exista.
+           */
+          <CtpKpi
+            key="valor"
+            label="Valor del patio"
+            value={
+              valorDelStock.filasValorizadas === 0
+                ? "sin costear"
+                : `S/ ${valorDelStock.totalSoles.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`
+            }
+            subValue={
+              valorDelStock.guiasSinCosto.length > 0
+                ? `Faltan costear ${nf(valorDelStock.guiasSinCosto.length)} guía${valorDelStock.guiasSinCosto.length === 1 ? "" : "s"} en Ingresos`
+                : valorDelStock.filasValorizadas === 0
+                  ? "Ninguna corrida dice de qué guía salió"
+                  : `${nf(valorDelStock.filasValorizadas)} fila${valorDelStock.filasValorizadas === 1 ? "" : "s"} valorizadas al costo de su guía`
+            }
+            icon={Coins}
+          />,
         ]}
       />
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-6">
+      {/* Siete columnas y no seis: la celda de la derecha ahora lleva DOS
+          botones (Exportar y Columnas) y con una sola columna «Exportar»
+          quedaba cortado contra el borde. */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-7">
         <label className="relative sm:col-span-2">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
@@ -856,7 +1218,17 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             textoVacio="Sin producto en el depósito"
           />
         )}
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:col-span-2">
+          {/* Lo que el vendedor manda por WhatsApp cuando le piden la lista. */}
+          <button
+            type="button"
+            onClick={exportar}
+            disabled={ordenadas.length === 0}
+            title="Bajar lo que estás viendo a un CSV que abre en Excel"
+            className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-[var(--accent)]"
+          >
+            <FileSpreadsheet className="h-4 w-4 shrink-0" aria-hidden /> Exportar
+          </button>
           <ColumnasMenu
             columnas={COLUMNAS_DISPONIBLES_OPCIONALES}
             visibles={colsVisibles}
@@ -875,14 +1247,13 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
         Ver también lo marcado como usado
       </label>
 
-      {nota && (
-        <p
-          role="status"
-          className="rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 px-3 py-2 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-        >
-          {nota}
-        </p>
-      )}
+      {/* Lo que el propio stock tiene mal, en chips que acotan la tabla. */}
+      <AvisosDelStock
+        cuentas={cuentaAvisos}
+        activo={aviso}
+        onElegir={setAviso}
+        detalle={`Mostrando ${nf(ordenadas.length)} de ${nf(filas.length)} filas · ${fmtM3(volumenALaVista)} m³`}
+      />
 
       <TablaCtp>
         <TheadCtp>
@@ -907,20 +1278,47 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 }
               />
             </th>
-            <th className="px-3 py-2 font-bold">Código paquete</th>
-            <th className="px-3 py-2 font-bold">Producto</th>
-            <th className="px-3 py-2 font-bold">Especie</th>
+            {/* Ordenables las que se comparan: «cuál es el más viejo», «cuál
+                tiene más piezas», «cuál vale más». Sin esto había que exportar
+                a Excel para contestarlas. */}
+            <ThOrdenable campo="codigo" orden={orden} onOrdenar={ordenarPor}>
+              Código paquete
+            </ThOrdenable>
+            <ThOrdenable campo="producto" orden={orden} onOrdenar={ordenarPor}>
+              Producto
+            </ThOrdenable>
+            <ThOrdenable campo="especie" orden={orden} onOrdenar={ordenarPor}>
+              Especie
+            </ThOrdenable>
             {colsVisibles.presentacion && <th className="px-3 py-2 font-bold">Presentación</th>}
             {colsVisibles.medidas && <th className="px-3 py-2 font-bold">Medidas</th>}
             {/* Piezas · m³ · PT, pegadas (2026-09-09): el pie tablar estaba
                 dos columnas más allá, detrás de «Corrida / lote». */}
-            <th className="px-3 py-2 text-right font-bold">Piezas</th>
-            <th className="px-3 py-2 text-right font-bold">Volumen</th>
+            <ThOrdenable campo="piezas" orden={orden} onOrdenar={ordenarPor} align="right">
+              Piezas
+            </ThOrdenable>
+            <ThOrdenable campo="volumen" orden={orden} onOrdenar={ordenarPor} align="right">
+              Volumen
+            </ThOrdenable>
             {colsVisibles.pieTablar && (
-              <th className="px-3 py-2 text-right font-bold">Pie tablar</th>
+              <ThOrdenable campo="pieTablar" orden={orden} onOrdenar={ordenarPor} align="right">
+                Pie tablar
+              </ThOrdenable>
+            )}
+            {colsVisibles.valor && (
+              <ThOrdenable campo="valor" orden={orden} onOrdenar={ordenarPor} align="right">
+                Valor (S/)
+              </ThOrdenable>
             )}
             {colsVisibles.lote && <th className="px-3 py-2 font-bold">Corrida / lote</th>}
-            <th className="px-3 py-2 text-right font-bold">Saldo corrida</th>
+            {colsVisibles.edad && (
+              <ThOrdenable campo="edad" orden={orden} onOrdenar={ordenarPor} align="right">
+                Parado hace
+              </ThOrdenable>
+            )}
+            <ThOrdenable campo="saldo" orden={orden} onOrdenar={ordenarPor} align="right">
+              Saldo corrida
+            </ThOrdenable>
             {colsVisibles.permiso && <th className="px-3 py-2 font-bold">N° Permiso</th>}
             <th className="px-3 py-2 text-right font-bold">Acciones</th>
           </tr>
@@ -930,6 +1328,19 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             <FilaVacia cols={totalCols}>
               {cargando ? (
                 "Leyendo la planta…"
+              ) : aviso ? (
+                /* El vacío lo causó el chip, no el filtro: decirlo y ofrecer
+                   la salida, o el operador va a buscar el error en otro lado. */
+                <span className="inline-flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1">
+                  Ninguna fila de las {nf(filas.length)} que estás viendo entra en ese aviso.
+                  <button
+                    type="button"
+                    onClick={() => setAviso(null)}
+                    className="font-bold text-[var(--accent-ink)] underline decoration-dotted underline-offset-2 dark:text-[var(--accent)]"
+                  >
+                    Ver todo de nuevo
+                  </button>
+                </span>
               ) : corridas.length > 0 ? (
                 "Ningún producto coincide con el filtro."
               ) : ocultosPorUsado ? (
@@ -958,7 +1369,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
               )}
             </FilaVacia>
           )}
-          {enPagina.map(({ corrida: c, paquete: p }) => (
+          {enPagina.map(({ corrida: c, paquete: p, dias, tramo, valorSoles, apartado }) => (
             <tr key={p ? p.id : c.id} className="hover:bg-[var(--surface-sunken)]">
               <td className="px-2 py-2">
                 <input
@@ -1025,6 +1436,30 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                       {c.titularNombre ?? "De tercero"}
                     </span>
                   )}
+                  {/* Reservado para alguien (ADR-418): sigue en el patio y sigue
+                      contando en los m³, pero ya tiene dueño. Una reserva
+                      vencida que nadie soltó es stock congelado por error, y la
+                      pastilla lo dice en rojo. */}
+                  {apartado && (
+                    <CeldaApartado
+                      apartado={apartado}
+                      ahora={ahora ?? undefined}
+                      onAbrir={() =>
+                        setApartando({
+                          filas: [
+                            {
+                              ctpEntryId: c.id,
+                              paqueteId: p?.id ?? null,
+                              etiqueta: p?.codigo ?? `Corrida N° ${c.lineNo ?? "—"}`,
+                              volumenM3: p?.volumenM3 ?? c.disponible,
+                              piezas: p?.cantidad ?? null,
+                            },
+                          ],
+                          apartadoActual: apartado,
+                        })
+                      }
+                    />
+                  )}
                   {c.usadoAt && (
                     <span
                       title={
@@ -1084,11 +1519,41 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                   {pieTablarDe(p?.volumenM3 ?? c.disponible).toLocaleString("es-PE")}
                 </td>
               )}
+              {colsVisibles.valor && (
+                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                  {valorSoles == null ? (
+                    /* Un guion, nunca S/ 0: el costo de la guía todavía no se
+                       cargó y un cero afirmaría que esa madera no costó nada. */
+                    <span
+                      title="No se puede valorizar: falta el costo de la guía que trajo esta madera"
+                      className="text-[var(--text-tertiary)]"
+                    >
+                      —
+                    </span>
+                  ) : (
+                    `S/ ${valorSoles.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  )}
+                </td>
+              )}
               {colsVisibles.lote && (
                 <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
                   <span className="font-mono">N° {c.lineNo ?? "—"}</span>
                   {c.lote && <span className="ml-1 font-mono">· {c.lote}</span>}
                   <div>{fmtDia(c.fecha)}</div>
+                </td>
+              )}
+              {colsVisibles.edad && (
+                <td className="px-3 py-2 text-right">
+                  {dias == null ? (
+                    <span className="text-[var(--text-tertiary)]">—</span>
+                  ) : (
+                    <span
+                      title={`Aserrado el ${fmtDia(c.fecha)}`}
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums ${EDAD_TONO[tramo ?? "fresco"]}`}
+                    >
+                      {fmtEdad(dias)}
+                    </span>
+                  )}
                 </td>
               )}
               <td className="px-3 py-2 text-right">
@@ -1172,6 +1637,27 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                     onClick={() => setCubicar({ corrida: c, paquete: p })}
                     label="Cubicar: medir pieza por pieza, cuadrar contra el libro y guardar (sale el ANEXO N° 04)"
                   />
+                  {!apartado && (
+                    <IconAction
+                      icon={BookmarkPlus}
+                      tone="info"
+                      onClick={() =>
+                        setApartando({
+                          filas: [
+                            {
+                              ctpEntryId: c.id,
+                              paqueteId: p?.id ?? null,
+                              etiqueta: p?.codigo ?? `Corrida N° ${c.lineNo ?? "—"}`,
+                              volumenM3: p?.volumenM3 ?? c.disponible,
+                              piezas: p?.cantidad ?? null,
+                            },
+                          ],
+                          apartadoActual: null,
+                        })
+                      }
+                      label="Apartar: reservarlo para un cliente hasta que se emita la guía"
+                    />
+                  )}
                   <IconAction
                     icon={RefreshCw}
                     tone="accent"
@@ -1211,28 +1697,54 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             sin total a propósito: la misma corrida repite su saldo en cada
             uno de sus paquetes, así que sumar la columna la contaría de más
             — el total correcto YA es el de Volumen (una vez por corrida). */}
-        {filas.length > 0 && (
+        {ordenadas.length > 0 && (
           <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
             <tr>
               <td
                 colSpan={4 + (colsVisibles.presentacion ? 1 : 0) + (colsVisibles.medidas ? 1 : 0)}
                 className="px-3 py-2 text-sm font-bold text-[var(--text-secondary)]"
               >
-                {visibles.length} {visibles.length === 1 ? "corrida" : "corridas"} · {filas.length}{" "}
-                {filas.length === 1 ? "fila" : "filas"}
+                {corridasALaVista} {corridasALaVista === 1 ? "corrida" : "corridas"} ·{" "}
+                {ordenadas.length} {ordenadas.length === 1 ? "fila" : "filas"}
               </td>
               <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                 {nf(totalPiezas)}
               </td>
+              {/* El total de una columna es la SUMA DE ESA COLUMNA. Antes venía
+                  del KPI (saldo por corrida) y con un aviso tildado habría
+                  quedado mostrando el total de filas que no están en pantalla. */}
               <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                {fmtM3(totales.volumen)}
+                {fmtM3(volumenALaVista)}
               </td>
               {colsVisibles.pieTablar && (
                 <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                  {pieTablarDe(totales.volumen).toLocaleString("es-PE")}
+                  {pieTablarDe(volumenALaVista).toLocaleString("es-PE")}
+                </td>
+              )}
+              {colsVisibles.valor && (
+                <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                  {/* Sin total si falta valorizar alguna fila: un subtotal
+                      presentado como total es la mentira más fácil de creer. */}
+                  {valorDelStock.filasSinValor > 0 || valorDelStock.filasValorizadas === 0 ? (
+                    <span
+                      title={`Faltan ${valorDelStock.filasSinValor} filas por valorizar`}
+                      className="font-sans text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]"
+                    >
+                      parcial
+                    </span>
+                  ) : (
+                    `S/ ${valorDelStock.totalSoles.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  )}
                 </td>
               )}
               {colsVisibles.lote && <td />}
+              {colsVisibles.edad && (
+                <td className="px-3 py-2 text-right font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                  {edadDelStock.masViejoDias == null
+                    ? "—"
+                    : `el más viejo: ${fmtEdad(edadDelStock.masViejoDias)}`}
+                </td>
+              )}
               <td />
               {colsVisibles.permiso && <td />}
               <td />
@@ -1248,7 +1760,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
         onIr={ir}
         sustantivo="paquete"
         extra={
-          <span className="font-mono tabular-nums">{fmtM3(totales.volumen)} m³ disponibles</span>
+          <span className="font-mono tabular-nums">{fmtM3(volumenALaVista)} m³ disponibles</span>
         }
       />
       {/* De un código de la pila a su corrida y a la madera con la que se hizo. */}
@@ -1308,6 +1820,26 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
              partida). */
           accionesSecundarias={[
             { label: "Despachar con guía", icon: Truck, onClick: () => setDespachando(true) },
+            /* Apartar lo tildado (ADR-418): el paso que faltaba entre elegir y
+               emitir. Hasta ahora, entre las dos cosas no había ningún estado y
+               nada impedía que otro despachara los mismos paquetes. */
+            {
+              label: "Apartar para un cliente",
+              icon: BookmarkPlus,
+              onClick: () =>
+                setApartando({
+                  filas: filas
+                    .filter((f) => seleccion.has(claveFila(f)))
+                    .map((f) => ({
+                      ctpEntryId: f.corrida.id,
+                      paqueteId: f.paquete?.id ?? null,
+                      etiqueta: f.paquete?.codigo ?? `Corrida N° ${f.corrida.lineNo ?? "—"}`,
+                      volumenM3: f.volumenM3,
+                      piezas: f.paquete?.cantidad ?? null,
+                    })),
+                  apartadoActual: null,
+                }),
+            },
           ]}
         />
       )}
@@ -1413,6 +1945,31 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
           paquete={escuadria}
           onCerrar={() => setEscuadria(null)}
           onGuardar={guardarEscuadria}
+        />
+      )}
+
+      {/**
+       * Reservar producto para un cliente (ADR-418).
+       *
+       * Medido el 2026-09-15: 9 de las 14 corridas de Blas salieron del stock
+       * por «marcar como usado» —sin guía y sin cliente—. Apartar es el estado
+       * que faltaba: la madera sigue contando en el patio, pero la pantalla
+       * dice para quién es y hasta cuándo.
+       */}
+      {apartando && (
+        <CtpApartarModal
+          abierto
+          filas={apartando.filas}
+          apartadoActual={apartando.apartadoActual}
+          destinatariosConocidos={destinatariosConocidos}
+          onCerrar={() => setApartando(null)}
+          onListo={(msg) => {
+            setApartando(null);
+            setSeleccion(new Set());
+            setNota(msg);
+            invalidarCtp("/forestal/ctp");
+            void recargar();
+          }}
         />
       )}
     </div>

@@ -61,6 +61,30 @@ const dec = (v: number | string | null | undefined) =>
 /** Redondeo a 4 decimales — precisión forestal (igual que `WoodEntry.volumeM3`). */
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
+/**
+ * La reserva VIVA de una fila del patio, como la lee la pantalla (ADR-418).
+ *
+ * `hasta` sale como DÍA («2026-09-18») y no como instante, a propósito: es un
+ * plazo que se pacta por día, y mandarlo con hora lo expone al off-by-one de
+ * Lima (medianoche UTC formateada en UTC-5 es el día anterior — la misma trampa
+ * de `fecha sin hora`). `creadoAt` sí es un instante y va en ISO completo.
+ */
+function apartadoDto(a: {
+  id: string;
+  para: string;
+  hasta: Date | null;
+  nota: string | null;
+  creadoAt: Date;
+}): { id: string; para: string; hasta: string | null; nota: string | null; creadoAt: string } {
+  return {
+    id: a.id,
+    para: a.para,
+    hasta: a.hasta ? a.hasta.toISOString().slice(0, 10) : null,
+    nota: a.nota,
+    creadoAt: a.creadoAt.toISOString(),
+  };
+}
+
 /** Filtro de rango de fechas compartido por `list` y `saldos` (undefined = sin límite). */
 function dateRange(opts: { fromDate?: Date; toDate?: Date }): Prisma.DateTimeFilter | undefined {
   if (!opts.fromDate && !opts.toDate) return undefined;
@@ -2259,6 +2283,203 @@ export class ForestCtpDB {
   }
 
   /**
+   * APARTAR un producto del patio (ADR-418): reservarlo a nombre de alguien
+   * mientras se termina de armar la guía de salida.
+   *
+   * El hueco que tapa: entre que el operador elige los paquetes de un pedido y
+   * emite la GTF pasan horas o días —hay que confirmar transportista, conductor
+   * y placa—. En ese hueco la madera sigue apareciendo libre para todos, y dos
+   * vendedores prometían los mismos paquetes.
+   *
+   * Se aparta una FILA de «Productos disponibles», que son dos cosas distintas:
+   * un paquete con su código (`paqueteId`) o la corrida entera cuando no declaró
+   * paquetes (`paqueteId = null`).
+   *
+   * ── Qué NO hace ────────────────────────────────────────────────────────────
+   * No mueve stock, no descuenta saldo y no toca ningún número declarado: es
+   * exactamente el mismo criterio que `marcarUsado` (ver su cabecera). Por eso
+   * tampoco lleva el guard de período cerrado — el hecho que registra («esto lo
+   * tiene fulano desde hoy») ocurre HOY, no en el mes de la corrida, y ningún
+   * acta, cierre ni export SERFOR lee esta tabla. Es una etiqueta de visibilidad
+   * con nombre, fecha y responsable.
+   *
+   * ⚠️ Si algún día un saldo declarado empieza a descontar lo apartado, esto pasa
+   * a necesitar el guard como cualquier otra escritura del libro.
+   *
+   * Una fila no puede tener dos reservas vivas: se chequea acá para poder decir
+   * QUIÉN la tiene —un choque de índice crudo no sirve al operador—, y la red
+   * contra dos clics simultáneos es el índice parcial `ForestCtpApartado_vivo_unico`
+   * (`prisma/migrations/adr-418-ctp-apartar-productos.sql`).
+   */
+  static async apartarProducto(
+    tenantId: string,
+    input: {
+      ctpEntryId: string;
+      paqueteId?: string | null;
+      para: string;
+      hasta?: Date | null;
+      nota?: string | null;
+    },
+    user: string,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const para = (input.para ?? "").trim();
+    if (!para) {
+      throw new CtpInvariantError("Pon para quién se aparta el producto.", "VALIDACION");
+    }
+    const paqueteId = (input.paqueteId ?? "").trim() || null;
+    const nota = (input.nota ?? "").trim() || null;
+
+    const corrida = await prisma.forestCtpEntry.findFirst({
+      where: { id: input.ctpEntryId, tenantId, deletedAt: null },
+      select: { id: true, lineNo: true, section: true, speciesCommon: true, productType: true },
+    });
+    if (!corrida) throw new CtpInvariantError("Esa corrida no existe.", "LOTE_NO_ENCONTRADO");
+    /* El patio sólo tiene producto terminado de una corrida de producción: una
+       línea de despacho es madera que YA se fue, no hay qué reservar. */
+    if (corrida.section !== "produccion") {
+      throw new CtpInvariantError(
+        "Sólo se aparta producto de una corrida de producción.",
+        "SECCION_INVALIDA",
+      );
+    }
+
+    /* El paquete tiene que ser de ESTA corrida: apartar el paquete de otra
+       dejaría la reserva colgada de una fila que la pantalla nunca muestra
+       junto a él (y el índice único la contaría en el lugar equivocado). */
+    let paqueteCodigo: string | null = null;
+    if (paqueteId) {
+      const paquete = await prisma.forestCtpPaquete.findFirst({
+        where: { id: paqueteId, tenantId, ctpEntryId: corrida.id, deletedAt: null },
+        select: { id: true, codigo: true },
+      });
+      if (!paquete) {
+        throw new CtpInvariantError("Ese paquete no existe o es de otra corrida.", "VALIDACION");
+      }
+      paqueteCodigo = paquete.codigo;
+    }
+
+    const yaApartado = await prisma.forestCtpApartado.findFirst({
+      where: { tenantId, ctpEntryId: corrida.id, paqueteId, liberadoAt: null },
+      select: { para: true, creadoAt: true },
+    });
+    if (yaApartado) {
+      throw new CtpInvariantError(
+        /* Concordancia de género: «la corrida … ya está apartadA». El mensaje
+           lo lee el operador en un cartel rojo; una falta de acuerdo ahí se
+           nota más que en cualquier otro lado. */
+        (paqueteCodigo
+          ? `El paquete ${paqueteCodigo} ya está apartado`
+          : `La corrida N° ${corrida.lineNo} ya está apartada`) +
+          ` para ${yaApartado.para.replace(/\.$/, "")}. Libera esa reserva antes de apartar${paqueteCodigo ? "lo" : "la"} de nuevo.`,
+        "VALIDACION",
+      );
+    }
+
+    let apartado;
+    try {
+      apartado = await prisma.forestCtpApartado.create({
+        data: {
+          tenantId,
+          ctpEntryId: corrida.id,
+          paqueteId,
+          para,
+          hasta: input.hasta ?? null,
+          nota,
+          creadoPor: user,
+        },
+      });
+    } catch (err) {
+      /* Dos clics a la vez: el chequeo de arriba pasó en los dos y el índice
+         parcial frenó al segundo. Se traduce al mismo idioma, no a un 500. */
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        throw new CtpInvariantError(
+          "Alguien acaba de apartar ese producto. Recarga la lista para ver quién lo tiene.",
+          "VALIDACION",
+        );
+      }
+      throw err;
+    }
+
+    const queCosa = paqueteCodigo
+      ? `el paquete ${paqueteCodigo}`
+      : `la corrida N° ${corrida.lineNo}`;
+    auditCtp({
+      tenantId,
+      action: "ctp_apartar",
+      entity: "ForestCtpApartado",
+      entityId: apartado.id,
+      detail:
+        `Apartó ${queCosa} (${corrida.productType ?? "sin producto"} · ${corrida.speciesCommon ?? "sin especie"}) para ${para}` +
+        (input.hasta ? ` · hasta el ${input.hasta.toISOString().slice(0, 10)}` : " · sin plazo") +
+        (nota ? ` · nota: ${nota}` : ""),
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
+    return apartado;
+  }
+
+  /**
+   * LIBERAR un apartado (ADR-418): el producto vuelve a estar disponible.
+   *
+   * No se borra la fila: el historial de quién tuvo reservado qué y por cuánto
+   * tiempo es justo lo que se consulta cuando un cliente reclama que su madera
+   * se vendió a otro. La reserva queda muerta con fecha, responsable y motivo.
+   *
+   * Idempotente a propósito: dos clics seguidos en «Liberar» no pueden dar
+   * error —el producto ya está libre, que es lo que el operador pidió—, pero el
+   * segundo NO vuelve a auditar ni pisa quién la soltó primero.
+   */
+  static async liberarApartado(
+    tenantId: string,
+    apartadoId: string,
+    motivo: string | null,
+    user: string,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const apartado = await prisma.forestCtpApartado.findFirst({
+      where: { id: apartadoId, tenantId },
+      include: {
+        ctpEntry: { select: { lineNo: true } },
+        paquete: { select: { codigo: true } },
+      },
+    });
+    if (!apartado) throw new CtpInvariantError("Esa reserva no existe.", "LOTE_NO_ENCONTRADO");
+    const { ctpEntry, paquete, ...fila } = apartado;
+    /* Ya estaba liberada: se devuelve tal cual, sin re-escribir ni re-auditar.
+       Reabrir el renglón borraría a quién la soltó de verdad. */
+    if (fila.liberadoAt) return fila;
+
+    const razon = (motivo ?? "").trim() || null;
+    /* Doble filtro tenantId + id aunque la lectura de arriba ya lo probó:
+       un update del libro nunca sale sin el tenant en el WHERE (regla 3). */
+    const liberado = await prisma.forestCtpApartado.update({
+      where: { id: apartadoId, tenantId },
+      data: { liberadoAt: new Date(), liberadoPor: user, liberadoMotivo: razon },
+    });
+
+    const queCosa = paquete?.codigo
+      ? `el paquete ${paquete.codigo}`
+      : `la corrida N° ${ctpEntry.lineNo}`;
+    auditCtp({
+      tenantId,
+      action: "ctp_liberar_apartado",
+      entity: "ForestCtpApartado",
+      entityId: apartadoId,
+      detail:
+        `Liberó ${queCosa}, que estaba apartado para ${apartado.para}: vuelve a Productos disponibles` +
+        (razon ? ` · motivo: ${razon}` : ""),
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
+    return liberado;
+  }
+
+  /**
    * Completar los campos VACÍOS de una corrida (ADR-401 §1.2).
    *
    * No es «editar»: es llenar un hueco. Un asiento que decía `presentacion:
@@ -3004,14 +3225,34 @@ export class ForestCtpDB {
         paquetes: {
           where: { deletedAt: null },
           orderBy: { codigo: "asc" },
+          /* La reserva VIVA del paquete (ADR-418): es la fila que el operador
+             ve en la pila, así que el «apartado para…» tiene que viajar con
+             ella o la pantalla ofrecería madera que ya tiene dueño. */
+          include: { apartados: { where: { liberadoAt: null } } },
         },
+        /* Las reservas vivas colgadas de la CORRIDA. Vienen todas —las de la
+           corrida entera y las de sus paquetes—; abajo se toma la que tiene
+           `paqueteId: null`, que es la que representa la fila sin paquete. */
+        apartados: { where: { liberadoAt: null } },
         /* De qué guía y de qué título habilitante viene la madera de la corrida.
            Es lo que la GTF de salida declara como origen del recurso: sin esto,
            el picker de la guía puede decir "qué producto" pero no "de dónde
-           salió", que es justo lo que compara un puesto de control. Se leen dos
-           columnas del ingreso, no el ingreso entero. */
+           salió", que es justo lo que compara un puesto de control. Se leen
+           cuatro columnas del ingreso, no el ingreso entero: las dos del origen
+           y las dos con las que se valoriza el patio (ADR-418). */
         consumos: {
-          select: { woodEntry: { select: { gtfNumber: true, originCode: true } } },
+          select: {
+            volumeM3: true,
+            costoUnitarioSnap: true,
+            woodEntry: {
+              select: {
+                gtfNumber: true,
+                originCode: true,
+                costoTotal: true,
+                volumeM3: true,
+              },
+            },
+          },
         },
       },
     });
@@ -3042,6 +3283,10 @@ export class ForestCtpDB {
            mostraría dos orígenes distintos según quién la lea. */
         const propio = (c.originCode ?? "").trim();
         const titularOrigen = heredados.length > 0 ? heredados : propio ? [propio] : [];
+        /* La reserva de la FILA SIN PAQUETE (ADR-418). Las reservas de los
+           paquetes cuelgan de la misma corrida, así que se distingue por
+           `paqueteId: null` — es lo que la pantalla dibuja en la fila madre. */
+        const apartadoCorrida = c.apartados.find((a) => a.paqueteId == null) ?? null;
         return {
           id: c.id,
           lineNo: c.lineNo,
@@ -3098,6 +3343,21 @@ export class ForestCtpDB {
           despachado: s?.despachado ?? 0,
           reprocesado: s?.reprocesado ?? 0,
           disponible,
+          /** Quién tiene reservada la corrida entera (ADR-418). `null` = libre. */
+          apartado: apartadoCorrida ? apartadoDto(apartadoCorrida) : null,
+          /** Los consumos con lo que hace falta para valorizar la materia prima
+           *  (ADR-418). El cálculo lo hace `lib/forestal/valor-del-patio.ts`: acá
+           *  sólo viajan los insumos crudos, sin derivar nada.
+           *  `costoUnitarioSnap` = el costo congelado al cierre (D6), que MANDA
+           *  sobre el vivo; `costoTotalGuia`/`volumenGuiaM3` = la factura de la
+           *  guía, de la que sale el costo vivo. `null` = no se sabe, nunca 0. */
+          costoConsumos: c.consumos.map((x) => ({
+            volumeM3: Number(x.volumeM3),
+            costoUnitarioSnap: x.costoUnitarioSnap != null ? Number(x.costoUnitarioSnap) : null,
+            costoTotalGuia: x.woodEntry?.costoTotal != null ? Number(x.woodEntry.costoTotal) : null,
+            volumenGuiaM3: x.woodEntry?.volumeM3 != null ? Number(x.woodEntry.volumeM3) : null,
+            gtfNumber: x.woodEntry?.gtfNumber ?? null,
+          })),
           paquetes: c.paquetes.map((p) => ({
             id: p.id,
             codigo: p.codigo,
@@ -3109,13 +3369,63 @@ export class ForestCtpDB {
             anchoCm: p.anchoCm != null ? Number(p.anchoCm) : null,
             largoM: p.largoM != null ? Number(p.largoM) : null,
             observations: p.observations,
+            /** Quién tiene reservado ESTE paquete (ADR-418). `null` = libre. */
+            apartado: p.apartados[0] ? apartadoDto(p.apartados[0]) : null,
           })),
         };
       })
       .filter((c) => c.disponible > 0);
 
+    /**
+     * El costo de la materia prima por GUÍA, para las corridas SIN consumos
+     * (ADR-418).
+     *
+     * Por qué existe además de `costoConsumos`: en el libro real de Blas hay
+     * **0 filas en ForestCtpConsumo**, así que la vía "oficial" —el costo que
+     * viaja con la atribución ingreso→corrida— no devuelve nada y la columna
+     * S/ quedaría vacía para siempre. La corrida igual nombra sus guías en
+     * `gtfIngreso` (texto del acta), y esa guía sí tiene su factura.
+     *
+     * Es un costo por GUÍA, no atribuido: quien lo use tiene que decir que es
+     * una aproximación por número de guía. Por eso viaja crudo y aparte, y no
+     * mezclado con `costoConsumos` — dos cosas distintas no pueden llegar
+     * indistinguibles a la pantalla.
+     *
+     * UNA query para todas las corridas (`gtfNumber: { in: [...] }`, que pega
+     * en el índice `(tenantId, gtfNumber)` de WoodEntry), nunca una por corrida.
+     */
+    const gtfsDelResultado = [...new Set(conSaldo.flatMap((c) => c.gtfOrigen))].filter(Boolean);
+    const guias = gtfsDelResultado.length
+      ? await prisma.woodEntry.findMany({
+          where: { tenantId, gtfNumber: { in: gtfsDelResultado }, deletedAt: null },
+          select: { gtfNumber: true, costoTotal: true, volumeM3: true },
+        })
+      : [];
+    /* Una guía es N filas (una por especie/producto): se suman, porque la
+       factura del proveedor ampara el camión entero. `costoTotal` null en todas
+       ⇒ null, no 0 — un 0 fingiría que la madera salió gratis. */
+    const costoDeGuia = new Map<string, { costoTotal: number | null; volumeM3: number | null }>();
+    for (const g of guias) {
+      const prev = costoDeGuia.get(g.gtfNumber) ?? { costoTotal: null, volumeM3: null };
+      costoDeGuia.set(g.gtfNumber, {
+        costoTotal:
+          g.costoTotal != null ? (prev.costoTotal ?? 0) + Number(g.costoTotal) : prev.costoTotal,
+        volumeM3: g.volumeM3 != null ? (prev.volumeM3 ?? 0) + Number(g.volumeM3) : prev.volumeM3,
+      });
+    }
+    const corridasConCosto = conSaldo.map((c) => ({
+      ...c,
+      /** Costo de las guías que la corrida nombra como origen (ADR-418). Vacío
+       *  si ninguna de sus guías está en el libro de ingresos. */
+      costoPorGtf: c.gtfOrigen.map((gtf) => ({
+        gtfNumber: gtf,
+        costoTotal: costoDeGuia.get(gtf)?.costoTotal ?? null,
+        volumeM3: costoDeGuia.get(gtf)?.volumeM3 ?? null,
+      })),
+    }));
+
     return {
-      corridas: conSaldo,
+      corridas: corridasConCosto,
       totales: {
         volumen: Math.round(conSaldo.reduce((a, c) => a + c.disponible, 0) * 10000) / 10000,
         paquetes: conSaldo.reduce((a, c) => a + c.paquetes.length, 0),

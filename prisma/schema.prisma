@@ -6297,6 +6297,10 @@ model ForestCtpEntry {
   /// Invariante L1 (Σ miembros ≤ quantity) impide empaquetar más de lo producido.
   loteMiembros ForestProdLoteMiembro[] @relation("LoteMiembroProduccion")
 
+  /// Las reservas sobre esta corrida (ADR-418): quién la tiene apartada mientras
+  /// se emite la guía. Incluye las ya liberadas — el historial es parte del acta.
+  apartados ForestCtpApartado[]
+
   @@index([tenantId, section, entryDate(sort: Desc)])
   @@index([tenantId, gtfNumber])
   @@index([deletedAt])
@@ -6386,10 +6390,62 @@ model ForestCtpPaquete {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  /// Las reservas sobre ESTE paquete (ADR-418). Un apartado se hace sobre la
+  /// fila que el operador ve en la pila: casi siempre un paquete con su código.
+  apartados ForestCtpApartado[]
+
   /// El código de paquete no se repite en la planta: es lo que se busca en la
   /// pila y lo que se cita en la guía de salida.
   @@unique([tenantId, codigo])
   @@index([tenantId, ctpEntryId])
+}
+
+/// Un producto APARTADO: reserva sobre una fila de «Productos disponibles» (ADR-418).
+///
+/// El hueco que tapa: entre que el operador elige los paquetes de un pedido y
+/// emite la GTF pasan horas o días (hay que confirmar transportista, conductor y
+/// placa). En ese hueco la madera sigue apareciendo libre para todo el mundo, y
+/// dos vendedores prometían los mismos paquetes. El apartado NO mueve stock ni
+/// toca ningún saldo declarado —mismo criterio que `ForestCtpEntry.usadoAt`—:
+/// sólo dice «esto ya tiene dueño, no lo ofrezcas».
+///
+/// Una reserva puede ser de UN paquete (`paqueteId`) o de la corrida entera
+/// (`paqueteId = NULL`), que son las dos formas de fila que arma la pantalla.
+///
+/// ⚠️ **Falta acá el índice que garantiza «una sola reserva viva por fila»**:
+/// es un UNIQUE PARCIAL sobre `(ctpEntryId, COALESCE(paqueteId, ''))` con
+/// `WHERE liberadoAt IS NULL`, y Prisma no sabe declarar ni el `WHERE` ni el
+/// `COALESCE` de un índice. Vive sólo en
+/// `prisma/migrations/adr-418-ctp-apartar-productos.sql` como
+/// `ForestCtpApartado_vivo_unico`. Sin él, dos clics simultáneos dejarían dos
+/// dueños sobre el mismo paquete y la pantalla mostraría uno al azar; el
+/// chequeo de `apartarProducto` es la primera línea, esto es la red.
+model ForestCtpApartado {
+  id       String @id @default(cuid())
+  tenantId String // denormalizado — regla 3 + detección de fuga (ADR-134 D3)
+
+  ctpEntryId String
+  ctpEntry   ForestCtpEntry @relation(fields: [ctpEntryId], references: [id], onDelete: Cascade)
+  /// NULL = la corrida entera (fila sin paquete en la pantalla).
+  paqueteId  String?
+  paquete    ForestCtpPaquete? @relation(fields: [paqueteId], references: [id], onDelete: Cascade)
+
+  /// Para quién se aparta. Texto libre: el cliente todavía no es una FK (deuda conocida).
+  para  String
+  /// Hasta cuándo vale la reserva. NULL = sin plazo.
+  hasta DateTime?
+  nota  String?
+
+  creadoPor String
+  creadoAt  DateTime @default(now())
+
+  /// Se soltó: volvió a estar libre. NULL = reserva viva.
+  liberadoAt     DateTime?
+  liberadoPor    String?
+  liberadoMotivo String?
+
+  @@index([tenantId, ctpEntryId])
+  @@index([tenantId, liberadoAt])
 }
 
 model ForestCtpDespachoOrigen {

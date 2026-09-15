@@ -12,6 +12,7 @@ import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-errors";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 import { withApiHandler } from "@/lib/api-handler";
 import { TIPOS_DOCUMENTO_LOCTP } from "@/lib/forestal/loctp-campos";
 import { LINEAS_PRODUCCION } from "@/lib/forestal/loctp-resumenes";
@@ -381,6 +382,42 @@ const patchSchema = z.discriminatedUnion("action", [
     action: z.literal("declarar_apertura"),
     apertura: z.boolean(),
     motivo: z.string().trim().max(500).optional(),
+  }),
+  /**
+   * APARTAR un producto del patio (ADR-418): reservarlo a nombre de alguien
+   * mientras se termina de armar la guía. `paqueteId` ausente/null = se aparta
+   * la corrida entera, que es la otra forma de fila de «Productos disponibles».
+   */
+  z.object({
+    action: z.literal("apartar_producto"),
+    ctpEntryId: z.cuid(),
+    paqueteId: z.cuid().nullable().optional(),
+    /* Sin nombre no hay reserva: «apartado para nadie» es madera bloqueada que
+       después nadie sabe soltar. 120 = lo que entra en la etiqueta de la pila. */
+    para: z.string().trim().min(1, "Pon para quién se aparta el producto.").max(120),
+    /* El plazo es opcional, pero si se pone no puede estar vencido: una reserva
+       que nace muerta no reserva nada.
+       Se comparan DÍAS, no instantes, y por el lado que no puede equivocarse:
+       el día de `hasta` se lee en UTC (un `<input type="date">` manda
+       "2026-09-15", que `coerce.date()` vuelve medianoche UTC) contra el día de
+       HOY en Lima. Al revés —hoy en UTC contra el día Lima del valor— después
+       de las 19:00 de Pucallpa el operador elegía "hoy" y el server lo
+       rechazaba por vencido (el off-by-one de `fecha sin hora`). Este lado
+       falla como mucho por un día de más, que no rompe nada. */
+    hasta: z.coerce
+      .date()
+      .refine((d) => d.toISOString().slice(0, 10) >= limaDateKey(), {
+        message: "El plazo no puede ser anterior a hoy.",
+      })
+      .nullable()
+      .optional(),
+    nota: z.string().trim().max(300).nullable().optional(),
+  }),
+  /** Soltar la reserva: el producto vuelve a Productos disponibles (ADR-418). */
+  z.object({
+    action: z.literal("liberar_apartado"),
+    apartadoId: z.cuid(),
+    motivo: z.string().trim().max(200).nullable().optional(),
   }),
 ]);
 
@@ -1056,6 +1093,29 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         user: auth.username ?? "unknown",
       });
       return NextResponse.json({ entry });
+    }
+    if (parsed.data.action === "apartar_producto") {
+      const apartado = await ForestCtpDB.apartarProducto(
+        auth.tenantId,
+        {
+          ctpEntryId: parsed.data.ctpEntryId,
+          paqueteId: parsed.data.paqueteId ?? null,
+          para: parsed.data.para,
+          hasta: parsed.data.hasta ?? null,
+          nota: parsed.data.nota ?? null,
+        },
+        auth.username ?? "unknown",
+      );
+      return NextResponse.json({ apartado });
+    }
+    if (parsed.data.action === "liberar_apartado") {
+      const apartado = await ForestCtpDB.liberarApartado(
+        auth.tenantId,
+        parsed.data.apartadoId,
+        parsed.data.motivo ?? null,
+        auth.username ?? "unknown",
+      );
+      return NextResponse.json({ apartado });
     }
     return NextResponse.json({
       entry: await ForestCtpDB.annul(

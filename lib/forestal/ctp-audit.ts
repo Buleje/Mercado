@@ -33,6 +33,10 @@ export type CtpAuditEntity =
   | "ForestCtpEntry"
   /** Un paquete declarado de una corrida (ADR-349): su código, sus piezas y su escuadría. */
   | "ForestCtpPaquete"
+  /** Una reserva sobre un producto del patio (ADR-418): quién lo tiene apartado
+   *  mientras se arma la guía. No mueve stock, pero decide a quién se le vende
+   *  la madera — y eso es exactamente lo que se reclama después. */
+  | "ForestCtpApartado"
   | "ForestCtpConsumo"
   | "ForestProdLote"
   /** Lote de ASERRÍO (ADR-334): la materia prima agrupada antes de la sierra. */
@@ -175,6 +179,12 @@ export type CtpAuditAction =
    *  despacharse ni reprocesarse (Brandon, 2026-09-01). Reversible. */
   | "ctp_linea_marcar_usado"
   | "ctp_linea_desmarcar_usado"
+  /** Apartar un producto del patio y soltarlo (ADR-418). Va aparte de
+   *  `marcar_usado` —que dice «esto ya no está»— porque una reserva dice «esto
+   *  es de fulano»: cuando dos clientes reclaman los mismos paquetes, lo que se
+   *  consulta es quién lo apartó primero y quién lo liberó. */
+  | "ctp_apartar"
+  | "ctp_liberar_apartado"
   /** Existencia de apertura declarada / deshecha (ADR-394). */
   | "ctp_apertura_declarar"
   | "ctp_apertura_deshacer"

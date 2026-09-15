@@ -23,7 +23,15 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "@buleje/design-system/icons";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "@buleje/design-system/icons";
 import {
   FILAS_POR_PAGINA,
   FILAS_POR_PAGINA_DEFAULT,
@@ -82,6 +90,53 @@ export function TheadCtp({ children }: { children: React.ReactNode }) {
     <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
       {children}
     </thead>
+  );
+}
+
+/**
+ * Cabecera que ordena, con su estado dicho en voz alta (`aria-sort`).
+ *
+ * El patrón ya estaba escrito a mano en tres tablas del panel (Guías, Historial
+ * de compras, Adelantos). Vive acá —el módulo de primitivos de la tabla del
+ * libro— para que la cuarta no vuelva a copiarlo: una tabla del libro que no
+ * ordena obliga a exportar a Excel para contestar «cuál es el más viejo».
+ *
+ * `campo` es genérico a propósito: cada tabla nombra sus columnas y el tipo la
+ * obliga a pedir una que exista.
+ */
+export function ThOrdenable<C extends string>({
+  campo,
+  orden,
+  onOrdenar,
+  align = "left",
+  className,
+  children,
+}: {
+  campo: C;
+  orden: { by: C; dir: "asc" | "desc" };
+  onOrdenar: (c: C) => void;
+  align?: "left" | "right";
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const activo = orden.by === campo;
+  const Icono = !activo ? ArrowUpDown : orden.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th
+      aria-sort={activo ? (orden.dir === "asc" ? "ascending" : "descending") : "none"}
+      className={`px-3 py-2 font-bold ${align === "right" ? "text-right" : ""} ${className ?? ""}`}
+    >
+      <button
+        type="button"
+        onClick={() => onOrdenar(campo)}
+        className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 font-bold uppercase tracking-[var(--ls-wider)] transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
+          align === "right" ? "flex-row-reverse" : ""
+        } ${activo ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`}
+      >
+        {children}
+        <Icono className={`h-3.5 w-3.5 ${activo ? "" : "opacity-40"}`} aria-hidden="true" />
+      </button>
+    </th>
   );
 }
 
