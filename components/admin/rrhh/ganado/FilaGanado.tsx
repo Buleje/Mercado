@@ -9,11 +9,14 @@
  * El chevron de expandir ahora es SIEMPRE visible junto al nombre: antes sólo
  * aparecía si había avisos, pero la fila se puede abrir siempre (haya o no
  * avisos) y no había ninguna pista de que fuera clicable.
+ *
+ * «Queda por pagar» (ADR-417) sale de `calcularQuedaPorPagar`, la misma función
+ * pura que suma el total del pie — nunca una resta escrita en el JSX.
  */
 
 import { useState } from "react";
 import { ChevronDown } from "@buleje/design-system/icons";
-import { explicarGanado } from "@/lib/rrhh/ganado";
+import { calcularQuedaPorPagar, explicarGanado, explicarQuedaPorPagar } from "@/lib/rrhh/ganado";
 import { CLASE_CHIP } from "../rrhh-form";
 import { CLASE_FOCUS_FILA, etiquetaModalidad, filaClicableProps, formatearPEN, pluralizar } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
@@ -37,6 +40,8 @@ export default function FilaGanado({ persona }: { persona: GanadoDTO["personas"]
     : unaSolaTarifa
       ? `${formatearPEN(persona.tramos[0].monto)} (${etiquetaModalidad(persona.tramos[0].modalidad)})`
       : pluralizar(persona.tramos.length, "tarifa", "tarifas");
+
+  const queda = calcularQuedaPorPagar(persona);
 
   const avisos = [
     ...persona.sinMarcar.length > 0 ? [`${pluralizar(persona.sinMarcar.length, "día", "días")} sin marcar`] : [],
@@ -67,6 +72,19 @@ export default function FilaGanado({ persona }: { persona: GanadoDTO["personas"]
         <td>{tarifaTexto}</td>
         <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">{formatearPEN(persona.total)}</td>
         <td className="text-right tabular-nums">{persona.adelantos ? formatearPEN(persona.adelantos.abiertosPen) : "—"}</td>
+        <td className="text-right tabular-nums">
+          {queda == null ? (
+            <span className="text-[var(--text-tertiary)]">—</span>
+          ) : queda.deuda > 0 ? (
+            // El adelanto fue mayor que lo ganado: no es un pago negativo, es
+            // deuda que sigue. «S/ -120.00» acá se leería como «hay que cobrarle».
+            <span className="font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              debe {formatearPEN(queda.deuda)}
+            </span>
+          ) : (
+            <span className="font-bold text-[var(--text-primary)]">{formatearPEN(queda.aPagar)}</span>
+          )}
+        </td>
         <td>
           {avisos.length > 0 ? (
             <div className="flex flex-wrap gap-1">
@@ -81,11 +99,16 @@ export default function FilaGanado({ persona }: { persona: GanadoDTO["personas"]
       </tr>
       {abierto && (
         <tr>
-          <td colSpan={7} className="bg-[var(--surface-sunken)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+          <td colSpan={8} className="bg-[var(--surface-sunken)] px-4 py-3 text-sm text-[var(--text-secondary)]">
             <ul className="list-inside list-disc space-y-1 leading-relaxed">
               {explicarGanado(persona).map((linea, i) => <li key={i}>{linea}</li>)}
+              {queda != null && <li>{explicarQuedaPorPagar(queda)}</li>}
             </ul>
-            {persona.beneficiarioId == null && <p className="mt-2 text-xs text-[var(--text-tertiary)]">Sin cuenta vinculada — sin adelantos que mostrar al lado.</p>}
+            {persona.beneficiarioId == null && (
+              <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+                Sin cuenta vinculada — no hay adelantos que mostrar al lado, así que tampoco se puede decir qué queda por pagar. Vincula su cuenta desde Personal.
+              </p>
+            )}
           </td>
         </tr>
       )}

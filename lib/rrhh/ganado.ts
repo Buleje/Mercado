@@ -5,10 +5,25 @@
  * con los MISMOS argumentos — la lección de ADR-412, donde la vista previa
  * llamaba la misma función sin `unit` y calculaba 424 veces de más.
  *
- * **No resta adelantos.** No hay ningún pago de sueldo anotado todavía: restar
- * el saldo de Adelantos afirmaría una deuda que el sistema no puede probar
- * (regla `verificacion-de-verdad` §2). Este módulo sólo dice cuánto se ganó;
- * el saldo de Adelantos se muestra AL LADO, en `GanadoDB.periodo`.
+ * **`calcularGanado` no resta adelantos** — dice cuánto se ganó y nada más. La
+ * resta vive aparte, en `calcularQuedaPorPagar` (ADR-417), porque los dos
+ * números ya salían en la misma fila y el usuario los restaba de cabeza.
+ * Cuatro decisiones que esa resta tiene tomadas, y por qué:
+ *
+ * 1. **Es referencia, no un pago.** Sigue sin haber ningún pago de sueldo
+ *    anotado: «queda por pagar» es la cuenta pendiente, no un recibo. Mismo
+ *    tono que el resto del módulo (`COPY_REFERENCIA`).
+ * 2. **El saldo de adelantos es a HOY, no del período.** Lo ganado se mide
+ *    entre `desde` y `hasta`; el saldo abierto de Adelantos es el de hoy, venga
+ *    de cuando venga. Son dos ventanas de tiempo distintas, y la pantalla lo
+ *    dice en una línea: sin ese aviso la resta miente (`verificacion-de-verdad`
+ *    §2, un derivado nunca se presenta como el dato).
+ * 3. **Si el adelanto es mayor que lo ganado, no hay pago negativo.** Queda
+ *    deuda: `aPagar = 0` y `deuda = adelantos − ganado`. Un «S/ -120.00» en una
+ *    columna de pagos se lee como que hay que cobrarle, y no es eso.
+ * 4. **Sin cuenta de Adelantos vinculada no se resta: da `null`.** No se asume
+ *    cero — de esa persona no sabemos si debe algo, y un cero inventado se
+ *    lee como «no debe nada». La celda queda «—» y la fila explica por qué.
  *
  * **Copy obligatorio junto a todo monto** (lo pone la pantalla, no este
  * módulo): «Referencia: no es planilla electrónica ni boleta. No calcula CTS,
@@ -307,4 +322,91 @@ export function explicarGanado(g: GanadoPersona): string[] {
     const dm = diasDelMes(t.desde);
     return `Sueldo mensual S/ ${fmt(t.monto)} ÷ ${dm} × ${fmtFactor(t.factor)} = S/ ${fmt(t.importe)}`;
   });
+}
+
+// ── Queda por pagar (ADR-417) ────────────────────────────────────────────────
+
+/** Lo mínimo que hace falta de una persona para la resta: lo ganado y su saldo de Adelantos. */
+export interface PersonaParaNeto {
+  /** Lo ganado del período (`GanadoPersona.total`). */
+  total: number;
+  /** Saldo de Adelantos de la persona; `null` = sin cuenta vinculada (`beneficiarioId == null`). */
+  adelantos: { abiertosPen: number } | null;
+}
+
+export interface QuedaPorPagar {
+  /** Lo ganado del período, tal cual salió de `calcularGanado`. */
+  ganado: number;
+  /** Saldo de adelantos ABIERTOS en soles, al día de HOY — no del período. */
+  adelantos: number;
+  /** `ganado − adelantos` con signo. Negativo = el adelanto fue mayor que lo ganado. */
+  neto: number;
+  /** Lo que queda por pagarle. Nunca negativo: si el adelanto fue mayor, es 0. */
+  aPagar: number;
+  /** Lo que seguiría debiendo después de descontarle todo lo ganado. Nunca negativo. */
+  deuda: number;
+}
+
+/**
+ * Lo que queda por pagarle a UNA persona: lo ganado del período menos su saldo
+ * de adelantos abiertos. `null` si no tiene cuenta de Adelantos vinculada —
+ * ver decisiones 1-4 en la cabecera de este archivo.
+ */
+export function calcularQuedaPorPagar(persona: PersonaParaNeto): QuedaPorPagar | null {
+  if (!persona.adelantos) return null;
+  const ganado = r2(persona.total);
+  const adelantos = r2(persona.adelantos.abiertosPen);
+  const neto = r2(ganado - adelantos);
+  return {
+    ganado,
+    adelantos,
+    neto,
+    aPagar: neto > 0 ? neto : 0,
+    deuda: neto < 0 ? r2(-neto) : 0,
+  };
+}
+
+export interface TotalQuedaPorPagar {
+  /** Σ de lo que queda por pagar, sólo de las personas con cuenta vinculada. */
+  aPagar: number;
+  /** Σ de lo que seguiría debiéndose después de descontar lo ganado. */
+  deuda: number;
+  /** Cuántas personas entran en el total. */
+  personas: number;
+  /** Cuántas quedaron fuera por no tener cuenta de Adelantos vinculada. */
+  sinCuenta: number;
+  /** De las que entran, cuántas siguen debiendo (`deuda > 0`). */
+  conDeuda: number;
+}
+
+/**
+ * El total de la columna. Suma `aPagar` y `deuda` POR SEPARADO: sumar los netos
+ * con signo dejaría que lo ganado de una persona tape la deuda de otra, y el
+ * total diría que hay menos por pagar del que realmente hay que sacar de la
+ * caja. `sinCuenta` sale afuera para que la pantalla pueda decir cuántas
+ * personas NO entran — si no, el total no cierra contra el total de lo ganado
+ * y parece un error de cuentas.
+ */
+export function totalQuedaPorPagar(personas: readonly PersonaParaNeto[]): TotalQuedaPorPagar {
+  const total: TotalQuedaPorPagar = { aPagar: 0, deuda: 0, personas: 0, sinCuenta: 0, conDeuda: 0 };
+  for (const p of personas) {
+    const q = calcularQuedaPorPagar(p);
+    if (!q) {
+      total.sinCuenta++;
+      continue;
+    }
+    total.personas++;
+    total.aPagar = r2(total.aPagar + q.aPagar);
+    total.deuda = r2(total.deuda + q.deuda);
+    if (q.deuda > 0) total.conDeuda++;
+  }
+  return total;
+}
+
+/** Una línea para el desplegable «Cómo sale»: la resta escrita, con su fecha de corte. */
+export function explicarQuedaPorPagar(q: QuedaPorPagar): string {
+  const resta = `S/ ${fmt(q.ganado)} ganado − S/ ${fmt(q.adelantos)} de adelantos abiertos`;
+  return q.deuda > 0
+    ? `${resta}: el adelanto es mayor que lo ganado en este período, sigue debiendo S/ ${fmt(q.deuda)}.`
+    : `${resta} = S/ ${fmt(q.aPagar)} por pagar.`;
 }

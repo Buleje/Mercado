@@ -10,6 +10,13 @@
  * genérico de red que cualquier otra falla. Ahora se valida ANTES de pedir:
  * el aviso sale en línea, junto a los campos, y el hook se queda con el
  * último rango válido — no se dispara el pedido que iba a fallar.
+ *
+ * «Queda por pagar» (ADR-417) = lo ganado del período − los adelantos abiertos,
+ * sólo para quien tiene cuenta de Adelantos vinculada. El total sale de
+ * `totalQuedaPorPagar` (función pura, testeada), no de una suma en el JSX, y
+ * abajo de la tabla se declara qué cubre: el saldo de adelantos es a HOY y el
+ * total no incluye a las personas sin cuenta — dos cifras contiguas que no
+ * cierran, sin esa línea, se leen como un error de cuentas.
  */
 
 import { Info } from "@buleje/design-system/icons";
@@ -19,9 +26,10 @@ import { Wallet } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import { useRrhhGanado } from "@/hooks/use-rrhh-ganado";
 import { diasDelMes, mesDe, semanaDe, sumarDias } from "@/lib/rrhh/fechas";
+import { totalQuedaPorPagar } from "@/lib/rrhh/ganado";
 import { limaDateKey } from "@/lib/utils";
 import { AvisoRrhh, CLASE_CAMPO, claseChipFiltro } from "../rrhh-form";
-import { COPY_REFERENCIA, formatearFecha, formatearPEN } from "../rrhh-ui";
+import { COPY_REFERENCIA, formatearFecha, formatearPEN, pluralizar } from "../rrhh-ui";
 import FilaGanado from "./FilaGanado";
 
 type Chip = "esta-semana" | "semana-pasada" | "este-mes" | "mes-pasado" | "rango";
@@ -74,6 +82,8 @@ export default function GanadoView() {
     if (!ganado) return 0;
     return ganado.personas.filter((p) => p.avisos.length > 0 || p.sinMarcar.length > 0 || p.sinTarifa.length > 0).length;
   }, [ganado]);
+
+  const queda = useMemo(() => totalQuedaPorPagar(ganado?.personas ?? []), [ganado]);
 
   const CHIPS: { id: Chip; label: string }[] = [
     { id: "esta-semana", label: "Esta semana" },
@@ -143,8 +153,18 @@ export default function GanadoView() {
           <EmptyState icon={Wallet} title="Sin personal activo en este período" />
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard label="Total de referencia" value={formatearPEN(ganado.total)} density="compact" />
+              <StatCard
+                label="Queda por pagar"
+                /* Sin nadie con cuenta vinculada el total NO es S/ 0.00: es que no
+                   se puede calcular. Un cero acá se leería como «no se debe nada». */
+                value={queda.personas === 0 ? "—" : formatearPEN(queda.aPagar)}
+                subValue={queda.personas === 0
+                  ? "Nadie con cuenta de Adelantos vinculada"
+                  : `${pluralizar(queda.personas, "persona", "personas")} de ${ganado.personas.length}`}
+                density="compact"
+              />
               <StatCard label="Personas" value={ganado.personas.length} density="compact" />
               <StatCard label="Con avisos" value={personasConAvisos} density="compact" emphasis={personasConAvisos > 0 ? "warning" : "neutral"} />
             </div>
@@ -157,6 +177,7 @@ export default function GanadoView() {
                   <th>Tarifa</th>
                   <th className="text-right">Ganado (referencia)</th>
                   <th className="text-right">Adelantos abiertos</th>
+                  <th className="text-right">Queda por pagar</th>
                   <th>Avisos</th>
                 </tr>
               </thead>
@@ -167,10 +188,20 @@ export default function GanadoView() {
                 <tr>
                   <th colSpan={4} className="text-right">Total</th>
                   <th className="text-right tabular-nums">{formatearPEN(ganado.total)}</th>
-                  <th colSpan={2} />
+                  <th />
+                  <th className="text-right tabular-nums">{queda.personas === 0 ? "—" : formatearPEN(queda.aPagar)}</th>
+                  <th />
                 </tr>
               </tfoot>
             </DataTable>
+            <p className="text-xs leading-relaxed text-[var(--text-tertiary)]">
+              «Queda por pagar» = lo ganado del período − los adelantos abiertos. Ese saldo de adelantos es el de hoy
+              {" "}({formatearFecha(ganado.hoy)}), no el de este período: si el adelanto se dio antes, igual se resta.
+              {queda.personas === 0
+                ? ` Nadie tiene cuenta de Adelantos vinculada (${pluralizar(ganado.personas.length, "persona", "personas")} en el período), así que no hay nada que restar: vincula su cuenta desde Personal.`
+                : ` El total suma ${pluralizar(queda.personas, "persona", "personas")} de ${ganado.personas.length}${queda.sinCuenta > 0 ? ` — ${pluralizar(queda.sinCuenta, "persona", "personas")} sin cuenta vinculada queda${queda.sinCuenta === 1 ? "" : "n"} en «—»` : ""}.`}
+              {queda.conDeuda > 0 && ` ${queda.conDeuda === 1 ? "1 persona sigue debiendo" : `${queda.conDeuda} personas siguen debiendo`} ${formatearPEN(queda.deuda)} después de descontarle lo ganado: esa deuda no está en el total.`}
+            </p>
           </>
         )
       )}
