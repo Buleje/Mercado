@@ -27,7 +27,8 @@ import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useFichaCtp } from "@/hooks/use-ficha-ctp";
+import { useFichaCtp, type FichaCtp } from "@/hooks/use-ficha-ctp";
+import CtpFichaParaEmitir from "./CtpFichaParaEmitir";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import { faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
@@ -80,7 +81,11 @@ export default function CtpDespachoGuiaModal({
   onClose: () => void;
   onSaved: (r: { lineas: number; offline?: boolean }) => void;
 }) {
-  const ficha = useFichaCtp();
+  const fichaTraida = useFichaCtp();
+  /* La Ficha recién guardada desde la pared de abajo manda sobre la que se trajo
+     al abrir: si no, completar la serie no se notaría hasta recargar el modal. */
+  const [fichaCompletada, setFichaCompletada] = useState<FichaCtp | null>(null);
+  const ficha = fichaCompletada ?? fichaTraida;
   const directorio = useDirectorioForestal();
 
   const [tab, setTab] = useState<"guia" | "productos">("guia");
@@ -568,6 +573,11 @@ export default function CtpDespachoGuiaModal({
         }
       >
         <div className="space-y-3 px-5 py-4 sm:px-6">
+          {/* La pared, ANTES de cargar nada: sin serie del talonario la guía no se
+              puede numerar, y con la Ficha vacía sale sin decir quién la emite.
+              Hasta hoy eso se descubría al apretar «Emitir», con todo cargado. */}
+          {!registrado && <CtpFichaParaEmitir ficha={ficha} onFichaGuardada={setFichaCompletada} />}
+
           {/* La franja del formato: con qué título sale la madera y cuánto se
               mueve. El volumen es el de la lista, en vivo. */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-2xl border-2 border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-4 py-3 lg:grid-cols-5 dark:bg-[var(--data-warning-500)]/10">

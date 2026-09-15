@@ -325,23 +325,99 @@ export function direccionCompleta(p: Pick<Parte, "direccion" | "distrito" | "pro
 }
 
 /**
+ * Qué clase de dato le falta a una parte para ir en la guía. La CLAVE es
+ * estable; la etiqueta se lee en pantalla y puede cambiar de redacción.
+ *
+ * Existe porque el gate de impresión de la guía necesita distinguir "le falta
+ * el nombre" (que el propio formulario de la GTF ya mira, `faltantesGtf`) de
+ * "le falta el documento / la licencia" (que sólo mira el Directorio). Comparar
+ * los textos para eso era atarse a la redacción.
+ */
+export type ClaveFaltanteParte = "nombre" | "documento" | "direccion" | "licencia";
+
+export interface FaltanteParte {
+  clave: ClaveFaltanteParte;
+  /** Cómo se dice en pantalla — incluye el porqué cuando no es obvio. */
+  label: string;
+}
+
+/**
  * Qué le falta a la parte para poder usarse en una guía CON ese rol.
  *
  * No bloquea guardar (una libreta a medio llenar sigue sirviendo): es lo que la
  * UI muestra para que el operador sepa que ese destinatario todavía no alcanza
  * para imprimir.
  */
-export function faltantesParaGuia(p: Parte, rol: RolParte): string[] {
-  const faltan: string[] = [];
-  if (!p.nombre) faltan.push("nombre");
+export function faltantesParaGuiaDetalle(p: Parte, rol: RolParte): FaltanteParte[] {
+  const faltan: FaltanteParte[] = [];
+  if (!p.nombre) faltan.push({ clave: "nombre", label: "nombre" });
   if (rol === "destinatario") {
-    if (!p.docNumero) faltan.push("documento");
-    if (!direccionCompleta(p)) faltan.push("dirección (es el punto de llegada)");
+    if (!p.docNumero) faltan.push({ clave: "documento", label: "documento" });
+    if (!direccionCompleta(p)) {
+      faltan.push({ clave: "direccion", label: "dirección (es el punto de llegada)" });
+    }
   }
-  if (rol === "transportista" && !p.docNumero) faltan.push("documento");
-  if (rol === "conductor" && !p.licencia) faltan.push("licencia de conducir");
-  if (rol === "proveedor" && !p.docNumero) faltan.push("documento");
+  if (rol === "transportista" && !p.docNumero) faltan.push({ clave: "documento", label: "documento" });
+  if (rol === "conductor" && !p.licencia) faltan.push({ clave: "licencia", label: "licencia de conducir" });
+  if (rol === "proveedor" && !p.docNumero) faltan.push({ clave: "documento", label: "documento" });
   return faltan;
+}
+
+/** Lo mismo, sólo las etiquetas — la forma que consume la vista del Directorio. */
+export function faltantesParaGuia(p: Parte, rol: RolParte): string[] {
+  return faltantesParaGuiaDetalle(p, rol).map((f) => f.label);
+}
+
+/**
+ * Las partes de la libreta que NO tienen ese rol todavía.
+ *
+ * En un aserradero real la misma empresa es proveedor un martes y destinatario
+ * el jueves. Medido en el tenant de Blas (2026-09-15): 5 partes cargadas y
+ * **cero** con rol `destinatario` — así que el selector de destinatario de la
+ * guía aparecía apagado teniendo la libreta llena. Esto es lo que se ofrece
+ * abajo, como "también en tu libreta, con otro papel".
+ */
+export function partesSinRol(partes: Parte[], rol: RolParte): Parte[] {
+  return ordenarPorUso(partes.filter((p) => p.activo && !p.roles.includes(rol)));
+}
+
+/**
+ * Una parte de la libreta con la forma que espera el endpoint de guardado.
+ *
+ * Hace falta para EDITAR por `id`: con `id` el servidor trata lo que llega como
+ * la fila completa (`ForestDirectorioDB.guardarParte`), así que mandar sólo
+ * `roles` le borraría la dirección y el documento. `logo` y `adjuntos` quedan
+ * afuera a propósito: `undefined` los preserva, incluirlos obligaría a arrastrar
+ * la imagen entera para sumar un rol.
+ */
+export function parteAInput(p: Parte): ParteInput & { id: string } {
+  return {
+    id: p.id,
+    roles: p.roles,
+    nombre: p.nombre,
+    categoria: p.categoria,
+    codigoCtp: p.codigoCtp ?? "",
+    ...(p.docTipo ? { docTipo: p.docTipo } : {}),
+    docNumero: p.docNumero ?? "",
+    direccion: p.direccion ?? "",
+    region: p.region ?? "",
+    provincia: p.provincia ?? "",
+    distrito: p.distrito ?? "",
+    zona: p.zona ?? "",
+    ubigeo: p.ubigeo ?? "",
+    telefono: p.telefono ?? "",
+    email: p.email ?? "",
+    registroMtc: p.registroMtc ?? "",
+    licencia: p.licencia ?? "",
+    tituloHabilitante: p.tituloHabilitante ?? "",
+    resolucion: p.resolucion ?? "",
+    planManejo: p.planManejo ?? "",
+    arffs: p.arffs ?? "",
+    representante: p.representante ?? "",
+    representanteDni: p.representanteDni ?? "",
+    notas: p.notas ?? "",
+    activo: p.activo,
+  };
 }
 
 /**
