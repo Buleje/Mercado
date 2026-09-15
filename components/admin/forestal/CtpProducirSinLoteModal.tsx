@@ -42,7 +42,9 @@ import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { logger } from "@/lib/logger";
-import { unificarPorMedida, type PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { ESPECIES_MADERA, unificarPorMedida, type PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { avisoDeEspecie, especieDelAsiento } from "@/lib/forestal/especie-del-asiento";
+import { recordarCodigosDeCorrida } from "@/lib/forestal/codigos-de-corrida";
 import { tipoDePieza } from "@/lib/forestal/cubicacion-tipo";
 import { productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
@@ -63,6 +65,7 @@ import { sugerirCodigoPaquete } from "@/lib/forestal/produccion-paquetes";
 import CubicadorMadera from "./CubicadorMadera";
 import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
+import { useTrozasParaCodigo } from "./hooks/use-trozas-para-codigo";
 import { esIsoValido, hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import { Btn } from "./ctp-shared";
 
@@ -154,6 +157,9 @@ export default function CtpProducirSinLoteModal({
      sobre el mismo dato tienen que contarse lo que pasó. */
   const [semana, setSemana] = useState(fecha);
   const jornadas = useJornadasDeProduccion(semana);
+  /* Las trozas del patio para el campo «Código» del cubicador: se leen UNA
+     vez con el modal, no cada vez que se vuelve del paso «declarar». */
+  const trozasParaCodigo = useTrozasParaCodigo();
   /* Piezas que vienen de una corrida ya declarada, camino al cubicador. Se
      vuelven a `null` apenas entran: si no, cada re-render las agregaría otra
      vez. */
@@ -223,11 +229,40 @@ export default function CtpProducirSinLoteModal({
     [paquetes],
   );
 
+  /**
+   * La especie que el asiento va a declarar (ADR-417). El libro declara UNA por
+   * asiento, y hasta hoy salía sola de lo cubicado: si nadie la había puesto en
+   * las piezas, el campo decía «Sin especie declarada» y la corrida se
+   * registraba igual — así quedó la única producción sin lote real del tenant
+   * (N.º 28 del 10/09: 6 paquetes, 0,2417 m³, sin especie y sin permiso).
+   * Ahora, cuando lo cubicado no la trae o trae varias, se elige acá y se baja a
+   * las piezas, que es donde vive: el paquete la lleva porque la pieza la tiene.
+   */
+  const [especieElegida, setEspecieElegida] = useState<string | null>(null);
+  const decision = useMemo(() => especieDelAsiento(especies, especieElegida), [especies, especieElegida]);
+  const especiePrincipal = decision.especie;
+  /**
+   * Lo que se ofrece para elegir sale de lo que el modal YA tiene cargado —lo
+   * cubicado, el patio que trajo el campo «Código» y las de fábrica—: un hook
+   * más de catálogo acá sería un segundo pedido de la misma lista que el
+   * cubicador ya pidió.
+   */
+  const especiesOfrecidas = useMemo(() => {
+    const delPatio = trozasParaCodigo.trozas.map((t) => t.especie).filter((e): e is string => Boolean(e));
+    return [...new Set([...especies, ...delPatio, ...ESPECIES_MADERA])];
+  }, [especies, trozasParaCodigo.trozas]);
+  /** Aplica la especie a TODAS las piezas: el asiento declara una sola. */
+  const declararEspecie = (nombre: string) => {
+    setEspecieElegida(nombre || null);
+    if (!nombre) return;
+    setPiezas((previas) => previas.map((pieza) => ({ ...pieza, especie: nombre })));
+  };
+
   /** Los mismos paquetes cubicados, en la forma que pide `cotizarAserrio` (ADR-412). */
   const bloquesAserrio = useMemo(
     () =>
       bloquesDeCorrida(
-        { lineNo: null, speciesCommon: especies[0] ?? null, productType: paquetes[0]?.productType ?? null, quantity: total.m3 },
+        { lineNo: null, speciesCommon: especiePrincipal, productType: paquetes[0]?.productType ?? null, quantity: total.m3 },
         paquetes.map((p) => ({
           codigo: p.codigo,
           productType: p.productType,
@@ -237,14 +272,12 @@ export default function CtpProducirSinLoteModal({
           largoM: p.largoM,
         })),
       ),
-    [especies, paquetes, total.m3],
+    [especiePrincipal, paquetes, total.m3],
   );
 
   /* El saldo por permiso se pide recién en el paso «declarar»: es la lectura
      más cara del libro y cubicar no la necesita. */
   const saldo = useSaldoPermisos(paso === "declarar");
-  /** La especie que el asiento va a declarar — la misma que se simula. */
-  const especiePrincipal = especies[0] ?? null;
   /**
    * Los permisos que se ofrecen: **sólo los que tienen rolliza de la especie
    * que se está declarando** (Brandon, 2026-09-10). Ofrecer un permiso de
@@ -313,7 +346,9 @@ export default function CtpProducirSinLoteModal({
         body: JSON.stringify({
           section: "produccion",
           entryDate: fecha,
-          speciesCommon: especies[0] ?? null,
+          // La DECIDIDA, no la primera cubicada: hoy coinciden porque elegirla la
+          // baja a las piezas, pero el asiento no puede depender de ese rebote.
+          speciesCommon: especiePrincipal,
           materiaPrimaRef: "Sin lote — cubicado en el Libro",
           /* El permiso DECLARADO del asiento: sólo vale porque esta corrida no
              consume ninguna guía de la que heredarlo (ADR-402). */
@@ -390,6 +425,10 @@ export default function CtpProducirSinLoteModal({
           `${e instanceof Error ? e.message : String(e)} · No quedó nada registrado: la corrida se deshizo.`,
         );
       }
+      /* Los códigos anotados al cubicar quedan atados a ESTA corrida: con eso
+         «Vincular materia prima» se abre con la propuesta ya armada, en vez de
+         pedir que alguien recuerde de qué trozas salió (ADR-417). */
+      recordarCodigosDeCorrida(entryId, piezas);
       invalidarCtp();
       const avisoCobro = mensajeCobroAserrio(aserrioCobrado);
       onListo(
@@ -484,6 +523,9 @@ export default function CtpProducirSinLoteModal({
               onLote={setPiezas}
               piezasAImportar={aImportar}
               onImportado={() => setAImportar(null)}
+              /* El código de la troza es interno (Brandon, 2026-09-14): no
+                 entra a `paquetesDeLoCubicado` ni a lo que se registra. */
+              codigoDeTroza={trozasParaCodigo}
             />
           ) : (
             <div className="mx-auto max-w-3xl space-y-3">
@@ -515,12 +557,34 @@ export default function CtpProducirSinLoteModal({
                 </label>
                 <label className="block">
                   <span className={LABEL}>Especie</span>
-                  <input
-                    value={especies.join(" · ") || "Sin especie declarada"}
-                    readOnly
-                    title="Sale de lo cubicado: el asiento declara UNA especie"
-                    className={`mt-1 ${CAMPO} bg-[var(--surface-sunken)]`}
-                  />
+                  {decision.estado === "de-lo-cubicado" ? (
+                    <input
+                      value={decision.especie}
+                      readOnly
+                      title="Sale de lo cubicado: el asiento declara UNA especie"
+                      className={`mt-1 ${CAMPO} bg-[var(--surface-sunken)]`}
+                    />
+                  ) : (
+                    <select
+                      value={especieElegida ?? ""}
+                      onChange={(e) => declararEspecie(e.target.value)}
+                      className={`mt-1 ${CAMPO}`}
+                    >
+                      <option value="">
+                        {especies.length === 0 ? "Elige la especie…" : `Cubicaste ${especies.length}: elige cuál declara`}
+                      </option>
+                      {especiesOfrecidas.map((nombre) => (
+                        <option key={nombre} value={nombre}>
+                          {nombre}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {avisoDeEspecie(decision, total.piezas) && (
+                    <span className="mt-1 block text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
+                      {avisoDeEspecie(decision, total.piezas)}
+                    </span>
+                  )}
                 </label>
               </div>
               {/* El permiso al que se va a vincular esta producción, y cómo le
@@ -823,7 +887,9 @@ export default function CtpProducirSinLoteModal({
           <span className="mr-auto text-xs text-[var(--text-tertiary)]">
             {paquetes.length === 0
               ? "Cubica al menos una medida para poder declarar."
-              : `${paquetes.length} ${paquetes.length === 1 ? "medida cubicada" : "medidas cubicadas"}`}
+              : paso === "declarar" && !especiePrincipal
+                ? "Falta la especie: el libro declara una por asiento."
+                : `${paquetes.length} ${paquetes.length === 1 ? "medida cubicada" : "medidas cubicadas"}`}
           </span>
           {paso === "cubicar" ? (
             <button
@@ -838,7 +904,7 @@ export default function CtpProducirSinLoteModal({
             <button
               type="button"
               onClick={() => void registrar()}
-              disabled={guardando || paquetes.length === 0 || !revisionDueno.valido || !aserrioValido}
+              disabled={guardando || paquetes.length === 0 || !especiePrincipal || !revisionDueno.valido || !aserrioValido}
               className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
             >
               {guardando ? (

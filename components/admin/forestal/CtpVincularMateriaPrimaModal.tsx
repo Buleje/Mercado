@@ -17,6 +17,14 @@
  * consumos por guía, el volumen de entrada y el marcado de las trozas viven en
  * un solo lugar, con sus locks y sus invariantes. Acá no hay una segunda forma
  * de atribuir materia prima.
+ *
+ * ## Puede abrirse PRE-ARMADA (2026-09-15)
+ *
+ * Si al cubicar se escribieron los códigos de las trozas, la pantalla llega con
+ * la propuesta hecha: qué trozas, de qué guía, de qué permiso, cuánto suman y
+ * si ese volumen alcanza para lo declarado al 56 %. Eso **no vincula**: deja el
+ * lote elegido y las trozas tildadas, y la firma sigue siendo de quien registra.
+ * Los códigos que no se encontraron se dicen arriba, no se ignoran.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, Layers, Loader2, Ruler, X } from "@buleje/design-system/icons";
@@ -32,6 +40,9 @@ import {
   type TrozaAVincular,
 } from "@/lib/forestal/vincular-produccion";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { olvidarCodigosDeCorrida } from "@/lib/forestal/codigos-de-corrida";
+import { usePropuestaDeVinculacion } from "./hooks/use-propuesta-de-vinculacion";
+import CtpPropuestaDeVinculacion from "./CtpPropuestaDeVinculacion";
 import { Btn } from "./ctp-shared";
 
 /** Un paquete declarado por la corrida, como lo devuelve el detalle. */
@@ -239,14 +250,41 @@ export default function CtpVincularMateriaPrimaModal({
     ),
     [lotes, corrida.especie],
   );
+  /* Lo que los códigos del cubicado proponen. Sin códigos anotados no pide
+     nada y la pantalla queda exactamente como estaba. */
+  const { propuesta, cargando: cargandoPropuesta, error: errorPropuesta } = usePropuestaDeVinculacion({
+    id: corrida.id,
+    especie: corrida.especie,
+    producidoM3: corrida.producidoM3,
+    tieneMateriaPrima: corrida.tieneMateriaPrima,
+  });
+
   const [loteId, setLoteId] = useState<string>("");
   const lote = candidatos.find((l) => l.id === loteId) ?? null;
   const libres = useMemo(() => (lote ? piezasLibres(lote) : []), [lote]);
 
+  /* Si la propuesta señala UN lote y está entre los candidatos, se elige solo:
+     es el único que sus trozas admiten. Con varios no se adivina — y con la
+     mano ya puesta en el selector tampoco se pisa lo elegido. */
+  const loteSugerido = propuesta?.lotes.length === 1 ? propuesta.lotes[0].id : null;
+  useEffect(() => {
+    if (!loteSugerido) return;
+    if (!candidatos.some((l) => l.id === loteSugerido)) return;
+    setLoteId((actual) => (actual === "" ? loteSugerido : actual));
+  }, [loteSugerido, candidatos]);
+
   /* Al elegir lote se tildan TODAS sus piezas libres: el caso normal es «este
-     lote entero fue el que se aserró». Destildar es más rápido que tildar 40. */
+     lote entero fue el que se aserró». Destildar es más rápido que tildar 40.
+     Con una propuesta encima se tildan SÓLO las que los códigos señalan: tildar
+     el lote entero convertiría la propuesta en otra cosa sin que se note. */
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
-  useEffect(() => { setElegidas(new Set(libres.map((t) => t.id))); }, [libres]);
+  const propuestasEnLote = useMemo(() => {
+    const ids = new Set(propuesta?.trozas.map((t) => t.id) ?? []);
+    return libres.filter((t) => ids.has(t.id)).map((t) => t.id);
+  }, [libres, propuesta]);
+  useEffect(() => {
+    setElegidas(new Set(propuestasEnLote.length > 0 ? propuestasEnLote : libres.map((t) => t.id)));
+  }, [libres, propuestasEnLote]);
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -327,6 +365,8 @@ export default function CtpVincularMateriaPrimaModal({
       });
       const j = (await r.json().catch(() => ({}))) as { message?: string; error?: string; volumenM3?: number };
       if (!r.ok) throw new Error(j.message ?? j.error ?? `El servidor respondió ${r.status}`);
+      /* La corrida ya tiene su origen escrito: el apunte del cubicado cumplió. */
+      olvidarCodigosDeCorrida(corrida.id);
       invalidarCtp();
       onListo(
         `Materia prima vinculada: ${trozas.length} troza(s) · ${fmtM3(revision.trozaM3)} m³ del lote ${lote.code} ` +
@@ -388,6 +428,13 @@ export default function CtpVincularMateriaPrimaModal({
         </div>
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5 sm:px-6">
+          {/* La propuesta primero: los números que se van a confirmar. */}
+          <CtpPropuestaDeVinculacion
+            propuesta={propuesta}
+            cargando={cargandoPropuesta}
+            error={errorPropuesta}
+          />
+
           <label className="block">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
               Lote de aserrío

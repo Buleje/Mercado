@@ -47,6 +47,7 @@ import {
   type OrigenMateriaPrima,
   type PaqueteBorrador,
 } from "@/lib/forestal/produccion-paquetes";
+import { avisosDeCifra } from "@/lib/forestal/produccion-cifras-imposibles";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { tenantDeLaClave } from "@/lib/forestal/sembrar-reparto";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
@@ -578,6 +579,21 @@ export default function CtpRegistrarProduccionModal({
     [acumulado, material.origenes],
   );
   const listo = motivos.length === 0 && !guardando && aserrioValido;
+  /**
+   * Las cifras que la madera no puede dar (piezas contra volumen).
+   *
+   * Va aparte de `motivos` A PROPÓSITO: esto AVISA, no impide. El libro tiene
+   * que poder registrar lo que realmente pasó —un turno raro existe—, pero no
+   * dejarlo pasar en silencio: las corridas #24 y #26 de Blas declararon 141
+   * piezas en 0.0090 y 0.0010 m³ y hoy están firmadas en el libro que ve SERFOR.
+   *
+   * Sólo los paquetes de ESTA tanda: los que la corrida ya tiene declarados se
+   * revisan desde la barra «Pendiente» de Producción, que es donde se corrigen.
+   */
+  const avisosDeCifras = useMemo(
+    () => avisosDeCifra({ volumenM3: totales.volumen, piezas: totales.piezas, paquetes }),
+    [paquetes, totales.volumen, totales.piezas],
+  );
 
   /**
    * Los bloques a cotizar (ADR-412): los paquetes YA declarados en tandas
@@ -1575,6 +1591,37 @@ export default function CtpRegistrarProduccionModal({
               </span>
             </p>
           )}
+
+          {/**
+           * Cifras que no pueden ser: piezas contra volumen.
+           *
+           * El rendimiento de arriba mira el TOTAL contra la materia prima; esto
+           * mira cada paquete contra sus propias piezas, que es donde la coma
+           * corrida se esconde — declarar de menos nunca cruza un techo.
+           *
+           * Mismo cartel que el aviso de rendimiento (avisa, no impide) y el
+           * mismo lugar: debajo de la tabla que se acaba de cargar.
+           */}
+          {avisosDeCifras.map((a, i) => (
+            <p
+              /* Con el índice: dos paquetes todavía sin código darían la misma
+                 clave y React dejaría de repintar el segundo aviso. */
+              key={`${a.motivo}-${a.paquete ?? i}`}
+              className={`mt-2 flex items-start gap-2 rounded-xl px-3 py-2 text-sm ${
+                a.tono === "error"
+                  ? "bg-[var(--data-error-500)]/12 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                  : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+              }`}
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span>
+                <b>{a.texto}</b>{" "}
+                <span className="font-normal opacity-90">
+                  {a.sugerencia} Se puede guardar igual — es un aviso, no un bloqueo.
+                </span>
+              </span>
+            </p>
+          ))}
         </Bloque>
       </ModalBody>
     </AdminModal>

@@ -74,6 +74,11 @@ import {
 } from "@/lib/forestal/ctp-secciones-filtro";
 import { nombreArchivoSeccion, seccionACsv } from "@/lib/forestal/ctp-secciones-csv";
 import { corridasAMedioDeclarar } from "@/lib/forestal/produccion-paquetes";
+import {
+  corridasConCifraImposible,
+  fmtVolumenDePieza,
+  type CorridaConCifraImposible,
+} from "@/lib/forestal/produccion-cifras-imposibles";
 
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
@@ -154,6 +159,82 @@ function ChipSinOrigen({
         <span className="font-mono font-normal">{Number(e.quantity ?? 0).toFixed(3)} m³</span>
       </button>
     </li>
+  );
+}
+
+/**
+ * El repaso de las corridas cuyas cifras no pueden ser (piezas contra volumen).
+ *
+ * Se despliega desde su pastilla de la barra «Pendiente», como «Sin materia
+ * prima»: el chequeo nuevo frena lo que se cargue de ahora en más, pero lo que
+ * YA está escrito en el libro que ve SERFOR queda invisible justo cuando la
+ * regla pasa a existir (mismo criterio que `CtpSobreTopePanel`).
+ *
+ * Cada fila dice LA CUENTA, no «valor sospechoso»: es lo único que permite
+ * decidir si el número está mal o si el turno fue raro de verdad.
+ */
+function ListaCifrasImposibles({
+  filas,
+  onVer,
+  onVerTodoElHistorico,
+}: {
+  filas: CorridaConCifraImposible[];
+  onVer: (id: string) => void;
+  onVerTodoElHistorico?: () => void;
+}) {
+  return (
+    <>
+      <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+        El volumen y las piezas que declaran no pueden ir juntos. No se bloquea nada —el libro
+        registra lo que pasó—, pero estas líneas ya están en el libro que se presenta: conviene
+        anular la corrida y volver a declararla con lo que realmente salió.
+      </p>
+      <ul className="space-y-1.5">
+        {filas.slice(0, 12).map((f) => (
+          <li key={f.id}>
+            <button
+              type="button"
+              onClick={() => onVer(f.id)}
+              title="Abrir la corrida"
+              className="w-full rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-3 py-2 text-left transition hover:border-[var(--data-error-500)]"
+            >
+              <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+                <b className="font-mono text-[var(--text-primary)]">N° {f.lineNo}</b>
+                <span className="font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                  {f.piezas.toLocaleString("es-PE")} piezas en{" "}
+                  {f.volumenM3.toLocaleString("es-PE", {
+                    minimumFractionDigits: 4,
+                    maximumFractionDigits: 4,
+                  })}{" "}
+                  m³ = {fmtVolumenDePieza(f.m3PorPieza)} por pieza
+                </span>
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                  {f.producto}
+                  {f.lote ? ` · ${f.lote}` : ""}
+                </span>
+              </span>
+            </button>
+          </li>
+        ))}
+        {filas.length > 12 && (
+          <li className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            +{filas.length - 12} más en la tabla del libro
+          </li>
+        )}
+      </ul>
+      {/* Este repaso mira lo CARGADO en el período activo: si la corrida mala es
+          de agosto y se está mirando septiembre, no sale. Decirlo acá evita leer
+          «0 pendientes» como «el libro está sano». */}
+      {onVerTodoElHistorico && (
+        <button
+          type="button"
+          onClick={onVerTodoElHistorico}
+          className="mt-2 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] underline decoration-dotted underline-offset-2 dark:text-[var(--accent)]"
+        >
+          Revisar todo el histórico, no sólo este período
+        </button>
+      )}
+    </>
   );
 }
 
@@ -847,6 +928,17 @@ export function CtpEntriesView({
     [entries, section],
   );
   const idsAmpliables = useMemo(() => new Set(ampliables.map((c) => c.id)), [ampliables]);
+  /**
+   * Las corridas ya cargadas que declaran una cifra que la madera no puede dar.
+   *
+   * Sale de `entries` —lo mismo que mira `ampliables`— y no de una consulta
+   * aparte: la barra «Pendiente» habla del libro que se está mirando. Lo que
+   * queda fuera del período lo dice el enlace al histórico del propio detalle.
+   */
+  const cifrasImposibles = useMemo(
+    () => (section === "produccion" ? corridasConCifraImposible(entries) : []),
+    [entries, section],
+  );
   /** La corrida cuyo panel de ampliación está abierto arriba de la tabla. */
   const [ampliarId, setAmpliarId] = useState<string | null>(null);
   /** Despacho al que se le están adjuntando papeles (ADR-371). */
@@ -1211,6 +1303,34 @@ export function CtpEntriesView({
       }
       return items;
     }
+    /* Primero lo que YA está mal escrito en el libro oficial: lo demás es
+       trabajo pendiente de hoy, esto es un número que no puede ser y que un
+       fiscalizador lee antes que nada. */
+    if (cifrasImposibles.length > 0) {
+      const peor = cifrasImposibles[0]!;
+      items.push({
+        key: "cifras-imposibles",
+        valor: cifrasImposibles.length,
+        label:
+          cifrasImposibles.length === 1
+            ? "cifra que no puede ser"
+            : "cifras que no pueden ser",
+        hint: `N° ${peor.lineNo}: ${fmtVolumenDePieza(peor.m3PorPieza)} por pieza`,
+        tono: "error",
+        title:
+          "El volumen y las piezas declarados no pueden ir juntos. Toca para ver la cuenta de cada una.",
+        contenido: (
+          <ListaCifrasImposibles
+            filas={cifrasImposibles}
+            onVer={(id) => {
+              const e = entries.find((x) => x.id === id);
+              if (e) setChainEntry(e);
+            }}
+            onVerTodoElHistorico={onVerTodoElHistorico}
+          />
+        ),
+      });
+    }
     if (kpis.abiertas > 0) {
       items.push({
         key: "sin-declarar",
@@ -1293,6 +1413,9 @@ export function CtpEntriesView({
     irAlCertificado,
     especiesDosFormas,
     setVerEspecies,
+    cifrasImposibles,
+    entries,
+    onVerTodoElHistorico,
   ]);
 
   const Icon = meta.icon;
