@@ -30,6 +30,7 @@ function colaborador(over: Partial<ColaboradorDTO> & { id: string; nombre: strin
     contactoEmergencia: { nombre: null, celular: null },
     observaciones: null,
     motivoCese: null,
+    fotoUrl: null,
     beneficiarioId: null,
     adminUserId: null,
     creadoEn: "2026-09-14T00:00:00.000Z",

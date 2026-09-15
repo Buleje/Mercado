@@ -28,6 +28,7 @@ const colaboradorRow = (p: Partial<ColaboradorRow> = {}): ColaboradorRow => ({
   tipoDocumento: "DNI",
   documento: "12345678",
   celular: "999888777",
+  fotoUrl: null,
   direccion: "Jr. Los Pinos 123",
   contactoEmergenciaNombre: "Ana",
   contactoEmergenciaCelular: "999111222",

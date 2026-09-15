@@ -2099,6 +2099,8 @@ model Colaborador {
   fechaCese                 DateTime?         @db.Date
   motivoCese                String?
   observaciones             String?
+  /// Foto del fotocheck (ADR-416): URL https de /api/upload, carpeta `rrhh`.
+  fotoUrl                   String?
   /// `AdelantoBeneficiario.id` — texto sin FK, siempre leído con tenantId.
   beneficiarioId            String?
   /// `AdminUser.id` — texto sin FK, siempre leído con tenantId.

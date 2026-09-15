@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Plus, Search, UserPlus, Users } from "@buleje/design-system/icons";
 import { DataTable, EmptyState, LoadingState, StatCard } from "@buleje/design-system";
 import { useRrhhColaboradores } from "@/hooks/use-rrhh-colaboradores";
@@ -25,6 +26,7 @@ import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
 import { BOTON, CLASE_CAMPO, CLASE_CHIP, claseChipFiltro } from "../rrhh-form";
 import { CLASE_FOCUS_FILA, COLABORADOR_ESTADO_META, filaClicableProps, formatearFecha } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
+import BotonFotocheck from "./BotonFotocheck";
 import ColaboradorFormModal from "./ColaboradorFormModal";
 import FichaColaboradorModal from "./FichaColaboradorModal";
 import TraerDesdeAdelantosModal from "./TraerDesdeAdelantosModal";
@@ -47,6 +49,12 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [traerAbierta, setTraerAbierta] = useState(false);
   const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
+
+  // El QR del fotocheck trae `?persona=<id>`: abre esa ficha (ADR-416).
+  const personaDelQr = useSearchParams().get("persona");
+  useEffect(() => {
+    if (personaDelQr) setFichaAbierta(personaDelQr);
+  }, [personaDelQr]);
 
   // El input nunca se desmonta: `qInput` cambia en cada tecla, `q` (lo que
   // dispara el fetch) recién 250ms después de la última tecla.
@@ -74,6 +82,7 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
 
   const filtrados = chip === "TODOS" ? colaboradores : colaboradores.filter((c) => c.estado === chip);
   const puedeEditar = nivel === "gestion" || nivel === "completo";
+  const paraFotocheck = filtrados.filter((c) => c.estado !== "CESADO");
   // «Primera carga» es sólo la primera. Con `colaboradores.length === 0` como
   // señal, una búsqueda sin resultados volvía a desmontar el buscador en la
   // tecla siguiente y se perdía el foco otra vez.
@@ -126,6 +135,9 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           <button type="button" onClick={() => setTraerAbierta(true)} className={BOTON.secundario}>
             <UserPlus className="h-4 w-4" /> Traer de Adelantos ({candidatosAdelantos.length})
           </button>
+        )}
+        {puedeEditar && paraFotocheck.length > 0 && (
+          <BotonFotocheck colaboradores={paraFotocheck} etiqueta={`Fotochecks (${paraFotocheck.length})`} className={BOTON.secundario} />
         )}
         {puedeEditar && (
           <button type="button" onClick={() => setAltaAbierta(true)} className={cn(BOTON.primario, "ml-auto")}>

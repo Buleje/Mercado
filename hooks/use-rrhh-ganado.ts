@@ -19,13 +19,20 @@ export interface UseRrhhGanadoResult {
   recargar: () => void;
 }
 
-export function useRrhhGanado(desde: FechaKey, hasta: FechaKey, colaboradorId?: string): UseRrhhGanadoResult {
+export function useRrhhGanado(desde: FechaKey, hasta: FechaKey, colaboradorId?: string, activo = true): UseRrhhGanadoResult {
   const [ganado, setGanado] = useState<GanadoDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
+    // Lo ganado es sólo del nivel completo: la hoja semanal lo monta para todos
+    // los roles, y sin esto manager y almacenero dejaban un 403 por apertura.
+    if (!activo) {
+      setGanado(null);
+      setLoading(false);
+      return;
+    }
     let vigente = true;
     setLoading(true);
     setError(null);
@@ -49,7 +56,7 @@ export function useRrhhGanado(desde: FechaKey, hasta: FechaKey, colaboradorId?: 
     return () => {
       vigente = false;
     };
-  }, [desde, hasta, colaboradorId, tick]);
+  }, [desde, hasta, colaboradorId, tick, activo]);
 
   const recargar = useCallback(() => setTick((t) => t + 1), []);
 

@@ -17,8 +17,8 @@
  * PURO: sin Prisma, React ni fetch.
  */
 
-import { diasDelMes, etiquetaCorta, mesDe, sumarDias } from "./fechas";
-import type { EstadoAsistencia, FechaKey, GanadoPersona, Modalidad, TramoGanado } from "./tipos";
+import { diasDelMes, etiquetaCorta, mesDe, rangoDeDias, sumarDias } from "./fechas";
+import type { DiaGanado, EstadoAsistencia, FechaKey, GanadoPersona, Modalidad, TramoGanado } from "./tipos";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -133,6 +133,17 @@ export function calcularGanado(input: CalcularGanadoInput): GanadoPersona {
   const porFecha = new Map<FechaKey, MarcaParaGanado>();
   for (const m of marcas) porFecha.set(m.fecha, m);
 
+  // Un casillero por día del rango pedido, para la hoja semanal (ADR-416). Los
+  // que no entran (antes del ingreso, después del cese o de hoy, sin tarifa)
+  // quedan en null: no valen S/ 0, no se pagan.
+  const dias: DiaGanado[] = rangoDeDias(desde, hasta).map((fecha) => ({
+    fecha,
+    estado: porFecha.get(fecha)?.estado ?? null,
+    factor: null,
+    importe: null,
+  }));
+  const diaPorFecha = new Map(dias.map((d) => [d.fecha, d]));
+
   // El período real: no antes de que ingresó, no después de que cesó, nunca
   // después de hoy (una marca futura no puede existir, pero el rango pedido sí
   // puede llegar hasta mañana).
@@ -180,6 +191,12 @@ export function calcularGanado(input: CalcularGanadoInput): GanadoPersona {
         usoHorasEstimadas = true;
       }
 
+      const dia = diaPorFecha.get(fecha);
+      if (dia) {
+        dia.factor = factor;
+        dia.importe = r2(valorBruto(tarifa, factor, horasDelDia, mesDe(fecha)));
+      }
+
       const clave = `${tarifa.vigenteDesde}|${mesDe(fecha)}`;
       const acc = tramos.get(clave) ?? {
         tarifa,
@@ -220,6 +237,8 @@ export function calcularGanado(input: CalcularGanadoInput): GanadoPersona {
     }));
 
   const total = r2(listaTramos.reduce((a, t) => a + t.importe, 0));
+  // La tarifa que rige el último día que cuenta: la «referencia» de la hoja semanal.
+  const tarifaDeReferencia = tarifaVigente(tarifas, periodoDesde <= periodoHasta ? periodoHasta : hasta);
 
   return {
     colaboradorId: colaborador.id,
@@ -230,26 +249,30 @@ export function calcularGanado(input: CalcularGanadoInput): GanadoPersona {
     sinTarifa,
     fueraDePeriodo,
     avisos,
+    dias,
+    referencia: tarifaDeReferencia ? { modalidad: tarifaDeReferencia.modalidad, monto: tarifaDeReferencia.monto } : null,
   };
+}
+
+/** Lo ganado SIN redondear: el tramo lo redondea una sola vez; el día, sólo para mostrarlo. */
+function valorBruto(tarifa: TarifaParaGanado, factor: number, horas: number, mes: string): number {
+  switch (tarifa.modalidad) {
+    case "DIA":
+      return tarifa.monto * factor;
+    case "HORA":
+      return tarifa.monto * horas;
+    case "SEMANA":
+      return (tarifa.monto / 7) * factor;
+    case "MES":
+      return (tarifa.monto / diasDelMes(mes)) * factor;
+    default:
+      return 0;
+  }
 }
 
 /** El importe de un tramo, redondeado UNA sola vez (ADR-414 §5). */
 function valorDelTramo(acc: Acumulador): number {
-  const { tarifa, factor, horas, mes } = acc;
-  switch (tarifa.modalidad) {
-    case "DIA":
-      return r2(tarifa.monto * factor);
-    case "HORA":
-      return r2(tarifa.monto * horas);
-    case "SEMANA":
-      return r2((tarifa.monto / 7) * factor);
-    case "MES":
-      return r2((tarifa.monto / diasDelMes(mes)) * factor);
-    case "SIN_PAGO":
-      return 0;
-    default:
-      return 0;
-  }
+  return r2(valorBruto(acc.tarifa, acc.factor, acc.horas, acc.mes));
 }
 
 // ── Cómo sale ────────────────────────────────────────────────────────────────

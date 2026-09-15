@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * AsistenciaView — switch Día / Mes de la asistencia (ADR-414 §7).
+ * AsistenciaView — switch Día / Semana / Mes de la asistencia (ADR-414 §7, ADR-416).
  *
  * Vista por defecto del hub: es lo de todos los días. El día y el mes son dos
  * pantallas de una misma hoja (ADR §4) — comparten `use-rrhh-asistencia`, sólo
@@ -10,17 +10,19 @@
  */
 
 import { useState } from "react";
-import { CalendarDays, Grid3x3 } from "@buleje/design-system/icons";
+import { CalendarDays, Columns3, Grid3x3 } from "@buleje/design-system/icons";
 import { cn, limaDateKey } from "@/lib/utils";
-import { diasDelMes, mesDe } from "@/lib/rrhh/fechas";
+import { diasDelMes, mesDe, semanaDe } from "@/lib/rrhh/fechas";
 import HojaDelDia from "./HojaDelDia";
 import HojaDelMes from "./HojaDelMes";
+import HojaDeLaSemana from "./HojaDeLaSemana";
 import type { NivelRrhh } from "@/lib/rrhh/tipos";
 
-type Modo = "dia" | "mes";
+type Modo = "dia" | "semana" | "mes";
 
 const MODOS = [
   ["dia", "Día", CalendarDays],
+  ["semana", "Semana", Columns3],
   ["mes", "Mes", Grid3x3],
 ] as const;
 
@@ -28,13 +30,20 @@ export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: Niv
   const [modo, setModo] = useState<Modo>("dia");
   const [fecha, setFecha] = useState<string>(() => limaDateKey());
   const [mes, setMes] = useState<string>(() => mesDe(limaDateKey()));
+  const [semana, setSemana] = useState<string>(() => semanaDe(limaDateKey()).desde);
 
   const primerDiaDelMes = `${mes}-01`;
   const ultimoDiaDelMes = `${mes}-${String(diasDelMes(primerDiaDelMes)).padStart(2, "0")}`;
 
   const elegirModo = (m: Modo) => {
-    // Pasar al mes muestra el mes del día que se estaba mirando, no siempre el actual.
+    // Cambiar de vista muestra el período de lo que se estaba mirando, no siempre el actual.
     if (m === "mes" && modo === "dia") setMes(mesDe(fecha));
+    if (m === "mes" && modo === "semana") setMes(mesDe(semana));
+    if (m === "semana" && modo === "dia") setSemana(semanaDe(fecha).desde);
+    if (m === "semana" && modo === "mes") {
+      const hoy = limaDateKey();
+      setSemana(semanaDe(mesDe(hoy) === mes ? hoy : `${mes}-01`).desde);
+    }
     setModo(m);
   };
 
@@ -60,9 +69,11 @@ export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: Niv
     </div>
   );
 
-  return modo === "dia" ? (
-    <HojaDelDia fecha={fecha} onCambiarFecha={setFecha} nivel={nivel} onCambioPersonal={onCambioPersonal} selectorModo={selectorModo} />
-  ) : (
-    <HojaDelMes mes={mes} desde={primerDiaDelMes} hasta={ultimoDiaDelMes} onCambiarMes={setMes} selectorModo={selectorModo} />
-  );
+  if (modo === "dia") {
+    return <HojaDelDia fecha={fecha} onCambiarFecha={setFecha} nivel={nivel} onCambioPersonal={onCambioPersonal} selectorModo={selectorModo} />;
+  }
+  if (modo === "semana") {
+    return <HojaDeLaSemana desde={semana} onCambiarSemana={setSemana} nivel={nivel} selectorModo={selectorModo} />;
+  }
+  return <HojaDelMes mes={mes} desde={primerDiaDelMes} hasta={ultimoDiaDelMes} onCambiarMes={setMes} selectorModo={selectorModo} />;
 }

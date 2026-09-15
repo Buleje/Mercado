@@ -85,6 +85,8 @@ export interface ColaboradorDTO extends ColaboradorMinDTO {
   contactoEmergencia: { nombre: string | null; celular: string | null };
   observaciones: string | null;
   motivoCese: string | null;
+  /** Foto del fotocheck (ADR-416); `null` = sin foto. */
+  fotoUrl: string | null;
   beneficiarioId: string | null;
   adminUserId: string | null;
   creadoEn: string;
@@ -184,6 +186,20 @@ export interface TramoGanado {
   importe: number; // redondeado UNA vez por tramo
 }
 
+/** Un día del período en lo ganado (hoja semanal, ADR-416). */
+export interface DiaGanado {
+  fecha: FechaKey;
+  /** La marca del día; `null` = sin marcar. */
+  estado: EstadoAsistencia | null;
+  /** Cuánto del día cuenta (`factorDe`). `null` = no entra: antes del ingreso, después del cese o de hoy, o sin tarifa. */
+  factor: number | null;
+  /**
+   * Lo ganado ese día, redondeado a céntimos para mostrarlo. `null` = no entra.
+   * El total NO es la suma de estos: sale de los tramos, redondeados una sola vez.
+   */
+  importe: number | null;
+}
+
 export interface GanadoPersona {
   colaboradorId: string;
   total: number;
@@ -193,6 +209,10 @@ export interface GanadoPersona {
   sinTarifa: FechaKey[];
   fueraDePeriodo: FechaKey[];
   avisos: string[];
+  /** Todos los días de `desde` a `hasta`, en orden (ADR-416). */
+  dias: DiaGanado[];
+  /** La tarifa que rige el último día que cuenta del período; `null` si no hay ninguna. */
+  referencia: { modalidad: Modalidad; monto: number } | null;
 }
 
 export interface GanadoDTO {

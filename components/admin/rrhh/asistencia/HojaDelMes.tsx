@@ -13,7 +13,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Users } from "@buleje/design-system/icons";
 import { LoadingState, EmptyState, DataTable } from "@buleje/design-system";
 import { avisarFallos, useRrhhAsistencia } from "@/hooks/use-rrhh-asistencia";
-import { dateDeFechaKey, etiquetaDia, mesDe, rangoDeDias } from "@/lib/rrhh/fechas";
+import { NOMBRES_MES, dateDeFechaKey, etiquetaDia, mesDe, rangoDeDias } from "@/lib/rrhh/fechas";
 import { cn, limaDateKey } from "@/lib/utils";
 import { AvisoRrhh, BOTON } from "../rrhh-form";
 import { dentroDeVentana, ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, estaIncluidoEseDia, motivoFueraDeVentana } from "../rrhh-ui";
@@ -25,7 +25,6 @@ import NavegadorPeriodo from "./NavegadorPeriodo";
 import { conteoDelMes } from "./conteo-mes";
 import type { ColaboradorMinDTO } from "@/lib/rrhh/tipos";
 
-const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"];
 /** Por `getUTCDay()`: 0 = domingo. */
 const LETRA_DIA = ["D", "L", "M", "M", "J", "V", "S"];
 

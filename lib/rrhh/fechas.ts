@@ -120,3 +120,6 @@ export function horaDeMinutos(min: number | null | undefined): string | null {
   const m = min % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
+
+/** Meses escritos a mano, no `Intl`: el nombre cambia según la versión de ICU. «Setiembre», como se dice en el Perú. */
+export const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"] as const;

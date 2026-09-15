@@ -28,3 +28,12 @@ export function conteoDelMes(colaborador: ColaboradorMinDTO, marcasDeLaPersona: 
   }
   return { conteo, sinMarcar };
 }
+
+/**
+ * Días trabajados de la hoja semanal (ADR-416): presente y tardanza cuentan
+ * uno, medio día cuenta medio. Es asistencia, no plata: con sueldo semanal un
+ * descanso se paga igual, pero no es un día trabajado.
+ */
+export function diasTrabajados(conteo: Record<EstadoAsistencia, number>): number {
+  return conteo.PRESENTE + conteo.TARDANZA + conteo.MEDIO_DIA * 0.5;
+}

@@ -16,13 +16,15 @@ import { LoadingState } from "@buleje/design-system";
 import { useRrhhFicha } from "@/hooks/use-rrhh-ficha";
 import { cn } from "@/lib/utils";
 import { AvisoRrhh, BOTON, CLASE_CHIP } from "../rrhh-form";
-import { COLABORADOR_ESTADO_META, etiquetaModalidad, formatearFecha, formatearPEN, iniciales } from "../rrhh-ui";
+import { COLABORADOR_ESTADO_META, etiquetaModalidad, formatearFecha, formatearPEN } from "../rrhh-ui";
+import BotonFotocheck from "./BotonFotocheck";
 import ColaboradorFormModal from "./ColaboradorFormModal";
 import CesarColaboradorModal from "./CesarColaboradorModal";
 import FichaCambioEstado from "./FichaCambioEstado";
 import FichaContratos from "./FichaContratos";
 import FichaCuenta from "./FichaCuenta";
 import FichaDatos from "./FichaDatos";
+import FichaFoto from "./FichaFoto";
 import FichaTarifas from "./FichaTarifas";
 import FichaUsuarioPanel from "./FichaUsuarioPanel";
 import type { NivelRrhh } from "@/lib/rrhh/tipos";
@@ -148,12 +150,7 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
         {ficha && c && meta && (
           <>
             <header className="flex flex-col gap-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:flex-row sm:items-center sm:p-5">
-              <span
-                aria-hidden
-                className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary/10 font-display text-2xl text-[var(--accent-ink)] dark:text-[var(--accent)]"
-              >
-                {iniciales(c.nombre)}
-              </span>
+              <FichaFoto nombre={c.nombre} fotoUrl={c.fotoUrl} puedeCambiar={puedeGestionar} accion={accion} onCambio={avisar} />
               <div className="min-w-0 flex-1 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={cn(CLASE_CHIP, meta.claseChip)}>{meta.label}</span>
@@ -162,6 +159,7 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
                 <p className="text-sm text-[var(--text-secondary)]">{resumen}</p>
               </div>
               <div className="flex flex-wrap gap-2">
+                {puedeGestionar && <BotonFotocheck colaboradores={[c]} etiqueta="Fotocheck" />}
                 <button type="button" onClick={() => setEditando(true)} className={BOTON.chico}>
                   <Pencil className="h-4 w-4" /> Editar
                 </button>

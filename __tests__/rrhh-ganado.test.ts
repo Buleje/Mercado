@@ -263,3 +263,43 @@ describe("explicarGanado — la cuenta que se muestra tiene que dar", () => {
     expect(explicarGanado(resultado)).toEqual(["1.5 días × S/ 60.00 = S/ 90.00"]);
   });
 });
+
+describe("calcularGanado — los días de la hoja semanal (ADR-416)", () => {
+  const semana = { desde: "2026-09-14", hasta: "2026-09-20" }; // lunes a domingo
+  const marcas: MarcaParaGanado[] = [
+    { fecha: "2026-09-14", estado: "PRESENTE", horas: null },
+    { fecha: "2026-09-15", estado: "TARDANZA", horas: null },
+    { fecha: "2026-09-16", estado: "MEDIO_DIA", horas: null },
+    { fecha: "2026-09-17", estado: "FALTA", horas: null },
+    { fecha: "2026-09-18", estado: "PERMISO", horas: null },
+    { fecha: "2026-09-19", estado: "DESCANSO", horas: null },
+  ];
+
+  it("sueldo semanal: cada día vale monto ÷ 7 × factor y los días suman el total", () => {
+    const r = calcularGanado({ colaborador: colaborador(), tarifas: [tarifa({ modalidad: "SEMANA", monto: 350, vigenteDesde: "2026-09-01" })], marcas, ...semana, hoy: "2026-09-20" });
+    expect(r.dias.map((d) => d.fecha)).toEqual(rangoDeDias(semana.desde, semana.hasta));
+    expect(r.dias.map((d) => d.factor)).toEqual([1, 1, 0.5, 0, 0, 1, 1]);
+    expect(r.dias.map((d) => d.importe)).toEqual([50, 50, 25, 0, 0, 50, 50]);
+    expect(r.dias[6].estado).toBeNull(); // domingo sin marcar: con sueldo semanal cuenta igual
+    expect(r.total).toBe(225);
+    expect(r.referencia).toEqual({ modalidad: "SEMANA", monto: 350 });
+  });
+
+  it("jornal por día: el descanso y el día sin marcar no se pagan", () => {
+    const r = calcularGanado({ colaborador: colaborador(), tarifas: [tarifa({ modalidad: "DIA", monto: 60, vigenteDesde: "2026-09-01" })], marcas, ...semana, hoy: "2026-09-20" });
+    expect(r.dias.map((d) => d.importe)).toEqual([60, 60, 30, 0, 0, 0, 0]);
+    expect(r.total).toBe(150);
+  });
+
+  it("los días antes del ingreso y los que todavía no llegan no entran (null), no valen S/ 0", () => {
+    const r = calcularGanado({ colaborador: colaborador({ fechaIngreso: "2026-09-16" }), tarifas: [tarifa({ modalidad: "DIA", monto: 60, vigenteDesde: "2026-09-01" })], marcas, ...semana, hoy: "2026-09-18" });
+    expect(r.dias.map((d) => d.importe)).toEqual([null, null, 30, 0, 0, null, null]);
+    expect(r.total).toBe(30);
+  });
+
+  it("sin tarifa esos días: quedan en null y la referencia es la que rige al cierre", () => {
+    const r = calcularGanado({ colaborador: colaborador(), tarifas: [tarifa({ modalidad: "DIA", monto: 60, vigenteDesde: "2026-09-17" })], marcas, ...semana, hoy: "2026-09-20" });
+    expect(r.dias.slice(0, 3).map((d) => d.importe)).toEqual([null, null, null]);
+    expect(r.referencia).toEqual({ modalidad: "DIA", monto: 60 });
+  });
+});

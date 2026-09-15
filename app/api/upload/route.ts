@@ -19,6 +19,8 @@ const ALLOWED_FOLDERS = new Set([
   "products", "logos", "brand", "branding", "general",
   "image-bank", "media", "covers", "banners", "superadmin",
   "hero",
+  // Fotos de las personas para el fotocheck (ADR-416).
+  "rrhh",
 ]);
 
 export async function POST(req: NextRequest) {

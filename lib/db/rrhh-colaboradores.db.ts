@@ -194,6 +194,7 @@ function mapColaborador(row: ColaboradorPrismaRow): ColaboradorRow {
     fechaCese: row.fechaCese,
     motivoCese: row.motivoCese,
     observaciones: row.observaciones,
+    fotoUrl: row.fotoUrl,
     beneficiarioId: row.beneficiarioId,
     adminUserId: row.adminUserId,
     createdAt: row.createdAt,
@@ -553,6 +554,7 @@ export const ColaboradoresDB = {
             estado: input.estado ?? "ACTIVO",
             fechaIngreso: input.fechaIngreso ? dateDeFechaKey(input.fechaIngreso) : null,
             observaciones: input.observaciones ?? null,
+            fotoUrl: input.fotoUrl ?? null,
             beneficiarioId: input.beneficiarioId ?? null,
             createdBy: usuario,
           },
@@ -653,6 +655,10 @@ export const ColaboradoresDB = {
       if (has("contactoEmergenciaNombre")) data.contactoEmergenciaNombre = patch.contactoEmergenciaNombre as string | null;
       if (has("contactoEmergenciaCelular")) data.contactoEmergenciaCelular = patch.contactoEmergenciaCelular as string | null;
       cambios.push("contacto de emergencia");
+    }
+    if (has("fotoUrl")) {
+      data.fotoUrl = patch.fotoUrl as string | null;
+      cambios.push("foto");
     }
     if (has("puestoId")) {
       const puestoId = patch.puestoId as string | null;

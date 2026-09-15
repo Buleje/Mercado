@@ -37,6 +37,8 @@ const camposColaborador = {
   puestoId: id.nullable(),
   fechaIngreso: fechaKey.nullable(),
   observaciones: texto(2000).nullable(),
+  /** Foto del fotocheck (ADR-416): la URL https que devuelve /api/upload. */
+  fotoUrl: z.string().trim().max(600).regex(/^https:\/\//, "La foto va como URL https").nullable(),
 };
 
 export const colaboradorCrearSchema = z.object({
@@ -51,6 +53,7 @@ export const colaboradorCrearSchema = z.object({
   puestoId: camposColaborador.puestoId.optional(),
   fechaIngreso: camposColaborador.fechaIngreso.optional(),
   observaciones: camposColaborador.observaciones.optional(),
+  fotoUrl: camposColaborador.fotoUrl.optional(),
   estado: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO"]).default("ACTIVO"),
   beneficiarioId: id.nullable().optional(), // sólo completo
   tarifaInicial: tarifaInput.nullable().optional(), // sólo completo
