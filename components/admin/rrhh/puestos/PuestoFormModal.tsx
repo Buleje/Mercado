@@ -8,17 +8,25 @@
  * Gestión NO manda la clave `tarifaSugerida`, ni siquiera como `null`: la ruta
  * responde 403 `tarifa_requiere_admin` a cualquier valor presente, y así un
  * manager no podía crear ni editar ningún puesto (revisión 2026-09-14).
+ *
+ * Hora de entrada y tolerancia (ADR-417): acá es el ÚNICO lugar donde se
+ * fijan. Sin ellas la hoja del día no tiene contra qué comparar la hora que se
+ * tipea —medido el 2026-09-15: 36 marcas con hora y ningún puesto con
+ * horario—, así que la TARDANZA se seguía poniendo a dedo.
  */
 
 import { useState, type FormEvent } from "react";
-import { Briefcase, Loader2, Pencil } from "@buleje/design-system/icons";
+import { Briefcase, Clock, Loader2, Pencil } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { cn } from "@/lib/utils";
 import { BOTON, CLASE_CAMPO } from "../rrhh-form";
 import { etiquetaModalidad } from "../rrhh-ui";
-import { useRrhhPuestos, type PuestoInput } from "@/hooks/use-rrhh-puestos";
+import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
+// El payload se tipa con el MISMO esquema con el que el servidor lo valida
+// (`puestoSchema`): así un campo nuevo del puesto no se puede mandar a ciegas.
+import type { PuestoInput } from "@/lib/rrhh/schemas";
 import type { Modalidad, NivelRrhh, PuestoDTO } from "@/lib/rrhh/tipos";
 
 interface Props {
@@ -42,6 +50,8 @@ export default function PuestoFormModal({ open, onClose, puesto, nivel, onGuarda
   const [modalidad, setModalidad] = useState<ModalidadPagada>(puesto?.tarifaSugerida?.modalidad ?? "DIA");
   const [monto, setMonto] = useState(puesto?.tarifaSugerida ? String(puesto.tarifaSugerida.monto) : "");
   const [horas, setHoras] = useState(String(puesto?.horasJornada ?? 8));
+  const [horaEntrada, setHoraEntrada] = useState(puesto?.horaEntrada ?? "");
+  const [tolerancia, setTolerancia] = useState(String(puesto?.toleranciaMin ?? 10));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +72,13 @@ export default function PuestoFormModal({ open, onClose, puesto, nivel, onGuarda
       setError("La jornada tiene que ser de más de 0 y hasta 24 horas.");
       return;
     }
+    const toleranciaNum = Number(tolerancia);
+    const toleranciaOk = Number.isInteger(toleranciaNum) && toleranciaNum >= 0 && toleranciaNum <= 240;
+    // Sólo molesta si hay horario: sin hora de entrada la tolerancia no juzga nada.
+    if (horaEntrada && !toleranciaOk) {
+      setError("La tolerancia va de 0 a 240 minutos, en números enteros.");
+      return;
+    }
     setGuardando(true);
     setError(null);
     const input: PuestoInput = {
@@ -69,6 +86,8 @@ export default function PuestoFormModal({ open, onClose, puesto, nivel, onGuarda
       descripcion: descripcion.trim() || null,
       // No tiene guard de nivel en la ruta (sólo `tarifaSugerida` lo tiene): un manager también la ajusta.
       horasJornada: horasNum,
+      horaEntrada: horaEntrada || null,
+      toleranciaMin: toleranciaOk ? toleranciaNum : 10,
       ...(puedeTarifa ? { tarifaSugerida: conTarifa ? { modalidad, monto: montoNum } : null } : {}),
     };
     const res = puesto ? await actualizar(puesto.id, input) : await crear(input);
@@ -121,6 +140,46 @@ export default function PuestoFormModal({ open, onClose, puesto, nivel, onGuarda
             <input id={id} type="number" inputMode="decimal" min={1} max={24} step="0.5" value={horas} onChange={(e) => setHoras(e.target.value)} className={cn(CLASE_CAMPO, "w-32 tabular-nums")} />
           )}
         </Field>
+
+        {/* ADR-417 — con estos dos campos la hoja del día deja de depender del ojo del encargado. */}
+        <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Hora de entrada" hint="Déjala vacía si este puesto no tiene hora fija.">
+              {(id) => (
+                <input
+                  id={id}
+                  type="time"
+                  value={horaEntrada}
+                  onChange={(e) => setHoraEntrada(e.target.value)}
+                  className={cn(CLASE_CAMPO, "tabular-nums")}
+                />
+              )}
+            </Field>
+            <Field label="Tolerancia (minutos)" hint="Los minutos de gracia antes de contar tardanza.">
+              {(id) => (
+                <input
+                  id={id}
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={240}
+                  step={1}
+                  disabled={!horaEntrada}
+                  value={tolerancia}
+                  onChange={(e) => setTolerancia(e.target.value)}
+                  className={cn(CLASE_CAMPO, "tabular-nums")}
+                />
+              )}
+            </Field>
+          </div>
+          <p className="flex items-start gap-2 text-xs leading-relaxed text-[var(--text-tertiary)]">
+            <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span>
+              Con hora de entrada, la hoja del día te sugiere <strong className="font-semibold text-[var(--text-secondary)]">tardanza</strong> apenas
+              tipeas una hora que pasa la tolerancia —nunca la marca sola—. Sin hora de entrada, la tardanza se sigue marcando a mano.
+            </span>
+          </p>
+        </div>
 
         {puedeTarifa && (
           <div className="space-y-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">

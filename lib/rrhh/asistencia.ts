@@ -37,6 +37,43 @@ export function calcularHoras(m: HorasInput): number | null {
   return null;
 }
 
+// ── Tardanza (ADR-417) ───────────────────────────────────────────────────────
+
+export interface Tardanza {
+  /** Pasó la tolerancia del puesto. */
+  tarde: boolean;
+  /** Minutos entre la hora del puesto y la que se marcó; negativo si llegó antes. */
+  minutos: number;
+}
+
+/**
+ * ¿Llegó tarde? Compara la hora marcada contra la del puesto, con su
+ * tolerancia.
+ *
+ * Devuelve `null` cuando NO hay con qué juzgar —sin hora marcada o sin
+ * horario en el puesto— y ese `null` es explícito, no un `false` disfrazado:
+ * un `false` ahí diría «llegó a tiempo» de alguien a quien nadie le fijó una
+ * hora. Medido contra la base el 2026-09-15: de 52 marcas, 36 traen hora de
+ * entrada y 5 estaban en TARDANZA puestas a dedo, porque `Puesto` no tenía
+ * ninguna hora contra la cual compararlas.
+ *
+ * El límite es `>`: llegar justo en el minuto de la tolerancia todavía entra
+ * (son minutos de gracia, y el último también es de gracia). Un turno que
+ * cruza medianoche queda como «no tarde»: la hora viaja sin fecha, así que no
+ * se puede saber si un 00:10 es de este turno o del siguiente, y equivocarse
+ * hacia «tarde» le mancharía el día a alguien que llegó bien.
+ */
+export function tardanzaDe(entrada: string | null, horaEntrada: string | null, toleranciaMin: number): Tardanza | null {
+  const entradaMin = minutosDeHora(entrada);
+  const esperadaMin = minutosDeHora(horaEntrada);
+  if (entradaMin == null || esperadaMin == null) return null;
+  // La base ya limita la tolerancia a 0..240 (CHECK); acá sólo nos defendemos
+  // de un dato viejo o de un `NaN` que llegue del formulario.
+  const gracia = Number.isFinite(toleranciaMin) ? Math.max(0, Math.trunc(toleranciaMin)) : 0;
+  const minutos = entradaMin - esperadaMin;
+  return { tarde: minutos > gracia, minutos };
+}
+
 // ── Revisar una marca ────────────────────────────────────────────────────────
 
 const ESTADOS_CON_HORAS: readonly EstadoAsistencia[] = ["PRESENTE", "TARDANZA", "MEDIO_DIA"];

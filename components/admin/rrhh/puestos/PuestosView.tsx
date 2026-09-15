@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { Briefcase, Loader2, Pencil, Plus, Trash2 } from "@buleje/design-system/icons";
+import { Briefcase, Clock, Loader2, Pencil, Plus, Trash2 } from "@buleje/design-system/icons";
 import { EmptyState, LoadingState } from "@buleje/design-system";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
@@ -100,6 +100,18 @@ export default function PuestosView({ nivel }: { nivel: NivelRrhh }) {
                 <span className={cn(CLASE_CHIP, "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>{pluralizar(p.personas, "persona", "personas")}</span>
                 <span className={cn(CLASE_CHIP, "bg-[var(--surface-sunken)] font-semibold tabular-nums text-[var(--text-secondary)]")}>
                   Jornada de {p.horasJornada.toLocaleString("es-PE", { maximumFractionDigits: 2 })} h
+                </span>
+                {/* El horario se ve en la lista (ADR-417): de un vistazo se sabe a quién se le juzga sola la tardanza y a quién no. */}
+                <span
+                  title={p.horaEntrada ? `Entra ${p.horaEntrada}, con ${p.toleranciaMin} min de tolerancia antes de contar tardanza` : "Sin hora de entrada: la tardanza se marca a mano"}
+                  className={cn(
+                    CLASE_CHIP,
+                    "gap-1 bg-[var(--surface-sunken)] tabular-nums",
+                    p.horaEntrada ? "font-semibold text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]",
+                  )}
+                >
+                  <Clock className="h-3.5 w-3.5" aria-hidden />
+                  {p.horaEntrada ? `${p.horaEntrada} · ${p.toleranciaMin} min` : "Sin horario"}
                 </span>
               </div>
               {p.descripcion && <p className="text-sm text-[var(--text-tertiary)]">{p.descripcion}</p>}

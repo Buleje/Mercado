@@ -10,10 +10,16 @@
  *
  * Layout por contenedor, no por viewport: con el sidebar abierto, una
  * pantalla de 1280 deja ~960 px para la lista.
+ *
+ * Tardanza (ADR-417): si el puesto tiene hora de entrada, al tipear la hora se
+ * SUGIERE la tardanza —se ve el estado sugerido y se acepta de un clic—, pero
+ * nunca se pisa lo que ya eligió el encargado: con la marca ya en TARDANZA, o
+ * en cualquier otro estado puesto a propósito, sólo se informa.
  */
 
 import { useState } from "react";
 import { AlertTriangle, Clock, History, Loader2, StickyNote } from "@buleje/design-system/icons";
+import { tardanzaDe } from "@/lib/rrhh/asistencia";
 import { cn } from "@/lib/utils";
 import { BOTON, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
 import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA } from "../rrhh-ui";
@@ -33,15 +39,31 @@ interface Props {
   errorMsg: string | undefined;
   /** Fuera de la ventana de corrección del rol — se ve, no se toca (el historial sigue disponible). */
   soloLectura?: boolean;
+  /** Horario del puesto (ADR-417). `null` = sin hora de entrada: la tardanza no se juzga sola. */
+  horario?: { horaEntrada: string; toleranciaMin: number } | null;
   onMarcar: (input: { estado: EstadoAsistencia | null; entrada?: string | null; salida?: string | null; nota?: string | null }) => void;
   onVerHistorial: () => void;
 }
 
-export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, errorMsg, soloLectura, onMarcar, onVerHistorial }: Props) {
+export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, errorMsg, soloLectura, horario, onMarcar, onVerHistorial }: Props) {
   const [notaAbierta, setNotaAbierta] = useState(false);
   const estadoActual = marca?.estado ?? null;
   const metaActual = estadoActual ? ESTADO_ASISTENCIA_META[estadoActual] : null;
   const muestraHoras = Boolean(estadoActual && LLEVA_HORAS.has(estadoActual));
+  // `null` mientras no haya hora marcada u horario del puesto: sin eso no hay nada que decir.
+  const tardanza = horario ? tardanzaDe(marca?.entrada ?? null, horario.horaEntrada, horario.toleranciaMin) : null;
+  const minutosTarde = tardanza?.tarde ? tardanza.minutos : null;
+  // Sólo se ofrece el cambio desde PRESENTE (lo que deja «Todos presentes»); con
+  // otro estado elegido a mano, la fila informa y no toca nada.
+  const sugerirTardanza = minutosTarde !== null && estadoActual === "PRESENTE" && !soloLectura;
+
+  /**
+   * El buffer del hook REEMPLAZA lo pendiente de la celda en vez de mezclarlo,
+   * así que la marca viaja completa: mandar sólo el estado guardaría la
+   * tardanza sin la hora que justamente la delató.
+   */
+  const aceptarTardanza = () =>
+    onMarcar({ estado: "TARDANZA", entrada: marca?.entrada ?? null, salida: marca?.salida ?? null, nota: marca?.nota ?? null });
 
   return (
     <div
@@ -87,23 +109,26 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
         {ORDEN_ESTADOS_ASISTENCIA.map((estado) => {
           const meta = ESTADO_ASISTENCIA_META[estado];
           const activo = estadoActual === estado;
+          const sugerido = sugerirTardanza && estado === "TARDANZA";
           return (
             <button
               key={estado}
               type="button"
               disabled={soloLectura}
               aria-pressed={activo}
-              title={meta.label}
-              onClick={() => onMarcar({ estado: activo ? null : estado })}
+              title={sugerido ? `${meta.label} — sugerida por la hora de entrada` : meta.label}
+              onClick={() => (sugerido ? aceptarTardanza() : onMarcar({ estado: activo ? null : estado }))}
               className={cn(
                 "inline-flex h-10 min-w-[2.5rem] items-center justify-center rounded-lg border-2 px-1.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 @min-[58rem]:h-9 @min-[58rem]:min-w-[2.25rem]",
                 activo
                   ? cn("border-current", meta.claseChip)
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+                // El sugerido se VE: borde de aviso punteado, además del texto de abajo.
+                sugerido && "border-dashed border-[var(--data-warning-500)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
               )}
             >
               <span aria-hidden>{meta.letra}</span>
-              <span className="sr-only">{meta.label}</span>
+              <span className="sr-only">{sugerido ? `${meta.label} (sugerida)` : meta.label}</span>
             </button>
           );
         })}
@@ -134,6 +159,28 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
         )}
       </div>
 
+      {muestraHoras && tardanza && horario && (
+        <div role="status" className="col-span-2 flex flex-wrap items-center gap-2 text-sm @min-[58rem]:order-5 @min-[58rem]:col-span-4">
+          {minutosTarde !== null ? (
+            <>
+              <span className={cn(CLASE_CHIP, "gap-1 bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]")}>
+                <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Llegó {minutosTarde} min tarde
+              </span>
+              <span className="text-[var(--text-tertiary)]">
+                Entra {horario.horaEntrada} · {horario.toleranciaMin} min de tolerancia
+              </span>
+              {sugerirTardanza && (
+                <button type="button" onClick={aceptarTardanza} className={BOTON.chico}>
+                  Marcar tardanza
+                </button>
+              )}
+            </>
+          ) : (
+            <span className="text-[var(--text-tertiary)]">Llegó a tiempo para las {horario.horaEntrada}.</span>
+          )}
+        </div>
+      )}
+
       {estadoActual && notaAbierta && !soloLectura ? (
         <input
           value={marca?.nota ?? ""}
@@ -141,17 +188,17 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
           aria-label={`Nota del día de ${colaborador.nombre}`}
           placeholder="Nota corta (ej. feriado, llegó en la tarde)"
           maxLength={300}
-          className={cn(CLASE_CAMPO, "col-span-2 h-10 @min-[58rem]:order-5 @min-[58rem]:col-span-4")}
+          className={cn(CLASE_CAMPO, "col-span-2 h-10 @min-[58rem]:order-6 @min-[58rem]:col-span-4")}
         />
       ) : (
         marca?.nota && (
-          <p className="col-span-2 flex items-start gap-1.5 text-sm text-[var(--text-secondary)] @min-[58rem]:order-5 @min-[58rem]:col-span-4">
+          <p className="col-span-2 flex items-start gap-1.5 text-sm text-[var(--text-secondary)] @min-[58rem]:order-6 @min-[58rem]:col-span-4">
             <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden /> {marca.nota}
           </p>
         )
       )}
       {errorMsg && (
-        <p role="alert" className="col-span-2 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)] @min-[58rem]:order-6 @min-[58rem]:col-span-4">
+        <p role="alert" className="col-span-2 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)] @min-[58rem]:order-7 @min-[58rem]:col-span-4">
           {errorMsg}
         </p>
       )}

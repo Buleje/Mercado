@@ -14,10 +14,12 @@ import { ChevronRight, Lock, Plus, UserPlus, Users } from "@buleje/design-system
 import { LoadingState, EmptyState } from "@buleje/design-system";
 import { avisarFallos, useRrhhAsistencia } from "@/hooks/use-rrhh-asistencia";
 import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
-import { etiquetaDia, sumarDias } from "@/lib/rrhh/fechas";
+import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
+import { etiquetaDia, mesDe, sumarDias } from "@/lib/rrhh/fechas";
 import { cn, limaDateKey } from "@/lib/utils";
 import { AvisoRrhh, BOTON, CLASE_CHIP } from "../rrhh-form";
 import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, contarEstado, dentroDeVentana, estaIncluidoEseDia, motivoFueraDeVentana, motivoNoIncluido, pluralizar } from "../rrhh-ui";
+import AvisoDiasAbiertos from "./AvisoDiasAbiertos";
 import FilaMarcaDelDia from "./FilaMarcaDelDia";
 import HistorialMarcaModal from "./HistorialMarcaModal";
 import LeyendaEstados from "./LeyendaEstados";
@@ -43,6 +45,11 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
   const [traerAbierta, setTraerAbierta] = useState(false);
   // «Estrenar RRHH con tu gente» (Brandon 2026-09-14) — mismo criterio de nivel que en PersonalView.
   const { candidatos: candidatosAdelantos } = useRrhhDesdeAdelantos(nivel === "completo");
+  // El horario vive en el puesto (ADR-417) y la hoja sólo trae `{ id, nombre }`
+  // del puesto de cada persona: sin este catálogo la fila no tiene contra qué
+  // comparar la hora que se tipea. Si el catálogo no carga, nadie queda con
+  // tardanza sugerida — se sigue marcando a mano, como antes.
+  const { puestos } = useRrhhPuestos();
 
   const puedeGestionar = nivel === "gestion" || nivel === "completo";
   const hoy = hoja?.hoy ?? limaDateKey();
@@ -65,6 +72,14 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
     }
     return { incluidos, noIncluidos, marcasDelDia, marcadosIncluidos, sinMarcar, conteo };
   }, [hoja, fecha]);
+
+  const horarioPorPuesto = useMemo(() => {
+    const mapa = new Map<string, { horaEntrada: string; toleranciaMin: number }>();
+    for (const p of puestos) {
+      if (p.horaEntrada) mapa.set(p.id, { horaEntrada: p.horaEntrada, toleranciaMin: p.toleranciaMin });
+    }
+    return mapa;
+  }, [puestos]);
 
   const irAFecha = async (destino: string) => {
     if (destino === fecha || destino > hoy) return;
@@ -192,6 +207,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
               pendiente={pendientes.has(`${c.id}|${fecha}`)}
               errorMsg={erroresPorCelda.get(`${c.id}|${fecha}`)}
               soloLectura={!editable}
+              horario={c.puesto ? (horarioPorPuesto.get(c.puesto.id) ?? null) : null}
               onMarcar={(input) => marcar({ colaboradorId: c.id, fecha, ...input })}
               onVerHistorial={() => setHistorialDe(c)}
             />
@@ -250,6 +266,10 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
           selector={{ tipo: "date", valor: fecha, max: hoy, onElegir: irAFecha }}
         />
       </div>
+
+      {/* Los días del mes que nadie marcó (ADR-417): sigue al mes que se está
+          mirando, no siempre al actual, y no pinta nada si no hay ninguno. */}
+      <AvisoDiasAbiertos mes={mesDe(fecha)} onIrAlDia={(destino) => void irAFecha(destino)} />
 
       {contenido}
 
