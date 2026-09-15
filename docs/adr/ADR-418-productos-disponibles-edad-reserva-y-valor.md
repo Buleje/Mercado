@@ -1,7 +1,7 @@
 # ADR-418 — Productos disponibles: la edad del patio, la reserva, el valor y la salida a Excel
 
 - **Fecha:** 2026-09-15
-- **Estado:** aceptado — migración escrita, **pendiente de aplicar** (`prisma/migrations/adr-418-ctp-apartar-productos.sql`)
+- **Estado:** aceptado — migración **aplicada el 2026-09-15** (`node scripts/apply-sql.mjs prisma/migrations/adr-418-ctp-apartar-productos.sql`, 401 ms, transacción atómica: tabla + 2 índices + el único parcial)
 - **Pedido por:** Brandon — «dame varias funciones de mejora para esa pestaña, nuevas y mejores ideas para potenciar
   la pestaña de disponibles productos». De las cuatro propuestas eligió **las cuatro**.
 - **Depende de:** ADR-316 (el saldo sale de una sola fuente, `?disponibles=1`), ADR-349 (la pestaña),
@@ -84,8 +84,11 @@ de un subtotal disfrazado de total.
 
 - La pestaña puede contestar por primera vez «qué es lo más viejo», «qué le falta medir», «qué está comprometido» y
   «cuánto vale» sin salir a otra pantalla.
-- **La migración no está aplicada**: hasta que corra, apartar devuelve error del servidor y la columna de apartados
-  queda vacía. El resto (edad, orden, avisos, export) no depende de la base.
+- Verificado por el camino del usuario el 2026-09-15 en `main`: 15 filas, el chip «7 parados hace más de 90 días»
+  acota a 7 y las cifras del pie cierran (7 corridas · 13,085 m³), el orden por edad pone mayo 2024 arriba, apartar
+  escribe una fila real (`creadoPor: qaadmin`, plazo a 7 días), la pastilla la edita, liberar la suelta y el segundo
+  apartado sobre la misma fila devuelve **422** con el mensaje del índice único. El patio de `main` sí tiene guías
+  costeadas: la tarjeta muestra **S/ 11.196** y «faltan costear 8 guías».
 - El valor del patio queda a la espera de que se carguen los costos de las guías. La tarjeta dice cuántas faltan, que
   es el trabajo concreto.
 - `CtpProductosDisponibles.tsx` sigue muy por encima de las ~300 líneas del estándar: se extrajeron los avisos y el
