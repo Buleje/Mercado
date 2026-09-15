@@ -28,6 +28,13 @@ export interface PiezaCubicada {
    */
   dueno?: string;
   /**
+   * Código de la troza de la que salió, tipeado o elegido del patio. Sólo lo
+   * pone «Producir sin lote» y es INTERNO (Brandon, 2026-09-14): no se manda al
+   * servidor, no agrupa en `unificarPorMedida`, no se declara ni consume la
+   * troza — ver `lib/forestal/codigo-de-troza.ts`.
+   */
+  codigo?: string;
+  /**
    * Tipo comercial forzado a mano. `undefined` = lo decide la medida
    * (`clasificarTipo`). Se lee SIEMPRE por `tipoDePieza`, nunca directo: es lo
    * que mantiene la pantalla, el Excel y el Anexo 04 diciendo lo mismo.
@@ -193,7 +200,11 @@ export function unificarPorMedida(piezas: PiezaCubicada[]): PiezaCubicada[] {
       acc.pieTablar = r2(acc.pieTablar + p.pieTablar);
       acc.m3 = r4(acc.m3 + p.m3);
     } else {
-      mapa.set(clave, { ...p });
+      /* El código de la troza NO va en la clave (es interno del cubicado,
+         Brandon 2026-09-14) y tampoco sobrevive a la unión: una fila que junta
+         piezas de varias trozas no puede quedarse con el código de la primera. */
+      const { codigo: _codigo, ...sinCodigo } = p;
+      mapa.set(clave, { ...sinCodigo });
     }
   }
   return [...mapa.values()];
@@ -214,16 +225,124 @@ const TENS: Record<string, number> = {
   ochenta: 80, noventa: 90,
 };
 
+/**
+ * Centenas. Hacen falta para la CANTIDAD de piezas —«ciento veinte piezas de
+ * dos por ocho»—, no para las medidas: no existe una tabla de 120 pulgadas.
+ * Se componen con lo que ya hay: «doscientos cincuenta y cinco» → 255.
+ *
+ * «mil» queda afuera a propósito: la cantidad se topea en 999 (`leerDictado`)
+ * y un número de cuatro cifras en un dictado casi siempre es un pegado
+ * («2810» = 2·8·10), no mil.
+ */
+const CENTENAS: Record<string, number> = {
+  cien: 100, ciento: 100, doscientos: 200, doscientas: 200, trescientos: 300,
+  trescientas: 300, cuatrocientos: 400, cuatrocientas: 400, quinientos: 500,
+  quinientas: 500, seiscientos: 600, seiscientas: 600, setecientos: 700,
+  setecientas: 700, ochocientos: 800, ochocientas: 800, novecientos: 900,
+  novecientas: 900,
+};
+
+/**
+ * Lo que el motor es-PE escribe cuando el cubicador dicta desde el patio.
+ *
+ * Son errores SISTEMÁTICOS del reconocedor (seseo y «h» de más), no errores
+ * del que habla: la palabra caía fuera de `ONES` y la medida se perdía en
+ * SILENCIO — «sais por hocho por dies» devolvía cero números.
+ *
+ * Regla para agregar una: la variante NO puede ser una palabra española de
+ * verdad ni chocar con una especie o un comando. Por eso quedan afuera
+ * «siento» (→ciento: es el verbo sentir), «dias» (→diez: son fechas) y
+ * «para» (→por: es el gatillo de pausar; se resuelve aparte, sólo cuando cae
+ * entre dos números). Los acentos no hacen falta acá: «dós» ya llega sin
+ * tilde porque `normalizeText` pasa antes por `stripAccents`.
+ */
+const HOMOFONOS: Record<string, string> = {
+  sais: "seis", dies: "diez", hocho: "ocho", onse: "once", catorse: "catorce",
+  dose: "doce", trese: "trece", quinse: "quince",
+};
+
+/**
+ * Fracciones de pulgada, por su DENOMINADOR. En aserrío se dicta todo el
+ * tiempo «dos y medio por ocho» o «tres cuartos»: perder esa media pulgada de
+ * espesor en una tabla es perder ~6 % del volumen declarado.
+ */
+const FRACCIONES: Record<string, number> = {
+  medio: 2, media: 2, medios: 2, medias: 2,
+  tercio: 3, tercios: 3,
+  cuarto: 4, cuartos: 4,
+  octavo: 8, octavos: 8,
+};
+const NOMBRES_FRACCION = Object.keys(FRACCIONES).join("|");
+
+/**
+ * Resuelve las fracciones habladas, ya con los enteros en dígitos:
+ *   «2 y 3 cuartos» → 2.75 · «1 y cuarto» → 1.25 · «3 cuartos» → 0.75 ·
+ *   «media pulgada» → 0.5.
+ *
+ * Corre DESPUÉS de `wordsToDigits`, y por eso no choca con el «y» de las
+ * decenas: «treinta y cinco» ya se resolvió a «35» antes de llegar acá. El
+ * «y» que queda sólo une un entero con una fracción.
+ *
+ * La fracción SUELTA sin numerador se acepta únicamente para medio/media: un
+ * «cuarto» solo es un ambiente de la casa más seguido que una medida, y
+ * fabricar un 0.25 de la nada mete un número que nadie dictó.
+ */
+function resolverFracciones(s: string): string {
+  const den = (w: string) => FRACCIONES[w];
+  // "N y M cuartos" → N + M/den
+  s = s.replace(
+    new RegExp(`(\\d+(?:\\.\\d+)?)\\s+y\\s+(\\d+)\\s+(${NOMBRES_FRACCION})\\b`, "g"),
+    (_m, entero: string, num: string, w: string) => String(r3(Number(entero) + Number(num) / den(w))),
+  );
+  // "N y medio" / "N y cuarto" → N + 1/den
+  s = s.replace(
+    new RegExp(`(\\d+(?:\\.\\d+)?)\\s+y\\s+(${NOMBRES_FRACCION})\\b`, "g"),
+    (_m, entero: string, w: string) => String(r3(Number(entero) + 1 / den(w))),
+  );
+  // Fracción suelta CON numerador: "tres cuartos" → 0.75, "un cuarto" → 0.25.
+  // El lookbehind evita comerse el decimal de "2.5 cuartos".
+  s = s.replace(
+    new RegExp(`(?<![\\d.])(\\d+)\\s+(${NOMBRES_FRACCION})\\b`, "g"),
+    (_m, num: string, w: string) => String(r3(Number(num) / den(w))),
+  );
+  // "media pulgada" → 0.5 (única fracción que se acepta sin numerador).
+  s = s.replace(/\bmedi[oa]s?\b/g, "0.5");
+  return s;
+}
+
 const stripAccents = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "");
 
-/** Convierte palabras-número a dígitos, resolviendo compuestos "treinta y cinco". */
+/**
+ * Convierte palabras-número a dígitos resolviendo los compuestos del
+ * castellano: "treinta y cinco" → 35, "ciento veinte" → 120,
+ * "doscientos cincuenta" → 250.
+ */
 function wordsToDigits(text: string): string {
-  const tokens = text.split(/\s+/);
+  // `HOMOFONOS` primero: lo que el motor escribió mal nunca va a estar en las
+  // tablas, y un número que no se reconoce se pierde sin avisar.
+  const tokens = text.split(/\s+/).map((t) => HOMOFONOS[t] ?? t);
   const out: string[] = [];
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
-    if (t in TENS) {
+    if (t in CENTENAS) {
+      // Centena + decena [+ "y" + unidad] o centena + unidad:
+      // "ciento veinte" → 120 · "doscientos cincuenta y cinco" → 255 ·
+      // "ciento cinco" → 105. Sola ("cien piezas") vale la centena pelada.
+      let valor = CENTENAS[t];
+      if (tokens[i + 1] in TENS) {
+        valor += TENS[tokens[i + 1]];
+        i += 1;
+        if (tokens[i + 1] === "y" && tokens[i + 2] in ONES && ONES[tokens[i + 2]] < 10) {
+          valor += ONES[tokens[i + 2]];
+          i += 2;
+        }
+      } else if (tokens[i + 1] in ONES && ONES[tokens[i + 1]] > 0) {
+        valor += ONES[tokens[i + 1]];
+        i += 1;
+      }
+      out.push(String(valor));
+    } else if (t in TENS) {
       // "treinta y cinco" → 35 (consume 3 tokens); "treinta" solo → 30.
       if (tokens[i + 1] === "y" && tokens[i + 2] in ONES && ONES[tokens[i + 2]] < 10) {
         out.push(String(TENS[t] + ONES[tokens[i + 2]]));
@@ -272,13 +391,30 @@ function normalizeText(input: string): string {
   // de memoria — se neutraliza ANTES de tokenizar. La "coma" hablada (decimal
   // peruano, "dos coma cinco") es la PALABRA "coma", no este carácter: no choca.
   s = s.replace(/[,;:]+/g, " ");
-  s = s.replace(/\s[x×*]\s/g, " por ");
   s = wordsToDigits(s);
+  s = normalizarSeparadores(s);
   s = s.replace(/(\d+)\s+(?:punto|coma)\s+(\d+)/g, "$1.$2");
-  s = s.replace(/(\d+)\s+y\s+3\s+cuartos?/g, "$1.75");
-  s = s.replace(/(\d+)\s+y\s+cuarto/g, "$1.25");
-  s = s.replace(/(\d+)\s+y\s+medi[oa]/g, "$1.5");
-  s = s.replace(/\bmedi[oa]\b/g, "0.5");
+  s = resolverFracciones(s);
+  return s;
+}
+
+/**
+ * Deja UNA sola forma del separador de medidas: la palabra " por ".
+ *
+ * El reconocedor lo escribe de cuatro maneras según cómo se habló —"por",
+ * "x" suelta, "×" y la "x" PEGADA a los dígitos ("2x8x10")— y además
+ * confunde el "por" hablado con "para" (bug de campo conocido: dictar una
+ * medida frenaba el trabajo porque "para" es gatillo de pausar). Ese arreglo
+ * sólo aplica ENTRE DOS NÚMEROS: "para" dicho solo sigue siendo el comando.
+ *
+ * Unificarlo no es cosmético: el separador es la señal de dónde termina cada
+ * medida, y con esa señal `mejoresNumeros` deja de partir números que el
+ * hablante ya delimitó.
+ */
+function normalizarSeparadores(s: string): string {
+  s = s.replace(/\s[x×*]\s/g, " por ");
+  s = s.replace(/(\d)\s*[x×*]\s*(?=\d)/g, "$1 por ");
+  s = s.replace(/(\d)\s+para\s+(?=\d)/g, "$1 por ");
   return s;
 }
 
@@ -363,7 +499,11 @@ export function parseVozDims(alternativas: string[]): DictadoParse {
  * medida dictada quedó rara (nunca se corrige sola: se marca).
  */
 export const RANGOS_MEDIDA = {
-  espesor: { min: 1, max: 12 },   // pulgadas
+  // Media pulgada es un espesor REAL (se dicta "media" o "tres cuartos"): con
+  // el mínimo en 1 toda tabla fraccionada salía marcada como rara, y una lista
+  // de rojos falsos enseña a ignorar la lista entera. No cambia nada del
+  // separador de dígitos pegados: de ahí nunca sale un valor entre 0.5 y 1.
+  espesor: { min: 0.5, max: 12 },  // pulgadas
   ancho: { min: 1, max: 30 },     // pulgadas
   largo: { min: 2, max: 30 },     // pies
 } as const;
@@ -447,28 +587,85 @@ function separarPegados(s: string, libres: readonly Dimension[] = DIMENSIONES, d
   return out.filter((n) => n > 0);
 }
 
-export function mejoresNumeros(alternativas: string[], fijas: MedidasFijas = {}, yaDictados = 0): number[] {
+/**
+ * Una escuadría completa, en el orden en que se dicta: espesor · ancho · largo
+ * (pulgadas · pulgadas · pies, la unidad del dictado).
+ */
+export type Escuadria = readonly [espesor: number, ancho: number, largo: number];
+
+/**
+ * Ajustes opcionales de la lectura. Todo lo de acá SÓLO DESEMPATA: nunca le
+ * gana a una hipótesis con más números en rango y nunca reemplaza un número
+ * por otro. Ante la duda, lo que se devuelve es lo que se escuchó.
+ */
+export interface OpcionesLectura {
+  /**
+   * Escuadrías que este aserradero ya cortó, de la más repetida a la menos
+   * (la lista la arma `escuadriasFrecuentes`). Una lectura que reproduce una medida
+   * que el libro cortó veinte veces vale más que otra igual de plausible que
+   * nadie cortó nunca.
+   */
+  frecuentes?: readonly Escuadria[];
+}
+
+/** Las formas en que el separador de medidas llega escrito (ver `normalizarSeparadores`). */
+const SEPARADORES_MEDIDA = new Set(["por", "x", "×"]);
+const esSeparador = (t: string | undefined) => t !== undefined && SEPARADORES_MEDIDA.has(t);
+const empiezaConDigito = (t: string | undefined) => t !== undefined && /^\d/.test(t);
+
+/** Lo que deja una hipótesis del reconocedor después de leerla. */
+interface Lectura {
+  /** Los números en el ORDEN dictado (nunca reordenados). */
+  nums: number[];
+  /** Cuántos "por" venían bien puestos: entre dos números. */
+  separadores: number;
+}
+
+export function mejoresNumeros(
+  alternativas: string[],
+  fijas: MedidasFijas = {},
+  yaDictados = 0,
+  opciones: OpcionesLectura = {},
+): number[] {
   const alts = alternativas.filter(Boolean);
   const libres = DIMENSIONES.filter((d) => !(typeof fijas[d] === "number" && fijas[d]! > 0));
   const ciclo = libres.length > 0 ? libres : DIMENSIONES;
+  const frecuentes = opciones.frecuentes ?? [];
 
   // Números pegados por hablar rápido → separar sabiendo qué medida toca.
   // También los de DOS cifras: con el largo fijo, "dos ocho" llega como "28",
   // y 28 no es un espesor que exista — ahí hay dos medidas, no una. Si el
   // valor SÍ es creíble para la medida que toca (un ancho de 28"), se respeta.
-  const expandir = (a: string) => {
-    const tokens = normalizeText(a).match(/\d+(?:\.\d+)?/g) ?? [];
+  //
+  // EXCEPCIÓN: un número de DOS cifras que vino delimitado por "por" no se
+  // parte. Si el cubicador dijo "dos por treinta y cinco", ya marcó dónde
+  // termina cada medida: partir ese 35 en 3 y 5 sería inventar una tabla que
+  // nadie dictó (que el 35 sea raro lo avisa `medidaSospechosa`, que es lo
+  // correcto). Con TRES o más cifras el delimitador no salva nada —no existe
+  // una medida de 810—: ahí el motor se comió un "por" al pegar los dígitos
+  // ("2 por 810" es 2·8·10) y hay que separarlos igual. Medido: sin esta
+  // distinción, "2 por 810" devolvía [2, 810] y la pieza no entraba.
+  const expandir = (a: string): Lectura => {
+    const tokens = normalizeText(a).match(/\d+(?:\.\d+)?|[^\s\d]+/g) ?? [];
     const out: number[] = [];
-    for (const t of tokens) {
+    let separadores = 0;
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (!empiezaConDigito(t)) {
+        if (esSeparador(t) && empiezaConDigito(tokens[i - 1]) && empiezaConDigito(tokens[i + 1])) separadores++;
+        continue;
+      }
       const entero = /^\d+$/.test(t);
+      const delimitado = esSeparador(tokens[i - 1]) || esSeparador(tokens[i + 1]);
       // La medida que toca depende de lo que YA se dictó, incluidos los
       // números sueltos que quedaron esperando de la frase anterior.
       const dimActual = ciclo[(yaDictados + out.length) % ciclo.length];
-      const separable = entero && (t.length >= 3 || (t.length === 2 && !valorPlausible(Number(t), dimActual)));
+      const separable =
+        entero && (t.length >= 3 || (t.length === 2 && !delimitado && !valorPlausible(Number(t), dimActual)));
       if (separable) out.push(...separarPegados(t, ciclo, yaDictados + out.length));
       else out.push(parseFloat(t));
     }
-    return out;
+    return { nums: out, separadores };
   };
 
   // Cuántos números de la lectura caen en el rango de la medida que les toca:
@@ -481,14 +678,86 @@ export function mejoresNumeros(alternativas: string[], fijas: MedidasFijas = {},
     return ok / nums.length + completa;
   };
 
+  /**
+   * Cuántas piezas de esta lectura son una escuadría que el libro YA cortó.
+   * Sólo cuenta piezas COMPLETAS y alineadas al ciclo: si la frase arranca a
+   * mitad de una pieza (quedaron números arrastrados de la anterior) no se
+   * sabe qué escuadría forman, y devolver 0 es mejor que adivinar.
+   */
+  const conocidas = (nums: number[]) => {
+    if (frecuentes.length === 0 || nums.length === 0) return 0;
+    if (yaDictados % ciclo.length !== 0) return 0;
+    const { piezas } = partirConFijas(nums, fijas);
+    return piezas.filter((p) =>
+      frecuentes.some((f) => f[0] === p.espesor && f[1] === p.ancho && f[2] === p.largo),
+    ).length;
+  };
+
   const lecturas = alts.map(expandir);
   if (lecturas.length === 0) return [];
+  // Comparación por escalones, de más fuerte a más débil. Ante empate en TODOS
+  // gana la hipótesis principal del motor (la #1): es la más probable y no
+  // reordena lo que se dictó.
   let mejor = 0;
   for (let i = 1; i < lecturas.length; i++) {
-    // Estrictamente mejor: ante empate gana la hipótesis principal del motor.
-    if (puntaje(lecturas[i]) > puntaje(lecturas[mejor]) + 0.001) mejor = i;
+    // 1) Plausibilidad: cuántos números caen en el rango de su medida.
+    const dif = puntaje(lecturas[i].nums) - puntaje(lecturas[mejor].nums);
+    if (dif > 0.001) { mejor = i; continue; }
+    if (dif < -0.001) continue;
+    // 2) Los "por" bien puestos: el hablante marcó dónde termina cada medida.
+    const difSep = lecturas[i].separadores - lecturas[mejor].separadores;
+    if (difSep > 0) { mejor = i; continue; }
+    if (difSep < 0) continue;
+    // 3) Lo que esta sierra ya cortó (sólo desempata, ver `conocidas`).
+    if (conocidas(lecturas[i].nums) > conocidas(lecturas[mejor].nums)) mejor = i;
   }
-  return lecturas[mejor];
+  return lecturas[mejor].nums;
+}
+
+/** Lo mínimo que hace falta de una pieza para saber qué escuadría es. */
+export type PiezaParaFrecuentes = Readonly<{
+  espesor: number;
+  ancho: number;
+  largo: number;
+  cantidad?: number;
+  uEspesor?: Unidad;
+  uAncho?: Unidad;
+  uLargo?: Unidad;
+}>;
+
+/**
+ * Las escuadrías que este aserradero MÁS cortó, listas para pasarle a
+ * `mejoresNumeros({ frecuentes })`.
+ *
+ * Se pesa por CANTIDAD de piezas, no por filas: una fila de 200 tablas de
+ * 2×8×10 dice más sobre lo que corta esta sierra que tres filas sueltas de
+ * una pieza cada una. Quedan afuera las piezas dictadas en otra unidad (cm o
+ * metros) y las que caen fuera de rango: una medida rara repetida no tiene que
+ * enseñarle nada al reconocedor.
+ *
+ * Es PURA: recibe las piezas ya cubicadas y devuelve la lista; no toca red ni
+ * base de datos.
+ */
+export function escuadriasFrecuentes(piezas: readonly PiezaParaFrecuentes[], top = 8): Escuadria[] {
+  const conteo = new Map<string, { escuadria: Escuadria; piezas: number; orden: number }>();
+  for (const p of piezas) {
+    if ((p.uEspesor ?? "pulg") !== "pulg" || (p.uAncho ?? "pulg") !== "pulg") continue;
+    if ((p.uLargo ?? "pies") !== "pies") continue;
+    if (
+      !valorPlausible(p.espesor, "espesor") ||
+      !valorPlausible(p.ancho, "ancho") ||
+      !valorPlausible(p.largo, "largo")
+    ) continue;
+    const clave = `${p.espesor}x${p.ancho}x${p.largo}`;
+    const cuantas = Math.max(1, Math.round(p.cantidad ?? 1));
+    const previo = conteo.get(clave);
+    if (previo) previo.piezas += cuantas;
+    else conteo.set(clave, { escuadria: [p.espesor, p.ancho, p.largo], piezas: cuantas, orden: conteo.size });
+  }
+  return [...conteo.values()]
+    .sort((a, b) => b.piezas - a.piezas || a.orden - b.orden)
+    .slice(0, Math.max(0, top))
+    .map((e) => e.escuadria);
 }
 
 // ─── Comandos de voz ────────────────────────────────────────────────────────
@@ -509,7 +778,7 @@ export type Comando =
   | { tipo: "dueno"; palabra: string }
   /** "pon fijo el largo a cuatro" → el largo deja de dictarse. */
   | { tipo: "fijar"; dimension: Dimension; valor: number }
-  /** "quita el fijo" (todo) o "desfijá el largo" (una sola). */
+  /** "quita el fijo" (todo) o "quita el fijo del largo" (una sola). */
   | { tipo: "desfijar"; dimension?: Dimension }
   /** "muéstrame por especie" → cambia el agrupado del resumen (dim como string;
    * el componente la valida contra DIMENSIONES_RESUMEN). */
@@ -679,15 +948,20 @@ export function esEco(textoEscuchado: string, textoDicho: string): boolean {
  * siguiente. Ahora el número pegado a "piezas/tablas/tablones/unidades" se
  * saca del pool y viaja como cantidad; sin esa palabra, todo son medidas.
  */
-export function leerDictado(input: string | string[], fijas: MedidasFijas = {}, yaDictados = 0): { cantidad: number; nums: number[] } {
+export function leerDictado(
+  input: string | string[],
+  fijas: MedidasFijas = {},
+  yaDictados = 0,
+  opciones: OpcionesLectura = {},
+): { cantidad: number; nums: number[] } {
   const alts = (Array.isArray(input) ? input : [input]).filter(Boolean);
   const s = normalizeText(alts[0] ?? "");
   const m = s.match(/(\d+)\s*(?:piezas?|tablas?|tablones?|listones?|unidades?|pzas?|pz)\b/);
-  if (!m) return { cantidad: 1, nums: mejoresNumeros(alts, fijas, yaDictados) };
+  if (!m) return { cantidad: 1, nums: mejoresNumeros(alts, fijas, yaDictados, opciones) };
   const cantidad = Math.max(1, Math.min(999, Math.round(Number(m[1]))));
   // Se quita SOLO esa aparición; el resto de la frase sigue siendo medidas.
   const resto = s.replace(m[0], " ");
-  return { cantidad, nums: mejoresNumeros([resto], fijas, yaDictados) };
+  return { cantidad, nums: mejoresNumeros([resto], fijas, yaDictados, opciones) };
 }
 
 /**

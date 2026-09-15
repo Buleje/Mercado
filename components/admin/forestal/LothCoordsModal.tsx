@@ -12,6 +12,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import { AlertTriangle, Check, Upload, X } from "@buleje/design-system/icons";
 import { polygonAreaHa, type LatLng } from "@/lib/forestal/loth-geo";
 import { parseCoordText, parseGeometryFile, type ParseResult } from "@/lib/forestal/loth-coords-io";
@@ -44,6 +49,19 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
      con el ref vacío y no vuelve a mirar cuando el modal aparece. */
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: onClose, activo: open });
+  /**
+   * Ventana: se mueve, se achica y se fija (ADR-420).
+   *
+   * Lo que se pega acá hay que cotejarlo contra el mapa que quedó detrás: si el
+   * polígono del plan cae donde está dibujado el borrador. Con el modal en el
+   * medio no se ve nada del mapa, y cerrarlo para mirar pierde el cuadro
+   * pegado. Corrido a un costado —y fijado— se comparan los dos a la vez.
+   */
+  const ventana = useVentanaDeModal(open, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "loth-coords",
+  });
   const [text, setText] = useState("");
   const [zona, setZona] = useState(zonaDefault);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -82,23 +100,44 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
   if (!open) return null;
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
+    <div
       className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Importar coordenadas del área de aprovechamiento"
+      /* El velo es decorativo: el diálogo es la caja de adentro. Cerrar tocando
+         afuera es un atajo —Escape y la X hacen lo mismo con teclado. */
+      role="presentation"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        /* Fijado quiere decir «lo dejo abierto para trabajar atrás»: el clic
+           afuera deja de cerrar. La X y Escape siguen cerrando siempre. */
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
     >
-      <div className="flex max-h-[88vh] w-full max-w-[44rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
-        <header className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
+      {/* El diálogo en sí: acá viven el foco, el arrastre y el tamaño —
+          el velo de atrás no se mueve. */}
+      <div
+        ref={cajaRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Importar coordenadas del área de aprovechamiento"
+        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
+        className="relative flex max-h-[88vh] w-full max-w-[44rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+      >
+        {/* Cabecera — y asa para arrastrar la ventana. */}
+        <header
+          {...ventana.asaProps}
+          className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
+        >
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Importar coordenadas</p>
             <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
               Pega el cuadro del plan de manejo o sube el KML / GeoJSON del expediente
             </p>
           </div>
+          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
+              esto los controles quedarían flotando en el medio. */}
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -216,6 +255,8 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
             <Check className="h-4 w-4" /> Usar este polígono
           </button>
         </footer>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

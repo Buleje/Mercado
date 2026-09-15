@@ -20,7 +20,8 @@
  *
  * Las acciones y una salida:
  *  - **Pausar / Seguir** — frena donde está y retoma por esa misma fila.
- *  - **Reiniciar / Leer de nuevo** — vuelve a la primera y sigue leyendo.
+ *  - **Reiniciar / Leer de nuevo** — vuelve a la punta por la que arrancó
+ *    (la primera leyendo al derecho, la ÚLTIMA leyendo al revés) y sigue.
  *  - **Ir a la fila N** — salta a cualquier punto sin cerrar ni volver a la
  *    tabla a buscar el botón de esa fila. En un lote de 301, «seguí desde la
  *    120» es el pedido normal después de una interrupción.
@@ -32,7 +33,7 @@
  */
 
 import { useEffect, useId, useState } from "react";
-import { ArrowRight, Pause, Play, RotateCcw, Volume2, X } from "@buleje/design-system/icons";
+import { ArrowRight, ArrowUp, Pause, Play, RotateCcw, Volume2, X } from "@buleje/design-system/icons";
 import type { EstadoLectura } from "@/hooks/use-lectura-en-voz";
 
 export default function ControlLecturaFlotante({
@@ -56,8 +57,16 @@ export default function ControlLecturaFlotante({
   etiqueta?: string;
 }) {
   if (!estado) return null;
-  const actual = estado.terminada ? estado.total : Math.min(estado.idx + 1, estado.total);
-  const pct = estado.total > 0 ? (actual / estado.total) * 100 : 0;
+  /* Leyendo al revés se termina en la PRIMERA, no en la última: decir «fila
+     15 de 15» al final de una lectura que acabó en la 1 es mentir. */
+  const actual = estado.terminada
+    ? (estado.haciaAtras ? 1 : estado.total)
+    : Math.min(estado.idx + 1, estado.total);
+  /* La barra mide lo LEÍDO, no la posición en la tabla: al revés se arranca
+     por la última, y una barra que empieza llena y se vacía se lee como si la
+     lectura estuviera deshaciendo algo. */
+  const leidas = estado.haciaAtras ? estado.total - actual + 1 : actual;
+  const pct = estado.total > 0 ? (leidas / estado.total) * 100 : 0;
   const titulo = estado.terminada ? "Terminó de leer" : estado.pausada ? "En pausa" : etiqueta;
 
   return (
@@ -99,6 +108,15 @@ export default function ControlLecturaFlotante({
         <div className="h-full rounded-full bg-[var(--accent)] transition-[width]" style={{ width: `${pct}%` }} />
       </div>
 
+      {/* El sentido, con todas las letras. Sin esto, ver el número de fila
+          BAJAR parece que la lectura se está trabando o que se tocó el botón
+          equivocado — y es justo lo que se pidió: cotejar la pila desde arriba. */}
+      {estado.haciaAtras && (
+        <p className="mb-2.5 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent-ink)] dark:text-[var(--accent)]">
+          <ArrowUp className="h-3 w-3 shrink-0" aria-hidden /> yendo hacia atrás — de la última a la primera
+        </p>
+      )}
+
       <div className="flex gap-2">
         {/* Terminada, «pausar» no tiene qué pausar: el botón grande pasa a ser
             volver a empezar, que es lo que se quiere después de escuchar todo. */}
@@ -111,7 +129,12 @@ export default function ControlLecturaFlotante({
             ) : (
               <Boton onClick={onPausar} Icono={Pause} label="Pausar" destacado />
             )}
-            <Boton onClick={onReiniciar} Icono={RotateCcw} label="Reiniciar" hint="Volver a la primera fila" />
+            <Boton
+              onClick={onReiniciar}
+              Icono={RotateCcw}
+              label="Reiniciar"
+              hint={estado.haciaAtras ? "Volver a la última fila" : "Volver a la primera fila"}
+            />
           </>
         )}
       </div>

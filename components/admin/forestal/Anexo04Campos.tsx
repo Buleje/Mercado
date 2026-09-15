@@ -24,6 +24,11 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import { ArrowRight, Check, ImageIcon, List, MessageSquare, Trash2, UserPlus, X } from "@buleje/design-system/icons";
 import {
   fmtAnexo, siguienteCorrelativo, type Anexo04, type DatosAnexo04, type EmisorGuardado,
@@ -151,6 +156,20 @@ function ObservacionesModal({
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: onCerrar });
+  /**
+   * Ventana: se mueve, se achica y se fija (ADR-420).
+   *
+   * Las observaciones son una declaración jurada que se escribe MIRANDO el
+   * anexo: la GTF, el N° de guía y los recuadros por especie están en la
+   * pantalla de atrás, tapada por este modal. Fijado se puede tocar el anexo
+   * —cambiar de pestaña, releer un casillero— sin perder el texto a medio
+   * escribir, que hasta ahora se iba con un clic afuera.
+   */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "anexo04-observaciones",
+  });
   /* Foco al abrir, con ref: `autoFocus` en un textarea lo marca la regla de
      a11y (y en un modal es exactamente lo que se quiere). */
   const areaRef = useRef<HTMLTextAreaElement>(null);
@@ -161,7 +180,9 @@ function ObservacionesModal({
   return (
     <div
       className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
+      /* Fijado = «lo dejo abierto para trabajar sobre el anexo»: el clic afuera
+         deja de cerrar. La X, el botón Listo y Escape siguen cerrando. */
+      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === "Escape") onCerrar();
@@ -171,9 +192,16 @@ function ObservacionesModal({
         role="dialog"
         aria-modal="true"
         aria-label="Observaciones del anexo"
-        className="w-full max-w-2xl rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]"
+        /* `relative`: el tirador de redimensión se ancla a esta esquina.
+           `overflow-auto`: sin alto fijo no hace nada, pero cuando la ventana
+           se achica a mano el texto se scrollea en vez de derramarse. */
+        className="relative w-full max-w-2xl overflow-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]"
       >
-        <div className="flex items-start justify-between gap-3">
+        {/* Cabecera — y asa para arrastrar la ventana. */}
+        <div
+          {...ventana.asaProps}
+          className="flex items-start justify-between gap-3"
+        >
           <div>
             <h4 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
               <MessageSquare className="h-4 w-4 text-[var(--accent)]" /> (12) Observaciones
@@ -182,6 +210,11 @@ function ObservacionesModal({
               Es una declaración jurada: lo que dice acá lo escribe quien firma. Vacío no imprime nada.
             </p>
           </div>
+          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
+              esto los controles quedarían flotando en el medio. */}
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onCerrar}
@@ -246,6 +279,8 @@ function ObservacionesModal({
             Listo
           </button>
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

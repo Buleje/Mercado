@@ -12,6 +12,11 @@
 import { Camera, Clock, Link2, MapPin, User, X } from "@buleje/design-system/icons";
 import { useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import {
   diasDeRegistro,
   estaFueraDePlazo,
@@ -51,6 +56,19 @@ export default function LothLineaDetalleModal({
   const cajaRef = useRef<HTMLDivElement>(null);
   // `activo`: el libro lo monta siempre, con `linea` en null hasta abrir una.
   useModalAccesible(cajaRef, { onCerrar: onClose, activo: !!linea });
+  /**
+   * Ventana: se mueve, se achica y se fija (ADR-420).
+   *
+   * Este modal se abre para COMPARAR: si la línea corrige a otra, o si el árbol
+   * tiene más trozas asentadas, el dato contra el que se lee está en la tabla
+   * que quedó tapada. Movido a un costado se leen las dos, y fijado se puede
+   * abrir otra fila sin que el detalle se cierre de golpe.
+   */
+  const ventana = useVentanaDeModal(!!linea, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "loth-linea-detalle",
+  });
   if (!linea) return null;
 
   const dias = diasDeRegistro(linea.entryDate, linea.createdAt);
@@ -60,20 +78,33 @@ export default function LothLineaDetalleModal({
   const lng = linea.gpsLng != null ? Number(linea.gpsLng) : null;
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
+    <div
       className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Detalle de la línea ${linea.lineNo}`}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        /* Fijado quiere decir «lo dejo abierto para leer la tabla de atrás»:
+           el clic afuera deja de cerrar. La X y Escape siguen cerrando. */
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="flex max-h-[88vh] w-full max-w-[42rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
-        <header className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
+      {/* El diálogo en sí: acá viven el foco, el arrastre y el tamaño —
+          el velo de atrás no se mueve. */}
+      <div
+        ref={cajaRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Detalle de la línea ${linea.lineNo}`}
+        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
+        className="relative flex max-h-[88vh] w-full max-w-[42rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+      >
+        {/* Cabecera — y asa para arrastrar la ventana. */}
+        <header
+          {...ventana.asaProps}
+          className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
+        >
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
               Línea N° {linea.lineNo}
@@ -83,6 +114,11 @@ export default function LothLineaDetalleModal({
               {linea.cites ? " · CITES" : ""}
             </p>
           </div>
+          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
+              esto los controles quedarían flotando en el medio. */}
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -227,6 +263,8 @@ export default function LothLineaDetalleModal({
             Cerrar
           </button>
         </footer>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

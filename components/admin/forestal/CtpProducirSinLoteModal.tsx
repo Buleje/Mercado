@@ -63,6 +63,11 @@ import {
   type DuenoMadera,
 } from "@/lib/forestal/dueno-de-la-madera";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { bloquesDeCorrida, type CobroAserrioValor, type ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
 import CtpCobroAserrio from "./CtpCobroAserrio";
@@ -197,6 +202,19 @@ export default function CtpProducirSinLoteModal({
   /* Foco adentro, Tab que no se escapa, Escape que cierra y foco devuelto. */
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onCerrar });
+  /**
+   * Ventana: se mueve, se achica y se fija (ADR-420).
+   *
+   * Acá pesa más que en ningún otro modal del libro. Ocupa el 96 % del alto y
+   * mientras se cubica hay que mirar la tabla de producción que quedó detrás —
+   * qué corrida se declaró ayer, qué permiso toca. Hasta ahora había que
+   * cerrar, mirar y volver a abrir, perdiendo lo cargado a medio dictar.
+   */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "ctp-producir-sin-lote",
+  });
 
   /* La serie de códigos que ya usa la planta: sin ella el sugerido puede caer
      en uno tomado y el paquete se rechaza DESPUÉS de crear la corrida. */
@@ -471,10 +489,14 @@ export default function CtpProducirSinLoteModal({
         role="dialog"
         aria-modal="true"
         aria-label="Producir sin lote"
-        className="flex h-[96vh] w-full max-w-[98vw] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
+        className="relative flex h-[96vh] w-full max-w-[98vw] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
-        {/* Cabecera */}
-        <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
+        {/* Cabecera — y asa para arrastrar la ventana. */}
+        <div
+          {...ventana.asaProps}
+          className="flex shrink-0 flex-wrap items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
+        >
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Calculator className="h-5 w-5" aria-hidden />
           </span>
@@ -501,6 +523,7 @@ export default function CtpProducirSinLoteModal({
               <span className="font-sans text-xs text-[var(--text-tertiary)]">PT</span>
             </span>
           </span>
+          <ControlesDeVentana ventana={ventana} />
           <button
             type="button"
             onClick={onCerrar}
@@ -986,6 +1009,8 @@ export default function CtpProducirSinLoteModal({
             </button>
           )}
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

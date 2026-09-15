@@ -13,6 +13,11 @@
 
 import { useMemo, useState, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Plus, Scissors, Trash2, X } from "@buleje/design-system/icons";
 import { smalianVolume, type LothEntryDTO } from "@/lib/forestal/loth-constants";
@@ -65,6 +70,19 @@ export default function LothTrozadoMultipleModal({
   const [renglones, setRenglones] = useState<Renglon[]>([nuevoRenglon(0), nuevoRenglon(1)]);
   const [guardando, setGuardando] = useState(false);
   useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onClose, activo: open });
+  /**
+   * Ventana: se mueve, se achica y se fija (ADR-420).
+   *
+   * Los renglones se copian de la libreta de campo, pero el árbol y su volumen
+   * talado están en la tabla del libro, detrás. Con seis trozas cargadas el
+   * modal tapa justo la fila contra la que hay que cotejar; corrido a un lado
+   * se tipea mirando el dato, sin cerrar y perder los renglones a medio llenar.
+   */
+  const ventana = useVentanaDeModal(open, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "loth-trozado-multiple",
+  });
   const [resultado, setResultado] = useState<{ creadas: number; errores: string[] } | null>(null);
 
   const arbol = useMemo(() => talas.find((t) => t.id === arbolId) ?? null, [talas, arbolId]);
@@ -109,17 +127,33 @@ export default function LothTrozadoMultipleModal({
   };
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
+    <div
       className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Trozar un árbol"
+      /* El velo es decorativo: el diálogo es la caja de adentro. Cerrar tocando
+         afuera es un atajo —Escape y la X hacen lo mismo con teclado. */
+      role="presentation"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        /* Fijado quiere decir «lo dejo abierto para mirar el libro de atrás»:
+           el clic afuera deja de cerrar. La X y Escape siguen cerrando. */
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
     >
-      <div className="flex max-h-[90vh] w-full max-w-[52rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
-        <header className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
+      {/* El diálogo en sí: acá viven el foco, el arrastre y el tamaño —
+          el velo de atrás no se mueve. */}
+      <div
+        ref={cajaRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Trozar un árbol"
+        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
+        className="relative flex max-h-[90vh] w-full max-w-[52rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+      >
+        {/* Cabecera — y asa para arrastrar la ventana. */}
+        <header
+          {...ventana.asaProps}
+          className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
+        >
           <div>
             <p className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
               <Scissors className="h-4 w-4" /> Trozar un árbol
@@ -128,6 +162,11 @@ export default function LothTrozadoMultipleModal({
               Todas las trozas del mismo fuste, de una vez. El código y el volumen salen solos.
             </p>
           </div>
+          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
+              esto los controles quedarían flotando en el medio. */}
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -309,6 +348,8 @@ export default function LothTrozadoMultipleModal({
             </button>
           )}
         </footer>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

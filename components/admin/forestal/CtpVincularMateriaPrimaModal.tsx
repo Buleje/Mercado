@@ -41,6 +41,11 @@ import {
   type TrozaAVincular,
 } from "@/lib/forestal/vincular-produccion";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import { olvidarCodigosDeCorrida } from "@/lib/forestal/codigos-de-corrida";
 import { usePropuestaDeVinculacion } from "./hooks/use-propuesta-de-vinculacion";
 import { useArmarLoteDePropuesta } from "./hooks/use-armar-lote-de-propuesta";
@@ -92,6 +97,19 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
 }) {
   const caja = useRef<HTMLDivElement>(null);
   useModalAccesible(caja, { onCerrar });
+  /**
+   * Ventana: se mueve, se achica y se fija (ADR-420).
+   *
+   * Este detalle se abre justamente para compararlo con lo de atrás: las
+   * escuadrías que salieron contra las trozas tildadas del lote. Encimado tapa
+   * la lista que hay que mirar; corrido a un costado se leen las dos columnas
+   * de m³ a la vez, que es la pregunta entera («¿pudo salir de esas trozas?»).
+   */
+  const ventana = useVentanaDeModal(true, {
+    ref: caja,
+    aplicarTranslate: true,
+    claveMemoria: "ctp-medidas-declaradas",
+  });
 
   const filas = paquetes.map((p) => ({
     codigo: p.codigo ?? "—",
@@ -127,9 +145,14 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
         role="dialog"
         aria-modal="true"
         aria-label="Medidas declaradas"
-        className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
+        className="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
+        {/* Cabecera — y asa para arrastrar la ventana. */}
+        <div
+          {...ventana.asaProps}
+          className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
+        >
           <div>
             <h4 className="flex items-center gap-2 font-display text-lg text-[var(--text-primary)]">
               <Ruler className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Medidas declaradas
@@ -139,6 +162,11 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
               {fmtPiezas(total.cantidad)} piezas · {fmtM3(total.m3)} m³ · {fmtPt(ptDesdeM3(total.m3))} PT
             </p>
           </div>
+          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
+              esto los controles quedarían flotando en el medio. */}
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onCerrar}
@@ -227,6 +255,8 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
             </>
           )}
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );
@@ -330,6 +360,19 @@ export default function CtpVincularMateriaPrimaModal({
   const [error, setError] = useState<string | null>(null);
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onCerrar });
+  /**
+   * Ventana: se mueve, se achica y se fija (ADR-420).
+   *
+   * Firmar el origen de una corrida es un careo con la pantalla de atrás: qué
+   * guía, qué permiso y qué saldo quedaba en el patio. Con la lista de trozas
+   * tildadas ocupando el alto entero, cerrar para mirar borra lo elegido —y
+   * estirado a lo ancho entran las piezas sin scrollear de a una.
+   */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "ctp-vincular-materia-prima",
+  });
 
   /**
    * El largo de la pieza más larga sale de los PAQUETES de la corrida, que el
@@ -443,9 +486,14 @@ export default function CtpVincularMateriaPrimaModal({
         role="dialog"
         aria-modal="true"
         aria-label="Vincular materia prima"
-        className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
+        className="relative flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
+        {/* Cabecera — y asa para arrastrar la ventana. */}
+        <div
+          {...ventana.asaProps}
+          className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
+        >
           <div className="min-w-0">
             <h3 className="flex items-center gap-2 font-display text-lg text-[var(--text-primary)]">
               <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Vincular materia prima
@@ -468,6 +516,11 @@ export default function CtpVincularMateriaPrimaModal({
               </button>
             </p>
           </div>
+          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
+              esto los controles quedarían flotando en el medio. */}
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onCerrar}
@@ -646,6 +699,8 @@ export default function CtpVincularMateriaPrimaModal({
             {guardando ? "Vinculando…" : "Vincular al lote"}
           </button>
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

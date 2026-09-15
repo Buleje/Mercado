@@ -9,13 +9,13 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Columns3, ChevronDown, Maximize2, Minimize2 } from "@buleje/design-system/icons";
+import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Columns3, ChevronDown, Maximize2, Minimize2, ArrowUp } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, ESPECIES_MADERA,
-  esEco, leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza, PT_POR_M3, recubicarPiezas, m3DesdePt,
+  esEco, escuadriasFrecuentes, leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza, PT_POR_M3, recubicarPiezas, m3DesdePt,
   type PiezaCubicada, type Unidad, type MedidasFijas,
 } from "@/lib/forestal/cubicacion";
 import {
@@ -52,6 +52,7 @@ import {
   type ColumnaSeleccionable,
 } from "./seleccion-celdas";
 import PanelEntradaVoz from "./cubicador-entrada-voz";
+import { resolverEspecie, sinCodigoDeTroza, type FuenteCodigoDeTroza, type TrozaParaCodigo } from "@/lib/forestal/codigo-de-troza";
 import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import CubicadorKpis from "./cubicador-kpis";
@@ -78,7 +79,8 @@ const UNIDADES: { v: Unidad; label: string }[] = [
 const GRILLA_CARGA = "cub-carga";
 const GRILLA_TABLA = "cub-tabla";
 /**
- * Alto de fila de arranque y alto del visor de la tabla ventaneada, en px.
+ * Alto del visor de la tabla ventaneada, en px (el alto de fila lo mide
+ * `use-tabla-ventaneada`).
  *
  * El del visor es CONSTANTE a propósito: cuando salía de `filas × altoFila`,
  * una medición distinta cambiaba el alto de la caja, el navegador re-encuadraba
@@ -86,7 +88,6 @@ const GRILLA_TABLA = "cub-tabla";
  * Con más de 150 filas (el umbral de ventaneo) el mínimo siempre era este
  * número, así que fijarlo no cambia nada de lo que se ve.
  */
-const ALTO_FILA_TABLA = 44;
 const ALTO_VISOR_TABLA = 600;
 /** Lo que ocupan cabecera, filtros y pie cuando la tabla toma la pantalla. */
 const ALTO_CHROME_EXPANDIDA = 250;
@@ -122,7 +123,7 @@ const TCOL = {
  * la TABLA (`tablaColumnasVisibles`, dentro del componente) — la fila de
  * carga de arriba (`TABLA_COLUMNAS_TODAS`) no se toca, sigue con las 4.
  */
-type ColOpcional = "numero" | "cant" | "espesor" | "ancho" | "largo" | "medida" | "tipo" | "especie" | "dueno" | "apartado" | "pt" | "m3";
+type ColOpcional = "numero" | "cant" | "espesor" | "ancho" | "largo" | "medida" | "tipo" | "codigo" | "especie" | "dueno" | "apartado" | "pt" | "m3";
 /* Las dos cuentas del cubicador, escritas una sola vez y mostradas al pasar el
    mouse por el encabezado: el pie tablar es la fórmula comercial y el m³ SALE
    de él (÷ 424), no del volumen geométrico. */
@@ -137,6 +138,8 @@ const COLS_OPCIONALES: { key: ColOpcional; label: string }[] = [
   { key: "largo", label: "Largo" },
   { key: "medida", label: "Medida" },
   { key: "tipo", label: "Tipo" },
+  /* Sólo se ofrece con `codigoDeTroza` («Producir sin lote»). */
+  { key: "codigo", label: "Código" },
   { key: "especie", label: "Especie" },
   { key: "dueno", label: "Dueño" },
   { key: "apartado", label: "Apartado" },
@@ -145,7 +148,7 @@ const COLS_OPCIONALES: { key: ColOpcional; label: string }[] = [
 ];
 const COLS_DEFAULT: Record<ColOpcional, boolean> = {
   numero: true, cant: true, espesor: true, ancho: true, largo: true,
-  medida: true, tipo: true, especie: true, dueno: true, apartado: true, pt: true, m3: true,
+  medida: true, tipo: true, codigo: true, especie: true, dueno: true, apartado: true, pt: true, m3: true,
 };
 
 // Especies de madera comunes en la Selva Central peruana (single-source en cubicacion.ts).
@@ -221,7 +224,23 @@ function decir(texto: string, rate = 1.5, voiceURI = "", onEco?: (hasta: number,
   }, 0);
 }
 
-export default function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onImportado }: {
+/**
+ * El parlante con una flecha hacia arriba: leer, pero SUBIENDO la tabla.
+ *
+ * Los dos ítems de lectura viven pegados en el mismo menú; con el mismo
+ * parlante en los dos, la única diferencia sería el texto — y el ícono se ve
+ * antes que el texto.
+ */
+function IconoLeerAlReves({ className }: { className?: string }) {
+  return (
+    <span className={`relative inline-flex shrink-0 items-center justify-center ${className ?? ""}`}>
+      <Volume2 className="h-full w-full" aria-hidden />
+      <ArrowUp className="absolute -right-1 -top-1 h-2.5 w-2.5 stroke-[3]" aria-hidden />
+    </span>
+  );
+}
+
+export default function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onImportado, codigoDeTroza }: {
   onPresent?: () => void;
   /**
    * Sufijo de la clave de almacenamiento. `""` = el lote de siempre (la pestaña
@@ -246,6 +265,16 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
    */
   piezasAImportar?: PiezaCubicada[] | null;
   onImportado?: (cuantas: number) => void;
+  /**
+   * El campo «Código» de la troza con sugerencias del patio y su columna en
+   * la tabla — sólo «Producir sin lote» (Brandon, 2026-09-14). Sin esto, el
+   * cubicador es exactamente el de siempre.
+   *
+   * El código es INTERNO: se guarda con las piezas en el `localStorage` de
+   * este espacio y nada más — no agrupa en `unificarPorMedida`, no se
+   * declara, no consume ni marca trozas y no sale al servidor.
+   */
+  codigoDeTroza?: FuenteCodigoDeTroza;
 }) {
   const [rows, setRows] = useState<PiezaCubicada[]>([]);
   const { confirm } = useConfirm();
@@ -262,6 +291,13 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   /** De quién es lo que se está dictando ahora — se pone FIJO al elegirlo,
    *  igual que la especie, hasta que se cambie a mano. */
   const [dueno, setDueno] = useState("");
+  /** El código de la troza que se le pega a lo que sigue (sólo con
+   *  `codigoDeTroza`). El ref se pone al día en el MISMO evento, como
+   *  `manualRef`: el Enter que agrega la pieza puede llegar antes del render. */
+  const [codigoTroza, setCodigoTroza] = useState("");
+  const codigoRef = useRef("");
+  const cambiarCodigo = useCallback((v: string) => { codigoRef.current = v; setCodigoTroza(v); }, []);
+  const conCodigo = Boolean(codigoDeTroza);
   /** Dueños ya usados en este dispositivo (no sólo en el lote actual): la
    *  lista crece sola con cada nombre nuevo, así el select/datalist ofrece
    *  el mismo dueño de ayer sin re-tipearlo. */
@@ -503,12 +539,35 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   // Modo del dictado: agregar filas nuevas, o EDITAR una fila puntual por voz.
   const modeRef = useRef<{ type: "add" } | { type: "edit"; id: string }>({ type: "add" });
   const rowsRef = useRef<PiezaCubicada[]>([]);
-  useEffect(() => { rowsRef.current = rows; }, [rows]);
+  /**
+   * Las escuadrías que ESTE lote ya viene cortando, para desempatar hipótesis.
+   *
+   * El reconocedor devuelve tres lecturas y varias veces empatan: las tres
+   * caen en rango y ninguna es más creíble que la otra. Ahí gana la que
+   * reproduce una medida que el operario ya dictó veinte veces esta mañana —
+   * un aserradero corta las mismas cuatro o cinco escuadrías todo el día.
+   *
+   * SÓLO desempata: nunca le gana a una lectura con más números en rango, ni
+   * reemplaza un número por otro (`mejoresNumeros` no reordena nada). Se
+   * recalcula junto con `rowsRef` para no pagar un render extra por pieza.
+   */
+  const frecuentesRef = useRef<ReturnType<typeof escuadriasFrecuentes>>([]);
+  useEffect(() => {
+    rowsRef.current = rows;
+    frecuentesRef.current = escuadriasFrecuentes(rows);
+  }, [rows]);
   const resetVoz = () => { carryRef.current = { nums: [], ts: 0 }; lastFinalRef.current = -1; ecoRef.current = { hasta: 0, texto: "" }; };
   useEffect(() => { especieRef.current = especie; }, [especie]);
   useEffect(() => { duenoRef.current = dueno; }, [dueno]);
   useEffect(() => { duenosConocidosRef.current = duenosConocidos; }, [duenosConocidos]);
   useEffect(() => { especiesRef.current = especiesOfrecidas; }, [especiesOfrecidas]);
+  /** Una troza elegida en el campo «Código»: su código y su especie, con el
+   *  nombre que ofrece el catálogo. Sin especie en la troza, no se toca. */
+  const elegirTroza = useCallback((t: TrozaParaCodigo) => {
+    cambiarCodigo(t.codigo);
+    const nombre = resolverEspecie(t.especie, especiesRef.current);
+    if (nombre) setEspecie(nombre);
+  }, [cambiarCodigo]);
   // Las fijas sobreviven al refresh: un lote de un mismo largo puede llevar
   // toda la mañana y recargar la página no debería soltar la medida.
   useEffect(() => { fijasRef.current = fijas; }, [fijas]);
@@ -562,7 +621,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   // con las filas frescas, sin depender de `rows` (que estaría stale).
   const addPieza = useCallback((p: {
     cantidad: number; espesor: number; ancho: number; largo: number;
-    uEspesor: Unidad; uAncho: Unidad; uLargo: Unidad; especie?: string; dueno?: string;
+    uEspesor: Unidad; uAncho: Unidad; uLargo: Unidad; especie?: string; dueno?: string; codigo?: string;
   }) => {
     const { pieTablar, m3 } = cubicarPieza(p);
     const row: PiezaCubicada = { id: nuevoId(), ...p, pieTablar, m3 };
@@ -699,7 +758,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       // ── MODO EDICIÓN: 3 números reemplazan la fila y sale ──
       // Se leen SIN las fijas: al corregir una fila se dictan las tres medidas.
       if (modeRef.current.type === "edit") {
-        const nums = mejoresNumeros(alternativas);
+        const nums = mejoresNumeros(alternativas, {}, 0, { frecuentes: frecuentesRef.current });
         if (nums.length >= 3 && nums[0] > 0 && nums[1] > 0 && nums[2] > 0) {
           updateRow(modeRef.current.id, nums[0], nums[1], nums[2]);
           hablar(`${nums[0]}, ${nums[1]}, ${nums[2]}`);
@@ -719,7 +778,12 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       // Se pasan las fijas y cuántos números quedaron esperando: sin eso, un
       // "quince" suelto se leería como espesor (imposible) y se partiría en 1·5.
       const carryVigente = Date.now() - carryRef.current.ts < CARRY_TTL_MS ? carryRef.current.nums : [];
-      const { cantidad: cantDictada, nums } = leerDictado(alternativas, fijasRef.current, carryVigente.length);
+      const { cantidad: cantDictada, nums } = leerDictado(
+        alternativas,
+        fijasRef.current,
+        carryVigente.length,
+        { frecuentes: frecuentesRef.current },
+      );
 
       // ── MODO AGREGAR: chunk en tríos, arrastra el sobrante a la próxima frase ──
       // El sobrante CADUCA: números de hace rato pegados a una frase nueva
@@ -735,6 +799,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           uEspesor: "pulg", uAncho: "pulg", uLargo: "pies",
           especie: especieRef.current || undefined,
           dueno: duenoRef.current || undefined,
+          codigo: codigoRef.current.trim() || undefined,
         });
         ultima = { espesor, ancho, largo }; added++;
       }
@@ -909,11 +974,32 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     }
   }, [editingId, stopLeer]);
 
-  // Leer toda la tabla en voz alta, resaltando y siguiendo cada fila.
+  /**
+   * Leer toda la tabla en voz alta, resaltando y siguiendo cada fila.
+   *
+   * Dos sentidos, un solo camino: al derecho (de la primera pieza a la última)
+   * y **al revés** (Brandon, 2026-09-15), que arranca por la última y baja.
+   * Al revés es para cotejar contra la pila física: la pila se destapa desde
+   * arriba y arriba está lo ÚLTIMO que se cargó — escuchar desde la primera
+   * obliga a ir contando al revés en la cabeza mientras se mueve madera.
+   *
+   * Tocar el sentido que YA suena corta la lectura y tocar el OTRO cambia de
+   * sentido en el aire; las dos cosas las resuelve `leer` según el sentido que
+   * se le pide.
+   */
   const leerTabla = useCallback(
     () => lecturaVoz.leer(() => rowsRef.current, medidaEnVoz),
     [lecturaVoz, medidaEnVoz],
   );
+  const leerTablaAlReves = useCallback(
+    () => lecturaVoz.leer(() => rowsRef.current, medidaEnVoz, undefined, { haciaAtras: true }),
+    [lecturaVoz, medidaEnVoz],
+  );
+  /* Qué sentido está sonando AHORA: manda cuál de los dos ítems se ofrece como
+     «Detener». Terminada la tanda el panel sigue abierto pero ya no lee, por
+     eso se mira `readingId` y no el estado. */
+  const leyendoAlReves = !!readingId && lecturaVoz.estado?.haciaAtras === true;
+  const leyendoAlDerecho = !!readingId && !leyendoAlReves;
 
   /**
    * Arranca la lectura DESDE una fila. Es lo que se pide en la práctica: se
@@ -955,7 +1041,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       pushToast({ tono: "warning", msg: "Faltan medidas", detail: "Espesor, ancho y largo tienen que ser mayores a 0." });
       return false;
     }
-    addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined, dueno: duenoRef.current || undefined });
+    addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined, dueno: duenoRef.current || undefined, codigo: codigoRef.current.trim() || undefined });
     // Lo fijado se conserva; sólo se limpia lo que se vuelve a tipear en cada pieza.
     setManualSync({
       cantidad: "1",
@@ -1032,6 +1118,11 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     persist(rowsRef.current.map((r) => (r.id === id ? { ...r, dueno: duenoNuevo.trim() || undefined } : r)));
     recordarDueno(duenoNuevo);
   }, [persist, recordarDueno]);
+  /** Código de la troza editado en la tabla: texto libre, como el dueño. No
+   *  cambia la especie de la fila — eso sólo lo hace el campo de arriba. */
+  const editarCodigo = useCallback((id: string, codigoNuevo: string) => {
+    persist(rowsRef.current.map((r) => (r.id === id ? { ...r, codigo: codigoNuevo.trim() || undefined } : r)));
+  }, [persist]);
   /**
    * Fuerza el tipo comercial de una pieza, o lo devuelve a automático.
    *
@@ -1175,6 +1266,11 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     () => [...new Set([...duenosLote, ...duenosConocidos])],
     [duenosLote, duenosConocidos],
   );
+  /** Los códigos del patio para el datalist de la celda «Código», sin repetir. */
+  const codigosParaDatalist = useMemo(
+    () => [...new Map((codigoDeTroza?.trozas ?? []).map((t) => [t.codigo, t] as const)).values()],
+    [codigoDeTroza?.trozas],
+  );
   // Tipos comerciales presentes, en el orden canónico (para el filtro por tipo).
   const tiposLote = useMemo(() => {
     const set = new Set<TipoComercial>(rows.map((r) => tipoDePieza(r)));
@@ -1192,7 +1288,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         if (filtroTipo && tipoDePieza(r) !== filtroTipo) return false;
         if (filtroDueno && (r.dueno?.trim() || "__sin__") !== filtroDueno) return false;
         if (q) {
-          const hay = norm(`${r.espesor}x${r.ancho}x${r.largo} ${r.especie ?? ""} ${r.dueno ?? ""} ${tipoDePieza(r)}`);
+          const hay = norm(`${r.espesor}x${r.ancho}x${r.largo} ${r.especie ?? ""} ${r.dueno ?? ""} ${r.codigo ?? ""} ${tipoDePieza(r)}`);
           if (!hay.includes(q)) return false;
         }
         return true;
@@ -1302,6 +1398,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     if (colsVisibles.m3) cols.push({ col: TCOL.m3, label: "m³", unidad: "m³", decimales: 3, leer: (p) => pieza(p)?.m3 ?? null });
     return cols;
   }, [filasVisibles, colsVisibles.cant, colsVisibles.pt, colsVisibles.m3]);
+  /** La columna «Código» existe sólo en «Producir sin lote», y ahí se puede ocultar. */
+  const verCodigo = conCodigo && colsVisibles.codigo;
   /** Cuántas columnas hay ANTES de Pie tablar/m³ ahora mismo — el rótulo del
    *  pie de tabla las abarca todas; con columnas ocultas, un colSpan fijo se
    *  quedaba corto o largo y desalineaba los totales. */
@@ -1309,7 +1407,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     + (colsVisibles.numero ? 1 : 0) + (colsVisibles.cant ? 1 : 0)
     + (colsVisibles.espesor ? 1 : 0) + (colsVisibles.ancho ? 1 : 0) + (colsVisibles.largo ? 1 : 0)
     + (colsVisibles.medida ? 1 : 0) + (colsVisibles.tipo ? 1 : 0)
-    + (colsVisibles.especie ? 1 : 0) + (colsVisibles.dueno ? 1 : 0) + (colsVisibles.apartado ? 1 : 0);
+    + (verCodigo ? 1 : 0) + (colsVisibles.especie ? 1 : 0) + (colsVisibles.dueno ? 1 : 0) + (colsVisibles.apartado ? 1 : 0);
 
   /**
    * Arrastre de relleno: se toma el asa de una celda y se baja.
@@ -1318,15 +1416,15 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
    * corregir el origen no arrastra el cambio — es una copia, no un vínculo.
    */
   const rellenarCampo = useCallback(
-    (campo: "especie" | "tipo" | "dueno") => (origen: number, posiciones: number[]) => {
+    (campo: "especie" | "tipo" | "dueno" | "codigo") => (origen: number, posiciones: number[]) => {
       const base = filasVisibles[origen]?.r;
       if (!base) return;
       const ids = new Set(posiciones.map((p) => filasVisibles[p]?.r.id).filter(Boolean));
       if (ids.size === 0) return;
-      const valor = campo === "especie" ? base.especie : campo === "dueno" ? base.dueno : base.tipo;
+      const valor = campo === "especie" ? base.especie : campo === "dueno" ? base.dueno : campo === "codigo" ? base.codigo : base.tipo;
       persist(rows.map((r) => (ids.has(r.id) ? { ...r, [campo]: valor } : r)));
       if (campo === "dueno" && typeof valor === "string") recordarDueno(valor);
-      const etiqueta = campo === "especie" ? (valor || "sin especie") : campo === "dueno" ? (valor || "sin dueño") : (valor ?? "automático");
+      const etiqueta = campo === "especie" ? (valor || "sin especie") : campo === "dueno" ? (valor || "sin dueño") : campo === "codigo" ? (valor || "sin código") : (valor ?? "automático");
       pushToast({
         tono: "success",
         msg: `${ids.size} ${ids.size === 1 ? "fila" : "filas"} → ${etiqueta}`,
@@ -1338,6 +1436,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   const rellenoEspecie = useRellenoArrastre(useMemo(() => rellenarCampo("especie"), [rellenarCampo]));
   const rellenoTipo = useRellenoArrastre(useMemo(() => rellenarCampo("tipo"), [rellenarCampo]));
   const rellenoDueno = useRellenoArrastre(useMemo(() => rellenarCampo("dueno"), [rellenarCampo]));
+  const rellenoCodigo = useRellenoArrastre(useMemo(() => rellenarCampo("codigo"), [rellenarCampo]));
   /** Arrastre de relleno de la columna Apartado: copia el número (o "sin
    *  apartado") de la fila de origen hacia las filas pisadas — mismo gesto
    *  que especie/tipo arriba. Escribe en `asignados`, no en `rows` (el
@@ -1392,7 +1491,9 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   // confunde en el dictado rápido.
   const liveGroups = useMemo(() => {
     if (!listening || !liveText) return null;
-    const nums = mejoresNumeros([liveText], fijas);
+    /* El caption en vivo usa el mismo desempate que el dictado de verdad: si
+       mostrara otra lectura, el operario vería una medida y entraría otra. */
+    const nums = mejoresNumeros([liveText], fijas, 0, { frecuentes: frecuentesRef.current });
     // El tamaño del grupo depende de las fijas: con el largo fijo, cada DOS
     // números ya son una pieza y así se ven mientras se dicta.
     const paso = numerosPorPieza(fijas) || 3;
@@ -1487,7 +1588,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
             cliente: form.cliente.trim() || undefined,
             especie: speciesCommon || undefined,
             precioPt: precio,
-            piezas: rowsRef.current,
+            /* El código de la troza es interno del cubicado: no sale al servidor. */
+            piezas: rowsRef.current.map(sinCodigoDeTroza),
             ctpEntryId: entryId,
           }),
         })
@@ -1707,6 +1809,14 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         manual={manual}
         onManualChange={setManualSync}
         onConfirmarCarga={confirmarCarga}
+        codigoTroza={codigoDeTroza ? {
+          valor: codigoTroza,
+          onValor: cambiarCodigo,
+          onElegir: elegirTroza,
+          trozas: codigoDeTroza.trozas,
+          cargando: codigoDeTroza.cargando,
+          error: codigoDeTroza.error,
+        } : undefined}
       />
       )}
 
@@ -1830,10 +1940,19 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                     },
                     {
                       key: "leer",
-                      label: readingId ? "Detener la lectura" : "Leer la tabla en voz alta",
-                      Icono: readingId ? Square : Volume2,
-                      activo: !!readingId,
+                      label: leyendoAlDerecho ? "Detener la lectura" : "Leer la tabla en voz alta",
+                      Icono: leyendoAlDerecho ? Square : Volume2,
+                      activo: leyendoAlDerecho,
+                      hint: "Lee en voz alta cada pieza, desde la primera hasta la última",
                       onClick: leerTabla,
+                    },
+                    {
+                      key: "leer-al-reves",
+                      label: leyendoAlReves ? "Detener la lectura" : "Leer al revés",
+                      Icono: leyendoAlReves ? Square : IconoLeerAlReves,
+                      activo: leyendoAlReves,
+                      hint: "Lee en voz alta desde la última pieza hacia atrás, en el orden en que destapas la pila",
+                      onClick: leerTablaAlReves,
                     },
                   ]}
                 />
@@ -2168,7 +2287,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                     className="absolute right-0 top-full z-20 mt-1 min-w-[190px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
                   >
                     <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Columnas visibles</p>
-                    {COLS_OPCIONALES.map(({ key, label }) => (
+                    {COLS_OPCIONALES.filter(({ key }) => key !== "codigo" || conCodigo).map(({ key, label }) => (
                       <label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
                         <input
                           type="checkbox"
@@ -2195,6 +2314,13 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
             <datalist id="cub-duenos-datalist">
               {duenosParaDatalist.map((d) => <option key={d} value={d} />)}
             </datalist>
+            {conCodigo && (
+              <datalist id="cub-codigos-datalist">
+                {codigosParaDatalist.map((t) => (
+                  <option key={t.codigo} value={t.codigo}>{[t.especie, t.guia ? `GTF ${t.guia}` : null].filter(Boolean).join(" · ")}</option>
+                ))}
+              </datalist>
+            )}
             {/**
              * UNA sola caja con scroll, la de `DataTable`.
              *
@@ -2251,6 +2377,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                   {colsVisibles.largo && <th className="px-3 py-2">Largo</th>}
                   {colsVisibles.medida && <th className="px-3 py-2">Medida</th>}
                   {colsVisibles.tipo && <th className="px-3 py-2">Tipo</th>}
+                  {verCodigo && <th className="px-3 py-2">Código</th>}
                   {colsVisibles.especie && <th className="px-3 py-2">Especie</th>}
                   {colsVisibles.dueno && <th className="px-3 py-2">Dueño</th>}
                   {colsVisibles.apartado && <th className="px-3 py-2">Apartado</th>}
@@ -2289,7 +2416,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                   const forzado = tipoEsManual(r);
                   // Vista previa del arrastre: la fila se pinta ANTES de soltar,
                   // así se ve hasta dónde va a llegar sin tener que adivinar.
-                  const enRelleno = rellenoEspecie.objetivo.includes(pos) || rellenoTipo.objetivo.includes(pos) || rellenoApartado.objetivo.includes(pos) || rellenoDueno.objetivo.includes(pos);
+                  const enRelleno = rellenoEspecie.objetivo.includes(pos) || rellenoTipo.objetivo.includes(pos) || rellenoApartado.objetivo.includes(pos) || rellenoDueno.objetivo.includes(pos) || rellenoCodigo.objetivo.includes(pos);
                   const numeroAp = asignados[r.id];
                   return (
                   <tr
@@ -2299,7 +2426,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                     /* El arrastre se extiende a nivel FILA y no celda por celda:
                        el asa se baja por cualquier parte de la fila, y repetir
                        el handler en once `<td>` sólo multiplicaba el trabajo. */
-                    onMouseEnter={() => { rellenoEspecie.extender(pos); rellenoTipo.extender(pos); rellenoApartado.extender(pos); rellenoDueno.extender(pos); }}
+                    onMouseEnter={() => { rellenoEspecie.extender(pos); rellenoTipo.extender(pos); rellenoApartado.extender(pos); rellenoDueno.extender(pos); rellenoCodigo.extender(pos); }}
                     className={`border-t border-[var(--rule-soft)] transition-colors ${enRelleno ? "bg-primary/10 outline-dashed outline-2 -outline-offset-2 outline-[var(--accent)]" : rowCls || (rara ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : "")}`}
                   >
                     <td className="px-2 py-2 text-center">
@@ -2345,6 +2472,14 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                           etiqueta={`Tipo comercial de la pieza ${r.espesor}×${r.ancho}×${r.largo}`}
                         />
                         <AsaRelleno onTomar={() => rellenoTipo.iniciar(pos)} titulo="Arrastra hacia abajo para poner este tipo en las filas siguientes" />
+                      </td>
+                    )}
+                    {/* Código de la troza (sólo «Producir sin lote»): texto libre,
+                        como el dueño, con los códigos del patio de sugerencia. */}
+                    {verCodigo && (
+                      <td className="group/celda relative px-3 py-2">
+                        <CodigoCell valor={r.codigo ?? ""} onCommit={(v) => editarCodigo(r.id, v)} />
+                        <AsaRelleno onTomar={() => rellenoCodigo.iniciar(pos)} titulo="Arrastra hacia abajo para poner este código en las filas siguientes" />
                       </td>
                     )}
                     {colsVisibles.especie && (
@@ -2617,6 +2752,31 @@ function DuenoCell({ valor, onCommit }: { valor: string; onCommit: (v: string) =
       aria-label="Dueño de la pieza"
       placeholder="—"
       className="w-[110px] rounded-xl border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+    />
+  );
+}
+
+/**
+ * Código de la troza editable en la tabla (sólo «Producir sin lote»). Mismo
+ * buffer local que `DuenoCell`: comitea al perder el foco o con Enter, así
+ * tipear «25» no deja primero un «2» escrito en la fila.
+ */
+function CodigoCell({ valor, onCommit }: { valor: string; onCommit: (v: string) => void }) {
+  const [texto, setTexto] = useState(valor);
+  const enfocado = useRef(false);
+  useEffect(() => { if (!enfocado.current) setTexto(valor); }, [valor]);
+  return (
+    <input
+      list="cub-codigos-datalist"
+      value={texto}
+      autoComplete="off"
+      onFocus={() => { enfocado.current = true; }}
+      onChange={(e) => setTexto(e.target.value)}
+      onBlur={() => { enfocado.current = false; if (texto !== valor) onCommit(texto); }}
+      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+      aria-label="Código de la troza de la pieza"
+      placeholder="—"
+      className="w-[80px] rounded-xl border border-[var(--rule-base)] bg-transparent px-1 py-0.5 font-mono text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
     />
   );
 }

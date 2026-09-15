@@ -13,6 +13,11 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, CheckCircle2, FileUp, Loader2, Upload, X } from "@buleje/design-system/icons";
 import { parseImportLineas, type FilaImport } from "@/lib/forestal/loth-import-lineas";
@@ -55,6 +60,19 @@ export default function LothImportLineasModal({
   const [omitidas, setOmitidas] = useState<Set<number>>(new Set());
   const [importando, setImportando] = useState(false);
   useModalAccesible(cajaRef, { onCerrar: importando ? undefined : onClose, activo: open });
+  /**
+   * Ventana: se mueve, se achica y se fija (ADR-420).
+   *
+   * Acá la vista previa es una tabla larga de filas con su veredicto: estirarla
+   * a lo ancho —o a toda la pantalla— es la diferencia entre revisar fila por
+   * fila y aceptar a ciegas. Y al decidir si una fila rechazada es un duplicado
+   * de verdad hay que mirar el libro de atrás, que este modal tapa entero.
+   */
+  const ventana = useVentanaDeModal(open, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "loth-import-lineas",
+  });
   const [resultado, setResultado] = useState<{ creadas: number; errores: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -80,17 +98,34 @@ export default function LothImportLineasModal({
   };
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
+    <div
       className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Importar líneas de ${SECTION_META[section].label}`}
+      /* El velo es decorativo: el diálogo es la caja de adentro. Cerrar tocando
+         afuera es un atajo —Escape y la X hacen lo mismo con teclado. */
+      role="presentation"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        /* Fijado quiere decir «lo dejo abierto mientras reviso»: el clic afuera
+           deja de cerrar —y con una previa de 60 filas pegadas, cerrarla sin
+           querer duele. La X y Escape siguen cerrando. */
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
     >
-      <div className="flex max-h-[90vh] w-full max-w-[60rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
-        <header className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
+      {/* El diálogo en sí: acá viven el foco, el arrastre y el tamaño —
+          el velo de atrás no se mueve. */}
+      <div
+        ref={cajaRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Importar líneas de ${SECTION_META[section].label}`}
+        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
+        className="relative flex max-h-[90vh] w-full max-w-[60rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+      >
+        {/* Cabecera — y asa para arrastrar la ventana. */}
+        <header
+          {...ventana.asaProps}
+          className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
+        >
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
               Importar · {SECTION_META[section].label}
@@ -99,6 +134,11 @@ export default function LothImportLineasModal({
               Pega el cuadro de Excel o sube un CSV. Nada se escribe hasta que lo confirmes.
             </p>
           </div>
+          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
+              esto los controles quedarían flotando en el medio. */}
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -251,6 +291,8 @@ export default function LothImportLineasModal({
             </button>
           )}
         </footer>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );
