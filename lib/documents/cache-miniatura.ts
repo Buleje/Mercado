@@ -3,6 +3,7 @@ import { createHash } from "crypto";
 import sharp from "sharp";
 import { uploadToStorage, downloadFromStorage } from "@/lib/documents/storage";
 import { logger } from "@/lib/logger";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * Las miniaturas se dibujan una vez y se guardan (ADR-307b).
@@ -62,7 +63,7 @@ export async function miniaturaConCache(
 ): Promise<MiniaturaCacheada> {
   const clave = claveDeCache(storagePath, `${variante}@${ancho}`);
 
-  const guardada = await downloadFromStorage(clave).catch(() => null);
+  const guardada = await downloadFromStorage(clave).catch(sinDato("documents/cache-miniatura miniatura guardada"));
   if (guardada && guardada.length > 0) {
     return { bytes: guardada, origen: "hit", contentType: "image/webp" };
   }

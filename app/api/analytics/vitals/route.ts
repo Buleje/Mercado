@@ -4,6 +4,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { recordRumSamples, type RumSample } from "@/lib/rum-history";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/analytics/vitals — beacon público de Core Web Vitals RUM.
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   // Beacon best-effort: nunca devolver error al cliente — un vital perdido
   // no debe generar retries ni ruido en consola de la tienda.
   try {
-    const parsed = BodySchema.safeParse(await req.json().catch(() => null));
+    const parsed = BodySchema.safeParse(await leerJson(req));
     if (!parsed.success) return NextResponse.json({ ok: true });
 
     const { tenantSlug, metrics } = parsed.data;

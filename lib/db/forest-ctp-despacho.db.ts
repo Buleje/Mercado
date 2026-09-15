@@ -36,6 +36,7 @@ import { ForestAnexosDB } from "./forest-anexos.db";
 import { decidirMargen, type MargenMotivo } from "@/lib/forestal/ctp-pnl";
 import { guiaEditable } from "@/lib/forestal/gtf-estado";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 const CACHE_PREFIX = "forest-ctp";
 /** 4 decimales — precisión forestal (volúmenes/cantidades). */
@@ -162,7 +163,7 @@ export class ForestCtpDespachoDB {
     const ids = origenes.map((o) => o.produccionEntryId);
     if (new Set(ids).size !== ids.length) {
       throw new CtpInvariantError(
-        "Una misma corrida aparece dos veces: sumá las cantidades en una sola línea.",
+        "Una misma corrida aparece dos veces: suma las cantidades en una sola línea.",
         "I4_SOBRE_ATRIBUCION_DESPACHO",
       );
     }
@@ -844,9 +845,9 @@ export class ForestCtpDespachoDB {
 
     const [trazabilidad, ficha, anexos, cerrado] = await Promise.all([
       ForestCtpDespachoDB.trazabilidadCompleta(tenantId, despachoEntryId),
-      ForestCtpFichaDB.get(tenantId).catch(() => null),
+      ForestCtpFichaDB.get(tenantId).catch(sinDato("forest-ctp-despacho.db ficha del establecimiento")),
       ForestAnexosDB.list(tenantId).catch(() => []),
-      ForestCtpCierreDB.closedPeriodOf(tenantId, despacho.entryDate).catch(() => null),
+      ForestCtpCierreDB.closedPeriodOf(tenantId, despacho.entryDate).catch(sinDato("forest-ctp-despacho.db período cerrado del despacho")),
     ]);
 
     const anexo = anexos.find((a) => a.ctpEntryId === despachoEntryId);

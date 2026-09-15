@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { TrustedDevicesDB } from "@/lib/db/trusted-devices.db";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * /api/admin/security/trusted-devices (ADR-304)
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const parsed = RevokeSchema.safeParse(body);
   if (!parsed.success || (!parsed.data.id && !parsed.data.all)) {
     return NextResponse.json({ error: "id o all requerido" }, { status: 400 });

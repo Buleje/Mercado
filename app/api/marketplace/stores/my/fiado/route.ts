@@ -7,6 +7,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { StoreBenefitsDB } from "@/lib/db/store-benefits.db";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * /api/marketplace/stores/my/fiado
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ error: "enabled (boolean) requerido" }, { status: 400 });

@@ -7,6 +7,7 @@ import { archivarContrato } from "@/lib/contratos/archivar-contrato";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * GET  → devuelve el PDF del contrato, armado al vuelo (inline o descarga).
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "El contrato no tiene texto todavía" }, { status: 422 });
     }
 
-    const settings = await SettingsDB.get(auth.tenantId).catch(() => null);
+    const settings = await SettingsDB.get(auth.tenantId).catch(sinDato("api/contratos/pdf ajustes del emisor"));
     const razonSocial = settings?.razonSocial?.trim() || settings?.businessName?.trim();
     const firmasDb = await ContractsDB.getSignatureImages(auth.tenantId, id);
 

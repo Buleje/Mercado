@@ -12,6 +12,7 @@ import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { generateDailyInsights } from "@/lib/ai/daily-insights";
 import { reportAICall } from "@/lib/billing/wire-up/ai-metering-middleware";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * GET /api/cron/daily-summary
@@ -241,7 +242,7 @@ export async function GET(req: NextRequest) {
 
         // Brandon 2026-06-17: "te deben Y" — agrega el total por cobrar (fiados)
         // al resumen diario. PorCobrarDB es tenant-scoped; fallback null si falla.
-        const porCobrar = await PorCobrarDB.getSummary(tenant.id).catch(() => null);
+        const porCobrar = await PorCobrarDB.getSummary(tenant.id).catch(sinDato("cron/daily-summary total por cobrar"));
 
         const rawLines = [
           `💰 Ventas: S/ ${totalVentas.toFixed(2)} (${totalPedidos} transacciones)`,

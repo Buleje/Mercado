@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sectionViewIncr } from "@/lib/store-page/ab-store";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/store-page/section-track — beacon PÚBLICO de engagement por sección
@@ -22,7 +23,7 @@ const Body = z.object({
 export async function POST(req: NextRequest) {
   const rl = await applyRateLimit(req, "MODERATE", "section-track");
   if (rl) return rl;
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const parsed = Body.safeParse(await leerJson(req));
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
   await sectionViewIncr(parsed.data.slug, parsed.data.section).catch((err) => { console.warn("[section-track] incr", err); });
   return new NextResponse(null, { status: 204 });

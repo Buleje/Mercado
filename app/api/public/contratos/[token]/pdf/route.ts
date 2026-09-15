@@ -4,6 +4,7 @@ import { SettingsDB } from "@/lib/db/settings.db";
 import { generarContratoPdf } from "@/lib/contratos/contrato-pdf";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * El PDF que lee quien va a firmar, servido same-origin.
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     const cuerpo = (contract.contenido?.trim() || contract.clausulas.join("\n\n")).trim();
     if (!cuerpo) return NextResponse.json({ error: "sin_texto" }, { status: 422 });
 
-    const settings = await SettingsDB.get(contract.tenantId).catch(() => null);
+    const settings = await SettingsDB.get(contract.tenantId).catch(sinDato("api/public/contratos/pdf ajustes del emisor"));
     const razonSocial = settings?.razonSocial?.trim() || settings?.businessName?.trim();
     const firmas = await ContractsDB.getSignatureImages(contract.tenantId, contract.id);
 

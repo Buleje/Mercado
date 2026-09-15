@@ -6,6 +6,7 @@ import { CacaoDB } from "@/lib/db/cacao.db";
 import { getCacaoMarket } from "@/lib/cacao/cacao-market";
 import { cacaoBeneficioAlerta } from "@/lib/cacao/cacao-quality";
 import { logger } from "@/lib/logger";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * ADR-128 — Recordatorios y alertas del módulo Cacao.
@@ -56,7 +57,7 @@ export const GET = withCronAuth("cacao-beneficio-recordatorios", async () => {
         type: "CACAO_BENEFICIO_ATENCION",
         severity: t.urgente > 0 ? "HIGH" : "MEDIUM",
         title: "Lotes de cacao requieren atención",
-        body: `${n} lote${n === 1 ? "" : "s"} llevan demasiados días en proceso${t.urgente > 0 ? ` (${t.urgente} urgente${t.urgente === 1 ? "" : "s"})` : ""}: ${muestra}. Revisá fermentación/secado.`,
+        body: `${n} lote${n === 1 ? "" : "s"} llevan demasiados días en proceso${t.urgente > 0 ? ` (${t.urgente} urgente${t.urgente === 1 ? "" : "s"})` : ""}: ${muestra}. Revisa fermentación/secado.`,
         actionUrl: "/admin?tab=cacao-acopio",
         actionLabel: "Ver beneficio",
         dedupWindowHours: 20,
@@ -82,7 +83,7 @@ export const GET = withCronAuth("cacao-beneficio-recordatorios", async () => {
     const precioMercadoKg = configs.some((c) => c.precioAlertaPenKg != null)
       ? await getCacaoMarket()
           .then((m) => m.pricePenPerKg)
-          .catch(() => null)
+          .catch(sinDato("cron/cacao-beneficio-recordatorios precio de mercado del cacao"))
       : null;
 
     for (const c of configs) {
@@ -97,7 +98,7 @@ export const GET = withCronAuth("cacao-beneficio-recordatorios", async () => {
               type: "CACAO_STOCK_BAJO",
               severity: "MEDIUM",
               title: "Stock de cacao bajo el mínimo",
-              body: `Disponible ${inv.kgSecoDisponible} kg < mínimo ${minimo} kg. Considerá acopiar o terminar beneficios en proceso.`,
+              body: `Disponible ${inv.kgSecoDisponible} kg < mínimo ${minimo} kg. Considera acopiar o terminar beneficios en proceso.`,
               actionUrl: "/admin?tab=cacao-acopio&cacaoView=inventario",
               actionLabel: "Ver inventario",
               dedupWindowHours: 20,

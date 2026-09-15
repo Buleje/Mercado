@@ -15,6 +15,7 @@ import { headers } from "next/headers";
 import { connection } from "next/server";
 import type { Metadata } from "next";
 import { SettingsDB } from "@/lib/db/settings.db";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * Dedupe per-request: layout.generateMetadata + page.generateMetadata + el
@@ -23,7 +24,7 @@ import { SettingsDB } from "@/lib/db/settings.db";
  * la promesa cacheada — elimina los 3x N+1 warnings que aparecían en logs.
  */
 export const getCachedSettings = cache(async (tenantId: string) => {
-  return SettingsDB.get(tenantId).catch(() => null);
+  return SettingsDB.get(tenantId).catch(sinDato("store-metadata ajustes de la tienda"));
 });
 
 /**

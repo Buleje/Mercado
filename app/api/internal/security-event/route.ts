@@ -3,6 +3,7 @@ import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { recordSecurityEvent } from "@/lib/security/security-events";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/internal/security-event
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const parsed = BodySchema.safeParse(await req.json().catch(() => null));
+  const parsed = BodySchema.safeParse(await leerJson(req));
   if (!parsed.success) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }

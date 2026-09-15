@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { readData, writeData } from "@/lib/file-store";
+import { esClaveInexistente, readData, writeData } from "@/lib/file-store";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -20,7 +20,13 @@ interface Task {
 }
 
 async function getTasks(): Promise<Task[]> {
-  const data = await readData<{ tasks?: Task[] }>(KEY).catch(() => null);
+  // Sin archivo todavía no hay tareas. Cualquier otra falla (JSON corrupto,
+  // permiso) se relanza: tratarla como lista vacía hacía que la escritura
+  // siguiente reescribiera el archivo y se perdieran todas (auditoría 2026-09-14).
+  const data = await readData<{ tasks?: Task[] }>(KEY).catch((err: unknown) => {
+    if (esClaveInexistente(err)) return null;
+    throw err;
+  });
   return data?.tasks ?? [];
 }
 async function saveTasks(tasks: Task[]): Promise<void> {

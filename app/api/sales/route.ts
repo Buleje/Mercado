@@ -24,6 +24,7 @@ import { CustomersDB } from "@/lib/db/customers.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { extractIgv, igvRateFromSettings } from "@/lib/tax";
 import { desglosarPago } from "@/lib/caja/desglosar-pago";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -290,7 +291,7 @@ async function salesHandler(
     if (data.amountPaid + 0.01 < finalTotal) {
       return NextResponse.json(
         {
-          error: `Monto pagado (S/${data.amountPaid.toFixed(2)}) es menor que el total (S/${finalTotal.toFixed(2)}). Usá fiado si la deuda es intencional.`,
+          error: `Monto pagado (S/${data.amountPaid.toFixed(2)}) es menor que el total (S/${finalTotal.toFixed(2)}). Usa fiado si la deuda es intencional.`,
         },
         { status: 400 },
       );
@@ -493,7 +494,7 @@ async function salesHandler(
         if (result.count === 0) {
           const p = productById.get(item.productId);
           throw new Error(
-            `Stock insuficiente para "${p?.name ?? item.productId}" (concurrencia detectada). Reintentá.`,
+            `Stock insuficiente para "${p?.name ?? item.productId}" (concurrencia detectada). Reintenta.`,
           );
         }
       }
@@ -549,7 +550,7 @@ async function salesHandler(
       const cotNumero = comprobanteNumero || `COT-${Date.now()}`;
       // Lee la tasa de IGV real del tenant (settings.taxRate guarda %, ej. 18).
       // Fallback a IGV_RATE (0.18). Soporta RUS/exonerados (taxRate=0).
-      const settingsForTax = await SettingsDB.get(tenantId).catch(() => null);
+      const settingsForTax = await SettingsDB.get(tenantId).catch(sinDato("api/sales ajustes del negocio para el IGV de la cotización"));
       const igvRate = igvRateFromSettings(settingsForTax?.taxRate);
       const { base: subtotal, igv } = extractIgv(finalTotal, igvRate);
       await prisma.cotizacion.create({

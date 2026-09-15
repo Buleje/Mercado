@@ -28,11 +28,12 @@ import {
   anotarDisparo,
   type N8nFlow,
 } from "@/lib/n8n/flows";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const AltaSchema = z.object({
   accion: z.literal("crear").optional(),
   nombre: z.string().min(2, "Ponele un nombre").max(80),
-  descripcion: z.string().min(5, "Contá para qué sirve — es lo único que lee el asistente para elegirlo").max(300),
+  descripcion: z.string().min(5, "Cuenta para qué sirve — es lo único que lee el asistente para elegirlo").max(300),
   url: z.string().url("La URL del webhook no es válida").max(500),
   activo: z.boolean().default(true),
 });
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
 
   const { flujos } = await getN8nConfig(auth.tenantId);
   if (flujos.length >= 20) {
-    return NextResponse.json({ error: "Ya hay 20 flujos. Borrá alguno antes de agregar otro." }, { status: 400 });
+    return NextResponse.json({ error: "Ya hay 20 flujos. Borra alguno antes de agregar otro." }, { status: 400 });
   }
   const nuevo: N8nFlow = {
     id: crypto.randomUUID(),
@@ -163,7 +164,7 @@ export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const id = typeof body === "object" && body !== null ? String((body as { id?: unknown }).id ?? "") : "";
   if (!id) return NextResponse.json({ error: "Falta el id" }, { status: 400 });
 

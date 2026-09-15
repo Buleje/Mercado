@@ -40,6 +40,7 @@ import { getN8nConfig, tokenValido } from "@/lib/n8n/flows";
 import { conversar } from "@/lib/asistente/conversar";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
 import { getPendingApproval, removePendingApproval } from "@/lib/agents/pending-approvals";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const BodySchema = z.union([
   z.object({
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
 
   if (!token || !slug) {
     return NextResponse.json(
-      { error: "Falta la credencial. Mandá 'Authorization: Bearer <token>' y 'X-Buleje-Tenant: <slug>'." },
+      { error: "Falta la credencial. Manda 'Authorization: Bearer <token>' y 'X-Buleje-Tenant: <slug>'." },
       { status: 401 },
     );
   }
@@ -95,13 +96,13 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Cuerpo ───────────────────────────────────────────────────────────────
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
       {
         error: "Datos inválidos",
-        detalle: "Mandá { texto } para anotar, o { aprobacionId, decision } para confirmar.",
+        detalle: "Manda { texto } para anotar, o { aprobacionId, decision } para confirmar.",
         issues: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
       },
       { status: 400 },

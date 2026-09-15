@@ -7,6 +7,7 @@ import { CouponsDB } from "@/lib/db/coupons.db";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 const schema = z.object({
   email: z.string().email("Email inválido").max(255),
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
           readCookie(req, "active-tenant-slug") ||
           "main";
 
-        const tenant = await findTenantByIdOrSlug(rawTenant).catch(() => null);
+        const tenant = await findTenantByIdOrSlug(rawTenant).catch(sinDato("api/newsletter tienda de la suscripción"));
         const tenantId = tenant?.id ?? rawTenant;
 
         await NewsletterDB.subscribe(tenantId, email);

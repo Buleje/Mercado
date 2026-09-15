@@ -7,6 +7,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { aiCostGuard } from "@/lib/ai/cost-control";
 import { trackAiUsage } from "@/lib/ai/track-usage";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/store-page/ai-content
@@ -35,29 +36,29 @@ const OUT = {
 } as const;
 
 function buildPrompt(type: string, biz: string): string {
-  const base = `Sos redactor de marketing para tiendas online de barrio en Perú. Negocio: ${biz}.
-Escribí en español de Perú, tuteo natural ("Pedí", "Elegí", "tu pedido"), NUNCA voseo argentino, sin emojis, sin signos de exclamación excesivos. Concreto y cálido.
-Devolvé EXCLUSIVAMENTE un objeto JSON válido (sin markdown, sin texto antes ni después).`;
+  const base = `Eres redactor de marketing para tiendas online de barrio en Perú. Negocio: ${biz}.
+Escribe en español de Perú, tuteo natural ("Pide", "Elige", "tu pedido"), NUNCA voseo argentino ("Pedí", "Elegí"), sin emojis, sin signos de exclamación excesivos. Concreto y cálido.
+Devuelve EXCLUSIVAMENTE un objeto JSON válido (sin markdown, sin texto antes ni después).`;
   switch (type) {
     case "about":
       return `${base}
-Generá la sección "Sobre nosotros" con estas claves EXACTAS:
+Genera la sección "Sobre nosotros" con estas claves EXACTAS:
 { "title": "...", "body": "..." }
 - title: corto (ej. "Sobre nosotros" o algo propio del negocio), máx 60 chars.
 - body: 2-3 párrafos (separados por saltos de línea \\n) que cuenten quiénes son, qué ofrecen y por qué elegirlos. Máx 800 chars. NO inventes datos falsos (premios, años exactos) que no se deduzcan del rubro.`;
     case "faq":
       return `${base}
-Generá 5 preguntas frecuentes típicas del rubro con esta forma EXACTA:
+Genera 5 preguntas frecuentes típicas del rubro con esta forma EXACTA:
 { "items": [ { "question": "...", "answer": "..." }, ... ] }
-Cubrí: medios de pago, delivery/tiempos, zona de cobertura, pedido mínimo, horarios. Respuestas breves y útiles.`;
+Cubre: medios de pago, delivery/tiempos, zona de cobertura, pedido mínimo, horarios. Respuestas breves y útiles.`;
     case "benefits":
       return `${base}
-Generá 4 beneficios de comprar en esta tienda con esta forma EXACTA:
+Genera 4 beneficios de comprar en esta tienda con esta forma EXACTA:
 { "items": [ { "icon": "uno de: truck|shield|clock|tag|heart|sparkles", "title": "...", "description": "..." }, ... ] }
-Elegí el icon que mejor represente cada beneficio (truck=delivery, shield=confianza/seguridad, clock=rapidez, tag=precio/oferta, heart=atención, sparkles=calidad/novedad).`;
+Elige el icon que mejor represente cada beneficio (truck=delivery, shield=confianza/seguridad, clock=rapidez, tag=precio/oferta, heart=atención, sparkles=calidad/novedad).`;
     default: // how-to-order
       return `${base}
-Generá los pasos de "Cómo pedir" con esta forma EXACTA:
+Genera los pasos de "Cómo pedir" con esta forma EXACTA:
 { "subtitle": "...", "steps": [ { "title": "...", "description": "..." }, ... ] }
 3 a 4 pasos claros (ej. elegir productos → confirmar por WhatsApp → pagar → recibir). subtitle opcional breve.`;
   }
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const parsed = Input.safeParse(await req.json().catch(() => null));
+  const parsed = Input.safeParse(await leerJson(req));
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
 
   if (!(await aiCostGuard.canSpend(auth.tenantId, 0.001))) {
     return NextResponse.json(
-      { error: "Llegaste al límite mensual de generaciones con IA. Actualizá tu plan o esperá el próximo mes." },
+      { error: "Llegaste al límite mensual de generaciones con IA. Actualiza tu plan o espera el próximo mes." },
       { status: 429 },
     );
   }
@@ -104,12 +105,12 @@ export async function POST(req: NextRequest) {
       json = JSON.parse(raw);
     } catch {
       logger.error("[ai-content] respuesta no-JSON", { raw: raw.slice(0, 200) });
-      return NextResponse.json({ error: "La IA no devolvió contenido válido. Probá de nuevo." }, { status: 502 });
+      return NextResponse.json({ error: "La IA no devolvió contenido válido. Prueba de nuevo." }, { status: 502 });
     }
     const out = OUT[sectionType].safeParse(json);
     if (!out.success) {
       logger.error("[ai-content] JSON fuera de schema", { type: sectionType, issues: out.error.issues });
-      return NextResponse.json({ error: "La IA devolvió contenido incompleto. Probá de nuevo." }, { status: 502 });
+      return NextResponse.json({ error: "La IA devolvió contenido incompleto. Prueba de nuevo." }, { status: 502 });
     }
     return NextResponse.json({ data: out.data });
   } catch (e) {

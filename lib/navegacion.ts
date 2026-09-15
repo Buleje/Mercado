@@ -1,7 +1,9 @@
-"use client";
-
 /**
  * navegacion.ts — ¿la página se está yendo?
+ *
+ * Sin `"use client"`: lo importa `lib/errores/sin-dato.ts`, que también corre en
+ * rutas del servidor. Los listeners van detrás de `typeof window`; en el
+ * servidor la bandera queda en `false`.
  *
  * Al navegar, el navegador corta los pedidos en vuelo y cada uno rechaza con
  * «TypeError: Failed to fetch». Los best-effort del panel lo registraban como

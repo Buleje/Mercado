@@ -20,6 +20,7 @@ import {
   DEFAULT_DESIGN_TOKENS,
   type DesignTokens,
 } from "@/lib/store-design-tokens";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color hex inválido");
 
@@ -60,7 +61,7 @@ export async function PUT(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = DesignSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(

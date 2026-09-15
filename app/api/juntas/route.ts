@@ -4,6 +4,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { resolveTenantIdForRoute } from "@/lib/resolve-tenant";
 import { JuntasDB } from "@/lib/db/juntas.db";
 import { customerPhoneFromReq } from "@/lib/junta/customer";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const CreateSchema = z.object({
   zoneLabel: z.string().min(1).max(80),
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     );
   }
 
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = CreateSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });

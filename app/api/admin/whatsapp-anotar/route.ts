@@ -26,6 +26,7 @@ import { enqueueActivityLog } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 import { WhatsAppDuenosDB, normalizarTelefono } from "@/lib/db/whatsapp-duenos.db";
 import { crearCodigo, codigoVivoDe } from "@/lib/asistente/vinculacion";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const AccionSchema = z.discriminatedUnion("accion", [z.object({ accion: z.literal("codigo") })]);
 
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const parsed = AccionSchema.safeParse(await req.json().catch(() => null));
+  const parsed = AccionSchema.safeParse(await leerJson(req));
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Este negocio todavía no tiene número de WhatsApp conectado. Configuralo en Ajustes › WhatsApp antes de vincular un teléfono.",
+          "Este negocio todavía no tiene número de WhatsApp conectado. Configúralo en Ajustes › WhatsApp antes de vincular un teléfono.",
       },
       { status: 400 },
     );
@@ -91,7 +92,7 @@ export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const telefono = normalizarTelefono(String((body as { telefono?: unknown } | null)?.telefono ?? ""));
   if (!telefono) {
     return NextResponse.json({ error: "Falta el teléfono" }, { status: 400 });

@@ -7,6 +7,7 @@ import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { callLLM } from "@/lib/llm-router";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -127,7 +128,7 @@ async function applyUpdate(req: NextRequest, { params }: RouteParams) {
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = PromotionUpdateSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });

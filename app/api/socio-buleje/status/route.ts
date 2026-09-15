@@ -4,6 +4,7 @@ import { StatusQuerySchema } from "@/lib/validators/socio-buleje";
 import { SocioBulejeDB, getSocioMonthlySavings } from "@/lib/db/socio-buleje.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * GET /api/socio-buleje/status?userId=...
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
     // Ahorro mensual REAL del ledger (solo si hay membership). Alimenta el
     // historial y el "uso este mes" del panel con datos reales, no mock.
     const savings = membership
-      ? await getSocioMonthlySavings(tenantId, userId, 6).catch(() => null)
+      ? await getSocioMonthlySavings(tenantId, userId, 6).catch(sinDato("api/socio-buleje/status ahorro mensual del socio"))
       : null;
 
     return NextResponse.json({ ok: true, membership, savings, traceId });

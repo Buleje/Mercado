@@ -4,6 +4,7 @@ import { PushSubscriptionsStore } from "@/lib/push-subscriptions";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/store-page/push-subscribe — opt-in de notificaciones push del
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
   const rl = await applyRateLimit(req, "MODERATE", "store-push-sub");
   if (rl) return rl;
 
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const parsed = Body.safeParse(await leerJson(req));
   if (!parsed.success) {
     return NextResponse.json({ error: "Suscripción inválida" }, { status: 400 });
   }

@@ -13,6 +13,7 @@
  */
 
 import { esc, idRow, openCtpReport } from "./ctp-print-shared";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 interface BalanceRow {
   species: string;
@@ -55,8 +56,8 @@ const n1 = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 1, 
 
 export async function printLothInforme(): Promise<void> {
   const [aRes, cRes] = await Promise.all([
-    fetch("/api/admin/forestal/plan?analytics=1", { credentials: "include" }).catch(() => null),
-    fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }).catch(() => null),
+    fetch("/api/admin/forestal/plan?analytics=1", { credentials: "include" }).catch(sinDato("informe LOTH /api/admin/forestal/plan")),
+    fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }).catch(sinDato("informe LOTH /api/admin/forestal/loth/caratula")),
   ]);
   const analytics: Analytics | null = aRes?.ok ? (await aRes.json()).analytics ?? null : null;
   const caratula: Caratula | null = cRes?.ok ? (await cRes.json()).active ?? null : null;
@@ -116,7 +117,7 @@ export async function printLothInforme(): Promise<void> {
     noAut.length > 0
       ? `<p class="flag"><b>⚠ Especie(s) con operaciones fuera del plan autorizado:</b> ${noAut.map(esc).join(", ")}.
          Movilizar o aprovechar una especie no incluida en la resolución del título habilitante es infracción —
-         regularizá el plan de manejo o el registro.</p>`
+         regulariza el plan de manejo o el registro.</p>`
       : "";
 
   const errores = analytics.anomalias.filter((a) => a.level === "error");

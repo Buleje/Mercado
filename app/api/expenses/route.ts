@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { toErrorPayload } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * Alta de un gasto. Los campos de ADR-374 son opcionales: un gasto cargado a
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
   if (blocked) return blocked;
 
   try {
-    const raw = await req.json().catch(() => null);
+    const raw = await leerJson(req);
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(

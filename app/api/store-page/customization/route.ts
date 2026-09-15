@@ -6,6 +6,7 @@ import { SettingsDB } from "@/lib/db/settings.db";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color hex inválido");
 
@@ -53,7 +54,7 @@ export async function PUT(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = UpsertSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(

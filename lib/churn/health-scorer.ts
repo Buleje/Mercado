@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -133,7 +134,7 @@ export async function calculateHealthScore(tenantSlug: string): Promise<HealthSc
       where: { tenantId: tenant.id },
       orderBy: { createdAt: "desc" },
       select: { createdAt: true },
-    }).catch(() => null),
+    }).catch(sinDato("churn/health-scorer último pedido del tenant")),
   ]);
 
   // Features usadas: contar recursos distintos en ActivityLog últimos 30 días

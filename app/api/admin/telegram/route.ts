@@ -22,6 +22,7 @@ import { logger } from "@/lib/logger";
 import { TelegramDB } from "@/lib/db/telegram.db";
 import { crearCodigo, codigoVivoDe } from "@/lib/telegram/vinculacion";
 import { botConfigurado, datosDelBot, estadoWebhook, registrarWebhook } from "@/lib/telegram/bot";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const AccionSchema = z.discriminatedUnion("accion", [
   z.object({ accion: z.literal("codigo") }),
@@ -64,14 +65,14 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const parsed = AccionSchema.safeParse(await req.json().catch(() => null));
+  const parsed = AccionSchema.safeParse(await leerJson(req));
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
 
   if (!botConfigurado()) {
     return NextResponse.json(
-      { error: "Falta TELEGRAM_BOT_TOKEN en el servidor. Creá el bot con @BotFather y pegá el token en el .env." },
+      { error: "Falta TELEGRAM_BOT_TOKEN en el servidor. Crea el bot con @BotFather y pega el token en el .env." },
       { status: 400 },
     );
   }
@@ -100,7 +101,7 @@ export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const chatId = Number((body as { chatId?: unknown } | null)?.chatId);
   if (!Number.isFinite(chatId)) {
     return NextResponse.json({ error: "Falta el chat" }, { status: 400 });

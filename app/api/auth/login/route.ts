@@ -14,6 +14,7 @@ import { AdminTotpDB } from "@/lib/db/admin-totp.db";
 import { alertNewDeviceLogin } from "@/lib/auth/security-alerts";
 import { AdminDevicesDB } from "@/lib/db/admin-devices.db";
 import { TrustedDevicesDB, TRUSTED_DEVICE_COOKIE } from "@/lib/db/trusted-devices.db";
+import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 
 type LegacyAdminUser = { id: string; username: string; password: string; role: AdminRole; name: string };
 
@@ -89,7 +90,7 @@ export async function POST(req: Request) {
   // Round 27 (security hardening): req.json() puede throw si body no es JSON
   // válido — devolver 400 explícito en lugar de fallar al catch externo (500).
   // Test descubrió que payloads malformados producían 500 (DoS signal).
-  const body = await req.json().catch(() => null) as { username?: string; password?: string; tenantSlug?: string } | null;
+  const body = await leerJson<{ username?: string; password?: string; tenantSlug?: string }>(req);
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   }
@@ -284,7 +285,7 @@ export async function POST(req: Request) {
     // B3 "último acceso": leer el ingreso ANTERIOR (antes de que
     // alertNewDeviceLogin actualice el lastSeenAt de este dispositivo) para
     // que el front lo muestre al entrar ("¿no fuiste vos?"). Best-effort.
-    const lastLogin = await AdminDevicesDB.getLastLogin(matchedTenantId, u.username).catch(() => null);
+    const lastLogin = await AdminDevicesDB.getLastLogin(matchedTenantId, u.username).catch(sinDato("api/auth/login último acceso del usuario"));
 
     const response = NextResponse.json({
       ok: true,

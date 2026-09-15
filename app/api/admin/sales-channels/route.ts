@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import { parseSalesChannels } from "@/lib/types/sales-channels";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * El storefront lee Settings por el tenantId CANÓNICO (CUID), mientras que la
@@ -16,7 +17,7 @@ import { parseSalesChannels } from "@/lib/types/sales-channels";
  * guarda en una fila huérfana y nunca se inyecta. (Bug verificado 2026-06-30.)
  */
 async function canonicalTenantId(raw: string): Promise<string> {
-  return (await resolveTenantSlugToId(raw).catch(() => null)) || raw;
+  return (await resolveTenantSlugToId(raw).catch(sinDato("api/admin/sales-channels id canónico del tenant"))) || raw;
 }
 
 /**

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { generateStatementToken } from "@/lib/fiado/statement-token";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const Schema = z.object({ customerId: z.string().min(1).max(100) });
 
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const parsed = Schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "customerId requerido" }, { status: 400 });

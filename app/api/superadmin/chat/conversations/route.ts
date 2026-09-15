@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { PlatformChatDB } from "@/lib/db/platform-chat.db";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const listSchema = z.object({
   status: z.enum(["open", "closed", "archived"]).optional(),
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });

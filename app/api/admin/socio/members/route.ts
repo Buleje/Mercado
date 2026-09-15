@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { SocioBulejeDB } from "@/lib/db/socio-buleje.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const ListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).optional(),
@@ -74,7 +75,7 @@ export async function PATCH(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const raw = await req.json().catch(() => null);
+    const raw = await leerJson(req);
     const parsed = PatchBodySchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(

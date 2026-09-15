@@ -20,6 +20,7 @@ import {
   deserializePageData,
   serializePageData,
 } from "@/lib/store-design-tokens";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const SectionSchema = z.object({
   id: z.string(),
@@ -54,7 +55,7 @@ export async function PUT(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = PutSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(

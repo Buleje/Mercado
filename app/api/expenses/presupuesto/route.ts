@@ -6,6 +6,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * GET  /api/expenses/presupuesto  → techos + comparación con lo gastado
@@ -62,7 +63,7 @@ export async function PUT(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const raw = await req.json().catch(() => null);
+    const raw = await leerJson(req);
     const parsed = PutSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(

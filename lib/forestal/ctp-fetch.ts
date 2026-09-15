@@ -14,6 +14,7 @@
  */
 
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /* ── Un solo pedido por dato (ADR-347) ──────────────────────────────────────
  *
@@ -95,7 +96,7 @@ export function ctpGet<T>(url: string, opciones: { ttlMs?: number } = {}): Promi
 
 /** Qué se le dice al operador según lo que respondió el servidor. */
 function motivo(status: number, quePedia: string, mensajeServidor?: string): string {
-  if (status === 401) return `Tu sesión venció mientras se cargaban ${quePedia}. Volvé a entrar.`;
+  if (status === 401) return `Tu sesión venció mientras se cargaban ${quePedia}. Vuelve a entrar.`;
   if (status === 403) {
     // El servidor distingue los dos casos y el mensaje es específico: se
     // muestra tal cual, que dice más que cualquier texto genérico.
@@ -104,7 +105,7 @@ function motivo(status: number, quePedia: string, mensajeServidor?: string): str
       : `Tu usuario no tiene permiso para ver ${quePedia}.`;
   }
   if (status === 404) return `No se encontró de dónde leer ${quePedia}.`;
-  if (status === 429) return `Demasiados pedidos seguidos: esperá unos segundos y recargá ${quePedia}.`;
+  if (status === 429) return `Demasiados pedidos seguidos: espera unos segundos y recarga ${quePedia}.`;
   if (status >= 500) return `El servidor falló al armar ${quePedia} (error ${status}).`;
   return `No se pudieron leer ${quePedia} (respuesta ${status}).`;
 }
@@ -125,7 +126,7 @@ export async function pedirJsonCtp<T>(url: string, quePedia: string): Promise<T>
     throw new Error(`Sin conexión al pedir ${quePedia}.`);
   }
   if (!r.ok) {
-    const cuerpo = (await r.json().catch(() => null)) as { message?: string; error?: string } | null;
+    const cuerpo = await leerJson<{ message?: string; error?: string }>(r);
     const detalle = cuerpo?.message ?? (cuerpo?.error && cuerpo.error !== "forbidden" ? cuerpo.error : undefined);
     throw new Error(motivo(r.status, quePedia, detalle));
   }

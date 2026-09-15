@@ -8,6 +8,7 @@ import { toErrorPayload } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * GET legacy — devuelve summary de TODOS los gastos del tenant.
@@ -80,7 +81,7 @@ export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string 
     const { id } = await ctx.params;
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    const raw = await req.json().catch(() => null);
+    const raw = await leerJson(req);
     const parsed = PatchSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(

@@ -20,6 +20,7 @@ import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
 import { avisosDeFicha } from "@/lib/forestal/ctp-ficha-types";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 const texto = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 
@@ -80,7 +81,7 @@ async function existencias(task: AgentTask, ctx: AgentContext): Promise<AgentRes
 async function buscarGuia(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
   const log = scopedLogger(ctx);
   const q = texto(task.payload.texto) || texto(task.payload.gtf);
-  if (!q) return { success: false, error: "Decime el N° de guía, el proveedor o la especie a buscar." };
+  if (!q) return { success: false, error: "Dime el N° de guía, el proveedor o la especie a buscar." };
   log.info("Buscando ingresos", { q });
 
   const { entries, total } = await WoodEntriesDB.list(task.tenantId, { search: q, limit: 12 });
@@ -115,7 +116,7 @@ async function buscarGuia(task: AgentTask, ctx: AgentContext): Promise<AgentResu
 async function buscarTroza(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
   const log = scopedLogger(ctx);
   const codigo = texto(task.payload.codigo);
-  if (!codigo) return { success: false, error: "Decime el código de la troza (el pintado en la testa)." };
+  if (!codigo) return { success: false, error: "Dime el código de la troza (el pintado en la testa)." };
   log.info("Buscando troza", { codigo });
 
   const troza = await WoodEntriesDB.buscarTrozaPorCodigo(task.tenantId, codigo);
@@ -126,7 +127,7 @@ async function buscarTroza(task: AgentTask, ctx: AgentContext): Promise<AgentRes
     };
   }
 
-  const ficha = await WoodEntriesDB.fichaDeTroza(task.tenantId, troza.id).catch(() => null);
+  const ficha = await WoodEntriesDB.fichaDeTroza(task.tenantId, troza.id).catch(sinDato("agente forestal ficha de la troza"));
   return {
     success: true,
     data: {
@@ -161,7 +162,7 @@ async function pendientes(task: AgentTask, ctx: AgentContext): Promise<AgentResu
 
   const [stats, ficha] = await Promise.all([
     WoodEntriesDB.stats(task.tenantId),
-    ForestCtpFichaDB.get(task.tenantId).catch(() => null),
+    ForestCtpFichaDB.get(task.tenantId).catch(sinDato("agente forestal ficha legal del libro")),
   ]);
 
   const avisos = ficha ? avisosDeFicha(ficha) : [];

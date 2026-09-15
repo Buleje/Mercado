@@ -14,6 +14,7 @@ import {
   getWhatsAppConfig,
   getConfigForPhoneNumberId,
 } from "@/lib/db/whatsapp-messages.db";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/admin/whatsapp/send-document — mandar por WhatsApp EL ARCHIVO, no un
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
-  const crudo = await req.json().catch(() => null);
+  const crudo = await leerJson(req);
   const parsed = Body.safeParse(crudo);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Datos inválidos" }, { status: 400 });
@@ -122,10 +123,10 @@ export async function POST(req: NextRequest) {
         const metaMsg = up.error?.message ?? "";
         const razon =
           upRes.status === 401 || up.error?.code === 190
-            ? "La conexión con WhatsApp venció: reconectá el número en Configuración › WhatsApp"
+            ? "La conexión con WhatsApp venció: reconecta el número en Configuración › WhatsApp"
             : /type|format|unsupported|mime/i.test(metaMsg)
               ? "WhatsApp no acepta este tipo de archivo"
-              : "WhatsApp no pudo recibir el archivo (revisá la conexión del número)";
+              : "WhatsApp no pudo recibir el archivo (revisa la conexión del número)";
         fallidos.push({ id: docId, nombre: doc.name, error: razon });
         continue;
       }

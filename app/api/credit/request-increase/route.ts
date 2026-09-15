@@ -7,6 +7,7 @@ import { createNotification } from "@/lib/create-notification";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/credit/request-increase
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Notificación al dueño con contexto (límite actual + monto pedido).
-    const credit = await getAvailableCredit(tenantId, phone).catch(() => null);
+    const credit = await getAvailableCredit(tenantId, phone).catch(sinDato("api/credit/request-increase línea de crédito actual"));
     const limiteActual = credit ? `S/${Number(credit.creditLimit).toFixed(2)}` : "sin línea";
     const quien = name ? `${name} (${phone})` : phone;
     const pedido = parsed.data.requestedAmount

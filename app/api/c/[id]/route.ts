@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CampaignsDB } from "@/lib/db/campaigns.db";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace/stores.db";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * GET /api/c/[id] — link de tracking de campañas.
@@ -26,7 +27,7 @@ export async function GET(
   if (!limited) {
     const tracked = await CampaignsDB.trackOpen(id);
     if (tracked) {
-      const slug = await MarketplaceStoresDB.getMyStoreSlug(tracked.tenantId).catch(() => null);
+      const slug = await MarketplaceStoresDB.getMyStoreSlug(tracked.tenantId).catch(sinDato("api/c slug de la tienda de la campaña"));
       if (slug) target = `${base}/t/${slug}`;
     }
   }

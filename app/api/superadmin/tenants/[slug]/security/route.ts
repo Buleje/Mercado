@@ -11,6 +11,7 @@ import { revokeSessionsBefore } from "@/lib/auth/session-revocation";
 import { notifyTenantOwnerSecurity } from "@/lib/auth/security-alerts";
 import { TrustedDevicesDB } from "@/lib/db/trusted-devices.db";
 import { logger } from "@/lib/logger";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       where: { tenantId: tenant.id, action: "login_success" },
       orderBy: { createdAt: "desc" },
       select: { createdAt: true, detail: true },
-    }).catch(() => null);
+    }).catch(sinDato("api/superadmin/tenants/security último login del tenant"));
     return NextResponse.json({
       username: admin?.username ?? null,
       twoFactorEnabled: !!admin?.totpEnabledAt,

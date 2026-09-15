@@ -8,6 +8,7 @@ import {
   buildBroadcastVars,
 } from "@/lib/chat/broadcast-templates";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 interface SegmentTenant {
   id: string;
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const parsed = postSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });

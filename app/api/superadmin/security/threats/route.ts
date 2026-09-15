@@ -5,6 +5,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { getThreatOverview } from "@/lib/security/security-events";
 import { blockIp, unblockIp, DEFAULT_BLOCK_TTL_SEC } from "@/lib/security/ip-blocklist";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * GET  /api/superadmin/security/threats  → overview del WAF (tab Amenazas)
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
-  const parsed = ActionSchema.safeParse(await req.json().catch(() => null));
+  const parsed = ActionSchema.safeParse(await leerJson(req));
   if (!parsed.success) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }

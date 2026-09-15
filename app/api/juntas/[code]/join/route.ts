@@ -5,6 +5,7 @@ import { resolveTenantIdForRoute } from "@/lib/resolve-tenant";
 import { JuntasDB } from "@/lib/db/juntas.db";
 import { customerPhoneFromReq } from "@/lib/junta/customer";
 import { normalizePhone } from "@/lib/db/misc.db";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /** Body de invitado: solo el WhatsApp (la junta es de barrio, sin cuenta). */
 const guestJoinSchema = z.object({ phone: z.string().min(6).max(20) });
@@ -28,7 +29,7 @@ export async function POST(
 
   let phone = await customerPhoneFromReq(req);
   if (!phone) {
-    const body = await req.json().catch(() => null);
+    const body = await leerJson(req);
     const parsed = guestJoinSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(

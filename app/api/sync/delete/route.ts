@@ -4,6 +4,7 @@ import { requireAgente, AUTOR_AGENTE } from "@/lib/sync/auth-agente";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const Body = z.object({
   documentIds: z.array(z.string().min(1)).min(1).max(500),
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAgente(req);
   if (auth instanceof NextResponse) return auth;
 
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const parsed = Body.safeParse(await leerJson(req));
   if (!parsed.success) {
     return NextResponse.json({ error: "body_invalido" }, { status: 400 });
   }

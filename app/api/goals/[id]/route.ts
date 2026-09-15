@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { readData, writeData } from "@/lib/file-store";
+import { esClaveInexistente, readData, writeData } from "@/lib/file-store";
 import { toErrorPayload } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -19,7 +19,13 @@ interface Goal {
 }
 
 async function getGoals(): Promise<Goal[]> {
-  const data = await readData<{ goals?: Goal[] }>(GOALS_KEY).catch(() => null);
+  // Sin archivo todavía no hay metas. Cualquier otra falla (JSON corrupto,
+  // permiso) se relanza: tratarla como lista vacía hacía que la escritura
+  // siguiente reescribiera el archivo y se perdieran todas (auditoría 2026-09-14).
+  const data = await readData<{ goals?: Goal[] }>(GOALS_KEY).catch((err: unknown) => {
+    if (esClaveInexistente(err)) return null;
+    throw err;
+  });
   return data?.goals ?? [];
 }
 

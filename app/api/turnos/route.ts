@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 const CreateTurnoSchema = z.object({
   inicioEfectivo: z.number().min(0),
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
      * venta del día— se escribían en el cajón de otra empresa.
      */
     if (cashRegisterId) {
-      const propia = await CashRegistersDB.getById(auth.tenantId, cashRegisterId).catch(() => null);
+      const propia = await CashRegistersDB.getById(auth.tenantId, cashRegisterId).catch(sinDato("api/turnos caja indicada para el turno"));
       if (!propia) {
         return NextResponse.json(
           { error: "Esa caja no existe en este negocio" },

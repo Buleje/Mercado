@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * Importar los registros del Libro de Operaciones que el SNIFFS exporta y que
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
-  const parsed = bodySchema.safeParse(await req.json().catch(() => null));
+  const parsed = bodySchema.safeParse(await leerJson(req));
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Datos inválidos", issues: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`) },
@@ -243,7 +244,7 @@ async function procesarConsumos(
     const troza = await WoodEntriesDB.buscarTrozaPorCodigo(tenantId, codigo);
 
     if (!troza) {
-      out.push({ fila: f.fila, codigo, accion: "error", mensaje: "Ese código no existe en el libro: cargá primero el ingreso." });
+      out.push({ fila: f.fila, codigo, accion: "error", mensaje: "Ese código no existe en el libro: carga primero el ingreso." });
       continue;
     }
     if (troza.noRecepcionada) {
@@ -281,7 +282,7 @@ async function procesarConsumos(
       fila: f.fila,
       codigo,
       accion: escribir ? "crear" : "crear",
-      mensaje: `Troza libre · ${vol ?? "sin volumen"} m³${f.lote ? ` · lote ${f.lote}` : ""}. Sumala a una corrida para registrar el consumo.`,
+      mensaje: `Troza libre · ${vol ?? "sin volumen"} m³${f.lote ? ` · lote ${f.lote}` : ""}. Súmala a una corrida para registrar el consumo.`,
     });
   }
   return out;
