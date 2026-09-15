@@ -201,7 +201,12 @@ export function useCtpCompliance(period: CtpPeriod, especie?: string): UseCtpCom
 
       const counts: CtpComplianceCounts = {
         fueraPlazo: wood.stats.lateCount,
-        pendientes: wood.stats.byStatus.pendiente,
+        /* Recepción, no validación (ADR-339 + el cambio de regla del
+           2026-09-15): el dato sale del MISMO predicado que la bandeja. */
+        /* `?? byStatus.pendiente`: si la API todavía no manda el contador
+           (build viejo servido desde caché), se cae al criterio anterior en vez
+           de reportar 0 y pintar un verde que no existe. */
+        pendientes: wood.stats.sinRecepcionCount ?? wood.stats.byStatus.pendiente,
         citesCount: wood.stats.citesCount,
         /* La existencia final manda; el movimiento del período es el respaldo.
            Son cosas distintas y confundirlas inventa una infracción: consumir

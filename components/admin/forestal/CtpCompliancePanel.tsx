@@ -422,17 +422,24 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           </div>
           <ul className="space-y-1.5">
             {breakdown.map((d) => (
-              <li key={d.key} className="flex items-center justify-between gap-3 text-sm">
-                <span className="inline-flex min-w-0 items-center gap-2">
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${d.puntos > 0 ? "bg-[var(--data-error-500)]" : "bg-[var(--data-success-500)]"}`} aria-hidden="true" />
-                  <span className="truncate text-[var(--text-secondary)]">{d.label}</span>
-                </span>
-                {d.puntos > 0 ? (
-                  <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--data-error-700)]">
-                    −{d.puntos} pts <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">({d.casos}{d.topeAlcanzado ? "+" : ""} {plural(d.casos, "caso", "casos")})</span>
+              <li key={d.key} className="text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${d.puntos > 0 ? "bg-[var(--data-error-500)]" : "bg-[var(--data-success-500)]"}`} aria-hidden="true" />
+                    <span className="truncate text-[var(--text-secondary)]">{d.label}</span>
                   </span>
-                ) : (
-                  <span className="shrink-0 text-xs font-bold text-[var(--data-success-700)]">sin restar</span>
+                  {d.puntos > 0 ? (
+                    <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--data-error-700)]">
+                      −{d.puntos} pts <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">({d.casos}{d.topeAlcanzado ? "+" : ""} {plural(d.casos, "caso", "casos")})</span>
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-xs font-bold text-[var(--data-success-700)]">sin restar</span>
+                  )}
+                </div>
+                {/* Qué hacer para recuperarlos: el label solo diagnostica, y un
+                    diagnóstico sin acción se mira una vez y se deja de mirar. */}
+                {d.puntos > 0 && (
+                  <p className="ml-4 mt-0.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">{d.accion}</p>
                 )}
               </li>
             ))}

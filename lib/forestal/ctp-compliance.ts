@@ -108,7 +108,17 @@ export function parseCitesPermiso(notes: string | null): string | null {
 export interface CtpComplianceCounts {
   /** Ingresos registrados con más de PLAZO_REGISTRO_DIAS días entre entryDate y createdAt. */
   fueraPlazo: number;
-  /** Ingresos con status "pendiente" (aún sin validar por un admin). */
+  /**
+   * Ingresos cuya RECEPCIÓN no está cerrada (ADR-339): la madera figura en el
+   * libro y nadie declaró haberla visto bajar del camión.
+   *
+   * Antes esta categoría contaba los `status = "pendiente"` (sin validar). Se
+   * cambió el 2026-09-15 porque premiaba el gesto equivocado: «Validar todos»
+   * despacha 21 ingresos de un click desde el escritorio y subía el score 25
+   * puntos, mientras las 21 guías seguían sin recepcionar y sus 153 trozas
+   * (181 m³) fuera del alcance del cubicador. Recepcionar es mirar la pila;
+   * validar es firmar un papel. El indicador ahora mide lo primero.
+   */
   pendientes: number;
   /** Ingresos de especies CITES en el período (requieren permiso). */
   citesCount: number;
@@ -200,15 +210,30 @@ export function ctpComplianceTone(score: number): CtpComplianceTone {
 /** Etiqueta legible de cada categoría que resta puntos (para el desglose del score). */
 const CATEGORIA_LABEL: Record<(typeof CATEGORIAS_QUE_RESTAN)[number], string> = {
   fueraPlazo: "Ingresos fuera de plazo",
-  pendientes: "Ingresos sin validar",
+  pendientes: "Guías sin recepcionar",
   especiesEnNegativo: "Especies en saldo negativo",
   stockNegativo: "Productos con stock negativo",
   despachosSinTraza: "Despachos sin cadena completa",
 };
 
+/**
+ * La acción física que sube esos puntos. El label solo («Guías sin
+ * recepcionar») dice qué está mal; esto dice qué hacer, que es lo que el panel
+ * necesitaba para no quedarse en un diagnóstico.
+ */
+const CATEGORIA_ACCION: Record<(typeof CATEGORIAS_QUE_RESTAN)[number], string> = {
+  fueraPlazo: "Ya pasó: sale solo cuando el período avance. Registra los próximos ingresos dentro de los 2 días hábiles.",
+  pendientes: "Ve a Ingresos, mira la madera y cierra la recepción de cada guía (se puede en bloque).",
+  especiesEnNegativo: "Esa especie consumió más de lo que entró validado: carga el ingreso que falta o corrige el consumo.",
+  stockNegativo: "Se despachó más de lo producido: revisa la atribución del despacho o la producción declarada.",
+  despachosSinTraza: "Completa la atribución del despacho desde su ficha («Editar atribución»): sin eso no hay certificado.",
+};
+
 export interface CtpComplianceDeduccion {
   key: (typeof CATEGORIAS_QUE_RESTAN)[number];
   label: string;
+  /** Qué hacer para recuperar esos puntos. */
+  accion: string;
   casos: number;
   /** Puntos que esta categoría le resta al score (0..TOPE_PUNTOS_POR_ALERTA). */
   puntos: number;
@@ -225,6 +250,13 @@ export function ctpComplianceBreakdown(counts: CtpComplianceCounts): CtpComplian
   return CATEGORIAS_QUE_RESTAN.map((key) => {
     const casos = Math.max(counts[key], 0);
     const puntos = Math.min(casos * PUNTOS_POR_CASO, TOPE_PUNTOS_POR_ALERTA);
-    return { key, label: CATEGORIA_LABEL[key], casos, puntos, topeAlcanzado: puntos >= TOPE_PUNTOS_POR_ALERTA && casos > 0 };
+    return {
+      key,
+      label: CATEGORIA_LABEL[key],
+      accion: CATEGORIA_ACCION[key],
+      casos,
+      puntos,
+      topeAlcanzado: puntos >= TOPE_PUNTOS_POR_ALERTA && casos > 0,
+    };
   });
 }
