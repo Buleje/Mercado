@@ -32,8 +32,29 @@ Pedido: «soluciona problemas y errores en general» + log de consola con 404 en
 | Reconexión del stream de notificaciones | 10 s fijos para siempre; si fallaba la verificación de sesión, abandonaba hasta recargar | test nuevo 6/6 (espera exacta 10/20/40 s, tope 5 min) |
 | 10 `console.error` de RRHH → `sinDato` | Cada falla de carga salía como error rojo en el overlay de Next | eslint 0, typecheck 0, vitest 9/9, consola RRHH 0 errores / 0 × 4xx |
 
+## 👥 RRHH: hoja semanal con lo ganado + PDF con firma + fotocheck (ADR-416) — SIN commitear
+Pedido de Brandon (texto libre en la ronda de cierre): formato semanal en Asistencia con ganancia diaria y semanal acumulada, referencia, días trabajados, PDF con columna de firma; y en Personal un fotocheck con foto y QR descargable en PDF.
+| Qué | Verificación |
+|---|---|
+| `calcularGanado` devuelve `dias` (importe por día) y `referencia`; el total sigue saliendo de los tramos | 4 tests nuevos (semanal 350 ÷ 7, jornal, fuera de período, sin tarifa) |
+| Modo **Semana** en Asistencia: tabla editable con importe del día, días trabajados, faltas, referencia y ganado (sólo admin/owner), calendario en celular | navegador con 2 personas de prueba: S/ 225 + S/ 330 = S/ 555, 8 días; 0 × 4xx, 0 errores; 400 px sin scroll horizontal |
+| PDF semanal A4 apaisado con firma, total, leyenda y copy de referencia | texto extraído + render con `pdftoppm` |
+| **Foto** (`Colaborador.fotoUrl`, SQL `adr-416-foto-colaborador.sql` APLICADO) subida a `/api/upload` carpeta `rrhh`; botón **Fotocheck** en la ficha y **Fotochecks (N)** en Personal; `?persona=<id>` abre la ficha (destino del QR) | e2e: upload 200 + PATCH 200 + https en la base, PDF renderizado, quitar → null; imagen del bucket y datos de prueba borrados |
+| `scripts/dev-with-canary.mjs`: sonda al arrancar; si una ruta /api da HTML 404 (estado viejo al relanzar), toca su route.ts y la refresca | medido: con `/api/health` en 404, tocar la ruta → health 200 y sonda 401; el log dice `rutas /api al día` |
+**Producción:** aplicar `adr-415-metas-y-tareas.sql` y `adr-416-foto-colaborador.sql` ANTES de subir el código.
+
+## 🗂️ Metas y tareas por negocio (ADR-415) — SIN commitear
+Pedido: «Metas y tareas por negocio». Antes: `local-data/*.json` sin `tenantId` (una lista para los 14 negocios) y en Vercel el disco es de sólo lectura (producción nunca guardó una).
+| Qué | Verificación |
+|---|---|
+| SQL `prisma/migrations/adr-415-metas-y-tareas.sql` **APLICADO** a la base (2 tablas, 4 índices, CHECK de listas cerradas, REVOKE a anon) | 8/8 sentencias; tablas en 0 filas, 6/4 CHECK, 0 permisos anon |
+| Modelos `AdminGoal`/`AdminTask` + `TENANT_MODELS`, clases `lib/db/admin-{goals,tasks}.db.ts`, contrato `lib/admin/metas-tareas.ts`, 4 rutas con Zod + CSRF | `prisma validate`, typecheck 0, eslint 0, 18 tests de ruta |
+| Zod 4: `.partial()` aplica los `.default()` → esquema de edición aparte | medido con zod 4.4.3; test «PATCH {current} no pisa la categoría» |
+| TasksTab avisa si guardar/cambiar estado/borrar falla; `completedAt` lo pone el servidor | navegador |
+| Carga vieja que pisaba lo optimista (Tareas y Metas): el GET del doble montaje volvía 470 ms después de Eliminar y la tarea reaparecía | e2e 11/11 (antes 10/11) + test de componente que falla sin la guarda |
+**Producción:** aplicar el SQL ANTES de subir este código (sin tablas → P2021 y el panel de metas vacío).
+
 ## ⚠️ Pendientes medidos de esta noche
-- **Metas y tareas se comparten entre TODOS los negocios**: `lib/file-store.ts` guarda `goals`/`tasks` en `local-data/` sin `tenantId` (auditoría `security`, confirmado por código, sin probar contra el servidor).
 - Voseo fuera del panel: ~370 en marketplace/tienda, ~166 en superadmin, checkout (zona de peligro) y landing.
 - 2 `.catch(() => null)` en zona de peligro: `app/api/orders/route.ts:479`, `app/api/checkout/fiado-option/route.ts:30`.
 
