@@ -45,7 +45,24 @@ pantalla propone TARDANZA y dice de cuánto fue; nunca pisa en silencio un estad
 fotocheck hace de credencial de seguridad y eso es lo que se lee en el momento. «No se sabe» y «ninguna» no son lo
 mismo: sin dato no se imprime la etiqueta vacía.
 
-### 4. Días abiertos y lo que queda por pagar
+### 4. La foto se toma con el celular
+Un QR abre la MISMA ficha en el teléfono con `&foto=1`, que pide iniciar sesión igual que el QR del fotocheck, y deja
+listo «Tomar foto» con `capture="environment"`. **Sin página pública ni token nuevo a propósito:** una URL sin sesión que
+acepte archivos en el bucket del negocio es superficie de abuso, y con login no hace falta. El disparo automático no se
+promete —un click que no nace de un toque puede ser ignorado (medido: 25 s sin selector)—, así que el botón queda
+destacado y el texto lo dice.
+
+Al construirlo apareció un bug que dejaba la función inservible en iPhone: `/api/upload` sólo acepta jpeg/png/webp y el
+iPhone entrega HEIC, pero `compressIfLarge` convertía **sólo por peso** (>1,5 MB), así que una HEIC chica salía intacta y
+el servidor la rechazaba. Ahora el tipo también es motivo para convertir.
+
+### 5. Por qué se corrige una marca
+El tramo del servidor ya estaba entero (`guardarMarcasSchema.motivo` → `motivoCorreccion` → historial): el que nunca
+mandaba el motivo era el hook. Ahora se pregunta **una vez por tanda** y sólo cuando la marca ya estaba guardada —la
+primera del día no es una corrección—, con cinco motivos frecuentes de un toque. «ok» y «.» no pasan, con la misma regla
+en el modal y en el servidor. El historial marca en ámbar las correcciones viejas: «Se corrigió sin anotar el motivo».
+
+### 6. Días abiertos y lo que queda por pagar
 - La asistencia avisa qué días del mes quedaron sin ninguna marca, con un clic para ir a cerrarlos. El cálculo
   `sinMarcar` ya existía por persona (`ganado.ts`, `conteo-mes.ts`); faltaba «qué día no marcó nadie».
 - «Lo ganado» muestra **queda por pagar** = ganado − adelantos abiertos, sólo para quien tiene cuenta de Adelantos
@@ -62,5 +79,6 @@ verificados contra la base real: rechaza `'25:99'` como hora y `'O positivo'` co
 - Imprimir fotochecks deja de ser a ciegas: los huecos (sin foto, sin documento, sin nombre del negocio) se ven antes.
 - La tardanza pasa a ser un dato derivable en vez de un criterio de quien marca — pero sólo donde haya horario cargado.
 - Cuatro columnas nuevas que revertir es barato mientras nadie las cargue (el SQL trae el `DROP` comentado).
-- Queda pendiente: pedir el motivo al corregir una marca (`motivoCorreccion`, 10 correcciones sin motivo) y dejar tocar
-  el refrigerio (`refrigerioMin`, presente en las 52 marcas y en ninguna pantalla).
+- La tardanza se ve en el día, la semana, el mes y el celular; la semana avisa arriba a quién y qué día antes de firmar.
+- Queda pendiente: dejar tocar el refrigerio (`refrigerioMin`, presente en las 52 marcas y en ninguna pantalla) y pedir
+  motivo también en el masivo con «reemplazar», que todavía pisa marcas vivas sin preguntar.
