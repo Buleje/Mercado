@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { FichaColaboradorDTO, FechaKey, Modalidad, TarifaDTO } from "@/lib/rrhh/tipos";
 import type { RrhhApiError } from "./use-rrhh-puestos";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 export type AccionColaborador =
   | { action: "editar"; [campo: string]: unknown }
@@ -71,7 +72,7 @@ export function useRrhhFicha(colaboradorId: string | null): UseRrhhFichaResult {
         if (vigente) setFicha(data);
       })
       .catch((err) => {
-        console.error("[rrhh] ficha falló", err);
+        sinDato("RRHH ficha")(err);
         if (vigente) setError(err instanceof Error ? err.message : "No se pudo cargar la ficha");
       })
       .finally(() => {

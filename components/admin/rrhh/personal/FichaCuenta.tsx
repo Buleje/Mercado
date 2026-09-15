@@ -14,6 +14,7 @@ import { AvisoRrhh, BOTON, CLASE_CAMPO } from "../rrhh-form";
 import { formatearPEN, pluralizar } from "../rrhh-ui";
 import type { FichaColaboradorDTO } from "@/lib/rrhh/tipos";
 import type { RrhhApiError } from "@/hooks/use-rrhh-puestos";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 interface BeneficiarioLite {
   id: string;
@@ -59,7 +60,7 @@ export default function FichaCuenta({ vinculo, cuenta, guardando, onVincular, on
       })
       .catch((err) => {
         // Antes un error de red dejaba la lista vacía sin decir nada: parecía que no había cuentas.
-        console.error("[rrhh] lista de cuentas de Adelantos falló", err);
+        sinDato("RRHH cuentas de Adelantos")(err);
         if (vigente) setErrorLista("No se pudo cargar la lista de cuentas de Adelantos.");
       })
       .finally(() => {

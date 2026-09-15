@@ -17,6 +17,7 @@ import { CLASE_CHIP, AvisoRrhh } from "../rrhh-form";
 import { ESTADO_ASISTENCIA_META } from "../rrhh-ui";
 import { etiquetaDia } from "@/lib/rrhh/fechas";
 import type { AsistenciaDTO, ColaboradorMinDTO, FechaKey } from "@/lib/rrhh/tipos";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 interface Props {
   open: boolean;
@@ -47,7 +48,7 @@ export default function HistorialMarcaModal({ open, onClose, colaborador, fecha,
         if (vigente) setVersiones(data.versiones);
       })
       .catch((err) => {
-        console.error("[rrhh] historial falló", err);
+        sinDato("RRHH historial de la marca")(err);
         if (vigente) setError(err instanceof Error ? err.message : "No se pudo cargar el historial");
       });
     return () => {

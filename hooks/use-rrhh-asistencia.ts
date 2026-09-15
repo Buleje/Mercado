@@ -20,6 +20,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { etiquetaDia } from "@/lib/rrhh/fechas";
 import type { AsistenciaDTO, EstadoAsistencia, FechaKey, HojaAsistenciaDTO } from "@/lib/rrhh/tipos";
 import type { RrhhApiError } from "./use-rrhh-puestos";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 export interface MarcaInput {
   colaboradorId: string;
@@ -141,7 +142,7 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
         setErroresPorCelda(new Map());
       })
       .catch((err) => {
-        console.error("[rrhh] asistencia falló", err);
+        sinDato("RRHH asistencia")(err);
         if (vigente) setError(err instanceof Error ? err.message : "No se pudo cargar la asistencia");
       })
       .finally(() => {
@@ -241,7 +242,7 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
         }
       }
     } catch (err) {
-      console.error("[rrhh] guardar asistencia falló", err);
+      sinDato("RRHH guardar asistencia")(err);
       for (const k of claves) if (sigueVigente(k)) fallos.push({ fecha: fechaPorClave.get(k) ?? "", motivo: "Sin conexión — reintenta" });
       if (montadoRef.current) {
         setErroresPorCelda((prev) => {

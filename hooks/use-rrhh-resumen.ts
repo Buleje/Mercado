@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ResumenRrhhDTO } from "@/lib/rrhh/tipos";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 export interface UseRrhhResumenResult {
   resumen: ResumenRrhhDTO | null;
@@ -37,7 +38,7 @@ export function useRrhhResumen(): UseRrhhResumenResult {
         if (vigente) setResumen(data);
       })
       .catch((err) => {
-        console.error("[rrhh] resumen falló", err);
+        sinDato("RRHH resumen")(err);
         if (vigente) setError(err instanceof Error ? err.message : "No se pudo cargar el resumen");
       })
       .finally(() => {

@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { FechaKey, GanadoDTO } from "@/lib/rrhh/tipos";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 export interface UseRrhhGanadoResult {
   ganado: GanadoDTO | null;
@@ -39,7 +40,7 @@ export function useRrhhGanado(desde: FechaKey, hasta: FechaKey, colaboradorId?: 
         if (vigente) setGanado(data);
       })
       .catch((err) => {
-        console.error("[rrhh] ganado falló", err);
+        sinDato("RRHH lo ganado")(err);
         if (vigente) setError(err instanceof Error ? err.message : "No se pudo calcular lo ganado");
       })
       .finally(() => {

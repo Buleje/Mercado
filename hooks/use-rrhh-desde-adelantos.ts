@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CandidatoDesdeAdelantosDTO, FechaKey, ResultadoTraerDesdeAdelantosDTO } from "@/lib/rrhh/tipos";
 import type { RrhhApiError } from "./use-rrhh-puestos";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 export type { CandidatoDesdeAdelantosDTO, ResultadoTraerDesdeAdelantosDTO };
 
@@ -64,7 +65,7 @@ export function useRrhhDesdeAdelantos(activo = true): UseRrhhDesdeAdelantosResul
         setYaVinculados(data.yaVinculados ?? 0);
       })
       .catch((err) => {
-        console.error("[rrhh] desde-adelantos falló", err);
+        sinDato("RRHH desde-adelantos")(err);
         if (vigente) setError(err instanceof Error ? err.message : "No se pudo cargar la lista de Adelantos");
       })
       .finally(() => {

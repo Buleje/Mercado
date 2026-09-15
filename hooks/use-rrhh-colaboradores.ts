@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { ColaboradorDTO, ColaboradorMinDTO, EstadoColaborador, FechaKey, Modalidad, NivelRrhh, TipoDocumento } from "@/lib/rrhh/tipos";
 import type { RrhhApiError } from "./use-rrhh-puestos";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 export interface FiltrosColaboradores {
   estados?: EstadoColaborador[];
@@ -85,7 +86,7 @@ export function useRrhhColaboradores(
         setNivel(data.nivel);
       })
       .catch((err) => {
-        console.error("[rrhh] colaboradores falló", err);
+        sinDato("RRHH personal")(err);
         if (vigente) setError(err instanceof Error ? err.message : "No se pudo cargar el personal");
       })
       .finally(() => {

@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { PuestoDTO } from "@/lib/rrhh/tipos";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 export interface PuestoInput {
   nombre: string;
@@ -69,7 +70,7 @@ export function useRrhhPuestos(): UseRrhhPuestosResult {
         if (vigente) setPuestos(data.puestos);
       })
       .catch((err) => {
-        console.error("[rrhh] puestos falló", err);
+        sinDato("RRHH puestos")(err);
         if (vigente) setError(err instanceof Error ? err.message : "No se pudieron cargar los puestos");
       })
       .finally(() => {
