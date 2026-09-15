@@ -315,6 +315,19 @@ const patchSchema = z.discriminatedUnion("action", [
    */
   z.object({
     id: z.string().trim().min(1),
+    action: z.literal("corregir_medidas_paquete"),
+    paqueteId: z.string().trim().min(1).max(40),
+    /* Los topes son de aserradero, no de float: una pieza no mide 2 m de
+       espesor ni 40 m de largo. La medida entra en cm y m (el Libro los pide
+       así); la pantalla convierte desde pulgadas y pies. */
+    espesorCm: z.number().positive().max(200),
+    anchoCm: z.number().positive().max(500),
+    largoM: z.number().positive().max(30),
+    /** Sólo se usa si el paquete venía con 0 piezas (19 de los 27 importados). */
+    cantidad: z.number().int().positive().max(100_000).optional(),
+  }),
+  z.object({
+    id: z.string().min(1),
     action: z.literal("corregir_linea"),
     campos: z
       .object({
@@ -987,6 +1000,22 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
           })
         : null;
       return NextResponse.json(aserrio ? { ...r, aserrio } : r);
+    }
+    if (parsed.data.action === "corregir_medidas_paquete") {
+      return NextResponse.json(
+        await ForestCtpDB.corregirMedidasDePaquete(
+          auth.tenantId,
+          parsed.data.id,
+          {
+            paqueteId: parsed.data.paqueteId,
+            espesorCm: parsed.data.espesorCm,
+            anchoCm: parsed.data.anchoCm,
+            largoM: parsed.data.largoM,
+            cantidad: parsed.data.cantidad,
+          },
+          auth.username ?? "unknown",
+        ),
+      );
     }
     if (parsed.data.action === "corregir_linea") {
       const r = await ForestCtpDB.corregirLinea(

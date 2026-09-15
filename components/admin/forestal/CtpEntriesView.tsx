@@ -79,6 +79,12 @@ import {
   fmtVolumenDePieza,
   type CorridaConCifraImposible,
 } from "@/lib/forestal/produccion-cifras-imposibles";
+import {
+  explicarHipotesis,
+  hipotesisDeCarga,
+  referenciaDe,
+  type ReferenciaPorPieza,
+} from "@/lib/forestal/hipotesis-de-carga";
 
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
@@ -175,10 +181,13 @@ function ChipSinOrigen({
  */
 function ListaCifrasImposibles({
   filas,
+  referencias,
   onVer,
   onVerTodoElHistorico,
 }: {
   filas: CorridaConCifraImposible[];
+  /** m³ por pieza de las corridas SANAS, para poder proponer la cuenta que explica el error. */
+  referencias: ReferenciaPorPieza[];
   onVer: (id: string) => void;
   onVerTodoElHistorico?: () => void;
 }) {
@@ -212,6 +221,19 @@ function ListaCifrasImposibles({
                   {f.producto}
                   {f.lote ? ` · ${f.lote}` : ""}
                 </span>
+                {/* La cuenta que suele explicarlo, para que quien corrige tenga un
+                    número de dónde agarrarse en vez de una corazonada (ADR-417). */}
+                {(() => {
+                  const frase = explicarHipotesis(
+                    hipotesisDeCarga(f.volumenM3, f.piezas, referenciaDe(f.producto, referencias)),
+                    (n) => n.toLocaleString("es-PE", { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
+                  );
+                  return frase ? (
+                    <span className="block w-full text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
+                      {frase}
+                    </span>
+                  ) : null;
+                })()}
               </span>
             </button>
           </li>
@@ -939,6 +961,29 @@ export function CtpEntriesView({
     () => (section === "produccion" ? corridasConCifraImposible(entries) : []),
     [entries, section],
   );
+  /**
+   * Los m³ por pieza de las corridas que SÍ cierran, para poder proponer la
+   * cuenta que explica a las que no (ADR-417). El listado del libro no trae los
+   * paquetes —el modal los busca por corrida—, así que la referencia sale de las
+   * corridas sanas del MISMO producto; si no hay ninguna, la pantalla lo dice en
+   * vez de dictaminar sin con qué comparar.
+   */
+  const referenciasPorPieza = useMemo<ReferenciaPorPieza[]>(() => {
+    if (section !== "produccion") return [];
+    const senaladas = new Set(cifrasImposibles.map((c) => c.id));
+    const out: ReferenciaPorPieza[] = [];
+    for (const e of entries) {
+      if (senaladas.has(e.id)) continue;
+      const vol = Number(e.quantity ?? 0);
+      const piezas = Number(e.pieces ?? 0);
+      if (!(vol > 0) || !(piezas > 0)) continue;
+      out.push({
+        productType: [e.productType, e.speciesCommon].filter(Boolean).join(" · ") || "—",
+        m3PorPieza: vol / piezas,
+      });
+    }
+    return out;
+  }, [entries, cifrasImposibles, section]);
   /** La corrida cuyo panel de ampliación está abierto arriba de la tabla. */
   const [ampliarId, setAmpliarId] = useState<string | null>(null);
   /** Despacho al que se le están adjuntando papeles (ADR-371). */
@@ -1322,6 +1367,7 @@ export function CtpEntriesView({
         contenido: (
           <ListaCifrasImposibles
             filas={cifrasImposibles}
+            referencias={referenciasPorPieza}
             onVer={(id) => {
               const e = entries.find((x) => x.id === id);
               if (e) setChainEntry(e);

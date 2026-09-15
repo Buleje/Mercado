@@ -15,6 +15,7 @@
  * uno que lleva a dos trozas, uno de una guía que todavía no llegó. Esconderlos
  * dejaría una propuesta que parece completa y no lo es.
  */
+import type { ReactNode } from "react";
 import { AlertTriangle, Check, FileText, Sparkles } from "@buleje/design-system/icons";
 import { BlockTitle } from "@buleje/design-system";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -44,10 +45,19 @@ export default function CtpPropuestaDeVinculacion({
   propuesta,
   cargando,
   error,
+  armar,
 }: {
   propuesta: PropuestaVinculacion | null;
   cargando: boolean;
   error: string | null;
+  /**
+   * El bloque que aparta la madera en un lote, cuando hace falta.
+   *
+   * Llega como nodo y no como datos porque escribir es cosa del modal —esta
+   * pantalla sólo muestra— y porque va JUSTO acá: entre el volumen y el lote
+   * elegido, que es el orden en que se lee la decisión.
+   */
+  armar?: ReactNode;
 }) {
   if (cargando) {
     return (
@@ -65,7 +75,7 @@ export default function CtpPropuestaDeVinculacion({
   }
   if (!propuesta) return null;
 
-  const { alcance, origenes, trozas, codigos, lotes, sinLote, otraEspecie } = propuesta;
+  const { alcance, origenes, trozas, codigos, lotes, otraEspecie } = propuesta;
   const noResueltos = codigos.filter((c) => c.estado !== "propuesto");
 
   return (
@@ -135,15 +145,11 @@ export default function CtpPropuestaDeVinculacion({
         )}
       </div>
 
-      {/* El paso que falta: `sumar-corrida` escribe desde un LOTE. */}
-      {sinLote.length > 0 && (
-        <p className="rounded-lg border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-2.5 py-2 text-sm text-[var(--text-secondary)]">
-          {sinLote.length === trozas.length ? "Ninguna" : `${sinLote.length} de ${trozas.length}`} de estas trozas está
-          apartada en un lote de aserrío, y la materia prima se atribuye desde un lote. Ármalo en <b>Lotes</b> con los
-          códigos{" "}
-          <span className="font-mono">{sinLote.map((t) => t.codigo).join(", ")}</span> y vuelve acá.
-        </p>
-      )}
+      {/* El paso que falta —armar el lote— lo resuelve `CtpArmarLoteDesdePropuesta`,
+          que el modal monta acá abajo: antes esto sólo decía «ármalo en Lotes y
+          vuelve», y el operador tenía que rehacer a mano lo que la propuesta ya
+          sabía. */}
+      {armar}
       {lotes.length > 0 && (
         <p className="text-xs text-[var(--text-tertiary)]">
           Ya apartadas en{" "}

@@ -36,6 +36,9 @@ import CtpPegarSniffs from "./CtpPegarSniffs";
 import type { DetalleProduccionSniffs } from "@/lib/forestal/sniffs-produccion-parse";
 import { juzgarRendimientoLote, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import {
+  AYUDA_FORMA_CODIGO,
+  codigoCanonicoDePaquete,
+  codigoTieneForma,
   motivosParaGuardar,
   sugerirCodigoPaquete,
   totalesProduccion,
@@ -424,6 +427,26 @@ export default function CtpRegistrarProduccionModal({
       }),
     [codigosPlanta, codigosUsados, paquetes],
   );
+  /**
+   * El código canónico del mes (`PQ-AAMM-NNN`) que todavía está libre.
+   *
+   * Es el que ofrece el aviso cuando lo tipeado no tiene forma. No se impone: la
+   * serie de la planta la decide el aserradero, y los códigos ya pintados en
+   * atados de verdad no se tocan.
+   */
+  const codigoCanonicoLibre = useCallback(() => {
+    const tomados = new Set(
+      [...codigosPlanta, ...codigosUsados, ...paquetes.map((p) => p.codigo)]
+        .map((c) => c.trim().toLowerCase())
+        .filter(Boolean),
+    );
+    const hoy = new Date();
+    for (let n = 1; n <= 999; n++) {
+      const c = codigoCanonicoDePaquete(hoy, n);
+      if (!tomados.has(c.toLowerCase())) return c;
+    }
+    return codigoCanonicoDePaquete(hoy, 999);
+  }, [codigosPlanta, codigosUsados, paquetes]);
   /* Sólo mientras el campo esté intacto: pisar lo que el operador tipeó porque
      llegó una respuesta del servidor es la forma más rápida de perder un código
      escrito a mano. */
@@ -1239,6 +1262,25 @@ export default function CtpRegistrarProduccionModal({
                 <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
                   Siguiente libre de la serie · {codigosPlanta.length} código
                   {codigosPlanta.length === 1 ? "" : "s"} ya usados en la planta
+                </span>
+              )}
+              {/* Un código sin forma (19 de los 33 del libro real son sólo un
+                  número) no se distingue de un N.º de línea ni de un permiso
+                  cuando alguien lo cita. Se AVISA y se ofrece el canónico; no se
+                  fuerza: la serie de la planta la decide el aserradero. */}
+              {codigo.trim() !== "" && !codigoTieneForma(codigo) && (
+                <span className="mt-1 block text-sm text-[var(--text-secondary)]">
+                  {AYUDA_FORMA_CODIGO}{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      codigoTocado.current = true;
+                      setCodigo(codigoCanonicoLibre());
+                    }}
+                    className="font-bold text-[var(--accent-dark)] underline underline-offset-2 dark:text-[var(--accent)]"
+                  >
+                    Usar {codigoCanonicoLibre()}
+                  </button>
                 </span>
               )}
             </Campo>

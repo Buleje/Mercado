@@ -31,6 +31,8 @@ export type CtpAuditEntity =
   | "WoodEntryTroza"
   | "WoodEntry"
   | "ForestCtpEntry"
+  /** Un paquete declarado de una corrida (ADR-349): su código, sus piezas y su escuadría. */
+  | "ForestCtpPaquete"
   | "ForestCtpConsumo"
   | "ForestProdLote"
   /** Lote de ASERRÍO (ADR-334): la materia prima agrupada antes de la sierra. */
@@ -92,6 +94,8 @@ export type CtpAuditAction =
   // despacho, reproceso o lote de producción todavía referencia.
   | "ctp_libro_purga_parcial"
   // ── Lote de aserrío (ADR-334): armar la materia prima antes de la corrida ──
+  /** Cargó o corrigió la escuadría de un paquete ya declarado (ADR-417). */
+  | "ctp_paquete_escuadria"
   | "ctp_lote_aserrio_create"
   // Lote declarado como inventario (Brandon, 2026-08-31): entra y sale en el
   // mismo acto, sin trozas reales — ver `ORIGEN_LOTE_INVENTARIO`.

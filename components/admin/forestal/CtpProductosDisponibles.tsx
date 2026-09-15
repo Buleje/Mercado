@@ -57,6 +57,12 @@ import CtpCubicarProductoModal from "./CtpCubicarProductoModal";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpMarcarUsadoModal from "./CtpMarcarUsadoModal";
 import CtpEditarLineaModal, { type LineaEditable } from "./CtpEditarLineaModal";
+import CtpEscuadriaPaqueteModal, { type PaqueteAMedir } from "./CtpEscuadriaPaqueteModal";
+import {
+  guardarEscuadriaDePaquete,
+  type EscuadriaAGuardar,
+} from "@/lib/forestal/escuadria-guardar";
+import { CeldaEscuadria } from "./ctp-celda-escuadria";
 import CtpBarraSeleccion from "./ctp-barra-seleccion";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { uidDeFila } from "@/lib/forestal/despacho-lista";
@@ -207,6 +213,8 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   );
   /** Ficha del paquete abierta desde su código (ADR-366). */
   const [fichaPaquete, setFichaPaquete] = useState<string | null>(null);
+  /** El paquete al que se le está cargando o corrigiendo la escuadría. */
+  const [escuadria, setEscuadria] = useState<PaqueteAMedir | null>(null);
   /** Producto que vuelve a la sierra (ADR-316). */
   const [reprocesar, setReprocesar] = useState<CorridaDisponible | null>(null);
   /**
@@ -352,6 +360,27 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     [recargar],
   );
 
+  /**
+   * Escribe la escuadría del paquete en el libro.
+   *
+   * ⚠️ El servidor todavía NO tiene esta rama: falta `corregir_medidas_paquete`
+   * en `app/api/admin/forestal/ctp/route.ts` y el método de escritura en
+   * `lib/db/forest-ctp.db.ts` (zona reservada). Hasta que aterrice, el modal
+   * muestra el error del servidor tal cual — que es lo que un formulario hace
+   * con cualquier rechazo, no una pantalla rota.
+   */
+  const guardarEscuadria = useCallback(
+    async (medidas: EscuadriaAGuardar) => {
+      await guardarEscuadriaDePaquete(medidas);
+      setEscuadria(null);
+      setNota(
+        `Escuadría guardada: ${medidas.espesorCm} × ${medidas.anchoCm} cm · ${medidas.largoM} m.`,
+      );
+      await recargar();
+    },
+    [recargar],
+  );
+
   const opciones = useMemo(
     () => ({
       especies: agruparPorClave(
@@ -487,6 +516,22 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
    *  una corrida sin paquetes, así que sumar acá no repite ninguna corrida. */
   const totalPiezas = useMemo(
     () => filas.reduce((a, f) => a + (f.paquete?.cantidad ?? 0), 0),
+    [filas],
+  );
+
+  /**
+   * Cuántos paquetes a la vista NO tienen escuadría.
+   *
+   * La tarjeta decía «Con su código y sus medidas» sobre TODOS: medido el
+   * 2026-09-15 en el libro real, 27 de 33 no tienen ninguna de las tres. Una
+   * cifra que afirma lo contrario de lo que la columna de al lado muestra es
+   * peor que no tener la cifra.
+   */
+  const paquetesSinMedidas = useMemo(
+    () =>
+      filas.filter(
+        (f) => f.paquete && !(f.paquete.espesorCm && f.paquete.anchoCm && f.paquete.largoM),
+      ).length,
     [filas],
   );
 
@@ -695,7 +740,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             label="Paquetes en planta"
             value={nf(totales.paquetes)}
             subValue={
-              totales.paquetes === 0 ? "Sin paquetes cargados" : "Con su código y sus medidas"
+              totales.paquetes === 0
+                ? "Sin paquetes cargados"
+                : paquetesSinMedidas > 0
+                  ? `${nf(paquetesSinMedidas)} sin escuadría cargada`
+                  : "Todos con su código y su escuadría"
             }
             icon={Boxes}
           />,
@@ -998,9 +1047,28 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
               )}
               {colsVisibles.medidas && (
                 <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
-                  {p?.espesorCm && p?.anchoCm && p?.largoM
-                    ? `${p.espesorCm} × ${p.anchoCm} cm · ${p.largoM} m`
-                    : "—"}
+                  {/* El `—` mudo pasó a ser puerta: sin escuadría el volumen de
+                      este paquete no tiene contra qué cotejarse (27 de 33 en el
+                      libro real). Con ella, al lado va el veredicto del cuadre. */}
+                  <CeldaEscuadria
+                    paquete={p}
+                    onEditar={() =>
+                      p &&
+                      setEscuadria({
+                        id: p.id,
+                        codigo: p.codigo,
+                        ctpEntryId: c.id,
+                        lineNo: c.lineNo,
+                        producto: p.producto ?? c.producto,
+                        especie: c.especie,
+                        cantidad: p.cantidad,
+                        volumenM3: p.volumenM3,
+                        espesorCm: p.espesorCm,
+                        anchoCm: p.anchoCm,
+                        largoM: p.largoM,
+                      })
+                    }
+                  />
                 </td>
               )}
               <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
@@ -1333,6 +1401,18 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             setCubicar(null);
             setNota(msg);
           }}
+        />
+      )}
+
+      {/**
+       * Cargar o corregir la escuadría del paquete. El volumen declarado NO se
+       * pisa: el modal muestra la diferencia y el que midió la pila decide.
+       */}
+      {escuadria && (
+        <CtpEscuadriaPaqueteModal
+          paquete={escuadria}
+          onCerrar={() => setEscuadria(null)}
+          onGuardar={guardarEscuadria}
         />
       )}
     </div>

@@ -78,6 +78,13 @@ export class CtpInvariantError extends Error {
       | "I2_SOBRE_CONSUMO"
       /** Dato del usuario que no cuadra fuera de un invariante numérico (ADR-395). */
       | "VALIDACION"
+      /**
+       * La materia prima propuesta no alcanza para lo que la corrida declara
+       * (ADR-417). Se rechaza en vez de vincular de a poco: `sumar-corrida`
+       * admite una sola pasada, así que una vinculación corta queda imposible
+       * de completar después.
+       */
+      | "VOLUMEN_INSUFICIENTE"
       /** Despachar producto que no se produjo — el acta, agregado por producto. */
       | "I3_SOBRE_DESPACHO"
       // ── Salida: producción → despacho (ADR-135) ──

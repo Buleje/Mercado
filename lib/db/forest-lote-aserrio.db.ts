@@ -12,6 +12,11 @@ import { ORIGEN_LOTE_INVENTARIO } from "@/lib/forestal/lotes-aserrio";
 import type { SniffsRefLote } from "@/lib/forestal/sniffs-produccion-parse";
 import { construirHistoriaLote } from "@/lib/forestal/historia-lote";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import {
+  pasaElTope,
+  rendimientoDeCorrida,
+  TOPE_RENDIMIENTO_PCT,
+} from "@/lib/forestal/vincular-produccion";
 
 /**
  * Lote de ASERRÍO (ADR-334): las trozas de una misma especie que van juntas a
@@ -1272,7 +1277,16 @@ export class ForestLoteAserrioDB {
   static async sumarACorrida(
     tenantId: string,
     input: { loteId: string; corridaId: string; trozaIds: string[]; fecha?: Date; user: string },
-  ): Promise<{ piezas: number; volumenM3: number; volumenTotalM3: number; loteCerrado: boolean }> {
+  ): Promise<{
+    piezas: number;
+    volumenM3: number;
+    volumenTotalM3: number;
+    loteCerrado: boolean;
+    /** `salida / entrada × 100`, o `null` si la corrida todavía no declaró. */
+    rendimientoPct: number | null;
+    /** El rendimiento pasó el techo de la plaza: se avisa, no se corrige. */
+    sobreElTope: boolean;
+  }> {
     if (!tenantId) throw new Error("tenantId is required");
     const { loteId, corridaId, trozaIds, fecha, user } = input;
     if (trozaIds.length === 0) {
@@ -1287,7 +1301,7 @@ export class ForestLoteAserrioDB {
     // total sobre el mismo valor viejo y el que escribe último pisa al otro
     // — el mismo TOCTOU que `setConsumos`/`setOrigenes` ya blindaron con
     // `FOR UPDATE` cuando se reprodujo en una función hermana.
-    const { corrida, lote, libres, delta, volumenPrevio, volumenTotal, seVacia } =
+    const { corrida, lote, libres, delta, volumenPrevio, volumenTotal, seVacia, rendimientoPct } =
       await prisma.$transaction(async (tx) => {
         const locked = await tx.$queryRaw<
           {
@@ -1298,9 +1312,12 @@ export class ForestLoteAserrioDB {
             quantity: Prisma.Decimal | null;
             volumeInputM3: Prisma.Decimal | null;
             speciesCommon: string | null;
+            /* El denominador sólo vale si las dos puntas están en m³: pie
+               tablar ÷ m³ no es un rendimiento, es un número inventado. */
+            unit: string | null;
           }[]
         >`
-          SELECT "id", "lineNo", "section", "status", "quantity", "volumeInputM3", "speciesCommon"
+          SELECT "id", "lineNo", "section", "status", "quantity", "volumeInputM3", "speciesCommon", "unit"
           FROM "ForestCtpEntry"
           WHERE "id" = ${corridaId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
           FOR UPDATE
@@ -1403,16 +1420,60 @@ export class ForestLoteAserrioDB {
         const volumenPrevio = corrida.volumeInputM3 == null ? 0 : Number(corrida.volumeInputM3);
         const volumenTotal = r4(volumenPrevio + delta);
 
+        /*
+         * De la sierra no sale más madera de la que entró.
+         *
+         * La pantalla ya lo dice antes de firmar (`revisarVinculacion`, regla
+         * 2), pero una regla que vive sólo en la pantalla la saltea cualquier
+         * POST — y acá no hay vuelta atrás: `sumar-corrida` admite UNA pasada
+         * por corrida (después de ésta la corrida deja de estar «sin origen»),
+         * así que una vinculación corta no se completa después: queda declarada
+         * con un rendimiento imposible para siempre.
+         *
+         * Diez litros de tolerancia: la del patio, no la del float.
+         */
+        const declarado = corrida.quantity == null ? null : Number(corrida.quantity);
+        const enM3 = (corrida.unit ?? "m3") === "m3";
+        if (declarado != null && enM3 && declarado > volumenTotal + 0.01) {
+          throw new CtpInvariantError(
+            `La corrida N° ${corrida.lineNo} declara ${declarado} m³ de producto y estas trozas suman ${volumenTotal} m³: ` +
+              "de la sierra nunca sale más madera de la que entró. Elige más trozas.",
+            "VOLUMEN_INSUFICIENTE",
+            { declarado, propuesto: volumenTotal },
+          );
+        }
+
+        /*
+         * El rendimiento, que hasta hoy quedaba en blanco.
+         *
+         * `setConsumos` lo calcula solo, pero SÓLO cuando encuentra la corrida
+         * sin `volumeInputM3` — y acá el volumen se escribe dos líneas más
+         * abajo, antes de llamarla (I1 se evalúa contra la fila bloqueada, ver
+         * cabecera). Resultado medido en Blas el 2026-09-15: 9 de 14 corridas
+         * de producción con su salida declarada y la columna «Rend.» vacía, que
+         * es justo el coeficiente que mira SERFOR.
+         *
+         * Se guarda el número REAL. Si pasa el 56 % de la plaza se devuelve
+         * `sobreElTope` para poder decirlo — recortarlo sería declarar un
+         * rendimiento que no ocurrió (ADR-358: se avisa, no se corrige).
+         */
+        const rendimientoPct = rendimientoDeCorrida(declarado, volumenTotal, corrida.unit);
+
         // 1. El volumen primero (ver cabecera y ADR-364), todavía bajo lock.
         await tx.forestCtpEntry.update({
           where: { id: corridaId },
-          data: { volumeInputM3: volumenTotal },
+          data: {
+            volumeInputM3: volumenTotal,
+            /* Sin rendimiento calculable no se toca la columna: escribir `null`
+               a propósito borraría el de una corrida que ya lo tenía. */
+            ...(rendimientoPct != null ? { rendimientoPct } : {}),
+          },
         });
 
         const disponibles = lote.trozas.filter((t) => motivoNoElegible(t) === null);
         const seVacia = libres.length >= disponibles.length;
 
-        return { corrida, lote, libres, delta, volumenPrevio, volumenTotal, seVacia };
+        return { corrida, lote, libres, delta, volumenPrevio, volumenTotal, seVacia, rendimientoPct };
       });
 
     try {
@@ -1445,7 +1506,15 @@ export class ForestLoteAserrioDB {
       /* Nada entró: la corrida vuelve al volumen que tenía. Dejarla inflada por
          un intento fallido inventaría materia prima. */
       await prisma.forestCtpEntry
-        .update({ where: { id: corridaId }, data: { volumeInputM3: volumenPrevio } })
+        .update({
+          where: { id: corridaId },
+          data: {
+            volumeInputM3: volumenPrevio,
+            /* Y el rendimiento que se derivó de ese volumen: dejarlo escrito
+               sobre un denominador que ya no existe es peor que el hueco. */
+            ...(rendimientoPct != null ? { rendimientoPct: null } : {}),
+          },
+        })
         /* Si ni siquiera se pudo restaurar, la corrida queda inflada sin
            atribución: se ve como «materia prima sin origen» en la ficha, pero
            hay que poder rastrear por qué. Silenciarlo lo volvería un misterio. */
@@ -1485,6 +1554,9 @@ export class ForestLoteAserrioDB {
       detail:
         `Sumó ${libres.length} troza${libres.length === 1 ? "" : "s"} del lote ${lote.code} a la corrida N° ${corrida.lineNo}: ` +
         `${delta} m³ más (de ${volumenPrevio} a ${volumenTotal} m³)` +
+        (rendimientoPct != null
+          ? ` · rendimiento ${rendimientoPct} %${pasaElTope(rendimientoPct) ? ` (sobre el ${TOPE_RENDIMIENTO_PCT} % de la plaza)` : ""}`
+          : "") +
         (seVacia ? ` · el lote quedó consumido` : ""),
       user,
     });
@@ -1499,6 +1571,8 @@ export class ForestLoteAserrioDB {
       volumenM3: delta,
       volumenTotalM3: volumenTotal,
       loteCerrado: seVacia,
+      rendimientoPct,
+      sobreElTope: pasaElTope(rendimientoPct),
     };
   }
 

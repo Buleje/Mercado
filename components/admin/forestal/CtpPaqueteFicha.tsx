@@ -24,6 +24,9 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { ModalBody } from "./ctp-shared";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
+import CtpEscuadriaPaqueteModal from "./CtpEscuadriaPaqueteModal";
+import { guardarEscuadriaDePaquete } from "@/lib/forestal/escuadria-guardar";
+import { CeldaEscuadria } from "./ctp-celda-escuadria";
 
 export interface PaqueteEncontrado {
   id: string;
@@ -124,6 +127,10 @@ export default function CtpPaqueteFicha({
   const [trozas, setTrozas] = useState<TrozaDeLaCorrida[]>([]);
   const [guias, setGuias] = useState<GuiaDeOrigen[]>([]);
   const [copiado, setCopiado] = useState(false);
+  /** El modal de escuadría abierto sobre esta ficha. */
+  const [medir, setMedir] = useState(false);
+  /** Sube de a uno tras guardar: es lo que vuelve a pedir el paquete al libro. */
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     let vivo = true;
@@ -144,7 +151,7 @@ export default function CtpPaqueteFicha({
       .catch((e) => { if (vivo) setError(e instanceof Error ? e.message : String(e)); })
       .finally(() => { if (vivo) setCargando(false); });
     return () => { vivo = false; };
-  }, [codigo]);
+  }, [codigo, version]);
 
   const p = resultados[0] ?? null;
   /* Varios: el código se tipeó parcial. Se listan para elegir, en vez de mostrar
@@ -152,6 +159,7 @@ export default function CtpPaqueteFicha({
   const varios = resultados.length > 1;
 
   return (
+    <>
     <AdminModal
       open
       onClose={onClose}
@@ -229,11 +237,21 @@ export default function CtpPaqueteFicha({
                   fuerte
                 />
               </div>
-              {(p.espesorCm != null || p.anchoCm != null || p.largoM != null) && (
-                <p className="mt-3 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-                  {n(p.espesorCm, 2)} × {n(p.anchoCm, 2)} cm × {n(p.largoM, 2)} m
-                </p>
-              )}
+              {/* La escuadría y su cuadre. Vacía es una PUERTA, no un guion: es
+                  el atado que está delante y el momento de medirlo. */}
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2">
+                <CeldaEscuadria
+                  paquete={{
+                    codigo: p.codigo,
+                    cantidad: p.cantidad ?? 0,
+                    volumenM3: Number(p.volumenM3 ?? 0),
+                    espesorCm: p.espesorCm,
+                    anchoCm: p.anchoCm,
+                    largoM: p.largoM,
+                  }}
+                  onEditar={() => setMedir(true)}
+                />
+              </div>
               {p.observations && (
                 <p className="mt-2 text-sm text-[var(--text-secondary)]">{p.observations}</p>
               )}
@@ -367,5 +385,32 @@ export default function CtpPaqueteFicha({
         )}
       </ModalBody>
     </AdminModal>
+
+      {/* Medir el atado que está delante: misma puerta que la celda MEDIDAS de
+          «Productos disponibles», abierta sobre esta ficha. */}
+      {medir && p && !varios && (
+        <CtpEscuadriaPaqueteModal
+          paquete={{
+            id: p.id,
+            codigo: p.codigo,
+            ctpEntryId: p.corrida.id,
+            lineNo: p.corrida.lineNo,
+            producto: p.productType ?? p.corrida.productType,
+            especie: p.corrida.speciesCommon,
+            cantidad: p.cantidad ?? 0,
+            volumenM3: Number(p.volumenM3 ?? 0),
+            espesorCm: p.espesorCm,
+            anchoCm: p.anchoCm,
+            largoM: p.largoM,
+          }}
+          onCerrar={() => setMedir(false)}
+          onGuardar={async (medidas) => {
+            await guardarEscuadriaDePaquete(medidas);
+            setMedir(false);
+            setVersion((v) => v + 1);
+          }}
+        />
+      )}
+    </>
   );
 }

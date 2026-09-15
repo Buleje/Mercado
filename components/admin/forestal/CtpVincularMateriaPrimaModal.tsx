@@ -26,7 +26,7 @@
  * lote elegido y las trozas tildadas, y la firma sigue siendo de quien registra.
  * Los códigos que no se encontraron se dicen arriba, no se ignoran.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, Layers, Loader2, Ruler, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
@@ -36,13 +36,17 @@ import { piezasLibres, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import {
   largoMaxEnMetros,
   revisarVinculacion,
+  TOPE_RENDIMIENTO_PCT,
   type CorridaAVincular,
   type TrozaAVincular,
 } from "@/lib/forestal/vincular-produccion";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { olvidarCodigosDeCorrida } from "@/lib/forestal/codigos-de-corrida";
 import { usePropuestaDeVinculacion } from "./hooks/use-propuesta-de-vinculacion";
+import { useArmarLoteDePropuesta } from "./hooks/use-armar-lote-de-propuesta";
+import { planearLoteDesdePropuesta } from "@/lib/forestal/lote-desde-propuesta";
 import CtpPropuestaDeVinculacion from "./CtpPropuestaDeVinculacion";
+import CtpArmarLoteDesdePropuesta from "./CtpArmarLoteDesdePropuesta";
 import { Btn } from "./ctp-shared";
 
 /** Un paquete declarado por la corrida, como lo devuelve el detalle. */
@@ -240,15 +244,29 @@ export default function CtpVincularMateriaPrimaModal({
   onCerrar: () => void;
   onListo: (mensaje: string) => void;
 }) {
+  /**
+   * El lote que se acaba de armar desde la propuesta.
+   *
+   * Vive acá y no en el padre porque el padre (`CtpEntriesView`) recarga sus
+   * lotes recién al cerrar: sin esto, el lote existiría en la base y el
+   * desplegable de abajo seguiría vacío — el mismo callejón que esto viene a
+   * abrir.
+   */
+  const [loteArmado, setLoteArmado] = useState<LoteAserrio | null>(null);
+  const todos = useMemo(
+    () => (loteArmado ? [loteArmado, ...lotes.filter((l) => l.id !== loteArmado.id)] : lotes),
+    [lotes, loteArmado],
+  );
+
   /* Sólo lotes abiertos y de la MISMA especie: ofrecer los otros es ofrecer un
      error que la revisión va a rechazar dos clics después. */
   const candidatos = useMemo(
-    () => lotes.filter(
+    () => todos.filter(
       (l) => l.status === "abierto" &&
         (!corrida.especie || norma(l.speciesCommon) === norma(corrida.especie)) &&
         piezasLibres(l).length > 0,
     ),
-    [lotes, corrida.especie],
+    [todos, corrida.especie],
   );
   /* Lo que los códigos del cubicado proponen. Sin códigos anotados no pide
      nada y la pantalla queda exactamente como estaba. */
@@ -261,6 +279,28 @@ export default function CtpVincularMateriaPrimaModal({
 
   const [loteId, setLoteId] = useState<string>("");
   const lote = candidatos.find((l) => l.id === loteId) ?? null;
+
+  /**
+   * Armar el lote que la propuesta necesita, sin salir de acá.
+   *
+   * `sumar-corrida` sólo mueve piezas de un lote y en el patio real no había
+   * ninguno con piezas libres (160 trozas sueltas, 0 lotes con madera): el
+   * desplegable de abajo salía vacío siempre. El plan dice qué se escribiría; el
+   * hook lo escribe con los mismos dos endpoints de la pestaña Lotes.
+   */
+  const corridaDelPlan = useMemo(
+    () => ({ lineNo: corrida.lineNo, especie: corrida.especie, fecha: corrida.fecha }),
+    [corrida.lineNo, corrida.especie, corrida.fecha],
+  );
+  const armado = useMemo(
+    () => (propuesta ? planearLoteDesdePropuesta(propuesta, corridaDelPlan, todos) : null),
+    [propuesta, corridaDelPlan, todos],
+  );
+  const alArmar = useCallback((nuevo: LoteAserrio) => {
+    setLoteArmado(nuevo);
+    setLoteId(nuevo.id);
+  }, []);
+  const armar = useArmarLoteDePropuesta(alArmar);
   const libres = useMemo(() => (lote ? piezasLibres(lote) : []), [lote]);
 
   /* Si la propuesta señala UN lote y está entre los candidatos, se elige solo:
@@ -363,15 +403,26 @@ export default function CtpVincularMateriaPrimaModal({
           fecha: corrida.fecha.slice(0, 10),
         }),
       });
-      const j = (await r.json().catch(() => ({}))) as { message?: string; error?: string; volumenM3?: number };
+      const j = (await r.json().catch(() => ({}))) as {
+        message?: string;
+        error?: string;
+        volumenM3?: number;
+        /* El rendimiento lo calcula y lo GUARDA el servidor (regla: los totales
+           no los decide el cliente). Se muestra el suyo, no el previsualizado. */
+        rendimientoPct?: number | null;
+        sobreElTope?: boolean;
+      };
       if (!r.ok) throw new Error(j.message ?? j.error ?? `El servidor respondió ${r.status}`);
       /* La corrida ya tiene su origen escrito: el apunte del cubicado cumplió. */
       olvidarCodigosDeCorrida(corrida.id);
       invalidarCtp();
+      const rendimiento = j.rendimientoPct ?? revision.rendimientoPct;
       onListo(
         `Materia prima vinculada: ${trozas.length} troza(s) · ${fmtM3(revision.trozaM3)} m³ del lote ${lote.code} ` +
           `quedaron atribuidas a la corrida N° ${corrida.lineNo ?? "—"}` +
-          (revision.rendimientoPct != null ? ` · rendimiento ${revision.rendimientoPct} %` : "") + ".",
+          (rendimiento != null ? ` · rendimiento ${rendimiento} %` : "") +
+          (j.sobreElTope ? ` (sobre el ${TOPE_RENDIMIENTO_PCT} % de la plaza: queda declarado así)` : "") +
+          ".",
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -433,6 +484,19 @@ export default function CtpVincularMateriaPrimaModal({
             propuesta={propuesta}
             cargando={cargandoPropuesta}
             error={errorPropuesta}
+            armar={
+              armado && (
+                <CtpArmarLoteDesdePropuesta
+                  armado={armado}
+                  corrida={corridaDelPlan}
+                  armando={armar.armando}
+                  error={armar.error}
+                  rechazadas={armar.rechazadas}
+                  listo={loteArmado ? { code: loteArmado.code, piezas: piezasLibres(loteArmado).length } : null}
+                  onArmar={(plan, c) => void armar.armar(plan, c)}
+                />
+              )
+            }
           />
 
           <label className="block">
@@ -453,8 +517,10 @@ export default function CtpVincularMateriaPrimaModal({
             </select>
             {candidatos.length === 0 && (
               <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
-                No hay lotes abiertos de {corrida.especie ?? "esa especie"} con trozas libres. Arma el lote
-                primero en <b>Lotes</b> y vuelve.
+                No hay lotes abiertos de {corrida.especie ?? "esa especie"} con trozas libres.{" "}
+                {armado?.plan
+                  ? "Arma el lote con el botón de arriba: la propuesta ya sabe qué madera va."
+                  : "Arma el lote primero en Lotes y vuelve."}
               </span>
             )}
           </label>

@@ -146,6 +146,54 @@ export function siguienteCodigo(anterior: string): string {
   return `${prefijo}${String(Number(numero) + 1).padStart(numero.length, "0")}`;
 }
 
+// ── La FORMA de un código de paquete ────────────────────────────────────────
+
+/**
+ * Un código con forma: letras, guion y correlativo.
+ *
+ * Medido el 2026-09-15 en el libro de Blas: de 33 paquetes, **19 tienen un
+ * código que es sólo un número** (`55`, `56`… `73`) y otros 8 son iniciales
+ * pegadas a un dígito (`Roly2`, `FG2`, `d1d15`, `S1525`) o un número que parece
+ * un permiso (`2026-032`). Únicos con forma: los 6 `SL-1`…`SL-6`.
+ *
+ * Un `74` escrito en un cartel no se distingue de un N.º de línea del libro, de
+ * un N.º de permiso ni de una cantidad de piezas: cuando alguien lo cita por
+ * teléfono o lo anota en una guía, no hay forma de saber qué es. La forma es
+ * justamente lo que vuelve al código citable.
+ *
+ * Acepta las dos variantes que conviven en la planta:
+ *   - `SL-7`, `PQ-014` — serie corrida de toda la planta.
+ *   - `PQ-2609-001` — la canónica, con el año y el mes adentro.
+ */
+export const FORMA_CODIGO_PAQUETE = /^[A-Za-z]{1,6}-(?:\d{4}-)?\d{1,6}$/;
+
+/** El formato que se propone cuando la planta no tiene ninguna serie con forma. */
+export const CODIGO_PAQUETE_CANONICO = "PQ-AAMM-NNN";
+
+/** Cómo se explica la forma en una línea, para la pantalla. */
+export const AYUDA_FORMA_CODIGO =
+  `Letras, guion y correlativo (${CODIGO_PAQUETE_CANONICO} — por ejemplo PQ-2609-001). ` +
+  "Un número pelado se confunde con el N.º de línea, con un permiso o con una cantidad.";
+
+/** ¿Este código se distingue de cualquier otro número del libro? */
+export function codigoTieneForma(codigo: string): boolean {
+  return FORMA_CODIGO_PAQUETE.test(codigo.trim());
+}
+
+/**
+ * El código canónico del mes: `PQ-AAMM-NNN`.
+ *
+ * `PQ` de paquete, el año y el mes de la corrida, y el correlativo de tres
+ * dígitos. Ordena solo, dice CUÁNDO sin abrir el libro, y dos plantas del mismo
+ * dueño que arrancan de cero el mismo día no chocan porque el índice es por
+ * tenant (`@@unique[tenantId, codigo]`).
+ */
+export function codigoCanonicoDePaquete(hoy: Date, n: number): string {
+  const aa = String(hoy.getUTCFullYear()).slice(-2);
+  const mm = String(hoy.getUTCMonth() + 1).padStart(2, "0");
+  return `PQ-${aa}${mm}-${String(n).padStart(3, "0")}`;
+}
+
 // ── El código de paquete que todavía está libre ─────────────────────────────
 
 /**
@@ -165,6 +213,14 @@ export function siguienteCodigo(anterior: string): string {
  *   4. Sin ninguna serie previa se arranca `PQ-AAMM-001`: el año y el mes hacen
  *      que dos plantas del mismo dueño no colisionen ni empezando de cero.
  *
+ * ⚠️ Sólo se continúan las series **con forma** ({@link codigoTieneForma}).
+ * Medido el 2026-09-15 en Blas: la serie más usada es la de números pelados
+ * (`55`…`73`, 19 de 33 paquetes), así que la pantalla venía proponiendo `74` —
+ * un código que no se distingue de un N.º de línea ni de un permiso, y que el
+ * operador acepta porque viene sugerido. Los códigos viejos **no se tocan**:
+ * están pintados en atados de verdad. Lo que cambia es lo que se propone de acá
+ * en más.
+ *
  * PURA: `hoy` entra por parámetro para poder testearla.
  */
 export function sugerirCodigoPaquete(
@@ -180,6 +236,9 @@ export function sugerirCodigoPaquete(
      prefijo no tiene que arrastrar a toda la planta. */
   const series = new Map<string, { ancho: number; max: number; veces: number; orden: number }>();
   existentes.forEach((crudo, i) => {
+    /* Una serie sin forma no se continúa: proponer el siguiente número pelado
+       es propagar el problema que este módulo intenta cortar. */
+    if (!codigoTieneForma(crudo)) return;
     const m = crudo.trim().match(/^(.*?)(\d+)$/);
     if (!m) return;
     const [, prefijo, numero] = m;
@@ -200,14 +259,11 @@ export function sugerirCodigoPaquete(
   )[0];
 
   if (!elegida) {
-    const aa = String(opts.hoy.getUTCFullYear()).slice(-2);
-    const mm = String(opts.hoy.getUTCMonth() + 1).padStart(2, "0");
-    const prefijo = `PQ-${aa}${mm}-`;
     for (let n = 1; n <= 9999; n++) {
-      const codigo = `${prefijo}${String(n).padStart(3, "0")}`;
+      const codigo = codigoCanonicoDePaquete(opts.hoy, n);
       if (!tomados.has(codigo.toLowerCase())) return codigo;
     }
-    return `${prefijo}${Date.parse(opts.hoy.toISOString())}`;
+    return codigoCanonicoDePaquete(opts.hoy, 9999);
   }
 
   const [prefijo, { ancho, max }] = elegida;

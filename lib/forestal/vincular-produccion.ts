@@ -246,6 +246,41 @@ export function revisarVinculacion(
   };
 }
 
+/**
+ * El rendimiento de una corrida: lo que SALIÓ sobre lo que ENTRÓ, en porcentaje.
+ *
+ * Es un **derivado**, no un dato que alguien declare: si los dos números están,
+ * se divide. Vive acá —y no copiado en cada llamador— porque hasta hoy la misma
+ * cuenta estaba escrita en cuatro lugares (`declararProduccion`, `setConsumos`,
+ * la ficha del lote) y una quinta copia es la que termina divergiendo.
+ *
+ * `null` cuando no se puede calcular, y son tres casos distintos que se ven
+ * igual desde afuera: la corrida no declaró producción, no tiene materia prima,
+ * o declaró en **pie tablar** — dividir PT por m³ no da un rendimiento, da un
+ * número inventado (la misma regla que `corridasOtraUnidad` en Consumos).
+ *
+ * Nunca se recorta al tope: un 89 % se guarda 89. El techo del 56 % **avisa**
+ * (`pasaElTope`), no corrige — el libro declara lo que pasó, y maquillar el
+ * número sería borrar justo lo que una fiscalización viene a mirar.
+ */
+export function rendimientoDeCorrida(
+  producidoM3: number | null | undefined,
+  entradaM3: number | null | undefined,
+  unit?: string | null,
+): number | null {
+  if ((unit ?? "m3") !== "m3") return null;
+  const salida = Number(producidoM3 ?? 0);
+  const entrada = Number(entradaM3 ?? 0);
+  if (!Number.isFinite(salida) || !Number.isFinite(entrada)) return null;
+  if (!(salida > 0) || !(entrada > 0)) return null;
+  return r2((salida / entrada) * 100);
+}
+
+/** ¿Ese rendimiento pasa el techo de la plaza (ADR-358)? Se avisa, no se corrige. */
+export function pasaElTope(rendimientoPct: number | null | undefined): boolean {
+  return rendimientoPct != null && rendimientoPct > TOPE_RENDIMIENTO_PCT;
+}
+
 /** El largo de la pieza más larga, en METROS, desde paquetes en metros o pies. */
 export function largoMaxEnMetros(
   paquetes: readonly { largoM?: number | null; largoPies?: number | null }[],

@@ -49,6 +49,7 @@ import { estaDisponible, type TrozaConsumible } from "@/lib/forestal/consumo-tro
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
+import { jornadasDesdeFilas, type JornadaDelLibro } from "@/lib/forestal/detalle-de-jornada";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -1617,9 +1618,7 @@ export class ForestCtpDB {
      * con cuántos registros, cuánto volumen y cuántas piezas.
      */
     seccion: "produccion" | "consumo" | "despacho" = "produccion",
-  ): Promise<
-    { dia: string; corridas: number; m3: number; pt: number; piezas: number }[]
-  > {
+  ): Promise<JornadaDelLibro[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const dia = /^\d{4}-\d{2}-\d{2}$/;
     if (!dia.test(rango.desde) || !dia.test(rango.hasta)) return [];
@@ -1646,45 +1645,53 @@ export class ForestCtpDB {
         volumeInputM3: true,
         /* Las piezas del consumo son las trozas que entraron, no las que
            salieron: se cuentan del puente, que es donde viven (ADR-326). */
-        _count: { select: { consumos: true } },
+        _count: { select: { consumos: true, reprocesosEntrada: true } },
+        /* Lo que el panel flotante de la tira cuenta de cada día (2026-09-14):
+           especie, dueño, permiso, línea, los paquetes vivos con su
+           clasificación y si la corrida tiene origen (consumos + reprocesos
+           que la producen, la regla de `corridaSinOrigen`). Viaja en ESTA
+           consulta —no una por día— y sólo se arma en producción. */
+        lineNo: true,
+        speciesCommon: true,
+        duenoMadera: true,
+        titularNombre: true,
+        originCode: true,
+        lineaProduccion: true,
+        materiaPrimaRef: true,
+        paquetes: {
+          where: { deletedAt: null },
+          select: { productType: true, cantidad: true, volumenM3: true },
+        },
       },
+      /* El orden del libro: dentro de un día, por N.º. El detalle suma en este
+         orden y muestra el nombre de especie de la corrida más vieja. */
+      orderBy: [{ entryDate: "asc" }, { lineNo: "asc" }],
       /* Un rango de semanas, no de años: el tope es una red, no una página. */
       take: 2000,
     });
 
-    const porDia = new Map<string, { corridas: number; m3: number; piezas: number }>();
-    for (const f of filas) {
-      const clave = f.entryDate.toISOString().slice(0, 10);
-      const acc = porDia.get(clave) ?? { corridas: 0, m3: 0, piezas: 0 };
-      acc.corridas += 1;
-      if (seccion === "consumo") {
-        acc.m3 += Number(f.volumeInputM3 ?? 0);
-        acc.piezas += f._count.consumos;
-      } else {
-        /* `quantity` es el volumen declarado y su unidad casi siempre es m³
-           (`guardar-produccion-corrida` manda `unit: "m3"`). Si una fila vieja
-           declaró en otra unidad, su volumen NO se suma —convertir a ojo sería
-           inventar el número que después se lee como producción del día— pero
-           la fila sí se cuenta: el día tuvo trabajo. */
-        if (!f.unit || f.unit === "m3") acc.m3 += Number(f.quantity ?? 0);
-        acc.piezas += f.pieces ?? 0;
-      }
-      porDia.set(clave, acc);
-    }
-
-    return [...porDia.entries()]
-      .map(([clave, v]) => ({
-        dia: clave,
-        corridas: v.corridas,
-        m3: Math.round(v.m3 * 10000) / 10000,
-        /* PT = m³ × `PT_POR_M3`, la equivalencia de la plaza. El aserradero
-           habla en pies tablares; el m³ es la unidad del papel. La constante se
-           importa: cuando vivía escrita en dos archivos, dos pantallas del mismo
-           libro daban dos totales distintos. */
-        pt: Math.round(v.m3 * PT_POR_M3),
-        piezas: v.piezas,
-      }))
-      .sort((a, b) => a.dia.localeCompare(b.dia));
+    /* La cuenta vive en `jornadasDesdeFilas` (pura y probada): acá sólo se
+       traduce cada asiento a su día UTC y a los conteos de sus puentes. */
+    return jornadasDesdeFilas(
+      filas.map((f) => ({
+        dia: f.entryDate.toISOString().slice(0, 10),
+        lineNo: f.lineNo,
+        quantity: f.quantity,
+        unit: f.unit,
+        pieces: f.pieces,
+        volumeInputM3: f.volumeInputM3,
+        consumos: f._count.consumos,
+        reprocesosEntrada: f._count.reprocesosEntrada,
+        speciesCommon: f.speciesCommon,
+        duenoMadera: f.duenoMadera,
+        titularNombre: f.titularNombre,
+        originCode: f.originCode,
+        lineaProduccion: f.lineaProduccion,
+        materiaPrimaRef: f.materiaPrimaRef,
+        paquetes: f.paquetes,
+      })),
+      seccion,
+    );
   }
 
   /**
@@ -2485,6 +2492,86 @@ export class ForestCtpDB {
    * La auditoría narra **el antes y el después de cada campo**. Una corrección
    * sin ese detalle es indistinguible de una adulteración.
    */
+  /**
+   * Cargar o corregir la escuadría de un paquete ya declarado (ADR-417).
+   *
+   * Por qué existe: 27 de los 33 paquetes del tenant real no tienen espesor,
+   * ancho ni largo, así que su volumen no se puede recalcular ni imprimir una
+   * lista de empaque — y el freno de cifras imposibles cae a su criterio flojo.
+   *
+   * **No toca `volumenM3` del paquete ni `quantity` de la corrida.** La
+   * escuadría se carga para poder COTEJAR lo declarado, no para reemplazarlo: si
+   * la medida y el volumen no cuadran, eso es justamente lo que hay que ver, y
+   * pisar uno con el otro borraría la pregunta. `cantidad` sólo se completa
+   * cuando el paquete venía en cero (19 de esos 27 llegaron así en la importación).
+   */
+  static async corregirMedidasDePaquete(
+    tenantId: string,
+    ctpEntryId: string,
+    input: { paqueteId: string; espesorCm: number; anchoCm: number; largoM: number; cantidad?: number },
+    user = "unknown",
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!ctpEntryId) throw new Error("ctpEntryId is required");
+
+    const corrida = await prisma.forestCtpEntry.findFirst({
+      where: { id: ctpEntryId, tenantId, deletedAt: null },
+      select: { id: true, lineNo: true, status: true, entryDate: true },
+    });
+    if (!corrida) throw new CtpInvariantError("Esa corrida no existe.", "LOTE_NO_ENCONTRADO");
+    if (corrida.status !== "registrado") {
+      throw new CtpInvariantError(
+        `Una corrida ${corrida.status} no se corrige: regístrala de nuevo.`,
+        "ESTADO_NO_EDITABLE",
+        { status: corrida.status },
+      );
+    }
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, corrida.entryDate);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se corrigen paquetes de un mes cerrado. Reabre el período.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+
+    /* El paquete se busca por tenant Y por corrida: un `paqueteId` de otra
+       corrida —o de otro tenant— no se toca ni se dice que sí. */
+    const paquete = await prisma.forestCtpPaquete.findFirst({
+      where: { id: input.paqueteId, tenantId, ctpEntryId, deletedAt: null },
+      select: { id: true, codigo: true, cantidad: true, espesorCm: true, anchoCm: true, largoM: true },
+    });
+    if (!paquete) throw new CtpInvariantError("Ese paquete no existe en esta corrida.", "LOTE_NO_ENCONTRADO");
+
+    const data: Prisma.ForestCtpPaqueteUpdateInput = {
+      espesorCm: new Prisma.Decimal(input.espesorCm),
+      anchoCm: new Prisma.Decimal(input.anchoCm),
+      largoM: new Prisma.Decimal(input.largoM),
+    };
+    /* Sólo se completa lo que faltaba: bajar las piezas de un paquete que ya las
+       declaraba cambiaría cuentas que el libro ya publicó. */
+    const completaPiezas = typeof input.cantidad === "number" && paquete.cantidad === 0;
+    if (completaPiezas) data.cantidad = input.cantidad;
+
+    await prisma.forestCtpPaquete.update({ where: { id: paquete.id, tenantId }, data });
+
+    auditCtp({
+      tenantId,
+      action: "ctp_paquete_escuadria",
+      entity: "ForestCtpPaquete",
+      entityId: paquete.id,
+      detail:
+        `Cargó la escuadría del paquete ${paquete.codigo} (corrida N° ${corrida.lineNo ?? "?"}): ` +
+        `${input.espesorCm} × ${input.anchoCm} cm × ${input.largoM} m` +
+        (completaPiezas ? ` · piezas ${input.cantidad}` : ""),
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
+    return { ok: true as const, paqueteId: paquete.id, piezasCompletadas: completaPiezas };
+  }
+
   static async corregirLinea(
     tenantId: string,
     id: string,
