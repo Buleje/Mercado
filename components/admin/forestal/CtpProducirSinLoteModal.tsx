@@ -27,6 +27,13 @@
  * ese permiso al 56 %, cuánto ya se declaró sin lote contra él y cuánto queda.
  * La simulación se ve acá mismo ANTES de registrar.
  *
+ * ## Traer del SNIFFS (ADR-397)
+ *
+ * En el paso «declarar» se puede pegar el «Detalle de la programación de
+ * producción». Acá **no arma paquetes** —esos salen de lo cubicado y esa es la
+ * única fuente de la tabla—: entra como lo declarado al SNIFFS y se coteja
+ * contra lo cubicado, producto por producto. Ver `CtpSniffsSinLote`.
+ *
  * ## Lo que NO hace, a propósito
  *
  * No inventa el origen. La corrida nace **sin consumos y sin lote**: el Libro ya
@@ -45,6 +52,8 @@ import { logger } from "@/lib/logger";
 import { ESPECIES_MADERA, unificarPorMedida, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { avisoDeEspecie, especieDelAsiento } from "@/lib/forestal/especie-del-asiento";
 import { recordarCodigosDeCorrida } from "@/lib/forestal/codigos-de-corrida";
+import { permisoDesdeLosCodigos } from "@/lib/forestal/codigo-de-troza";
+import { codigosDeLoCubicado } from "@/lib/forestal/propuesta-de-vinculacion";
 import { tipoDePieza } from "@/lib/forestal/cubicacion-tipo";
 import { productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
@@ -63,6 +72,7 @@ import { SIN_PERMISO, simularCorrida } from "@/lib/forestal/saldo-por-permiso";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { sugerirCodigoPaquete } from "@/lib/forestal/produccion-paquetes";
 import CubicadorMadera from "./CubicadorMadera";
+import CtpSniffsSinLote from "./CtpSniffsSinLote";
 import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
 import { useTrozasParaCodigo } from "./hooks/use-trozas-para-codigo";
@@ -302,6 +312,17 @@ export default function CtpProducirSinLoteModal({
       : { lista: todos, filtrados: false };
   }, [saldo.datos, especiePrincipal]);
   /**
+   * El permiso que dicen los códigos anotados al cubicar (ADR-417). En el patio
+   * real cada código lleva a UNA guía y a un solo título habilitante, así que lo
+   * que ya se escribió alcanza para proponerlo — y 6 de las 14 corridas se
+   * registraron sin ninguno. Con códigos de dos permisos no se elige: se dicen.
+   */
+  const permisoSugerido = useMemo(
+    () => permisoDesdeLosCodigos(codigosDeLoCubicado(piezas), trozasParaCodigo.trozas),
+    [piezas, trozasParaCodigo.trozas],
+  );
+
+  /**
    * Cómo queda el permiso si esta producción se registra. No hay aritmética
    * nueva: el borrador entra como una corrida más en la MISMA cuenta que dibuja
    * el apartado «Saldo por permiso» (ADR-409).
@@ -529,6 +550,27 @@ export default function CtpProducirSinLoteModal({
             />
           ) : (
             <div className="mx-auto max-w-3xl space-y-3">
+              {/* Lo que se declaró al SNIFFS, para cotejarlo con lo cubicado
+                  (ADR-397). Va acá y no en el paso de cubicar por dos razones:
+                  el cotejo necesita que YA haya algo cubicado con qué comparar,
+                  y mientras se miden piezas el Ctrl+V es del cubicador. No
+                  arma paquetes: los m³ del Libro salen del pie tablar de cada
+                  medida, y el resumen del SNIFFS no trae ni piezas ni
+                  escuadrías. */}
+              <CtpSniffsSinLote
+                paquetes={paquetes}
+                especie={especiePrincipal}
+                especiesConocidas={especiesOfrecidas}
+                fecha={fecha}
+                onUsarFecha={(iso) => {
+                  setFecha(iso);
+                  setSemana(iso);
+                }}
+                onUsarEspecie={declararEspecie}
+                onAnotar={(nota) =>
+                  setObservaciones((previas) => (previas.trim() ? `${previas.trim()}\n${nota}` : nota))
+                }
+              />
               <div className="grid gap-2 sm:grid-cols-3">
                 <label className="block">
                   <span className={LABEL}>Fecha de la producción</span>
@@ -609,6 +651,34 @@ export default function CtpProducirSinLoteModal({
                       <option key={p} value={p} />
                     ))}
                   </datalist>
+                  {/* Lo que dicen los códigos anotados al cubicar. Se propone, no se
+                      escribe solo: el campo es libre porque quien registra puede saber
+                      algo que el patio todavía no. */}
+                  {permisoSugerido.estado === "uno" && permiso.trim() !== permisoSugerido.permiso && (
+                    <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
+                      <span>
+                        {permisoSugerido.codigos.length === 1
+                          ? `El código ${permisoSugerido.codigos[0]} que cargaste es de`
+                          : `Los ${permisoSugerido.codigos.length} códigos que cargaste son de`}{" "}
+                        <b className="font-mono text-[var(--text-primary)]">{permisoSugerido.permiso}</b>
+                        {permisoSugerido.guias.length === 1 ? ` (guía ${permisoSugerido.guias[0]})` : ""}.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPermiso(permisoSugerido.permiso)}
+                        className="rounded-lg border border-[var(--rule-base)] px-2 py-0.5 font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
+                      >
+                        Usarlo
+                      </button>
+                    </span>
+                  )}
+                  {permisoSugerido.estado === "varios" && (
+                    <span className="mt-1 block text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
+                      Los códigos que cargaste vienen de {permisoSugerido.permisos.length} permisos (
+                      <span className="font-mono">{permisoSugerido.permisos.join(" · ")}</span>): elige cuál declara esta
+                      corrida.
+                    </span>
+                  )}
                   <span className="mt-1 block text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
                     {permisos.filtrados
                       ? permisos.lista.length === 1
