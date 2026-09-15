@@ -1,6 +1,6 @@
 # SESSION HANDOFF — 2026-09-14 (tarde)
 
-Branch: `audit/storefront-mejoras-verificadas-2026-06-15`. Subido hasta `36a00f17`; **`dbcbc4a7`, `93978b2e` y el commit de docs están SÓLO en local** (subir con `git push` cuando Brandon lo pida).
+Branch: `audit/storefront-mejoras-verificadas-2026-06-15`. **Todo subido** (push de la noche: `dbcbc4a7`, `93978b2e`, `e7b11141` y la ronda de la consola).
 Detalle completo y cómo revertir cada cosa: memoria `harness-refresh-2026-09-14`.
 
 ## ✅ Hecho y subido hoy (tarde)
@@ -22,6 +22,15 @@ Detalle completo y cómo revertir cada cosa: memoria `harness-refresh-2026-09-14
 | `ef165c94` · `2205edc6` · `0270feb9` | Errores tragados con `sinDato`, 9 módulos con `?sub=`, fecha en el aviso de caja | reviewer con contexto fresco + 259 archivos de test (2.898 ✓) |
 | `dbcbc4a7` | 104 de 107 `.catch(() => null)` del servidor con `sinDato`/`leerJson`/`descartarEsperado`; el log ya no guarda valores de Prisma; metas, tareas y beta-feedback no reescriben un JSON corrupto | auditoría `security` sin veto + 24 tests nuevos |
 | `93978b2e` | Tuteo en todo el panel: `components/admin`, `app/admin`, hooks, `lib`, mensajes de `app/api` y prompts de IA | detector genérico: 0 residuo real en el panel; 3.289 tests; 19 aserciones actualizadas |
+
+## 🔧 Consola del panel (noche) — `1da711dd` · `b1937ca3` · `83d4b848`, subidos
+Pedido: «soluciona problemas y errores en general» + log de consola con 404 en `me/specializations`, `notifications/stream`, `chat/threads` y `rrhh/colaboradores/desde-adelantos`.
+| Qué | Causa medida | Verificación |
+|---|---|---|
+| 404 en rutas que existen | Estado viejo en memoria del dev server: `route.js` y chunks EN disco, el handler ni corría (sin `[AUTH] OK`). `touch` de una ruta → todas 200. «Reiniciar sin limpiar las rompe»: descartado | curl con sesión 6/6 200; memoria `next-dev-manifest-stale-404-api` |
+| `SSEListener` borrado | Escuchaba con `onmessage` y el servidor manda eventos con nombre: nunca recibió nada; sus eventos tenían 0 listeners | RRHH en navegador: EventSource a la vez 3 → 2 |
+| Reconexión del stream de notificaciones | 10 s fijos para siempre; si fallaba la verificación de sesión, abandonaba hasta recargar | test nuevo 6/6 (espera exacta 10/20/40 s, tope 5 min) |
+| 10 `console.error` de RRHH → `sinDato` | Cada falla de carga salía como error rojo en el overlay de Next | eslint 0, typecheck 0, vitest 9/9, consola RRHH 0 errores / 0 × 4xx |
 
 ## ⚠️ Pendientes medidos de esta noche
 - **Metas y tareas se comparten entre TODOS los negocios**: `lib/file-store.ts` guarda `goals`/`tasks` en `local-data/` sin `tenantId` (auditoría `security`, confirmado por código, sin probar contra el servidor).
