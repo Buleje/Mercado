@@ -9,7 +9,7 @@
  */
 
 import { z } from "zod";
-import { ESTADOS_ASISTENCIA, MODALIDADES, TIPOS_DOCUMENTO } from "./tipos";
+import { ESTADOS_ASISTENCIA, GRUPOS_SANGUINEOS, MODALIDADES, TIPOS_DOCUMENTO } from "./tipos";
 
 const fechaKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha va como AAAA-MM-DD");
 const hora = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "La hora va como HH:MM");
@@ -39,6 +39,9 @@ const camposColaborador = {
   observaciones: texto(2000).nullable(),
   /** Foto del fotocheck (ADR-416): la URL https que devuelve /api/upload. */
   fotoUrl: z.string().trim().max(600).regex(/^https:\/\//, "La foto va como URL https").nullable(),
+  /** Lo que se lee en una emergencia (ADR-417): lista cerrada, nunca texto libre. */
+  grupoSanguineo: z.enum(GRUPOS_SANGUINEOS).nullable(),
+  alergias: texto(200).nullable(),
 };
 
 export const colaboradorCrearSchema = z.object({
@@ -54,6 +57,8 @@ export const colaboradorCrearSchema = z.object({
   fechaIngreso: camposColaborador.fechaIngreso.optional(),
   observaciones: camposColaborador.observaciones.optional(),
   fotoUrl: camposColaborador.fotoUrl.optional(),
+  grupoSanguineo: camposColaborador.grupoSanguineo.optional(),
+  alergias: camposColaborador.alergias.optional(),
   estado: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO"]).default("ACTIVO"),
   beneficiarioId: id.nullable().optional(), // sólo completo
   tarifaInicial: tarifaInput.nullable().optional(), // sólo completo
@@ -97,6 +102,10 @@ export const puestoSchema = z.object({
     .nullable()
     .optional(),
   horasJornada: z.number().positive().max(24).optional(),
+  /** Hora de entrada del puesto (ADR-417): con ella la tardanza se juzga sola. */
+  horaEntrada: hora.nullable().optional(),
+  /** Minutos de gracia; más de 4 h no es tolerancia, es otro turno. */
+  toleranciaMin: z.number().int().min(0).max(240).optional(),
   orden: z.number().int().min(0).max(999).optional(),
 });
 export type PuestoInput = z.infer<typeof puestoSchema>;

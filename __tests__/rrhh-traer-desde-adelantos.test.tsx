@@ -18,6 +18,8 @@ const CANDIDATOS: CandidatoDesdeAdelantosDTO[] = [
 
 function colaborador(over: Partial<ColaboradorDTO> & { id: string; nombre: string }): ColaboradorDTO {
   return {
+    grupoSanguineo: null,
+    alergias: null,
     apodo: null,
     puesto: null,
     estado: "ACTIVO",

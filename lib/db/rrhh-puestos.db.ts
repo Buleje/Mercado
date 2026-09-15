@@ -42,6 +42,8 @@ type PuestoPrismaRow = {
   tarifaModalidad: string | null;
   tarifaMonto: Prisma.Decimal | null;
   horasJornada: Prisma.Decimal;
+  horaEntrada: string | null;
+  toleranciaMin: number;
   orden: number;
 };
 
@@ -53,6 +55,8 @@ function mapPuesto(row: PuestoPrismaRow, personas: number): PuestoRow {
     tarifaModalidad: row.tarifaModalidad,
     tarifaMonto: row.tarifaMonto == null ? null : toNum(row.tarifaMonto),
     horasJornada: toNum(row.horasJornada),
+    horaEntrada: row.horaEntrada,
+    toleranciaMin: row.toleranciaMin,
     orden: row.orden,
     personas,
   };
@@ -106,6 +110,8 @@ export const PuestosDB = {
           tarifaModalidad: input.tarifaSugerida?.modalidad ?? null,
           tarifaMonto: input.tarifaSugerida ? new Prisma.Decimal(input.tarifaSugerida.monto) : null,
           horasJornada: input.horasJornada != null ? new Prisma.Decimal(input.horasJornada) : undefined,
+          horaEntrada: input.horaEntrada ?? null,
+          toleranciaMin: input.toleranciaMin ?? undefined,
           orden: input.orden ?? 0,
           createdBy: usuario,
         },
@@ -155,6 +161,14 @@ export const PuestosDB = {
     if (patch.horasJornada !== undefined) {
       data.horasJornada = new Prisma.Decimal(patch.horasJornada);
       cambios.push("horas de jornada");
+    }
+    if (patch.horaEntrada !== undefined) {
+      data.horaEntrada = patch.horaEntrada;
+      cambios.push("hora de entrada");
+    }
+    if (patch.toleranciaMin !== undefined) {
+      data.toleranciaMin = patch.toleranciaMin;
+      cambios.push("tolerancia");
     }
     if (patch.orden !== undefined) {
       data.orden = patch.orden;

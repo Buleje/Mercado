@@ -2062,6 +2062,10 @@ model Puesto {
   tarifaModalidad TarifaModalidad?
   tarifaMonto     Decimal?         @db.Decimal(12, 2)
   horasJornada    Decimal          @default(8) @db.Decimal(4, 2)
+  /// Hora de entrada del puesto, «HH:MM» de 24 h (ADR-417). `null` = sin horario: no se juzga la tardanza.
+  horaEntrada     String?
+  /// Minutos de gracia antes de que la llegada cuente como tardanza.
+  toleranciaMin   Int              @default(10)
   orden           Int              @default(0)
   createdBy       String
   createdAt       DateTime         @default(now())
@@ -2101,6 +2105,10 @@ model Colaborador {
   observaciones             String?
   /// Foto del fotocheck (ADR-416): URL https de /api/upload, carpeta `rrhh`.
   fotoUrl                   String?
+  /// Lo que se lee en una emergencia, impreso en el dorso del fotocheck (ADR-417).
+  /// Lista cerrada A+ … O-; `null` = no se sabe (no se inventa).
+  grupoSanguineo            String?
+  alergias                  String?
   /// `AdelantoBeneficiario.id` — texto sin FK, siempre leído con tenantId.
   beneficiarioId            String?
   /// `AdminUser.id` — texto sin FK, siempre leído con tenantId.

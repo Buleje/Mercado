@@ -15,7 +15,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import type { ColaboradorDTO, ColaboradorMinDTO, EstadoColaborador, FechaKey, Modalidad, NivelRrhh, TipoDocumento } from "@/lib/rrhh/tipos";
+import type { ColaboradorDTO, ColaboradorMinDTO, EstadoColaborador, FechaKey, GrupoSanguineo, Modalidad, NivelRrhh, TipoDocumento } from "@/lib/rrhh/tipos";
 import type { RrhhApiError } from "./use-rrhh-puestos";
 import { sinDato } from "@/lib/errores/sin-dato";
 
@@ -114,6 +114,11 @@ export interface ColaboradorInput {
   puestoId?: string | null;
   fechaIngreso?: FechaKey | null;
   observaciones?: string | null;
+  /** Foto del fotocheck (ADR-416): URL https de /api/upload. */
+  fotoUrl?: string | null;
+  /** Lo que se lee en una emergencia, impreso en el dorso del fotocheck (ADR-417). */
+  grupoSanguineo?: GrupoSanguineo | null;
+  alergias?: string | null;
   estado?: "ACTIVO" | "VACACIONES" | "LICENCIA" | "SUSPENDIDO";
   /** Sólo nivel completo. */
   beneficiarioId?: string | null;

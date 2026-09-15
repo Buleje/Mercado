@@ -22,6 +22,8 @@ import {
 } from "@/lib/rrhh/dto";
 
 const colaboradorRow = (p: Partial<ColaboradorRow> = {}): ColaboradorRow => ({
+  grupoSanguineo: null,
+  alergias: null,
   id: "c1",
   nombre: "Victor Quispe",
   apodo: "Vic",
@@ -110,6 +112,8 @@ describe("aPuestoDTO — la tarifa sugerida sólo en nivel completo", () => {
     tarifaModalidad: "DIA",
     tarifaMonto: 60,
     horasJornada: 8,
+    horaEntrada: null,
+    toleranciaMin: 10,
     orden: 1,
   };
 

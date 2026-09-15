@@ -17,12 +17,14 @@
 import { fechaKeyDeDate, horaDeMinutos } from "./fechas";
 import { enmascararDocumento } from "./documento";
 import {
+  GRUPOS_SANGUINEOS,
   TIPOS_DOCUMENTO,
   type AsistenciaDTO,
   type ColaboradorDTO,
   type ColaboradorMinDTO,
   type EstadoAsistencia,
   type EstadoColaborador,
+  type GrupoSanguineo,
   type Modalidad,
   type ModalidadPagada,
   type NivelRrhh,
@@ -40,6 +42,8 @@ export interface PuestoRow {
   tarifaModalidad: string | null;
   tarifaMonto: number | null;
   horasJornada: number;
+  horaEntrada: string | null;
+  toleranciaMin: number;
   orden: number;
 }
 
@@ -61,6 +65,8 @@ export interface ColaboradorRow {
   motivoCese: string | null;
   observaciones: string | null;
   fotoUrl: string | null;
+  grupoSanguineo: string | null;
+  alergias: string | null;
   beneficiarioId: string | null;
   adminUserId: string | null;
   createdAt: Date;
@@ -102,6 +108,10 @@ function esTipoDocumento(v: string | null): v is TipoDocumento {
   return v !== null && (TIPOS_DOCUMENTO as readonly string[]).includes(v);
 }
 
+function esGrupoSanguineo(v: string | null): v is GrupoSanguineo {
+  return v !== null && (GRUPOS_SANGUINEOS as readonly string[]).includes(v);
+}
+
 function esModalidadPagada(v: string): v is ModalidadPagada {
   return v === "HORA" || v === "DIA" || v === "SEMANA" || v === "MES";
 }
@@ -115,6 +125,8 @@ export function aPuestoDTO(row: PuestoRow, nivel: NivelRrhh, personas: number): 
     nombre: row.nombre,
     descripcion: row.descripcion,
     horasJornada: row.horasJornada,
+    horaEntrada: row.horaEntrada,
+    toleranciaMin: row.toleranciaMin,
     orden: row.orden,
     personas,
   };
@@ -164,6 +176,8 @@ export function aColaboradorDTO(row: ColaboradorRow, nivel: Exclude<NivelRrhh, "
     observaciones: row.observaciones,
     motivoCese: row.motivoCese,
     fotoUrl: row.fotoUrl,
+    grupoSanguineo: esGrupoSanguineo(row.grupoSanguineo) ? row.grupoSanguineo : null,
+    alergias: row.alergias,
     beneficiarioId: row.beneficiarioId,
     adminUserId: row.adminUserId,
     creadoEn: row.createdAt.toISOString(),

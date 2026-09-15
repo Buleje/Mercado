@@ -195,6 +195,8 @@ function mapColaborador(row: ColaboradorPrismaRow): ColaboradorRow {
     motivoCese: row.motivoCese,
     observaciones: row.observaciones,
     fotoUrl: row.fotoUrl,
+    grupoSanguineo: row.grupoSanguineo,
+    alergias: row.alergias,
     beneficiarioId: row.beneficiarioId,
     adminUserId: row.adminUserId,
     createdAt: row.createdAt,
@@ -555,6 +557,8 @@ export const ColaboradoresDB = {
             fechaIngreso: input.fechaIngreso ? dateDeFechaKey(input.fechaIngreso) : null,
             observaciones: input.observaciones ?? null,
             fotoUrl: input.fotoUrl ?? null,
+            grupoSanguineo: input.grupoSanguineo ?? null,
+            alergias: input.alergias?.trim() || null,
             beneficiarioId: input.beneficiarioId ?? null,
             createdBy: usuario,
           },
@@ -655,6 +659,12 @@ export const ColaboradoresDB = {
       if (has("contactoEmergenciaNombre")) data.contactoEmergenciaNombre = patch.contactoEmergenciaNombre as string | null;
       if (has("contactoEmergenciaCelular")) data.contactoEmergenciaCelular = patch.contactoEmergenciaCelular as string | null;
       cambios.push("contacto de emergencia");
+    }
+    if (has("grupoSanguineo")) {
+      data.grupoSanguineo = patch.grupoSanguineo as string | null;
+    }
+    if (has("alergias")) {
+      data.alergias = (patch.alergias as string | null)?.trim() || null;
     }
     if (has("fotoUrl")) {
       data.fotoUrl = patch.fotoUrl as string | null;

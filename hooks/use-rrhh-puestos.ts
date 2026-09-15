@@ -10,16 +10,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import type { PuestoInput as PuestoInputDelSchema } from "@/lib/rrhh/schemas";
 import type { PuestoDTO } from "@/lib/rrhh/tipos";
 import { sinDato } from "@/lib/errores/sin-dato";
 
-export interface PuestoInput {
-  nombre: string;
-  descripcion?: string | null;
-  tarifaSugerida?: { modalidad: "HORA" | "DIA" | "SEMANA" | "MES"; monto: number } | null;
-  horasJornada?: number;
-  orden?: number;
-}
+/**
+ * Lo que el hook manda es exactamente lo que el servidor valida: el tipo sale
+ * de `puestoSchema` (ADR-417). Antes era una copia a mano y al agregarle el
+ * horario al puesto quedó corta — el formulario ya mandaba `horaEntrada` y el
+ * tipo del hook decía que ese campo no existía.
+ */
+export type PuestoInput = PuestoInputDelSchema;
 
 export interface RrhhApiError {
   error: string;

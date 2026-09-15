@@ -36,11 +36,18 @@ export type FechaKey = string;
 
 // ── Puestos ──────────────────────────────────────────────────────────────────
 
+export const GRUPOS_SANGUINEOS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
+export type GrupoSanguineo = (typeof GRUPOS_SANGUINEOS)[number];
+
 export interface PuestoDTO {
   id: string;
   nombre: string;
   descripcion: string | null;
   horasJornada: number;
+  /** «HH:MM» de 24 h; `null` = sin horario, la tardanza no se juzga sola (ADR-417). */
+  horaEntrada: string | null;
+  /** Minutos de gracia antes de contar tardanza. */
+  toleranciaMin: number;
   orden: number;
   /** Personas no cesadas con este puesto. */
   personas: number;
@@ -87,6 +94,9 @@ export interface ColaboradorDTO extends ColaboradorMinDTO {
   motivoCese: string | null;
   /** Foto del fotocheck (ADR-416); `null` = sin foto. */
   fotoUrl: string | null;
+  /** Lo que se lee en una emergencia, va al dorso del fotocheck (ADR-417). */
+  grupoSanguineo: GrupoSanguineo | null;
+  alergias: string | null;
   beneficiarioId: string | null;
   adminUserId: string | null;
   creadoEn: string;
