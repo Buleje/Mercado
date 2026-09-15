@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cachedJson } from "@/lib/client-cache-fetch";
+import { descartarEsperado } from "@/lib/errores/sin-dato";
 
 interface OrderNotification {
   id: string;
@@ -16,6 +17,15 @@ interface NotificationState {
   lowStockCount: number;
   unseenCount: number;
 }
+
+/**
+ * Espera antes de reconectar: 10 s, 20 s, 40 s… hasta 5 min; vuelve a 10 s
+ * apenas la conexión abre. Con una espera fija de 10 s, una ruta caída (un 404
+ * del dev server, un 503) dejaba un pedido fallido en la consola cada 10 s
+ * mientras el panel estuviera abierto (medido 2026-09-14).
+ */
+const RECONEXION_BASE_MS = 10_000;
+const RECONEXION_TOPE_MS = 5 * 60_000;
 
 /**
  * Hook for real-time admin notifications via SSE.
@@ -34,6 +44,7 @@ export function useAdminNotifications() {
 
   useEffect(() => {
     let cancelled = false;
+    let fallos = 0;
 
     function connect() {
       if (cancelled) return;
@@ -45,6 +56,7 @@ export function useAdminNotifications() {
       eventSourceRef.current = es;
 
       es.onopen = () => {
+        fallos = 0;
         setState((prev) => ({ ...prev, connected: true }));
       };
 
@@ -69,16 +81,28 @@ export function useAdminNotifications() {
       es.onerror = () => {
         es.close();
         setState((prev) => ({ ...prev, connected: false }));
-        // Re-verificar auth antes de reconectar (evita loop 401 infinito)
-        reconnectTimerRef.current = setTimeout(() => {
-          fetch("/api/auth/me")
-            .then((r) => r.json())
-            .then((d) => {
-              if (!cancelled && d?.role === "admin") connect();
-            })
-            .catch(() => { /* auth check silent fail — reconexion deferida */ });
-        }, 10_000);
+        programarReconexion();
       };
+    }
+
+    function programarReconexion() {
+      const espera = Math.min(RECONEXION_BASE_MS * 2 ** fallos, RECONEXION_TOPE_MS);
+      fallos += 1;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      // Re-verificar auth antes de reconectar (evita loop 401 infinito)
+      reconnectTimerRef.current = setTimeout(() => {
+        fetch("/api/auth/me")
+          .then((r) => r.json())
+          .then((d) => {
+            if (!cancelled && d?.role === "admin") connect();
+          })
+          // Sin red o con el server reiniciando, la verificación falla igual que
+          // el stream: antes se abandonaba y el panel quedaba sin avisos hasta
+          // recargar. Ahora se reintenta con la espera siguiente.
+          .catch(() => {
+            if (!cancelled) programarReconexion();
+          });
+      }, espera);
     }
 
     // Gate inicial: solo conectar SSE si hay sesion admin confirmada.
@@ -88,7 +112,8 @@ export function useAdminNotifications() {
       .then((d) => {
         if (!cancelled && d?.role === "admin") connect();
       })
-      .catch(() => { /* auth check silent fail — no SSE connect */ });
+      // Sin sesión admin confirmada no se abre el stream: no hay nada que avisar.
+      .catch(descartarEsperado);
 
     return () => {
       cancelled = true;

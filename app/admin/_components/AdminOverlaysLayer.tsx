@@ -4,8 +4,8 @@
  * app/admin/_components/AdminOverlaysLayer.tsx
  *
  * Capa de overlays que siempre viven al final del AdminPage sin importar
- * qué tab esté activa: floating buttons, atajos, bottom bar mobile, SSE
- * listener, morning summary, onboarding wizard y onboarding tour.
+ * qué tab esté activa: floating buttons, atajos, bottom bar mobile, morning
+ * summary, onboarding wizard y onboarding tour.
  *
  * Extraído de app/admin/page.tsx en el Sprint A final del refactor.
  */
@@ -16,7 +16,6 @@ import { ShortcutsModal } from "@/components/admin/AdminModals";
 import { AdminFloatingButtons } from "@/components/admin/AdminFloatingButtons";
 import { AdminMobileBottomBar } from "@/components/admin/AdminMobileBottomBar";
 import { OnboardingTour } from "@/components/admin/OnboardingTour";
-import SSEListener from "@/components/admin/SSEListener";
 
 const AIStatusBanner = dynamic(() => import("@/components/admin/AIStatusBanner"), {
   ssr: false,
@@ -53,13 +52,13 @@ export interface AdminOverlaysLayerProps {
   onCloseShortcuts: () => void;
 
   // Mobile bottom bar
-  // Mismo tipo que entrega useAdminAuth: AIStatusBanner/SSEListener lo exigen para el gate de rol.
+  // Mismo tipo que entrega useAdminAuth: AIStatusBanner lo exige para el gate de rol.
   userRole: AdminRole;
-  // Gate de rol para AIStatusBanner/SSEListener (2026-09-14): ambos pegan a
-  // rutas con allowedRoles acotado (ai-assistant/health, admin/sse) — antes
-  // se montaban sin saber si el rol logueado podía pedirlas y almacenero
-  // recibía 403 en cada carga. `false` hasta que useAdminAuth resuelva el
-  // rol real evita pedir con el "admin" optimista por default.
+  // Gate de rol para AIStatusBanner (2026-09-14): pega a una ruta con
+  // allowedRoles acotado (ai-assistant/health) — antes se montaba sin saber si
+  // el rol logueado podía pedirla y almacenero recibía 403 en cada carga.
+  // `false` hasta que useAdminAuth resuelva el rol real evita pedir con el
+  // "admin" optimista por default.
   authReady: boolean;
   tab: Tab;
   filteredTabs: FilteredTabs;
@@ -114,7 +113,6 @@ export function AdminOverlaysLayer({
       />
 
       <AIStatusBanner userRole={userRole} authReady={authReady} />
-      <SSEListener userRole={userRole} authReady={authReady} />
       {/* Burbuja flotante de chat (Brandon 2026-06-06): cliente escribe →
           avatar + badge abajo-derecha; responde sin salir del tab actual. */}
       <AdminChatHead />
