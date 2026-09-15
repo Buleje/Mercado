@@ -1,6 +1,6 @@
 # SESSION HANDOFF — 2026-09-14 (tarde)
 
-Branch: `audit/storefront-mejoras-verificadas-2026-06-15`. **Los commits de la noche están SÓLO en local** (subir con `git push` cuando Brandon lo pida).
+Branch: `audit/storefront-mejoras-verificadas-2026-06-15`. Subido hasta `36a00f17`; **`dbcbc4a7`, `93978b2e` y el commit de docs están SÓLO en local** (subir con `git push` cuando Brandon lo pida).
 Detalle completo y cómo revertir cada cosa: memoria `harness-refresh-2026-09-14`.
 
 ## ✅ Hecho y subido hoy (tarde)
@@ -20,6 +20,13 @@ Detalle completo y cómo revertir cada cosa: memoria `harness-refresh-2026-09-14
 | `fd20c5a9` | RRHH: jornada editable en puestos y sin 403 de Adelantos para almacenero y manager | 0 respuestas 4xx por rol |
 | `b6d10ad6` | Logger de producción tiraba TypeError en el navegador (`process.stdout`): 42 componentes cliente | test que fallaba 2 de 3 antes del arreglo |
 | `ef165c94` · `2205edc6` · `0270feb9` | Errores tragados con `sinDato`, 9 módulos con `?sub=`, fecha en el aviso de caja | reviewer con contexto fresco + 259 archivos de test (2.898 ✓) |
+| `dbcbc4a7` | 104 de 107 `.catch(() => null)` del servidor con `sinDato`/`leerJson`/`descartarEsperado`; el log ya no guarda valores de Prisma; metas, tareas y beta-feedback no reescriben un JSON corrupto | auditoría `security` sin veto + 24 tests nuevos |
+| `93978b2e` | Tuteo en todo el panel: `components/admin`, `app/admin`, hooks, `lib`, mensajes de `app/api` y prompts de IA | detector genérico: 0 residuo real en el panel; 3.289 tests; 19 aserciones actualizadas |
+
+## ⚠️ Pendientes medidos de esta noche
+- **Metas y tareas se comparten entre TODOS los negocios**: `lib/file-store.ts` guarda `goals`/`tasks` en `local-data/` sin `tenantId` (auditoría `security`, confirmado por código, sin probar contra el servidor).
+- Voseo fuera del panel: ~370 en marketplace/tienda, ~166 en superadmin, checkout (zona de peligro) y landing.
+- 2 `.catch(() => null)` en zona de peligro: `app/api/orders/route.ts:479`, `app/api/checkout/fiado-option/route.ts:30`.
 
 ## 🖥️ Entorno (rige desde una terminal nueva)
 - `claude` se lanza en un scope de systemd con tope de RAM de 13G para los Bash (función en `~/.bashrc`); el boot de sesión dice si está activo.
@@ -34,4 +41,4 @@ Detalle completo y cómo revertir cada cosa: memoria `harness-refresh-2026-09-14
 5. Brandon: `/skill-doctor` y `/doctor`.
 
 ## 🧹 Estado de QA
-Tenant `inversiones-agroforestales-blas-sociedad-op-qa-ui` **activo** para verificar RRHH: 9 personas «QA …», 4 puestos, asistencia del 08 al 14/09. Usuarios `qaadmin`, `qaalmacenero` y `qamanager` (nuevo, `scripts/create-qa-manager.mjs`); los scripts abortan en tenants que no son `-qa`. Apagarlo (`active=false`) cuando termine la verificación.
+Tenant `inversiones-agroforestales-blas-sociedad-op-qa-ui` **inactivo** (`active=false`, apagado al terminar); conserva: 9 personas «QA …», 4 puestos, asistencia del 08 al 14/09. Usuarios `qaadmin`, `qaalmacenero` y `qamanager` (`scripts/create-qa-manager.mjs`); para reactivarlo: `active=true` en `Tenant`.
