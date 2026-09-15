@@ -78,7 +78,7 @@ export default function CtpComplianceHistoria({
         <p className="mt-2 text-sm text-[var(--text-secondary)]">
           {error
             ? "No se pudo leer la historia del cumplimiento."
-            : "Todavía no hay historia: la serie arranca hoy. Se guarda un punto cada día que abrís el libro — los días que nadie entra no tienen punto, y eso también dice algo."}
+            : "Todavía no hay historia: la serie arranca hoy. Se guarda un punto cada día que abres el libro — los días que nadie entra no tienen punto, y eso también dice algo."}
         </p>
       </section>
     );

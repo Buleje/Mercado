@@ -57,7 +57,7 @@ export const GET = withCronAuth("documentos-vencimiento", async () => {
       try {
         await sendSuperAdminAlert({
           subject: titulo,
-          title: `Tenés ${titulo.toLowerCase()}`,
+          title: `Tienes ${titulo.toLowerCase()}`,
           items: docs.slice(0, 8).map((d) => ({
             label: d.name,
             value: textoCorto(diasRestantes(d.expiresAt)),

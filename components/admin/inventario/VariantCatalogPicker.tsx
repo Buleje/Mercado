@@ -178,7 +178,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
       open
       onClose={onClose}
       title="Catálogo de adicionales"
-      description="Importá plantillas completas o seleccioná opciones específicas (con sus imágenes)."
+      description="Importa plantillas completas o selecciona opciones específicas (con sus imágenes)."
       variant="wide"
     >
           {/* Filtros */}
@@ -378,7 +378,7 @@ function TemplateRow({
               {allSelected ? "Deseleccionar todas" : "Seleccionar todas"}
             </button>
             <span className="text-xs text-[var(--text-tertiary)]">
-              {selectedIds.size > 0 ? `${selectedIds.size} de ${template.options.length} elegidas` : "Tocá las que querés importar"}
+              {selectedIds.size > 0 ? `${selectedIds.size} de ${template.options.length} elegidas` : "Toca las que quieres importar"}
             </span>
           </div>
 

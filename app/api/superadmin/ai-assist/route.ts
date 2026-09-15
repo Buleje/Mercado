@@ -43,11 +43,11 @@ function fallback(c: Ctx): { summary: string; action: string; draft: string } {
   if (c.errorsCount && c.errorsCount > 0) bits.push(`${c.errorsCount} error(es) en su panel`);
   const summary = bits.length ? `${c.name} tiene ${bits.join(", ")}.` : `${c.name} se ve estable.`;
   const action = c.daysSinceLastOrder != null && c.daysSinceLastOrder >= 7
-    ? "Contactá al dueño para entender por qué dejó de vender y ofrecé ayuda concreta."
+    ? "Contacta al dueño para entender por qué dejó de vender y ofrece ayuda concreta."
     : c.missingFeatures && c.missingFeatures.length
-      ? `Ofrecé activar ${c.missingFeatures[0]} para que venda más.`
-      : "Hacé un check-in amistoso para mantener la relación.";
-  const draft = `¡Hola! Te escribo del equipo Buleje 👋. Vi cómo va ${c.name} y quería darte una mano${c.missingFeatures && c.missingFeatures.length ? ` — por ejemplo con ${c.missingFeatures[0]}, que te puede ayudar a vender más` : ""}. ¿Tenés 5 minutos esta semana para que te muestre?`;
+      ? `Ofrece activar ${c.missingFeatures[0]} para que venda más.`
+      : "Haz un check-in amistoso para mantener la relación.";
+  const draft = `¡Hola! Te escribo del equipo Buleje 👋. Vi cómo va ${c.name} y quería darte una mano${c.missingFeatures && c.missingFeatures.length ? ` — por ejemplo con ${c.missingFeatures[0]}, que te puede ayudar a vender más` : ""}. ¿Tienes 5 minutos esta semana para que te muestre?`;
   return { summary, action, draft };
 }
 
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const prompt = `Sos el copiloto de soporte de Buleje (SaaS para bodegas/negocios en Perú). Te paso el estado de un negocio cliente; ayudá al equipo a retenerlo y ayudarlo.
+    const prompt = `Sos el copiloto de soporte de Buleje (SaaS para bodegas/negocios en Perú). Te paso el estado de un negocio cliente; ayuda al equipo a retenerlo y ayudarlo.
 
 Negocio: ${c.name}
 Plan: ${c.plan ?? "?"}
@@ -78,7 +78,7 @@ Pedidos totales: ${c.ordersTotal ?? "?"}
 Errores en su panel: ${c.errorsCount ?? 0}
 Funciones de crecimiento que NO usa: ${c.missingFeatures?.join(", ") || "ninguna detectada"}
 
-Respondé SOLO un JSON (sin texto extra):
+Responde SOLO un JSON (sin texto extra):
 {"summary":"<2 frases: qué le pasa al negocio, en criollo>","action":"<1 acción concreta para el equipo>","draft":"<mensaje corto, cálido y tuteo peruano para mandarle al dueño por WhatsApp; máx 3 frases>"}`;
 
     const { text } = await trackAiUsage(

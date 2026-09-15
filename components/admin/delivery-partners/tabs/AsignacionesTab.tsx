@@ -85,11 +85,11 @@ export function AsignacionesTab() {
 
   const handleAssign = async () => {
     if (!selectedPartner) {
-      setError("Seleccioná un repartidor primero.");
+      setError("Selecciona un repartidor primero.");
       return;
     }
     if (!assignModal.orderId) {
-      setError("Ingresá un ID de orden.");
+      setError("Ingresa un ID de orden.");
       return;
     }
     // El endpoint requiere `fee` — usamos la tarifa del partner seleccionado.
@@ -256,7 +256,7 @@ export function AsignacionesTab() {
             Sin asignaciones registradas
           </p>
           <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-            Asigná un repartidor a una orden pendiente y se mostrará acá con su estado en vivo.
+            Asigna un repartidor a una orden pendiente y se mostrará acá con su estado en vivo.
           </p>
           <button
             type="button"
@@ -427,7 +427,7 @@ export function AsignacionesTab() {
                 {partners.length === 0 && (
                   <p className="text-sm text-[var(--data-warning-500)] font-bold flex items-center gap-1.5 mt-2">
                     <AlertCircle className="h-4 w-4" />
-                    No hay repartidores activos. Activá uno desde la pestaña Repartidores.
+                    No hay repartidores activos. Activa uno desde la pestaña Repartidores.
                   </p>
                 )}
               </>

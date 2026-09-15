@@ -31,7 +31,7 @@ export default function MetaModal({
   return (
     <ModalShell
       title="Meta de recuperación"
-      subtitle="Cuánto querés recuperar este mes"
+      subtitle="Cuánto quieres recuperar este mes"
       onClose={onClose}
       size="sm"
       footer={<ModalActions onClose={onClose} onSubmit={() => onGuardar(Number(valor) || 0)} saving={false} label="Guardar meta" />}

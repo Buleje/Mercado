@@ -240,7 +240,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
           <Ban className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <b>Especie(s) con operaciones fuera del plan autorizado:</b>{" "}
-            {(data.especiesNoAutorizadas ?? []).join(", ")}. Aprovechar una especie que no figura en la resolución es infracción — regularizá el plan o el registro.
+            {(data.especiesNoAutorizadas ?? []).join(", ")}. Aprovechar una especie que no figura en la resolución es infracción — regulariza el plan o el registro.
           </div>
         </div>
       )}
@@ -272,7 +272,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
         <Kpi
           label="Margen del aprovechamiento"
           valor={margenPct != null ? `${margenPct}` : "—"} sufijo={margenPct != null ? "%" : undefined}
-          contexto={data.costeo ? `S/ ${fm(data.costeo.margenTotal)} sobre S/ ${fm(data.costeo.ingresoTotal)} de ingreso` : "Cargá precios y costos para verlo"}
+          contexto={data.costeo ? `S/ ${fm(data.costeo.margenTotal)} sobre S/ ${fm(data.costeo.ingresoTotal)} de ingreso` : "Carga precios y costos para verlo"}
           icon={Gauge}
           tono={margenPct == null ? "neutral" : margenPct >= 25 ? "success" : margenPct >= 0 ? "warning" : "error"}
           barra={margenPct != null ? Math.max(0, margenPct) : null}
@@ -302,7 +302,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
             <RankingPanel rows={ranking} />
           ) : (
             <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
-              Cargá el precio de venta en las especies del plan y los costos operativos para ver el margen.
+              Carga el precio de venta en las especies del plan y los costos operativos para ver el margen.
             </p>
           )}
         </section>

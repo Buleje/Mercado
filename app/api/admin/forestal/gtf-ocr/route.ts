@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       // Mensaje para el operador del patio, no para un programador; el detalle
       // técnico va al log.
       logger.warn("[gtf-ocr] sin OPENAI_API_KEY ni ANTHROPIC_API_KEY configuradas", { tenantId: auth.tenantId.slice(-6) });
-      return NextResponse.json({ error: "La lectura automática de guías todavía no está activada. Cargá los datos de la GTF a mano mientras tanto." }, { status: 503 });
+      return NextResponse.json({ error: "La lectura automática de guías todavía no está activada. Carga los datos de la GTF a mano mientras tanto." }, { status: 503 });
     }
 
     const result = safeParseJSON(content, GtfSchema);

@@ -36,7 +36,7 @@ export default function DuenosModal({
 
   const agregar = () => {
     const limpio = nombre.trim();
-    if (!limpio) { setErr("Escribí un nombre."); return; }
+    if (!limpio) { setErr("Escribe un nombre."); return; }
     if (duenos.some((d) => d.toLowerCase() === limpio.toLowerCase())) {
       setErr("Ese dueño ya está guardado.");
       return;
@@ -55,7 +55,7 @@ export default function DuenosModal({
       open
       onClose={onClose}
       title="Dueños guardados"
-      description="Creá el nombre una vez; después lo elegís de la lista, sin re-tipearlo."
+      description="Crea el nombre una vez; después lo eliges de la lista, sin re-tipearlo."
     >
       <ModalBody className="space-y-4">
         <div className="flex gap-2">
@@ -76,7 +76,7 @@ export default function DuenosModal({
 
         {duenos.length === 0 ? (
           <p className="rounded-xl bg-[var(--surface-sunken)] px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">
-            Todavía no guardaste ningún dueño. Escribí uno arriba.
+            Todavía no guardaste ningún dueño. Escribe uno arriba.
           </p>
         ) : (
           <ul className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)]">

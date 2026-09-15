@@ -171,7 +171,7 @@ export function trozasSobreDeclaradas(filas: readonly FilaDespacho[]): FilaDespa
  */
 export function problemasDeLista(filas: readonly FilaDespacho[]): string[] {
   const problemas: string[] = [];
-  if (filas.length === 0) return ["Agregá al menos un producto a la lista."];
+  if (filas.length === 0) return ["Agrega al menos un producto a la lista."];
 
   const sinVolumen = filas.filter((f) => !(f.volumen > 0));
   if (sinVolumen.length > 0) {

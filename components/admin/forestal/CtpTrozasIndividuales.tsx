@@ -135,7 +135,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
         <PackageOpen className="h-8 w-8 text-[var(--text-tertiary)]" />
         <p className="text-base font-bold text-[var(--text-primary)]">Ninguna guía del período trae lista de piezas</p>
         <p className="max-w-md text-sm text-[var(--text-tertiary)]">
-          Importá el inventario de rolliza en patio (menú <b>Importar libro</b>) o cargá las trozas desde la ficha de un ingreso.
+          Importa el inventario de rolliza en patio (menú <b>Importar libro</b>) o carga las trozas desde la ficha de un ingreso.
         </p>
       </div>
     );

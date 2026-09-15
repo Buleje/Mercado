@@ -104,7 +104,7 @@ export default function CtpProduccionPendiente({
          cruzado contra los que ya están. */
       setError(
         `No se pudieron leer los paquetes ya declarados (${e instanceof Error ? e.message : String(e)}): ` +
-          "revisá que el código que uses no esté repetido.",
+          "revisa que el código que uses no esté repetido.",
       );
     } finally {
       setCargandoFicha(false);
@@ -180,13 +180,13 @@ export default function CtpProduccionPendiente({
        * de otro lado.
        */}
       <p className="px-1 text-sm text-[var(--text-tertiary)]">
-        El {RENDIMIENTO_TOPE_PCT} % es un <b>techo, no una meta</b>: agregá sólo lo que de verdad salió de la
+        El {RENDIMIENTO_TOPE_PCT} % es un <b>techo, no una meta</b>: agrega sólo lo que de verdad salió de la
         sierra.
         {piezasLibres > 0 && (
           <>
             {" "}
             {piezasLibres === 1 ? "La troza que le queda" : `Las ${piezasLibres} trozas que le quedan`} al lote
-            {piezasLibres === 1 ? " va" : " van"} a una corrida nueva —{piezasLibres === 1 ? "tildala" : "tildalas"}{" "}
+            {piezasLibres === 1 ? " va" : " van"} a una corrida nueva —{piezasLibres === 1 ? "tíldala" : "tíldalas"}{" "}
             abajo—: sumarle madera a una corrida ya declarada le cambiaría el rendimiento que ya quedó escrito.
           </>
         )}

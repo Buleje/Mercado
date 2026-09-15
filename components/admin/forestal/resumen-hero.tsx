@@ -147,7 +147,7 @@ export function HeroResumen({ total, renglones, porEspecie, porTipo, porMedida, 
                 value={conValor ? `S/ ${fmtSoles(total.valor)}` : "—"}
                 icon={Coins}
                 destacado={conValor}
-                hint={conValor && total.pieTablar > 0 ? `S/ ${fmtSoles(total.valor / total.pieTablar)} por PT` : "cargá el precio en el cubicador"}
+                hint={conValor && total.pieTablar > 0 ? `S/ ${fmtSoles(total.valor / total.pieTablar)} por PT` : "carga el precio en el cubicador"}
               />
             </div>
 

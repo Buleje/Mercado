@@ -387,7 +387,7 @@ export default function CommissionCalculator() {
           </div>
           <p className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin ventas en el periodo</p>
           <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
-            Las comisiones se calculan a partir de las ventas registradas. Generá tu primera venta desde el POS para ver el desglose.
+            Las comisiones se calculan a partir de las ventas registradas. Genera tu primera venta desde el POS para ver el desglose.
           </p>
           {/* El empty state decía sólo «no hay ventas» y escondía lo único
               accionable: la regla con la que se van a calcular. Dejarla lista

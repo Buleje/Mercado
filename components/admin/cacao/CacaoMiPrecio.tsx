@@ -119,7 +119,7 @@ export default function CacaoMiPrecio({
       {loading ? (
         <p className="py-12 text-center text-sm text-[var(--text-tertiary)]">Cargando…</p>
       ) : !stats || stats.chartData.length === 0 ? (
-        <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">Todavía no hay precios registrados. Acopiá lotes y registrá ventas para ver tu tendencia.</p>
+        <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">Todavía no hay precios registrados. Acopia lotes y registra ventas para ver tu tendencia.</p>
       ) : (
         <>
           <div className="mb-3 flex flex-wrap items-center gap-2">

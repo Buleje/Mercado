@@ -108,7 +108,7 @@ export function cuadrarConLibro(
       avisos.push({
         campo: "especie",
         tono: "aviso",
-        texto: `Ninguna pieza dice especie y el libro declara ${declarado.especie}: cargala para que el anexo la pueda nombrar.`,
+        texto: `Ninguna pieza dice especie y el libro declara ${declarado.especie}: cárgala para que el anexo la pueda nombrar.`,
       });
     } else if (especies.length > 1 || especies[0] !== esperada) {
       avisos.push({
@@ -160,7 +160,7 @@ export function cuadrarConLibro(
           `(${delta > 0 ? "+" : ""}${fmtM3(delta)} m³, ${pct.toFixed(1)} %). ` +
           (delta > 0
             ? "Medir de más que lo declarado es lo que un control lee como carga sin amparo."
-            : "Si sobró madera declarada, revisá si parte salió en otra guía."),
+            : "Si sobró madera declarada, revisa si parte salió en otra guía."),
         delta,
       });
     }

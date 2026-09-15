@@ -56,7 +56,7 @@ export function StopsTimeline({ stops, loading, onMarkStop }: StopsTimelineProps
 
   async function handleConfirmFail(stopId: string) {
     if (!failureReason.trim()) {
-      setError("Indicá un motivo de fallo.");
+      setError("Indica un motivo de fallo.");
       return;
     }
     setBusyId(stopId);

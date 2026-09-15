@@ -220,7 +220,7 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
         icon: Users,
         count: summary.solicitudesPendientes,
         label: `${summary.solicitudesPendientes} solicitud${summary.solicitudesPendientes === 1 ? "" : "es"} de repartidor pendiente${summary.solicitudesPendientes === 1 ? "" : "s"}`,
-        description: "Revisá los repartidores que quieren trabajar contigo.",
+        description: "Revisa los repartidores que quieren trabajar contigo.",
         cta: "Revisar",
         href: "/admin?tab=delivery-partners",
       });

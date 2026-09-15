@@ -389,14 +389,14 @@ export function avisosDeFicha(f: CtpFicha, ahora: number = Date.now()): AvisoFic
         clave: `titulo-vencido:${nombreTitulo(t)}`,
         nivel: "critico",
         titulo: `Título habilitante vencido: ${nombreTitulo(t)}`,
-        detalle: `Venció el ${fechaCortaUTC(t.vencimiento)} (hace ${Math.abs(dias)} días). El origen de la madera que ampara ya no está vigente: renová el título o sacalo de la Ficha antes de emitir una guía que lo declare.`,
+        detalle: `Venció el ${fechaCortaUTC(t.vencimiento)} (hace ${Math.abs(dias)} días). El origen de la madera que ampara ya no está vigente: renueva el título o sácalo de la Ficha antes de emitir una guía que lo declare.`,
       });
     } else if (dias <= 30) {
       out.push({
         clave: `titulo-por-vencer:${nombreTitulo(t)}`,
         nivel: "aviso",
         titulo: `Título ${nombreTitulo(t)} vence en ${dias} ${dias === 1 ? "día" : "días"}`,
-        detalle: `Vence el ${fechaCortaUTC(t.vencimiento)}. La renovación ante la ARFFS no es inmediata: empezá el trámite ahora.`,
+        detalle: `Vence el ${fechaCortaUTC(t.vencimiento)}. La renovación ante la ARFFS no es inmediata: empieza el trámite ahora.`,
       });
     }
   }
@@ -408,7 +408,7 @@ export function avisosDeFicha(f: CtpFicha, ahora: number = Date.now()): AvisoFic
       nivel: "aviso",
       titulo: `El título ${nombreTitulo(t)} no tiene fecha de vencimiento`,
       detalle:
-        "Sin esa fecha nadie te va a avisar cuando caduque, y un título vencido invalida el origen de la madera que ampara. Cargala desde la resolución que lo aprobó.",
+        "Sin esa fecha nadie te va a avisar cuando caduque, y un título vencido invalida el origen de la madera que ampara. Cárgala desde la resolución que lo aprobó.",
     });
   }
 
@@ -443,7 +443,7 @@ export function avisosDeFicha(f: CtpFicha, ahora: number = Date.now()): AvisoFic
       clave: "ruc-invalido",
       nivel: "aviso",
       titulo: "El RUC no pasa la verificación de SUNAT",
-      detalle: `${f.ruc} no cumple el dígito verificador. Sale impreso en el certificado y en el Libro: revisalo antes de emitir.`,
+      detalle: `${f.ruc} no cumple el dígito verificador. Sale impreso en el certificado y en el Libro: revísalo antes de emitir.`,
     });
   }
 

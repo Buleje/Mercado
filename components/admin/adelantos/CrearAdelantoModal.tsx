@@ -195,7 +195,7 @@ export default function CrearAdelantoModal({
   const submit = async () => {
     setErr(null);
     if (!beneficiarioId || montoNum <= 0) {
-      setErr("Elegí una persona y un monto válido.");
+      setErr("Elige una persona y un monto válido.");
       return;
     }
     /**
@@ -256,7 +256,7 @@ export default function CrearAdelantoModal({
       setErr(j?.error ?? "No se pudo crear el adelanto.");
     } catch (e) {
       logger.error("[adelantos] no se pudo crear el adelanto", { error: String(e) });
-      setErr("No se pudo crear el adelanto. Revisá la conexión.");
+      setErr("No se pudo crear el adelanto. Revisa la conexión.");
     } finally {
       setSaving(false);
     }
@@ -645,8 +645,8 @@ function PieDelFormulario({
             </span>
           ) : (
             <span className="text-[var(--text-tertiary)]">
-              <span className="hidden sm:inline">Elegí la persona y el monto para ver cómo queda la cuenta.</span>
-              <span className="sm:hidden">Elegí persona y monto.</span>
+              <span className="hidden sm:inline">Elige la persona y el monto para ver cómo queda la cuenta.</span>
+              <span className="sm:hidden">Elige persona y monto.</span>
             </span>
           )}
         </p>

@@ -168,7 +168,7 @@ export default function LeadsFunnelModule() {
       <AdminModuleHeader
         eyebrow="Clientes · CEO Dashboard"
         title="Funnel de Leads"
-        description="Prospectos que llenaron el formulario público. Movele el status conforme los contactes y cerrá ventas."
+        description="Prospectos que llenaron el formulario público. Muévele el status conforme los contactes y cierra ventas."
         icon={UserPlus}
       >
         <button

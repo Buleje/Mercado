@@ -31,7 +31,7 @@ export default function MetaModal({
       open
       onClose={onClose}
       title="Meta de recuperación"
-      description="Cuánto querés recuperar este mes"
+      description="Cuánto quieres recuperar este mes"
       footer={<ModalActions onClose={onClose} onSubmit={() => onGuardar(Number(valor) || 0)} saving={false} label="Guardar meta" />}
     >
       <div className="space-y-4 px-5 py-5 sm:px-6">

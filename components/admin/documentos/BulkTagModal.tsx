@@ -60,7 +60,7 @@ export function BulkTagModal({
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Tag className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
             <p id={titleId} className="text-sm font-extrabold text-[var(--text-primary)]">Etiquetar {count} documento{count === 1 ? "" : "s"}</p>
-            <p className="text-xs text-[var(--text-tertiary)]">Elegí una etiqueta existente o creá una nueva</p>
+            <p className="text-xs text-[var(--text-tertiary)]">Elige una etiqueta existente o crea una nueva</p>
           </div>
           <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
@@ -89,7 +89,7 @@ export function BulkTagModal({
               })}
             </div>
           ) : (
-            <p className="text-sm italic text-[var(--text-tertiary)]">Todavía no tenés etiquetas — creá la primera abajo.</p>
+            <p className="text-sm italic text-[var(--text-tertiary)]">Todavía no tienes etiquetas — crea la primera abajo.</p>
           )}
 
           <EtiquetaAutocomplete

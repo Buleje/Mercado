@@ -221,7 +221,7 @@ export function interpretarProduccion(
 
   if (lineasNoReconocidas > 0) {
     avisos.push(
-      `${lineasNoReconocidas} fila(s) con una línea de producción que no se reconoció: quedaron como LP (principal). Revisalo — el Cuadro Resumen 3 del LO-CTP se presenta por línea.`,
+      `${lineasNoReconocidas} fila(s) con una línea de producción que no se reconoció: quedaron como LP (principal). Revísalo — el Cuadro Resumen 3 del LO-CTP se presenta por línea.`,
     );
   }
   if (corridas.length > 0) {

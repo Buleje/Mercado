@@ -74,7 +74,7 @@ describe("estadoDeAvisos", () => {
   it("un motivo que no se reconoce se muestra crudo, sin inventar un consejo", () => {
     const [, mail] = estadoDeAvisos([envio("email", "failed", "algo raro del proveedor", "d@m.pe")]);
     expect(mail!.motivo).toBe("algo raro del proveedor");
-    expect(mail!.comoArreglar).toBe("Revisá la configuración de correo del sistema.");
+    expect(mail!.comoArreglar).toBe("Revisa la configuración de correo del sistema.");
   });
 
   it("sin motivo no hay consejo", () => {

@@ -428,10 +428,10 @@ export default function ChatIAClean({
           if (fullContent.length === 0) {
             const looks401 = typeof sawError === "string" && /401|unauthor|api.?key|invalid.*key/i.test(sawError);
             const errorText = looks401
-              ? `**API key del proveedor IA inválida o expirada.**\n\nDetalle: ${sawError}\n\n**Solución:** verificá que \`GROQ_API_KEY\` (o \`ANTHROPIC_API_KEY\` / \`XAI_API_KEY\`) en \`.env.local\` sea la key real del proveedor (Groq ~56 chars, Anthropic ~108 chars, xAI ~84 chars). Si vale solo \`gsk_...\` o similar corto, es un placeholder.`
+              ? `**API key del proveedor IA inválida o expirada.**\n\nDetalle: ${sawError}\n\n**Solución:** verifica que \`GROQ_API_KEY\` (o \`ANTHROPIC_API_KEY\` / \`XAI_API_KEY\`) en \`.env.local\` sea la key real del proveedor (Groq ~56 chars, Anthropic ~108 chars, xAI ~84 chars). Si vale solo \`gsk_...\` o similar corto, es un placeholder.`
               : sawError
               ? `**No pude responder:** ${sawError}`
-              : `**El asistente está inactivo.** No se recibió respuesta de la IA.\n\nPosibles causas:\n- Falta configurar \`AI_GATEWAY_API_KEY\` o \`GROQ_API_KEY\` en el servidor\n- El servicio de IA externo está temporalmente caído\n- Se agotaron los tokens disponibles del mes\n\nContactá al administrador técnico para revisar la configuración.`;
+              : `**El asistente está inactivo.** No se recibió respuesta de la IA.\n\nPosibles causas:\n- Falta configurar \`AI_GATEWAY_API_KEY\` o \`GROQ_API_KEY\` en el servidor\n- El servicio de IA externo está temporalmente caído\n- Se agotaron los tokens disponibles del mes\n\nContacta al administrador técnico para revisar la configuración.`;
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, content: errorText, error: true } : m,
@@ -634,8 +634,8 @@ export default function ChatIAClean({
                 streaming
                   ? "Esperando respuesta…"
                   : voz.listening
-                    ? "Escuchando… decí «listo» para mandarlo"
-                    : "Preguntá o dictá: «anotame 25 galones de petróleo para el camión N12 a 27»"
+                    ? "Escuchando… di «listo» para mandarlo"
+                    : "Pregunta o dicta: «anotame 25 galones de petróleo para el camión N12 a 27»"
               }
               className={cn(
                 "w-full resize-none rounded-2xl border border-[var(--rule-base)]",
@@ -785,7 +785,7 @@ export default function ChatIAClean({
                 Shift+Enter
               </kbd>{" "}
               nueva línea
-              {voz.listening && <> · decí «listo» para mandarlo, «cancelar» para borrarlo</>}
+              {voz.listening && <> · di «listo» para mandarlo, «cancelar» para borrarlo</>}
             </p>
             {messages.length > 0 && (
               <button
@@ -818,7 +818,7 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
       </SectionTitle>
       <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
         Contame qué pasó y lo anoto donde va — gastos, ingresos, adelantos, cobros.
-        Y si querés entender el negocio, preguntame: respondo con datos reales y
+        Y si quieres entender el negocio, pregúntame: respondo con datos reales y
         ejemplos fáciles.
       </p>
 
@@ -826,7 +826,7 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
         <div className="flex items-center gap-2 mb-4">
           <Mic className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
           <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Dictá o escribí para anotar
+            Dicta o escribe para anotar
           </p>
         </div>
         <div className="grid sm:grid-cols-2 gap-2">

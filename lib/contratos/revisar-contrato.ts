@@ -52,8 +52,8 @@ export function revisarPorReglas(contrato: DbContract): {
       titulo: `Quedaron ${camposVacios.length} dato(s) sin llenar`,
       hallazgo: `En el texto todavía aparece ${camposVacios.slice(0, 4).map((c) => `[${c}]`).join(", ")}${camposVacios.length > 4 ? "…" : ""}.`,
       consecuencia:
-        "Un contrato con espacios en blanco se puede completar después sin que vos lo veas, o directamente no vale para lo que quedó vacío.",
-      sugerencia: "Volvé al asistente, completá esos campos y regenerá el contrato antes de mandarlo a firmar.",
+        "Un contrato con espacios en blanco se puede completar después sin que tú lo veas, o directamente no vale para lo que quedó vacío.",
+      sugerencia: "Vuelve al asistente, completa esos campos y regenera el contrato antes de mandarlo a firmar.",
     });
   }
 
@@ -64,7 +64,7 @@ export function revisarPorReglas(contrato: DbContract): {
       hallazgo: "No hay fecha de vencimiento cargada.",
       consecuencia:
         "Sin fecha de término nadie te avisa cuándo renovarlo, y en alquileres y suministros se prorroga solo en las condiciones viejas.",
-      sugerencia: "Cargale una fecha de término o un plazo en meses.",
+      sugerencia: "Cárgale una fecha de término o un plazo en meses.",
     });
   }
 
@@ -75,7 +75,7 @@ export function revisarPorReglas(contrato: DbContract): {
       titulo: "Las fechas están al revés",
       hallazgo: "El vencimiento es anterior al inicio.",
       consecuencia: "El contrato nace vencido.",
-      sugerencia: "Corregí las fechas antes de firmar.",
+      sugerencia: "Corrige las fechas antes de firmar.",
     });
   }
 
@@ -86,7 +86,7 @@ export function revisarPorReglas(contrato: DbContract): {
       hallazgo: `La duración cargada es de unos ${Math.round(meses)} meses.`,
       consecuencia:
         "Pasados los 5 años, el contrato sujeto a modalidad se convierte en indeterminado y el trabajador gana estabilidad laboral.",
-      sugerencia: "Bajá el plazo o asumí que estás contratando a plazo indeterminado.",
+      sugerencia: "Baja el plazo o asume que estás contratando a plazo indeterminado.",
       base: "Art. 74 del D.S. 003-97-TR",
     });
   }
@@ -109,7 +109,7 @@ export function revisarPorReglas(contrato: DbContract): {
       titulo: "El contrato no tiene monto",
       hallazgo: "El monto quedó en cero.",
       consecuencia: "Sin monto no se puede reclamar un incumplimiento de pago ni calcular una penalidad.",
-      sugerencia: "Cargá el precio, la renta o la remuneración pactada.",
+      sugerencia: "Carga el precio, la renta o la remuneración pactada.",
     });
   }
 
@@ -125,7 +125,7 @@ export function revisarPorReglas(contrato: DbContract): {
         hallazgo: `El texto pacta una penalidad de ${valor}% por período de atraso.`,
         consecuencia:
           "Una penalidad manifiestamente excesiva puede ser reducida por un juez, así que en la práctica no te protege.",
-        sugerencia: "Bajala a un rango razonable (1-3% por semana) con un tope total.",
+        sugerencia: "Bájala a un rango razonable (1-3% por semana) con un tope total.",
         base: "Art. 1346 del Código Civil",
       });
     }
@@ -143,7 +143,7 @@ export function revisarPorReglas(contrato: DbContract): {
         titulo: "Hay un RUC que no es válido",
         hallazgo: `Aparece "${cruda.trim()}" y un RUC peruano tiene 11 dígitos y empieza con 10 o 20.`,
         consecuencia: "Con el RUC mal escrito el contrato identifica a otra empresa, o a ninguna.",
-        sugerencia: "Verificá el RUC en la ficha RUC de SUNAT y corregilo.",
+        sugerencia: "Verifica el RUC en la ficha RUC de SUNAT y corrígelo.",
       });
       break;
     }
@@ -155,7 +155,7 @@ export function revisarPorReglas(contrato: DbContract): {
       titulo: "Todavía no hay firmantes definidos",
       hallazgo: "Nadie fue invitado a firmar.",
       consecuencia: "Un contrato sin firmas es un borrador: no obliga a nadie.",
-      sugerencia: "Cargá a la contraparte y mandale el link de firma por WhatsApp.",
+      sugerencia: "Carga a la contraparte y mándale el link de firma por WhatsApp.",
     });
   }
 
@@ -181,7 +181,7 @@ const RespuestaIaSchema = z.object({
 
 function promptDeRevision(contrato: DbContract, texto: string): string {
   return [
-    "Sos un abogado peruano revisando un contrato para el dueño de una bodega que NO es abogado.",
+    "Eres un abogado peruano revisando un contrato para el dueño de una bodega que NO es abogado.",
     "Tu trabajo es encontrar lo que le puede salir caro antes de que firme.",
     "",
     `Tipo de contrato: ${contrato.tipo}`,
@@ -192,16 +192,16 @@ function promptDeRevision(contrato: DbContract, texto: string): string {
     "TEXTO DEL CONTRATO:",
     texto.slice(0, 14_000),
     "",
-    "Devolvé SOLO un JSON con esta forma exacta, sin texto alrededor ni markdown:",
+    "Devuelve SOLO un JSON con esta forma exacta, sin texto alrededor ni markdown:",
     '{"puntaje": 0-100, "resumen": "…", "riesgos": [{"severidad":"alta|media|baja","titulo":"…","hallazgo":"…","consecuencia":"…","sugerencia":"…","base":"norma peruana si aplica"}]}',
     "",
     "Reglas:",
-    "- Escribí en español rioplatense-peruano simple, como si se lo explicaras a un vecino. Nada de latinajos.",
+    "- Escribe en español peruano simple, con tuteo, como si se lo explicaras a un vecino. Nada de latinajos.",
     "- 'hallazgo' = qué dice el contrato hoy. 'consecuencia' = qué le puede pasar en plata o en juicio. 'sugerencia' = qué cambiar.",
-    "- Priorizá: obligaciones sin contraparte, plazos ilegales, penalidades desbalanceadas, falta de cláusula de resolución, ausencia de garantías, y todo lo que perjudique a quien contrata.",
+    "- Prioriza: obligaciones sin contraparte, plazos ilegales, penalidades desbalanceadas, falta de cláusula de resolución, ausencia de garantías, y todo lo que perjudique a quien contrata.",
     "- 'puntaje' es qué tan sano está el contrato: 100 = impecable, 0 = no lo firmes.",
-    "- Máximo 8 riesgos, los más importantes primero. Si está todo bien, devolvé una lista vacía.",
-    "- Poné 'base' SÓLO si hay un artículo o decreto peruano concreto que lo respalde (ej.: 'Art. 1362 del Código Civil'). Si no lo hay, omití el campo por completo: no escribas que no aplica ninguna norma.",
+    "- Máximo 8 riesgos, los más importantes primero. Si está todo bien, devuelve una lista vacía.",
+    "- Pon 'base' SÓLO si hay un artículo o decreto peruano concreto que lo respalde (ej.: 'Art. 1362 del Código Civil'). Si no lo hay, omite el campo por completo: no escribas que no aplica ninguna norma.",
   ].join("\n");
 }
 

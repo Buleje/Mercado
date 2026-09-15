@@ -460,7 +460,7 @@ export default function GrillaHoja({
           className={`sticky left-0 z-10 cursor-pointer border border-[var(--rule-base)] px-1 text-center text-[length:var(--ts-2xs)] font-bold ${
             filaEnSeleccion ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
           }`}
-          title={`Fila ${f + 1} — clic para seleccionarla; arrastrá el borde para cambiar el alto`}
+          title={`Fila ${f + 1} — clic para seleccionarla; arrastra el borde para cambiar el alto`}
         >
           {f + 1}
           {/* Asa de alto, sobre el borde inferior. */}
@@ -545,7 +545,7 @@ export default function GrillaHoja({
               {f === sel.filaFin && c === sel.colFin && (
                 <span
                   onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); rellenando.current = true; }}
-                  title="Arrastrá para copiar hacia abajo"
+                  title="Arrastra para copiar hacia abajo"
                   className="absolute -bottom-[3px] -right-[3px] z-30 h-2 w-2 cursor-crosshair rounded-[1px] bg-[var(--accent)]"
                 />
               )}
@@ -624,7 +624,7 @@ export default function GrillaHoja({
                     ? "bg-[var(--accent)] text-white"
                     : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                 }`}
-                title={`Columna ${numeroALetra(c + 1)} — clic para seleccionarla; arrastrá el borde para cambiar el ancho`}
+                title={`Columna ${numeroALetra(c + 1)} — clic para seleccionarla; arrastra el borde para cambiar el ancho`}
               >
                 {numeroALetra(c + 1)}
                 {/* Asa de redimensionado, sobre el borde derecho. */}

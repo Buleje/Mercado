@@ -85,8 +85,8 @@ export default function LothRentabilidadPanel({
           title="Todavía no se puede calcular la rentabilidad"
           description={
             hasPlan
-              ? "Cargá el precio de venta y el valor al estado natural (VEN) por especie en el Plan de Manejo, y registrá despachos, para ver el margen."
-              : "Registrá o activá un Plan de Manejo con precios por especie para calcular la rentabilidad."
+              ? "Carga el precio de venta y el valor al estado natural (VEN) por especie en el Plan de Manejo, y registra despachos, para ver el margen."
+              : "Registra o activa un Plan de Manejo con precios por especie para calcular la rentabilidad."
           }
         />
       </div>
@@ -149,7 +149,7 @@ export default function LothRentabilidadPanel({
             <TrendingDown className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-error-700)]" />
             <div>
               <p className="text-sm font-bold text-[var(--data-error-700)]">Pierde plata: {peor.species}</p>
-              <p className="text-xs text-[var(--text-secondary)]">{soles(peor.margen)} ({pct(peor.margenPct)}). Revisá el precio de venta o los costos de esta especie.</p>
+              <p className="text-xs text-[var(--text-secondary)]">{soles(peor.margen)} ({pct(peor.margenPct)}). Revisa el precio de venta o los costos de esta especie.</p>
             </div>
           </div>
         )}

@@ -287,7 +287,7 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onC
         <button
           type="button"
           onClick={onPublish}
-          title={asset.publishedProductId ? "Publicado como servicio de alquiler — tocá para quitarlo de la tienda" : "Publicar como servicio de alquiler en tu tienda/marketplace"}
+          title={asset.publishedProductId ? "Publicado como servicio de alquiler — toca para quitarlo de la tienda" : "Publicar como servicio de alquiler en tu tienda/marketplace"}
           className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold transition-colors",
             asset.publishedProductId ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
         >
@@ -466,7 +466,7 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-bold text-[var(--text-primary)]">{published ? "Publicada en tu tienda" : "Publicar en tu tienda"}</span>
-                <span className="block text-xs text-[var(--text-tertiary)]">{published ? "Aparece en tienda y marketplace como servicio de alquiler. Tocá para quitarla." : "La muestra como servicio de alquiler. No entra a inventario."}</span>
+                <span className="block text-xs text-[var(--text-tertiary)]">{published ? "Aparece en tienda y marketplace como servicio de alquiler. Toca para quitarla." : "La muestra como servicio de alquiler. No entra a inventario."}</span>
               </span>
               <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-black uppercase", published ? "bg-[var(--accent)] text-white" : "border border-[var(--rule-base)] text-[var(--text-secondary)]")}>{published ? "On" : "Off"}</span>
             </button>

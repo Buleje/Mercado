@@ -227,10 +227,10 @@ export default function PanelEntradaVoz({
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-base font-extrabold text-[var(--text-primary)]">
                     {paused
-                      ? "En pausa — decí «continúa» para seguir"
+                      ? "En pausa — di «continúa» para seguir"
                       : listening
                         ? "Escuchando…"
-                        : "Tocá el micrófono y dictá"}
+                        : "Toca el micrófono y dicta"}
                   </p>
                   <InfoTip
                     side="bottom"
@@ -244,7 +244,7 @@ export default function PanelEntradaVoz({
                     type="button"
                     onClick={() => onUpdateConfig({ speak: !config.speak })}
                     aria-pressed={speakOn}
-                    title={speakOn ? "La voz repite lo dictado — tocá para silenciar" : "Activar voz que repite lo dictado"}
+                    title={speakOn ? "La voz repite lo dictado — toca para silenciar" : "Activar voz que repite lo dictado"}
                     className={`ml-auto inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[length:var(--ts-2xs)] font-bold transition ${
                       speakOn
                         ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
@@ -259,7 +259,7 @@ export default function PanelEntradaVoz({
                   {numerosPorPieza(fijas) === 3 ? (
                     <>Solo los números: <span className="font-bold text-[var(--text-secondary)]">&ldquo;dos seis ocho&rdquo;</span> = 2&Prime; × 6&Prime; × 8 pies.</>
                   ) : (
-                    <>Con lo fijo puesto, dictá <b className="text-[var(--text-secondary)]">{numerosPorPieza(fijas) === 1 ? "un número" : `${numerosPorPieza(fijas)} números`}</b> por pieza ({DIMENSIONES.filter((d) => fijas[d] == null).join(" · ")}). Para soltarlo decí <b className="text-[var(--text-secondary)]">&ldquo;quitá el fijo&rdquo;</b>.</>
+                    <>Con lo fijo puesto, dicta <b className="text-[var(--text-secondary)]">{numerosPorPieza(fijas) === 1 ? "un número" : `${numerosPorPieza(fijas)} números`}</b> por pieza ({DIMENSIONES.filter((d) => fijas[d] == null).join(" · ")}). Para soltarlo di <b className="text-[var(--text-secondary)]">&ldquo;quita el fijo&rdquo;</b>.</>
                   )}
                 </p>
               </div>
@@ -286,7 +286,7 @@ export default function PanelEntradaVoz({
                   <div className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]"><Volume2 className="h-3.5 w-3.5" /> escuchando…</div>
                 )}
                 <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                  Cada bloque verde = una pieza (espesor · ancho · largo). Si un cuadrado quedó mal, pausá y editá esa fila con su micrófono.
+                  Cada bloque verde = una pieza (espesor · ancho · largo). Si un cuadrado quedó mal, pausa y edita esa fila con su micrófono.
                 </p>
               </div>
             )}
@@ -301,7 +301,7 @@ export default function PanelEntradaVoz({
         </>
       ) : (
         <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
-          Este navegador no soporta dictado por voz (usá Chrome). Podés cargar las medidas a mano abajo.
+          Este navegador no soporta dictado por voz (usá Chrome). Puedes cargar las medidas a mano abajo.
         </p>
       )}
 
@@ -449,7 +449,7 @@ export default function PanelEntradaVoz({
           desde tablet — `sm:` es el mismo corte que usa el resto del DS. */}
       <div data-grilla={grillaId} className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
         <p className="mb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          O cargala a mano
+          O cárgala a mano
         </p>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
           <CeldaCarga
@@ -493,7 +493,7 @@ export default function PanelEntradaVoz({
           <button
             type="button"
             onClick={() => onManualChange({ cantidad: "1", espesor: "2", ancho: "8", largo: "10" })}
-            title="Precarga 2×8×10 (Comercial) — confirmá la cantidad real que sacaste y tocá «Agregar a mano»"
+            title="Precarga 2×8×10 (Comercial) — confirma la cantidad real que sacaste y toca «Agregar a mano»"
             className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] sm:col-auto sm:h-10"
           >
             <Plus className="h-4 w-4" /> Comercial mínimo
@@ -636,24 +636,24 @@ function AyudaDeVoz() {
     <div className="space-y-2.5 text-xs font-normal leading-snug text-[var(--text-secondary)]">
       <p>
         Solo los números: <b className="text-[var(--text-primary)]">&ldquo;dos seis ocho&rdquo;</b>{" "}
-        = espesor 2&Prime; · ancho 6&Prime; · largo 8 pies. Decí los 3 y una{" "}
-        <b className="text-[var(--text-primary)]">micro-pausa</b> los guarda al toque — seguí con la
+        = espesor 2&Prime; · ancho 6&Prime; · largo 8 pies. Di los 3 y una{" "}
+        <b className="text-[var(--text-primary)]">micro-pausa</b> los guarda al toque — sigue con la
         siguiente sin esperar.
       </p>
       <p>
-        Si una medida se repite toda la jornada, fijala: decí{" "}
-        <Cmd>&ldquo;pon fijo el largo a cuatro&rdquo;</Cmd> y después dictá sólo espesor y ancho.
+        Si una medida se repite toda la jornada, fíjala: di{" "}
+        <Cmd>&ldquo;pon fijo el largo a cuatro&rdquo;</Cmd> y después dicta sólo espesor y ancho.
       </p>
       <div>
         <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
           Comandos por voz
         </p>
         <ul className="mt-1 space-y-1">
-          <li><Cmd>&laquo;pausá&raquo;</Cmd> / <Cmd>&laquo;continuá&raquo;</Cmd> — el micrófono deja de anotar y retoma.</li>
-          <li><Cmd>&laquo;eliminá el último&raquo;</Cmd> — borra la pieza recién dictada.</li>
+          <li><Cmd>&laquo;pausa&raquo;</Cmd> / <Cmd>&laquo;continúa&raquo;</Cmd> — el micrófono deja de anotar y retoma.</li>
+          <li><Cmd>&laquo;elimina el último&raquo;</Cmd> — borra la pieza recién dictada.</li>
           <li><Cmd>&laquo;especie tornillo&raquo;</Cmd> — de acá en adelante todo entra con esa especie.</li>
           <li><Cmd>&laquo;dueño Juan&raquo;</Cmd> — lo mismo con el dueño de la madera.</li>
-          <li><Cmd>&laquo;pon fijo el largo a cuatro&raquo;</Cmd> / <Cmd>&laquo;quitá el fijo&raquo;</Cmd></li>
+          <li><Cmd>&laquo;pon fijo el largo a cuatro&raquo;</Cmd> / <Cmd>&laquo;quita el fijo&raquo;</Cmd></li>
         </ul>
       </div>
     </div>

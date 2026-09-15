@@ -164,7 +164,7 @@ export default function CtpPlantaPanel({
           />
         </div>
         <p className="mt-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
-          {sinZonas ? "Dibujá una zona para empezar a ubicar"
+          {sinZonas ? "Dibuja una zona para empezar a ubicar"
             : sinUbicar === 0 ? "Todo ubicado en el mapa"
             : `Faltan ${sinUbicar} por ubicar`}
         </p>
@@ -175,7 +175,7 @@ export default function CtpPlantaPanel({
         <div className="flex items-center gap-2 border-b-2 border-[var(--accent)] bg-primary/10 px-3 py-2 dark:bg-[var(--accent)]/12">
           <MousePointer className="h-3.5 w-3.5 shrink-0 animate-pulse text-[var(--accent)]" />
           <span className="min-w-0 flex-1 truncate text-xs font-bold text-[var(--text-primary)]">
-            {corto(enMano.label)} <span className="font-medium text-[var(--text-secondary)]">→ tocá la zona</span>
+            {corto(enMano.label)} <span className="font-medium text-[var(--text-secondary)]">→ toca la zona</span>
           </span>
           <button type="button" onClick={() => onEnMano(null)} aria-label="Soltar el ítem" className="shrink-0 rounded-xl p-0.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]">
             <XIcon className="h-3.5 w-3.5" />
@@ -314,8 +314,8 @@ export default function CtpPlantaPanel({
            el mapa está vacío. */
         <p className="border-t-2 border-[var(--rule-base)] px-3 py-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
           {sinZonas
-            ? "Tildá la aserrada para despacharla. Para ubicarla en el mapa, dibujá una zona primero."
-            : "Arrastrá al mapa, o tocá para tomar y después tocá la zona · tildá la aserrada para despacharla."}
+            ? "Tilda la aserrada para despacharla. Para ubicarla en el mapa, dibuja una zona primero."
+            : "Arrastra al mapa, o toca para tomar y después toca la zona · tilda la aserrada para despacharla."}
         </p>
       )}
     </aside>

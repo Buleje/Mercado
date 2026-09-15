@@ -263,7 +263,7 @@ export function MarketplaceProductosTab() {
             {selectedCount} seleccionado{selectedCount !== 1 ? "s" : ""}
           </span>
           <span className="text-xs text-[var(--text-secondary)] hidden sm:inline">
-            Aplicá la acción a todos a la vez:
+            Aplica la acción a todos a la vez:
           </span>
           <div className="ml-auto flex items-center gap-2">
             <button

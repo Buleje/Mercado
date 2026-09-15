@@ -58,7 +58,7 @@ export default function ImportarCubicacionModal({
       const filas = await leerArchivoAFilas(file);
       setResultado(parsearFilasImportadas(filas));
     } catch (e) {
-      setErrorGeneral(`No se pudo leer el archivo: ${e instanceof Error ? e.message : String(e)}. Probá con un .xlsx o .csv.`);
+      setErrorGeneral(`No se pudo leer el archivo: ${e instanceof Error ? e.message : String(e)}. Prueba con un .xlsx o .csv.`);
     } finally {
       setCargando(false);
     }
@@ -125,7 +125,7 @@ export default function ImportarCubicacionModal({
     // el separador ";" del Excel es-PE). Sin datos: solo los encabezados.
     setBajando(true);
     descargarPlantillaImport(PLANTILLA_IMPORT.headers)
-      .catch(() => setErrorGeneral("No se pudo generar la plantilla. Probá de nuevo."))
+      .catch(() => setErrorGeneral("No se pudo generar la plantilla. Prueba de nuevo."))
       .finally(() => setBajando(false));
   };
 
@@ -198,19 +198,19 @@ export default function ImportarCubicacionModal({
           </p>
         ) : modo === "foto" ? (
           <p className="mb-3 text-sm text-[var(--text-secondary)]">
-            Sacale una foto (o subí una) a la planilla de cubicación escrita a mano — cantidad, espesor, ancho y largo por fila. La IA lee la letra y arma la lista; <b>vos la revisás</b> contra la foto antes de sumarla al lote. Las filas donde la IA no estuvo segura salen resaltadas.
+            Sácale una foto (o sube una) a la planilla de cubicación escrita a mano — cantidad, espesor, ancho y largo por fila. La IA lee la letra y arma la lista; <b>tú la revisas</b> contra la foto antes de sumarla al lote. Las filas donde la IA no estuvo segura salen resaltadas.
           </p>
         ) : (
           <div className="mb-3 text-sm text-[var(--text-secondary)]">
             <p>
-              Subí un audio donde dictaste las medidas tabla por tabla — espesor, ancho y largo (&ldquo;dos ocho once, dos ocho diez…&rdquo;). Se transcribe y se separa en piezas automáticamente; <b>vos revisás</b> el transcript y la lista antes de sumarla al lote.
+              Sube un audio donde dictaste las medidas tabla por tabla — espesor, ancho y largo (&ldquo;dos ocho once, dos ocho diez…&rdquo;). Se transcribe y se separa en piezas automáticamente; <b>tú revisas</b> el transcript y la lista antes de sumarla al lote.
             </p>
             <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--text-tertiary)]">
               <span>Igual que el micrófono en vivo, entiende:</span>
               <span><b className="text-[var(--text-secondary)]">&ldquo;cinco tablas de dos por ocho por diez&rdquo;</b> (cantidad)</span>
               <span><b className="text-[var(--text-secondary)]">&ldquo;especie cedro&rdquo;</b></span>
-              <span><b className="text-[var(--text-secondary)]">&ldquo;pon fijo el largo a diez&rdquo;</b> / <b className="text-[var(--text-secondary)]">&ldquo;quitá el fijo&rdquo;</b></span>
-              <span><b className="text-[var(--text-secondary)]">&ldquo;eliminá el último&rdquo;</b> si te corregiste al dictar</span>
+              <span><b className="text-[var(--text-secondary)]">&ldquo;pon fijo el largo a diez&rdquo;</b> / <b className="text-[var(--text-secondary)]">&ldquo;quita el fijo&rdquo;</b></span>
+              <span><b className="text-[var(--text-secondary)]">&ldquo;elimina el último&rdquo;</b> si te corregiste al dictar</span>
             </p>
           </div>
         )}
@@ -218,7 +218,7 @@ export default function ImportarCubicacionModal({
         {filasActuales > 0 && (
           <p className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--accent)]/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-[var(--accent)]">
             <Check className="h-4 w-4 shrink-0" />
-            Ya tenés <b>{filasActuales}</b> {filasActuales === 1 ? "fila" : "filas"} en el lote. Lo que importes se <b>suma</b> — no se borra nada de lo anterior.
+            Ya tienes <b>{filasActuales}</b> {filasActuales === 1 ? "fila" : "filas"} en el lote. Lo que importes se <b>suma</b> — no se borra nada de lo anterior.
           </p>
         )}
 
@@ -285,7 +285,7 @@ export default function ImportarCubicacionModal({
             <img src={fotoUrl} alt="Foto de la planilla escaneada" className="h-28 w-28 shrink-0 rounded-lg border border-[var(--rule-base)] object-cover" />
             <p className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
               <Sparkles className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
-              Cotejá cada fila de abajo contra esta foto antes de confirmar.
+              Coteja cada fila de abajo contra esta foto antes de confirmar.
             </p>
           </div>
         )}

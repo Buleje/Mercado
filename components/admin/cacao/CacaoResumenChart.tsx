@@ -145,7 +145,7 @@ export default function CacaoResumenChart() {
       ) : error ? (
         <p className="py-12 text-center text-sm text-[var(--data-error-700)]">No se pudo cargar el gráfico: {error}</p>
       ) : !view ? (
-        <p className="py-16 text-center text-sm text-[var(--text-tertiary)]">Se necesitan al menos 2 meses con movimiento para dibujar el gráfico. Registrá acopio/ventas para verlo.</p>
+        <p className="py-16 text-center text-sm text-[var(--text-tertiary)]">Se necesitan al menos 2 meses con movimiento para dibujar el gráfico. Registra acopio/ventas para verlo.</p>
       ) : (
         <>
           <div className="mb-3 flex flex-wrap items-center gap-3">

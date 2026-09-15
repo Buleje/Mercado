@@ -181,7 +181,7 @@ function CashCounter({
       return;
     }
     if (!hasCount) {
-      setFeedback({ kind: "err", msg: "Contá al menos una denominación antes de guardar." });
+      setFeedback({ kind: "err", msg: "Cuenta al menos una denominación antes de guardar." });
       return;
     }
     setSaving(true);
@@ -382,7 +382,7 @@ function CashCounter({
               onClick={handleSaveArqueo}
               disabled={saving || !hasCount || !registerId}
               aria-disabled={saving || !hasCount || !registerId}
-              title={!registerId ? "No hay caja registradora abierta" : !hasCount ? "Contá al menos una denominación" : undefined}
+              title={!registerId ? "No hay caja registradora abierta" : !hasCount ? "Cuenta al menos una denominación" : undefined}
               className="px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Guardando…" : "Guardar arqueo"}

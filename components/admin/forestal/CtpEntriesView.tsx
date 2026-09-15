@@ -197,7 +197,7 @@ function ChipsSinOrigen({
     <>
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
         <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-          Marcá las que salieron del mismo lote y ponéselo a todas de una vez, o tocá una para
+          Marca las que salieron del mismo lote y pónselo a todas de una vez, o toca una para
           elegir sus trozas a mano. De mayor a menor volumen.
         </p>
         {visiblesIds.length > 1 && (
@@ -288,13 +288,13 @@ const SECTION_META: Record<
     icon: Boxes,
     cta: "Declarar producción",
     empty:
-      "Sin transformaciones registradas. Elegí un lote en «Declarar producción»: salen sus trozas para elegir cuáles entran a la sierra.",
+      "Sin transformaciones registradas. Elige un lote en «Declarar producción»: salen sus trozas para elegir cuáles entran a la sierra.",
   },
   despacho: {
     label: "Despacho",
     icon: Truck,
     cta: "Nuevo despacho",
-    empty: "Sin despachos registrados. Registrá la salida de producto con su GTF.",
+    empty: "Sin despachos registrados. Registra la salida de producto con su GTF.",
   },
 };
 
@@ -1198,7 +1198,7 @@ export function CtpEntriesView({
           hint: "producto despachado sin corrida que lo ampare",
           tono: "error",
           title:
-            "Lo que salió y no puede decir de qué corrida vino: rompe la cadena de custodia. Tocá para ver cuál.",
+            "Lo que salió y no puede decir de qué corrida vino: rompe la cadena de custodia. Toca para ver cuál.",
           /* Lleva el foco al cartel, NO lo pliega adentro: ese aviso bloquea la
              emisión de un certificado ante SERFOR y tiene que seguir a la vista
              (decisión de Brandon). La pastilla dice el total, el cartel dice
@@ -1246,7 +1246,7 @@ export function CtpEntriesView({
         hint: e.grafias.map((g) => `«${g.texto}» ${g.usos}`).join(" vs "),
         tono: "warning",
         title:
-          "Para el libro son dos maderas: los totales por especie y el saldo por permiso se parten. Tocá para elegir una forma.",
+          "Para el libro son dos maderas: los totales por especie y el saldo por permiso se parten. Toca para elegir una forma.",
         onClick: () => setVerEspecies(true),
       });
     }
@@ -1337,12 +1337,12 @@ export function CtpEntriesView({
               ¿Cómo funciona esta pestaña?
             </summary>
             <p className="mt-2 text-sm leading-snug text-[var(--text-secondary)]">
-              Elegí en <b className="text-[var(--text-primary)]">Lotes</b> la madera que entra hoy a
+              Elige en <b className="text-[var(--text-primary)]">Lotes</b> la madera que entra hoy a
               la sierra: abajo sale su lista de trozas. Lo ya declarado está en{" "}
               <b className="text-[var(--text-primary)]">
                 Opciones → Producción · Todos y registrados
               </b>
-              . ¿La sierra ya cortó y el lote todavía no está armado? Usá{" "}
+              . ¿La sierra ya cortó y el lote todavía no está armado? Usa{" "}
               <b className="text-[var(--text-primary)]">Producir sin lote</b>. Para ver cuánto puede
               dar todavía cada título habilitante,{" "}
               <b className="text-[var(--text-primary)]">Saldo por permiso</b>.
@@ -1797,16 +1797,16 @@ export function CtpEntriesView({
               fechaConsumo={hoy}
               vacio={
                 lotesConMadera.length > 0
-                  ? "Todavía no elegiste el lote. Abrí «Lotes» y elegí cuál entra hoy a la sierra: acá salen sus trozas con GTF, código de planta, diámetros y volumen."
-                  : "No hay lotes con madera esperando. Armá uno en «Lotes de aserrío» y sus trozas van a salir en esta lista."
+                  ? "Todavía no elegiste el lote. Abre «Lotes» y elige cuál entra hoy a la sierra: acá salen sus trozas con GTF, código de planta, diámetros y volumen."
+                  : "No hay lotes con madera esperando. Arma uno en «Lotes de aserrío» y sus trozas van a salir en esta lista."
               }
             />
           </div>
           <p className="flex flex-col items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-6 text-center text-sm text-[var(--text-secondary)] sm:hidden">
             <Boxes className="h-7 w-7 text-[var(--text-tertiary)]" aria-hidden />
             {lotesConMadera.length > 0
-              ? "Todavía no elegiste el lote. Elegí cuál entra hoy a la sierra y acá salen sus trozas."
-              : "No hay lotes con madera esperando. Armá uno en «Lotes de aserrío» y sus trozas van a salir acá."}
+              ? "Todavía no elegiste el lote. Elige cuál entra hoy a la sierra y acá salen sus trozas."
+              : "No hay lotes con madera esperando. Arma uno en «Lotes de aserrío» y sus trozas van a salir acá."}
           </p>
           <div className="flex justify-center">
             {lotesConMadera.length > 0 ? (
@@ -2279,7 +2279,7 @@ export function CtpEntriesView({
               Anular línea
             </CardTitle>
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-              Indicá el motivo (queda en el historial, no se borra).
+              Indica el motivo (queda en el historial, no se borra).
             </p>
             <input
               autoFocus

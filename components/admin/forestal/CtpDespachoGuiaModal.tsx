@@ -334,9 +334,9 @@ export default function CtpDespachoGuiaModal({
   const bloqueoRegistro = enviando
     ? null
     : filas.length === 0
-      ? "Agregá productos en «Creación de lista de productos»"
+      ? "Agrega productos en «Creación de lista de productos»"
       : problemas.length > 0
-        ? "Revisá los avisos de la lista"
+        ? "Revisa los avisos de la lista"
         : !gtfNumber.trim()
           ? "Falta el N° de GTF"
           : null;

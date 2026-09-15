@@ -88,7 +88,7 @@ export default function NetworkToggleCard() {
             Red de repartidores Buleje
           </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
-            Si activás esta opción, los repartidores de Buleje verán tu tienda en su mapa y podrán aceptar tus pedidos. Si la desactivás, solo tus repartidores propios atienden.
+            Si activas esta opción, los repartidores de Buleje verán tu tienda en su mapa y podrán aceptar tus pedidos. Si la desactivas, solo tus repartidores propios atienden.
           </p>
         </div>
       </header>

@@ -67,7 +67,7 @@ export function LastLoginToast() {
       shownThisLoad = true;
       try { sessionStorage.removeItem(KEY); } catch { /* noop */ }
       toast(`Último acceso ${rel}${ipTxt}`, {
-        description: "Si no reconocés este acceso, revisá tus dispositivos en Configuración → Seguridad.",
+        description: "Si no reconoces este acceso, revisa tus dispositivos en Configuración → Seguridad.",
         duration: 8000,
       });
     }, 1200);

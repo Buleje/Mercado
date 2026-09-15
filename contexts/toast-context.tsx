@@ -73,7 +73,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               key={t.id}
               type="button"
               onClick={() => dismissToast(t.id)}
-              aria-label={`${t.name} agregado al carrito. Tocá para cerrar`}
+              aria-label={`${t.name} agregado al carrito. Toca para cerrar`}
               className={cn(
                 "pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-3 text-left shadow-[var(--shadow-lg)] transition-all duration-300",
                 t.exiting ? "translate-y-2 opacity-0" : "translate-y-0 opacity-100",

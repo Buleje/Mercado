@@ -32,8 +32,8 @@ export async function expandSearchTerms(query: string): Promise<string[]> {
     const prompt = [
       "Sos un buscador de documentos de una bodega/empresa peruana.",
       `El usuario busca: "${query.trim()}".`,
-      "Devolvé SOLO JSON con sinónimos y palabras clave para buscar en nombres",
-      "de archivo y texto OCR (incluí términos peruanos como 'recibo', 'boleta',",
+      "Devuelve SOLO JSON con sinónimos y palabras clave para buscar en nombres",
+      "de archivo y texto OCR (incluye términos peruanos como 'recibo', 'boleta',",
       "'licencia', 'DIGESA', 'alquiler', 'proveedor' cuando apliquen).",
       'Formato: {"terms":["t1","t2","t3","t4","t5"]} — minúsculas, sin tildes, máx 8.',
     ].join("\n");

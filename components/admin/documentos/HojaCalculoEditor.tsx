@@ -240,7 +240,7 @@ function EditorCargado({
       const blob = formato === "csv"
         ? new Blob([generarCsv(hojas[0].filas.map((f) => f.map((c) => c.crudo)))], { type: "text/csv" })
         : await guardarCambios(
-            paquete.current ?? (() => { throw new Error("Se perdió el archivo original; recargá la página."); })(),
+            paquete.current ?? (() => { throw new Error("Se perdió el archivo original; recarga la página."); })(),
             editor.cambiosParaArchivo(),
           );
 
@@ -255,7 +255,7 @@ function EditorCargado({
         const j = await r.json().catch(() => ({}));
         if (r.status === 429) {
           const seg = Number(j.retryAfter) || 60;
-          throw new Error(`Demasiados guardados seguidos. Tus cambios siguen acá: probá de nuevo en ${Math.ceil(seg / 60)} min.`);
+          throw new Error(`Demasiados guardados seguidos. Tus cambios siguen acá: prueba de nuevo en ${Math.ceil(seg / 60)} min.`);
         }
         throw new Error(j.error === "too_large" ? "El archivo quedó demasiado grande." : (j.message ?? `No se pudo guardar (HTTP ${r.status})`));
       }
@@ -288,7 +288,7 @@ function EditorCargado({
         ? new Blob([generarCsv(hojas[0].filas.map((f) => f.map((c) => c.crudo)))], { type: "text/csv" })
         : await (async () => {
             const zip = paquete.current;
-            if (!zip) throw new Error("Se perdió el archivo original; recargá la página.");
+            if (!zip) throw new Error("Se perdió el archivo original; recarga la página.");
             const copia = await abrirPaquete(await zip.generateAsync({ type: "arraybuffer" }));
             return guardarCambios(copia, editor.cambiosParaArchivo());
           })();
@@ -453,7 +453,7 @@ function EditorCargado({
   const accionesHojas = useMemo(() => {
     const conZip = async (fn: (zip: JSZipType) => Promise<void>) => {
       const zip = paquete.current;
-      if (!zip) { setError("Se perdió el archivo original; recargá la página."); return; }
+      if (!zip) { setError("Se perdió el archivo original; recarga la página."); return; }
       try {
         await fn(zip);
         setError(null);
@@ -643,7 +643,7 @@ function EditorCargado({
           value={contenido}
           onChange={(e) => ejecutar({ tipo: "valores", celdas: [{ ...seleccion, valor: e.target.value }] })}
           aria-label="Contenido de la celda"
-          placeholder="Escribí un valor o una fórmula (=SUMA(B2:B10))"
+          placeholder="Escribe un valor o una fórmula (=SUMA(B2:B10))"
           className={`min-w-0 flex-1 bg-transparent text-xs text-[var(--text-primary)] outline-none ${esFormula(contenido) ? "font-mono" : ""}`}
         />
       </div>

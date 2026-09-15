@@ -799,7 +799,7 @@ export default function PuntoCompraView() {
         // del genérico "No se pudo crear la OC" (reporte QA Compras).
         if (res.status === 402) {
           const body = await res.json().catch(() => ({} as { detail?: string; error?: string }));
-          setPlanBlockedMsg(body.detail ?? body.error ?? "Tu periodo de prueba terminó. Activá un plan para crear órdenes de compra.");
+          setPlanBlockedMsg(body.detail ?? body.error ?? "Tu periodo de prueba terminó. Activa un plan para crear órdenes de compra.");
           return;
         }
         throw new Error("Error al crear OC");
@@ -973,7 +973,7 @@ export default function PuntoCompraView() {
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-500)]">
           <span className="shrink-0">●</span>
           <p>
-            Tenés <strong>{needsReorderCount}</strong> productos por debajo del stock mínimo.{" "}
+            Tienes <strong>{needsReorderCount}</strong> productos por debajo del stock mínimo.{" "}
             <button type="button" onClick={() => { setSoloReponer(true); setPage(1); }} className="underline font-semibold">
               Ver todos
             </button>
@@ -1114,7 +1114,7 @@ export default function PuntoCompraView() {
               Gastos fijos del negocio
             </SectionTitle>
             <p className="text-sm text-[var(--text-secondary)]">
-              Lo que se paga todos los meses: alquiler, servicios, combustible. Tocá una tarjeta para registrar el pago del período.
+              Lo que se paga todos los meses: alquiler, servicios, combustible. Toca una tarjeta para registrar el pago del período.
             </p>
           </div>
           <button
@@ -1140,9 +1140,9 @@ export default function PuntoCompraView() {
               <span className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/20 mb-3">
                 <Tag className="h-7 w-7 text-[var(--data-warning-500)]" />
               </span>
-              <p className="text-base font-bold text-[var(--text-primary)]">Aún no tenés gastos fijos cargados</p>
+              <p className="text-base font-bold text-[var(--text-primary)]">Aún no tienes gastos fijos cargados</p>
               <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-md mx-auto">
-                Cargá una vez tus pagos recurrentes (alquiler, internet, gasolina) y después solo hacés <strong>click</strong> en la card cuando toca pagar.
+                Carga una vez tus pagos recurrentes (alquiler, internet, gasolina) y después solo haces <strong>click</strong> en la card cuando toca pagar.
               </p>
               <button
                 type="button"
@@ -1323,8 +1323,8 @@ export default function PuntoCompraView() {
           </p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">
             {showInventario
-              ? "Mostrando productos del inventario abajo. Apagá para enfocarte solo en gastos."
-              : "Productos del inventario ocultos. Encendé para hacer compra de reposición."}
+              ? "Mostrando productos del inventario abajo. Apaga para enfocarte solo en gastos."
+              : "Productos del inventario ocultos. Enciende para hacer compra de reposición."}
           </p>
         </div>
         <button
@@ -1507,8 +1507,8 @@ export default function PuntoCompraView() {
               </p>
               <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-sm mx-auto">
                 {needsReorderCount > 0
-                  ? "Esta pantalla abre mostrando sólo los gastos fijos. Traé el inventario para armar la reposición."
-                  : "Esta pantalla abre mostrando sólo los gastos fijos. Traé el inventario para agregar productos al carrito."}
+                  ? "Esta pantalla abre mostrando sólo los gastos fijos. Trae el inventario para armar la reposición."
+                  : "Esta pantalla abre mostrando sólo los gastos fijos. Trae el inventario para agregar productos al carrito."}
               </p>
               {/* Antes esto mandaba a buscar un toggle que estaba en otra parte
                   de la pantalla. La acción va acá, donde se necesita. */}
@@ -2387,7 +2387,7 @@ export default function PuntoCompraView() {
                 </div>
               </div>
               <p className="text-xs text-[var(--text-tertiary)]">
-                Después podés completar persona contacto y banco desde el tab <strong>Proveedores</strong>.
+                Después puedes completar persona contacto y banco desde el tab <strong>Proveedores</strong>.
               </p>
             </div>
 

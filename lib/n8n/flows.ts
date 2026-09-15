@@ -200,7 +200,7 @@ export async function dispararFlujo(
         ok: false,
         error:
           "Esa URL apunta a la red local y está bloqueada por seguridad. " +
-          "Usá la URL pública de tu n8n (o poné N8N_ALLOW_LOCAL=1 en desarrollo).",
+          "Usa la URL pública de tu n8n (o pon N8N_ALLOW_LOCAL=1 en desarrollo).",
       };
     }
 

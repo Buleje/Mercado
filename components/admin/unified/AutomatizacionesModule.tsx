@@ -40,7 +40,7 @@ export default function AutomatizacionesModule() {
       <AdminModuleHeader
         eyebrow="Asistente · Automatizaciones"
         title="Anotar desde afuera"
-        description="Dictale por WhatsApp o Telegram, o conectá n8n para que tus flujos anoten en Buleje."
+        description="Díctale por WhatsApp o Telegram, o conecta n8n para que tus flujos anoten en Buleje."
         icon={Webhook}
       />
       <IASaludPanel />

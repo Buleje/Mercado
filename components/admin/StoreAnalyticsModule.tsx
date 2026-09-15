@@ -292,7 +292,7 @@ export default function StoreAnalyticsModule() {
         <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-6 text-center">
           <p className="text-sm font-bold text-[var(--text-primary)]">Sin datos en el período seleccionado</p>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">
-            Cuando haya tráfico y ventas en tus productos, los verás acá. Probá con un período más amplio o esperá a que registremos eventos.
+            Cuando haya tráfico y ventas en tus productos, los verás acá. Prueba con un período más amplio o espera a que registremos eventos.
           </p>
         </div>
       )}
@@ -342,7 +342,7 @@ export default function StoreAnalyticsModule() {
       ) : (
         <LockedAdvanced
           title="Funnel de conversión y tendencia diaria"
-          desc="Mirá dónde se caen tus ventas (vistas → carrito → compra) y la curva de ingresos día a día."
+          desc="Mira dónde se caen tus ventas (vistas → carrito → compra) y la curva de ingresos día a día."
         />
       )}
 

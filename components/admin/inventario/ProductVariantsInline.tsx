@@ -287,7 +287,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
       const existingAttrs = new Set(rows.map(r => r.attr.toLowerCase()));
       const itemsToCreate = tpl.items.filter(it => !existingAttrs.has(it.attr.toLowerCase()));
       if (itemsToCreate.length === 0) {
-        setError(`Ya tenés todas las variantes de "${tpl.label}"`);
+        setError(`Ya tienes todas las variantes de "${tpl.label}"`);
         return;
       }
       // POST en serie (no paralelo) para preservar position y evitar rate limits
@@ -448,8 +448,8 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
                 <div className="fixed inset-0 z-10" onClick={() => setShowTemplates(false)} />
                 <div className="absolute right-0 top-full mt-1 z-20 w-72 max-h-80 overflow-y-auto rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl">
                   <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Elegí una plantilla</p>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Crea todas las variantes en un click. Después podés editarlas o agregar más.</p>
+                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Elige una plantilla</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Crea todas las variantes en un click. Después puedes editarlas o agregar más.</p>
                   </div>
                   {VARIANT_TEMPLATES.map(tpl => (
                     <button
@@ -531,7 +531,7 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
           if (file && onDropImage) onDropImage(file);
         }}
         className="relative h-16 w-16 rounded-xl overflow-hidden border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary shrink-0 bg-[var(--surface-sunken)] group transition-all"
-        title="Click para elegir o arrastrá una imagen aquí"
+        title="Click para elegir o arrastra una imagen aquí"
       >
         {previewImg ? (
           <Image

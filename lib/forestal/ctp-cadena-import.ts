@@ -439,7 +439,7 @@ export function origenesDelDespacho(
  * error es de verdad y se deja como está.
  */
 export function seResuelveAlImportar(mensaje: string, codigo: string, mapa: Map<string, string>): boolean {
-  if (!/no existe en el libro|no encontrad|importá los ingresos primero|cargá primero el ingreso/i.test(mensaje)) {
+  if (!/no existe en el libro|no encontrad|import[aá] los ingresos primero|carg[aá] primero el ingreso/i.test(mensaje)) {
     return false;
   }
   /* El mensaje puede traer el código de la troza o el número de guía: se acepta

@@ -24,14 +24,14 @@ import { soles, clave, palabras, texto, hayEmpate } from "./comun";
 /**
  * Busca una máquina por nombre, placa o tipo.
  *
- * Devolver el `id` es el punto: sin él, «anotá el combustible del camión N12»
+ * Devolver el `id` es el punto: sin él, «anota el combustible del camión N12»
  * termina en un `assetId` inventado y la tarjeta pregunta por un activo que no
  * existe. Con más de una coincidencia se ordena por puntaje pero se dice que
  * hay varias — elegir por el agente es elegir mal la mitad de las veces.
  */
 export async function buscarMaquina(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
   const q = texto(task.payload.texto);
-  if (!q) return { success: false, error: "Decime qué máquina buscar (nombre o placa)." };
+  if (!q) return { success: false, error: "Dime qué máquina buscar (nombre o placa)." };
 
   const activos = await AssetsDB.listWithStats(task.tenantId, { includeInactive: true });
   const qk = clave(q);
@@ -73,7 +73,7 @@ export async function buscarMaquina(task: AgentTask, ctx: AgentContext): Promise
         mensaje: `Ninguna máquina coincide con "${q}". Las máquinas se dan de alta en Mi Plata › Reportes › Activos.`,
       }),
       ...(hayEmpate(rank) && {
-        mensaje: "Hay más de una que calza parecido: preguntá cuál antes de anotar nada.",
+        mensaje: "Hay más de una que calza parecido: pregunta cuál antes de anotar nada.",
       }),
       /**
        * El veredicto, explícito.
@@ -85,7 +85,7 @@ export async function buscarMaquina(task: AgentTask, ctx: AgentContext): Promise
        */
       ...(rank.length > 0 && !hayEmpate(rank) && {
         recomendado: rank[0].a.id,
-        mensaje: `"${rank[0].a.name}" es la que mejor calza: usá ese maquinaId sin preguntar.`,
+        mensaje: `"${rank[0].a.name}" es la que mejor calza: usa ese maquinaId sin preguntar.`,
       }),
     },
   };
@@ -100,7 +100,7 @@ export async function buscarMaquina(task: AgentTask, ctx: AgentContext): Promise
  */
 export async function buscarPersona(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
   const q = texto(task.payload.texto);
-  if (!q) return { success: false, error: "Decime a quién buscar (nombre o documento)." };
+  if (!q) return { success: false, error: "Dime a quién buscar (nombre o documento)." };
 
   const [personas, adelantos] = await Promise.all([
     AdelantosDB.listBeneficiarios(task.tenantId),
@@ -151,10 +151,10 @@ export async function buscarPersona(task: AgentTask, ctx: AgentContext): Promise
       ...(rank.length === 0 && {
         mensaje: `Nadie del padrón coincide con "${q}". Las personas se dan de alta en Mi Plata › Por cobrar › Adelantos.`,
       }),
-      ...(hayEmpate(rank) && { mensaje: "Hay más de una que calza parecido: preguntá cuál antes de anotar nada." }),
+      ...(hayEmpate(rank) && { mensaje: "Hay más de una que calza parecido: pregunta cuál antes de anotar nada." }),
       ...(rank.length > 0 && !hayEmpate(rank) && {
         recomendado: rank[0].p.id,
-        mensaje: `"${rank[0].p.nombre}" es quien mejor calza: usá ese personaId sin preguntar.`,
+        mensaje: `"${rank[0].p.nombre}" es quien mejor calza: usa ese personaId sin preguntar.`,
       }),
     },
   };
@@ -211,7 +211,7 @@ export async function buscarDeuda(task: AgentTask, ctx: AgentContext): Promise<A
       }),
       // Acá SÍ alcanza con que haya más de una: dos deudas del mismo cliente son
       // dos deudas distintas, y cobrar en la equivocada deja las dos mal.
-      ...(deudas.length > 1 && { mensaje: "Hay más de una deuda abierta: preguntá cuál antes de cobrar." }),
+      ...(deudas.length > 1 && { mensaje: "Hay más de una deuda abierta: pregunta cuál antes de cobrar." }),
     },
   };
 }
@@ -266,11 +266,11 @@ function veredicto<T>(
 ): Record<string, unknown> {
   if (rank.length === 0) return { mensaje: sinResultados };
   if (hayEmpate(rank)) {
-    return { mensaje: "Hay más de uno que calza parecido: preguntá cuál antes de anotar nada." };
+    return { mensaje: "Hay más de uno que calza parecido: pregunta cuál antes de anotar nada." };
   }
   return {
     recomendado: idDe(rank[0].x),
-    mensaje: `"${nombreDe(rank[0].x)}" es el que mejor calza: usá ese ${comoLlamarlo} sin preguntar.`,
+    mensaje: `"${nombreDe(rank[0].x)}" es el que mejor calza: usa ese ${comoLlamarlo} sin preguntar.`,
   };
 }
 
@@ -283,7 +283,7 @@ function veredicto<T>(
  */
 export async function buscarProveedor(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
   const q = texto(task.payload.texto);
-  if (!q) return { success: false, error: "Decime qué proveedor buscar (nombre, RUC o documento)." };
+  if (!q) return { success: false, error: "Dime qué proveedor buscar (nombre, RUC o documento)." };
 
   const proveedores = await SuppliersDB.getAll(task.tenantId);
   const rank = rankear(proveedores, q, (p) => ({
@@ -330,7 +330,7 @@ export async function buscarCuenta(task: AgentTask, ctx: AgentContext): Promise<
     };
   }
 
-  // Sin texto se listan todas: «pasá plata del banco a la caja» necesita ver las dos.
+  // Sin texto se listan todas: «pasa plata del banco a la caja» necesita ver las dos.
   const rank = q
     ? rankear(cuentas, q, (c) => ({ identidad: [c.numeroCuenta], nombre: c.nombre, extra: `${c.banco ?? ""} ${c.tipo}` }))
     : cuentas.map((x) => ({ x, score: 1 }));
@@ -401,7 +401,7 @@ export async function buscarLote(task: AgentTask, ctx: AgentContext): Promise<Ag
              * mientras que un cuid no.
              */
             usarComoCentroCosto: rank[0].x.loteCode,
-            mensaje: `Pasá "${rank[0].x.loteCode}" como centroCosto del gasto.`,
+            mensaje: `Pasa "${rank[0].x.loteCode}" como centroCosto del gasto.`,
           }),
     },
   };

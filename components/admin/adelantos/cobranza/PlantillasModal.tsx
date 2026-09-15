@@ -27,7 +27,7 @@ export default function PlantillasModal({
   return (
     <ModalShell
       title="Mensajes de cobranza"
-      subtitle="Uno por tramo de atraso. Podés usar {nombre}, {saldo} y {dias}."
+      subtitle="Uno por tramo de atraso. Puedes usar {nombre}, {saldo} y {dias}."
       onClose={onClose}
       size="md"
       footer={<ModalActions onClose={onClose} onSubmit={() => onGuardar(borrador)} saving={false} label="Guardar" />}

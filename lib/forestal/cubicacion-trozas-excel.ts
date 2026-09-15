@@ -140,7 +140,7 @@ function agregarResumenPorEspecie(ws: Worksheet, especies: string[]): void {
   const filaNota = filaTotal + 2;
   ws.mergeCells(`${cLabel}${filaNota}:${cVol}${filaNota}`);
   const nota = ws.getCell(`${cLabel}${filaNota}`);
-  nota.value = "Referencia — se calcula sola mientras llenás. La Especie tiene que escribirse EXACTO como al costado para que sume ahí (si no, cae en \"Otras\").";
+  nota.value = "Referencia — se calcula sola mientras llenas. La Especie tiene que escribirse EXACTO como al costado para que sume ahí (si no, cae en \"Otras\").";
   nota.font = { italic: true, size: 8, color: { argb: "FF9CA3AF" } };
   nota.alignment = { wrapText: true, vertical: "top" };
 }

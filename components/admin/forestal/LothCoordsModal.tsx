@@ -96,7 +96,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Importar coordenadas</p>
             <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-              Pegá el cuadro del plan de manejo o subí el KML / GeoJSON del expediente
+              Pega el cuadro del plan de manejo o sube el KML / GeoJSON del expediente
             </p>
           </div>
           <button
@@ -184,7 +184,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
               </p>
             ) : (
               <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-                Pegá al menos 3 vértices. Se aceptan columnas <b>Este / Norte</b> (UTM), lat/lng decimales, o un archivo KML/GeoJSON.
+                Pega al menos 3 vértices. Se aceptan columnas <b>Este / Norte</b> (UTM), lat/lng decimales, o un archivo KML/GeoJSON.
               </p>
             )}
             {result.ignoradas.length > 0 && (

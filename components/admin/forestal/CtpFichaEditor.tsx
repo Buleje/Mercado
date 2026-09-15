@@ -118,7 +118,7 @@ export default function CtpFichaEditor() {
       setPadron({
         estado: baja ? "aviso" : "ok",
         mensaje: baja
-          ? `SUNAT devuelve el RUC en estado «${body.estado}». Revisá antes de emitir documentos con él.`
+          ? `SUNAT devuelve el RUC en estado «${body.estado}». Revisa antes de emitir documentos con él.`
           : `Traído de SUNAT: ${body.razonSocial ?? "sin razón social"}.`,
       });
     } catch (e) {
@@ -165,7 +165,7 @@ export default function CtpFichaEditor() {
               {rucSospechoso && (
                 <p className="mt-1.5 flex items-start gap-1.5 text-sm font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  Ese RUC no pasa la verificación de SUNAT (dígito verificador). Revisá que no falte o sobre un número.
+                  Ese RUC no pasa la verificación de SUNAT (dígito verificador). Revisa que no falte o sobre un número.
                 </p>
               )}
               {padron.mensaje && (
@@ -202,10 +202,10 @@ export default function CtpFichaEditor() {
               <button type="button" onClick={addTitulo} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"><Plus className="h-3.5 w-3.5" /> Agregar</button>
             </div>
             <div className="space-y-2">
-              {draft.titulos.length === 0 && <p className="text-sm text-[var(--text-tertiary)]">Sin títulos cargados. Agregá las concesiones/permisos que abastecen el CTP.</p>}
+              {draft.titulos.length === 0 && <p className="text-sm text-[var(--text-tertiary)]">Sin títulos cargados. Agrega las concesiones/permisos que abastecen el CTP.</p>}
               {draft.titulos.length > 1 && (
                 <p className="text-sm text-[var(--text-tertiary)]">
-                  El <strong className="text-[var(--text-secondary)]">primero</strong> es el que cada guía de salida propone (casilleros 5, 6, 8 y 9); en el formulario de la guía se puede elegir otro. Usá <ArrowUp className="inline h-3.5 w-3.5" aria-hidden /> para cambiar el predeterminado.
+                  El <strong className="text-[var(--text-secondary)]">primero</strong> es el que cada guía de salida propone (casilleros 5, 6, 8 y 9); en el formulario de la guía se puede elegir otro. Usa <ArrowUp className="inline h-3.5 w-3.5" aria-hidden /> para cambiar el predeterminado.
                 </p>
               )}
               {draft.titulos.map((t, i) => (
@@ -264,7 +264,7 @@ export default function CtpFichaEditor() {
               <button type="button" onClick={addCites} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"><Plus className="h-3.5 w-3.5" /> Agregar</button>
             </div>
             <div className="space-y-2">
-              {draft.citesPermisos.length === 0 && <p className="text-xs text-[var(--text-tertiary)]">Sin permisos CITES. Si procesás caoba, cedro, shihuahuaco u otra especie CITES, cargá su permiso para tenerlo a mano ante un fiscalizador.</p>}
+              {draft.citesPermisos.length === 0 && <p className="text-xs text-[var(--text-tertiary)]">Sin permisos CITES. Si procesas caoba, cedro, shihuahuaco u otra especie CITES, carga su permiso para tenerlo a mano ante un fiscalizador.</p>}
               {draft.citesPermisos.map((p, i) => (
                 <div key={i} className="flex flex-wrap items-center gap-2">
                   <input className={`${I} min-w-[9rem] flex-1`} value={p.especie} onChange={(e) => setCites(i, { especie: e.target.value })} placeholder="Especie (ej. Shihuahuaco)" />

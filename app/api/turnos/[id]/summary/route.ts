@@ -46,7 +46,7 @@ export async function GET(
       const resolvedId = await AdminUsersDB.resolveIdByUsername(auth.tenantId, auth.username);
       if (!resolvedId || turno.adminUserId !== resolvedId) {
         return NextResponse.json(
-          { error: "No tenés permiso para ver el resumen de otro cajero" },
+          { error: "No tienes permiso para ver el resumen de otro cajero" },
           { status: 403 },
         );
       }

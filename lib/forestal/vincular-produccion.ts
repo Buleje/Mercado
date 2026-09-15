@@ -136,7 +136,7 @@ export function revisarVinculacion(
       severidad: "error",
       mensaje:
         `La corrida N° ${corrida.lineNo ?? "—"} ya tiene materia prima atribuida: sumarle más le cambiaría el rendimiento. ` +
-        "Registrá la madera nueva en una corrida aparte.",
+        "Registra la madera nueva en una corrida aparte.",
     });
   }
 
@@ -192,7 +192,7 @@ export function revisarVinculacion(
       severidad: "error",
       mensaje:
         `La corrida declara ${fmt(corrida.producidoM3)} m³ de producto y las trozas elegidas suman ${fmt(trozaM3)} m³: ` +
-        "de la sierra nunca sale más madera de la que entró. Elegí más trozas.",
+        "de la sierra nunca sale más madera de la que entró. Elige más trozas.",
     });
   } else if (rendimientoPct != null && rendimientoPct > TOPE_RENDIMIENTO_PCT) {
     hallazgos.push({

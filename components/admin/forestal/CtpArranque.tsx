@@ -65,7 +65,7 @@ export default function CtpArranque({ onIr }: { onIr?: (vista: string) => void }
       <header className="flex flex-wrap items-center gap-2">
         <Sparkles className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
         <p className="text-sm font-bold text-[var(--text-primary)]">
-          {hechos === 0 ? "Tu libro está recién abierto" : "Terminá de poner en marcha el libro"}
+          {hechos === 0 ? "Tu libro está recién abierto" : "Termina de poner en marcha el libro"}
         </p>
         <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
           {hechos} de {total}

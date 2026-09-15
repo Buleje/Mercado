@@ -148,9 +148,9 @@ export default function Anexo04Cuadre({
           <span className="font-mono tabular-nums">{fmtAnexo(Math.abs(delta))} m³</span>
         </p>
         <p className="text-xs text-[var(--text-secondary)]">
-          declarás <span className="font-mono font-bold tabular-nums">{fmtAnexo(objetivoM3)}</span> y las
+          declaras <span className="font-mono font-bold tabular-nums">{fmtAnexo(objetivoM3)}</span> y las
           piezas suman <span className="font-mono font-bold tabular-nums">{fmtAnexo(calculado)}</span> m³ ·
-          mové {medidas === 1 ? "una medida" : `${medidas} medidas`} para cerrarlo
+          mueve {medidas === 1 ? "una medida" : `${medidas} medidas`} para cerrarlo
         </p>
         {medidas === 1 && (
           <label className="ml-auto flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
@@ -224,10 +224,10 @@ export default function Anexo04Cuadre({
                         <>
                           El escalón más chico acá mueve{" "}
                           <b className="font-mono tabular-nums">{fmtAnexo(salto)} m³</b> — más que la
-                          diferencia. Sacá «medidas reales» o repartí entre varias.
+                          diferencia. Saca «medidas reales» o reparte entre varias.
                         </>
                       ) : (
-                        <>Con esta medida no se llega: el cambio sería demasiado grande. Probá otra medida.</>
+                        <>Con esta medida no se llega: el cambio sería demasiado grande. Prueba otra medida.</>
                       )}
                     </p>
                   </>
@@ -284,8 +284,8 @@ export default function Anexo04Cuadre({
       ) : (
         <p className={`${CAJA} mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]`}>
           Con {medidas} medidas {modo === "real" ? "y la grilla de la sierra " : ""}no se llega a
-          cuadrar: los escalones disponibles mueven más que la diferencia. Probá con una sola medida
-          {modo === "real" ? " o sacá «medidas reales»" : ""}.
+          cuadrar: los escalones disponibles mueven más que la diferencia. Prueba con una sola medida
+          {modo === "real" ? " o saca «medidas reales»" : ""}.
         </p>
       )}
 

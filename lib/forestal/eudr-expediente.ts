@@ -209,7 +209,7 @@ export function construirExpedienteEudr(
       : ["  (el operador no declaró títulos habilitantes en su ficha)"]),
     ...(vencidos.length
       ? ["", `ATENCIÓN: ${vencidos.length} título(s) figuran VENCIDOS al ${hoy}. Un título vencido`,
-         "no ampara aprovechamiento nuevo: verificá la renovación ante la ARFFS."]
+         "no ampara aprovechamiento nuevo: verifica la renovación ante la ARFFS."]
       : []),
     "",
     "La legalidad del aprovechamiento se sostiene en esos títulos y en las guías",

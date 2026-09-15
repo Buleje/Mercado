@@ -107,7 +107,7 @@ export default function CtpImportarProgramacionesModal({
     validar: (r, fuente) =>
       r.filas.length === 0
         ? fuente === "captura"
-          ? "Leí la captura pero no encontré filas con fecha y especie. Probá con una captura donde la tabla se vea entera, o copiá su texto y pegalo acá."
+          ? "Leí la captura pero no encontré filas con fecha y especie. Prueba con una captura donde la tabla se vea entera, o copia su texto y pégalo acá."
           : (r.avisos[0] ?? "No encontré programaciones en lo que pegaste.")
         : null,
     /* Una sola programación también se importa: el modal ya dice qué se pega. */
@@ -193,7 +193,7 @@ export default function CtpImportarProgramacionesModal({
                 {repetidas > 0 && ` · ${repetidas} ya en el libro`}
               </span>
             ) : (
-              "Pegá la lista de programaciones del SNIFFS"
+              "Pega la lista de programaciones del SNIFFS"
             )
           }
         >
@@ -212,7 +212,7 @@ export default function CtpImportarProgramacionesModal({
       <ModalBody className="space-y-3">
         <ZonaPegarSniffs
           lectura={lectura}
-          titulo="Pegá la lista"
+          titulo="Pega la lista"
           compacto={hayFilas}
           texto={
             <>

@@ -216,12 +216,12 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
               </button>
             </div>
             <p className="text-xs text-[var(--text-tertiary)]">
-              Una especie CITES (caoba, cedro, shihuahuaco) es legal con su permiso archivado. Cargá el N° y su
+              Una especie CITES (caoba, cedro, shihuahuaco) es legal con su permiso archivado. Carga el N° y su
               vencimiento para acreditar el origen ante OSINFOR — el booleano de cada línea no alcanza.
             </p>
             {permisos.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[var(--rule-base)] px-3 py-2.5 text-sm text-[var(--text-tertiary)]">
-                Sin permisos cargados. Agregá uno si aprovechás especies CITES.
+                Sin permisos cargados. Agrega uno si aprovechas especies CITES.
               </p>
             ) : (
               <div className="space-y-2">
@@ -301,7 +301,7 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
             {isValid ? (
               <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-sm font-medium text-[var(--data-success-700)]"><Check className="h-4 w-4 shrink-0" /> Listo para {current ? "actualizar" : "crear"}</div>
             ) : (
-              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-sm font-medium text-[var(--data-warning-700)]"><AlertCircle className="h-4 w-4 shrink-0" /> Completá el titular</div>
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-sm font-medium text-[var(--data-warning-700)]"><AlertCircle className="h-4 w-4 shrink-0" /> Completa el titular</div>
             )}
           </div>
         </aside>

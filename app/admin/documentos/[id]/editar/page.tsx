@@ -53,7 +53,7 @@ export default function EditarDocumentoPage({ params }: { params: Promise<{ id: 
       try {
         const { id } = await params;
         const r = await fetch(`/api/admin/documents/${id}`, { credentials: "include" });
-        if (!r.ok) throw new Error(r.status === 404 ? "Ese documento no existe o no tenés permiso para verlo." : `No se pudo abrir (HTTP ${r.status})`);
+        if (!r.ok) throw new Error(r.status === 404 ? "Ese documento no existe o no tienes permiso para verlo." : `No se pudo abrir (HTTP ${r.status})`);
         const j = await r.json();
         const d = j.document ?? j;
         if (cancelado) return;

@@ -236,7 +236,7 @@ export default function DeliveryPartnersLiveMap() {
       setError(null);
       setLastUpdate(new Date());
     } catch {
-      setError("Error de red — verificá tu conexión");
+      setError("Error de red — verifica tu conexión");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -357,7 +357,7 @@ export default function DeliveryPartnersLiveMap() {
                 {loading
                   ? "Cargando ubicaciones..."
                   : !summary || summary.total === 0
-                    ? "Aún no hay repartidores registrados. Agregá uno desde la pestaña Repartidores."
+                    ? "Aún no hay repartidores registrados. Agrega uno desde la pestaña Repartidores."
                     : `${summary.online} de ${summary.total} ${summary.total === 1 ? "repartidor" : "repartidores"} en línea · auto-refresh cada 10s${lastUpdate ? ` · última: ${timeAgo(lastUpdate.toISOString())}` : ""}`}
               </p>
             </div>
@@ -528,7 +528,7 @@ export default function DeliveryPartnersLiveMap() {
                 <p className="text-sm text-[var(--text-tertiary)] mt-1 leading-relaxed">
                   {loading
                     ? "Cargando..."
-                    : "Agregá repartidores desde la pestaña Repartidores"}
+                    : "Agrega repartidores desde la pestaña Repartidores"}
                 </p>
               </div>
             ) : (

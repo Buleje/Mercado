@@ -480,8 +480,8 @@ export function RepartidoresTab() {
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
                 {totalCount === 0
-                  ? "Aún no tenés repartidores registrados. Agregá uno para empezar a gestionar entregas."
-                  : `${totalCount} ${totalCount === 1 ? "repartidor registrado" : "repartidores registrados"} · gestioná tarifas, zonas y disponibilidad.`}
+                  ? "Aún no tienes repartidores registrados. Agrega uno para empezar a gestionar entregas."
+                  : `${totalCount} ${totalCount === 1 ? "repartidor registrado" : "repartidores registrados"} · gestiona tarifas, zonas y disponibilidad.`}
               </p>
             </div>
           </div>
@@ -700,7 +700,7 @@ export function RepartidoresTab() {
             Sin repartidores registrados
           </p>
           <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-            Agregá tu primer repartidor para empezar a asignar entregas y gestionar tu flota.
+            Agrega tu primer repartidor para empezar a asignar entregas y gestionar tu flota.
           </p>
           <button
             type="button"

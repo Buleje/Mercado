@@ -100,7 +100,7 @@ export async function transcribirAudio(
   if (!FORMATOS_GROQ.includes(paraGroq as (typeof FORMATOS_GROQ)[number])) {
     return {
       ok: false,
-      error: `No sé leer archivos ".${extension}". Mandá el audio en ${FORMATOS_GROQ.slice(0, 5).join(", ")}…`,
+      error: `No sé leer archivos ".${extension}". Manda el audio en ${FORMATOS_GROQ.slice(0, 5).join(", ")}…`,
     };
   }
   /**
@@ -145,7 +145,7 @@ export async function transcribirAudio(
       logger.warn("[transcribir] Groq rechazó el audio", { status: res.status, detalle });
       // Un 429 acá es el mismo límite por minuto que el del chat: se dice.
       if (res.status === 429) {
-        return { ok: false, error: "El proveedor cortó por límite de uso. Probá de nuevo en un minuto." };
+        return { ok: false, error: "El proveedor cortó por límite de uso. Prueba de nuevo en un minuto." };
       }
       return { ok: false, error: `No se pudo transcribir (HTTP ${res.status}).` };
     }
@@ -168,7 +168,7 @@ export async function transcribirAudio(
     return {
       ok: false,
       error: mensaje.includes("timeout") || mensaje.includes("abort")
-        ? "El audio tardó demasiado en transcribirse. Probá con uno más corto."
+        ? "El audio tardó demasiado en transcribirse. Prueba con uno más corto."
         : "No se pudo transcribir el audio.",
     };
   }

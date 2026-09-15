@@ -182,7 +182,7 @@ export default function TramiteFormulario({
   async function onLogoArchivo(file?: File) {
     if (!file) return;
     if (file.size > LOGO_MAX_BYTES) {
-      setAviso("La imagen pesa demasiado — probá con una más liviana.");
+      setAviso("La imagen pesa demasiado — prueba con una más liviana.");
       return;
     }
     try {
@@ -461,10 +461,10 @@ export default function TramiteFormulario({
       // (se asigna en la creación, no espera a "Presentado" como numeroDocumento)
       // — el aviso lo dice de una vez en vez de un genérico "ya podés seguirlo".
       let mensaje = numeroNuevo
-        ? `Guardado y numerado como N° ${guardado.numeroDocumento} — ya podés presentarlo.`
+        ? `Guardado y numerado como N° ${guardado.numeroDocumento} — ya puedes presentarlo.`
         : idGuardado || existente
           ? "Cambios guardados en el expediente."
-          : `Guardado como ${guardado.codigoInterno} — ya podés identificarlo y buscarlo en el Expediente.`;
+          : `Guardado como ${guardado.codigoInterno} — ya puedes identificarlo y buscarlo en el Expediente.`;
 
       // El documento sale de acá cuando pasa a "Presentado": se archiva solo,
       // sin que el operador tenga que acordarse de apretar "PDF al Drive"
@@ -521,9 +521,9 @@ export default function TramiteFormulario({
     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
       <p className="text-sm text-[var(--text-tertiary)]">
         {faltantes.length > 0
-          ? `Falta: ${faltantes.map((f) => f.label).join(", ")}${sinGuias ? " · agregá al menos una guía" : ""}`
+          ? `Falta: ${faltantes.map((f) => f.label).join(", ")}${sinGuias ? " · agrega al menos una guía" : ""}`
           : sinGuias
-            ? "Agregá al menos una guía en la tabla antes de imprimir."
+            ? "Agrega al menos una guía en la tabla antes de imprimir."
             : "El documento sale con tu membrete; la firma va a mano."}
       </p>
       <div className="flex flex-wrap gap-2">

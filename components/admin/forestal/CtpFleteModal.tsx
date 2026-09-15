@@ -281,9 +281,9 @@ export default function CtpFleteModal({
       title={flete ? "Editar el viaje" : "Anotar un viaje"}
       description={
         progreso
-          ? `Viaje ${progreso.actual} de ${progreso.total}${progreso.grupo ? ` · ${progreso.grupo}` : ""} — confirmá y cerrá el monto`
+          ? `Viaje ${progreso.actual} de ${progreso.total}${progreso.grupo ? ` · ${progreso.grupo}` : ""} — confirma y cierra el monto`
           : !flete && prellenado
-            ? `Prellenado desde la guía ${prellenado.gtfNumber} · confirmá y cerrá el monto`
+            ? `Prellenado desde la guía ${prellenado.gtfNumber} · confirma y cierra el monto`
             : "Lo único obligatorio es la fecha; el monto se cierra después"
       }
       icon={Truck}

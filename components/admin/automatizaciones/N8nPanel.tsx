@@ -220,7 +220,7 @@ export default function N8nPanel() {
           <EmptyState
             icon={Webhook}
             title="Todavía no hay flujos"
-            description="Creá un flujo en n8n con un nodo Webhook, copiá su URL de producción y pegala acá. Después le decís al asistente «mandá esto al contador» y lo dispara."
+            description="Crea un flujo en n8n con un nodo Webhook, copia su URL de producción y pégala acá. Después le dices al asistente «manda esto al contador» y lo dispara."
           />
         ) : (
           <ul className="space-y-2">

@@ -115,7 +115,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
         const r = await fetch(`/api/admin/overview${rangeQuery}`);
         if (cancelled) return;
         if (!r.ok) {
-          setFetchError(`Error del servidor (${r.status}). Reintentá en unos segundos.`);
+          setFetchError(`Error del servidor (${r.status}). Reintenta en unos segundos.`);
           return;
         }
         const json = await r.json();
@@ -126,7 +126,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
           setFetchError(typeof json.error === "string" ? json.error : "Respuesta inválida.");
         }
       } catch {
-        if (!cancelled) setFetchError("Error de red. Verificá tu conexión.");
+        if (!cancelled) setFetchError("Error de red. Verifica tu conexión.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -179,7 +179,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
           Sin datos
         </p>
         <p className="text-sm text-[var(--text-secondary)]">
-          No pudimos cargar tu resumen. Recargá la página.
+          No pudimos cargar tu resumen. Recarga la página.
         </p>
       </div>
     );

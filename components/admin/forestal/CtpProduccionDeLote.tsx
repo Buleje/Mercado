@@ -477,7 +477,7 @@ export default function CtpProduccionDeLote({
               otro. Sin selección la barra no existe, y entonces el único botón
               es éste: apagado, diciendo qué falta hacer. */}
           {alConsumo.length === 0 && (
-            <Btn variant="primary" disabled title="Elegí las trozas que entran a la sierra">
+            <Btn variant="primary" disabled title="Elige las trozas que entran a la sierra">
               <Boxes className="h-4 w-4" />
               Declarar producción
             </Btn>
@@ -554,7 +554,7 @@ export default function CtpProduccionDeLote({
         <p className="rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
           El patio tiene <b className="font-mono tabular-nums">{estado.patioTruncado.hay}</b> piezas y se
           leyeron <b className="font-mono tabular-nums">{estado.patioTruncado.leidas}</b>: puede faltar
-          alguna de este lote en la lista. Buscá por código para encontrarla.
+          alguna de este lote en la lista. Busca por código para encontrarla.
         </p>
       )}
 
@@ -583,7 +583,7 @@ export default function CtpProduccionDeLote({
       {yaEnElLote.length > 1 && (
         <p className="px-1 text-sm text-[var(--text-tertiary)]">
           No hace falta que entre el lote entero:{" "}
-          <b className="text-[var(--text-secondary)]">destildá las que no van hoy</b> y se quedan apartadas
+          <b className="text-[var(--text-secondary)]">destilda las que no van hoy</b> y se quedan apartadas
           para la corrida siguiente.
         </p>
       )}
@@ -644,7 +644,7 @@ export default function CtpProduccionDeLote({
           accionDisabled={excesos.length > 0}
           /* El botón apagado sin decir por qué se lee como que la pantalla está
              rota: el motivo del tope va acá, y el detalle con su arreglo abajo. */
-          aviso={excesos.length > 0 ? "Una guía se pasa de su tope — mirá el aviso de abajo" : null}
+          aviso={excesos.length > 0 ? "Una guía se pasa de su tope — mira el aviso de abajo" : null}
           onAccion={() => { setError(null); setAbierto(true); }}
         />
       )}

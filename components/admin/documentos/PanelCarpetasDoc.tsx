@@ -285,7 +285,7 @@ export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acc
 
           {folders.length === 0 && creandoEn === undefined && (
             <li className="px-2 py-3 text-xs text-[var(--text-tertiary)]">
-              Todavía no hay carpetas. Creá una con el botón de arriba para ordenar tus documentos.
+              Todavía no hay carpetas. Crea una con el botón de arriba para ordenar tus documentos.
             </li>
           )}
         </ul>
@@ -301,7 +301,7 @@ export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acc
           "hover:bg-primary/40 focus-visible:bg-primary focus-visible:outline-none",
           arrastrando && "bg-primary",
         )}
-        title="Arrastrá para cambiar el ancho · doble clic para volver al normal"
+        title="Arrastra para cambiar el ancho · doble clic para volver al normal"
       />
 
       {porBorrar && (

@@ -185,10 +185,10 @@ export function DespachoSection({
         <div className="px-5 py-6 text-center">
           <Bike className="h-10 w-10 mx-auto text-[var(--text-tertiary)]" strokeWidth={1.5} />
           <p className="mt-3 text-sm font-bold text-[var(--text-secondary)]">
-            Aún no tenés motorizados registrados
+            Aún no tienes motorizados registrados
           </p>
           <p className="mt-1 text-xs text-[var(--text-tertiary)] max-w-xs mx-auto">
-            Andá a <strong className="text-[var(--accent)]">Delivery Partners</strong> para
+            Ve a <strong className="text-[var(--accent)]">Delivery Partners</strong> para
             registrar al personal de tu tienda con su WhatsApp y vehículo.
           </p>
           <button

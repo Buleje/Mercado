@@ -81,7 +81,7 @@ const DEFAULT_NAV_LINKS: NavLinkItem[] = [
 const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc: string; color: string }[] = [
   // ── Setup inicial ──
   { id: "business", icon: <Store className="h-5 w-5" />, title: "Datos del Negocio", desc: "Nombre, RUC, contacto, redes", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
-  { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Plan y suscripción", desc: "Básico, Pro, Enterprise o Max — cambiá cuando quieras", color: "text-[var(--accent)] bg-primary/10 dark:bg-primary/15" },
+  { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Plan y suscripción", desc: "Básico, Pro, Enterprise o Max — cambia cuando quieras", color: "text-[var(--accent)] bg-primary/10 dark:bg-primary/15" },
   // ── Operación diaria ──
   { id: "sales", icon: <FileText className="h-5 w-5" />, title: "Ventas y Comprobantes", desc: "Series, SUNAT, descuentos", color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
   { id: "inventory", icon: <Package className="h-5 w-5" />, title: "Inventario", desc: "Stock, alertas, unidades", color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
@@ -619,7 +619,7 @@ export default function SettingsModule({
     } catch (err) {
       toast.error("No se pudo guardar", {
         id: t,
-        description: err instanceof Error ? err.message : "Error desconocido. Probá de nuevo.",
+        description: err instanceof Error ? err.message : "Error desconocido. Prueba de nuevo.",
       });
       return false;
     } finally {
@@ -641,7 +641,7 @@ export default function SettingsModule({
       return true;
     } catch (err) {
       console.warn("[SettingsModule] patchFlags falló", err);
-      toast.error("No se pudo guardar el feature flag — revisá tu conexión.");
+      toast.error("No se pudo guardar el feature flag — revisa tu conexión.");
       return false;
     }
   }, []);
@@ -687,7 +687,7 @@ export default function SettingsModule({
       } catch (err) {
         toast.error("No se pudo subir la imagen", {
           id: t,
-          description: err instanceof Error ? err.message : "Probá con un archivo más chico o en otro formato.",
+          description: err instanceof Error ? err.message : "Prueba con un archivo más chico o en otro formato.",
         });
       } finally {
         setUploadingField(null);
@@ -928,7 +928,7 @@ export default function SettingsModule({
       {/* ─── Identidad visual: 3 imágenes (Logo + Portada + Banner) ─── */}
       <SectionCard
         title="Identidad visual"
-        desc="Subí 3 imágenes que definen cómo se ve tu negocio en el marketplace y en tu panel"
+        desc="Sube 3 imágenes que definen cómo se ve tu negocio en el marketplace y en tu panel"
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <ImageDropCard
@@ -1086,7 +1086,7 @@ export default function SettingsModule({
           if (!ok) return;
           const loginRes = await fetch("/api/auth/login", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ password: newPw }) }).catch(sinDato("Ajustes /api/auth/login"));
           if (!loginRes?.ok) {
-            toast.error("La contraseña se guardó, pero no se pudo renovar tu sesión — volvé a iniciar sesión.");
+            toast.error("La contraseña se guardó, pero no se pudo renovar tu sesión — vuelve a iniciar sesión.");
             return;
           }
           setStoredAdminPw(newPw); setCurrentPwInput(""); setNewPw(""); setConfirmPw("");
@@ -1134,7 +1134,7 @@ export default function SettingsModule({
             setMaintenanceMode(previous);
             setMaintenanceMsg(previousMsg);
             console.warn("[SettingsModule] modo mantenimiento falló", err);
-            toast.error("No se pudo cambiar el modo mantenimiento — revisá tu conexión.");
+            toast.error("No se pudo cambiar el modo mantenimiento — revisa tu conexión.");
           }
         }} label={maintenanceMode ? "Modo activo — tienda bloqueada" : "Desactivado"} desc="Los clientes ven el catálogo pero no pueden comprar" />
         {maintenanceMode && (
@@ -1163,7 +1163,7 @@ export default function SettingsModule({
           } catch (err) {
             setBypassLogin(previous);
             console.warn("[SettingsModule] bypass login falló", err);
-            toast.error("No se pudo cambiar el acceso sin login — revisá tu conexión.");
+            toast.error("No se pudo cambiar el acceso sin login — revisa tu conexión.");
           }
         }} label="Acceso sin login" desc="Permite entrar al panel sin credenciales" danger />
         {bypassLogin && (
@@ -1865,7 +1865,7 @@ export default function SettingsModule({
     <div className="space-y-4">
       <SectionCard
         title="Tutorial de bienvenida"
-        desc="Volvé a ver el recorrido guiado del panel cuando quieras."
+        desc="Vuelve a ver el recorrido guiado del panel cuando quieras."
       >
         <button
           onClick={() => {
@@ -1984,7 +1984,7 @@ export default function SettingsModule({
                     Próximo paso · {overallCompletion}% completo
                   </span>
                   <span className="block text-base font-bold text-[var(--text-primary)] truncate">
-                    Configurá: {nextStep.title}
+                    Configura: {nextStep.title}
                   </span>
                   <span className="block text-xs text-[var(--text-secondary)] truncate">{nextStep.desc}</span>
                 </span>
@@ -2272,7 +2272,7 @@ function ImageDropCard({
           aria-label={`URL de ${label}`}
           value={safeUrl}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="o pegá URL: https://…"
+          placeholder="o pega URL: https://…"
           className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>

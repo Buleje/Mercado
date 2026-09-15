@@ -389,7 +389,7 @@ export default function ScoringCrediticioTab() {
           title={search || filterLevel !== "TODOS" ? "Ningún cliente coincide" : "Todavía no hay clientes para evaluar"}
           description={
             search || filterLevel !== "TODOS"
-              ? "Probá con otro nombre o quitá el filtro de nivel."
+              ? "Prueba con otro nombre o quita el filtro de nivel."
               : "En cuanto tus clientes compren o les fíes, acá vas a ver su score."
           }
           action={

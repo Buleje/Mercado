@@ -97,10 +97,10 @@ export async function sendWelcomeTenant(to: string, tenant: { name: string; slug
 
         <h2 style="font-size: 18px; margin: 24px 0 8px;">Próximos pasos</h2>
         <ol style="font-size: 15px; line-height: 1.6; padding-left: 20px;">
-          <li>Entrá a tu panel y revisá tus productos</li>
-          <li>Configurá horarios y zonas de delivery</li>
-          <li>Subí logo y banner para tu tienda</li>
-          <li>Activá WhatsApp para recibir pedidos</li>
+          <li>Entra a tu panel y revisa tus productos</li>
+          <li>Configura horarios y zonas de delivery</li>
+          <li>Sube logo y banner para tu tienda</li>
+          <li>Activa WhatsApp para recibir pedidos</li>
         </ol>
 
         <div style="margin: 32px 0; text-align: center;">
@@ -113,13 +113,13 @@ export async function sendWelcomeTenant(to: string, tenant: { name: string; slug
         </div>
 
         <p style="font-size: 14px; color: #666; line-height: 1.5; margin: 24px 0 0;">
-          <strong>Recordá:</strong> tenés 15 días de prueba completa. Después podés
+          <strong>Recuerda:</strong> tienes 15 días de prueba completa. Después puedes
           elegir un plan en <a href="${baseUrl}/planes" style="color: #00A0A0;">${baseUrl}/planes</a>.
         </p>
 
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
         <p style="font-size: 13px; color: #999; text-align: center; margin: 0;">
-          ¿Necesitás ayuda? Escribinos por WhatsApp al +51 929 340 532.<br />
+          ¿Necesitas ayuda? Escríbenos por WhatsApp al +51 929 340 532.<br />
           Buleje · Pucallpa, Perú
         </p>
       </div>

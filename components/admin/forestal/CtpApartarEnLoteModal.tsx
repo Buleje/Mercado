@@ -117,7 +117,7 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
       <div className={`space-y-3 ${MODAL_BODY}`}>
         {mezcla && (
           <p className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 p-3 text-sm font-bold text-[var(--text-primary)]">
-            Elegiste {especies.join(", ")}. Un lote lleva una sola especie: separá la selección y hacelo en dos tandas.
+            Elegiste {especies.join(", ")}. Un lote lleva una sola especie: separa la selección y hazlo en dos tandas.
           </p>
         )}
         {error && (
@@ -134,7 +134,7 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
 
         {lotes && !mezcla && compatibles.length === 0 && (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-5 text-center text-sm text-[var(--text-secondary)]">
-            No hay ningún lote abierto de {especies[0] ?? "esa especie"}. Creá uno desde la pestaña Lotes y volvé.
+            No hay ningún lote abierto de {especies[0] ?? "esa especie"}. Crea uno desde la pestaña Lotes y vuelve.
           </p>
         )}
 

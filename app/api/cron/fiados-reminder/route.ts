@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
         // Dia 1: Suave, amigable — como avisarle a un vecino
         return {
           mensaje: (nombre, saldo) =>
-            `Hola ${nombre}! 👋 Te paso el aviso de tu cuentita en la bodega: S/${saldo}. Cuando puedas pasate! 😊`,
+            `Hola ${nombre}! 👋 Te paso el aviso de tu cuentita en la bodega: S/${saldo}. Cuando puedas pásate! 😊`,
           title: (nombre, saldo) => `Aviso amigable: ${nombre} - S/${saldo}`,
           severity: "LOW",
           level: "SUAVE",
@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
         // Dia 16-30: Ultimo aviso antes de cortar credito
         return {
           mensaje: (nombre, saldo, _fecha, dias) =>
-            `${nombre}, lamentablemente tu cuenta de S/${saldo} lleva ${dias} dias vencida. Si no se regulariza esta semana, no podre darte mas credito.${telefonoBodega ? ` Llamame al ${telefonoBodega} para coordinar.` : " Pasate por la bodega para coordinar."}`,
+            `${nombre}, lamentablemente tu cuenta de S/${saldo} lleva ${dias} dias vencida. Si no se regulariza esta semana, no podre darte mas credito.${telefonoBodega ? ` Llámame al ${telefonoBodega} para coordinar.` : " Pásate por la bodega para coordinar."}`,
           title: (nombre, saldo) => `ULTIMO AVISO: ${nombre} - S/${saldo}`,
           severity: "HIGH",
           level: "ULTIMO_AVISO",

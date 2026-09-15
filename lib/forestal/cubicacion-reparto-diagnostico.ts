@@ -179,7 +179,7 @@ export function diagnosticarReparto(d: Distribucion, dim: DimensionResumen = "ti
           ...base,
           causa: "pasado",
           detalle: `Ampara ${r4(-b.libreM3)} m³ más de los ${b.capacidadM3} m³ que declaró: era eso o dejar ${sobranPiezas ? "piezas" : "una pieza"} sin ningún bloque que la ampare.`,
-          accion: `Si el número tiene que cerrar clavado, subí el m³ del bloque a ${r4(b.usadoM3)}.`,
+          accion: `Si el número tiene que cerrar clavado, sube el m³ del bloque a ${r4(b.usadoM3)}.`,
           sugerencia: [],
           sugeridoM3: 0,
         });
@@ -196,7 +196,7 @@ export function diagnosticarReparto(d: Distribucion, dim: DimensionResumen = "ti
             b.piezasLibres === 1
               ? "El m³ de este bloque ya cerró, pero quedó 1 de las piezas que declaró sin ubicar."
               : `El m³ de este bloque ya cerró, pero quedaron ${b.piezasLibres} de las piezas que declaró sin ubicar.`,
-          accion: "Revisá el conteo del bloque: con ese volumen no entran más piezas.",
+          accion: "Revisa el conteo del bloque: con ese volumen no entran más piezas.",
           sugerencia: [],
           sugeridoM3: 0,
         });
@@ -219,21 +219,21 @@ export function diagnosticarReparto(d: Distribucion, dim: DimensionResumen = "ti
             ...base,
             causa: "tope-piezas",
             detalle: `Llegó a las ${Number(tope)} piezas declaradas a mano y le sobran ${base.libreM3} m³ de capacidad.`,
-            accion: "Subí el tope de piezas del bloque (o sacalo) para que siga cargando.",
+            accion: "Sube el tope de piezas del bloque (o sácalo) para que siga cargando.",
           }, sugerir(propias, b.libreM3)));
         } else if (admitidas.length === 0) {
           huecos.push(conSugerencia({
             ...base,
             causa: "filtro-grupo",
             detalle: `El bloque sólo admite ciertos grupos y lo que falta de ${esp.especie} no está entre ellos.`,
-            accion: "Sacá el filtro de grupos del bloque, o mandá ese faltante a otro bloque.",
+            accion: "Saca el filtro de grupos del bloque, o manda ese faltante a otro bloque.",
           }, sugerir(propias, b.libreM3)));
         } else if (!largoAdmitido(b, esp)) {
           huecos.push(conSugerencia({
             ...base,
             causa: "filtro-largo",
             detalle: "El bloque está fijado a ciertos largos y lo que falta no los tiene.",
-            accion: "Ampliá los largos del bloque, o mandá ese faltante a otro bloque.",
+            accion: "Amplía los largos del bloque, o manda ese faltante a otro bloque.",
           }, sugerir(propias, b.libreM3)));
         } else {
           const mas = sugerir(admitidas, b.libreM3);
@@ -245,7 +245,7 @@ export function diagnosticarReparto(d: Distribucion, dim: DimensionResumen = "ti
               cierra > 0
                 ? `Entran ${cierra} m³ más en este bloque.`
                 : `Ninguna pieza del faltante de ${esp.especie} entra en ${base.libreM3} m³: es el resto de repartir piezas enteras.`,
-            accion: cierra > 0 ? "Revisá el orden de los bloques: hay madera que todavía entra acá." : "",
+            accion: cierra > 0 ? "Revisa el orden de los bloques: hay madera que todavía entra acá." : "",
             sugerencia: mas,
             sugeridoM3: cierra,
           });
@@ -264,7 +264,7 @@ export function diagnosticarReparto(d: Distribucion, dim: DimensionResumen = "ti
           ...base,
           causa: "otra-especie",
           detalle: `Este bloque está cargado como ${esp.especie} y lo que falta amparar es de ${nombres}. Una especie no ampara a la otra, así que su capacidad queda entera sin usar.`,
-          accion: `Cambiá la especie del bloque a ${nombres.split(", ")[0]} si es la misma madera, o cargá un bloque de esa especie.`,
+          accion: `Cambia la especie del bloque a ${nombres.split(", ")[0]} si es la misma madera, o carga un bloque de esa especie.`,
           sugerencia: mas,
           sugeridoM3: cierra,
         });

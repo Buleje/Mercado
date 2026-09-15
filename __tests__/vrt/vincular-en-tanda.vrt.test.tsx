@@ -71,7 +71,7 @@ test("el reparto se ve antes de firmar: qué le toca a cada una y qué saldo que
 
   await pintado();
   /* Sin lote elegido no se promete nada y el botón no se puede usar. */
-  expect(document.body.innerText).toContain("Elegí el lote para ver qué le toca a cada una.");
+  expect(document.body.innerText).toContain("Elige el lote para ver qué le toca a cada una.");
   expect(boton(/Ponerle el lote a 0/).disabled).toBe(true);
 
   /* Con especies mezcladas lo dice antes, no después de llenar la tabla de rojo. */

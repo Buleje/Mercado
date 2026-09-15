@@ -108,7 +108,7 @@ export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: Entid
               <p className="px-2 py-3 text-center text-xs text-[var(--text-tertiary)]">Cargando…</p>
             ) : error ? (
               <p className="px-2 py-3 text-center text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                El Directorio no está disponible: cargá los datos a mano.
+                El Directorio no está disponible: carga los datos a mano.
               </p>
             ) : visibles.length === 0 ? (
               <p className="px-2 py-3 text-center text-xs text-[var(--text-tertiary)]">
@@ -155,7 +155,7 @@ export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: Entid
           </button>
 
           <p className="mt-1.5 border-t border-[var(--rule-soft)] px-1 pt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            Gestioná todos los emisores en Libro CTP → Gestión → Directorio.
+            Gestiona todos los emisores en Libro CTP → Gestión → Directorio.
           </p>
         </div>
       )}

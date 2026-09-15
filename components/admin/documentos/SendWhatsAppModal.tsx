@@ -155,7 +155,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
 
   const [message, setMessage] = useState(
     isSign
-      ? `Hola, te pido que firmes este documento "${doc?.name ?? ""}". Podés firmarlo desde este enlace:`
+      ? `Hola, te pido que firmes este documento "${doc?.name ?? ""}". Puedes firmarlo desde este enlace:`
       : ""
   );
   const titleId = useId();
@@ -250,7 +250,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
 
   /** Vía 1 — el servidor sube el archivo a Meta y lo manda al número. */
   const enviarArchivo = useCallback(async () => {
-    if (!normalized) { setErrorEnvio("Poné el número de WhatsApp del destinatario."); return; }
+    if (!normalized) { setErrorEnvio("Pon el número de WhatsApp del destinatario."); return; }
     setEnviando(true);
     setErrorEnvio(null);
     try {
@@ -272,7 +272,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
       };
       if (r.status === 409 && data.motivo === "sin_conexion") {
         setErrorEnvio(
-          "El WhatsApp del negocio no está conectado. Conectalo en Configuración › WhatsApp, o mandá el archivo desde tu celular con «Compartir desde este equipo».",
+          "El WhatsApp del negocio no está conectado. Conéctalo en Configuración › WhatsApp, o manda el archivo desde tu celular con «Compartir desde este equipo».",
         );
         return;
       }
@@ -300,7 +300,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
         archivos.push(new File([blob], d.name, { type: d.mimeType || blob.type }));
       }
       if (!navigator.canShare?.({ files: archivos })) {
-        setErrorEnvio("Este equipo no puede compartir estos archivos. Probá con «Mandar el archivo» o con el enlace.");
+        setErrorEnvio("Este equipo no puede compartir estos archivos. Prueba con «Mandar el archivo» o con el enlace.");
         return;
       }
       await navigator.share({ files: archivos, ...(message.trim() ? { text: message.trim() } : {}) });
@@ -360,7 +360,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]"><FileWarning className="h-6 w-6" /></span>
               <p className="text-sm font-bold text-[var(--text-primary)]">Solo se pueden firmar PDFs</p>
-              <p className="max-w-xs text-xs text-[var(--text-secondary)]">Este documento no es un PDF, así que no se puede solicitar la firma. Subí una versión en PDF y volvé a intentarlo.</p>
+              <p className="max-w-xs text-xs text-[var(--text-secondary)]">Este documento no es un PDF, así que no se puede solicitar la firma. Sube una versión en PDF y vuelve a intentarlo.</p>
             </div>
           ) : resultado ? (
             <ResultadoEnvio resultado={resultado} />
@@ -382,7 +382,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
               )}
               {via === "dispositivo" && (
                 <p className="mt-1.5 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
-                  Abre el menú de compartir de este equipo con los archivos adjuntos: elegís el chat y listo.
+                  Abre el menú de compartir de este equipo con los archivos adjuntos: eliges el chat y listo.
                 </p>
               )}
             </div>
@@ -397,7 +397,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
               <ul className="mt-1 space-y-0.5 text-xs text-[var(--text-secondary)]">
                 {problemas.map(({ doc: d, motivo }) => <li key={d.id}>{d.name} — {motivo}</li>)}
               </ul>
-              <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">Para esos, mandá un enlace.</p>
+              <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">Para esos, manda un enlace.</p>
             </div>
           )}
 
@@ -473,7 +473,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
               {fallos.size > 0 && (
                 <p className="mt-2 text-[length:var(--ts-2xs,11px)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                   {[...fallos.values()].some((m) => m.includes("límite"))
-                    ? `El servidor permite ${LIMITE_LOTE} enlaces cada 15 minutos. Mandá los que sí se generaron y probá con el resto más tarde.`
+                    ? `El servidor permite ${LIMITE_LOTE} enlaces cada 15 minutos. Manda los que sí se generaron y prueba con el resto más tarde.`
                     : "Los documentos marcados no se pudieron compartir. El mensaje lleva sólo los que sí."}
                 </p>
               )}
@@ -581,7 +581,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
               className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
             />
             <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
-              {via === "enlace" ? "El enlace se agrega automáticamente al final del mensaje." : "Si lo dejás vacío, el archivo va solo."}
+              {via === "enlace" ? "El enlace se agrega automáticamente al final del mensaje." : "Si lo dejas vacío, el archivo va solo."}
             </p>
           </div>
 

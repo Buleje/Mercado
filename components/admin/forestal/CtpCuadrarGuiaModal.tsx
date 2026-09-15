@@ -264,7 +264,7 @@ export default function CtpCuadrarGuiaModal({
           <div className="space-y-4">
             <p className="rounded-xl bg-[var(--surface-sunken)] p-3 text-sm text-[var(--text-secondary)]">
               La guía trae el volumen <b>dos veces</b> y no coinciden. El documento no se corrige solo:
-              mirá el papel y decí cuál de los dos lados es el bueno. Queda registrado con tu motivo.
+              mira el papel y di cuál de los dos lados es el bueno. Queda registrado con tu motivo.
             </p>
 
             <label className="block">
@@ -384,7 +384,7 @@ export default function CtpCuadrarGuiaModal({
                   {a.opciones.length === 0 ? (
                     <p className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
                       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-600)]" aria-hidden />
-                      La lista declara <b>menos</b> que la cabecera: falta cargar piezas. Completá la lista
+                      La lista declara <b>menos</b> que la cabecera: falta cargar piezas. Completa la lista
                       desde el detalle del ingreso; acá no hay nada que corregir.
                     </p>
                   ) : (
@@ -418,7 +418,7 @@ export default function CtpCuadrarGuiaModal({
                               <span className="block text-[var(--text-secondary)]">{o.resumen}</span>
                               {bloqueado && (
                                 <span className="block text-xs font-semibold text-[var(--data-error-600)]">
-                                  Esa pieza ya entró a la sierra: corregí o anulá su corrida primero.
+                                  Esa pieza ya entró a la sierra: corrige o anula su corrida primero.
                                 </span>
                               )}
                             </span>

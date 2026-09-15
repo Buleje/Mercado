@@ -285,7 +285,7 @@ export default function CacaoNoticiero() {
                   <Cell label="Actualizado" value={relTime(p.asOf) || "—"} />
                 </div>
               </>
-            ) : <div className="flex items-center gap-2 py-6 text-[var(--text-tertiary)]"><AlertCircle className="h-5 w-5" /> Precio no disponible ahora. Reintentá en unos minutos.</div>}
+            ) : <div className="flex items-center gap-2 py-6 text-[var(--text-tertiary)]"><AlertCircle className="h-5 w-5" /> Precio no disponible ahora. Reintenta en unos minutos.</div>}
           </div>
 
           {/* Análisis */}

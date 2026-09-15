@@ -108,8 +108,8 @@ export default function SunatModoOficialCard() {
               </ul>
               <p className="mt-3 rounded-xl bg-[var(--surface-sunken)] px-3.5 py-2.5 text-xs text-[var(--text-secondary)]">
                 {configReady
-                  ? "Todo listo. Contactá a soporte de Buleje para activar la facturación electrónica oficial."
-                  : "Completá los requisitos de arriba y luego soporte de Buleje activa el modo oficial."}
+                  ? "Todo listo. Contacta a soporte de Buleje para activar la facturación electrónica oficial."
+                  : "Completa los requisitos de arriba y luego soporte de Buleje activa el modo oficial."}
               </p>
             </div>
           )}

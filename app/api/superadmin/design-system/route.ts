@@ -324,7 +324,7 @@ export async function POST(req: NextRequest) {
     const tokens = parsed.data.tokens as DesignTokens;
     if (getPresetBySlug(tokens.meta.slug)) {
       return NextResponse.json(
-        { error: `Slug '${tokens.meta.slug}' colisiona con un preset oficial. Cambiá el nombre.` },
+        { error: `Slug '${tokens.meta.slug}' colisiona con un preset oficial. Cambia el nombre.` },
         { status: 409 },
       );
     }

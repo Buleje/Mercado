@@ -66,7 +66,7 @@ export const POST = withApiHandler("forestal-ctp-purga", async (req: NextRequest
   }
   if (parsed.data.confirmacion.toUpperCase() !== PALABRA) {
     return NextResponse.json(
-      { error: "confirmacion_invalida", message: `Escribí «${PALABRA}» para confirmar.` },
+      { error: "confirmacion_invalida", message: `Escribe «${PALABRA}» para confirmar.` },
       { status: 400 },
     );
   }

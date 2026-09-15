@@ -94,12 +94,12 @@ export default function ImportacionFlotante() {
         estado.detenido ? (
           <p className="mt-3 flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)]">
             <AlertCircle className="h-4 w-4 shrink-0" /> Lo detuviste: subieron {estado.subidosOk} de {estado.total}.
-            Reimportá la carpeta cuando quieras seguir.
+            Reimporta la carpeta cuando quieras seguir.
           </p>
         ) : estado.fallados > 0 ? (
           <p className="mt-3 flex items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
             <AlertCircle className="h-4 w-4 shrink-0" /> Subieron {estado.subidosOk} de {estado.total}.
-            Volvé a importar la carpeta y se reintentan sólo los que faltan.
+            Vuelve a importar la carpeta y se reintentan sólo los que faltan.
           </p>
         ) : (
           <p className="mt-3 flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] px-3 py-2 text-sm font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">

@@ -431,12 +431,12 @@ describe("seResuelveAlImportar · el preview no debe asustar con errores falsos"
   it("«falta el ingreso» es mentira si el ingreso viene en el mismo archivo", () => {
     // El preview no escribe: mira los consumos cuando los ingresos todavía no
     // existen. Al importar de verdad van primero y el consumo los encuentra.
-    expect(seResuelveAlImportar("Ese código no existe en el libro: cargá primero el ingreso.", "3036392", mapa)).toBe(true);
-    expect(seResuelveAlImportar("GTF de ingreso no encontrado: 019-0000004 — importá los ingresos primero", "", mapa)).toBe(true);
+    expect(seResuelveAlImportar("Ese código no existe en el libro: carga primero el ingreso.", "3036392", mapa)).toBe(true);
+    expect(seResuelveAlImportar("GTF de ingreso no encontrado: 019-0000004 — importa los ingresos primero", "", mapa)).toBe(true);
   });
 
   it("si el código NO está en el archivo, el error es de verdad", () => {
-    expect(seResuelveAlImportar("Ese código no existe en el libro: cargá primero el ingreso.", "9999999", mapa)).toBe(false);
+    expect(seResuelveAlImportar("Ese código no existe en el libro: carga primero el ingreso.", "9999999", mapa)).toBe(false);
   });
 
   it("un error de otra cosa no se disfraza de pendiente", () => {

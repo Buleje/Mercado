@@ -140,7 +140,7 @@ export default function TramiteRelacionGuias({
 
   async function traerDelLibro() {
     if (!periodoDesde || !periodoHasta) {
-      setAvisoTraer("Elegí el período (desde / hasta) antes de traer las guías de los libros.");
+      setAvisoTraer("Elige el período (desde / hasta) antes de traer las guías de los libros.");
       return;
     }
     setTrayendo(true);
@@ -154,7 +154,7 @@ export default function TramiteRelacionGuias({
       if (traidas.length === 0) {
         setAvisoTraer(
           avisos.length === 2
-            ? `Ningún libro respondió (${avisos.join(" · ")}). Agregá las guías a mano.`
+            ? `Ningún libro respondió (${avisos.join(" · ")}). Agrega las guías a mano.`
             : avisos.length === 1
               ? `${avisos[0]}. El otro libro no tiene guías nuevas en el período.`
               : "Ningún libro tiene guías nuevas en ese período.",
@@ -228,7 +228,7 @@ export default function TramiteRelacionGuias({
       {repetidos.length > 0 && (
         <p className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-2.5 text-xs font-medium text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          N° repetido entre las vigentes: {repetidos.join(", ")}. Revisalo antes de presentar.
+          N° repetido entre las vigentes: {repetidos.join(", ")}. Revísalo antes de presentar.
         </p>
       )}
 
@@ -239,7 +239,7 @@ export default function TramiteRelacionGuias({
         <p className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] p-2.5 text-xs font-medium text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {duplicadosCruzados.length === 1 ? "Esta guía" : "Estas guías"} ya {duplicadosCruzados.length === 1 ? "está" : "están"} en otra relación guardada:{" "}
-          {duplicadosCruzados.map((d) => `${d.numero} (${d.otraRelacion})`).join(", ")}. Puede ser un tipeo repetido — revisalo antes de presentar.
+          {duplicadosCruzados.map((d) => `${d.numero} (${d.otraRelacion})`).join(", ")}. Puede ser un tipeo repetido — revísalo antes de presentar.
         </p>
       )}
 

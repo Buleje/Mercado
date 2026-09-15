@@ -479,7 +479,7 @@ export function alertasDeLote(lote: LoteAserrio, ahora: Date): AlertaLote[] {
   const alertas: AlertaLote[] = [];
   if (lote.status === "abierto") {
     if (lote.piezas === 0) {
-      alertas.push({ tono: "info", texto: "Lote vacío: agregale piezas o deshacelo." });
+      alertas.push({ tono: "info", texto: "Lote vacío: agrégale piezas o deshazlo." });
     }
     const consumidasPorFuera = lote.trozas.filter((t) => t.consumidaEnId).length;
     if (consumidasPorFuera > 0) {
@@ -500,7 +500,7 @@ export function alertasDeLote(lote: LoteAserrio, ahora: Date): AlertaLote[] {
     if (loteVencido(lote, ahora)) {
       alertas.push({
         tono: "warning",
-        texto: `El proceso tenía fecha de fin ${new Date(lote.finProceso!).toLocaleDateString("es-PE", { timeZone: "UTC" })} y ya pasó: cerralo o ponele una fecha nueva.`,
+        texto: `El proceso tenía fecha de fin ${new Date(lote.finProceso!).toLocaleDateString("es-PE", { timeZone: "UTC" })} y ya pasó: ciérralo o ponle una fecha nueva.`,
       });
     }
   }

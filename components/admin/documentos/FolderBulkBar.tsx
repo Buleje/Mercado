@@ -213,7 +213,7 @@ export default function FolderBulkBar({
             <input
               type="text"
               maxLength={8}
-              placeholder="Pegá otro…"
+              placeholder="Pega otro…"
               className="w-24 rounded-xl border border-[var(--rule-base)] px-2 py-1 text-sm outline-none focus:border-primary"
               onKeyDown={(e) => {
                 const v = (e.target as HTMLInputElement).value.trim();
@@ -268,7 +268,7 @@ export default function FolderBulkBar({
           </div>
           {sugerencias.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1 border-t-2 border-[var(--rule-soft)] pt-2">
-              <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">Ya usás:</span>
+              <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">Ya usas:</span>
               {sugerencias.slice(0, 12).map((s) => (
                 <button
                   key={s}

@@ -645,7 +645,7 @@ export function printLothPlano(opts: PlanoOptions): void {
 </body></html>`;
 
   const w = window.open("", "_blank", "width=1280,height=900");
-  if (!w) throw new Error("El navegador bloqueó la ventana. Permití pop-ups para imprimir el plano.");
+  if (!w) throw new Error("El navegador bloqueó la ventana. Permite pop-ups para imprimir el plano.");
   w.document.write(html);
   w.document.close();
   w.focus();

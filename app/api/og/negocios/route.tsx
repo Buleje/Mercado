@@ -129,8 +129,8 @@ export async function GET(req: NextRequest) {
               maxWidth: 880,
             }}
           >
-            Tu tienda online en 5 minutos. Cobrás con Yape, vendés con delivery
-            y emitís boletas SUNAT.
+            Tu tienda online en 5 minutos. Cobrás con Yape, vendes con delivery
+            y emites boletas SUNAT.
           </span>
         </div>
 

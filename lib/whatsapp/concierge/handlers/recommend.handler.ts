@@ -38,7 +38,7 @@ const RECOMMEND_COST_USD = 0.005;
 
 const FALLBACK_BUDGET: ActionResult = {
   reply:
-    "Por ahora no puedo recomendarte productos personalizados. Escribí *catálogo* para ver lo disponible.",
+    "Por ahora no puedo recomendarte productos personalizados. Escribe *catálogo* para ver lo disponible.",
   newState: "browsing",
 };
 
@@ -84,7 +84,7 @@ export async function recommendHandler(
     return {
       reply:
         `No encontré productos para *"${seed}"* en el marketplace.\n\n` +
-        `Probá con otra palabra (ej: *"arroz"*, *"pollo"*, *"snacks"*) o escribí *catálogo* para ver lo destacado.`,
+        `Prueba con otra palabra (ej: *"arroz"*, *"pollo"*, *"snacks"*) o escribe *catálogo* para ver lo destacado.`,
       newState: "browsing",
     };
   }

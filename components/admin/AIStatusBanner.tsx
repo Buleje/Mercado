@@ -104,7 +104,7 @@ export default function AIStatusBanner({ userRole = null, authReady = true }: AI
         <span className="ml-2 text-[var(--data-warning-500)]/80 dark:text-amber-300/80">
           {providerCheck?.detail ?? "Ningún proveedor de IA está configurado correctamente."}
           {providerErrors && providerErrors.length > 0 && (
-            <> Configurá una API key real en <code className="rounded bg-[var(--data-warning-500)]/20 px-1 font-mono text-xs">.env.local</code></>
+            <> Configura una API key real en <code className="rounded bg-[var(--data-warning-500)]/20 px-1 font-mono text-xs">.env.local</code></>
           )}
         </span>
       </div>

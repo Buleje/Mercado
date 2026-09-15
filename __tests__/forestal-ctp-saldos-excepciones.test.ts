@@ -161,9 +161,9 @@ describe("saldo negativo: qué hacer cuando la madera ya está cargada", () => {
     expect(e.ir).toBe("ingresos");
     expect(e.filtro).toBe("pendiente");
     expect(e.detalle).toContain("181.09");
-    expect(e.detalle).toContain("Recepcionalas");
+    expect(e.detalle).toContain("Recepciónalas");
     /* Y ya NO manda a cargar un ingreso que existe. */
-    expect(e.detalle).not.toContain("Cargá el ingreso");
+    expect(e.detalle).not.toContain("Carga el ingreso");
   });
 
   it("si lo pendiente NO alcanza, lo dice y manda a revisar las corridas", () => {
@@ -173,7 +173,7 @@ describe("saldo negativo: qué hacer cuando la madera ya está cargada", () => {
     });
     expect(e.filtro).toBeUndefined();
     expect(e.detalle).toContain("no alcanzan");
-    expect(e.detalle).toContain("revisá el volumen");
+    expect(e.detalle).toContain("revisa el volumen");
   });
 
   it("sin nada esperando recepción, el consejo es el de antes", () => {
@@ -182,6 +182,6 @@ describe("saldo negativo: qué hacer cuando la madera ya está cargada", () => {
       materiaPrima: { ...NEGATIVO.materiaPrima, pendienteM3: 0 },
     });
     expect(e.filtro).toBeUndefined();
-    expect(e.detalle).toContain("Cargá el ingreso");
+    expect(e.detalle).toContain("Carga el ingreso");
   });
 });

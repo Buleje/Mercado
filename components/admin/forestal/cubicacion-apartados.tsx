@@ -76,7 +76,7 @@ export default function ApartadosPanel({
               ? <>Cierra el apartado con las <b className="text-[var(--text-primary)]">{marcadasCount} filas marcadas</b>.</>
               : pendientes > 0
                 ? <><b className="text-[var(--text-primary)]">{pendientes}</b> {pendientes === 1 ? "fila" : "filas"} sin apartar todavía.</>
-                : "No hay filas sin apartar. Dictá o cargá más piezas para armar el próximo bloque."}
+                : "No hay filas sin apartar. Dicta o carga más piezas para armar el próximo bloque."}
           </p>
           {candidatas > 0 && (
             <p className="mt-0.5 font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">

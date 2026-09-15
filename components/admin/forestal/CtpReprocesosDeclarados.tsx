@@ -350,7 +350,7 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
                             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
                             <span>
                               Salieron {fmtM3(r.salio)} m³ de {fmtM3(r.entro)} que entraron: un
-                              reproceso no crea madera. Revisá el asiento.
+                              reproceso no crea madera. Revisa el asiento.
                             </span>
                           </p>
                         )}

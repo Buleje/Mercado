@@ -49,7 +49,7 @@ async function aDataUrlChico(archivo: File): Promise<string> {
     const jpg = lienzo.toDataURL("image/jpeg", calidad);
     if (jpg.length <= LOGO_MAX_BYTES) return jpg;
   }
-  throw new Error("La imagen es muy grande incluso reducida. Probá con una más simple.");
+  throw new Error("La imagen es muy grande incluso reducida. Prueba con una más simple.");
 }
 
 export default function CtpParteLogo({

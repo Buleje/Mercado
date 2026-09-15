@@ -38,7 +38,7 @@ export default function VerificarGtfSerfor({
 
   async function verificar() {
     const n = nro.trim();
-    if (!n) { setMsg({ ok: false, text: "Escribí el N° de registro de la guía que emitiste." }); return; }
+    if (!n) { setMsg({ ok: false, text: "Escribe el N° de registro de la guía que emitiste." }); return; }
     setCargando(true);
     setMsg(null);
     try {

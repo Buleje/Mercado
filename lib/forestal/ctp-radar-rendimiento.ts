@@ -154,7 +154,7 @@ export function analizarRendimiento(g: TrazaGrafo): RendimientoCorrida[] {
       ...b, medianaGrupo: med, desvioPct,
       flag: (bajo ? "bajo" : "alto") as RendimientoFlag,
       motivo: bajo
-        ? `Rinde ${Math.abs(desvioPct)}% menos que las demás corridas de su tipo (${round(b.ratio, 2)} vs ${round(med, 2)} ${b.unidad || "u"}/m³). Revisá si falta producto por registrar o si la materia prima atribuida es de más.`
+        ? `Rinde ${Math.abs(desvioPct)}% menos que las demás corridas de su tipo (${round(b.ratio, 2)} vs ${round(med, 2)} ${b.unidad || "u"}/m³). Revisa si falta producto por registrar o si la materia prima atribuida es de más.`
         : `Rinde ${desvioPct}% más que sus pares (${round(b.ratio, 2)} vs ${round(med, 2)} ${b.unidad || "u"}/m³). Suele ser materia prima sin atribuir del todo.`,
     };
   });

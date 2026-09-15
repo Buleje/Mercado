@@ -344,7 +344,7 @@ export default function CtpRadarApariencia({
             </form>
             <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
               {vistas.length >= MAX_VISTAS
-                ? `Llegaste a ${MAX_VISTAS} vistas: borrá una para guardar otra nueva.`
+                ? `Llegaste a ${MAX_VISTAS} vistas: borra una para guardar otra nueva.`
                 : "Guarda la pantalla entera: tamaño, colores, orden, foco, agrupación y zoom."}
             </p>
           </section>

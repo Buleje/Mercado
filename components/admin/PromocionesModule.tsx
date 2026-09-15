@@ -234,7 +234,7 @@ export default function PromocionesModule() {
         setFormError("No se pudo cambiar el estado de la promoción.");
       }
     } catch {
-      setFormError("Error de conexión. Intentá de nuevo.");
+      setFormError("Error de conexión. Intenta de nuevo.");
     } finally {
       setSaving(false);
     }
@@ -258,7 +258,7 @@ export default function PromocionesModule() {
         setPromos(prev => prev.filter(p => p.id !== id));
         setSuccessMsg("Promoción eliminada");
       } else {
-        setFormError("No se pudo eliminar la promoción. Intentá de nuevo.");
+        setFormError("No se pudo eliminar la promoción. Intenta de nuevo.");
       }
     } catch {
       setFormError("Error de conexión al eliminar la promoción.");

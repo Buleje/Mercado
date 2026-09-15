@@ -130,7 +130,7 @@ function VisorPdfPaginas({ docId, nombre }: { docId: string; nombre: string }) {
       <AvisoArchivo
         error={error}
         titulo="No se pudo abrir el PDF"
-        sugerencia="También podés descargarlo y abrirlo en tu equipo."
+        sugerencia="También puedes descargarlo y abrirlo en tu equipo."
         urlDescarga={`/api/admin/documents/${docId}/raw`}
         onReintentar={() => setIntento((n) => n + 1)}
       />
@@ -260,7 +260,7 @@ export function VisorPdf({ url, nombre, tamano, docId }: {
         <AvisoArchivo
           error={error}
           titulo="No se pudo mostrar el PDF"
-          sugerencia="También podés descargarlo y abrirlo en tu equipo."
+          sugerencia="También puedes descargarlo y abrirlo en tu equipo."
           urlDescarga={url}
           onReintentar={() => setIntento((n) => n + 1)}
         />

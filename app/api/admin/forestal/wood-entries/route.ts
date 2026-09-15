@@ -176,7 +176,7 @@ async function ensureSpecializationOrDeny(tenantId: string) {
       {
         error: "specialization_disabled",
         message:
-          "El módulo Libro de Operaciones CTP no está habilitado para este tenant. Solicitá al superadmin habilitarlo.",
+          "El módulo Libro de Operaciones CTP no está habilitado para este tenant. Solicita al superadmin habilitarlo.",
       },
       { status: 403 },
     );
@@ -330,7 +330,7 @@ const recepcionGuiaSchema = z.object({
   action: z.literal("recepcionar_guia"),
   /** Los asientos de la guía. Tope alto: una GTF no tiene 50 especies. */
   ids: z.array(z.string().trim().min(1).max(60)).min(1).max(50),
-  fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD").optional(),
+  fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD").optional(),
 });
 
 /**
@@ -347,7 +347,7 @@ const completarGuiaSchema = z.object({
       speciesScientificName: z.string().trim().max(160).optional(),
     })
     .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
-      message: "Mandá al menos un campo con contenido.",
+      message: "Manda al menos un campo con contenido.",
     }),
 });
 
@@ -365,7 +365,7 @@ const corregirGuiaSchema = z.object({
       speciesScientificName: z.string().trim().max(160).optional(),
     })
     .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
-      message: "Mandá al menos un campo con contenido.",
+      message: "Manda al menos un campo con contenido.",
     }),
 });
 

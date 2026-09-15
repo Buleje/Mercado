@@ -423,7 +423,7 @@ export default function CtpProducirSinLoteModal({
               Producir sin lote
             </CardTitle>
             <p className="text-xs text-[var(--text-tertiary)]">
-              Cubicá acá y declaralo en el Libro. La materia prima se vincula después —
+              Cubica acá y decláralo en el Libro. La materia prima se vincula después —
               <b> lo que cubiques acá no toca el lote del cubicador</b>.
             </p>
           </div>
@@ -536,7 +536,7 @@ export default function CtpProducirSinLoteModal({
                     onChange={(e) => setPermiso(e.target.value)}
                     list="ctp-permisos-sin-lote"
                     placeholder={
-                      saldo.cargando ? "Buscando permisos…" : "Ej. CON-25-001 · o escribilo"
+                      saldo.cargando ? "Buscando permisos…" : "Ej. CON-25-001 · o escríbelo"
                     }
                     className={`mt-1 ${CAMPO} font-mono`}
                   />
@@ -564,7 +564,7 @@ export default function CtpProducirSinLoteModal({
                   </p>
                   {!permiso.trim() ? (
                     <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-                      Elegí un permiso para ver cuánto le queda después de declarar esto.
+                      Elige un permiso para ver cuánto le queda después de declarar esto.
                     </p>
                   ) : saldo.cargando && !saldo.datos ? (
                     <p className="mt-1 flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
@@ -822,7 +822,7 @@ export default function CtpProducirSinLoteModal({
           )}
           <span className="mr-auto text-xs text-[var(--text-tertiary)]">
             {paquetes.length === 0
-              ? "Cubicá al menos una medida para poder declarar."
+              ? "Cubica al menos una medida para poder declarar."
               : `${paquetes.length} ${paquetes.length === 1 ? "medida cubicada" : "medidas cubicadas"}`}
           </span>
           {paso === "cubicar" ? (

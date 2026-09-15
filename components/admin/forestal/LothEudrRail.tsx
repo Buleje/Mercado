@@ -165,7 +165,7 @@ export default function LothEudrRail({
             type="button"
             onClick={onExportGeoJson}
             disabled={!canExport}
-            title={canExport ? "Descargar la geolocalización en GeoJSON para la DDS" : "Declará la parcela y geolocalizá operaciones primero"}
+            title={canExport ? "Descargar la geolocalización en GeoJSON para la DDS" : "Declara la parcela y geolocaliza operaciones primero"}
             className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5" /> GeoJSON
@@ -174,7 +174,7 @@ export default function LothEudrRail({
             type="button"
             onClick={onPrintDds}
             disabled={!parcelaDeclarada}
-            title={parcelaDeclarada ? "Informe EUDR imprimible (DDS)" : "Declará la parcela primero"}
+            title={parcelaDeclarada ? "Informe EUDR imprimible (DDS)" : "Declara la parcela primero"}
             className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />} Informe

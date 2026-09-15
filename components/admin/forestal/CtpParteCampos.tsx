@@ -160,7 +160,7 @@ export default function CtpParteCampos({
             title={
               tipoPadron
                 ? `Consultar ${tipoPadron === "RUC" ? "SUNAT" : "RENIEC"} con ese número`
-                : "Escribí 8 dígitos (DNI) u 11 (RUC)"
+                : "Escribe 8 dígitos (DNI) u 11 (RUC)"
             }
             className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
           >

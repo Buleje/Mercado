@@ -135,7 +135,7 @@ export default function CubicacionesGuardadas({
       ) : visibles.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
           {lista.length === 0
-            ? "Todavía no guardaste ninguna cubicación. Cubicá un lote y tocá «Guardar»."
+            ? "Todavía no guardaste ninguna cubicación. Cubica un lote y toca «Guardar»."
             : "Ninguna cubicación coincide con la búsqueda."}
         </p>
       ) : (
@@ -154,7 +154,7 @@ export default function CubicacionesGuardadas({
                   <button
                     type="button"
                     onClick={() => copiarCodigo(c)}
-                    title={`Copiar el código de esta cubicación (${c.id}) — pegalo en Resumen por Permiso como objetivo`}
+                    title={`Copiar el código de esta cubicación (${c.id}) — pégalo en Resumen por Permiso como objetivo`}
                     className="mt-1 inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                   >
                     <Copy className="h-3 w-3" aria-hidden />

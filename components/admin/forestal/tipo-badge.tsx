@@ -76,7 +76,7 @@ export function TipoSelect({
         value={manual ? tipo : ""}
         onChange={(e) => onCambiar(e.target.value as TipoComercial | "")}
         aria-label={etiqueta}
-        title={manual ? `Puesto a mano. Por su medida sería «${auto}».` : `Sale de la medida: ${auto}. Elegí otro para forzarlo.`}
+        title={manual ? `Puesto a mano. Por su medida sería «${auto}».` : `Sale de la medida: ${auto}. Elige otro para forzarlo.`}
         className={`w-[108px] cursor-pointer appearance-none rounded-full py-1 pl-2.5 pr-5 text-[length:var(--ts-xs)] font-bold outline-none focus:ring-2 focus:ring-[var(--accent)]/40 ${tipoChipCls(tonoTipo(tipo))} ${manual ? "ring-2 ring-[var(--accent)]" : ""}`}
       >
         {/* La opción automática cambia de NOMBRE según el estado, y no es un

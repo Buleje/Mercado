@@ -147,7 +147,7 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
 
         <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-2.5">
           <span className="text-xs font-bold text-[var(--text-secondary)]">
-            Tocá el mapa para marcar vértices · <b className="font-mono tabular-nums">{draft.length}</b>
+            Toca el mapa para marcar vértices · <b className="font-mono tabular-nums">{draft.length}</b>
             {draft.length >= 3 && <span className="text-[var(--text-tertiary)]"> · {areaHa.toFixed(2)} ha</span>}
           </span>
           <div className="ml-auto flex items-center gap-1.5">

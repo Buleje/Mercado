@@ -94,7 +94,7 @@ const METRICS = [
     key: "inp" as const,
     label: "Respuesta al toque",
     tech: "INP",
-    explain: "Cuánto tarda en reaccionar cuando tocás",
+    explain: "Cuánto tarda en reaccionar cuando tocas",
     fmt: (v: number) => `${Math.round(v)} ms`,
   },
 ];
@@ -202,7 +202,7 @@ export default function PerfScoreHero() {
               {primaryGrade === "bueno" && "Tu tienda vuela — así se queda la gente comprando."}
               {primaryGrade === "regular" && "Tu tienda carga, pero se siente la espera. Hay margen."}
               {primaryGrade === "pobre" && "Tu tienda está lenta — cada segundo de espera son ventas que se van."}
-              {primaryGrade === "sin-dato" && "Navegá un poco el panel para que junte mediciones."}
+              {primaryGrade === "sin-dato" && "Navega un poco el panel para que junte mediciones."}
             </p>
             {/* Referencia cruzada equipo ↔ clientes */}
             <div className="mt-3 flex items-center gap-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">

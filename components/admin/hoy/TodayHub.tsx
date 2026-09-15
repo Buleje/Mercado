@@ -172,7 +172,7 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, hide
           No pudimos cargar tu resumen
         </p>
         <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
-          Nos pasó algo. Recargá la página o revisa tu conexión.
+          Nos pasó algo. Recarga la página o revisa tu conexión.
         </p>
       </div>
     );

@@ -83,7 +83,7 @@ export default function ForestLotesModule() {
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          title="Agrupá corridas del Libro CTP en un lote comercial con código, grado y certificado QR"
+          title="Agrupa corridas del Libro CTP en un lote comercial con código, grado y certificado QR"
           className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
         >
           <Plus className="h-4 w-4" /> Nuevo lote
@@ -185,7 +185,7 @@ export default function ForestLotesModule() {
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
           <Layers className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p className="text-base font-medium">{search.trim() || statusFilter !== "todos" ? "Ningún lote coincide con el filtro." : "Sin lotes todavía."}</p>
-          {!search.trim() && statusFilter === "todos" && <p className="mt-1 text-sm">Creá el primer lote agrupando corridas de producción del Libro CTP.</p>}
+          {!search.trim() && statusFilter === "todos" && <p className="mt-1 text-sm">Crea el primer lote agrupando corridas de producción del Libro CTP.</p>}
         </div>
       ) : vista === "tabla" ? (
         <LotesTabla

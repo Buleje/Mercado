@@ -1336,8 +1336,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                   ¿Hasta cuándo vale este contrato?
                                 </label>
                                 <p className="text-xs text-[var(--text-secondary)]">
-                                  Esta plantilla no pide fecha de término. Si la cargás, te avisamos
-                                  30 días antes de que venza; si la dejás vacía, no te avisa nadie.
+                                  Esta plantilla no pide fecha de término. Si la cargas, te avisamos
+                                  30 días antes de que venza; si la dejas vacía, no te avisa nadie.
                                 </p>
                                 <input
                                   id="venc-manual"

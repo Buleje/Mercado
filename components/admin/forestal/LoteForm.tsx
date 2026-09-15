@@ -104,7 +104,7 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
          se eligen del otro, sin scroll en desktop. */
       variant="wide"
       title="Nuevo lote de producción"
-      description="Agrupá corridas del CTP en un lote comercial"
+      description="Agrupa corridas del CTP en un lote comercial"
       icon={Layers}
       footer={
         <ModalFooter error={error}>

@@ -204,14 +204,14 @@ export default function ObligacionesTab() {
                 {venc ? (
                   <p className="text-[var(--text-primary)] font-semibold">
                     {venc.rango}
-                    <span className="block text-xs font-normal text-[var(--text-tertiary)] mt-0.5">RUC terminado en {venc.ultimoDigito} · referencial, confirmá el cronograma oficial SUNAT</span>
+                    <span className="block text-xs font-normal text-[var(--text-tertiary)] mt-0.5">RUC terminado en {venc.ultimoDigito} · referencial, confirma el cronograma oficial SUNAT</span>
                   </p>
                 ) : (
                   <input
                     value={ruc}
                     onChange={e => setRuc(e.target.value.replace(/\D/g, "").slice(0, 11))}
                     onBlur={() => { if (ruc.length === 11) saveSetting({ ruc }); }}
-                    placeholder="Ingresá tu RUC (11 dígitos)"
+                    placeholder="Ingresa tu RUC (11 dígitos)"
                     className="w-full text-sm border border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)]"
                   />
                 )}
@@ -320,7 +320,7 @@ export default function ObligacionesTab() {
               <li className="flex items-start gap-2.5">
                 <Info className="h-4 w-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
                 <span className="text-[var(--text-secondary)]">
-                  <span className="font-semibold text-[var(--text-primary)]">PLAME</span> (Planilla Electrónica) — solo si tenés trabajadores en planilla (ESSALUD 9%, ONP/AFP)
+                  <span className="font-semibold text-[var(--text-primary)]">PLAME</span> (Planilla Electrónica) — solo si tienes trabajadores en planilla (ESSALUD 9%, ONP/AFP)
                 </span>
               </li>
               <li className="flex items-start gap-2.5">

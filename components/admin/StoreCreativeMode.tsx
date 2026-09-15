@@ -147,11 +147,11 @@ const PANEL_ORDER: CreativePanel[] = [
 
 // Onboarding guiado (Lote K #17, Brandon 2026-06-27): 5 pasos para el 1er uso.
 const TOUR_STEPS: Array<{ panel: CreativePanel; title: string; desc: string }> = [
-  { panel: "identidad", title: "1. Tu identidad", desc: "Subí tu logo y poné el nombre de tu tienda. Es lo primero que ve tu cliente." },
-  { panel: "colores", title: "2. Tus colores", desc: "Elegí los colores de tu marca o aplicá una paleta lista en 1 clic." },
-  { panel: "hero", title: "3. Tu portada", desc: "Poné una imagen o video de fondo y un título que enganche al visitante." },
-  { panel: "contacto", title: "4. WhatsApp y horario", desc: "Cargá tu WhatsApp para recibir pedidos y tu horario de atención." },
-  { panel: "plantillas", title: "5. ¡Listo para publicar!", desc: "Cuando te guste cómo quedó, tocá “Aplicar y guardar” arriba a la derecha." },
+  { panel: "identidad", title: "1. Tu identidad", desc: "Sube tu logo y pon el nombre de tu tienda. Es lo primero que ve tu cliente." },
+  { panel: "colores", title: "2. Tus colores", desc: "Elige los colores de tu marca o aplica una paleta lista en 1 clic." },
+  { panel: "hero", title: "3. Tu portada", desc: "Pon una imagen o video de fondo y un título que enganche al visitante." },
+  { panel: "contacto", title: "4. WhatsApp y horario", desc: "Carga tu WhatsApp para recibir pedidos y tu horario de atención." },
+  { panel: "plantillas", title: "5. ¡Listo para publicar!", desc: "Cuando te guste cómo quedó, toca “Aplicar y guardar” arriba a la derecha." },
 ];
 
 interface StoreCreativeModeProps {
@@ -226,7 +226,7 @@ const SECTION_ITEMS: { key: SectionKey; label: string }[] = [
 const LANDING_BODY_ITEMS: { key: string; label: string; desc: string; icon: typeof Home }[] = [
   { key: "trust", label: "Confianza", desc: "Insignias de pago seguro, delivery y atención", icon: ShieldCheck },
   { key: "promos", label: "Promociones", desc: "Banner con tus ofertas activas", icon: Tag },
-  { key: "featured", label: "Destacados", desc: "Carrusel de productos que recomendás", icon: Star },
+  { key: "featured", label: "Destacados", desc: "Carrusel de productos que recomiendas", icon: Star },
   { key: "testimonials", label: "Testimonios", desc: "Reseñas reales de tus clientes", icon: Quote },
   { key: "info", label: "Información", desc: "Horario, dirección, contacto y mapa", icon: MapPin },
 ];
@@ -300,14 +300,14 @@ const RUBRO_TEMPLATES: RubroTemplate[] = [
     primaryColor: "#00A0A0", secondaryColor: "#FF6B5B", accentColor: "#0F766E", fontFamily: "geist",
     darkModeDefault: false, borderRadius: 14, buttonStyle: "rounded",
     heroTitle: "Tu bodega de confianza, ahora online",
-    heroSubtitle: "Abarrotes, bebidas y delivery rápido. Pagá con Yape o efectivo.",
+    heroSubtitle: "Abarrotes, bebidas y delivery rápido. Paga con Yape o efectivo.",
     slogan: "Lo de siempre, a un clic",
   },
   {
     id: "rubro-restaurante", industry: "restaurante", name: "Restaurante / Cafetería", vibe: "Apetitoso y vivo",
     primaryColor: "#DC2626", secondaryColor: "#F59E0B", accentColor: "#EA580C", fontFamily: "poppins",
     darkModeDefault: false, borderRadius: 18, buttonStyle: "pill",
-    heroTitle: "Pedí tu plato favorito sin moverte",
+    heroTitle: "Pide tu plato favorito sin moverte",
     heroSubtitle: "Comida recién hecha y delivery calentito a tu puerta.",
     slogan: "Sabor que llega a tu casa",
   },
@@ -332,7 +332,7 @@ const RUBRO_TEMPLATES: RubroTemplate[] = [
     primaryColor: "#EA580C", secondaryColor: "#334155", accentColor: "#F97316", fontFamily: "roboto",
     darkModeDefault: false, borderRadius: 6, buttonStyle: "square",
     heroTitle: "Herramientas y todo para el hogar",
-    heroSubtitle: "Lo que necesitás para arreglar y construir, al toque.",
+    heroSubtitle: "Lo que necesitas para arreglar y construir, al toque.",
     slogan: "La solución a la mano",
   },
   {
@@ -340,7 +340,7 @@ const RUBRO_TEMPLATES: RubroTemplate[] = [
     primaryColor: "#DB2777", secondaryColor: "#F59E0B", accentColor: "#EC4899", fontFamily: "nunito",
     darkModeDefault: false, borderRadius: 20, buttonStyle: "pill",
     heroTitle: "Pan fresquito y postres del día",
-    heroSubtitle: "Encargá tu torta o pan caliente con delivery a tu mesa.",
+    heroSubtitle: "Encarga tu torta o pan caliente con delivery a tu mesa.",
     slogan: "Recién salido del horno",
   },
 ];
@@ -926,7 +926,7 @@ function SectionStyleEditor({
       {/* Texto de la sección — etiqueta + título + alineación (Brandon 2026-06-27).
           También editable con doble-click sobre el texto en el preview. */}
       {textFields && (
-        <SectionCard icon={Type} title="Texto de la sección" hint="Editá acá o doble-click sobre el texto en el preview">
+        <SectionCard icon={Type} title="Texto de la sección" hint="Edita acá o doble-click sobre el texto en el preview">
           <div className="space-y-1.5">
             <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Etiqueta</p>
             <input
@@ -987,11 +987,11 @@ function SectionStyleEditor({
             label=""
           />
         </div>
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Opcional · click o arrastrá · máx 5 MB</p>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Opcional · click o arrastra · máx 5 MB</p>
       </SectionCard>
 
       {/* Diseños de 1 clic — formas y looks listos */}
-      <SectionCard icon={WandSparkles} title="Diseño rápido" hint="Aplicá un look completo en 1 clic">
+      <SectionCard icon={WandSparkles} title="Diseño rápido" hint="Aplica un look completo en 1 clic">
         <div className="grid grid-cols-2 gap-2">
           {SECTION_DESIGN_PRESETS.map((p) => {
             const cleaned = JSON.stringify(
@@ -1247,7 +1247,7 @@ function CustomSectionEditor({
         body: JSON.stringify({ sectionType: section.type, storeName, rubro: label }),
       });
       const json = await res.json().catch((err) => { console.warn("[ai-content] respuesta no-JSON", err); return null; });
-      if (!res.ok || !json?.data) { setAiErr(json?.error ?? "No se pudo generar. Probá de nuevo."); return; }
+      if (!res.ok || !json?.data) { setAiErr(json?.error ?? "No se pudo generar. Prueba de nuevo."); return; }
       onPatch(json.data as Record<string, unknown>);
     } catch {
       setAiErr("Falló la conexión con la IA.");
@@ -1287,7 +1287,7 @@ function CustomSectionEditor({
         </div>
       )}
 
-      <SectionCard icon={Type} title="Texto" hint="Editá acá o doble-click sobre el texto en el preview">
+      <SectionCard icon={Type} title="Texto" hint="Edita acá o doble-click sobre el texto en el preview">
         {typeof d.eyebrow === "string" && (
           <div className="space-y-1.5">
             <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Etiqueta</p>
@@ -1361,7 +1361,7 @@ function CustomSectionEditor({
       )}
 
       {Array.isArray((d as { logos?: unknown }).logos) && (
-        <SectionCard icon={ImageIcon} title="Logos / marcas" hint="Agregá, cambiá o quitá logos">
+        <SectionCard icon={ImageIcon} title="Logos / marcas" hint="Agrega, cambia o quita logos">
           {((d as { logos: Array<{ url: string; alt?: string }> }).logos).map((lg, i, arr) => (
             <div key={i} className="space-y-1.5 rounded-lg border border-white/10 p-2">
               <div className="flex items-center justify-between">
@@ -1407,7 +1407,7 @@ function CustomSectionEditor({
 
       {/* Redes (Lote A): plataforma + URL */}
       {Array.isArray((d as { links?: unknown }).links) && (
-        <SectionCard icon={Share2} title="Links de redes" hint="Elegí la red y pegá el link">
+        <SectionCard icon={Share2} title="Links de redes" hint="Elige la red y pega el link">
           {((d as { links: Array<{ platform: string; url: string }> }).links).map((lk, i, arr) => (
             <div key={i} className="flex items-center gap-1.5 rounded-lg border border-white/10 p-2">
               <select value={lk.platform} onChange={(e) => onPatch({ links: arr.map((x, j) => (j === i ? { ...x, platform: e.target.value } : x)) })} className={cn(INPUT_CLASS, "w-28 shrink-0")} aria-label="Red social">
@@ -1526,7 +1526,7 @@ function CustomSectionEditor({
       )}
 
       {images && (
-        <SectionCard icon={ImageIcon} title="Galería" hint="Agregá, cambiá o quitá fotos">
+        <SectionCard icon={ImageIcon} title="Galería" hint="Agrega, cambia o quita fotos">
           {images.map((img, i) => (
             <div key={i} className="space-y-1.5 rounded-lg border border-white/10 p-2">
               <div className="flex items-center justify-between">
@@ -2660,7 +2660,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       });
       const data = await res.json().catch((err) => { console.warn("[creative-mode] ai-theme respuesta no-JSON", err); return null; });
       if (!res.ok || !data?.theme) {
-        setAiError(data?.error ?? "No se pudo generar el tema. Probá de nuevo.");
+        setAiError(data?.error ?? "No se pudo generar el tema. Prueba de nuevo.");
         return;
       }
       const t = data.theme as Partial<StoreTheme>;
@@ -2678,7 +2678,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         slogan: t.slogan ?? draft.slogan,
       });
     } catch (err) {
-      setAiError("Falló la conexión con la IA. Revisá tu internet e intentá de nuevo.");
+      setAiError("Falló la conexión con la IA. Revisa tu internet e intenta de nuevo.");
       console.warn("[creative-mode] generateAiTheme falló", err);
     } finally {
       setAiLoading(false);
@@ -2788,7 +2788,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const designTips = useMemo(() => {
     const tips: Array<{ level: "warn" | "info"; text: string }> = [];
     const cr = contrastRatio(draft.primaryColor, "#ffffff");
-    if (cr !== null && cr < 4.5) tips.push({ level: "warn", text: `Bajo contraste: texto blanco sobre tu color primario (${cr.toFixed(1)}:1) cuesta leer en móvil. Apuntá a 4.5:1.` });
+    if (cr !== null && cr < 4.5) tips.push({ level: "warn", text: `Bajo contraste: texto blanco sobre tu color primario (${cr.toFixed(1)}:1) cuesta leer en móvil. Apunta a 4.5:1.` });
     const words = (draft.heroTitle || "").trim().split(/\s+/).filter(Boolean).length;
     if (words > 8) tips.push({ level: "info", text: `Tu título del hero tiene ${words} palabras. Los títulos cortos (≤8) convierten mejor.` });
     if (!draft.heroImage && !draft.heroVideoUrl) tips.push({ level: "info", text: "El hero no tiene imagen ni video de fondo. Un fondo visual capta más atención." });
@@ -3300,9 +3300,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="rounded-xl border border-[var(--accent-soft)]/40 bg-linear-to-br from-[var(--accent-soft)]/15 to-transparent p-3 space-y-2">
                   <div className="flex items-center gap-1.5">
                     <WandSparkles className="h-4 w-4 text-[var(--accent-soft)]" />
-                    <p className="text-sm font-bold text-white">Diseñá con IA</p>
+                    <p className="text-sm font-bold text-white">Diseña con IA</p>
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">Contá qué vendés y la IA arma colores, tipografía y textos por vos.</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">Cuenta qué vendes y la IA arma colores, tipografía y textos por ti.</p>
                   <textarea
                     className={cn(INPUT_CLASS, "resize-none")}
                     rows={2}
@@ -3357,7 +3357,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
                 <div className="pt-1">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-500)] mb-1">Plantillas listas</p>
-                  <p className="text-xs text-[var(--text-tertiary)] leading-snug">Aplicá un look completo en 1 click — colores + tipografía + estilo.</p>
+                  <p className="text-xs text-[var(--text-tertiary)] leading-snug">Aplica un look completo en 1 click — colores + tipografía + estilo.</p>
                 </div>
                 {QUICK_TEMPLATES.map((tpl) => (
                   <button
@@ -3452,7 +3452,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {!draft.logo && (
                   <div className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
                     <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
-                    <p className="text-[length:var(--ts-2xs)] leading-snug text-gray-200">Subí tu <strong className="text-white">logo</strong>: las tiendas con logo se ven más profesionales y se reconocen mejor.</p>
+                    <p className="text-[length:var(--ts-2xs)] leading-snug text-gray-200">Sube tu <strong className="text-white">logo</strong>: las tiendas con logo se ven más profesionales y se reconocen mejor.</p>
                   </div>
                 )}
                 {/* Logo — click o arrastrá para subir (Brandon 2026-06-25) */}
@@ -3468,7 +3468,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       label=""
                     />
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Click o arrastrá · cuadrado · máx 5 MB</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Click o arrastra · cuadrado · máx 5 MB</p>
                 </div>
 
                 <Field label="Nombre de la tienda" labelClassName={LABEL_CLASS}>
@@ -3478,7 +3478,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <input className={INPUT_CLASS} value={draft.slogan} onChange={(e) => patch("slogan", e.target.value)} placeholder="Tu tienda de confianza" />
                 </Field>
                 <Field label="Descripción" labelClassName={LABEL_CLASS}>
-                  <textarea className={cn(INPUT_CLASS, "resize-none")} rows={3} value={draft.description} onChange={(e) => patch("description", e.target.value)} placeholder="Qué vendés y qué te hace especial…" />
+                  <textarea className={cn(INPUT_CLASS, "resize-none")} rows={3} value={draft.description} onChange={(e) => patch("description", e.target.value)} placeholder="Qué vendes y qué te hace especial…" />
                 </Field>
               </>
             )}
@@ -3490,7 +3490,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <div className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
                     <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
                     <p className="text-[length:var(--ts-2xs)] leading-snug text-gray-200">
-                      Tu hero no tiene imagen ni video de fondo. Las tiendas con fondo visual <strong className="text-white">captan más la atención</strong> — subí una imagen, pegá un video o aplicá un gradiente abajo.
+                      Tu hero no tiene imagen ni video de fondo. Las tiendas con fondo visual <strong className="text-white">captan más la atención</strong> — sube una imagen, pega un video o aplica un gradiente abajo.
                     </p>
                   </div>
                 )}
@@ -3647,12 +3647,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       label=""
                     />
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Fondo del hero · click o arrastrá · máx 5 MB</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Fondo del hero · click o arrastra · máx 5 MB</p>
                 </div>
 
                 {/* #2 Gradiente del hero (si no hay foto) — 2 colores + ángulo */}
                 <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
-                  <p className={LABEL_CLASS}>Gradiente del hero {draft.heroImage ? "(quitá la foto para verlo)" : ""}</p>
+                  <p className={LABEL_CLASS}>Gradiente del hero {draft.heroImage ? "(quita la foto para verlo)" : ""}</p>
                   <div className="flex items-center gap-2">
                     <label className="relative inline-flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-white/15" title="Color 1">
                       <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: draft.heroGradientFrom || "#00A0A0" }} />
@@ -3693,7 +3693,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
                       <p className={LABEL_CLASS}>A/B Test del título</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Mostrá 2 versiones 50/50 y mirá cuál convierte mejor.</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Muestra 2 versiones 50/50 y mira cuál convierte mejor.</p>
                     </div>
                     <Toggle checked={draft.abTestEnabled ?? false} onChange={(v) => patch("abTestEnabled", v)} />
                   </div>
@@ -3831,7 +3831,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     </button>
                   </div>
                   {(draft.brandSwatches ?? []).length === 0 ? (
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Guardá tus colores para reusarlos. Click en un color → lo aplica al primario.</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Guarda tus colores para reusarlos. Click en un color → lo aplica al primario.</p>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {(draft.brandSwatches ?? []).map((c, i) => (
@@ -3869,14 +3869,14 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             {panel === "secciones" && (
               <div className="space-y-4">
                 <p className="text-xs leading-snug text-[var(--text-tertiary)]">
-                  Ordená y activá lo que ve tu cliente. Todo lo de acá se refleja en tu tienda real.
+                  Ordena y activa lo que ve tu cliente. Todo lo de acá se refleja en tu tienda real.
                 </p>
 
                 {/* ── Página de inicio (orden REAL via bodyOrder) ─────────────── */}
                 <SectionCard
                   icon={Home}
                   title="Página de inicio"
-                  hint="El orden de tu portada · arrastrá para reordenar"
+                  hint="El orden de tu portada · arrastra para reordenar"
                   badge={<LiveBadge />}
                 >
                   {/* Banner superior (announcementImage) — banda full-width arriba */}
@@ -3892,7 +3892,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         label=""
                       />
                     </div>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Imagen full-width arriba de todo · click o arrastrá · máx 5 MB</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Imagen full-width arriba de todo · click o arrastra · máx 5 MB</p>
                   </div>
 
                   {/* Secciones reordenables del cuerpo */}
@@ -4054,7 +4054,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* ── #6 Secciones de tu página (custom): crear/ordenar/ocultar/borrar ── */}
                 <SectionCard icon={Layout} title="Secciones de tu página" hint="Galería, sobre nosotros, horarios… crear, ordenar, ocultar o borrar">
                   {customSections.length === 0 && (
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Todavía no agregaste secciones. Usá “Agregar sección” abajo.</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Todavía no agregaste secciones. Usa “Agregar sección” abajo.</p>
                   )}
                   {customSections.map((s, idx) => (
                     <div key={s.id} className={cn("flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-2", !s.visible && "opacity-55")}>
@@ -4235,7 +4235,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* Lote F: fuente personalizada por URL (.woff2/.ttf hosteado) */}
                 <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
                   <p className={LABEL_CLASS}>Fuente personalizada</p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Pegá la URL de tu fuente (.woff2 o .ttf hosteado) para usar tu tipografía de marca.</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Pega la URL de tu fuente (.woff2 o .ttf hosteado) para usar tu tipografía de marca.</p>
                   <input className={INPUT_CLASS} value={draft.customFontUrl ?? ""} onChange={(e) => patch("customFontUrl", e.target.value)} placeholder="https://…/MiFuente.woff2" />
                   {draft.customFontUrl && (
                     <StylePicker
@@ -4412,7 +4412,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {!draft.freeShipEnabled && !draft.welcomePopupEnabled && !draft.exitIntentEnabled && (draft.announcements ?? []).length === 0 && !draft.openStatusEnabled && (
                   <div className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
                     <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
-                    <p className="text-[length:var(--ts-2xs)] leading-snug text-gray-200">No tenés ninguna <strong className="text-white">herramienta de conversión</strong> activa. Probá una barra de envío gratis, un popup de bienvenida o anuncios — ayudan a vender más.</p>
+                    <p className="text-[length:var(--ts-2xs)] leading-snug text-gray-200">No tienes ninguna <strong className="text-white">herramienta de conversión</strong> activa. Prueba una barra de envío gratis, un popup de bienvenida o anuncios — ayudan a vender más.</p>
                   </div>
                 )}
                 {/* Conversión (Brandon 2026-06-26): envío gratis, prueba social,
@@ -4429,7 +4429,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     <Field label="Monto para envío gratis (S/)" labelClassName={LABEL_CLASS}>
                       <input type="number" min={0} step={1} className={INPUT_CLASS} value={draft.freeShipThreshold ?? 50} onChange={(e) => patch("freeShipThreshold", Number(e.target.value) || 0)} placeholder="50" />
                     </Field>
-                    <Field label="Texto (opcional · usá {falta})" labelClassName={LABEL_CLASS}>
+                    <Field label="Texto (opcional · usa {falta})" labelClassName={LABEL_CLASS}>
                       <input className={INPUT_CLASS} value={draft.freeShipText ?? ""} onChange={(e) => patch("freeShipText", e.target.value)} placeholder="Te faltan {falta} para envío gratis" />
                     </Field>
                   </>
@@ -4531,7 +4531,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-[var(--text-tertiary)]">Notificaciones push</span>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Invitá a tus visitantes a recibir ofertas por el navegador</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Invita a tus visitantes a recibir ofertas por el navegador</p>
                   </div>
                   <Toggle checked={draft.pushOptInEnabled ?? false} onChange={(v) => patch("pushOptInEnabled", v)} />
                 </div>
@@ -4599,7 +4599,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     </button>
                   </div>
                   {(draft.testimonials ?? []).length === 0 && (
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Sin reseñas. Agregá las opiniones de tus clientes.</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Sin reseñas. Agrega las opiniones de tus clientes.</p>
                   )}
                   {(draft.testimonials ?? []).map((t, idx) => (
                     <div key={idx} className="space-y-1.5 rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
@@ -4702,7 +4702,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* #10 Exportar / Importar tema (clonar look entre sucursales) */}
                 <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-3">
                   <p className="text-sm font-bold text-white">Exportar / Importar tema</p>
-                  <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">Guardá toda la personalización como archivo y aplicala en otra de tus tiendas.</p>
+                  <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">Guarda toda la personalización como archivo y aplícala en otra de tus tiendas.</p>
                   <div className="flex gap-2">
                     <button type="button" onClick={exportTheme} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
                       <Download className="h-3.5 w-3.5" /> Exportar

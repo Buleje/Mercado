@@ -219,7 +219,7 @@ export default function ImportarProgreso({
         // de tabs. Lo único que lo mata es cerrar o recargar el navegador.
         <p className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-          Podés seguir trabajando — no cierres ni recargues el navegador.
+          Puedes seguir trabajando — no cierres ni recargues el navegador.
         </p>
       )}
     </div>

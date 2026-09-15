@@ -32,7 +32,7 @@ export function mensajeRecordatorio(nombre: string, saldo: number, moneda = "PEN
     moneda === "USD"
       ? `$ ${saldo.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       : `S/ ${saldo.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  return `Hola ${nombre}, te recuerdo que tenés un saldo pendiente de ${monto} por liquidar. ¡Gracias!`;
+  return `Hola ${nombre}, te recuerdo que tienes un saldo pendiente de ${monto} por liquidar. ¡Gracias!`;
 }
 
 /** El enlace listo, o `null` si esa persona no tiene teléfono cargado. */

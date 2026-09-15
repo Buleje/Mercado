@@ -325,7 +325,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                   </p>
                   <p className="text-xs text-[var(--text-secondary)] mt-1">
                     {sinPrecio.map((i) => i.product.name).join(", ")} — se cobrarían S/0.00.
-                    Cargá el precio en Inventario o destildalos para seguir.
+                    Carga el precio en Inventario o destíldalos para seguir.
                   </p>
                 </div>
               )}

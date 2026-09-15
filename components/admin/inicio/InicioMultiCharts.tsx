@@ -689,7 +689,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
                   ? "success"
                   : "warning",
               hint: prodKpis.margenIncompleto
-                ? "Falta costo en algunos productos. Cargá costPrice para ver el margen real."
+                ? "Falta costo en algunos productos. Carga costPrice para ver el margen real."
                 : undefined,
             },
           ]}

@@ -331,7 +331,7 @@ export default function MobilePOS() {
         setPayError(errMsg);
         // Si el server rechaza por fiado sin customerPhone, mostrar pista
         if (res.status === 400 && method === "fiado") {
-          setPayError("Fiado necesita seleccionar cliente. Usá la app desktop.");
+          setPayError("Fiado necesita seleccionar cliente. Usa la app desktop.");
         }
       }
     } catch (err) {

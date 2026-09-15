@@ -140,12 +140,12 @@ async function mensajeDeError(res: Response, accion: string): Promise<string> {
     : null;
 
   switch (res.status) {
-    case 400: return detalle ?? "Faltan datos o son inválidos. Revisá el formulario.";
+    case 400: return detalle ?? "Faltan datos o son inválidos. Revisa el formulario.";
     case 401:
-    case 403: return "Tu sesión venció. Recargá la página e intentá de nuevo.";
+    case 403: return "Tu sesión venció. Recarga la página e intenta de nuevo.";
     case 402: return detalle ?? "El plan de esta tienda no permite registrar cambios.";
-    case 404: return "Esa devolución ya no está disponible. Recargá la lista.";
-    case 429: return "Demasiados intentos seguidos. Esperá unos segundos.";
+    case 404: return "Esa devolución ya no está disponible. Recarga la lista.";
+    case 429: return "Demasiados intentos seguidos. Espera unos segundos.";
     default:  return detalle ?? `No se pudo ${accion} (error ${res.status}).`;
   }
 }
@@ -227,7 +227,7 @@ export default function DevolucionesProveedorModule() {
         setAviso({ tipo: "error", texto: await mensajeDeError(res, "cargar las devoluciones") });
       }
     } catch {
-      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. Revisá tu internet." });
+      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. Revisa tu internet." });
     } finally {
       setLoading(false);
     }

@@ -193,7 +193,7 @@ export default function ConteoFisicoWizard() {
       // Volver atrás: mostrar tildado lo que el servidor no aceptó sería
       // exactamente el engaño que este arreglo elimina.
       setItems(prev => prev.map(i => i.id === itemId ? { ...i, ajustado: actual.ajustado } : i));
-      setError('No se pudo guardar ese cambio. Revisá la conexión.');
+      setError('No se pudo guardar ese cambio. Revisa la conexión.');
       setTimeout(() => setError(''), 4000);
     }
   };

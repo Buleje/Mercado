@@ -271,7 +271,7 @@ export default function CtpLoteArmarModal({
                      programar igual —la guía llega mañana— pero se dice, o el
                      lote nace vacío y nadie sabe por qué. */
                   ? `No hay ${especie.trim()} libre en el patio todavía: el lote queda programado esperando la guía`
-                  : "Elegí la especie que va a aserrarse en este lote"
+                  : "Elige la especie que va a aserrarse en este lote"
           }
         >
           <Btn variant="secondary" onClick={onClose} disabled={guardando}>
@@ -326,7 +326,7 @@ export default function CtpLoteArmarModal({
               span={6}
               label="Especie"
               required
-              hint="Escribí la especie aunque el patio no tenga stock de ella · el botón abre el catálogo de la planta"
+              hint="Escribe la especie aunque el patio no tenga stock de ella · el botón abre el catálogo de la planta"
             >
               <CtpEspecieInput
                 id="ctp-lote-inventario-especies"
@@ -412,7 +412,7 @@ export default function CtpLoteArmarModal({
             hint={
               permisos.length === 0
                 ? "El patio no tiene piezas con título habilitante cargado"
-                : "Elegilo primero: las especies de abajo se acotan a la madera de ese permiso"
+                : "Elígelo primero: las especies de abajo se acotan a la madera de ese permiso"
             }
           >
             <select value={permiso} onChange={(e) => setPermiso(e.target.value)} className={I}>

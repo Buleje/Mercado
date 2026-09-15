@@ -322,7 +322,7 @@ export default function CtpGuiasEmitidasView({
               {g.sinOrigen > 0.001 && (
                 <span
                   className="shrink-0 rounded bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                  title="Esta guía ampara madera sin corrida de producción atribuida. Completá el origen desde Despacho ▸ cadena de custodia."
+                  title="Esta guía ampara madera sin corrida de producción atribuida. Completa el origen desde Despacho ▸ cadena de custodia."
                 >
                   {g.unidad === "m3" ? fmtM3(g.sinOrigen) : g.sinOrigen.toFixed(4)} {g.unidad ?? ""} sin origen
                 </span>

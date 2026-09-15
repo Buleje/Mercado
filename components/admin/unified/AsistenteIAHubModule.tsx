@@ -45,7 +45,7 @@ export default function AsistenteIAHubModule({ initialTab }: { initialTab?: stri
           («Abastecimiento · Compras» sobre un título «Compras») — el mismo
           dato tres veces contando el ítem marcado en el sidebar. */}
       <AdminTabBar
-        heading={{ title: "Asistente IA", description: "Anotá operaciones hablando, preguntá por tu negocio y conectá tus automatizaciones.", icon: BotMessageSquare }} tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
+        heading={{ title: "Asistente IA", description: "Anota operaciones hablando, pregunta por tu negocio y conecta tus automatizaciones.", icon: BotMessageSquare }} tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "chat" && <ChatIAModule />}
         {sub === "comandos" && <AICommandModule />}
         {sub === "sugerencias" && <SugerenciasIAModule />}

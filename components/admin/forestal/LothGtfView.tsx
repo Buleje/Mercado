@@ -364,7 +364,7 @@ export default function LothGtfView({
                   </td>
                 </tr>
               ))}
-              {gtfs.length === 0 && <tr><td colSpan={8} className="px-4 py-10 text-center text-[var(--text-tertiary)]"><FileText className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin GTF emitidas. Hacé click en &quot;Emitir GTF&quot;.</td></tr>}
+              {gtfs.length === 0 && <tr><td colSpan={8} className="px-4 py-10 text-center text-[var(--text-tertiary)]"><FileText className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin GTF emitidas. Haz click en &quot;Emitir GTF&quot;.</td></tr>}
             </tbody>
           </DataTable>
         </div>
@@ -679,9 +679,9 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
       <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-wrap items-center justify-between gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
         <span className="text-xs font-semibold text-[var(--text-tertiary)]">
           {items.length} {items.length === 1 ? "ítem" : "ítems"} · <span className="font-mono tabular-nums">{fmtM3(totalVol)}</span> m³
-          {items.length === 0 && <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— agregá al menos una troza</span>}
+          {items.length === 0 && <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— agrega al menos una troza</span>}
           {items.length > 0 && hasMissingRequired && (
-            <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— completá transportista, conductor y placa</span>
+            <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— completa transportista, conductor y placa</span>
           )}
           {selloSerfor && (
             <span className="ml-2 inline-flex items-center gap-1 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">

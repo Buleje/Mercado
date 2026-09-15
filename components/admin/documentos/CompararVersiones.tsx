@@ -133,7 +133,7 @@ export default function CompararVersiones({
   if (datos.tipo === "otro") {
     return (
       <p className="py-6 text-center text-sm text-[var(--text-tertiary)]">
-        Este tipo de archivo no se puede comparar por dentro. Abrí cada versión para verla.
+        Este tipo de archivo no se puede comparar por dentro. Abre cada versión para verla.
       </p>
     );
   }

@@ -108,7 +108,7 @@ export default function CacaoCampoSanidad({ parcelas, onOpenParcela, onChanged }
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
           <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-600)]"><Stethoscope className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">{focos.length === 0 ? "Sin focos registrados" : "Sin resultados"}</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm">{focos.length === 0 ? "Cuando detectes monilia, escoba de bruja u otra plaga en una sección, registrala acá para hacerle seguimiento." : "Ajustá los filtros para ver otros focos."}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm">{focos.length === 0 ? "Cuando detectes monilia, escoba de bruja u otra plaga en una sección, registrala acá para hacerle seguimiento." : "Ajusta los filtros para ver otros focos."}</p>
         </div>
       ) : (
         <ul className="space-y-2">
@@ -154,7 +154,7 @@ function RegistrarSanidadModal({ parcelas, onClose, onSaved }: { parcelas: Parce
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting) return;
-    if (!f.parcelaId) { setError("Elegí una sección."); return; }
+    if (!f.parcelaId) { setError("Elige una sección."); return; }
     setSubmitting(true); setError(null);
     try {
       const r = await fetch("/api/admin/cacao/campo?type=sanidad", {
@@ -168,7 +168,7 @@ function RegistrarSanidadModal({ parcelas, onClose, onSaved }: { parcelas: Parce
 
   const I = "h-11 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
-    <AdminModal open onClose={onClose} variant="wide" icon={Stethoscope} title="Registrar foco fitosanitario" description="Anotá una plaga o enfermedad detectada en una sección para seguirla.">
+    <AdminModal open onClose={onClose} variant="wide" icon={Stethoscope} title="Registrar foco fitosanitario" description="Anota una plaga o enfermedad detectada en una sección para seguirla.">
       <form onSubmit={submit} className="space-y-3 px-5 py-5 sm:px-6">
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-bold text-[var(--text-primary)]">Sección<select value={f.parcelaId} onChange={set("parcelaId")} className={`mt-1 ${I}`}>{parcelas.map((p) => <option key={p.id} value={p.id}>{p.codigo}{p.nombre ? ` · ${p.nombre}` : ""}</option>)}</select></label>

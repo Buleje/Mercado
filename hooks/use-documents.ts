@@ -44,7 +44,7 @@ function motivoLote(msg: string): string {
   if (/failed to fetch|network|load failed/i.test(msg)) return "se cortó la conexión";
   if (msg.includes("429")) return "el servidor pidió esperar: fueron muchas acciones seguidas";
   if (msg.includes("401")) return "hay que volver a entrar al panel";
-  if (msg.includes("403") || /csrf/i.test(msg)) return "la sesión venció, recargá la página";
+  if (msg.includes("403") || /csrf/i.test(msg)) return "la sesión venció, recarga la página";
   if (msg.includes("400")) return "el servidor rechazó el pedido";
   return "el servidor no pudo completarlo";
 }
@@ -552,7 +552,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
           if (action === "delete") {
             setError(
               afectados === 0
-                ? `No se eliminó ninguno de los ${ids.length} documentos: el servidor no los encontró. Recargá la página y probá de nuevo.`
+                ? `No se eliminó ninguno de los ${ids.length} documentos: el servidor no los encontró. Recarga la página y prueba de nuevo.`
                 : `Se eliminaron ${afectados} de ${ids.length}. Los otros ${ids.length - afectados} siguen en el drive.`,
             );
           }

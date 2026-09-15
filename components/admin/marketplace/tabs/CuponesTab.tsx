@@ -265,7 +265,7 @@ function NewCouponModal({
             <Ticket className="h-3.5 w-3.5" />
             Nuevo cupón marketplace
           </div>
-          <CardTitle className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">Configurá tu descuento</CardTitle>
+          <CardTitle className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">Configura tu descuento</CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-1">Aparecerá en el carrito de los clientes que entren al marketplace.</p>
 
           {/* Preview ticket */}
@@ -450,7 +450,7 @@ function NewCouponModal({
         {/* Footer sticky */}
         <div className="sticky bottom-0 flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--rule-base)] bg-white/95 backdrop-blur rounded-b-3xl">
           <p className="text-xs text-[var(--text-tertiary)] hidden sm:block">
-            Podés activar/desactivar el cupón después.
+            Puedes activar/desactivar el cupón después.
           </p>
           <div className="flex items-center gap-3 ml-auto">
             <button

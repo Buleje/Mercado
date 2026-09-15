@@ -61,7 +61,7 @@ export default function CtpJornadasDelTurno({
         <Btn
           variant="primary"
           disabled={!lote || ocupado}
-          title={lote ? `Registra ${reparto.jornadas.length} corrida(s) en el lote ${lote.code}` : "Elegí un lote arriba para poder registrar"}
+          title={lote ? `Registra ${reparto.jornadas.length} corrida(s) en el lote ${lote.code}` : "Elige un lote arriba para poder registrar"}
           onClick={async () => {
             if (!lote) return;
             setResumen(await onRegistrar(reparto.jornadas, lote.id));
@@ -83,7 +83,7 @@ export default function CtpJornadasDelTurno({
 
       {!lote && (
         <p className="text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-          Elegí un lote en la tira de arriba: la corrida se abre dentro de un lote de aserrío.
+          Elige un lote en la tira de arriba: la corrida se abre dentro de un lote de aserrío.
         </p>
       )}
       {reparto.aviso && <p className="text-sm text-[var(--text-secondary)]">{reparto.aviso}</p>}

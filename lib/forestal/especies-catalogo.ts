@@ -156,7 +156,7 @@ export function agregarEspecie(
 ): ResultadoCatalogo {
   const nombre = txt(entrada.nombre);
   const clave = claveEspecie(nombre);
-  if (!clave) return { ok: false, motivo: "Escribí el nombre de la especie." };
+  if (!clave) return { ok: false, motivo: "Escribe el nombre de la especie." };
   if (nombre.length > 120)
     return { ok: false, motivo: "El nombre no puede pasar de 120 caracteres." };
   if (catalogo.agregadas.length >= MAX_ESPECIES) {

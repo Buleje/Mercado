@@ -66,16 +66,16 @@ const PROMPT =
   "operario forestal peruano en el patio. Suele traer columnas para el diámetro menor (Ø1), el diámetro " +
   "mayor (Ø2) y el largo, y a veces la especie — o aparecer como tríos de números por línea. Puede tener " +
   "tachones o correcciones: usá el valor final, no el tachado.\n\n" +
-  "Para CADA troza (fila o línea) que puedas identificar, devolvé:\n" +
+  "Para CADA troza (fila o línea) que puedas identificar, devuelve:\n" +
   "- d1: diámetro MENOR en centímetros (número).\n" +
   "- d2: diámetro MAYOR en centímetros. Si sólo hay un diámetro anotado, repetilo en d1 y d2.\n" +
   "- largo: longitud en METROS (número).\n" +
   "- especie: si está escrita en esa fila o en un encabezado que aplica a todo el bloque; si no hay, dejalo vacío.\n" +
-  "- incierto: true si algún número de ESA fila es ambiguo o dudoso (por ejemplo no distinguís un 3 de un 8 " +
+  "- incierto: true si algún número de ESA fila es ambiguo o dudoso (por ejemplo no distingues un 3 de un 8 " +
   "o un 40 de un 46), false si se lee con confianza.\n\n" +
-  "Si la foto no parece una planilla de cubicación de trozas, devolvé trozas: [] y advertencia con una " +
-  "frase corta explicando qué ves en cambio. Si hay zonas ilegibles, devolvé las filas que SÍ se puedan " +
-  "leer y dejá esas fuera — nunca inventes un valor para lo que no se lee.";
+  "Si la foto no parece una planilla de cubicación de trozas, devuelve trozas: [] y advertencia con una " +
+  "frase corta explicando qué ves en cambio. Si hay zonas ilegibles, devuelve las filas que SÍ se puedan " +
+  "leer y deja esas fuera — nunca inventes un valor para lo que no se lee.";
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:herramientas");

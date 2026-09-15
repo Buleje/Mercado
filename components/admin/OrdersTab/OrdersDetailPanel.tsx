@@ -198,7 +198,7 @@ export function OrdersDetailPanel({
     if (order.status === "confirmado") {
       return {
         label: "Confirmado · listo para preparar",
-        sub: "Marcá cuando empieces a armar el pedido",
+        sub: "Marca cuando empieces a armar el pedido",
         primary: { label: "Empezar preparación", onClick: () => onPatchOrder(order.id, { status: "preparando" }), tone: "primary" as const },
         // FIX 2026-05-07: entrega manual sin pasar por delivery. Abre modal
         // que pide método (mostrador / propia / encargo / otro) + nota
@@ -209,7 +209,7 @@ export function OrdersDetailPanel({
     if (order.status === "preparando") {
       return {
         label: "Preparando · armando el pedido",
-        sub: "Asigná un motorizado abajo y avanzá cuando salga",
+        sub: "Asigna un motorizado abajo y avanza cuando salga",
         primary: { label: "Marcar en camino", onClick: () => onPatchOrder(order.id, { status: "en_camino" }), tone: "primary" as const },
         secondary: { label: "Entregado (manual)", onClick: openManual, tone: "success" as const },
       };

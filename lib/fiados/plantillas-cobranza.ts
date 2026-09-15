@@ -15,12 +15,12 @@ export type Plantillas = Record<TramoId, string>;
 
 /** Ninguno amenaza: en una bodega de pueblo el deudor es el vecino. */
 export const PLANTILLAS_POR_DEFECTO: Plantillas = {
-  corriente: "Hola {nombre}, ¿cómo estás? Te recuerdo que tenés {saldo} pendiente de tu fiado. Cuando puedas lo vemos. ¡Gracias!",
-  t30: "Hola {nombre}, te recuerdo que tenés {saldo} pendiente de tu fiado desde hace {dias} días. ¿Cuándo lo podés pasar?",
-  t60: "Hola {nombre}, ya van {dias} días de los {saldo} pendientes de tu fiado. Necesito que me digas para cuándo lo tenés.",
-  t90: "Hola {nombre}, tenés {saldo} de tu fiado sin liquidar hace {dias} días. Vamos a tener que acordar una fecha firme esta semana.",
+  corriente: "Hola {nombre}, ¿cómo estás? Te recuerdo que tienes {saldo} pendiente de tu fiado. Cuando puedas lo vemos. ¡Gracias!",
+  t30: "Hola {nombre}, te recuerdo que tienes {saldo} pendiente de tu fiado desde hace {dias} días. ¿Cuándo lo puedes pasar?",
+  t60: "Hola {nombre}, ya van {dias} días de los {saldo} pendientes de tu fiado. Necesito que me digas para cuándo lo tienes.",
+  t90: "Hola {nombre}, tienes {saldo} de tu fiado sin liquidar hace {dias} días. Vamos a tener que acordar una fecha firme esta semana.",
   t90mas:
-    "Hola {nombre}, tu fiado de {saldo} lleva {dias} días sin pagarse. Necesito que nos sentemos a resolverlo — decime cuándo podés pasar.",
+    "Hola {nombre}, tu fiado de {saldo} lleva {dias} días sin pagarse. Necesito que nos sentemos a resolverlo — dime cuándo puedes pasar.",
 };
 
 /** Reemplaza los huecos. Lo que no se reconoce se deja tal cual, no se borra. */

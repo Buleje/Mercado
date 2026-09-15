@@ -633,7 +633,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
       <VistaHeader
         titulo="Cadena de custodia"
         meta={ctpPeriodShortLabel(period)}
-        hint="GTF de ingreso → corrida → despacho. Tocá un nodo para fijar de dónde salió y a dónde fue; la barra de cada línea es la parte con respaldo documental."
+        hint="GTF de ingreso → corrida → despacho. Toca un nodo para fijar de dónde salió y a dónde fue; la barra de cada línea es la parte con respaldo documental."
       >
           {g && !isEmpty && (
             <>
@@ -797,8 +797,8 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
             {/* Cómo se maneja el lienzo. En el celu la cadena no entra a lo ancho;
                 en desktop el zoom y el arrastre no se descubren solos. */}
             <p className="flex flex-wrap items-center gap-x-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
-              <span className="sm:hidden">Deslizá para ver toda la cadena <span aria-hidden>→</span> · tocá un nodo para el detalle</span>
-              <span className="hidden sm:inline">Arrastrá para moverte · Ctrl + rueda para acercar · <kbd className="font-mono">+</kbd> <kbd className="font-mono">−</kbd> <kbd className="font-mono">0</kbd> <kbd className="font-mono">F</kbd> (ajustar)</span>
+              <span className="sm:hidden">Desliza para ver toda la cadena <span aria-hidden>→</span> · toca un nodo para el detalle</span>
+              <span className="hidden sm:inline">Arrastra para moverte · Ctrl + rueda para acercar · <kbd className="font-mono">+</kbd> <kbd className="font-mono">−</kbd> <kbd className="font-mono">0</kbd> <kbd className="font-mono">F</kbd> (ajustar)</span>
             </p>
             <CtpRadarLienzo
               layout={layout}

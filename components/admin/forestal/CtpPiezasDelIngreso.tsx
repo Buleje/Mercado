@@ -164,7 +164,7 @@ export default function CtpPiezasDelIngreso({
       });
       aplicar(res.trozas);
       if (res.asignados === 0) {
-        setError("No había ninguna pieza para numerar: las recibidas ya tienen código (usá «Renumerar» para pisarlos).");
+        setError("No había ninguna pieza para numerar: las recibidas ya tienen código (usa «Renumerar» para pisarlos).");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -187,7 +187,7 @@ export default function CtpPiezasDelIngreso({
         </span>
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs font-bold text-[var(--text-tertiary)]">
-            {seleccion.size > 0 ? `${seleccion.size} elegida${seleccion.size === 1 ? "" : "s"}` : "Elegí piezas o aplicá a todas"}
+            {seleccion.size > 0 ? `${seleccion.size} elegida${seleccion.size === 1 ? "" : "s"}` : "Elige piezas o aplica a todas"}
           </span>
           <button type="button" onClick={seleccionarTodas} className={CHIP}>Todas</button>
           <button type="button" onClick={() => setSeleccion(new Set())} disabled={seleccion.size === 0} className={CHIP}>

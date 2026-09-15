@@ -79,7 +79,7 @@ const JSON_SCHEMA = {
 const PROMPT =
   "Esta es una foto de la pantalla «Detalle de la programación de producción» del SNIFFS, el sistema " +
   "forestal de SERFOR (Perú). Puede ser una foto de un monitor, con reflejos o en ángulo.\n\n" +
-  "Devolvé:\n" +
+  "Devuelve:\n" +
   "- lote: el «N° de Lote» (ej. «18-2026»).\n" +
   "- fechaInicio y fechaFin: en formato AAAA-MM-DD (en pantalla están como DD/MM/AAAA).\n" +
   "- especieCientifica y especieComun: la especie viene como «Cedrelinga cateniformis - TORNILLO»; " +
@@ -89,8 +89,8 @@ const PROMPT =
   "nombre del producto TAL CUAL está escrito (ej. «MADERA ASERRADA (PAQUETERIA CORTA)»), su volumen " +
   "en m³ y su porcentaje aprovechado.\n\n" +
   "Los volúmenes del SNIFFS llevan TRES decimales (0.002, 9.753, 5.456): no los redondees ni les " +
-  "muevas el punto. Si una fila no se lee con confianza, dejala fuera y explicá en advertencia. " +
-  "Si la foto no es esa pantalla, devolvé productos: [] y decí en advertencia qué se ve.";
+  "muevas el punto. Si una fila no se lee con confianza, dejala fuera y explica en advertencia. " +
+  "Si la foto no es esa pantalla, devuelve productos: [] y di en advertencia qué se ve.";
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro");

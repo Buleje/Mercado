@@ -324,7 +324,7 @@ export default function SugerenciasCompraTab() {
       if (createdCount === groupCount) {
         const detalles = [
           `${selected.size} productos repartidos en ${groupCount} ${groupCount === 1 ? "proveedor" : "proveedores"}.`,
-          sinPrecio > 0 ? `${sinPrecio} ${sinPrecio === 1 ? "producto va" : "productos van"} sin precio: ponéselo antes de recibir la orden o entrará como S/0.` : "",
+          sinPrecio > 0 ? `${sinPrecio} ${sinPrecio === 1 ? "producto va" : "productos van"} sin precio: pónselo antes de recibir la orden o entrará como S/0.` : "",
           aCredito > 0 ? `${aCredito} ${aCredito === 1 ? "va" : "van"} a crédito: se ${aCredito === 1 ? "abrió su cuenta" : "abrieron sus cuentas"} por pagar.` : "",
         ].filter(Boolean).join(" ");
         toast.success(
@@ -332,7 +332,7 @@ export default function SugerenciasCompraTab() {
           { description: detalles },
         );
       } else if (createdCount > 0) {
-        toast(`Creadas ${createdCount}/${groupCount} órdenes`, { description: "Algunas fallaron. Reintentá." });
+        toast(`Creadas ${createdCount}/${groupCount} órdenes`, { description: "Algunas fallaron. Reintenta." });
       } else {
         toast.error("No se pudo crear ninguna orden");
       }
@@ -354,7 +354,7 @@ export default function SugerenciasCompraTab() {
         toast.success("Orden de compra creada", {
           description: [
             item.productName,
-            sinPrecio > 0 ? "Va sin precio: ponéselo antes de recibirla o entrará como S/0." : "",
+            sinPrecio > 0 ? "Va sin precio: pónselo antes de recibirla o entrará como S/0." : "",
             aCredito > 0 ? "Va a crédito: se abrió su cuenta por pagar." : "",
           ].filter(Boolean).join(" · "),
         });
@@ -416,7 +416,7 @@ export default function SugerenciasCompraTab() {
               ? "Falta cargar el stock mínimo de tus productos para poder calcular reposición."
               : stats.total === 0
               ? `Nada por reponer: ningún producto llega a su punto de pedido según lo que se vendió en ${ventanaDias} días.`
-              : `${stats.total} ${stats.total === 1 ? "producto llega" : "productos llegan"} a su punto de pedido. Marcá los que querés pedir y generamos las órdenes por proveedor.`}
+              : `${stats.total} ${stats.total === 1 ? "producto llega" : "productos llegan"} a su punto de pedido. Marca los que quieres pedir y generamos las órdenes por proveedor.`}
           </p>
         </div>
 
@@ -462,7 +462,7 @@ export default function SugerenciasCompraTab() {
           <p className="mx-auto mt-2 max-w-lg text-sm text-[var(--text-secondary)]">
             {sinStockMinimo.productosActivos > 0 ? (
               <>
-                Tenés <strong>{sinStockMinimo.productosActivos}</strong>{" "}
+                Tienes <strong>{sinStockMinimo.productosActivos}</strong>{" "}
                 {sinStockMinimo.productosActivos === 1 ? "producto activo" : "productos activos"} y
                 ninguno tiene <strong>stock mínimo</strong> cargado. Ese es el dato que me dice
                 cuándo un producto está por acabarse, así que sin él no hay nada que calcular.
@@ -472,7 +472,7 @@ export default function SugerenciasCompraTab() {
             )}
           </p>
           <p className="mx-auto mt-3 max-w-lg text-xs text-[var(--text-tertiary)]">
-            Se carga por producto en Inventario. Con ponerle mínimo a los que más vendés ya alcanza
+            Se carga por producto en Inventario. Con ponerle mínimo a los que más vendes ya alcanza
             para empezar: el resto se puede ir completando después.
           </p>
         </div>
@@ -804,7 +804,7 @@ export default function SugerenciasCompraTab() {
             <Search className="h-6 w-6 text-[var(--text-tertiary)]" />
           </span>
           <p className="text-base font-bold text-[var(--text-primary)]">No hay sugerencias en este filtro</p>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Ajustá el filtro o limpiá la búsqueda para ver más.</p>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Ajusta el filtro o limpia la búsqueda para ver más.</p>
           <button
             type="button"
             onClick={() => { setFilter("todos"); setSearch(""); }}
@@ -873,7 +873,7 @@ export default function SugerenciasCompraTab() {
                 {sinRotacion.length} {sinRotacion.length === 1 ? "producto no se vendió" : "productos no se vendieron"} en {ventanaDias} días
               </span>
               <span className="block text-sm text-[var(--text-secondary)]">
-                No entran en la lista de compra. Revisá si conviene liquidarlos antes de reponer.
+                No entran en la lista de compra. Revisa si conviene liquidarlos antes de reponer.
               </span>
             </span>
             {verSinRotacion ? <ChevronUp className="h-5 w-5 shrink-0" /> : <ChevronDown className="h-5 w-5 shrink-0" />}

@@ -104,7 +104,7 @@ export default function CtpCostoGuiaModal({
     else
       setError(
         guia.lineas.length > 1
-          ? "No se pudo guardar el costo de todos los asientos. Volvé a darle a Guardar: se reescribe, no se suma."
+          ? "No se pudo guardar el costo de todos los asientos. Vuelve a darle a Guardar: se reescribe, no se suma."
           : "No se pudo guardar el costo. La guía quedó recepcionada igual; se puede cargar desde Rentabilidad.",
       );
   }
@@ -182,7 +182,7 @@ export default function CtpCostoGuiaModal({
               /* Sin volumen no hay precio unitario que valga: habilitado
                  multiplicaría por 0 y dejaría el total en «gratis». */
               disabled={vol <= 0}
-              title={vol <= 0 ? "La guía no declara volumen: cargá el total" : undefined}
+              title={vol <= 0 ? "La guía no declara volumen: carga el total" : undefined}
               value={porM3 ?? ""}
               onChange={(e) => {
                 const p = Number(e.target.value);

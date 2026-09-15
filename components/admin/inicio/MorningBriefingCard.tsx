@@ -175,11 +175,11 @@ export default function MorningBriefingCard() {
   // Sugerencia contextual (prioridad: yape → fiados → pedidos → stock).
   let sugerencia: string;
   if (stats.yapeVerificar > 0) {
-    sugerencia = `Verificá los pagos Yape pendientes antes de preparar el pedido — así no despachás sin tener la plata confirmada.`;
+    sugerencia = `Verifica los pagos Yape pendientes antes de preparar el pedido — así no despachas sin tener la plata confirmada.`;
   } else if (stats.fiadosVencidos > 0) {
-    sugerencia = `Cobrá los fiados vencidos hoy — mientras más esperás, más difícil es recuperar esa plata.`;
+    sugerencia = `Cobra los fiados vencidos hoy — mientras más esperas, más difícil es recuperar esa plata.`;
   } else if (stats.pedidosPendientes > 0) {
-    sugerencia = `Confirmá los pedidos pendientes rápido para no perder la venta.`;
+    sugerencia = `Confirma los pedidos pendientes rápido para no perder la venta.`;
   } else {
     sugerencia = `Repón el stock bajo antes de quedarte sin vender tus productos estrella.`;
   }
@@ -212,7 +212,7 @@ export default function MorningBriefingCard() {
         Para hoy · <span className="capitalize">{fecha}</span>
       </p>
       <SectionTitle as="h2" className="mt-1 max-w-[34ch] text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)] sm:text-[1.75rem]">
-        Tenés {tasks.length} {tasks.length === 1 ? "cosa" : "cosas"} por resolver
+        Tienes {tasks.length} {tasks.length === 1 ? "cosa" : "cosas"} por resolver
       </SectionTitle>
       <p className="mt-1.5 text-sm font-medium text-[var(--text-secondary)]">
         Ayer vendiste{" "}

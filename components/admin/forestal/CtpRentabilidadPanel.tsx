@@ -119,7 +119,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
         <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-medium text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
           <span>
-            {pendientes} valor(es) de venta sin guardar. Se pierden si salís de la pestaña.
+            {pendientes} valor(es) de venta sin guardar. Se pierden si sales de la pestaña.
           </span>
           <button
             type="button"
@@ -214,7 +214,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
 
       {/* Por despacho — venta editable */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <CardTitle as="h3" className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Despachos del período · registrá el valor de venta</CardTitle>
+        <CardTitle as="h3" className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Despachos del período · registra el valor de venta</CardTitle>
         {pnl.porDespacho.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">No hay despachos en el período.</p>
         ) : (

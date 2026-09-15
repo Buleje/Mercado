@@ -223,7 +223,7 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
         /* De un tipo hacia sí mismo no hay reproceso que hacer: si sobra
            comercial y falta comercial, lo que hay es capacidad sin usar y de
            eso ya avisa el diagnóstico del reparto.
-           Y sólo lo que la sierra puede hacer (ADR-407): ofrecer «reprocesá
+           Y sólo lo que la sierra puede hacer (ADR-407): ofrecer «reprocesa
            paquetería en comercial» es ofrecer agrandar la madera. */
         if (mismoTipo(desdeTipo, f.label)) continue;
         if (!puedeReprocesarse(desdeTipo, f.label)) continue;

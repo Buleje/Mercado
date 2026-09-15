@@ -222,7 +222,7 @@ export default function SunatConexionTab() {
             label={existe ? "Token de Nubefact (ya guardado)" : "Token de Nubefact"}
             hint={
               existe
-                ? "Dejalo vacío para conservar el que ya está. Sólo escribí acá si lo vas a reemplazar."
+                ? "Déjalo vacío para conservar el que ya está. Sólo escribe acá si lo vas a reemplazar."
                 : "Se saca en app.nubefact.com → Configuración → Token."
             }
           >
@@ -230,12 +230,12 @@ export default function SunatConexionTab() {
               type="password"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              placeholder={existe ? "•••••••••• guardado" : "pegá el token acá"}
+              placeholder={existe ? "•••••••••• guardado" : "pega el token acá"}
               autoComplete="off"
               className={INPUT}
             />
           </Campo>
-          <Campo label="Ambiente" hint="Producción emite comprobantes con validez legal. Empezá siempre en prueba.">
+          <Campo label="Ambiente" hint="Producción emite comprobantes con validez legal. Empieza siempre en prueba.">
             <select
               value={isProduction ? "prod" : "beta"}
               onChange={(e) => setIsProduction(e.target.value === "prod")}

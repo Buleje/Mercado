@@ -131,7 +131,7 @@ export default function CtpCubicacionParaConsumo({
           </CardTitle>
           {expandido ? (
             <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-              Medí lo que salió de la sierra y usalo al cargar el consumo: el reparto dice qué le toca a cada
+              Mide lo que salió de la sierra y úsalo al cargar el consumo: el reparto dice qué le toca a cada
               troza y a cada día.
             </p>
           ) : (
@@ -248,7 +248,7 @@ export default function CtpCubicacionParaConsumo({
             <p className="rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
               Quedan {fmtM3(distribucion.totales.faltanteM3)} m³ de aserrada que ninguna troza elegida puede
               amparar (harían falta {fmtM3(distribucion.totales.rollizaFaltanteM3)} m³ de rolliza al{" "}
-              {aprovechable} %). Tildá más trozas o revisá el aprovechable.
+              {aprovechable} %). Tilda más trozas o revisa el aprovechable.
             </p>
           )}
         </div>

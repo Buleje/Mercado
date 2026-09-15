@@ -180,7 +180,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
                 <Sliders className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-3" />
                 <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] mb-1">Aún no hay adicionales</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] max-w-md mx-auto leading-snug">
-                  Agregá un grupo (ej. <em>Cremas</em>, <em>Tamaño</em>, <em>Toppings</em>) o importá uno listo desde el catálogo global.
+                  Agrega un grupo (ej. <em>Cremas</em>, <em>Tamaño</em>, <em>Toppings</em>) o importa uno listo desde el catálogo global.
                 </p>
               </div>
             )}
@@ -331,7 +331,7 @@ function GroupCard({
           Opciones ({group.options.length})
         </p>
         {group.options.length === 0 ? (
-          <p className="text-xs text-[var(--text-tertiary)] italic py-2">Aún no hay opciones. Agregá una para empezar.</p>
+          <p className="text-xs text-[var(--text-tertiary)] italic py-2">Aún no hay opciones. Agrega una para empezar.</p>
         ) : (
           <div className="space-y-2">
             {group.options.map((o, oIdx) => (
@@ -419,7 +419,7 @@ function OptionRow({
               ? "border-[var(--rule-base)]"
               : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-primary"
           )}
-          title={option.imageUrl ? "Click o arrastrá para reemplazar" : "Click o arrastrá una imagen aquí"}
+          title={option.imageUrl ? "Click o arrastra para reemplazar" : "Click o arrastra una imagen aquí"}
         >
           {option.imageUrl ? (
             <Image

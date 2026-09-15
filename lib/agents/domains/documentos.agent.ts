@@ -31,7 +31,7 @@ function tamano(bytes: number | null | undefined): string {
 async function buscar(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
   const log = scopedLogger(ctx);
   const q = texto(task.payload.texto);
-  if (!q) return { success: false, error: "Decime qué documento buscar (nombre, proveedor, número…)." };
+  if (!q) return { success: false, error: "Dime qué documento buscar (nombre, proveedor, número…)." };
   log.info("Buscando documentos", { q });
 
   const docs = await DocumentsDB.list(task.tenantId, { q });

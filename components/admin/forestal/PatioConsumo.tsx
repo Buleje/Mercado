@@ -170,7 +170,7 @@ export default function PatioConsumo() {
       {!elegida ? (
         <>
           <p className="text-base text-[var(--text-secondary)]">
-            Elegí la corrida que está aserrando. Se abre en la oficina; acá se le suman los palos.
+            Elige la corrida que está aserrando. Se abre en la oficina; acá se le suman los palos.
           </p>
           {corridas === null ? (
             <p className="flex items-center gap-2 py-4 text-base text-[var(--text-tertiary)]">
@@ -258,7 +258,7 @@ export default function PatioConsumo() {
           >
             {guardando && <Loader2 className="h-5 w-5 animate-spin" aria-hidden />}
             {seleccion.size === 0
-              ? "Elegí las piezas"
+              ? "Elige las piezas"
               : `Cargar ${seleccion.size} pieza${seleccion.size === 1 ? "" : "s"}`}
           </button>
         </>

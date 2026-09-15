@@ -64,7 +64,7 @@ function SaldoMeta({ meta }: { meta: MetaLote | null | undefined }) {
       )}
       title={
         meta.sobreReferencial
-          ? `Rinde ${meta.rendimientoPct}%, sobre el referencial SERFOR de ${RENDIMIENTO_REF_ASERRADA}% — revisá antes de presentar el libro`
+          ? `Rinde ${meta.rendimientoPct}%, sobre el referencial SERFOR de ${RENDIMIENTO_REF_ASERRADA}% — revisa antes de presentar el libro`
           : porEncima
             ? "Por encima del referencial, dentro de la tolerancia"
             : "Por debajo del referencial (no es una infracción)"

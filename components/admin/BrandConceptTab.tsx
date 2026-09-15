@@ -395,7 +395,7 @@ function generateConcepts(colors: string[], primaryHex: string): Concept[] {
       id: "ofertas-bold",
       name: "Ofertas Bold",
       tagline: "Impacto · Urgencia",
-      description: "Complementaria 180° + sombras profundas + waves al pie. Todo grita comprá ahora — ideal cuando rotás stock con descuentos agresivos.",
+      description: "Complementaria 180° + sombras profundas + waves al pie. Todo grita compra ahora — ideal cuando rotas stock con descuentos agresivos.",
       harmony: "Complementaria (180°)",
       idealPara: ["Ferreterías", "Tiendas mayoristas", "Outlets", "Promociones agresivas"],
       primary: primaryUsable,
@@ -511,7 +511,7 @@ export default function BrandConceptTab({
       lastAnalyzed.current = logo;
     } catch (e) {
       console.error("[BrandConcept] extract error", e);
-      setError("No se pudo analizar el logo. Probá con otra imagen o asegurate de que sea PNG/JPG válido.");
+      setError("No se pudo analizar el logo. Prueba con otra imagen o asegúrate de que sea PNG/JPG válido.");
     } finally {
       setAnalyzing(false);
     }
@@ -610,9 +610,9 @@ export default function BrandConceptTab({
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
               <ImageIcon className="h-7 w-7 text-primary" />
             </div>
-            <p className="text-base font-bold text-[var(--text-primary)]">Subí tu logo primero</p>
+            <p className="text-base font-bold text-[var(--text-primary)]">Sube tu logo primero</p>
             <p className="text-sm text-muted mt-1">
-              Andá a <span className="font-bold">Identidad</span> y subí tu logo. Después volvé acá y te genero los conceptos.
+              Ve a <span className="font-bold">Identidad</span> y sube tu logo. Después vuelve acá y te genero los conceptos.
             </p>
           </div>
         ) : (
@@ -724,7 +724,7 @@ export default function BrandConceptTab({
             <span className="font-bold"> modo claro/oscuro</span> · <span className="font-bold">cards</span> ·
             <span className="font-bold"> botones</span> · <span className="font-bold">navbar</span> ·
             <span className="font-bold"> patrón fondo</span> · <span className="font-bold">radio</span> ·
-            <span className="font-bold"> espaciado</span>. Ajustá manual desde
+            <span className="font-bold"> espaciado</span>. Ajusta manual desde
             <span className="font-bold"> Colores</span>, <span className="font-bold">Estilos</span> y <span className="font-bold">Avanzado</span>.
           </p>
         </section>
@@ -1347,7 +1347,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
           color: c.backgroundPattern === "gradient" ? "#fff" : textPrimary,
         }}
       >
-        <p className="text-xs font-extrabold">Recibí ofertas exclusivas en tu WhatsApp</p>
+        <p className="text-xs font-extrabold">Recibe ofertas exclusivas en tu WhatsApp</p>
         <button
           type="button"
           className="inline-flex items-center gap-1.5 px-4 h-9 text-xs font-extrabold"

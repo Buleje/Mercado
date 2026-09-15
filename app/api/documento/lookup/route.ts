@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   const parsed = QuerySchema.safeParse({ numero: new URL(req.url).searchParams.get("numero") ?? "" });
   if (!parsed.success) {
     return NextResponse.json(
-      { encontrado: false, numero: "", motivo: "Escribí 8 dígitos para un DNI u 11 para un RUC." },
+      { encontrado: false, numero: "", motivo: "Escribe 8 dígitos para un DNI u 11 para un RUC." },
       { status: 400 },
     );
   }
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
   } catch (e) {
     logger.error("[documento/lookup] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
-      { encontrado: false, numero: parsed.data.numero, motivo: "No se pudo consultar ahora. Cargá los datos a mano." },
+      { encontrado: false, numero: parsed.data.numero, motivo: "No se pudo consultar ahora. Carga los datos a mano." },
       { status: 200 },
     );
   }

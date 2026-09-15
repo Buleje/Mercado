@@ -214,7 +214,7 @@ export default function CtpAtribucionEditor({
       {/* Filas actuales */}
       {rows && rows.length === 0 ? (
         <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-3 text-center text-xs text-[var(--text-tertiary)]">
-          Sin atribución: buscá arriba para agregar {kind === "origenes" ? "corridas" : "guías"}.
+          Sin atribución: busca arriba para agregar {kind === "origenes" ? "corridas" : "guías"}.
         </p>
       ) : (
         <ul className="space-y-1.5">

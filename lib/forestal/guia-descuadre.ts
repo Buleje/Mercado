@@ -190,7 +190,7 @@ export function explicarDescuadre(d: DescuadreDeGuia, gtfNumber?: string | null)
   const base =
     `${guia} declara ${fmtM3(d.declaradoM3)} m³${especie} en su cabecera, ` +
     `pero su lista de trozas suma ${fmtM3(d.listaM3)} m³.`;
-  if (!d.sospechosa) return `${base} El documento no cuadra consigo mismo: revisalo antes de seguir.`;
+  if (!d.sospechosa) return `${base} El documento no cuadra consigo mismo: revísalo antes de seguir.`;
   const s = d.sospechosa;
   return (
     `${base} La pieza ${s.codificacion ?? "—"} figura con cantidad ${s.cantidad} ` +

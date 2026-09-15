@@ -118,7 +118,7 @@ export default function DistribucionesGuardadas({
       ) : visibles.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
           {lista.length === 0
-            ? "Todavía no guardaste ninguna distribución. Cargá los bloques y tocá «Guardar»."
+            ? "Todavía no guardaste ninguna distribución. Carga los bloques y toca «Guardar»."
             : "Ninguna distribución coincide con la búsqueda."}
         </p>
       ) : (

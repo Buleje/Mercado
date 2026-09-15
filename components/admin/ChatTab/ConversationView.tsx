@@ -43,7 +43,7 @@ function parseMeta(raw: string | null): { reactions: MetaReaction[]; replyTo: Me
 export function ConversationView({
   messages,
   loading,
-  emptyState = "Seleccioná una conversación para verla",
+  emptyState = "Selecciona una conversación para verla",
   onReact,
   onReply,
 }: ConversationViewProps) {

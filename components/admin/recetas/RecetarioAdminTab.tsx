@@ -195,7 +195,7 @@ export default function RecetarioAdminTab() {
       fetchRecetas();
     } catch (err) {
       console.warn("[RecetarioAdminTab] guardar receta falló", err);
-      toast.error("No se pudo guardar la receta — revisá tu conexión.");
+      toast.error("No se pudo guardar la receta — revisa tu conexión.");
     }
     setSaving(false);
   };
@@ -217,7 +217,7 @@ export default function RecetarioAdminTab() {
       fetchRecetas();
     } catch (err) {
       console.warn("[RecetarioAdminTab] cambiar estado falló", err);
-      toast.error("No se pudo cambiar el estado — revisá tu conexión.");
+      toast.error("No se pudo cambiar el estado — revisa tu conexión.");
     }
   };
 
@@ -235,7 +235,7 @@ export default function RecetarioAdminTab() {
       fetchRecetas();
     } catch (err) {
       console.warn("[RecetarioAdminTab] eliminar receta falló", err);
-      toast.error("No se pudo eliminar la receta — revisá tu conexión.");
+      toast.error("No se pudo eliminar la receta — revisa tu conexión.");
     }
   };
 

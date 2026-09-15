@@ -127,7 +127,7 @@ describe("buscar-producto", () => {
     const r = await correr("buscar-producto", { texto: "arroz" });
     const d = r.data as { total: number; mensaje?: string };
     expect(d.total).toBe(2);
-    expect(d.mensaje).toContain("preguntá cuál");
+    expect(d.mensaje).toContain("pregunta cuál");
   });
 
   it("encuentra por SKU exacto", async () => {

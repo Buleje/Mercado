@@ -363,7 +363,7 @@ export default function CtpLotesView({
             key="libres"
             label="Libres en el patio"
             value={String(libresEnPatio)}
-            subValue="Piezas sin apartar — armá un lote"
+            subValue="Piezas sin apartar — arma un lote"
             icon={PackageOpen}
             onClick={() => setArmar(true)}
             emphasis={libresEnPatio > 0 ? "neutral" : "warning"}
@@ -575,8 +575,8 @@ export default function CtpLotesView({
           </p>
           <p className="mx-auto mt-1 max-w-lg text-sm text-[var(--text-secondary)]">
             {lotes.length === 0
-              ? "Un lote son las trozas de una misma especie que entran juntas a la sierra. Armalo con las piezas del patio y después Producción lo consume de un click."
-              : "Probá con otro estado o limpiá la búsqueda."}
+              ? "Un lote son las trozas de una misma especie que entran juntas a la sierra. Ármalo con las piezas del patio y después Producción lo consume de un click."
+              : "Prueba con otro estado o limpia la búsqueda."}
           </p>
           {lotes.length === 0 && (
             <span className="mt-4 inline-flex">

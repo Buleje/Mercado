@@ -118,7 +118,7 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
         gtfsFantasma.length > 0
           ? `El libro ampara salidas con ${plural(gtfsFantasma.length, "una guía que no figura", "guías que no figuran")} entre las emitidas: ${listar(gtfsFantasma)}. Ante una fiscalización, esa madera viaja sin documento que la respalde.`
           : "Cada N° de guía declarado en el libro corresponde a una GTF emitida.",
-      action: "Emití la guía faltante o corregí el número en la línea de despacho del libro.",
+      action: "Emite la guía faltante o corrige el número en la línea de despacho del libro.",
       navTarget: "gtf",
       navigateLabel: "Ver guías",
     },
@@ -135,7 +135,7 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
         especiesAmbiguas.length > 0
           ? `El libro y el plan nombran distinto a la misma especie: ${especiesAmbiguas.map((e) => `«${e.libro}» / «${e.plan}»`).join(", ")}. Se cruzan igual, pero conviene unificar el texto antes de presentar el libro.`
           : "Cada especie del libro se llama igual que en el plan de manejo.",
-      action: "Unificá el nombre en Plan de Manejo · Especies autorizadas o al registrar la línea.",
+      action: "Unifica el nombre en Plan de Manejo · Especies autorizadas o al registrar la línea.",
       navTarget: "plan",
       navigateLabel: "Ver plan de manejo",
     },
@@ -148,7 +148,7 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
       okTitle: "Carátula del libro configurada",
       description:
         "Un libro sin titular ni título habilitante no identifica de qué autorización sale la madera ante OSINFOR.",
-      action: "Completá titular + título habilitante en 'Configurar carátula'.",
+      action: "Completa titular + título habilitante en 'Configurar carátula'.",
       navTarget: "caratula",
       navigateLabel: "Configurar carátula",
     },
@@ -163,7 +163,7 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
         exceso.length > 0
           ? `Movilizar más de lo autorizado por el POA es la infracción que sanciona OSINFOR: ${listar(speciesOf("exceso_autorizado"))}.`
           : "Ninguna especie movilizó más de su volumen autorizado.",
-      action: "Revisá el Balance por especie y frená la movilización de la especie excedida.",
+      action: "Revisa el Balance por especie y frena la movilización de la especie excedida.",
       navTarget: "analitica",
       navigateLabel: "Ver analítica",
     },
@@ -178,7 +178,7 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
         especiesNoAutorizadas.length > 0
           ? `Especies con operaciones en el libro fuera del POA: ${listar(especiesNoAutorizadas)}. Aprovechar una especie que no figura en la resolución del título habilitante es infracción.`
           : "Todas las especies con operaciones figuran en el plan de manejo autorizado.",
-      action: "Agregá la especie en Plan de Manejo · Especies autorizadas, o corregí el registro.",
+      action: "Agrega la especie en Plan de Manejo · Especies autorizadas, o corrige el registro.",
       navTarget: "plan",
       navigateLabel: "Ver plan de manejo",
     },
@@ -193,7 +193,7 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
         rendAserrio.length > 0
           ? "Se despachó más producto (m³) del que entró como materia prima consumida — rendimiento >100%."
           : "El producto despachado no supera la materia prima consumida.",
-      action: "Verificá cantidades de consumo vs. despacho de producto.",
+      action: "Verifica cantidades de consumo vs. despacho de producto.",
       navTarget: "analitica",
       navigateLabel: "Ver analítica",
     },
@@ -206,9 +206,9 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
       okTitle: "Trozado consistente con lo talado",
       description:
         trozadoTala.length > 0
-          ? `Imposible físicamente (no se troza más de lo tumbado) — revisá la captura: ${listar(speciesOf("trozado_gt_talado"))}.`
+          ? `Imposible físicamente (no se troza más de lo tumbado) — revisa la captura: ${listar(speciesOf("trozado_gt_talado"))}.`
           : "Ninguna especie trozó más volumen del que se taló.",
-      action: "Revisá los volúmenes de Tala vs. Trozado de esas especies.",
+      action: "Revisa los volúmenes de Tala vs. Trozado de esas especies.",
       navTarget: "secciones",
       navigateLabel: "Ver secciones",
     },
@@ -223,7 +223,7 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
         fueraPlazo.length > 0
           ? fueraPlazo[0].message
           : "Todas las líneas se registraron dentro del plazo SERFOR.",
-      action: "Registrá las operaciones apenas ocurren para no acumular atraso.",
+      action: "Registra las operaciones apenas ocurren para no acumular atraso.",
       navTarget: "secciones",
       navigateLabel: "Ver secciones",
     },
@@ -238,7 +238,7 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
         trozaFantasma.length > 0
           ? "Una troza que se movilizó sin figurar en Trozado corta la cadena de custodia."
           : "Cada troza movilizada figura registrada en Trozado.",
-      action: "Registrá el trozado de esas trozas o corregí el código.",
+      action: "Registra el trozado de esas trozas o corrige el código.",
       navTarget: "secciones",
       navigateLabel: "Ver secciones",
     },
@@ -253,7 +253,7 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
         saldoBajo.length > 0
           ? `Queda menos del 10% del volumen autorizado: ${listar(speciesOf("saldo_bajo"))}.`
           : "Ninguna especie está por agotar su saldo autorizado.",
-      action: "Planificá el cierre del aprovechamiento de esas especies.",
+      action: "Planifica el cierre del aprovechamiento de esas especies.",
       navTarget: "analitica",
       navigateLabel: "Ver analítica",
     },
@@ -268,9 +268,9 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
       okTitle: "Especies CITES con su permiso cargado",
       description:
         citesSinPermiso.length > 0
-          ? `Especies protegidas en el libro sin permiso en el catálogo: ${listar(citesSinPermiso)}. Es legal con permiso archivado — cargalo para acreditarlo ante OSINFOR.`
+          ? `Especies protegidas en el libro sin permiso en el catálogo: ${listar(citesSinPermiso)}. Es legal con permiso archivado — cárgalo para acreditarlo ante OSINFOR.`
           : "Cada especie CITES del libro tiene su permiso cargado (o no hay CITES).",
-      action: "Cargá el N° de permiso en Configurar carátula → Permisos CITES.",
+      action: "Carga el N° de permiso en Configurar carátula → Permisos CITES.",
       navTarget: "caratula",
       navigateLabel: "Configurar carátula",
     },

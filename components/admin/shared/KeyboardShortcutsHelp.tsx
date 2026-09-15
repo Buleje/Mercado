@@ -106,7 +106,7 @@ export function KeyboardShortcutsHelp({ open, onClose, sections = DEFAULT_SECTIO
                   Atajos de teclado
                 </Dialog.Title>
                 <Dialog.Description className="text-xs text-[var(--text-tertiary)]">
-                  Manejá el admin sin salir del teclado
+                  Maneja el admin sin salir del teclado
                 </Dialog.Description>
               </div>
             </div>

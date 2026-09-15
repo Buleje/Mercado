@@ -517,14 +517,14 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
               a un toque.
             </p>
             <p className="mt-3 max-w-[16rem] text-sm font-medium text-white/85">
-              Pedí a las bodegas y restaurantes de Ciudad Constitución con delivery rápido.
-              Pagás al recibir — Yape, Plin o efectivo.
+              Pide a las bodegas y restaurantes de Ciudad Constitución con delivery rápido.
+              Pagas al recibir — Yape, Plin o efectivo.
             </p>
           </div>
           <ul className="space-y-1.5 text-sm font-medium text-white/90">
             <li>Envío gratis desde S/50</li>
             <li>10% OFF en tu primera compra</li>
-            <li>Seguí tu pedido en vivo</li>
+            <li>Sigue tu pedido en vivo</li>
           </ul>
         </aside>
 

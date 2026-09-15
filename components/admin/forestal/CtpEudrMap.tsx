@@ -162,7 +162,7 @@ export default function CtpEudrMap({ origins, geoByCode }: { origins: OrigenRow[
             <div className="pointer-events-auto max-w-sm rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-5 text-center shadow-lg backdrop-blur">
               <Warehouse className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" />
               <p className="text-sm font-bold text-[var(--text-primary)]">Ningún origen tiene coordenadas todavía</p>
-              <p className="mt-1 text-xs text-[var(--text-tertiary)]">Cargá la geolocalización de cada concesión/predio abajo (tipeando lat/lng o con «Mapa»). Aparecen acá como puntos.</p>
+              <p className="mt-1 text-xs text-[var(--text-tertiary)]">Carga la geolocalización de cada concesión/predio abajo (tipeando lat/lng o con «Mapa»). Aparecen acá como puntos.</p>
             </div>
           </div>
         )}
@@ -180,7 +180,7 @@ export default function CtpEudrMap({ origins, geoByCode }: { origins: OrigenRow[
             <span className="h-3 w-3 rounded-full border border-white" style={{ background: C_GEO }} aria-hidden="true" /> Falta atestar
           </span>
           <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
-            <Camera className="h-3.5 w-3.5" /> Tocá un punto para ver el detalle
+            <Camera className="h-3.5 w-3.5" /> Toca un punto para ver el detalle
           </span>
         </div>
       )}

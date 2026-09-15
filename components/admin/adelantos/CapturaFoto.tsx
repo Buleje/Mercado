@@ -64,8 +64,8 @@ export default function CapturaFoto({
       logger.error("[adelantos] no se pudo abrir la cámara", { error: String(err) });
       setError(
         err instanceof DOMException && err.name === "NotAllowedError"
-          ? "No diste permiso para usar la cámara. Podés adjuntar la foto desde el archivo."
-          : "No se encontró una cámara disponible. Podés adjuntar la foto desde el archivo.",
+          ? "No diste permiso para usar la cámara. Puedes adjuntar la foto desde el archivo."
+          : "No se encontró una cámara disponible. Puedes adjuntar la foto desde el archivo.",
       );
     }
   }, []);
@@ -114,7 +114,7 @@ export default function CapturaFoto({
       onCerrar();
     } catch (err) {
       logger.error("[adelantos] no se pudo subir la foto", { error: String(err) });
-      setError("No se pudo subir la foto. Probá de nuevo o adjuntala desde el archivo.");
+      setError("No se pudo subir la foto. Prueba de nuevo o adjúntala desde el archivo.");
     } finally {
       setSubiendo(false);
     }

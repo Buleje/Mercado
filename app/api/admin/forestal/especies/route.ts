@@ -83,7 +83,7 @@ const patchSchema = z.union([
       cientifico: cientificoSchema,
     })
     .refine((c) => c.nombre !== undefined || c.cientifico !== undefined, {
-      message: "Mandá el nombre o el nombre científico.",
+      message: "Manda el nombre o el nombre científico.",
     }),
 ]);
 
@@ -163,7 +163,7 @@ export const GET = withApiHandler("forestal-especies-get", async (req: NextReque
 export const POST = withApiHandler("forestal-especies-post", (req: NextRequest) =>
   escribir(req, async (tenantId, user, body, rol) => {
     const parsed = postSchema.safeParse(body);
-    if (!parsed.success) throw new EspecieCatalogoError("Escribí el nombre de la especie.");
+    if (!parsed.success) throw new EspecieCatalogoError("Escribe el nombre de la especie.");
     const d = parsed.data;
 
     if ("accion" in d && d.accion === "sembrar") {

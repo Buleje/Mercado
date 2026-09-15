@@ -59,7 +59,7 @@ const COMPOSER_EMOJIS = [
 export function MessageComposer({
   onSend,
   disabled = false,
-  placeholder = "Escribí tu respuesta…",
+  placeholder = "Escribe tu respuesta…",
   replyTo = null,
   onCancelReply,
   onTyping,
@@ -276,7 +276,7 @@ export function MessageComposer({
       textareaRef.current?.focus();
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
-      toast.error("No se pudo enviar el mensaje. Reintentá.");
+      toast.error("No se pudo enviar el mensaje. Reintenta.");
     } finally {
       setSending(false);
     }
@@ -293,7 +293,7 @@ export function MessageComposer({
       setSuggestions(s);
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
-      toast.error("No se pudieron generar sugerencias. Reintentá.");
+      toast.error("No se pudieron generar sugerencias. Reintenta.");
     } finally {
       setLoadingSuggest(false);
     }
@@ -320,7 +320,7 @@ export function MessageComposer({
         <div className="mb-2 flex items-center gap-2 rounded-lg border-l-[3px] border-primary bg-primary/10 px-2.5 py-1.5">
           <div className="min-w-0 flex-1 leading-tight">
             <div className="text-[length:var(--ts-2xs)] font-bold text-primary">
-              Respondiendo a {replyTo.senderType === "seller" ? "vos" : replyTo.senderName}
+              Respondiendo a {replyTo.senderType === "seller" ? "ti" : replyTo.senderName}
             </div>
             <div className="truncate text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
               {replyTo.body}
@@ -462,12 +462,12 @@ export function MessageComposer({
                 {searching && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--text-tertiary)]" aria-hidden />}
               </div>
               {mode === "substitution" && !originalName.trim() && (
-                <p className="mb-1 px-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Escribí qué falta y elegí el reemplazo.</p>
+                <p className="mb-1 px-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Escribe qué falta y elige el reemplazo.</p>
               )}
               <div className="max-h-56 overflow-y-auto">
                 {results.length === 0 ? (
                   <p className="py-4 text-center text-xs text-[var(--text-tertiary)]">
-                    {searching ? "Buscando…" : "Escribí para buscar en tu catálogo"}
+                    {searching ? "Buscando…" : "Escribe para buscar en tu catálogo"}
                   </p>
                 ) : (
                   results.map((hit) => (
@@ -502,7 +502,7 @@ export function MessageComposer({
           {mode === "order" && (
             <div className="mt-2 border-t border-[var(--rule-base)] pt-2">
               {draft.length === 0 ? (
-                <p className="py-2 text-center text-xs text-[var(--text-tertiary)]">Agregá productos al pedido tocándolos arriba.</p>
+                <p className="py-2 text-center text-xs text-[var(--text-tertiary)]">Agrega productos al pedido tocándolos arriba.</p>
               ) : (
                 <>
                   <div className="max-h-40 space-y-1 overflow-y-auto">
@@ -593,7 +593,7 @@ export function MessageComposer({
                 </button>
               ))}
               <p className="px-1 pt-0.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                Tocá una para editarla antes de enviar.
+                Toca una para editarla antes de enviar.
               </p>
             </div>
           )}

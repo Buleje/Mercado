@@ -116,7 +116,7 @@ export default function DuplicadosView({ onOpenDoc, onEliminar }: {
         </div>
         <p className="text-lg font-extrabold text-[var(--text-primary)]">No hay archivos repetidos</p>
         <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
-          Cada documento del drive es distinto. Si importás una carpeta dos veces, acá vas a ver qué se duplicó.
+          Cada documento del drive es distinto. Si importas una carpeta dos veces, acá vas a ver qué se duplicó.
         </p>
       </div>
     );
@@ -127,7 +127,7 @@ export default function DuplicadosView({ onOpenDoc, onEliminar }: {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
         <p className="text-sm text-[var(--text-secondary)]">
           <span className="font-extrabold text-[var(--text-primary)]">{grupos.length}</span>{" "}
-          {grupos.length === 1 ? "archivo repetido" : "archivos repetidos"} · recuperás hasta{" "}
+          {grupos.length === 1 ? "archivo repetido" : "archivos repetidos"} · recuperas hasta{" "}
           <span className="font-extrabold text-[var(--text-primary)]">{pesoLegible(recuperable)}</span>
         </p>
         <button onClick={cargar} className="text-xs font-bold text-[var(--text-tertiary)] hover:text-primary">

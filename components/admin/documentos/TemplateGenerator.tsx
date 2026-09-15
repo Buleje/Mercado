@@ -153,7 +153,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
             {loading ? (
               <p className="text-sm text-[var(--text-secondary)] px-3 py-2">Cargando…</p>
             ) : templates.length === 0 ? (
-              <p className="text-sm text-[var(--text-secondary)] px-3 py-2">Sin plantillas. Reabrí el módulo.</p>
+              <p className="text-sm text-[var(--text-secondary)] px-3 py-2">Sin plantillas. Reabre el módulo.</p>
             ) : (
               <ul className="space-y-1">
                 {templates.map((t) => (
@@ -184,7 +184,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
               <div className="h-full flex items-center justify-center text-center text-[var(--text-secondary)] text-sm py-20">
                 <div>
                   <FileText className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-                  Elegí una plantilla para empezar.
+                  Elige una plantilla para empezar.
                 </div>
               </div>
             ) : success ? (

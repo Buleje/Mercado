@@ -103,8 +103,8 @@ export default function CtpGtfSeccion({
    * la placa corregida. El guardado es aparte, a un clic de distancia.
    */
   async function imprimir(datos: GtfDatos) {
-    if (!gtf) throw new Error("Emití la GTF antes de imprimirla.");
-    if (!ficha) throw new Error("Todavía no se pudo leer la Ficha del CTP. Reintentá en un momento.");
+    if (!gtf) throw new Error("Emite la GTF antes de imprimirla.");
+    if (!ficha) throw new Error("Todavía no se pudo leer la Ficha del CTP. Reintenta en un momento.");
     setBusy("imprimir");
     try {
       const d = await documentoGtfSalida({ ...despacho, gtfNumber: gtf }, ficha, cadena, datos);
@@ -150,7 +150,7 @@ export default function CtpGtfSeccion({
   async function imprimirGuardado() {
     if (!gtfCompleta(completos)) {
       setAbierto(true);
-      setError("La guía todavía no está completa: revisá los datos marcados abajo.");
+      setError("La guía todavía no está completa: revisa los datos marcados abajo.");
       return;
     }
     try {
@@ -195,7 +195,7 @@ export default function CtpGtfSeccion({
 
       {!gtf && (
         <p className="mt-2 text-xs text-[var(--text-tertiary)]">
-          Emití la guía para poder cargar propietario, destinatario, transportista y traslado.
+          Emite la guía para poder cargar propietario, destinatario, transportista y traslado.
         </p>
       )}
       {/* `-700` no llega a AA sobre el canvas dark: en dark se usa `-500`. */}

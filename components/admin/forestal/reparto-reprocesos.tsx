@@ -211,7 +211,7 @@ function TablaSalidas({
       <table className="mt-1 w-full">
         <thead>
           <tr className="border-b border-[var(--rule-soft)]">
-            <th className={`${TH} w-8 text-center`} title="Marcá lo que ya repasaste: la fila queda subrayada">
+            <th className={`${TH} w-8 text-center`} title="Marca lo que ya repasaste: la fila queda subrayada">
               <span aria-hidden>✓</span>
               <span className="sr-only">Marcar como repasado</span>
             </th>
@@ -494,8 +494,8 @@ function RespaldosImposibles({ imposibles }: { imposibles: AmparoImposible[] }) 
         ))}
       </ul>
       <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
-        <b>Cómo se arregla:</b> marcá el bloque con «Lleva sólo» para que no ampare ese tipo, traé un
-        producto de origen del que sí salga, o corregí el tipo de esas piezas si la medida está mal
+        <b>Cómo se arregla:</b> marca el bloque con «Lleva sólo» para que no ampare ese tipo, trae un
+        producto de origen del que sí salga, o corrige el tipo de esas piezas si la medida está mal
         cargada.
       </p>
     </div>
@@ -766,16 +766,16 @@ export default function ReprocesosSugeridos({
                 2.500 salen paquetería larga 1.500 y larga angosta 0.800 a la
                 vez. Compiten sólo si la suma se pasa — ahí sí, elegir una. */}
             <TablaSalidas
-              titulo="Podés cubrir con lo libre"
+              titulo="Puedes cubrir con lo libre"
               ayuda={
                 g.opcionesCabenJuntas
                   ? `entran juntas: ${fmtM3(g.opcionesM3)} de los ${fmtM3(g.libreM3)} m³ libres`
-                  : `no entran juntas (${fmtM3(g.opcionesM3)} de ${fmtM3(g.libreM3)} m³ libres) · elegí una`
+                  : `no entran juntas (${fmtM3(g.opcionesM3)} de ${fmtM3(g.libreM3)} m³ libres) · elige una`
               }
               destinos={g.opciones}
               totalM3={g.opcionesCabenJuntas ? g.opcionesM3 : null}
               totalPiezas={g.opcionesCabenJuntas ? g.opcionesPiezas : null}
-              totalLabel="Total si las hacés todas"
+              totalLabel="Total si las haces todas"
               tono="opcion"
               grupo={g}
               marcadas={marcadas}
@@ -854,7 +854,7 @@ export default function ReprocesosSugeridos({
                   ·{" "}
                   <b className="font-mono tabular-nums">{fmtM3(g.imposibleM3)} m³</b>
                   {g.imposiblePiezas > 0 && ` (${fmtPiezas(g.imposiblePiezas)} pzas)`} que de acá{" "}
-                  <b>no pueden salir</b> — mirá el aviso de arriba
+                  <b>no pueden salir</b> — mira el aviso de arriba
                 </span>
               )}
               {g.excedeM3 > RUIDO_M3 ? (

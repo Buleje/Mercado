@@ -294,7 +294,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
     type: "hours",
     label: "Horarios de atención",
     emoji: "🕐",
-    description: "Los días y horas que trabajás. El cliente sabe cuándo puede pedir sin sorpresas.",
+    description: "Los días y horas que trabajas. El cliente sabe cuándo puede pedir sin sorpresas.",
     tag: "operaciones",
     create: () => ({
       type: "hours",
@@ -318,14 +318,14 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
     type: "payment",
     label: "Métodos de pago",
     emoji: "💳",
-    description: "Qué medios aceptás: Yape, Plin, efectivo, tarjeta o transferencia.",
+    description: "Qué medios aceptas: Yape, Plin, efectivo, tarjeta o transferencia.",
     tag: "operaciones",
     create: () => ({
       type: "payment",
       visible: true,
       data: {
-        title: "Cómo podés pagar",
-        subtitle: "Eligés vos al confirmar el pedido. Sin sorpresas.",
+        title: "Cómo puedes pagar",
+        subtitle: "Eliges tú al confirmar el pedido. Sin sorpresas.",
         methods: [
           { id: "yape", label: "Yape", enabled: true },
           { id: "plin", label: "Plin", enabled: true },
@@ -350,15 +350,15 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
         subtitle: "Sin app, sin trámites. Desde el celular.",
         steps: [
           {
-            title: "Elegís lo que querés",
-            description: "Mirás el catálogo y agregás todo al carrito. Vas viendo el total real.",
+            title: "Eliges lo que quieres",
+            description: "Miras el catálogo y agregas todo al carrito. Vas viendo el total real.",
           },
           {
-            title: "Confirmás cómo pagás",
+            title: "Confirmas cómo pagas",
             description: "Yape, Plin o efectivo al recibir. Tu eliges.",
           },
           {
-            title: "Recibís en tu puerta",
+            title: "Recibes en tu puerta",
             description: "El motorizado llega en 25-35 minutos a tu zona.",
           },
         ],
@@ -379,7 +379,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
         items: [
           {
             question: "¿Cuánto tarda el delivery?",
-            answer: "Entre 25 y 35 minutos en zonas cercanas. Si vivís más lejos te avisamos antes.",
+            answer: "Entre 25 y 35 minutos en zonas cercanas. Si vives más lejos te avisamos antes.",
           },
           {
             question: "¿A qué zonas hacen delivery?",
@@ -387,11 +387,11 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
           },
           {
             question: "¿Puedo pagar con efectivo y necesito vuelto?",
-            answer: "Sí. Al confirmar el pedido decís cuánto vas a entregar y preparamos el vuelto exacto.",
+            answer: "Sí. Al confirmar el pedido dices cuánto vas a entregar y preparamos el vuelto exacto.",
           },
           {
             question: "¿Qué pasa si no me gusta lo que recibí?",
-            answer: "Nos avisás al toque por WhatsApp y lo solucionamos: cambio, reembolso o crédito a tu favor.",
+            answer: "Nos avisas al toque por WhatsApp y lo solucionamos: cambio, reembolso o crédito a tu favor.",
           },
         ],
       },
@@ -422,7 +422,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
           {
             icon: "heart",
             title: "Atención cercana",
-            description: "Hablás con personas reales por WhatsApp, no con bots.",
+            description: "Hablas con personas reales por WhatsApp, no con bots.",
           },
         ],
       },
@@ -438,7 +438,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
       type: "gallery",
       visible: true,
       data: {
-        title: "Conocé nuestro lugar",
+        title: "Conoce nuestro lugar",
         subtitle: "Fotos reales del local, productos y equipo.",
         images: [
           { url: "", alt: "Foto del local" },
@@ -476,14 +476,14 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
     type: "cta",
     label: "Banner de acción",
     emoji: "🎯",
-    description: "Una franja grande con un mensaje y un botón — ideal para 'Pedí ahora' o una promo.",
+    description: "Una franja grande con un mensaje y un botón — ideal para 'Pide ahora' o una promo.",
     tag: "operaciones",
     create: () => ({
       type: "cta",
       visible: true,
       data: {
         title: "¿Listo para tu pedido?",
-        subtitle: "Escribinos y te atendemos al toque.",
+        subtitle: "Escríbenos y te atendemos al toque.",
         buttonLabel: "Pedir ahora",
         buttonUrl: "",
         background: "brand",
@@ -494,12 +494,12 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
     type: "video",
     label: "Video",
     emoji: "🎬",
-    description: "Mostrá un video de YouTube o un .mp4 — tu local, cómo cocinás, una reseña.",
+    description: "Muestra un video de YouTube o un .mp4 — tu local, cómo cocinas, una reseña.",
     tag: "informacion",
     create: () => ({
       type: "video",
       visible: true,
-      data: { title: "Mirá nuestro video", subtitle: "", videoUrl: "" },
+      data: { title: "Mira nuestro video", subtitle: "", videoUrl: "" },
     }),
   },
   {
@@ -518,7 +518,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
     type: "logos",
     label: "Marcas / logos",
     emoji: "🏷️",
-    description: "Franja con logos de marcas que vendés o aliados — genera confianza.",
+    description: "Franja con logos de marcas que vendes o aliados — genera confianza.",
     tag: "trust",
     create: () => ({
       type: "logos",
@@ -543,7 +543,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
     type: "team",
     label: "Nuestro equipo",
     emoji: "👥",
-    description: "Mostrá las caras del negocio: foto, nombre y rol. Genera cercanía.",
+    description: "Muestra las caras del negocio: foto, nombre y rol. Genera cercanía.",
     tag: "trust",
     create: () => ({
       type: "team",
@@ -568,7 +568,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
       type: "social",
       visible: true,
       data: {
-        title: "Seguinos en redes",
+        title: "Síguenos en redes",
         links: [
           { platform: "instagram", url: "" },
           { platform: "facebook", url: "" },
@@ -586,7 +586,7 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
       type: "categories",
       visible: true,
       data: {
-        title: "Explorá por categoría",
+        title: "Explora por categoría",
         subtitle: "",
         items: [
           { name: "Categoría 1", image: "", url: "" },

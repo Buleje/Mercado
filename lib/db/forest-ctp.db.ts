@@ -1145,7 +1145,7 @@ export class ForestCtpDB {
       }
       if (actual.quantity == null) {
         throw new CtpInvariantError(
-          `La corrida #${actual.lineNo} todavía no declaró producción: declarala primero.`,
+          `La corrida #${actual.lineNo} todavía no declaró producción: declárala primero.`,
           "LINEA_NO_EDITABLE",
         );
       }
@@ -1313,7 +1313,7 @@ export class ForestCtpDB {
     }
     if (actual.quantity != null) {
       throw new CtpInvariantError(
-        `La corrida #${actual.lineNo} ya declaró producción. Para corregirla, anulala y volvé a registrarla.`,
+        `La corrida #${actual.lineNo} ya declaró producción. Para corregirla, anúlala y vuelve a registrarla.`,
         "LINEA_NO_EDITABLE",
       );
     }
@@ -2115,7 +2115,7 @@ export class ForestCtpDB {
       : null;
     if (cerradoAnnul) {
       throw new CtpInvariantError(
-        `El período ${cerradoAnnul.label} está cerrado: no se puede anular una línea de un mes cerrado. Reabrí el período para corregir.`,
+        `El período ${cerradoAnnul.label} está cerrado: no se puede anular una línea de un mes cerrado. Reabre el período para corregir.`,
         "PERIODO_CERRADO",
         { periodKey: cerradoAnnul.periodKey },
       );
@@ -2210,7 +2210,7 @@ export class ForestCtpDB {
     const { usado, motivo, user } = input;
     if (usado && !motivo?.trim()) {
       throw new CtpInvariantError(
-        "Poné el motivo por el que se marca como usado.",
+        "Pon el motivo por el que se marca como usado.",
         "MOTIVO_REQUERIDO",
       );
     }
@@ -2322,7 +2322,7 @@ export class ForestCtpDB {
     if (!actual) throw new CtpInvariantError("Esa línea no existe.", "LOTE_NO_ENCONTRADO");
     if (actual.status !== "registrado") {
       throw new CtpInvariantError(
-        `Una línea ${actual.status} no se completa: registrala de nuevo.`,
+        `Una línea ${actual.status} no se completa: regístrala de nuevo.`,
         "ESTADO_NO_EDITABLE",
         { status: actual.status },
       );
@@ -2330,7 +2330,7 @@ export class ForestCtpDB {
     const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, actual.entryDate);
     if (cerrado) {
       throw new CtpInvariantError(
-        `El período ${cerrado.label} está cerrado: no se completan líneas de un mes cerrado. Reabrí el período para corregir.`,
+        `El período ${cerrado.label} está cerrado: no se completan líneas de un mes cerrado. Reabre el período para corregir.`,
         "PERIODO_CERRADO",
         { periodKey: cerrado.periodKey },
       );
@@ -2507,7 +2507,7 @@ export class ForestCtpDB {
     if (!actual) throw new CtpInvariantError("Esa línea no existe.", "LOTE_NO_ENCONTRADO");
     if (actual.status !== "registrado") {
       throw new CtpInvariantError(
-        `Una línea ${actual.status} no se corrige: registrala de nuevo.`,
+        `Una línea ${actual.status} no se corrige: regístrala de nuevo.`,
         "ESTADO_NO_EDITABLE",
         { status: actual.status },
       );
@@ -2515,7 +2515,7 @@ export class ForestCtpDB {
     const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, actual.entryDate);
     if (cerrado) {
       throw new CtpInvariantError(
-        `El período ${cerrado.label} está cerrado: no se corrigen líneas de un mes cerrado. Reabrí el período.`,
+        `El período ${cerrado.label} está cerrado: no se corrigen líneas de un mes cerrado. Reabre el período.`,
         "PERIODO_CERRADO",
         { periodKey: cerrado.periodKey },
       );
@@ -2611,7 +2611,7 @@ export class ForestCtpDB {
         if (campo === "volumeInputM3" && n < atribuidoM3) {
           rechazados.push({
             campo,
-            motivo: `ya tiene ${atribuidoM3.toFixed(4)} m³ atribuidos de las guías de ingreso: el volumen consumido no puede quedar por debajo (I1). Cambiá primero la atribución.`,
+            motivo: `ya tiene ${atribuidoM3.toFixed(4)} m³ atribuidos de las guías de ingreso: el volumen consumido no puede quedar por debajo (I1). Cambia primero la atribución.`,
           });
           continue;
         }
@@ -2720,7 +2720,7 @@ export class ForestCtpDB {
     const { apertura, motivo, user } = input;
     if (apertura && !motivo?.trim()) {
       throw new CtpInvariantError(
-        "Poné por qué esta corrida es existencia de apertura.",
+        "Pon por qué esta corrida es existencia de apertura.",
         "MOTIVO_REQUERIDO",
       );
     }

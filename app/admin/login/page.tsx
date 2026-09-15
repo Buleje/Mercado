@@ -127,7 +127,7 @@ export default function AdminLoginPage() {
     fromRef.current = params.get("from");
     // Banner de contexto: si lo redirigieron desde una ruta protegida.
     const r = params.get("reason");
-    if (r === "expired") setReason("Tu sesión expiró. Ingresá de nuevo.");
+    if (r === "expired") setReason("Tu sesión expiró. Ingresa de nuevo.");
     else if (fromRef.current) setReason("Inicia sesión para continuar.");
 
     // Login universal (ADR-120): el backend resuelve el tenant por la
@@ -310,7 +310,7 @@ export default function AdminLoginPage() {
         setRetryAfter(ra);
         setError(null);
       } else if (res.status === 400) {
-        showError("Completá tu usuario y contraseña.");
+        showError("Completa tu usuario y contraseña.");
       } else if (res.status === 401) {
         const body = await res.json().catch(() => ({}));
         const left = body?.attemptsLeft;
@@ -325,15 +325,15 @@ export default function AdminLoginPage() {
         }
         showError(msg);
       } else if (res.status >= 500) {
-        showError("El servidor tuvo un problema. Reintentá en unos segundos.");
+        showError("El servidor tuvo un problema. Reintenta en unos segundos.");
       } else {
         showError("No se pudo iniciar sesión.");
       }
     } catch {
       showError(
         typeof navigator !== "undefined" && !navigator.onLine
-          ? "Sin conexión. Revisá tu internet e intentá de nuevo."
-          : "No se pudo conectar con el servidor. Reintentá.",
+          ? "Sin conexión. Revisa tu internet e intenta de nuevo."
+          : "No se pudo conectar con el servidor. Reintenta.",
       );
     } finally {
       setLoading(false);
@@ -418,7 +418,7 @@ export default function AdminLoginPage() {
       {/* El aire vertical sale de la ALTURA del viewport, que es la dimensión
           que escasea en laptops: con `sm:py-16` fijo (128px arriba + 128 abajo)
           el documento medía 957px en una pantalla de 768 y se cortaban el pie
-          legal y el desplegable "¿Buscás otro panel?". `clamp(1.5rem,4vh,4rem)`
+          legal y el desplegable "¿Buscas otro panel?". `clamp(1.5rem,4vh,4rem)`
           da 30px a 768px de alto y 58px a 1440px. */}
       <aside
         className="relative flex flex-col justify-center px-5 sm:px-10 lg:px-16 2xl:px-20 py-[var(--login-pad-y)]"
@@ -463,7 +463,7 @@ export default function AdminLoginPage() {
           {tenantChoices ? (
             <div className="mt-[var(--login-gap-lg)] space-y-3">
               <p className="text-sm text-[var(--text-secondary)] max-w-sm">
-                Tu cuenta existe en varias tiendas. Elegí a cuál querés entrar:
+                Tu cuenta existe en varias tiendas. Elige a cuál quieres entrar:
               </p>
               {tenantChoices.map((t) => (
                 <button
@@ -593,7 +593,7 @@ export default function AdminLoginPage() {
             </div>
 
             {/* B2: confiar en este equipo → mantiene la sesión activa mientras
-                trabajás (keep-alive). No debilita seguridad ni saltea 2FA. */}
+                trabajas (keep-alive). No debilita seguridad ni saltea 2FA. */}
             <label className="flex items-start gap-2.5 cursor-pointer select-none pt-0.5">
               <input
                 type="checkbox"
@@ -603,7 +603,7 @@ export default function AdminLoginPage() {
               />
               <span className="text-sm text-[var(--text-secondary)]">
                 <span className="font-semibold text-[var(--text-primary)]">Confiar en este equipo</span>
-                {" "}— no te saca del panel por estar ausente. Seguís adentro hasta que lo apagues
+                {" "}— no te saca del panel por estar ausente. Sigues adentro hasta que lo apagues
                 en Ajustes › Seguridad.
               </span>
             </label>
@@ -622,7 +622,7 @@ export default function AdminLoginPage() {
               >
                 <Clock className="h-5 w-5 shrink-0 mt-0.5" aria-hidden />
                 <span>
-                  Demasiados intentos. Esperá{" "}
+                  Demasiados intentos. Espera{" "}
                   <span className="tabular-nums">{mmss(retryAfter)}</span> — recargar no ayuda.
                 </span>
               </div>
@@ -656,7 +656,7 @@ export default function AdminLoginPage() {
               ) : retryAfter > 0 ? (
                 <>
                   <Clock className="h-5 w-5" strokeWidth={2.25} />
-                  Esperá {mmss(retryAfter)}
+                  Espera {mmss(retryAfter)}
                 </>
               ) : (
                 <>
@@ -685,7 +685,7 @@ export default function AdminLoginPage() {
           <details className="mt-[var(--login-gap-lg)] group">
             <summary className="flex items-center justify-between gap-2 cursor-pointer py-3 px-4 -mx-4 rounded-xl hover:bg-[var(--surface-sunken)]/50 transition-colors list-none">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                ¿Buscás otro panel?
+                ¿Buscas otro panel?
               </span>
               <ChevronDown
                 className="h-4 w-4 text-[var(--text-tertiary)] transition-transform group-open:rotate-180"

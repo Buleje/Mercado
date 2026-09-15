@@ -155,7 +155,7 @@ export function estimarPreciosRegionales(
     disclaimer:
       "Estimado MUY aproximado — no es una cotización. Parte del precio internacional de hoy y aplica " +
       "descuentos típicos de la cadena (flete, secado, márgenes), así que puede desviarse bastante del " +
-      "precio real, que depende de calidad, humedad, fermentación y del comprador. Verificá con tu comprador.",
+      "precio real, que depende de calidad, humedad, fermentación y del comprador. Verifica con tu comprador.",
   };
 }
 

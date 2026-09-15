@@ -126,7 +126,7 @@ export default function PlatformInboxPanel() {
 
         <section className={`${selectedId ? "flex" : "hidden sm:flex"} flex-1 flex-col min-w-0`}>
           {!selected ? (
-            <div className="flex flex-1 items-center justify-center text-sm text-[var(--text-tertiary)]">Elegí un mensaje</div>
+            <div className="flex flex-1 items-center justify-center text-sm text-[var(--text-tertiary)]">Elige un mensaje</div>
           ) : (
             <>
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">

@@ -116,7 +116,7 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
               );
             })}
           </div>
-          {sugeridas.length > 9 && <p className="mt-2 text-xs text-[var(--text-tertiary)]">+{sugeridas.length - 9} sugerencias más (programá las de arriba para verlas actualizarse).</p>}
+          {sugeridas.length > 9 && <p className="mt-2 text-xs text-[var(--text-tertiary)]">+{sugeridas.length - 9} sugerencias más (programa las de arriba para verlas actualizarse).</p>}
         </div>
       )}
 
@@ -139,7 +139,7 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
           <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Calendar className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">{labores.length === 0 ? "Aún no registraste labores" : "Sin resultados"}</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm">{labores.length === 0 ? "Registrá labores en tus secciones y acá verás el cronograma completo." : "Ajustá los filtros para ver otras labores."}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm">{labores.length === 0 ? "Registra labores en tus secciones y acá verás el cronograma completo." : "Ajusta los filtros para ver otras labores."}</p>
         </div>
       ) : (
         <div className="space-y-5">

@@ -163,7 +163,7 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
           <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
           <p>
             <span className="font-extrabold">{abiertos} {abiertos === 1 ? "enlace está abierto" : "enlaces están abiertos"}:</span>{" "}
-            cualquiera que tenga el link ve el archivo sin pedir clave. Cortá los que ya no uses, o volvé a compartir poniéndoles una clave.
+            cualquiera que tenga el link ve el archivo sin pedir clave. Corta los que ya no uses, o vuelve a compartir poniéndoles una clave.
           </p>
         </div>
       )}

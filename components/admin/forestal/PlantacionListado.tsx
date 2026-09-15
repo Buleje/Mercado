@@ -161,8 +161,8 @@ export default function PlantacionListado({
           </p>
           <p className="mx-auto max-w-sm text-sm text-[var(--text-tertiary)]">
             {filtro
-              ? "Probá con otro estado o mirá todos."
-              : "Empezá con el Formato Único de Inscripción — el sistema guía cada sección."}
+              ? "Prueba con otro estado o mira todos."
+              : "Empieza con el Formato Único de Inscripción — el sistema guía cada sección."}
           </p>
           <Btn variant="dark" onClick={onNueva}>
             <Plus className="h-4 w-4" />

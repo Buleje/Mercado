@@ -83,7 +83,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
 
   async function handleSubmit() {
     if (selectedCount === 0) {
-      toast.error("Seleccioná al menos un producto");
+      toast.error("Selecciona al menos un producto");
       return;
     }
     setSubmitting(true);

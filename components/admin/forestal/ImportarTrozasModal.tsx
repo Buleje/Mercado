@@ -59,7 +59,7 @@ export default function ImportarTrozasModal({
       const filas = await leerArchivoAFilas(file);
       setResultado(parsearFilasTrozas(filas));
     } catch (e) {
-      setErrorGeneral(`No se pudo leer el archivo: ${e instanceof Error ? e.message : String(e)}. Probá con un .xlsx o .csv.`);
+      setErrorGeneral(`No se pudo leer el archivo: ${e instanceof Error ? e.message : String(e)}. Prueba con un .xlsx o .csv.`);
     } finally {
       setCargando(false);
     }
@@ -95,7 +95,7 @@ export default function ImportarTrozasModal({
   const descargarPlantilla = () => {
     setBajando(true);
     descargarPlantillaTrozas(especiesActuales)
-      .catch(() => setErrorGeneral("No se pudo generar la plantilla. Probá de nuevo."))
+      .catch(() => setErrorGeneral("No se pudo generar la plantilla. Prueba de nuevo."))
       .finally(() => setBajando(false));
   };
 
@@ -145,14 +145,14 @@ export default function ImportarTrozasModal({
           </p>
         ) : (
           <p className="mb-3 text-sm text-[var(--text-secondary)]">
-            Sacale una foto (o subí una) a la planilla de trozas escrita a mano en patio — con diámetro menor, diámetro mayor y largo por fila. La IA lee la letra y arma la lista; <b>vos la revisás</b> contra la foto antes de sumarla al patio. Las filas donde la IA no estuvo segura salen resaltadas.
+            Sácale una foto (o sube una) a la planilla de trozas escrita a mano en patio — con diámetro menor, diámetro mayor y largo por fila. La IA lee la letra y arma la lista; <b>tú la revisas</b> contra la foto antes de sumarla al patio. Las filas donde la IA no estuvo segura salen resaltadas.
           </p>
         )}
 
         {filasActuales > 0 && (
           <p className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--accent)]/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-[var(--accent)]">
             <Check className="h-4 w-4 shrink-0" />
-            Ya tenés <b>{filasActuales}</b> {filasActuales === 1 ? "troza" : "trozas"} en el patio. Lo que importes se <b>suma</b> — no se borra nada de lo anterior.
+            Ya tienes <b>{filasActuales}</b> {filasActuales === 1 ? "troza" : "trozas"} en el patio. Lo que importes se <b>suma</b> — no se borra nada de lo anterior.
           </p>
         )}
 
@@ -202,7 +202,7 @@ export default function ImportarTrozasModal({
             <img src={fotoUrl} alt="Foto de la planilla escaneada" className="h-28 w-28 shrink-0 rounded-lg border border-[var(--rule-base)] object-cover" />
             <p className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
               <Sparkles className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
-              Cotejá cada fila de abajo contra esta foto antes de confirmar.
+              Coteja cada fila de abajo contra esta foto antes de confirmar.
             </p>
           </div>
         )}

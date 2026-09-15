@@ -186,7 +186,7 @@ export default function CtpBuscarGtf({
           {!buscado && !error && (
             <div className="px-2 py-6 text-center">
               <p className="text-sm text-[var(--text-secondary)]">
-                Escribí el número y apretá <strong>Enter</strong>.
+                Escribe el número y aprieta <strong>Enter</strong>.
               </p>
               <p className="mt-1 text-xs text-[var(--text-tertiary)]">
                 Busca en los tres registros a la vez: la guía con la que <strong>entró</strong> la madera, la
@@ -200,7 +200,7 @@ export default function CtpBuscarGtf({
             <div className="px-2 py-6 text-center">
               <p className="text-sm font-bold text-[var(--text-primary)]">Eso no está en el libro.</p>
               <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                Si es una guía de salida, fijate que el período elegido la incluya. Si es de ingreso y la madera
+                Si es una guía de salida, fíjate que el período elegido la incluya. Si es de ingreso y la madera
                 ya llegó, todavía no está registrada.
               </p>
             </div>

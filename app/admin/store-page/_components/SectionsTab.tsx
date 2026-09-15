@@ -234,7 +234,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
   return (
     <AdminTabShell
       title="Secciones de tu página pública"
-      description="Arma tu /t/[slug] con bloques pre-elaborados. Agregás, editás y reordenás — todo se refleja en vivo cuando guardás."
+      description="Arma tu /t/[slug] con bloques pre-elaborados. Agregas, editas y reordenas — todo se refleja en vivo cuando guardas."
       icon={Layers}
     >
       {/* Header con acciones */}
@@ -293,7 +293,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
             Tu página pública aún no tiene secciones
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto mb-5">
-            Agregá bloques desde las plantillas: Sobre Nosotros, Horarios, Métodos de Pago, Cómo Pedir, FAQ y más.
+            Agrega bloques desde las plantillas: Sobre Nosotros, Horarios, Métodos de Pago, Cómo Pedir, FAQ y más.
           </p>
           <button
             type="button"
@@ -332,8 +332,8 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
                     onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
                     role="button"
                     tabIndex={0}
-                    aria-label="Arrastrá para reordenar la sección"
-                    title="Arrastrá para reordenar"
+                    aria-label="Arrastra para reordenar la sección"
+                    title="Arrastra para reordenar"
                     className="inline-flex h-9 w-5 shrink-0 cursor-grab items-center justify-center rounded-md text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:cursor-grabbing"
                   >
                     <GripVertical className="h-4 w-4" aria-hidden />
@@ -431,7 +431,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
       {/* Sticky Save bar */}
       <div className="sticky bottom-4 flex items-center justify-end gap-3 p-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-lg">
         {error && <span className="text-sm text-[var(--data-error-500)]">{error}</span>}
-        {saved && <span className="text-sm text-[var(--data-success-500)] font-semibold">Guardado · refrescá /t/[slug] para verlo</span>}
+        {saved && <span className="text-sm text-[var(--data-success-500)] font-semibold">Guardado · refresca /t/[slug] para verlo</span>}
         <button
           onClick={save}
           disabled={saving}
@@ -468,7 +468,7 @@ function TemplatesModal({
     <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
-      aria-label="Elegí una plantilla"
+      aria-label="Elige una plantilla"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
@@ -482,7 +482,7 @@ function TemplatesModal({
               Galería de plantillas
             </p>
             <SectionTitle className="text-[var(--text-primary)]">
-              Elegí una sección para agregar
+              Elige una sección para agregar
             </SectionTitle>
           </div>
           <button

@@ -96,7 +96,7 @@ export default function LothContextoPanel({
                 : BTN
             }
           >
-            <MapPin className="h-3.5 w-3.5" /> {markMode ? "Tocá el mapa…" : "Marcar en el mapa"}
+            <MapPin className="h-3.5 w-3.5" /> {markMode ? "Toca el mapa…" : "Marcar en el mapa"}
           </button>
           <button type="button" onClick={guardar} disabled={saving} className={BTN}>
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
@@ -120,7 +120,7 @@ export default function LothContextoPanel({
           </p>
           {referencias.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
-              Tocá <b>Marcar en el mapa</b> y hacé click donde está el centro poblado, el campamento o el ingreso a la UMF.
+              Toca <b>Marcar en el mapa</b> y haz click donde está el centro poblado, el campamento o el ingreso a la UMF.
             </p>
           ) : (
             <ul className="space-y-2">
@@ -174,7 +174,7 @@ export default function LothContextoPanel({
           </p>
           {cartografia.vias.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
-              Usá <b>Trazar vía</b> arriba del mapa para dibujar la carretera, la trocha de arrastre o el río.
+              Usa <b>Trazar vía</b> arriba del mapa para dibujar la carretera, la trocha de arrastre o el río.
             </p>
           ) : (
             <ul className="space-y-2">
@@ -227,7 +227,7 @@ export default function LothContextoPanel({
           </div>
           {accesos.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
-              Agregá los tramos como en el expediente: <b>Puerto Bermúdez — C.P. Unión Siria · 30 min · auto-camioneta</b>.
+              Agrega los tramos como en el expediente: <b>Puerto Bermúdez — C.P. Unión Siria · 30 min · auto-camioneta</b>.
             </p>
           ) : (
             <ul className="space-y-2">

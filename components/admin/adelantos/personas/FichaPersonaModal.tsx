@@ -73,7 +73,7 @@ export default function FichaPersonaModal({
   const wa = enlaceWhatsAppConTexto(
     persona.telefono,
     debeAlgo
-      ? `Hola ${persona.nombre}, te recuerdo que tenés un saldo pendiente de ${fmtMonedas(persona.saldoPendiente)} por liquidar. ¡Gracias!`
+      ? `Hola ${persona.nombre}, te recuerdo que tienes un saldo pendiente de ${fmtMonedas(persona.saldoPendiente)} por liquidar. ¡Gracias!`
       : `Hola ${persona.nombre}, ¿cómo estás?`,
   );
   const waCuenta = enlaceWhatsAppConTexto(persona.telefono, textoEstadoDeCuenta(persona.nombre, movimientos));

@@ -108,10 +108,10 @@ function TrialGraceBanner() {
     <div className="sticky top-0 z-[60] flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-[var(--data-error-500)] px-4 py-2 text-center text-white">
       <span className="inline-flex items-center gap-2 text-sm font-bold">
         <ShieldAlert className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-        Trial expirado — podés seguir vendiendo.
+        Trial expirado — puedes seguir vendiendo.
       </span>
       <span className="text-sm text-white/90">
-        Activá tu plan para recuperar el panel completo.
+        Activa tu plan para recuperar el panel completo.
       </span>
       <Link
         href="/admin?tab=plan"
@@ -135,7 +135,7 @@ function TrialExpiredScreen() {
         <PageTitle className="text-center">Tu período de prueba ha terminado</PageTitle>
         <p className="mt-3 max-w-xl text-center text-base text-[var(--text-secondary)]">
           Los 15 días gratuitos para probar Buleje se agotaron. Para seguir
-          gestionando tu negocio, elegí un plan o esperá a que el equipo de
+          gestionando tu negocio, elige un plan o espera a que el equipo de
           soporte habilite tu cuenta manualmente.
         </p>
 

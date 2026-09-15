@@ -34,7 +34,7 @@ const OPCIONES: { valor: Resolucion; titulo: string; detalle: string; Icon: type
   {
     valor: "conservar-ambos",
     titulo: "Conservar los dos",
-    detalle: 'El que subís queda como "nombre (2)". No se toca lo que ya estaba.',
+    detalle: 'El que subes queda como "nombre (2)". No se toca lo que ya estaba.',
     Icon: Copy,
   },
   {
@@ -62,7 +62,7 @@ export default function ConflictosImport({
           {filas.length === 1
             ? "1 archivo ya existe con otro contenido"
             : `${filas.length} archivos ya existen con otro contenido`}
-          {" — "}decidí qué hacer con {filas.length === 1 ? "él" : "ellos"}.
+          {" — "}decide qué hacer con {filas.length === 1 ? "él" : "ellos"}.
         </span>
       </p>
 

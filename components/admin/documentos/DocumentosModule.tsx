@@ -1268,8 +1268,8 @@ export default function DocumentosModule() {
       setAnalyzeResult({
         name: doc.name,
         summary: /no_text|422/.test(msg)
-          ? "No pude extraer texto (¿es una imagen o un escaneo? usá el botón Escanear)."
-          : "No pude analizar el documento. Reintentá.",
+          ? "No pude extraer texto (¿es una imagen o un escaneo? usa el botón Escanear)."
+          : "No pude analizar el documento. Reintenta.",
         keyFacts: [],
       });
       setTimeout(() => setAnalyzeResult(null), 8000);
@@ -1290,7 +1290,7 @@ export default function DocumentosModule() {
         <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
           <div className="bg-[var(--surface-raised)] border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
             <Upload className="h-12 w-12 mx-auto text-primary mb-3" />
-            <p className="text-xl font-extrabold text-[var(--text-primary)]">Soltá los archivos para subir</p>
+            <p className="text-xl font-extrabold text-[var(--text-primary)]">Suelta los archivos para subir</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">PDF, imágenes, docs, planillas</p>
           </div>
         </div>
@@ -1334,7 +1334,7 @@ export default function DocumentosModule() {
             },
             {
               label: "Importar carpeta",
-              description: "Subís una carpeta completa respetando sus subcarpetas",
+              description: "Subes una carpeta completa respetando sus subcarpetas",
               icon: FolderTree,
               onClick: () => setImportandoCarpeta(true),
               dividerBefore: true,
@@ -1470,7 +1470,7 @@ export default function DocumentosModule() {
                 {" "}— te avisaré por WhatsApp antes.
               </p>
             ) : (
-              <p className="mt-0.5">La IA lo nombró y clasificó. Si vence, agregá la fecha desde el documento.</p>
+              <p className="mt-0.5">La IA lo nombró y clasificó. Si vence, agrega la fecha desde el documento.</p>
             )}
           </div>
           <button onClick={() => setScanResult(null)} className="ml-auto p-1 rounded-xl hover:bg-emerald-100" aria-label="Cerrar"><X className="h-4 w-4" /></button>
@@ -1630,7 +1630,7 @@ export default function DocumentosModule() {
             }}
           >
             <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              {draggingFolderId ? "Soltá acá → raíz" : "Carpetas"}
+              {draggingFolderId ? "Suelta acá → raíz" : "Carpetas"}
             </p>
             <div className="flex items-center gap-0.5">
               {folders.length > 1 && (
@@ -1676,7 +1676,7 @@ export default function DocumentosModule() {
           )}
           {selectingFolders && selectedFolderIds.size === 0 && (
             <p className="mx-1 mb-2 rounded-lg border border-dashed border-[var(--rule-base)] px-3 py-2 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
-              Marcá las carpetas que querés cambiar de una: emoji, etiquetas, color o eliminar.
+              Marca las carpetas que quieres cambiar de una: emoji, etiquetas, color o eliminar.
             </p>
           )}
 
@@ -1696,7 +1696,7 @@ export default function DocumentosModule() {
 
           <ul className="space-y-0.5">
             {folders.length === 0 && (
-              <li className="px-3 py-2 text-xs text-[var(--text-tertiary)] italic">Sin carpetas. Creá la primera.</li>
+              <li className="px-3 py-2 text-xs text-[var(--text-tertiary)] italic">Sin carpetas. Crea la primera.</li>
             )}
             {visibleFolderRows.map(({ folder: f, depth, hasChildren }) => {
               const active = filterMode === "folder" && activeFolderId === f.id;
@@ -1927,7 +1927,7 @@ export default function DocumentosModule() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
               <input
                 type="text"
-                placeholder={semantic ? "Describí lo que buscás… ej: el contrato del local" : "Buscar por nombre, tag o contenido OCR…"}
+                placeholder={semantic ? "Describe lo que buscas… ej: el contrato del local" : "Buscar por nombre, tag o contenido OCR…"}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className={cn(
@@ -1942,7 +1942,7 @@ export default function DocumentosModule() {
                 "inline-flex items-center gap-1.5 px-3 min-h-11 rounded-xl border-2 text-sm font-semibold transition-colors",
                 semantic ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]" : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"
               )}
-              title="Búsqueda inteligente: entiende lo que querés decir, no solo palabras exactas"
+              title="Búsqueda inteligente: entiende lo que quieres decir, no solo palabras exactas"
             >
               <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">IA</span>
             </button>
@@ -2041,7 +2041,7 @@ export default function DocumentosModule() {
           {semantic && (
             <div className="flex items-center gap-2 rounded-lg bg-[var(--accent)]/10 px-3 py-1.5 text-xs font-medium text-[var(--accent)]">
               <Sparkles className="h-3.5 w-3.5 shrink-0" />
-              Modo IA activo: describí el documento (ej. &ldquo;el contrato del local&rdquo;), no solo palabras exactas.
+              Modo IA activo: describe el documento (ej. &ldquo;el contrato del local&rdquo;), no solo palabras exactas.
             </div>
           )}
 
@@ -2295,7 +2295,7 @@ export default function DocumentosModule() {
 
           {/* Lo que todavía no se puede buscar por lo que dice. Es la deuda
               real del drive: un archivo sin descripción sólo aparece si te
-              acordás de su nombre. */}
+              acuerdas de su nombre. */}
           {!VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && filterMode !== "trash" && (indexableDocs.length > 0 || soloSinDescribir) && (
             <div className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-dashed border-[var(--accent)]/35 bg-[var(--accent)]/5 px-3 py-2">
               <Sparkles className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
@@ -2304,7 +2304,7 @@ export default function DocumentosModule() {
                   <>
                     <span className="tabular-nums font-bold text-[var(--text-primary)]">{indexableDocs.length}</span>{" "}
                     {indexableDocs.length === 1 ? "documento no tiene descripción" : "documentos no tienen descripción"}: no
-                    aparecen cuando buscás por lo que dicen adentro.{" "}
+                    aparecen cuando buscas por lo que dicen adentro.{" "}
                     <span className="font-normal text-[var(--text-tertiary)]">
                       Se van leyendo solos cada noche; con el botón se apura la fila.
                     </span>
@@ -2943,7 +2943,7 @@ function SidebarResizeHandle({
       role="separator"
       aria-orientation="vertical"
       aria-label="Redimensionar barra lateral"
-      title="Arrastrá para achicar o alargar · doble click para restaurar"
+      title="Arrastra para achicar o alargar · doble click para restaurar"
       onPointerDown={(e) => {
         dragging.current = true;
         startX.current = e.clientX;
@@ -3353,9 +3353,9 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
       <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
         <Upload className="h-7 w-7" />
       </div>
-      <p className="text-lg font-extrabold text-[var(--text-primary)]">Subí tu primer documento</p>
+      <p className="text-lg font-extrabold text-[var(--text-primary)]">Sube tu primer documento</p>
       <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-md mx-auto">
-        Arrastrá y soltá archivos en cualquier parte de la pantalla, o usá el botón. Aceptamos PDF, imágenes, planillas, Word, ZIP y más (hasta 50 MB c/u).
+        Arrastra y suelta archivos en cualquier parte de la pantalla, o usa el botón. Aceptamos PDF, imágenes, planillas, Word, ZIP y más (hasta 50 MB c/u).
       </p>
       <button onClick={onUpload} className="mt-5 inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors">
         <Upload className="h-4 w-4" /> Subir archivos

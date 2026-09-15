@@ -55,10 +55,10 @@ export function comoArreglar(canal: CanalAviso, motivo: string | null): string |
   const m = (motivo ?? "").toLowerCase();
   if (!m) return null;
   if (m.includes("no tiene correo cargado") || m.includes("no tiene whatsapp cargado")) {
-    return "Cargá el dato en Ajustes → Datos del negocio.";
+    return "Carga el dato en Ajustes → Datos del negocio.";
   }
   if (m.includes("domain is not verified") || m.includes("not verified")) {
-    return "El dominio del remitente no está verificado en Resend: verificalo en resend.com/domains.";
+    return "El dominio del remitente no está verificado en Resend: verifícalo en resend.com/domains.";
   }
   if (m.includes("oauth") || m.includes("access token") || m.includes("401")) {
     return "El token de WhatsApp venció o es inválido: renovalo en la configuración de WhatsApp.";
@@ -67,8 +67,8 @@ export function comoArreglar(canal: CanalAviso, motivo: string | null): string |
     return "El proveedor está limitando los envíos: se reintenta en la próxima corrida.";
   }
   return canal === "email"
-    ? "Revisá la configuración de correo del sistema."
-    : "Revisá la configuración de WhatsApp del sistema.";
+    ? "Revisa la configuración de correo del sistema."
+    : "Revisa la configuración de WhatsApp del sistema.";
 }
 
 /** El estado de cada canal a partir de lo que quedó registrado. */

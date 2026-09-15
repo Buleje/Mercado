@@ -77,7 +77,7 @@ export function revisarCierre(d: DatosPendientes, mes = "el mes"): RevisionCierr
     // Nombra el mes: en pantalla convive con el panel de pendientes, que mira el
     // período de la vista — sin el mes, dos veredictos distintos parecen un bug.
     titulo:
-      veredicto === "no_conviene" ? `Revisá esto antes de cerrar ${mes}`
+      veredicto === "no_conviene" ? `Revisa esto antes de cerrar ${mes}`
         : veredicto === "con_observaciones" ? `Se puede cerrar ${mes}, con observaciones`
           : `Todo en orden para cerrar ${mes}`,
   };

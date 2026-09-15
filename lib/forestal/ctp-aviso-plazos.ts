@@ -275,7 +275,7 @@ export function construirAviso(d: DatosAviso, hoy: Date, nombreNegocio?: string)
     lotes.length > 4 ? `…y ${lotes.length - 4} más.` : null,
     "",
     `El plazo para registrar en el Libro es de ${PLAZO_REGISTRO_DIAS} días hábiles.`,
-    "Entrá al panel → Libro CTP (Forestal).",
+    "Entra al panel → Libro CTP (Forestal).",
   ]
     .filter((l): l is string => l !== null)
     .join("\n");

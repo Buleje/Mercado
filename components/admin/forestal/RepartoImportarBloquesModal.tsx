@@ -74,7 +74,7 @@ export default function RepartoImportarBloquesModal({
     try {
       setResultado(parsearBloquesImportados(await leerArchivoAFilas(file)));
     } catch (e) {
-      setError(`No se pudo leer el archivo: ${e instanceof Error ? e.message : String(e)}. Probá con un .xlsx o un .csv.`);
+      setError(`No se pudo leer el archivo: ${e instanceof Error ? e.message : String(e)}. Prueba con un .xlsx o un .csv.`);
     } finally {
       setCargando(false);
     }
@@ -90,15 +90,15 @@ export default function RepartoImportarBloquesModal({
       open
       onClose={onCerrar}
       title="Importar bloques"
-      description="Pegá la planilla o subí el archivo: cada fila entra como un bloque de la distribución."
+      description="Pega la planilla o sube el archivo: cada fila entra como un bloque de la distribución."
       icon={FileSpreadsheet}
       footer={
         <ModalFooter
           error={error}
           nota={
             resultado
-              ? `${bloques.length} bloque${bloques.length === 1 ? "" : "s"} listo${bloques.length === 1 ? "" : "s"}${resultado.descartadas.length > 0 ? ` · ${resultado.descartadas.length} fila${resultado.descartadas.length === 1 ? "" : "s"} afuera` : ""}${bloquesActuales > 0 ? ` · se suman a los ${bloquesActuales} que ya tenés` : ""}`
-              : "Copiá el rango en Excel y pegalo acá, o subí el .xlsx/.csv."
+              ? `${bloques.length} bloque${bloques.length === 1 ? "" : "s"} listo${bloques.length === 1 ? "" : "s"}${resultado.descartadas.length > 0 ? ` · ${resultado.descartadas.length} fila${resultado.descartadas.length === 1 ? "" : "s"} afuera` : ""}${bloquesActuales > 0 ? ` · se suman a los ${bloquesActuales} que ya tienes` : ""}`
+              : "Copia el rango en Excel y pégalo acá, o sube el .xlsx/.csv."
           }
         >
           <Btn variant="ghost" onClick={onCerrar}>Cancelar</Btn>
@@ -132,7 +132,7 @@ export default function RepartoImportarBloquesModal({
         {modo === "pegar" ? (
           <label className="block">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-              Pegá acá (Ctrl+V)
+              Pega acá (Ctrl+V)
             </span>
             <textarea
               value={texto}

@@ -51,8 +51,8 @@ export default function UnificarDuplicadosModal({
     if (fallaron > 0) {
       setError(
         fallaron === aBorrar.length
-          ? "No se pudo borrar ninguna copia. Intentá de nuevo."
-          : `Se borraron ${aBorrar.length - fallaron} de ${aBorrar.length}. Volvé a intentar con las que quedan.`,
+          ? "No se pudo borrar ninguna copia. Intenta de nuevo."
+          : `Se borraron ${aBorrar.length - fallaron} de ${aBorrar.length}. Vuelve a intentar con las que quedan.`,
       );
       onListo();
       return;

@@ -235,7 +235,7 @@ export default function CtpGtfDatosForm({
         {/* `-700` no llega a AA sobre el canvas dark: en dark se usa `-500`. */}
         {vigente === false && (
           <p className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-            Vigencia vencida el {datos.traslado.fechaFin}: actualizá las fechas antes de mover el producto.
+            Vigencia vencida el {datos.traslado.fechaFin}: actualiza las fechas antes de mover el producto.
           </p>
         )}
       </div>
@@ -278,7 +278,7 @@ export default function CtpGtfDatosForm({
               <span>
                 El dueño de la madera es este CTP
                 <span className="mt-0.5 block font-normal text-[var(--text-tertiary)]">
-                  Si la madera es de un tercero (el CTP sólo la transformó), destildá y cargá sus datos: la norma
+                  Si la madera es de un tercero (el CTP sólo la transformó), destilda y carga sus datos: la norma
                   distingue al propietario del producto del titular del centro.
                 </span>
               </span>
@@ -474,7 +474,7 @@ export default function CtpGtfDatosForm({
             </div>
             </div>
             <div className="border-t-2 border-[var(--rule-soft)] pt-3"><div className="grid grid-cols-1 gap-x-3 gap-y-2.5 sm:grid-cols-6 2xl:grid-cols-12">
-              <Field span={6} label="Títulos habilitantes" required hint="Separá con coma. Acreditan el origen legal de la madera">
+              <Field span={6} label="Títulos habilitantes" required hint="Separa con coma. Acreditan el origen legal de la madera">
                 <input
                   type="text"
                   className={I}

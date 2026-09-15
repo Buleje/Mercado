@@ -37,7 +37,7 @@ export default function CtpPegarSniffsLote({
     interpretarConIA: (imagen) => leerDetalleConIA(imagen),
     validar: (d) =>
       !d.lote && !d.especieComun && !d.fechaInicio && d.volumenConsumidoM3 == null && d.productos.length === 0
-        ? "No encontré los datos del lote en lo que pegaste. Pegá la pantalla «Detalle de la programación de producción» del SNIFFS."
+        ? "No encontré los datos del lote en lo que pegaste. Pega la pantalla «Detalle de la programación de producción» del SNIFFS."
         : null,
     parece: pareceDetalleSniffs,
     onLeido: (d) => onDetalle(d),
@@ -50,7 +50,7 @@ export default function CtpPegarSniffsLote({
       detalle.lote ? `lote ${detalle.lote}` : null,
       detalle.fechaInicio ? `${fmtDiaSniffs(detalle.fechaInicio)}${detalle.fechaFin ? ` → ${fmtDiaSniffs(detalle.fechaFin)}` : ""}` : null,
       [detalle.especieCientifica, detalle.especieComun].filter(Boolean).join(" · ") || null,
-      detalle.volumenConsumidoM3 != null ? `consumido ${fmtM3(detalle.volumenConsumidoM3)} m³` : "consumido: no se leyó, ponelo a mano",
+      detalle.volumenConsumidoM3 != null ? `consumido ${fmtM3(detalle.volumenConsumidoM3)} m³` : "consumido: no se leyó, ponlo a mano",
     ].filter(Boolean);
     return (
       <div className="mb-3 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 py-2 text-sm">
@@ -70,7 +70,7 @@ export default function CtpPegarSniffsLote({
           {productos.length > 0
             ? `${productos.length} producto${productos.length === 1 ? "" : "s"} (${fmtM3(totalM3)} m³) van al paso siguiente, listos para revisar y agregar.`
             : "La captura no trae productos: se declaran en el paso siguiente."}{" "}
-          Los campos de abajo se llenaron con lo leído; corregí lo que haga falta.
+          Los campos de abajo se llenaron con lo leído; corrige lo que haga falta.
         </p>
       </div>
     );
@@ -81,7 +81,7 @@ export default function CtpPegarSniffsLote({
       lectura={lectura}
       texto={
         <>
-          pegá la captura del «Detalle de la programación de producción» (<Tecla>Ctrl+V</Tecla>): llena el lote, las
+          pega la captura del «Detalle de la programación de producción» (<Tecla>Ctrl+V</Tecla>): llena el lote, las
           fechas, la especie y el consumido, y lleva los productos al paso siguiente.
         </>
       }

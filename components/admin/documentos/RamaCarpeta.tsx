@@ -177,7 +177,7 @@ export default function RamaCarpeta({
               {carpeta.name}
             </span>
             {/* Cuántos hay adentro: dice de un vistazo dónde está lo que
-                buscás, sin entrar a cada carpeta. */}
+                buscas, sin entrar a cada carpeta. */}
             {!!carpeta.documentCount && (
               <span className="ml-auto shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
                 {carpeta.documentCount}

@@ -174,7 +174,7 @@ export default function VinculoContraparte({
             <p className="py-3 text-center text-xs text-[var(--text-tertiary)]">
               {gente.length === 0
                 ? `Todavía no hay ${lado === "cliente" ? "clientes" : lado === "proveedor" ? "proveedores" : "personas"} cargados.`
-                : "Ninguno coincide con lo que buscás."}
+                : "Ninguno coincide con lo que buscas."}
             </p>
           )}
 

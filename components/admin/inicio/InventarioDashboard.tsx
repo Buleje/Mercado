@@ -246,7 +246,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
         onChangeRange={onChangeRange}
         icon={Package}
         title="Tu inventario está vacío"
-        description="Agregá productos para empezar a ver stock crítico, rotación, valor invertido y proyección de agotamiento."
+        description="Agrega productos para empezar a ver stock crítico, rotación, valor invertido y proyección de agotamiento."
         action={{ label: "Agregar producto", href: "/admin?tab=productos" }}
       />
     );

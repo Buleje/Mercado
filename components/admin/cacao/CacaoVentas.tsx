@@ -415,7 +415,7 @@ export default function CacaoVentas() {
                 Sin ventas registradas
               </p>
               <p className="mx-auto mt-1 max-w-sm text-sm">
-                Registrá la venta de tu cacao seco (local o exportación FOB). Se descuenta del
+                Registra la venta de tu cacao seco (local o exportación FOB). Se descuenta del
                 inventario y verás tus ingresos.
               </p>
               <button
@@ -459,7 +459,7 @@ export default function CacaoVentas() {
                     <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                       Total de la venta:{" "}
                       <b className="text-[var(--text-secondary)]">S/ {n2(cobro.totalPen)}</b>.
-                      Ingresá el monto cobrado acumulado (anticipo + abonos).
+                      Ingresa el monto cobrado acumulado (anticipo + abonos).
                     </p>
                   </div>
                 </div>

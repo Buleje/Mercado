@@ -242,11 +242,11 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
       }
     } catch (err) {
       console.error("[rrhh] guardar asistencia falló", err);
-      for (const k of claves) if (sigueVigente(k)) fallos.push({ fecha: fechaPorClave.get(k) ?? "", motivo: "Sin conexión — reintentá" });
+      for (const k of claves) if (sigueVigente(k)) fallos.push({ fecha: fechaPorClave.get(k) ?? "", motivo: "Sin conexión — reintenta" });
       if (montadoRef.current) {
         setErroresPorCelda((prev) => {
           const siguiente = new Map(prev);
-          for (const k of claves) if (sigueVigente(k)) siguiente.set(k, "Sin conexión — reintentá");
+          for (const k of claves) if (sigueVigente(k)) siguiente.set(k, "Sin conexión — reintenta");
           return siguiente;
         });
       }

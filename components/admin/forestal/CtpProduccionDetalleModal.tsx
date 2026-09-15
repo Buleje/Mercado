@@ -197,7 +197,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                    de qué guías salió es decir cuánto entró. */
                 description={
                   declarado > 0
-                    ? "La cadena de custodia se corta acá: todo despacho que cite esta corrida queda sin certificado. Usá «Editar atribución» para decir de qué guías salieron sus " +
+                    ? "La cadena de custodia se corta acá: todo despacho que cite esta corrida queda sin certificado. Usa «Editar atribución» para decir de qué guías salieron sus " +
                       `${fmtM3(declarado)} m³.`
                     : "Esta corrida declaró producto y no de qué madera salió: su rendimiento queda en blanco y ningún despacho que la cite se puede certificar. " +
                       "Con «Editar atribución» le declarás sus guías, y el volumen que sumen queda como su materia prima."
@@ -228,7 +228,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                 <WarningAlert
                   icon={AlertCircle}
                   title="Rendimiento sobre el referencial SERFOR"
-                  description={`El referencial es ${ref}% (RDE D000259-2024). Un rendimiento muy por encima puede indicar sobre-declaración — verificá el volumen consumido y el producido antes de despachar.`}
+                  description={`El referencial es ${ref}% (RDE D000259-2024). Un rendimiento muy por encima puede indicar sobre-declaración — verifica el volumen consumido y el producido antes de despachar.`}
                 />
               ) : null;
             })()}
@@ -269,7 +269,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                   />
                 </div>
               ) : consumos.length === 0 ? (
-                <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Sin guías atribuidas. Usá &quot;Editar atribución&quot; para declarar de dónde salió.</p>
+                <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Sin guías atribuidas. Usa &quot;Editar atribución&quot; para declarar de dónde salió.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <DataTable className="w-full text-sm">

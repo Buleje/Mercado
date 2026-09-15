@@ -272,7 +272,7 @@ export function interpretarDetalleProduccionSniffs(
   if (vc) {
     const v = volumenLeido(vc[1]);
     volumenConsumidoM3 = v.valor;
-    if (v.dudoso) avisos.push(`Leí «${vc[1]}» como volumen consumido, sin punto decimal: lo tomé como ${v.valor} m³. Revisalo.`);
+    if (v.dudoso) avisos.push(`Leí «${vc[1]}» como volumen consumido, sin punto decimal: lo tomé como ${v.valor} m³. Revísalo.`);
   }
 
   // ── Filas de producto ──
@@ -299,18 +299,18 @@ export function interpretarDetalleProduccionSniffs(
   const referencia = opts.consumidoM3 ?? volumenConsumidoM3;
   for (const p of productos) {
     if (p.dudoso) {
-      avisos.push(`«${p.productoCrudo}»: leí «${p.volumenLeido}» sin punto decimal y lo tomé como ${p.volumenM3} m³. Revisalo.`);
+      avisos.push(`«${p.productoCrudo}»: leí «${p.volumenLeido}» sin punto decimal y lo tomé como ${p.volumenM3} m³. Revísalo.`);
     } else if (referencia != null && referencia > 0 && p.volumenM3 > referencia) {
       /* Más producto que materia prima no existe: o el OCR leyó mal o la
          captura es de otro lote. Se marca, no se corrige. */
       p.dudoso = true;
-      avisos.push(`«${p.productoCrudo}» dice ${p.volumenM3} m³, más que los ${referencia} m³ consumidos: revisá el número.`);
+      avisos.push(`«${p.productoCrudo}» dice ${p.volumenM3} m³, más que los ${referencia} m³ consumidos: revisa el número.`);
     }
   }
 
   if (productos.length === 0) {
     avisos.push(
-      "No encontré filas de producto. Pegá la tabla «Resumen de Producción por PMF y Producto» completa, con la columna de producto y la de volumen.",
+      "No encontré filas de producto. Pega la tabla «Resumen de Producción por PMF y Producto» completa, con la columna de producto y la de volumen.",
     );
   }
 
@@ -460,11 +460,11 @@ export function interpretarListaProgramacionesSniffs(texto: string): { filas: Pr
     if (f) filas.push(f);
   }
   const avisos: string[] = [];
-  if (filas.length === 0) avisos.push("No encontré filas con fecha y especie. Pegá la lista de programaciones del SNIFFS (una fila por lote).");
+  if (filas.length === 0) avisos.push("No encontré filas con fecha y especie. Pega la lista de programaciones del SNIFFS (una fila por lote).");
   const sinLote = filas.filter((f) => !f.lote).length;
-  if (sinLote > 0) avisos.push(`${sinLote} fila(s) sin N° de lote: se les asigna el correlativo automático si las importás.`);
+  if (sinLote > 0) avisos.push(`${sinLote} fila(s) sin N° de lote: se les asigna el correlativo automático si las importas.`);
   const sinVolumen = filas.filter((f) => f.volumenConsumidoM3 == null).length;
-  if (sinVolumen > 0) avisos.push(`${sinVolumen} fila(s) sin volumen consumido: completalo antes de importar.`);
+  if (sinVolumen > 0) avisos.push(`${sinVolumen} fila(s) sin volumen consumido: complétalo antes de importar.`);
   return { filas, avisos };
 }
 
@@ -527,10 +527,10 @@ export function detalleDesdeIA(
          MARCA, no se corrige. Que lo haya leído un modelo no lo hace más cierto. */
       const dudoso = referencia != null && referencia > 0 && volumenM3 > referencia;
       if (!productType && (p.producto ?? "").trim()) {
-        avisos.push(`«${p.producto}» no está en el catálogo del LO-CTP: elegí el producto a mano.`);
+        avisos.push(`«${p.producto}» no está en el catálogo del LO-CTP: elige el producto a mano.`);
       }
       if (dudoso) {
-        avisos.push(`«${p.producto}» dice ${volumenM3} m³, más que los ${referencia} m³ consumidos: revisá el número.`);
+        avisos.push(`«${p.producto}» dice ${volumenM3} m³, más que los ${referencia} m³ consumidos: revisa el número.`);
       }
       return {
         productoCrudo: (p.producto ?? "").trim() || "—",

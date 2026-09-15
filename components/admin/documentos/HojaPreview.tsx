@@ -184,7 +184,7 @@ export default function HojaPreview({ url, mimeType, nombre, onEnviar, miniatura
       <AvisoArchivo
         error={error}
         titulo="No se pudo mostrar la planilla"
-        sugerencia="También podés descargarla y abrirla en Excel."
+        sugerencia="También puedes descargarla y abrirla en Excel."
         urlDescarga={url}
         onReintentar={() => setIntento((n) => n + 1)}
       />

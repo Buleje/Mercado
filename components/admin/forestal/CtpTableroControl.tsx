@@ -410,7 +410,7 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
 
           {mov.truncado && (
             <p className="text-xs text-[var(--text-tertiary)]">
-              El período es tan largo que el eje se cortó: acotá las fechas para ver el detalle completo.
+              El período es tan largo que el eje se cortó: acota las fechas para ver el detalle completo.
             </p>
           )}
         </>

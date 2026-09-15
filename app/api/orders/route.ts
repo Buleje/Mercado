@@ -605,7 +605,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
       });
       return NextResponse.json(
         {
-          error: "El total no coincide. Refrescá el carrito y volvé a intentar.",
+          error: "El total no coincide. Refresca el carrito y vuelve a intentar.",
           code: "TOTAL_MISMATCH",
           serverTotal: computedTotal,
         },

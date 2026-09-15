@@ -58,7 +58,7 @@ export async function visionExtractJSON<T>(
           messages: [
             {
               role: "system",
-              content: "Sos un extractor de datos de fotos/documentos peruanos. Respondé SOLO JSON válido sin markdown. Si algo no se puede leer, no lo inventes.",
+              content: "Sos un extractor de datos de fotos/documentos peruanos. Responde SOLO JSON válido sin markdown. Si algo no se puede leer, no lo inventes.",
             },
             {
               role: "user",
@@ -107,7 +107,7 @@ export async function visionExtractJSON<T>(
       return {
         ok: false,
         status: 503,
-        error: "La lectura automática de fotos todavía no está activada en esta tienda. Cargá los datos a mano mientras tanto.",
+        error: "La lectura automática de fotos todavía no está activada en esta tienda. Carga los datos a mano mientras tanto.",
       };
     }
 

@@ -157,7 +157,7 @@ export default function LothEspecieFueraModal({
             <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 p-3 text-sm font-bold text-[var(--text-primary)]">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />
               Cargarla acá no la autoriza: el volumen tiene que ser el que dice el documento aprobado. Si {especie} no figura
-              en la resolución, volvé y descartá los árboles.
+              en la resolución, vuelve y descarta los árboles.
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block">

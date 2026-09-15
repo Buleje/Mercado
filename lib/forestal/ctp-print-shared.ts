@@ -153,7 +153,7 @@ ${opts.body}
 </body></html>`;
   const w = window.open("", "_blank", "width=980,height=760");
   if (!w)
-    throw new Error("El navegador bloqueó la ventana. Permití pop-ups para descargar el reporte.");
+    throw new Error("El navegador bloqueó la ventana. Permite pop-ups para descargar el reporte.");
   w.document.write(html);
   w.document.close();
   w.document.getElementById("ctp-print")?.addEventListener("click", () => w.print());

@@ -32,9 +32,9 @@ interface SpeechRecognitionLike {
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 const ERR_MSG: Record<string, string> = {
-  "not-allowed": "Permiso de micrófono denegado. Tocá el candado 🔒 en la barra de direcciones, permití el micrófono y recargá la página.",
-  "service-not-allowed": "El navegador bloqueó el micrófono. Revisá los permisos del sitio y recargá.",
-  "audio-capture": "No se encontró micrófono. Conectá uno y reintentá.",
+  "not-allowed": "Permiso de micrófono denegado. Toca el candado 🔒 en la barra de direcciones, permite el micrófono y recarga la página.",
+  "service-not-allowed": "El navegador bloqueó el micrófono. Revisa los permisos del sitio y recarga.",
+  "audio-capture": "No se encontró micrófono. Conecta uno y reintenta.",
 };
 
 export interface VozContinua {

@@ -701,7 +701,7 @@ export async function POST(req: NextRequest) {
               `Te regalamos un cupon de *10% de descuento* para tu proxima compra:\n\n` +
               `Codigo: *${welcomeCode}*\n` +
               `Valido por 30 dias\n\n` +
-              `Usalo en tu proximo pedido!`,
+              `Úsalo en tu proximo pedido!`,
               { tenantId: targetStore.tenantId, context: "marketplace-welcome-coupon" },
             ).catch((err) => logger.error("[marketplace/orders] welcome coupon whatsapp failed", { error: String(err), tenantId: targetStore!.tenantId }));
           }

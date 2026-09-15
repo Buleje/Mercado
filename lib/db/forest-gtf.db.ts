@@ -31,7 +31,7 @@ export class GtfSpeciesNotAuthorizedError extends Error {
   constructor(readonly species: string[]) {
     super(
       `La GTF incluye especie(s) no autorizada(s) en el plan de manejo: ${species.join(", ")}. ` +
-        `Movilizar una especie fuera del POA es infracción — corregí la guía o el plan antes de emitirla.`,
+        `Movilizar una especie fuera del POA es infracción — corrige la guía o el plan antes de emitirla.`,
     );
     this.name = "GtfSpeciesNotAuthorizedError";
   }

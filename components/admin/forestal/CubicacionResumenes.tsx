@@ -256,7 +256,7 @@ export default function CubicacionResumenes() {
       <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-16 text-center">
         <PackageOpen className="h-10 w-10 text-[var(--text-tertiary)]" />
         <p className="text-base font-bold text-[var(--text-primary)]">Todavía no hay lote cubicado</p>
-        <p className="max-w-sm text-sm text-[var(--text-tertiary)]">Cubicá madera en la herramienta <b>Cubicador de madera</b> y volvé acá para ver los resúmenes por especie y tipo.</p>
+        <p className="max-w-sm text-sm text-[var(--text-tertiary)]">Cubica madera en la herramienta <b>Cubicador de madera</b> y vuelve acá para ver los resúmenes por especie y tipo.</p>
         <button type="button" onClick={recargar} className={`mt-1 ${BTN}`}>
           <RefreshCw className="h-4 w-4" /> Actualizar
         </button>
@@ -381,7 +381,7 @@ export default function CubicacionResumenes() {
             icon={Layers}
             titulo="Por especie y tipo"
             hint="Cuánto comercial, cuánta paquetería y cuánta corta salió de cada madera."
-            ayuda={<>Tildá una fila —o varias, de cualquier especie— y bajá <b>su</b> ANEXO N° 04: las medidas de esas filas, unificadas en un solo papel. Lo que no se tilda no entra. Las columnas van en el orden del módulo: piezas · m³ · PT.</>}
+            ayuda={<>Tilda una fila —o varias, de cualquier especie— y baja <b>su</b> ANEXO N° 04: las medidas de esas filas, unificadas en un solo papel. Lo que no se tilda no entra. Las columnas van en el orden del módulo: piezas · m³ · PT.</>}
           >
             {/* La barra sólo existe cuando hay algo elegido: un botón que casi
                 siempre está deshabilitado ocupa lugar y no se aprende. */}
@@ -524,7 +524,7 @@ export default function CubicacionResumenes() {
             titulo="¿Mejoró respecto del lote anterior?"
             /* La comparación sigue la dimensión del agrupado libre: si no se dice,
                el usuario no entiende por qué habla de medidas y no de tipos. */
-            hint={`Comparado ${ETIQUETA_DIMENSION[dim].toLowerCase()} — cambialo en «Tablas → Agrupado libre».`}
+            hint={`Comparado ${ETIQUETA_DIMENSION[dim].toLowerCase()} — cámbialo en «Tablas → Agrupado libre».`}
           >
             <ResumenComparar rows={rows} precioDe={precioDe} conValor={conValor} dim={dim} guardadas={guardadas} cargando={cargandoGuardadas} />
           </SeccionResumen>

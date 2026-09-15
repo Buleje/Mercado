@@ -89,14 +89,14 @@ export default function POSFiadoPanel({
           setTimeout(() => { setShowCobrar(false); setCobroResult(null); }, 1500);
         }
       } else if (res.status === 409) {
-        setCobroError("Otro cajero está cobrando ahora mismo. Reintentá en un segundo.");
+        setCobroError("Otro cajero está cobrando ahora mismo. Reintenta en un segundo.");
       } else if (res.status === 404) {
         setCobroError(typeof body.error === "string" ? body.error : "No hay fiados activos");
       } else {
         setCobroError(typeof body.error === "string" ? body.error : `Error ${res.status}`);
       }
     } catch (err) {
-      setCobroError(err instanceof Error ? err.message : "Error de red — verificá tu conexión");
+      setCobroError(err instanceof Error ? err.message : "Error de red — verifica tu conexión");
     }
     setCobrando(false);
   };

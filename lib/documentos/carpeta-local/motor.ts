@@ -108,7 +108,7 @@ function motivo(err: unknown): string {
   if (/413|too_large/.test(m)) return "pesa más de lo que acepta el drive";
   if (/415|mime_not_allowed/.test(m)) return "el drive no acepta ese tipo de archivo";
   if (/429/.test(m)) return "el servidor pidió esperar (muchos archivos seguidos)";
-  if (/401|403/.test(m)) return "la sesión venció, recargá el panel";
+  if (/401|403/.test(m)) return "la sesión venció, recarga el panel";
   if (/NotAllowedError|permiso/i.test(m)) return "el navegador retiró el permiso sobre la carpeta";
   if (/NotFoundError/.test(m)) return "el archivo ya no está en la carpeta";
   return m.slice(0, 120);

@@ -65,7 +65,7 @@ export function useHistorialGastos() {
       setKpisServidor(data.kpis ?? null);
     } catch (err) {
       console.warn("[useHistorialGastos] fetch failed", err);
-      setError("No se pudo cargar el historial. Intentá de nuevo.");
+      setError("No se pudo cargar el historial. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }

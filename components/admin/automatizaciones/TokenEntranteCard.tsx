@@ -44,7 +44,7 @@ export default function TokenEntranteCard({ token, ejemploCurl, copiado, onCopia
       </div>
 
       <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-        Pegá este token en el nodo <strong>HTTP Request</strong> de n8n. Con eso, un audio de
+        Pega este token en el nodo <strong>HTTP Request</strong> de n8n. Con eso, un audio de
         WhatsApp que n8n transcriba llega acá como operación: te devuelve el resumen para que se
         lo hagas confirmar a la persona, y recién ahí se anota.
       </p>
@@ -82,9 +82,9 @@ export default function TokenEntranteCard({ token, ejemploCurl, copiado, onCopia
               </button>
               <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-relaxed">
                 Devuelve <code className="font-mono">estado: &quot;pendiente&quot;</code> con un{" "}
-                <code className="font-mono">aprobacionId</code> y el resumen. Para confirmarlo, volvé a
+                <code className="font-mono">aprobacionId</code> y el resumen. Para confirmarlo, vuelve a
                 llamar con <code className="font-mono">{`{"aprobacionId":"…","decision":"aprobar"}`}</code>{" "}
-                — tenés 10 minutos. Si tu flujo ya le preguntó a la persona, mandá{" "}
+                — tienes 10 minutos. Si tu flujo ya le preguntó a la persona, manda{" "}
                 <code className="font-mono">{`"confirmar": true`}</code> y se anota de una.
               </p>
             </div>
@@ -93,7 +93,7 @@ export default function TokenEntranteCard({ token, ejemploCurl, copiado, onCopia
       ) : (
         <WarningAlert>
           No se puede emitir el token porque falta <code className="font-mono">AUTH_SECRET</code> en el
-          entorno. Configuralo y recargá.
+          entorno. Configúralo y recarga.
         </WarningAlert>
       )}
     </section>

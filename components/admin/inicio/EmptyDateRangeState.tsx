@@ -91,7 +91,7 @@ export default function EmptyDateRangeState({
     `Sin ${metric} ${dateRange.preset === "especifica" ? describeRange(dateRange) : rangeTxt}`;
   const desc =
     description ??
-    "Probá ampliar el rango o cambiá a otro período. Cuando empieces a registrar movimientos, los datos van a aparecer acá.";
+    "Prueba ampliar el rango o cambia a otro período. Cuando empieces a registrar movimientos, los datos van a aparecer acá.";
 
   const handleQuick = useCallback(
     (p: Exclude<DatePreset, "personalizado" | "especifica">) => {
@@ -146,7 +146,7 @@ export default function EmptyDateRangeState({
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               <Calendar className="h-3.5 w-3.5" />
-              Probá con
+              Prueba con
             </span>
             {chips.map((p) => (
               <button

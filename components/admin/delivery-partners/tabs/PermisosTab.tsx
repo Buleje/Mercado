@@ -147,7 +147,7 @@ export function PermisosTab() {
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
                 {permissions.length === 0
-                  ? "No hay permisos configurados todavía. Asigná accesos granulares por usuario."
+                  ? "No hay permisos configurados todavía. Asigna accesos granulares por usuario."
                   : `${permissions.length} ${permissions.length === 1 ? "usuario" : "usuarios"} con accesos · ${totalGrants} ${totalGrants === 1 ? "permiso otorgado" : "permisos otorgados"}.`}
               </p>
             </div>
@@ -317,7 +317,7 @@ export function PermisosTab() {
           <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
             {permissions.length === 0
               ? "Cuando otorgues accesos a usuarios sobre tu tienda, aparecerán acá con detalle por permiso."
-              : "Cambiá el filtro para ver permisos de otro tipo."}
+              : "Cambia el filtro para ver permisos de otro tipo."}
           </p>
         </div>
       ) : (

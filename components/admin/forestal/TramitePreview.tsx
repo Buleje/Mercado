@@ -80,10 +80,10 @@ export default function TramitePreview({
         <span className="text-sm font-bold text-[var(--text-primary)]">Así se va a presentar</span>
         {editable && (
           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            <PencilLine className="h-3 w-3" aria-hidden="true" /> tocá el papel para editarlo
+            <PencilLine className="h-3 w-3" aria-hidden="true" /> toca el papel para editarlo
           </span>
         )}
-        <span className="ml-auto text-xs text-[var(--text-tertiary)]">se actualiza mientras escribís</span>
+        <span className="ml-auto text-xs text-[var(--text-tertiary)]">se actualiza mientras escribes</span>
         {acciones && <div className="flex items-center gap-1">{acciones}</div>}
       </div>
       <iframe

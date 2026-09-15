@@ -349,7 +349,7 @@ export default function WaChatView({
               (!canSend || loadingSuggest) && "cursor-not-allowed opacity-40",
             )}
             aria-label="Sugerir respuesta con IA"
-            title="La IA lee el hilo y te propone 3 respuestas (vos elegís)"
+            title="La IA lee el hilo y te propone 3 respuestas (tú eliges)"
           >
             {loadingSuggest ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
           </button>

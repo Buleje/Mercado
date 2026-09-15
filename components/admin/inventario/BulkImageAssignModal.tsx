@@ -431,7 +431,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                     {productSearch || activeProductCat ? "Sin resultados" : "¡Todos tus productos tienen imagen!"}
                   </p>
                   <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                    {productSearch ? "Probá otra búsqueda." : activeProductCat ? "Probá quitar el filtro de categoría." : "Buen trabajo."}
+                    {productSearch ? "Prueba otra búsqueda." : activeProductCat ? "Prueba quitar el filtro de categoría." : "Buen trabajo."}
                   </p>
                 </div>
               )}
@@ -484,7 +484,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                           <Check className="h-3.5 w-3.5" /> Asignada
                         </div>
                       ) : isDragOver ? (
-                        <div className="text-xs font-bold text-primary">Soltá acá</div>
+                        <div className="text-xs font-bold text-primary">Suelta acá</div>
                       ) : (
                         <div className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Drop</div>
                       )}
@@ -507,7 +507,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
             </span>
           </div>
           <p className="hidden sm:block text-xs text-[var(--text-tertiary)]">
-            Tip: arrastrá la imagen sobre el producto. Cada drop guarda automático.
+            Tip: arrastra la imagen sobre el producto. Cada drop guarda automático.
           </p>
           <button
             onClick={() => onOpenChange(false)}

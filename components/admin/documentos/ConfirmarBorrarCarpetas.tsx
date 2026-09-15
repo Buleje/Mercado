@@ -124,7 +124,7 @@ export function ConfirmarBorrarCarpetas({
             <div className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-3">
               <FileWarning className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning)]" />
               <p className="text-sm text-[var(--text-secondary)]">
-                Adentro hay <strong className="font-bold text-[var(--text-primary)]">{documentos} documento{documentos === 1 ? "" : "s"}</strong>. Decidí qué hacer con ellos:
+                Adentro hay <strong className="font-bold text-[var(--text-primary)]">{documentos} documento{documentos === 1 ? "" : "s"}</strong>. Decide qué hacer con ellos:
               </p>
             </div>
           ) : (

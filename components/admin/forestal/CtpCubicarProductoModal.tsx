@@ -187,7 +187,7 @@ export default function CtpCubicarProductoModal({
     if (piezas.length === 0) return;
     if (hayProblema && !forzar) {
       setForzar(true);
-      setError("Mirá las diferencias de abajo. Si la medición es la correcta, volvé a apretar para guardarla igual.");
+      setError("Mira las diferencias de abajo. Si la medición es la correcta, vuelve a apretar para guardarla igual.");
       return;
     }
     setGuardando(true);
@@ -239,7 +239,7 @@ export default function CtpCubicarProductoModal({
       title={`Cubicar · ${titulo}`}
       description={
         declaradas.length === 0
-          ? "Medí la madera y después tildá en la tabla contra qué registros tiene que cuadrar"
+          ? "Mide la madera y después tilda en la tabla contra qué registros tiene que cuadrar"
           : `${declaradas.length} registro(s) elegidos · ${cuadre.total.piezasDeclaradas} piezas · ${fmtM3(cuadre.total.m3Declarado)} m³ declarados`
       }
       footer={
@@ -429,7 +429,7 @@ export default function CtpCubicarProductoModal({
               </tr>
             </TheadCtp>
             <TbodyCtp>
-              {filas.length === 0 && <FilaVacia cols={9}>Agregá una fila y cargá las medidas.</FilaVacia>}
+              {filas.length === 0 && <FilaVacia cols={9}>Agrega una fila y carga las medidas.</FilaVacia>}
               {filas.map((f, i) => {
                 const p = cubicar(f);
                 const auto = p ? tipoDePieza({ ...p, tipo: undefined }) : "Otro";

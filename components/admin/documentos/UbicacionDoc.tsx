@@ -54,7 +54,7 @@ export default function UbicacionDoc({ folderId, folders, onMover, compacto }: {
         onClick={() => setAbierto((v) => !v)}
         disabled={moviendo}
         aria-expanded={abierto}
-        title={ruta.length > 0 ? `Está en ${etiqueta} — tocá para moverlo` : "No está en ninguna carpeta — tocá para guardarlo en una"}
+        title={ruta.length > 0 ? `Está en ${etiqueta} — toca para moverlo` : "No está en ninguna carpeta — toca para guardarlo en una"}
         className={cn(
           "inline-flex max-w-full items-center gap-1.5 rounded-xl border text-xs font-bold transition-colors",
           compacto ? "px-2 py-1" : "w-full px-3 py-2 text-sm",
@@ -101,7 +101,7 @@ export default function UbicacionDoc({ folderId, folders, onMover, compacto }: {
             ))}
             {arbol.length === 0 && (
               <p className="px-3 py-3 text-xs text-[var(--text-tertiary)]">
-                Todavía no creaste carpetas. Podés crearlas desde la barra de la izquierda del drive.
+                Todavía no creaste carpetas. Puedes crearlas desde la barra de la izquierda del drive.
               </p>
             )}
           </div>

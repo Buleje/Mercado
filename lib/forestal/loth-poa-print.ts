@@ -144,7 +144,7 @@ export function printLothPoa(analisis: PoaAnalisis, meta: PoaPrintMeta): void {
   <h2>3. Padrón de árboles semilleros (quedan en pie)</h2>
   <table>
     <thead><tr><th>Código</th><th>Especie</th><th class="num">DAP (cm)</th><th class="num">Vol. est. (m³)</th></tr></thead>
-    <tbody>${semilleros || '<tr><td colspan="4" style="text-align:center;color:#94a3b8">Sin semilleros asignados (configurá el % en el panel del POA).</td></tr>'}</tbody>
+    <tbody>${semilleros || '<tr><td colspan="4" style="text-align:center;color:#94a3b8">Sin semilleros asignados (configura el % en el panel del POA).</td></tr>'}</tbody>
   </table>
 
   <div class="firma">
@@ -165,7 +165,7 @@ export function printLothPoa(analisis: PoaAnalisis, meta: PoaPrintMeta): void {
 </body></html>`;
 
   const w = window.open("", "_blank", "width=1000,height=900");
-  if (!w) throw new Error("El navegador bloqueó la ventana. Permití pop-ups para imprimir el anexo del POA.");
+  if (!w) throw new Error("El navegador bloqueó la ventana. Permite pop-ups para imprimir el anexo del POA.");
   w.document.write(html);
   w.document.close();
   w.focus();

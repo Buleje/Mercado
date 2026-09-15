@@ -183,7 +183,7 @@ export function BloqueEspecie({
         <div className="border-b border-[var(--rule-soft)] bg-[var(--data-warning-500)]/8 px-3 py-2">
           <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            {e.especie} combina bloques de {e.porPermiso.length} permisos — elegí los de UN permiso a la vez para el Anexo 04.
+            {e.especie} combina bloques de {e.porPermiso.length} permisos — elige los de UN permiso a la vez para el Anexo 04.
           </p>
           <ul className="flex flex-wrap gap-x-4 gap-y-0.5 font-mono text-xs tabular-nums text-[var(--text-secondary)]">
             {e.porPermiso.map((p) => (
@@ -315,7 +315,7 @@ export function BloqueEspecie({
               </AdminTooltip>
               {vacioPorFiltro && (
                 <span
-                  title="Cambiá el filtro en la columna «Lleva sólo» de la tabla de arriba, o sacalo para que el bloque tome de todo"
+                  title="Cambia el filtro en la columna «Lleva sólo» de la tabla de arriba, o sácalo para que el bloque tome de todo"
                   className="ml-2 inline-flex items-center gap-1 rounded-full border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-2 py-0.5 align-middle text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                 >
                   <AlertTriangle className="h-3 w-3" aria-hidden /> el filtro lo dejó sin nada
@@ -351,7 +351,7 @@ export function BloqueEspecie({
                       placeholder={fmtM3(b.bloque.m3 * (b.aprovechablePct / 100))}
                       aria-label={`Tope de m³ que ampara el bloque ${b.bloque.etiqueta || "sin etiqueta"}`}
                       title={b.bloque.amparaManualM3 == null
-                        ? "Techo del bloque. Se calcula como m³ × % aprovechable; escribí el tuyo para decirlo a mano — el bloque se reparte de nuevo dentro de esa capacidad."
+                        ? "Techo del bloque. Se calcula como m³ × % aprovechable; escribe el tuyo para decirlo a mano — el bloque se reparte de nuevo dentro de esa capacidad."
                         : "Dicho a mano: manda sobre el % aprovechable."}
                       className={`h-7 w-20 rounded-xl border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.bloque.amparaManualM3 == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
                     />
@@ -468,7 +468,7 @@ export function BloqueEspecie({
               <button
                 type="button"
                 onClick={() => onAgregarBloqueSugerido(e.especie, e.rollizaFaltanteM3)}
-                title={`Agrega un bloque de ${e.especie} con ${fmtM3(e.rollizaFaltanteM3)} m³ de rolliza — la capacidad exacta para cubrir este faltante al aprovechamiento vigente. Completá la etiqueta (GTF/lote) con la troza real cuando llegue.`}
+                title={`Agrega un bloque de ${e.especie} con ${fmtM3(e.rollizaFaltanteM3)} m³ de rolliza — la capacidad exacta para cubrir este faltante al aprovechamiento vigente. Completa la etiqueta (GTF/lote) con la troza real cuando llegue.`}
                 className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-warning-700)] transition-colors hover:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)] print:hidden"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden /> Agregar bloque de {fmtM3(e.rollizaFaltanteM3)} m³
@@ -630,7 +630,7 @@ function JornadaBloque({
           <DataTable className="w-full min-w-[620px] table-fixed text-base">
             <thead>
               <tr className="text-left text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                <th scope="col" className="w-24 px-3 py-3" title="Tildá la línea cuando ya la distribuiste y la pasaste al Libro de Operaciones">Distribuido</th>
+                <th scope="col" className="w-24 px-3 py-3" title="Tilda la línea cuando ya la distribuiste y la pasaste al Libro de Operaciones">Distribuido</th>
                 <th scope="col" className="px-3 py-3">{etiquetaCol}</th>
                 <th scope="col" className="w-28 px-3 py-3 text-right">Piezas</th>
                 <th scope="col" className="w-32 px-3 py-3 text-right">Pie tablar</th>

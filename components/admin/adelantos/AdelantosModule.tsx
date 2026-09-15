@@ -235,7 +235,7 @@ function ResumenView({
   onGoTab: (tab: string) => void;
 }) {
   if (loading) return <SkeletonGrid />;
-  if (!resumen) return <EmptyState icon={Wallet} title="Sin datos aún" hint="Creá tu primer adelanto en la pestaña Adelantos." />;
+  if (!resumen) return <EmptyState icon={Wallet} title="Sin datos aún" hint="Crea tu primer adelanto en la pestaña Adelantos." />;
 
   // Sin actividad todavía → guía de 2 pasos en vez del muro de ceros.
   const sinActividad =
@@ -250,7 +250,7 @@ function ResumenView({
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <Coins className="h-8 w-8 text-primary" />
           </div>
-          <SectionTitle className="text-2xl">Empezá a registrar adelantos</SectionTitle>
+          <SectionTitle className="text-2xl">Empieza a registrar adelantos</SectionTitle>
           <p className="mt-2 text-base text-[var(--text-secondary)]">
             Un adelanto es plata que le das a alguien y se va liquidando con lo que te entrega (producto o servicio).
           </p>
@@ -262,7 +262,7 @@ function ResumenView({
             </div>
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-white">2</span>
-              <p className="mt-2 text-base font-bold text-[var(--text-primary)]">Registrá el adelanto</p>
+              <p className="mt-2 text-base font-bold text-[var(--text-primary)]">Registra el adelanto</p>
               <p className="text-sm text-[var(--text-secondary)]">El monto y cómo se va a liquidar.</p>
             </div>
           </div>
@@ -581,7 +581,7 @@ function AdelantosView({
             onClick={() => onCreando(true)}
             disabled={beneficiarios.length === 0}
             className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 lg:hidden"
-            title={beneficiarios.length === 0 ? "Creá primero una persona" : undefined}
+            title={beneficiarios.length === 0 ? "Crea primero una persona" : undefined}
           >
             <Plus className="h-5 w-5" /> Nuevo adelanto
           </button>
@@ -638,9 +638,9 @@ function AdelantosView({
       {loading ? (
         <SkeletonGrid />
       ) : adelantos.length === 0 ? (
-        <EmptyState icon={Coins} title="Sin adelantos" hint={beneficiarios.length === 0 ? "Primero creá una persona en la pestaña Personas." : "Registrá tu primer adelanto."} />
+        <EmptyState icon={Coins} title="Sin adelantos" hint={beneficiarios.length === 0 ? "Primero crea una persona en la pestaña Personas." : "Registra tu primer adelanto."} />
       ) : filtrados.length === 0 ? (
-        <EmptyState icon={Search} title="Sin resultados" hint="Probá con otro filtro o búsqueda." />
+        <EmptyState icon={Search} title="Sin resultados" hint="Prueba con otro filtro o búsqueda." />
       ) : (
         <TablaAdelantos
           adelantos={filtrados}
@@ -854,9 +854,9 @@ function PersonasView({
       {loading ? (
         <SkeletonGrid />
       ) : beneficiarios.length === 0 ? (
-        <EmptyState icon={Users} title="Sin personas" hint="Agregá a quién le das adelantos." />
+        <EmptyState icon={Users} title="Sin personas" hint="Agrega a quién le das adelantos." />
       ) : ordenados.length === 0 ? (
-        <EmptyState icon={Search} title="Sin resultados" hint="Probá con otro nombre, documento o filtro." />
+        <EmptyState icon={Search} title="Sin resultados" hint="Prueba con otro nombre, documento o filtro." />
       ) : (
         <>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -965,7 +965,7 @@ function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: Benefi
   return (
     <ModalShell title="Eliminar persona" onClose={onClose}>
       <p className="text-base text-[var(--text-secondary)]">
-        ¿Seguro que querés eliminar a <strong className="text-[var(--text-primary)]">{persona.nombre}</strong>? Esta acción no se puede deshacer.
+        ¿Seguro que quieres eliminar a <strong className="text-[var(--text-primary)]">{persona.nombre}</strong>? Esta acción no se puede deshacer.
       </p>
       {err && <p className="mt-3 text-base font-semibold text-[var(--data-error)]">{err}</p>}
       <div className="mt-5 flex justify-end gap-2">
@@ -1091,7 +1091,7 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
 
       {/* Feed agrupado por día */}
       {grupos.length === 0 ? (
-        <EmptyState icon={Search} title="Sin movimientos" hint="Probá con otro filtro o rango." />
+        <EmptyState icon={Search} title="Sin movimientos" hint="Prueba con otro filtro o rango." />
       ) : (
         <div className="space-y-4">
           {grupos.map((g) => (
@@ -1168,7 +1168,7 @@ function RecurrentesView({ beneficiarios, onChange }: { beneficiarios: Beneficia
       {loading ? (
         <SkeletonGrid />
       ) : recs.length === 0 ? (
-        <EmptyState icon={Repeat} title="Sin recurrentes" hint={beneficiarios.length === 0 ? "Primero creá una persona." : "Programá un adelanto que se repita solo."} />
+        <EmptyState icon={Repeat} title="Sin recurrentes" hint={beneficiarios.length === 0 ? "Primero crea una persona." : "Programa un adelanto que se repita solo."} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {recs.map((r) => (
@@ -1209,7 +1209,7 @@ function CrearRecurrenteModal({ beneficiarios, onClose, onCreated }: { beneficia
   const submit = async () => {
     setErr(null);
     const m = Number(monto);
-    if (!beneficiarioId || !m || m <= 0) { setErr("Elegí persona y un monto válido."); return; }
+    if (!beneficiarioId || !m || m <= 0) { setErr("Elige persona y un monto válido."); return; }
     setSaving(true);
     const res = await fetch("/api/adelantos/recurrentes", {
       method: "POST", headers: jsonHeaders(), credentials: "include",

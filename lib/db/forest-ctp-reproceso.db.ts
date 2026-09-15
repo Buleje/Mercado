@@ -51,7 +51,7 @@ export async function setReprocesoOrigenes(
   const repetido = limpias.find((l, i) => limpias.findIndex((x) => x.origenEntryId === l.origenEntryId) !== i);
   if (repetido) {
     throw new CtpInvariantError(
-      "Una corrida no puede aparecer dos veces en el mismo reproceso: sumá las cantidades.",
+      "Una corrida no puede aparecer dos veces en el mismo reproceso: suma las cantidades.",
       "I6_SOBRE_REPROCESO",
       { origenEntryId: repetido.origenEntryId },
     );

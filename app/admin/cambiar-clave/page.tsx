@@ -40,7 +40,7 @@ export default function CambiarClavePage() {
       const d = await res.json().catch(() => ({}));
       setErr(d.error === "incorrect current password" ? "La contraseña temporal no es correcta." : (d.issues?.[0]?.message ?? "No se pudo cambiar la contraseña."));
     } catch {
-      setErr("Error de red. Intentá de nuevo.");
+      setErr("Error de red. Intenta de nuevo.");
     } finally {
       setBusy(false);
     }
@@ -53,10 +53,10 @@ export default function CambiarClavePage() {
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <ShieldCheck className="h-5 w-5" />
           </span>
-          <PageTitle className="text-[var(--text-primary)]">Creá tu contraseña</PageTitle>
+          <PageTitle className="text-[var(--text-primary)]">Crea tu contraseña</PageTitle>
         </div>
         <p className="text-sm text-[var(--text-secondary)] mb-5">
-          Tu acceso se reseteó con una clave temporal. Por seguridad, elegí tu propia contraseña para continuar.
+          Tu acceso se reseteó con una clave temporal. Por seguridad, elige tu propia contraseña para continuar.
         </p>
 
         <form onSubmit={submit} className="space-y-3">
@@ -81,7 +81,7 @@ export default function CambiarClavePage() {
               </button>
             </div>
             <span className={`mt-1 block text-xs ${next.length === 0 ? "text-[var(--text-tertiary)]" : strong ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-warning-600,#f0503f)]"}`}>
-              {next.length === 0 ? "Mínimo 10 caracteres, con letra y número o símbolo." : strong ? "Contraseña segura ✓" : "Aún débil — sumá largo o un símbolo."}
+              {next.length === 0 ? "Mínimo 10 caracteres, con letra y número o símbolo." : strong ? "Contraseña segura ✓" : "Aún débil — suma largo o un símbolo."}
             </span>
           </label>
           <label className="block">

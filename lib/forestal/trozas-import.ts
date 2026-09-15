@@ -265,7 +265,7 @@ export function interpretarTrozas(
     );
   }
   if (trozas.length === 0 && errores.length > 0) {
-    avisos.push("Ninguna fila se pudo leer. Revisá que las columnas tengan código, diámetros y largo, o el volumen.");
+    avisos.push("Ninguna fila se pudo leer. Revisa que las columnas tengan código, diámetros y largo, o el volumen.");
   }
 
   return {

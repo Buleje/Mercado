@@ -84,7 +84,7 @@ function FilaLote({
               {libres} troza{libres === 1 ? "" : "s"} esperando la sierra
             </span>
           ) : (
-            <span>Sin piezas libres — abrilo para ver qué tiene</span>
+            <span>Sin piezas libres — ábrelo para ver qué tiene</span>
           )}
           {dias != null && (
             <span className="tabular-nums" title={`Abierto el ${lote.fechaApertura?.slice(0, 10)}`}>
@@ -276,7 +276,7 @@ export default function CtpElegirLoteModal({
         {filtrados.length === 0 ? (
           <p className="rounded-xl bg-[var(--surface-sunken)] px-3 py-6 text-center text-sm text-[var(--text-secondary)]">
             {lotes.length === 0
-              ? "Todavía no hay lotes armados. Apartá madera del patio para programar el primero."
+              ? "Todavía no hay lotes armados. Aparta madera del patio para programar el primero."
               : "Ningún lote coincide con lo que buscaste."}
           </p>
         ) : (

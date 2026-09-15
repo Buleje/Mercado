@@ -54,7 +54,7 @@ export async function consultarDocumento(numeroCrudo: string): Promise<Resultado
       encontrado: false,
       tipo: tipo ?? undefined,
       numero,
-      motivo: `${tipo === "RUC" ? "SUNAT" : "RENIEC"} está tardando demasiado. Cargá los datos a mano.`,
+      motivo: `${tipo === "RUC" ? "SUNAT" : "RENIEC"} está tardando demasiado. Carga los datos a mano.`,
     };
   });
 }
@@ -70,7 +70,7 @@ async function consultarSinTecho(numeroCrudo: string): Promise<ResultadoDocument
       motivo:
         numero.length === 11
           ? "Un RUC de 11 dígitos arranca con 10, 15, 16, 17 o 20."
-          : "Escribí 8 dígitos para un DNI u 11 para un RUC.",
+          : "Escribe 8 dígitos para un DNI u 11 para un RUC.",
     };
   }
 
@@ -94,8 +94,8 @@ async function consultarSinTecho(numeroCrudo: string): Promise<ResultadoDocument
         numero,
         motivo:
           ruc.reason === "not_found"
-            ? "SUNAT no tiene ese RUC. Revisá el número."
-            : "No se pudo consultar SUNAT ahora. Cargá los datos a mano.",
+            ? "SUNAT no tiene ese RUC. Revisa el número."
+            : "No se pudo consultar SUNAT ahora. Carga los datos a mano.",
       };
     }
     /* `source: "mock"` con un provider real configurado significa que se cayó
@@ -118,7 +118,7 @@ async function consultarSinTecho(numeroCrudo: string): Promise<ResultadoDocument
       demo: esDemo || undefined,
       avisoConfig:
         ruc.reason === "bad_credentials"
-          ? "El token de SUNAT no es válido: revisá SUNAT_RUC_API_TOKEN."
+          ? "El token de SUNAT no es válido: revisa SUNAT_RUC_API_TOKEN."
           : ruc.reason === "provider_unavailable"
             ? "SUNAT no contestó: estos datos son de ejemplo."
             : undefined,
@@ -137,7 +137,7 @@ async function consultarSinTecho(numeroCrudo: string): Promise<ResultadoDocument
       encontrado: false,
       tipo,
       numero,
-      motivo: `No se pudo consultar ${tipo === "DNI" ? "RENIEC" : "SUNAT"} ahora. Cargá los datos a mano.`,
+      motivo: `No se pudo consultar ${tipo === "DNI" ? "RENIEC" : "SUNAT"} ahora. Carga los datos a mano.`,
     };
   }
 }

@@ -214,7 +214,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
           /* localStorage best-effort */
         }
         setError(
-          "Sin conexión: guardamos el lote como borrador en este dispositivo. Reintentá cuando vuelva la señal.",
+          "Sin conexión: guardamos el lote como borrador en este dispositivo. Reintenta cuando vuelva la señal.",
         );
       } else {
         setError(err instanceof Error ? err.message : String(err));
@@ -226,7 +226,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
   async function submit(e: React.FormEvent, keepOpen = false) {
     e.preventDefault();
     if (submitting || !isValid) {
-      if (!isValid) setError("Ingresá el peso en kg.");
+      if (!isValid) setError("Ingresa el peso en kg.");
       return;
     }
     await sendLote(buildPayload(), keepOpen);
@@ -325,8 +325,8 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
               {!online && (
                 <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-medium text-[var(--data-warning-700)]">
                   <WifiOff className="h-4 w-4 shrink-0" />
-                  Sin conexión. Podés seguir cargando; si al guardar falla la red, el lote queda como
-                  borrador y lo reintentás.
+                  Sin conexión. Puedes seguir cargando; si al guardar falla la red, el lote queda como
+                  borrador y lo reintentas.
                 </div>
               )}
               {pendingDraft && (
@@ -444,7 +444,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                       setProductorNombre(e.target.value);
                       setProductorId(null);
                     }}
-                    placeholder="o escribí el nombre del productor…"
+                    placeholder="o escribe el nombre del productor…"
                     className={`${I} h-9`}
                   />
                   {productorNombre.trim() && !productorId && (
@@ -649,7 +649,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                 </div>
                 {!hasCut && (
                   <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                    Cargá la prueba de corte para ver el grado.
+                    Carga la prueba de corte para ver el grado.
                   </p>
                 )}
               </div>

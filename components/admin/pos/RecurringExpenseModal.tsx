@@ -259,7 +259,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
               Nuevo gasto recurrente
             </SectionTitle>
             <p className="text-sm text-[var(--text-secondary)] truncate">
-              Configurá un pago fijo (alquiler, internet, etc.) para registrarlo en 1 click cuando llegue la fecha.
+              Configura un pago fijo (alquiler, internet, etc.) para registrarlo en 1 click cuando llegue la fecha.
             </p>
           </div>
           <button

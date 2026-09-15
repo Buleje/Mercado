@@ -50,7 +50,7 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
   if (guardadas.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">
-        Guardá una cubicación en el cubicador y vas a poder comparar este lote contra ella.
+        Guarda una cubicación en el cubicador y vas a poder comparar este lote contra ella.
       </p>
     );
   }
@@ -64,7 +64,7 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
           onChange={(e) => setContraId(e.target.value)}
           className="h-9 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] sm:flex-none sm:max-w-sm"
         >
-          <option value="">Elegí una cubicación guardada…</option>
+          <option value="">Elige una cubicación guardada…</option>
           {guardadas.map((g) => (
             <option key={g.id} value={g.id}>{g.nombre} · {g.totales.piezas} pzas · {fmtPt(g.totales.pieTablar)} PT</option>
           ))}

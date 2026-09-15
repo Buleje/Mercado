@@ -113,16 +113,16 @@ export default function TelegramPanel() {
       {!estado?.configurado ? (
         <InfoAlert>
           Falta el bot. Escribile a <strong>@BotFather</strong> en Telegram, mandale{" "}
-          <code className="font-mono">/newbot</code>, y pegá el token que te da en{" "}
+          <code className="font-mono">/newbot</code>, y pega el token que te da en{" "}
           <code className="font-mono">TELEGRAM_BOT_TOKEN</code> del <code className="font-mono">.env</code>.
-          Después recargá esta pantalla.
+          Después recarga esta pantalla.
         </InfoAlert>
       ) : (
         <>
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-            Le hablás al bot —escribiendo o con un <strong>audio</strong>— y te muestra qué se va a
+            Le hablas al bot —escribiendo o con un <strong>audio</strong>— y te muestra qué se va a
             anotar con los botones <strong>Confirmar</strong> y <strong>Cancelar</strong>. Recién
-            cuando tocás Confirmar queda en los libros.
+            cuando tocas Confirmar queda en los libros.
           </p>
 
           {/* ── Vincular ─────────────────────────────────────────────────── */}

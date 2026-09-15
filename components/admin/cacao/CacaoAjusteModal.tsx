@@ -56,7 +56,7 @@ export default function CacaoAjusteModal({ variedades, onClose, onSaved }: Props
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting || !isValid) {
-      if (!isValid) setError("Ingresá la cantidad (kg) y un motivo (mín. 3 caracteres).");
+      if (!isValid) setError("Ingresa la cantidad (kg) y un motivo (mín. 3 caracteres).");
       return;
     }
     setSubmitting(true);

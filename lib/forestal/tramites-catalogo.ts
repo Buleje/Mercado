@@ -269,7 +269,7 @@ const CAMPOS_COMUNES: CampoTramite[] = [
     label: "Empresa que emite (membrete)",
     tipo: "texto",
     autollenado: "ficha",
-    hint: "Sale arriba del papel. Trae la razón social de tu Ficha CTP — cambiala sólo si ESTE documento lo firma otra empresa",
+    hint: "Sale arriba del papel. Trae la razón social de tu Ficha CTP — cámbiala sólo si ESTE documento lo firma otra empresa",
     grupo: "firma",
   },
 ];
@@ -500,7 +500,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "La documentación de origen legal de la materia prima y las guías de transporte emitidas se encuentran a disposición de su Autoridad en nuestras instalaciones.",
     ],
     advertencia:
-      "Adjuntá el Libro en formato oficial: se descarga desde Acciones → «Formato oficial SERFOR» en el Libro CTP.",
+      "Adjunta el Libro en formato oficial: se descarga desde Acciones → «Formato oficial SERFOR» en el Libro CTP.",
   },
 
   // ── 5. Cambio de regente / responsable técnico ────────────────────────────
@@ -584,7 +584,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Por lo expuesto, solicito tener por presentado el descargo y disponer el archivo de la observación formulada.",
     ],
     advertencia:
-      "El plazo para descargar es corto y se cuenta desde la notificación: verificá la fecha del acta antes de presentar. La carpeta de fiscalización del Libro CTP arma la evidencia del período.",
+      "El plazo para descargar es corto y se cuenta desde la notificación: verifica la fecha del acta antes de presentar. La carpeta de fiscalización del Libro CTP arma la evidencia del período.",
   },
 
   // ── 7. Relación de guías de transporte forestal emitidas ──────────────────
@@ -619,7 +619,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
         tipo: "texto",
         requerido: true,
         placeholder: "SERFOR — Sede Puerto Bermúdez",
-        hint: "Cambialo si tu titular reporta a otra sede: es un sugerido, no un dato fijo",
+        hint: "Cámbialo si tu titular reporta a otra sede: es un sugerido, no un dato fijo",
         grupo: "destino",
       },
       {
@@ -663,7 +663,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Solicito a su Despacho disponer el registro de las guías detalladas en el Sistema Nacional de Información y Fiscalización Forestal y de Fauna Silvestre (SNIFFS), conforme a la información que se declara.",
     ],
     advertencia:
-      "El SNIFFS no tiene un canal para que el titular registre directamente: por eso esta relación se presenta en mesa de partes para que la Sede la suba al sistema. Verificá cada N° de guía contra tu talonario físico y marcá como anuladas sólo las que de verdad no se usaron.",
+      "El SNIFFS no tiene un canal para que el titular registre directamente: por eso esta relación se presenta en mesa de partes para que la Sede la suba al sistema. Verifica cada N° de guía contra tu talonario físico y marca como anuladas sólo las que de verdad no se usaron.",
   },
 
   // ── 8. Constancia / permiso CITES ────────────────────────────────────────
@@ -702,7 +702,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Por lo expuesto, solicito tener por presentada la solicitud y disponer la emisión del permiso.",
     ],
     advertencia:
-      "El permiso CITES es previo al embarque y el trámite tiene plazos propios: iniciá con anticipación. El expediente EUDR del Libro CTP sirve para acreditar la cadena.",
+      "El permiso CITES es previo al embarque y el trámite tiene plazos propios: inicia con anticipación. El expediente EUDR del Libro CTP sirve para acreditar la cadena.",
   },
 
   // ── 9. Anulación de guía de transporte forestal ───────────────────────────
@@ -733,7 +733,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
         id: "guiaReemplazo",
         label: "N° de guía de reemplazo (si la hay)",
         tipo: "texto",
-        hint: "Dejalo vacío si esta guía no se reemplazó por otra",
+        hint: "Déjalo vacío si esta guía no se reemplazó por otra",
       },
     ],
     anexos: [
@@ -804,7 +804,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Por lo expuesto, solicito a su Despacho disponer la evaluación y aprobación de la ampliación de volumen requerida.",
     ],
     advertencia:
-      "El TUPA de tu ARFFS fija si esto se tramita como modificación del Plan de Manejo o como un procedimiento propio de ampliación: confirmalo antes de presentar.",
+      "El TUPA de tu ARFFS fija si esto se tramita como modificación del Plan de Manejo o como un procedimiento propio de ampliación: confírmalo antes de presentar.",
   },
 
   // ── 11. Reposición de talonario de GTF por pérdida o deterioro ────────────
@@ -835,7 +835,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
         id: "denunciaPolicial",
         label: "N° de denuncia policial",
         tipo: "texto",
-        hint: "Si el hecho fue robo o pérdida, cotejá con tu ARFFS si la exige",
+        hint: "Si el hecho fue robo o pérdida, coteja con tu ARFFS si la exige",
       },
     ],
     anexos: [
@@ -851,7 +851,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Los números del rango afectado quedan inutilizados para todo efecto: ninguna guía con esos correlativos ampara transporte alguno desde la fecha señalada.",
       "Por lo expuesto, solicito a su Despacho disponer la reposición de un nuevo talonario, dejando constancia de la inutilización del rango declarado.",
     ],
-    advertencia: "Cotejá en el TUPA de tu ARFFS si exige la denuncia policial como requisito obligatorio (no solo recomendado) antes de presentar.",
+    advertencia: "Coteja en el TUPA de tu ARFFS si exige la denuncia policial como requisito obligatorio (no solo recomendado) antes de presentar.",
   },
 
   // ── 12. Paralización temporal de operaciones ──────────────────────────────
@@ -872,7 +872,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
         id: "fechaFinParalizacion",
         label: "Fecha estimada de reinicio",
         tipo: "fecha",
-        hint: "Dejalo vacío si todavía no hay fecha cierta",
+        hint: "Déjalo vacío si todavía no hay fecha cierta",
       },
       {
         id: "motivoParalizacion",
@@ -928,7 +928,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
         : "No se han producido cambios en la planta desde el último registro.",
       "Adjunto la documentación que sustenta la vigencia de nuestra operación y quedo a disposición para la inspección que su Autoridad estime necesaria.",
     ],
-    advertencia: "Iniciá el trámite con anticipación: operar con el registro vencido puede generar observaciones aunque la planta siga funcionando igual.",
+    advertencia: "Inicia el trámite con anticipación: operar con el registro vencido puede generar observaciones aunque la planta siga funcionando igual.",
   },
 
   // ── 14. Informe periódico de regencia forestal (Título Habilitante) ──────
@@ -966,7 +966,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       d.incidenciasRegencia?.trim() ? `Incidencias u observaciones técnicas del período: ${v(d, "incidenciasRegencia")}.` : "No se presentaron incidencias técnicas dignas de mención en el período.",
       "Adjunto el resumen del aprovechamiento y quedo a disposición para la verificación que su Autoridad estime necesaria.",
     ],
-    advertencia: "La periodicidad exacta de la regencia (mensual, trimestral…) la fija tu Plan de Manejo o el TUPA de tu ARFFS: confirmala antes de presentar.",
+    advertencia: "La periodicidad exacta de la regencia (mensual, trimestral…) la fija tu Plan de Manejo o el TUPA de tu ARFFS: confírmala antes de presentar.",
   },
 
   // ── 15. Remisión del Libro de Operaciones del Título Habilitante ─────────
@@ -998,7 +998,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       d.observacionesRemisionTh?.trim() ? `Observaciones: ${v(d, "observacionesRemisionTh")}.` : "",
       "La documentación de origen legal y las guías de transporte forestal emitidas se encuentran a disposición de su Autoridad en nuestras instalaciones.",
     ],
-    advertencia: "Adjuntá el Libro en formato oficial: se descarga desde el Libro de Títulos Habilitantes.",
+    advertencia: "Adjunta el Libro en formato oficial: se descarga desde el Libro de Títulos Habilitantes.",
   },
 
   // ── 16. Recurso de reconsideración o apelación ────────────────────────────
@@ -1142,7 +1142,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
         label: "Cómo ocurrió",
         tipo: "textarea",
         requerido: true,
-        placeholder: "Extravío / robo / asalto en ruta — contá el hecho tal como pasó, sin suposiciones",
+        placeholder: "Extravío / robo / asalto en ruta — cuenta el hecho tal como pasó, sin suposiciones",
         sugerencias: [
           {
             label: "Extravío en tránsito",
@@ -1191,8 +1191,8 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
     ],
     anexos: [
       "Copia de tu DNI",
-      "Copia o fotografía de la GTF, si conservás alguna (talón, foto del celular, PDF del aplicativo SERFOR)",
-      "Copia o fotografía de la Lista de Trozas, si conservás algún registro",
+      "Copia o fotografía de la GTF, si conservas alguna (talón, foto del celular, PDF del aplicativo SERFOR)",
+      "Copia o fotografía de la Lista de Trozas, si conservas algún registro",
     ],
     cuerpo: (d) => [
       `Que, mediante el presente documento pongo en conocimiento de su Despacho la pérdida de la Guía de Transporte Forestal N° ${v(d, "numeroGtfPerdida")} y su Lista de Trozas, documentos que amparaban el transporte de ${v(d, "volumenAmparadoPerdido", "un volumen de")} m³ de ${v(d, "especieProductoPerdido", "producto forestal")}.`,
@@ -1203,7 +1203,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Por lo expuesto, solicito a su Despacho se sirva registrar la presente denuncia y expedir el certificado o constancia de denuncia policial correspondiente, documento que pondremos en conocimiento de la autoridad forestal competente.",
     ],
     advertencia:
-      "Antes de ir a la comisaría, probá la Denuncia Policial Digital (gob.pe/11155 → sistemas.policia.gob.pe/denuncias_digitales): es gratis, está las 24 horas, cubre pérdida/robo de \"guía\" como categoría, y el certificado PDF que emite tiene la MISMA validez que el de comisaría. Usá este documento como guión de los hechos para esa declaración, o llevalo impreso si preferís hacer la denuncia en persona.",
+      "Antes de ir a la comisaría, prueba la Denuncia Policial Digital (gob.pe/11155 → sistemas.policia.gob.pe/denuncias_digitales): es gratis, está las 24 horas, cubre pérdida/robo de \"guía\" como categoría, y el certificado PDF que emite tiene la MISMA validez que el de comisaría. Usa este documento como guión de los hechos para esa declaración, o llévalo impreso si prefieres hacer la denuncia en persona.",
   },
 
   // ── 19. Comunicación a SERFOR por pérdida de GTF ya emitida ──────────────
@@ -1272,7 +1272,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Por lo expuesto, solicito a su Despacho tener por comunicada la pérdida de la guía referida y disponer se deje constancia de la inutilización de dicho número para todo efecto, sin perjuicio de la responsabilidad que pudiera corresponder conforme a los hechos denunciados.",
     ],
     advertencia:
-      "Confirmá con tu Sede si además de SERFOR corresponde copia a tu ARFFS: la guía la visa y controla el correlativo la Autoridad Regional, aunque el registro final viva en el SNIFFS. El certificado de denuncia policial es el anexo que no puede faltar — sin él, este documento sólo es un aviso, no un respaldo.",
+      "Confirma con tu Sede si además de SERFOR corresponde copia a tu ARFFS: la guía la visa y controla el correlativo la Autoridad Regional, aunque el registro final viva en el SNIFFS. El certificado de denuncia policial es el anexo que no puede faltar — sin él, este documento sólo es un aviso, no un respaldo.",
   },
 
   // ── 20. Aviso de inicio de aprovechamiento / zafra ────────────────────────
@@ -1313,7 +1313,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Ponemos en conocimiento de su Autoridad el inicio de operaciones a efectos de la programación de las visitas de supervisión que estime pertinentes.",
     ],
     advertencia:
-      "Cotejá en tu Plan de Manejo si el aviso de inicio es un requisito EXPRESO con plazo de anticipación, o una buena práctica sin plazo fijo: lo que obliga es lo que dice tu propio plan aprobado, no una norma genérica.",
+      "Coteja en tu Plan de Manejo si el aviso de inicio es un requisito EXPRESO con plazo de anticipación, o una buena práctica sin plazo fijo: lo que obliga es lo que dice tu propio plan aprobado, no una norma genérica.",
   },
 
   // ── 21. Apertura de vía de extracción / camino forestal ───────────────────
@@ -1351,7 +1351,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Adjunto el croquis de ubicación de la vía y quedo a disposición para la verificación de campo que su Autoridad considere necesaria.",
     ],
     advertencia:
-      "Si el trazo no figuraba en tu Plan de Manejo aprobado, puede que necesite tramitarse como una modificación del plan y no como una autorización suelta: confirmalo con tu ARFFS antes de presentar.",
+      "Si el trazo no figuraba en tu Plan de Manejo aprobado, puede que necesite tramitarse como una modificación del plan y no como una autorización suelta: confírmalo con tu ARFFS antes de presentar.",
   },
 
   // ── 22. Siniestro en el área de aprovechamiento ───────────────────────────
@@ -1396,7 +1396,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Ponemos el hecho en conocimiento de su Autoridad a efectos de que se tenga presente al momento de evaluar el cumplimiento del Plan de Manejo del período, y solicitamos disponer la verificación de campo que estime pertinente.",
     ],
     advertencia:
-      "Este aviso deja constancia del hecho; si el siniestro te impide cumplir el volumen o el cronograma del POA, todavía tenés que tramitar el reajuste del plan por separado — este documento es el sustento, no el pedido de ajuste en sí.",
+      "Este aviso deja constancia del hecho; si el siniestro te impide cumplir el volumen o el cronograma del POA, todavía tienes que tramitar el reajuste del plan por separado — este documento es el sustento, no el pedido de ajuste en sí.",
   },
 
   // ── 23. Oficio o carta genérica ───────────────────────────────────────────

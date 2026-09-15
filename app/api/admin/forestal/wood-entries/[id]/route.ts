@@ -100,7 +100,7 @@ const patchSchema = z.discriminatedUnion("action", [
     fecha: z
       .string()
       .trim()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD")
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD")
       .optional(),
   }),
   z.object({ action: z.literal("reject"), reason: z.string().trim().min(3).max(500) }),

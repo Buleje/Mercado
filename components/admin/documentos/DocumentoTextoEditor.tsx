@@ -122,7 +122,7 @@ export default function DocumentoTextoEditor({
         const j = await r.json().catch(() => ({}));
         if (r.status === 429) {
           const seg = Number(j.retryAfter) || 60;
-          throw new Error(`Demasiados guardados seguidos. Tu texto sigue acá: probá de nuevo en ${Math.ceil(seg / 60)} min.`);
+          throw new Error(`Demasiados guardados seguidos. Tu texto sigue acá: prueba de nuevo en ${Math.ceil(seg / 60)} min.`);
         }
         throw new Error(j.error === "too_large" ? "El archivo quedó demasiado grande." : (j.message ?? `No se pudo guardar (HTTP ${r.status})`));
       }
@@ -296,7 +296,7 @@ export default function DocumentoTextoEditor({
       <AvisoArchivo
         error={errorCarga}
         titulo="No se pudo abrir el documento"
-        sugerencia="Si el problema sigue, descargalo y abrilo en Word."
+        sugerencia="Si el problema sigue, descárgalo y ábrelo en Word."
         urlDescarga={`/api/admin/documents/${docId}/raw`}
         onReintentar={() => setIntento((n) => n + 1)}
       />
@@ -366,7 +366,7 @@ export default function DocumentoTextoEditor({
       {mixtos > 0 && (
         <p className="border-b-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
           {mixtos === 1 ? "Hay un párrafo" : `Hay ${mixtos} párrafos`} con formatos mezclados (negritas o subrayados sueltos), marcados con una línea al costado.
-          Si los editás, el párrafo queda con un solo formato. El archivo anterior queda como versión.
+          Si los editas, el párrafo queda con un solo formato. El archivo anterior queda como versión.
         </p>
       )}
 
@@ -392,7 +392,7 @@ export default function DocumentoTextoEditor({
           ))}
           {bloques.length === 0 && (
             <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
-              El documento está vacío. Agregá un párrafo para empezar.
+              El documento está vacío. Agrega un párrafo para empezar.
             </p>
           )}
         </div>

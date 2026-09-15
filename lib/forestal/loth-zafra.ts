@@ -137,7 +137,7 @@ export function analizarZafra(input: ZafraInput): ZafraAnalisis {
     proyeccionCierreM3: movilizadoM3,
     riesgoNoMovilizadoM3: saldoM3,
     meses: [],
-    mensaje: "Cargá la vigencia del plan (desde / hasta) para planificar la zafra.",
+    mensaje: "Carga la vigencia del plan (desde / hasta) para planificar la zafra.",
   };
   if (!desde || !hasta || hasta <= desde) return vacio;
 
@@ -173,9 +173,9 @@ export function analizarZafra(input: ZafraInput): ZafraAnalisis {
       ? `La vigencia venció y quedaron ${saldoM3.toFixed(2)} m³ sin movilizar: la autorización no se acumula al período siguiente.`
       : "Zafra cerrada: se movilizó todo lo autorizado dentro de la vigencia."
     : estado === "atrasado"
-      ? `Vas ${Math.abs(desfasePct).toFixed(1)} puntos por debajo del tiempo consumido. Para no perder saldo hacen falta ${ritmoRequeridoM3Dia.toFixed(3)} m³/día en los ${diasRestantes} días que quedan (venís a ${ritmoActualM3Dia.toFixed(3)}).`
+      ? `Vas ${Math.abs(desfasePct).toFixed(1)} puntos por debajo del tiempo consumido. Para no perder saldo hacen falta ${ritmoRequeridoM3Dia.toFixed(3)} m³/día en los ${diasRestantes} días que quedan (vienes a ${ritmoActualM3Dia.toFixed(3)}).`
       : estado === "adelantado"
-        ? `Vas ${desfasePct.toFixed(1)} puntos por encima del tiempo consumido: a este ritmo cerrás antes de que venza la vigencia.`
+        ? `Vas ${desfasePct.toFixed(1)} puntos por encima del tiempo consumido: a este ritmo cierras antes de que venza la vigencia.`
         : `En ritmo: ${avanceVolumenPct.toFixed(1)}% del volumen con ${avanceTiempoPct.toFixed(1)}% del tiempo consumido.`;
 
   return {

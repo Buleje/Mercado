@@ -170,7 +170,7 @@ export default function CalculadoraRendimiento() {
             </>
           ) : (
             <p className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]">
-              <Percent className="h-4 w-4" /> Poné la troza consumida y lo que salió.
+              <Percent className="h-4 w-4" /> Pon la troza consumida y lo que salió.
             </p>
           )}
         </div>

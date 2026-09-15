@@ -69,7 +69,7 @@ async function ensureSpecOrDeny(tenantId: string) {
       {
         error: "specialization_disabled",
         message:
-          "El Libro de Operaciones de Títulos Habilitantes no está habilitado para este tenant. Solicitá al superadmin habilitarlo.",
+          "El Libro de Operaciones de Títulos Habilitantes no está habilitado para este tenant. Solicita al superadmin habilitarlo.",
       },
       { status: 403 },
     );

@@ -73,7 +73,7 @@ export function FiltroLargoCelda({ valor, onChange }: {
           onBlur={agregar}
           list="largos-disponibles"
           placeholder={lista.length === 0 ? "cualquiera" : "+ largo"}
-          aria-label="Agregar un largo (pies) al filtro — elegí de la lista o escribí el tuyo"
+          aria-label="Agregar un largo (pies) al filtro — elige de la lista o escribe el tuyo"
           className="h-7 w-16 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-right font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
         />
       </div>

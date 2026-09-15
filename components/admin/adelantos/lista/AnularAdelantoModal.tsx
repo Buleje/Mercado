@@ -72,7 +72,7 @@ export default function AnularAdelantoModal({
       setErr(j?.error ?? "No se pudo anular el adelanto.");
     } catch (e) {
       logger.error("[adelantos] no se pudo anular", { error: String(e) });
-      setErr("No se pudo anular. Revisá la conexión.");
+      setErr("No se pudo anular. Revisa la conexión.");
     } finally {
       setSaving(false);
     }

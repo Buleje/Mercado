@@ -44,7 +44,7 @@ interface TrazaDTO {
 }
 
 const TRAZA_MOTIVO: Record<Exclude<TrazaDTO["motivo"], "ok">, string> = {
-  sin_miembros: "El lote no tiene corridas. Agregá al menos una para armar la cadena.",
+  sin_miembros: "El lote no tiene corridas. Agrega al menos una para armar la cadena.",
   corrida_sin_origen: "Una corrida del lote no tiene su materia prima atribuida: la cadena se corta un eslabón más atrás (falta el ingreso con GTF).",
 };
 
@@ -265,7 +265,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
                           </td>
                         </tr>
                       ))}
-                      {traza.corridas.length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">Lote vacío. Editá para agregar corridas.</td></tr>}
+                      {traza.corridas.length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">Lote vacío. Edita para agregar corridas.</td></tr>}
                     </tbody>
                   </DataTable>
                 </div>
@@ -355,7 +355,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
             {/* Confirmación de anulación inline */}
             {annulReason !== null && (
               <div className="space-y-2 rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3">
-                <p className="text-sm text-[var(--text-primary)]"><strong>Anular {lote.loteCode}:</strong> indicá el motivo (queda en el historial, no se borra).</p>
+                <p className="text-sm text-[var(--text-primary)]"><strong>Anular {lote.loteCode}:</strong> indica el motivo (queda en el historial, no se borra).</p>
                 <input ref={annulReasonRef} value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (mín. 3 caracteres)" className={`${I} border-[var(--data-error-500)]/40 focus:border-[var(--data-error-500)] focus:ring-[var(--data-error-500)]/20`} />
                 <div className="flex justify-end gap-2">
                   <Btn variant="secondary" size="sm" onClick={() => setAnnulReason(null)} disabled={busy}>Cancelar</Btn>

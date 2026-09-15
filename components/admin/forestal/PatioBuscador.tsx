@@ -148,7 +148,7 @@ export default function PatioBuscador() {
 
         {hallazgos?.length === 0 && (
           <p className="rounded-2xl bg-[var(--surface-sunken)] px-4 py-6 text-center text-base text-[var(--text-secondary)]">
-            Ninguna troza con ese número. Probá con la codificación de la guía.
+            Ninguna troza con ese número. Prueba con la codificación de la guía.
           </p>
         )}
 
@@ -167,7 +167,7 @@ export default function PatioBuscador() {
             <WifiOff className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
             <span>
               Sin señal — esto es lo último guardado, {antiguedad(desdeCache, new Date())}.
-              {esViejo(desdeCache, new Date()) && " Puede haber cambiado: confirmá antes de aserrar."}
+              {esViejo(desdeCache, new Date()) && " Puede haber cambiado: confirma antes de aserrar."}
             </span>
           </p>
         )}

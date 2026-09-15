@@ -134,7 +134,7 @@ export default function CtpPeriodPicker({
                 </label>
                 {incompleto && (
                   <p className="text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                    Elegí las dos fechas. Mientras tanto se muestra todo el histórico.
+                    Elige las dos fechas. Mientras tanto se muestra todo el histórico.
                   </p>
                 )}
               </div>

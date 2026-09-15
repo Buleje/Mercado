@@ -263,14 +263,14 @@ export default function CacaoNews() {
             <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
               <Newspaper className="mx-auto h-7 w-7 text-[var(--text-tertiary)]" />
               <p className="mt-2 text-sm text-[var(--text-tertiary)]">
-                {items.length === 0 ? "Sin noticias disponibles ahora. Probá actualizar en un rato." : "Ninguna noticia coincide con los filtros."}
+                {items.length === 0 ? "Sin noticias disponibles ahora. Prueba actualizar en un rato." : "Ninguna noticia coincide con los filtros."}
               </p>
               {items.length > 0 && filtrosActivos && <button type="button" onClick={limpiar} className="mt-3 inline-flex items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-3.5 w-3.5" />Limpiar filtros</button>}
             </div>
           ) : (
             <div className="space-y-4">
               {vista.nRecientes === 0 && (
-                <p className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-center text-sm text-[var(--text-tertiary)]">Sin noticias recientes con estos filtros — mirá el histórico más abajo.</p>
+                <p className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-center text-sm text-[var(--text-tertiary)]">Sin noticias recientes con estos filtros — mira el histórico más abajo.</p>
               )}
               {(["hoy", "semana", "mes"] as const).map((g) =>
                 vista.recientes[g].length === 0 ? null : (

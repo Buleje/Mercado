@@ -98,7 +98,7 @@ export function useImportCarpeta(): Ctx {
 /** Un "HTTP 429: {...}" no le dice nada a nadie; esto sí. */
 function mensajeError(e: unknown): string {
   const crudo = e instanceof Error ? e.message : String(e);
-  if (crudo.includes("429")) return "el servidor pidió esperar (demasiadas subidas seguidas). Probá de nuevo en unos minutos.";
+  if (crudo.includes("429")) return "el servidor pidió esperar (demasiadas subidas seguidas). Prueba de nuevo en unos minutos.";
   if (crudo.includes("413") || crudo.includes("too_large")) return "hay archivos más pesados de lo permitido.";
   if (crudo.includes("415") || crudo.includes("mime_not_allowed")) return "hay tipos de archivo que el drive no acepta.";
   return crudo.slice(0, 160);

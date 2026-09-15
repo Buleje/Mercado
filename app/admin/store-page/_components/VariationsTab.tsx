@@ -372,7 +372,7 @@ function ProductModifierEditor({
       onChange();
     } catch (err) {
       console.warn("[VariationsTab] crear grupo falló", err);
-      toast.error("No se pudo crear el grupo — revisá tu conexión.");
+      toast.error("No se pudo crear el grupo — revisa tu conexión.");
     }
   }
 
@@ -396,7 +396,7 @@ function ProductModifierEditor({
       onChange();
     } catch (err) {
       console.warn("[VariationsTab] eliminar grupo falló", err);
-      toast.error("No se pudo eliminar el grupo — revisá tu conexión.");
+      toast.error("No se pudo eliminar el grupo — revisa tu conexión.");
     }
   }
 
@@ -422,7 +422,7 @@ function ProductModifierEditor({
       onChange();
     } catch (err) {
       console.warn("[VariationsTab] guardar grupo falló", err);
-      toast.error("No se pudo guardar el grupo — revisá tu conexión.");
+      toast.error("No se pudo guardar el grupo — revisa tu conexión.");
     }
   }
 
@@ -456,7 +456,7 @@ function ProductModifierEditor({
       onChange();
     } catch (err) {
       console.warn("[VariationsTab] agregar opción falló", err);
-      toast.error("No se pudo agregar la opción — revisá tu conexión.");
+      toast.error("No se pudo agregar la opción — revisa tu conexión.");
     }
   }
 
@@ -479,7 +479,7 @@ function ProductModifierEditor({
       onChange();
     } catch (err) {
       console.warn("[VariationsTab] guardar opción falló", err);
-      toast.error("No se pudo guardar la opción — revisá tu conexión.");
+      toast.error("No se pudo guardar la opción — revisa tu conexión.");
     }
   }
 
@@ -503,7 +503,7 @@ function ProductModifierEditor({
       onChange();
     } catch (err) {
       console.warn("[VariationsTab] eliminar opción falló", err);
-      toast.error("No se pudo eliminar la opción — revisá tu conexión.");
+      toast.error("No se pudo eliminar la opción — revisa tu conexión.");
     }
   }
 
@@ -552,7 +552,7 @@ function ProductModifierEditor({
                   Aún no tienes variaciones para este producto.
                 </p>
                 <p className="text-xs text-[var(--text-tertiary)]">
-                  Empezá con un preset rápido (abajo) o creá uno custom.
+                  Empieza con un preset rápido (abajo) o crea uno custom.
                 </p>
               </div>
             )}
@@ -582,7 +582,7 @@ function ProductModifierEditor({
                 } catch (err) {
                   setGroups(previous);
                   console.warn("[VariationsTab] reordenar grupos falló", err);
-                  toast.error("No se pudo guardar el orden de los grupos — revisá tu conexión.");
+                  toast.error("No se pudo guardar el orden de los grupos — revisa tu conexión.");
                 }
               }}
               renderGroup={(g) => (
@@ -609,7 +609,7 @@ function ProductModifierEditor({
                       await reload();
                     } catch (err) {
                       console.warn("[VariationsTab] reordenar opciones falló", err);
-                      toast.error("No se pudo guardar el orden de las opciones — revisá tu conexión.");
+                      toast.error("No se pudo guardar el orden de las opciones — revisa tu conexión.");
                       await reload();
                     }
                   }}
@@ -795,7 +795,7 @@ function GroupCard({
       <div className="px-4 py-3 space-y-2">
         {group.options.length === 0 && (
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-            Sin opciones — agregá la primera con el botón de abajo.
+            Sin opciones — agrega la primera con el botón de abajo.
           </p>
         )}
         {group.options.length > 0 && onReorderOptions ? (
@@ -973,7 +973,7 @@ function OptionRow({
           onChange={(e) => setImageUrl(e.target.value)}
           onBlur={commit}
           readOnly={imageUrl.startsWith("data:")}
-          placeholder="URL imagen o arrastrá un archivo"
+          placeholder="URL imagen o arrastra un archivo"
           className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-transparent focus:outline-none truncate"
         />
       </div>

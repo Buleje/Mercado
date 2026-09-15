@@ -120,7 +120,7 @@ export default function CtpListaProductosTab({
         <TbodyCtp>
           {filas.length === 0 && (
             <FilaVacia cols={13}>
-              La guía todavía no tiene productos. Abrí <b>Producción</b> y elegí lo que sale de la planta.
+              La guía todavía no tiene productos. Abre <b>Producción</b> y elige lo que sale de la planta.
             </FilaVacia>
           )}
           {filas.map((f, i) => (

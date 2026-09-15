@@ -158,7 +158,7 @@ export default function CrearPersonaModal({
       setErr(j?.error ?? (editando ? "No se pudo guardar los cambios." : "No se pudo crear la persona."));
     } catch (e) {
       logger.error("[adelantos] no se pudo guardar la persona", { error: String(e) });
-      setErr("No se pudo guardar. Revisá la conexión.");
+      setErr("No se pudo guardar. Revisa la conexión.");
     } finally {
       setSaving(false);
     }
@@ -167,7 +167,7 @@ export default function CrearPersonaModal({
   return (
     <ModalShell
       title={editando ? "Editar persona" : "Nueva persona"}
-      subtitle="Escribí el DNI o el RUC y los datos se completan solos."
+      subtitle="Escribe el DNI o el RUC y los datos se completan solos."
       onClose={onClose}
       size="xl"
       footer={<ModalActions onClose={onClose} onSubmit={submit} saving={saving} label={editando ? "Guardar cambios" : "Crear persona"} />}
@@ -231,7 +231,7 @@ export default function CrearPersonaModal({
             <input
               value={direccion}
               onChange={(e) => setDireccion(e.target.value)}
-              placeholder="La trae SUNAT si cargás el RUC"
+              placeholder="La trae SUNAT si cargas el RUC"
               className={inputCls}
             />
           </Field>

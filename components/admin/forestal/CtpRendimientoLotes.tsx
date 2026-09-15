@@ -48,7 +48,7 @@ const META_PCT = RENDIMIENTO_META * 100;
  */
 function estado(pct: number): { tono: "ok" | "aviso" | "malo"; texto: string } {
   const juicio = juzgarRendimiento(pct);
-  if (juicio === "sospechoso") return { tono: "malo", texto: "Imposible: revisá la carga" };
+  if (juicio === "sospechoso") return { tono: "malo", texto: "Imposible: revisa la carga" };
   if (pct > RENDIMIENTO_PLAUSIBLE_MAX) return { tono: "malo", texto: "Más alto de lo creíble" };
   if (pct < RENDIMIENTO_PLAUSIBLE_MIN) return { tono: "malo", texto: "Muy bajo: falta declarar o se perdió madera" };
   if (juicio === "bajo") return { tono: "aviso", texto: `Bajo la meta de ${META_PCT.toFixed(0)} %` };

@@ -156,7 +156,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
       title: `${data.counts.fueraPlazo} ${plural(data.counts.fueraPlazo, "ingreso registrado", "ingresos registrados")} fuera de plazo`,
       okTitle: "Ningún ingreso fuera de plazo",
       description: "SERFOR exige registrar el ingreso dentro de los 2 días hábiles de la operación (RDE D000025-2023).",
-      action: "Revisá la columna 'Días registro' en la pestaña Ingresos.",
+      action: "Revisa la columna 'Días registro' en la pestaña Ingresos.",
       navTarget: "ingresos",
       navFiltro: "fuera-de-plazo",
       navigateLabel: "Ver ingresos",
@@ -187,8 +187,8 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           : "Las especies CITES requieren permiso de aprovechamiento archivado.",
       action:
         cites.length > 0
-          ? "Cargá su N° de permiso CITES en la pestaña Ficha CTP."
-          : "Verificá que cada una tenga su permiso CITES a mano para una fiscalización.",
+          ? "Carga su N° de permiso CITES en la pestaña Ficha CTP."
+          : "Verifica que cada una tenga su permiso CITES a mano para una fiscalización.",
       navTarget: cites.length > 0 ? "ficha" : "ingresos",
       navFiltro: cites.length > 0 ? undefined : "cites",
       navigateLabel: cites.length > 0 ? "Ir a Ficha CTP" : "Ver ingresos",
@@ -204,7 +204,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
         citesIng.length > 0
           ? `Un ingreso de especie protegida sin su N° de permiso vinculado no acredita origen legal ante una fiscalización: GTF ${citesIng.slice(0, 4).join(", ")}${citesIng.length > 4 ? ` y ${citesIng.length - 4} más` : ""}.`
           : "Cada acta de ingreso CITES acredita su permiso.",
-      action: "Cargá el permiso en la Ficha CTP y vinculalo al registrar el ingreso.",
+      action: "Carga el permiso en la Ficha CTP y vincúlalo al registrar el ingreso.",
       navTarget: "ingresos",
       navFiltro: "cites",
       navigateLabel: "Ver ingresos",
@@ -217,7 +217,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
       title: `${data.counts.especiesEnNegativo} ${plural(data.counts.especiesEnNegativo, "especie tiene", "especies tienen")} saldo negativo`,
       okTitle: "Ninguna especie en sobre-consumo",
       description: "Se transformó más volumen del que ingresó validado.",
-      action: "Revisá el Balance por especie en la pestaña Saldos.",
+      action: "Revisa el Balance por especie en la pestaña Saldos.",
       navTarget: "saldos",
       navigateLabel: "Ver saldos",
     },
@@ -232,7 +232,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
         prodNeg.length > 0
           ? `Se despachó más de lo producido en: ${prodNeg.slice(0, 3).join(", ")}${prodNeg.length > 3 ? ` y ${prodNeg.length - 3} más` : ""}.`
           : "Se despachó más producto del que se produjo.",
-      action: "Revisá el Stock de productos transformados en la pestaña Saldos.",
+      action: "Revisa el Stock de productos transformados en la pestaña Saldos.",
       navTarget: "saldos",
       navigateLabel: "Ver saldos",
     },
@@ -247,7 +247,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
         trazaLin.length > 0
           ? `No pueden emitir certificado de trazabilidad: ${plural(trazaLin.length, "línea", "líneas")} #${trazaLin.slice(0, 5).join(", #")}${trazaLin.length > 5 ? ` y ${trazaLin.length - 5} más` : ""}.`
           : "Hay volumen despachado sin corrida de origen atribuida.",
-      action: "Completala con 'Editar atribución' dentro del botón 'Cadena' del despacho.",
+      action: "Complétala con 'Editar atribución' dentro del botón 'Cadena' del despacho.",
       navTarget: "despacho",
       navigateLabel: "Ver despachos",
     },
@@ -262,7 +262,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
         rendLin.length > 0
           ? `Posible sobre-declaración (ref. 56% aserrada / 41% tablillas, RDE D000259-2024): ${plural(rendLin.length, "corrida", "corridas")} #${rendLin.slice(0, 5).join(", #")}${rendLin.length > 5 ? ` y ${rendLin.length - 5} más` : ""}.`
           : "Se declaró más producto del que la troza suele rendir.",
-      action: "Verificá el volumen consumido vs. producido en la pestaña Producción.",
+      action: "Verifica el volumen consumido vs. producido en la pestaña Producción.",
       navTarget: "produccion",
       navigateLabel: "Ver producción",
     },
@@ -277,7 +277,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
         docsVenc.length > 0
           ? `Un título habilitante o permiso CITES vencido invalida el origen de la materia prima: ${docsVenc.slice(0, 4).join(", ")}${docsVenc.length > 4 ? ` y ${docsVenc.length - 4} más` : ""}.`
           : "Hay un documento habilitante vencido en la Ficha del CTP.",
-      action: "Renová o actualizá su vencimiento en la pestaña Ficha CTP.",
+      action: "Renueva o actualiza su vencimiento en la pestaña Ficha CTP.",
       navTarget: "ficha",
       navigateLabel: "Ir a Ficha CTP",
     },
@@ -292,7 +292,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
         docsPorVenc.length > 0
           ? `La renovación ante la ARFFS no es inmediata: ${docsPorVenc.slice(0, 4).join(", ")}${docsPorVenc.length > 4 ? ` y ${docsPorVenc.length - 4} más` : ""}.`
           : "Un documento habilitante de la Ficha está por vencer.",
-      action: "Empezá el trámite de renovación antes de que caduque.",
+      action: "Empieza el trámite de renovación antes de que caduque.",
       navTarget: "ficha",
       navigateLabel: "Ir a Ficha CTP",
     },
@@ -310,7 +310,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
               .map((e) => e.grafias.map((g) => `«${g.texto}» ${g.usos}`).join(" vs "))
               .join(" · ")}${dosFormas.length > 3 ? ` y ${dosFormas.length - 3} más` : ""}.`
           : "«Tornillo» y «TORNILLO» serían dos especies en el mismo libro.",
-      action: "Elegí una forma en el catálogo de especies: el libro entero pasa a decirla.",
+      action: "Elige una forma en el catálogo de especies: el libro entero pasa a decirla.",
       navTarget: "ingresos",
       navigateLabel: "Abrir el catálogo",
       onAction: () => setVerEspecies(true),
@@ -537,7 +537,7 @@ const READINESS_META = {
     Icon: AlertTriangle,
     box: "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]",
     text: "text-[var(--data-warning-700)]",
-    title: "Podés cerrar el período",
+    title: "Puedes cerrar el período",
   },
   error: {
     Icon: ShieldAlert,

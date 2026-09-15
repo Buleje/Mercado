@@ -75,7 +75,7 @@ export default function CacaoSimuladorPrecio({
         </span>
       </div>
       <p className="mb-4 text-xs text-[var(--text-tertiary)]">
-        Movés el % y ves de una qué pasaría con tu precio de compra{escenario?.showMargen ? " y tu margen" : ""} si el ICE cambiara desde hoy — antes de que pase.
+        Mueves el % y ves de una qué pasaría con tu precio de compra{escenario?.showMargen ? " y tu margen" : ""} si el ICE cambiara desde hoy — antes de que pase.
       </p>
 
       {iceUsdHoy == null || oficialSolKgHoy == null ? (
@@ -169,7 +169,7 @@ export default function CacaoSimuladorPrecio({
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <p>
               Escenario hipotético, no una predicción: proyecta el precio de hoy (oficial S/ {sol(oficialSolKgHoy)}/kg, {COMPRA_LOCAL_PCT}% en chacra) con el % que elijas.
-              {escenario?.showMargen ? " El margen re-escala los ingresos ya cosechados y valorizados sobre el mismo volumen del campo, sin tocar tus costos." : " Cargá cosechas valorizadas en Campo para ver también el impacto en tu margen."}
+              {escenario?.showMargen ? " El margen re-escala los ingresos ya cosechados y valorizados sobre el mismo volumen del campo, sin tocar tus costos." : " Carga cosechas valorizadas en Campo para ver también el impacto en tu margen."}
             </p>
           </div>
         </>

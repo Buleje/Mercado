@@ -97,7 +97,7 @@ export async function documentoGtfSalida(
   lineasDeLaGuia?: readonly LineaProducto[],
 ): Promise<DocumentoGtfSalida> {
   if (!despacho.gtfNumber) {
-    throw new Error("El despacho todavía no tiene GTF emitida. Emití la GTF antes de imprimirla.");
+    throw new Error("El despacho todavía no tiene GTF emitida. Emite la GTF antes de imprimirla.");
   }
   // El original es el papel que se muestra en un puesto de control: sin
   // transportista, placa o destinatario no sirve, así que no se imprime a medias.
@@ -225,7 +225,7 @@ export async function documentoGtfSalida(
     <div class="gs-qr">
       <img src="${qrDataUrl}" alt="QR de verificación" />
       <div>
-        <b>Verificable en línea:</b> escaneá el QR para contrastar el origen de este producto
+        <b>Verificable en línea:</b> escanea el QR para contrastar el origen de este producto
         en vivo contra el Libro de Operaciones del CTP.
         <span class="url">${esc(verifyUrl)}</span>
       </div>

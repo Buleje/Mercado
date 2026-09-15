@@ -60,7 +60,7 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
       onClose={onClose}
       variant="info"
       title="Importar censo forestal"
-      description="Pegá la hoja del regente con sus encabezados — se detectan solos, en cualquier orden"
+      description="Pega la hoja del regente con sus encabezados — se detectan solos, en cualquier orden"
       icon={Table}
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">

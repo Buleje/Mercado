@@ -220,7 +220,7 @@ export async function printInformePeriodo(period: CtpPeriod): Promise<void> {
   </body></html>`;
 
   const w = window.open("", "_blank", "width=900,height=700");
-  if (!w) throw new Error("El navegador bloqueó la ventana. Permití pop-ups para imprimir el informe.");
+  if (!w) throw new Error("El navegador bloqueó la ventana. Permite pop-ups para imprimir el informe.");
   w.document.write(html);
   w.document.close();
   w.focus();

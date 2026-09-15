@@ -205,7 +205,7 @@ export default function CtpDocumentoVisor({
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-bold text-[var(--text-primary)]">{doc?.nombre ?? "Documento"}</p>
             <p className="text-sm text-[var(--text-secondary)]">
-              Vista previa en tamaño A4 · {hojas} hoja{hojas === 1 ? "" : "s"} · revisalo antes de imprimir
+              Vista previa en tamaño A4 · {hojas} hoja{hojas === 1 ? "" : "s"} · revísalo antes de imprimir
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className={icono}>
@@ -376,7 +376,7 @@ export default function CtpDocumentoVisor({
             <span className="font-bold text-[var(--data-error-600)]">{drive.detalle}</span>
           ) : pdf === "error" ? (
             <span className="font-bold text-[var(--data-error-600)]">
-              No se pudo armar el PDF en este navegador. Usá «Imprimir / PDF» → «Guardar como PDF»: sale el mismo documento.
+              No se pudo armar el PDF en este navegador. Usa «Imprimir / PDF» → «Guardar como PDF»: sale el mismo documento.
             </span>
           ) : (
             <>

@@ -313,7 +313,7 @@ export default function ImportarCarpetaModal({
               }`}
             >
               <FolderTree className="h-10 w-10 text-[var(--text-tertiary)]" />
-              <p className="text-sm font-bold text-[var(--text-primary)]">Soltá una carpeta acá</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Suelta una carpeta acá</p>
               <p className="max-w-sm text-xs text-[var(--text-tertiary)]">
                 Se respeta la estructura: cada subcarpeta se crea en el drive y cada archivo queda donde estaba.
               </p>
@@ -383,7 +383,7 @@ export default function ImportarCarpetaModal({
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>
                   Son {pendientes.length} archivos y el servidor acepta {ARCHIVOS_POR_TANDA} cada 15 minutos.
-                  Ahora suben los primeros {ARCHIVOS_POR_TANDA}; dentro de un rato volvé a importar
+                  Ahora suben los primeros {ARCHIVOS_POR_TANDA}; dentro de un rato vuelve a importar
                   la misma carpeta y sigue por {paraLaProxima === 1 ? "el que falta" : `los ${paraLaProxima} que faltan`}.
                 </span>
               </p>

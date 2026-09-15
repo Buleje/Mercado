@@ -106,12 +106,12 @@ export default function DetalleAdelantoModal({
     };
     if (tipo === "LIBRE") {
       const v = Number(valor);
-      if (!descripcion.trim() || !v || v <= 0) { setErr("Describí la entrega y poné un valor."); return; }
+      if (!descripcion.trim() || !v || v <= 0) { setErr("Describe la entrega y pon un valor."); return; }
       body.descripcion = descripcion.trim();
       body.valorManual = v;
     } else {
       const pid = Number(productId);
-      if (!pid) { setErr("Elegí un producto del catálogo."); return; }
+      if (!pid) { setErr("Elige un producto del catálogo."); return; }
       body.productId = pid;
       body.descripcion = descripcion.trim() || undefined;
       if (cantidad) body.cantidad = Number(cantidad);
@@ -136,7 +136,7 @@ export default function DetalleAdelantoModal({
       setErr(j?.error ?? "No se pudo registrar la entrega.");
     } catch (e) {
       logger.error("[adelantos] no se pudo registrar la entrega", { error: String(e) });
-      setErr("No se pudo registrar la entrega. Revisá la conexión.");
+      setErr("No se pudo registrar la entrega. Revisa la conexión.");
     } finally {
       setSaving(false);
     }
@@ -272,7 +272,7 @@ export default function DetalleAdelantoModal({
                   {tipo === "PRODUCTO" && (
                     <div className="grid grid-cols-2 gap-2">
                       <select value={productId} onChange={(e) => setProductId(e.target.value)} aria-label="Producto" className={inputCls}>
-                        <option value="">Elegí un producto…</option>
+                        <option value="">Elige un producto…</option>
                         {productos.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name} — {formatCurrency(p.price)}{p.stock != null ? ` · stock ${p.stock}` : ""}

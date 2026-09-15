@@ -110,7 +110,7 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
       /* Qué papel sale roto y por qué campo. Es la diferencia entre saber que
          algo falta y saber qué tipear. */
       detalle: (d.ficha.papelesIncompletos ?? []).map((p) => `${p.documento}: falta ${p.faltan.join(", ")}`),
-      paso: d.ficha.tieneIdentidad && d.ficha.tieneSerieGtf ? null : "Completá la Ficha: sin la serie autorizada no se puede emitir una guía de salida.",
+      paso: d.ficha.tieneIdentidad && d.ficha.tieneSerieGtf ? null : "Completa la Ficha: sin la serie autorizada no se puede emitir una guía de salida.",
       vista: "ficha",
       desbloquea: d.ficha.tieneSerieGtf ? undefined : ["Guías de salida"],
     },
@@ -120,7 +120,7 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
       queDa: "El origen legal de todo: sin la guía de entrada, nada de lo que salga se puede amparar.",
       estado: i.total > 0 ? "en_uso" : "sin_estrenar",
       medida: i.total > 0 ? `${plural(i.total, "guía cargada", "guías cargadas")}` : "todavía sin guías",
-      paso: i.total > 0 ? null : "Cargá la primera guía de ingreso.",
+      paso: i.total > 0 ? null : "Carga la primera guía de ingreso.",
       vista: "ingresos",
       desbloquea: i.total > 0 ? undefined : ["Todo lo demás"],
     },
@@ -130,7 +130,7 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
       queDa: "Contar el patio como lo cuenta un fiscalizador: por palo, no por metro cúbico.",
       estado: porCobertura(i.conPiezas, i.total),
       medida: i.total === 0 ? "sin ingresos todavía" : `${i.conPiezas} de ${plural(i.total, "guía", "guías")} con sus piezas`,
-      paso: i.conPiezas >= i.total ? null : "Cargá la lista de trozas de las guías que faltan.",
+      paso: i.conPiezas >= i.total ? null : "Carga la lista de trozas de las guías que faltan.",
       vista: "trozas",
     },
     {
@@ -139,7 +139,7 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
       queDa: "La mitad de la cuenta: sin lo que se pagó, ningún despacho puede decir cuánto dejó.",
       estado: porCobertura(conCosto, i.total),
       medida: i.total === 0 ? "sin ingresos todavía" : `${conCosto} de ${plural(i.total, "guía valorizada", "guías valorizadas")} (${pct(conCosto, i.total)} %)`,
-      paso: conCosto >= i.total ? null : "Cargá lo que pagaste por cada guía en Rentabilidad.",
+      paso: conCosto >= i.total ? null : "Carga lo que pagaste por cada guía en Rentabilidad.",
       vista: "rentabilidad",
       desbloquea: conCosto > 0 ? undefined : ["Margen por despacho", "Rentabilidad del período"],
     },
@@ -149,7 +149,7 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
       queDa: "Poder probar que SERFOR conoce tus guías. Es lo primero que se pide en una fiscalización.",
       estado: porCobertura(conConstancia, i.total),
       medida: i.total === 0 ? "sin ingresos todavía" : `${conConstancia} de ${plural(i.total, "guía", "guías")} con constancia`,
-      paso: conConstancia >= i.total ? null : "Consultá cada guía en el SNIFFS y guardá su constancia.",
+      paso: conConstancia >= i.total ? null : "Consulta cada guía en el SNIFFS y guarda su constancia.",
       vista: "ingresos",
     },
     {
@@ -163,7 +163,7 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
           : p.sinDeclarar > 0
             ? `${plural(p.sinDeclarar, "corrida", "corridas")} sin declarar de ${p.corridas}`
             : `${plural(p.corridas, "corrida declarada", "corridas declaradas")}`,
-      paso: p.corridas > 0 && p.sinDeclarar === 0 ? null : "Declará qué salió de las corridas abiertas.",
+      paso: p.corridas > 0 && p.sinDeclarar === 0 ? null : "Declara qué salió de las corridas abiertas.",
       vista: "produccion",
     },
     {
@@ -197,7 +197,7 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
       queDa: "La otra mitad de la cuenta. Con el costo cargado, es lo que cierra el margen.",
       estado: porCobertura(s.conVenta, s.total),
       medida: s.total === 0 ? "sin despachos todavía" : `${s.conVenta} de ${plural(s.total, "despacho", "despachos")} con precio`,
-      paso: s.conVenta >= s.total ? null : "Cargá el precio de venta de cada despacho.",
+      paso: s.conVenta >= s.total ? null : "Carga el precio de venta de cada despacho.",
       vista: "rentabilidad",
     },
     {
@@ -216,7 +216,7 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
       /* Sin nada registrado no hay mes que cerrar. */
       estado: d.cierres > 0 ? "en_uso" : i.total === 0 && p.corridas === 0 ? "no_aplica" : "sin_estrenar",
       medida: d.cierres > 0 ? `${plural(d.cierres, "mes cerrado", "meses cerrados")}` : "ningún mes cerrado",
-      paso: d.cierres > 0 ? null : "Cerrá el primer mes: sin cierres, cada período arranca en cero.",
+      paso: d.cierres > 0 ? null : "Cierra el primer mes: sin cierres, cada período arranca en cero.",
       vista: "cierre",
       desbloquea: d.cierres > 0 ? undefined : ["Existencia de apertura heredada"],
     },

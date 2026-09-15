@@ -664,15 +664,15 @@ export default function CtpRegistrarProduccionModal({
    * tipeó el siguiente (ADR-358).
    */
   const noEntra: string | null = !codigo.trim()
-    ? "Poné el código del paquete."
+    ? "Pon el código del paquete."
     : !(volumenAUsar && volumenAUsar > 0)
-      ? "Poné el volumen del paquete."
+      ? "Pon el volumen del paquete."
       : material.volumenM3 > 0 && volumenAUsar * veces > margenParaEste
         ? margenParaEste > 0
           ? veces > 1
             ? `${veces} paquetes de ${fmtM3(volumenAUsar)} m³ pasan el tope del ${RENDIMIENTO_TOPE_PCT} %: entran ${fmtM3(margenParaEste)} m³ más (${Math.floor(margenParaEste / volumenAUsar)} paquete(s)).`
             : `Ese paquete pasa el tope del ${RENDIMIENTO_TOPE_PCT} %: entran ${fmtM3(margenParaEste)} m³ más.`
-          : `Ya se llegó al tope del ${RENDIMIENTO_TOPE_PCT} % (${fmtM3(tope)} m³). Sacá un paquete para agregar otro.`
+          : `Ya se llegó al tope del ${RENDIMIENTO_TOPE_PCT} % (${fmtM3(tope)} m³). Saca un paquete para agregar otro.`
         : null;
 
   /** Los campos del paquete, tal como quedaron en el formulario. */
@@ -887,7 +887,7 @@ export default function CtpRegistrarProduccionModal({
                 </>
               ) : (
                 <span className="inline-flex items-center gap-1.5">
-                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> Sin margen: sacá volumen para guardar
+                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> Sin margen: saca volumen para guardar
                 </span>
               )}
             </span>
@@ -1121,7 +1121,7 @@ export default function CtpRegistrarProduccionModal({
               <input
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)}
-                placeholder={previo > 0 ? "Si la escribís, reemplaza la anterior" : "Turno, sierra…"}
+                placeholder={previo > 0 ? "Si la escribes, reemplaza la anterior" : "Turno, sierra…"}
                 maxLength={300}
                 className={CAMPO}
               />
@@ -1272,7 +1272,7 @@ export default function CtpRegistrarProduccionModal({
                   que esta vez salió suelto. */}
               {presentacionAuto && (
                 <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
-                  La puso el producto — cambiala si esta vez salió de otra forma.
+                  La puso el producto — cámbiala si esta vez salió de otra forma.
                 </span>
               )}
             </Campo>
@@ -1570,7 +1570,7 @@ export default function CtpRegistrarProduccionModal({
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <span>
                 {veredicto.tono === "malo"
-                  ? `Rendimiento ${rendimientoPct} %: por encima del ${RENDIMIENTO_PLAUSIBLE_MAX} % que se ve en aserrío. Revisá que ningún paquete esté cargado de más.`
+                  ? `Rendimiento ${rendimientoPct} %: por encima del ${RENDIMIENTO_PLAUSIBLE_MAX} % que se ve en aserrío. Revisa que ningún paquete esté cargado de más.`
                   : `Rendimiento ${rendimientoPct} %: por debajo del ${RENDIMIENTO_PLAUSIBLE_MIN} % habitual en aserrío. ¿Falta declarar algún paquete? Se puede guardar igual — es un aviso, no un bloqueo.`}
               </span>
             </p>

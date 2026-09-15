@@ -282,7 +282,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 flex-1 truncate text-sm text-[var(--text-tertiary)]" title="Dibujá las zonas de la planta (entrada, patio de trozas, aserrado, despacho…) sobre el satélite: el mapa muestra dónde está la madera y el Libro, cuánta se mueve.">
+        <p className="min-w-0 flex-1 truncate text-sm text-[var(--text-tertiary)]" title="Dibuja las zonas de la planta (entrada, patio de trozas, aserrado, despacho…) sobre el satélite: el mapa muestra dónde está la madera y el Libro, cuánta se mueve.">
           <strong className="text-[var(--text-secondary)]">Mapa de tu aserradero.</strong> El mapa dice <em>dónde</em> está la madera; el Libro, <em>cuánta</em>.
         </p>
         <div className="flex shrink-0 items-center gap-2">
@@ -293,7 +293,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
             <button
               type="button"
               onClick={() => setBloque({ corridas: corridasAserradas, titulo: "Despachar aserrada de la planta" })}
-              title="Elegí qué paquetes suben al camión y registrá su guía sin salir de acá"
+              title="Elige qué paquetes suben al camión y registra su guía sin salir de acá"
               className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--accent-600)]"
             ><Truck className="h-4 w-4" /> Nuevo despacho</button>
           )}
@@ -361,7 +361,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           onChanged={load}
           enMano={enMano}
           onSoltarEnZona={soltarEnZona}
-          onSoltarAfuera={() => setAviso("Soltalo DENTRO de una zona dibujada; ahí afuera no hay nada mapeado.")}
+          onSoltarAfuera={() => setAviso("Suéltalo DENTRO de una zona dibujada; ahí afuera no hay nada mapeado.")}
           zonaResaltada={resaltada}
           irA={irA}
           ubicados={ubicadosPorZona}

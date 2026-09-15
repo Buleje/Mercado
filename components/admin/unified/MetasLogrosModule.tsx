@@ -372,7 +372,7 @@ function SemaMesTab() {
   const handleSave = () => {
     const val = Number(tempGoal);
     if (!Number.isFinite(val) || val <= 0) {
-      setEditError("Ingresá un monto mayor a 0");
+      setEditError("Ingresa un monto mayor a 0");
       return;
     }
     if (val > MAX_MONTHLY_GOAL) {
@@ -439,7 +439,7 @@ function SemaMesTab() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-extrabold text-[var(--data-error-500)]">Te queda poco mes</p>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Necesitás vender <span className="font-bold text-[var(--text-primary)]">{formatCurrency(isUrgent.ratePerDay, { decimals: 0 })}</span> por día durante los próximos {isUrgent.remainingDays} días para alcanzar la meta. Activá una promo o llamá a clientes habituales.
+              Necesitas vender <span className="font-bold text-[var(--text-primary)]">{formatCurrency(isUrgent.ratePerDay, { decimals: 0 })}</span> por día durante los próximos {isUrgent.remainingDays} días para alcanzar la meta. Activa una promo o llama a clientes habituales.
             </p>
           </div>
         </div>
@@ -528,7 +528,7 @@ function SemaMesTab() {
             )} />
             <div className="text-xs">
               <p className="font-bold text-[var(--text-primary)]">
-                A este ritmo cerrás el mes con {formatCurrency(stats.forecast, { decimals: 0 })}
+                A este ritmo cierras el mes con {formatCurrency(stats.forecast, { decimals: 0 })}
               </p>
               <p className="text-[var(--text-secondary)] mt-0.5">
                 {stats.forecast >= monthlyGoal

@@ -144,7 +144,7 @@ export default function Anexo04Modal({
     if (inicio.emision) {
       onAviso?.(
         `Esta guía ya tiene el anexo N° ${inicio.emision.numero || "(sin numerar)"} emitido. ` +
-          "Si es el mismo viaje, abrilo desde «Emitidos» en vez de emitir otro.",
+          "Si es el mismo viaje, ábrelo desde «Emitidos» en vez de emitir otro.",
         "success",
       );
     }
@@ -337,7 +337,7 @@ export default function Anexo04Modal({
                   aria-label="Volumen total del anexo, editable"
                   title={
                     totalManual == null
-                      ? "Se calcula sumando las piezas. Escribí el tuyo para declarar otro (ajuste mínimo, las medidas de cada pieza no cambian)."
+                      ? "Se calcula sumando las piezas. Escribe el tuyo para declarar otro (ajuste mínimo, las medidas de cada pieza no cambian)."
                       : `Declarado a mano: el cálculo desde las piezas da ${fmtAnexo(anexo.totalCalculadoM3)} m³. Las hojas se reparten para sumar EXACTO este número.`
                   }
                   className={`h-6 w-16 rounded-lg border-2 bg-[var(--surface-raised)] px-1 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${totalManual == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-secondary)]" : "border-[var(--accent)] text-[var(--accent)]"}`}

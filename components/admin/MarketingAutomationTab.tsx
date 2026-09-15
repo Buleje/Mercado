@@ -223,7 +223,7 @@ export default function MarketingAutomationTab({
       <AdminModuleHeader
         as="h2"
         title="Campañas"
-        description="Mandá promos y avisos a tus clientes por WhatsApp o por la app, segmentado."
+        description="Manda promos y avisos a tus clientes por WhatsApp o por la app, segmentado."
         icon={Megaphone}
       >
         <button

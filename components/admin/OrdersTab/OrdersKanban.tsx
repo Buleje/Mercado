@@ -627,7 +627,7 @@ export function OrdersKanban({
     if (!allowed.includes(target.id as OrderStatus)) {
       const from = COLUMNS.find((c) => c.id === order.status)?.label ?? order.status;
       toast.error(`No se puede pasar de "${from}" a "${target.label}" directo`, {
-        description: "Primero pasá por los estados intermedios del pedido.",
+        description: "Primero pasa por los estados intermedios del pedido.",
       });
       if (rejectedTimeoutRef.current) clearTimeout(rejectedTimeoutRef.current);
       setRejectedId(activeId);

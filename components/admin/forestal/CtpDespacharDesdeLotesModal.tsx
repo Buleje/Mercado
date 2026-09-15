@@ -163,7 +163,7 @@ export default function CtpDespacharDesdeLotesModal({
       open
       onClose={onClose}
       title="Despachar desde lotes"
-      description="Elegí los lotes, marcá qué sale y armá la guía con eso"
+      description="Elige los lotes, marca qué sale y arma la guía con eso"
       icon={Truck}
       variant="info"
       footer={
@@ -172,8 +172,8 @@ export default function CtpDespacharDesdeLotesModal({
             elegidas.length > 0
               ? `${elegidas.length} producto${elegidas.length === 1 ? "" : "s"} de ${new Set(elegidas.map((f) => f.lote)).size} lote(s) · ${fmtM3(totalM3)} m³`
               : lotesElegidos.size === 0
-                ? "Primero elegí uno o más lotes de la izquierda."
-                : "Marcá los productos que salen."
+                ? "Primero elige uno o más lotes de la izquierda."
+                : "Marca los productos que salen."
           }
         >
           <Btn
@@ -181,7 +181,7 @@ export default function CtpDespacharDesdeLotesModal({
             disabled={elegidas.length === 0}
             title={
               elegidas.length === 0
-                ? "Marcá al menos un producto"
+                ? "Marca al menos un producto"
                 : "Abre la guía de transporte con lo marcado ya cargado"
             }
             onClick={() => onDespachar(elegidas.map((f) => f.uid))}
@@ -266,10 +266,10 @@ export default function CtpDespacharDesdeLotesModal({
                 <div className="px-4 py-10 text-center">
                   <Layers className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
                   <p className="mt-2 text-sm font-bold text-[var(--text-primary)]">
-                    Elegí un lote para ver su madera.
+                    Elige un lote para ver su madera.
                   </p>
                   <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                    Podés marcar varios: lo de todos se junta en una sola guía.
+                    Puedes marcar varios: lo de todos se junta en una sola guía.
                   </p>
                 </div>
               ) : (

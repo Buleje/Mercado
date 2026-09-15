@@ -746,7 +746,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       load();
     } catch (err) {
       console.error("[InventoryTab] addProduct error", err);
-      toast.error("Error de conexión. Reintentá.");
+      toast.error("Error de conexión. Reintenta.");
     }
     setSaving(false);
   };
@@ -1837,7 +1837,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   {/* Estado — pill clickeable arriba a la derecha (uno solo para activo/inactivo) */}
                   <button
                     onClick={() => toggleActive(p)}
-                    title={p.active ? "Activo — tocá para desactivar" : "Inactivo — tocá para activar"}
+                    title={p.active ? "Activo — toca para desactivar" : "Inactivo — toca para activar"}
                     className={cn(
                       "absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition-colors",
                       p.active
@@ -2247,7 +2247,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <div className="min-w-0 flex-1">
                   <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Inventario</p>
                   <SectionTitle className="text-[var(--text-primary)]">Agregar al catálogo</SectionTitle>
-                  <p className="mt-0.5 text-sm text-[var(--text-secondary)] leading-snug">Tocá un producto para editarlo, o creá uno nuevo.</p>
+                  <p className="mt-0.5 text-sm text-[var(--text-secondary)] leading-snug">Toca un producto para editarlo, o crea uno nuevo.</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
@@ -2295,7 +2295,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     </CardTitle>
                     <p className="mt-1 max-w-xs text-sm text-[var(--text-secondary)]">
                       {products.length === 0
-                        ? "Todavía no cargaste productos. Creá el primero para empezar a vender."
+                        ? "Todavía no cargaste productos. Crea el primero para empezar a vender."
                         : "No se encontraron productos con esos filtros."}
                     </p>
                     <button
@@ -2732,7 +2732,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <input value={addSeo.metaTitle} onChange={(e) => setAddSeo(s => ({ ...s, metaTitle: e.target.value }))} maxLength={70} placeholder="Ej: Arroz Costeño 5kg — barato en Ciudad Constitución" className={FIELD_INPUT} />
                 </Field>
                 <Field label={<>Descripción SEO <span className="font-normal text-[var(--text-tertiary)]">({addSeo.metaDescription.length}/160)</span></>} labelClassName={FIELD_LABEL}>
-                  <textarea value={addSeo.metaDescription} onChange={(e) => setAddSeo(s => ({ ...s, metaDescription: e.target.value }))} maxLength={160} rows={2} placeholder="Aparece en Google bajo el título. Resumí el producto en 1-2 líneas." className={cn(FIELD_INPUT, "resize-none")} />
+                  <textarea value={addSeo.metaDescription} onChange={(e) => setAddSeo(s => ({ ...s, metaDescription: e.target.value }))} maxLength={160} rows={2} placeholder="Aparece en Google bajo el título. Resume el producto en 1-2 líneas." className={cn(FIELD_INPUT, "resize-none")} />
                 </Field>
                 <Field label={<>Imagen para compartir (URL) <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span></>} labelClassName={FIELD_LABEL}>
                   <input value={addSeo.ogImage} onChange={(e) => setAddSeo(s => ({ ...s, ogImage: e.target.value }))} placeholder="https://… (si vacío, usa la imagen del producto)" className={FIELD_INPUT} />
@@ -2868,7 +2868,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   }}
                 />
                 {addGallery.length === 0 ? (
-                  <p className="text-xs text-[var(--text-tertiary)]">Subí más ángulos del producto. La principal es la de arriba; estas son extra.</p>
+                  <p className="text-xs text-[var(--text-tertiary)]">Sube más ángulos del producto. La principal es la de arriba; estas son extra.</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {addGallery.map((url, i) => (
@@ -2944,7 +2944,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         {addVariants.filter(v => v.name.trim()).length > 0 && (
                           <p className="text-xs font-semibold text-[var(--accent)]">{addVariants.filter(v => v.name.trim()).length} presentación(es)</p>
                         )}
-                        <p className="pt-1 text-[length:var(--ts-2xs,0.6875rem)] text-[var(--text-tertiary)] leading-snug">Así se verá en tu tienda mientras lo creás.</p>
+                        <p className="pt-1 text-[length:var(--ts-2xs,0.6875rem)] text-[var(--text-tertiary)] leading-snug">Así se verá en tu tienda mientras lo creas.</p>
                       </div>
                     </div>
                   </div>
@@ -3269,7 +3269,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         </button>
                       </div>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted text-center">
-                        o arrastrá una imagen aquí — cualquier formato (JPG, PNG, WebP, AVIF…)
+                        o arrastra una imagen aquí — cualquier formato (JPG, PNG, WebP, AVIF…)
                       </p>
                       <input
                         id={editImgFieldId}
@@ -3601,7 +3601,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         </button>
                       ))}
                     </div>
-                    <p className="text-xs text-[var(--text-tertiary)]">Dejá el campo vacío y aplicá para <strong>quitar</strong> la etiqueta.</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">Deja el campo vacío y aplica para <strong>quitar</strong> la etiqueta.</p>
                   </div>
                 ) : bulkField === "price" ? (
                   <div className="mt-1">

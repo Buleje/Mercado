@@ -160,17 +160,17 @@ export const DEMO_DATA_MODULES: Partial<Record<Tab, { label: string; api?: strin
 export const MODULE_INFO: Partial<Record<Tab, { priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>> = {
   "asistente-ia":  { priority: "core",   desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",     tip: "Empieza acá cada mañana para tener el pulso del negocio." },
   "inventario":    { priority: "core",   desc: "Stock, Kardex, vencimientos, mermas y alertas de inventario.",           tip: "Control completo del inventario desde una sola vista." },
-  "productos":     { priority: "high",   desc: "Catálogo, categorías, ofertas, cupones e historial de precios.",         tip: "Gestioná tu catálogo y optimizá precios." },
+  "productos":     { priority: "high",   desc: "Catálogo, categorías, ofertas, cupones e historial de precios.",         tip: "Gestiona tu catálogo y optimiza precios." },
   "compras":       { priority: "high",   desc: "Pedidos a proveedor, directorio de proveedores y recepción.",            tip: "Flujo completo de compras desde la cotización hasta la recepción." },
   "plata":         { priority: "high",   desc: "Ingresos, egresos, gastos, ganancias, reportes y exportación.",          tip: "Visión financiera completa del negocio en un solo módulo." },
-  "clientes":      { priority: "high",   desc: "CRM, delivery, opiniones y programa de fidelización.",                   tip: "Conoce a tus clientes y personalizá la atención." },
-  "config":        { priority: "core",   desc: "Usuarios, permisos, plan y configuración de la página web.",             tip: "Configurá esto primero para que todo funcione correctamente." },
-  "pedidos":       { priority: "core",   desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",           tip: "Centralizá pedidos de WhatsApp, tienda online y mostrador." },
+  "clientes":      { priority: "high",   desc: "CRM, delivery, opiniones y programa de fidelización.",                   tip: "Conoce a tus clientes y personaliza la atención." },
+  "config":        { priority: "core",   desc: "Usuarios, permisos, plan y configuración de la página web.",             tip: "Configura esto primero para que todo funcione correctamente." },
+  "pedidos":       { priority: "core",   desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",           tip: "Centraliza pedidos de WhatsApp, tienda online y mostrador." },
   "plan":          { priority: "medium", desc: "Tu plan actual, límites y opciones de mejora.",                          tip: "Revisa tu plan para aprovechar al máximo la plataforma." },
   "fiados":        { priority: "high",   desc: "Control de créditos informales: registro, pagos y saldos pendientes.",  tip: "Lleva la cuenta de lo que te deben tus clientes de confianza." },
   "turnos":        { priority: "high",   desc: "Apertura y cierre de turnos con conteo de efectivo.",                   tip: "Control de caja por turno para saber exactamente cuánto entró." },
-  "recetas":       { priority: "medium", desc: "Recetas de producción con ingredientes y control de lotes.",            tip: "Calculá costos de producción y descontá stock automáticamente." },
-  "prestamos":     { priority: "medium", desc: "Préstamos a clientes con cuotas, interés y tabla de amortización.",     tip: "Gestioná préstamos con calculadora integrada y seguimiento de pagos." },
+  "recetas":       { priority: "medium", desc: "Recetas de producción con ingredientes y control de lotes.",            tip: "Calcula costos de producción y descuenta stock automáticamente." },
+  "prestamos":     { priority: "medium", desc: "Préstamos a clientes con cuotas, interés y tabla de amortización.",     tip: "Gestiona préstamos con calculadora integrada y seguimiento de pagos." },
 };
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {

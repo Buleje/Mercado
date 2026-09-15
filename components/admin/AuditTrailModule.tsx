@@ -109,7 +109,7 @@ export default function AuditTrailModule() {
         setError(`No se pudo cargar el registro de auditoría (HTTP ${res.status})`);
       }
     } catch (e) {
-      setError("No se pudo cargar el registro de auditoría — revisá tu conexión.");
+      setError("No se pudo cargar el registro de auditoría — revisa tu conexión.");
       console.error("[AuditTrail] fetch error", e);
     }
     setLoading(false);

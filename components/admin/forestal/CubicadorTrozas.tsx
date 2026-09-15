@@ -330,7 +330,7 @@ export default function CubicadorTrozas() {
         >
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Lo que llevás cubicado
+              Lo que llevas cubicado
             </p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Todo el patio</p>
           </div>
@@ -374,7 +374,7 @@ export default function CubicadorTrozas() {
               valor={cmpGtf ? `${cmpGtf.deltaM3 > 0 ? "+" : ""}${fmtM3(cmpGtf.deltaM3)}` : "—"}
               unidad={cmpGtf ? "m³" : undefined}
               apagado={!cmpGtf}
-              sub={cmpGtf ? `${cmpGtf.deltaPct > 0 ? "+" : ""}${cmpGtf.deltaPct} % contra la guía` : "poné los m³ de la guía"}
+              sub={cmpGtf ? `${cmpGtf.deltaPct > 0 ? "+" : ""}${cmpGtf.deltaPct} % contra la guía` : "pon los m³ de la guía"}
             />
           </div>
 
@@ -405,10 +405,10 @@ export default function CubicadorTrozas() {
             </button>
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <p className="text-sm font-bold text-[var(--text-primary)]">
-                {paused ? "⏸ En pausa — decí «continúa» para seguir" : voz.listening ? "Escuchando… dictá cada troza y una micro-pausa la guarda" : "Tocá el micrófono y dictá las trozas"}
+                {paused ? "⏸ En pausa — di «continúa» para seguir" : voz.listening ? "Escuchando… dicta cada troza y una micro-pausa la guarda" : "Toca el micrófono y dicta las trozas"}
               </p>
               <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                Tres números por troza: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;cuarenta cuarenta y cinco tres punto cinco&rdquo;</span> = Ø menor 40 cm · Ø mayor 45 cm · largo 3.5 m. Con una sola medida de diámetro, repetila.
+                Tres números por troza: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;cuarenta cuarenta y cinco tres punto cinco&rdquo;</span> = Ø menor 40 cm · Ø mayor 45 cm · largo 3.5 m. Con una sola medida de diámetro, repítela.
               </p>
               <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
                 <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
@@ -459,7 +459,7 @@ export default function CubicadorTrozas() {
           </div>
         ) : (
           <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
-            Este navegador no soporta dictado por voz (usá Chrome). Podés cargar las trozas a mano abajo.
+            Este navegador no soporta dictado por voz (usá Chrome). Puedes cargar las trozas a mano abajo.
           </p>
         )}
 
@@ -563,12 +563,12 @@ export default function CubicadorTrozas() {
         {sospechosas > 0 && (
           <p className="mb-3 flex items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="h-3.5 w-3.5" />
-            {sospechosas === 1 ? "Hay una troza con medidas raras" : `Hay ${sospechosas} trozas con medidas raras`} (largo &gt;15 m o Ø &lt;10 cm): revisá las filas resaltadas — corregí el valor y la marca se va.
+            {sospechosas === 1 ? "Hay una troza con medidas raras" : `Hay ${sospechosas} trozas con medidas raras`} (largo &gt;15 m o Ø &lt;10 cm): revisa las filas resaltadas — corrige el valor y la marca se va.
           </p>
         )}
 
         {rows.length === 0 ? (
-          <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no cubicaste trozas. Dictá o cargá la primera.</p>
+          <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no cubicaste trozas. Dicta o carga la primera.</p>
         ) : (
           <DataTable className="w-full min-w-[640px] text-sm" wrapperProps={propsTabla}>
               <thead>
@@ -700,8 +700,8 @@ export default function CubicadorTrozas() {
           ) : (
             <p className="text-xs text-[var(--text-tertiary)]">
               {guiasError
-                ? "No se pudo leer el libro — escribí los m³ de la guía a mano para comparar."
-                : "Elegí la guía del libro (o escribí los m³) para comparar con lo cubicado."}
+                ? "No se pudo leer el libro — escribe los m³ de la guía a mano para comparar."
+                : "Elige la guía del libro (o escribe los m³) para comparar con lo cubicado."}
             </p>
           )}
         </div>
@@ -710,7 +710,7 @@ export default function CubicadorTrozas() {
           <p className="mt-2 flex items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
             Esa guía ya tiene {guiaElegida.trozasCount} trozas cargadas en el libro: si las estás volviendo a
-            medir, mirá primero el detalle de la guía para no contar la misma madera dos veces.
+            medir, mira primero el detalle de la guía para no contar la misma madera dos veces.
           </p>
         )}
 

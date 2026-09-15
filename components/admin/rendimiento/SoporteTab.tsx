@@ -335,7 +335,7 @@ export default function SoporteTab() {
                 {allOk ? "Todo en orden" : "Hay algo para revisar"}
               </p>
               <p className="text-sm text-[var(--text-secondary)]">
-                Datos de este equipo — si hablás con soporte, copiá y pegáselos.
+                Datos de este equipo — si hablas con soporte, copia y pégaselos.
               </p>
             </div>
           </div>

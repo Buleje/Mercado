@@ -127,7 +127,7 @@ export default function CtpTrozasBuscador() {
       {!q.trim() && !cargando && (
         <EmptyState
           icon={PackageOpen}
-          title="Escribí un código de troza"
+          title="Escribe un código de troza"
           description="Busca en TODO el libro, no sólo en lo que está cargado arriba. Cada pieza conserva su codificación, sus dimensiones y el volumen que declara el documento."
         />
       )}

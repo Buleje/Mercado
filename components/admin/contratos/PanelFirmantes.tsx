@@ -93,7 +93,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
       .filter(b => b.nombre.length >= 2);
 
     if (limpios.length === 0) {
-      setError("Cargá al menos un firmante con nombre.");
+      setError("Carga al menos un firmante con nombre.");
       return;
     }
 
@@ -135,7 +135,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
     const texto = [
       `Hola ${f.nombre}, te comparto el contrato ${contrato.numero} para que lo revises y lo firmes.`,
       "",
-      "Podés leerlo completo y firmarlo desde el celular acá:",
+      "Puedes leerlo completo y firmarlo desde el celular acá:",
       f.link,
     ].join("\n");
     const destino = f.telefono ? `${normalizarTelefono(f.telefono)}` : "";

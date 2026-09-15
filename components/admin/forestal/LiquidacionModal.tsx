@@ -144,7 +144,7 @@ export default function LiquidacionModal({
           </DataTable>
         </div>
         {!conValor && (
-          <p className="mt-2 text-xs text-[var(--text-tertiary)]">Poné un precio (general o por especie) en el cubicador para ver los montos.</p>
+          <p className="mt-2 text-xs text-[var(--text-tertiary)]">Pon un precio (general o por especie) en el cubicador para ver los montos.</p>
         )}
 
       </div>

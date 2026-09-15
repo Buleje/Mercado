@@ -103,17 +103,17 @@ function computeForecast(total: number, currentHour: number): number | null {
 
 function getMotivationalMessage(pct: number, currentHour: number): string {
   // FIX 2026-05-07 (B5): mensaje específico fuera de horario.
-  if (currentHour < OPENING_HOUR) return "Aún no abre — alistá el día";
+  if (currentHour < OPENING_HOUR) return "Aún no abre — alista el día";
   if (currentHour > CLOSING_HOUR) {
-    return pct >= 100 ? "Día cerrado con la meta cumplida" : "Día cerrado — descansá";
+    return pct >= 100 ? "Día cerrado con la meta cumplida" : "Día cerrado — descansa";
   }
   const hourFraction = (currentHour - OPENING_HOUR) / (CLOSING_HOUR - OPENING_HOUR);
   const pace = pct / 100;
-  if (pct >= 100) return "Meta cumplida — seguí sumando!";
+  if (pct >= 100) return "Meta cumplida — sigue sumando!";
   if (pace >= hourFraction + 0.1) return "Vas adelantado al ritmo — buen día";
   if (pace >= hourFraction - 0.05) return "Estás en ritmo para alcanzar la meta";
-  if (pace >= hourFraction - 0.2) return "Un empujón más y te alcanzás";
-  return "Activá promociones — el día está lento";
+  if (pace >= hourFraction - 0.2) return "Un empujón más y te alcanzas";
+  return "Activa promociones — el día está lento";
 }
 
 function Confetti() {
@@ -267,7 +267,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
     const v = Number(tempGoal);
     // FIX 2026-05-07 (F4): validación con feedback visible al dueño.
     if (!Number.isFinite(v) || v <= 0) {
-      setEditError("Ingresá un monto mayor a 0");
+      setEditError("Ingresa un monto mayor a 0");
       return;
     }
     if (v > MAX_DAILY_GOAL) {
@@ -620,7 +620,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
               Te queda poco tiempo
             </p>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Necesitás vender <span className="font-bold text-[var(--text-primary)]">{fmt(isUrgent.ratePerHour)}</span> por hora durante las próximas {isUrgent.remainingHours}h para alcanzar la meta. Activá una promo o llamá a clientes habituales.
+              Necesitas vender <span className="font-bold text-[var(--text-primary)]">{fmt(isUrgent.ratePerHour)}</span> por hora durante las próximas {isUrgent.remainingHours}h para alcanzar la meta. Activa una promo o llama a clientes habituales.
             </p>
           </div>
         </div>
@@ -651,12 +651,12 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
           )} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-[var(--text-primary)]">
-              A este ritmo terminás el día con {fmt(stats.forecast)}
+              A este ritmo terminas el día con {fmt(stats.forecast)}
             </p>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
               {stats.forecast >= dailyGoal
                 ? `Vas a superar la meta por ${fmt(stats.forecast - dailyGoal)}.`
-                : `Te van a faltar ${fmt(Math.max(0, dailyGoal - stats.forecast))} para alcanzar la meta. Acelerá el ritmo.`}
+                : `Te van a faltar ${fmt(Math.max(0, dailyGoal - stats.forecast))} para alcanzar la meta. Acelera el ritmo.`}
             </p>
           </div>
         </div>

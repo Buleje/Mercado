@@ -50,7 +50,7 @@ export default function TarjetaPersona({
   const wa = enlaceWhatsAppConTexto(
     b.telefono,
     debe
-      ? `Hola ${b.nombre}, te recuerdo que tenés un saldo pendiente de ${fmtMonedas(b.saldoPendiente)} por liquidar. ¡Gracias!`
+      ? `Hola ${b.nombre}, te recuerdo que tienes un saldo pendiente de ${fmtMonedas(b.saldoPendiente)} por liquidar. ¡Gracias!`
       : `Hola ${b.nombre}, ¿cómo estás?`,
   );
 

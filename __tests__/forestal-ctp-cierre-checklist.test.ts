@@ -46,6 +46,6 @@ describe("revisarCierre", () => {
 
 it("nombra el mes en el veredicto (convive con el panel de otro período)", () => {
   expect(revisarCierre(LIMPIO, "junio de 2026").titulo).toBe("Todo en orden para cerrar junio de 2026");
-  expect(revisarCierre({ ...LIMPIO, saldosNegativos: 1 }, "junio de 2026").titulo).toBe("Revisá esto antes de cerrar junio de 2026");
+  expect(revisarCierre({ ...LIMPIO, saldosNegativos: 1 }, "junio de 2026").titulo).toBe("Revisa esto antes de cerrar junio de 2026");
   expect(revisarCierre(LIMPIO).titulo).toBe("Todo en orden para cerrar el mes");
 });

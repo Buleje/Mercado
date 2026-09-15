@@ -20,7 +20,7 @@ export function mensajeAvisoTramites(porVencer: (TramiteRegistro & { diasRestant
     "",
     ...lineas,
     "",
-    "Revisalos en el panel → Trámites y Oficios.",
+    "Revísalos en el panel → Trámites y Oficios.",
   ].join("\n");
 }
 
@@ -41,6 +41,6 @@ export function mensajeAvisoSinRespuesta(sinRespuesta: TramiteRegistro[], hoy: D
     ...lineas,
     "",
     "No es un plazo legal, es la señal de ir a preguntar por el expediente en mesa de partes.",
-    "Revisalos en el panel → Trámites y Oficios → Expediente.",
+    "Revísalos en el panel → Trámites y Oficios → Expediente.",
   ].join("\n");
 }

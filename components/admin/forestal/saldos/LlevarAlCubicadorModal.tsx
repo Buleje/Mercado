@@ -131,7 +131,7 @@ export default function LlevarAlCubicadorModal({
 
         {candidatos.length === 0 ? (
           <p className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-6 text-center text-sm text-[var(--text-secondary)]">
-            Con este recorte no queda madera para repartir. Quitá algún filtro y volvé a
+            Con este recorte no queda madera para repartir. Quita algún filtro y vuelve a
             intentar.
           </p>
         ) : (

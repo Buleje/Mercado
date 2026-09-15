@@ -148,7 +148,7 @@ export default function TablaDeTrabajo({ filas }: {
         )}
       </div>
       <p className="mb-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-        Tantea acá: cambiá piezas, m³, pie tablar o el <b>precio por pie</b> y mirá el importe.{" "}
+        Tantea acá: cambia piezas, m³, pie tablar o el <b>precio por pie</b> y mira el importe.{" "}
         <b>No toca nada</b> — ni el lote del cubicador, ni el reparto, ni el papel. Se guarda en este
         equipo hasta que lo reinicies.
       </p>

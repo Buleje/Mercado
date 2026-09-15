@@ -114,7 +114,7 @@ export function AlertaDescuadre({
       <div className="flex flex-wrap items-start gap-2 text-sm">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
         <span>
-          <b>Antes de exportar, revisá:</b>{" "}
+          <b>Antes de exportar, revisa:</b>{" "}
           {/* «De capacidad», no «de rolliza»: un bloque de aserrada directa
               también puede quedar con volumen sin usar, y ahí no hay troza. */}
           {libreM3 > LIBRE_ALERTA_M3 && <>{fmtM3(libreM3)} m³ de capacidad quedaron libres (sin usar) en los bloques cargados.</>}

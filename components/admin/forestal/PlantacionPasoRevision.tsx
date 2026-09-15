@@ -187,7 +187,7 @@ export default function PlantacionPasoRevision({
 
       <div className="flex flex-col items-end gap-1.5">
         {!datos.djAceptado && (
-          <p className="text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">Aceptá la declaración jurada para generar el documento.</p>
+          <p className="text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">Acepta la declaración jurada para generar el documento.</p>
         )}
         <button
           type="button"

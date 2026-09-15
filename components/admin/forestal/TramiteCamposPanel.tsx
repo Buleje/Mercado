@@ -337,7 +337,7 @@ export default function TramiteCamposPanel({
           </Field>
           <Field
             label="Fecha límite para responder"
-            hint="Sólo si ESTE trámite responde a una notificación con plazo (ej. descargo). Poné la fecha real de tu caso — el sistema no la inventa — y avisa 3 días antes"
+            hint="Sólo si ESTE trámite responde a una notificación con plazo (ej. descargo). Pon la fecha real de tu caso — el sistema no la inventa — y avisa 3 días antes"
           >
             <input type="date" className={I} value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} />
           </Field>

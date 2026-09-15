@@ -129,7 +129,7 @@ export function parsearFilasImportadas(matriz: Celda[][]): ResultadoImport {
   if (idxHeader === -1) {
     return {
       piezas: [],
-      errores: [{ fila: 1, motivo: "No encontré las columnas Especie, Espesor, Ancho y Largo. Revisá que la primera fila tenga esos títulos." }],
+      errores: [{ fila: 1, motivo: "No encontré las columnas Especie, Espesor, Ancho y Largo. Revisa que la primera fila tenga esos títulos." }],
       columnas: { cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null },
     };
   }
@@ -285,7 +285,7 @@ export function interpretarDictadoAudio(texto: string, cfg: ComandosCfg = COMAND
 
   const oraciones = separarEnOraciones(texto);
   if (oraciones.length === 0) {
-    errores.push({ fila: 1, motivo: "No se reconoció ningún número en el audio. Dictá más despacio y separá bien cada medida." });
+    errores.push({ fila: 1, motivo: "No se reconoció ningún número en el audio. Dicta más despacio y separa bien cada medida." });
     return { piezas: out, errores, columnas: COLUMNAS_SIN_MAPEO };
   }
 
@@ -357,7 +357,7 @@ export function interpretarDictadoAudio(texto: string, cfg: ComandosCfg = COMAND
   }
 
   if (out.length === 0 && errores.length === 0) {
-    errores.push({ fila: 1, motivo: "No se reconoció ningún número en el audio. Dictá más despacio y separá bien cada medida." });
+    errores.push({ fila: 1, motivo: "No se reconoció ningún número en el audio. Dicta más despacio y separa bien cada medida." });
   }
 
   return { piezas: out, errores, columnas: COLUMNAS_SIN_MAPEO };

@@ -164,7 +164,7 @@ export function computeDunning(
     {
       key: "pastDue",
       label: "Cobro vencido",
-      hint: "La fecha de renovación ya pasó — verificá el pago",
+      hint: "La fecha de renovación ya pasó — verifica el pago",
       kind: "risk",
       count: pastDueRows.length,
       amountPEN: sum(pastDueRows.map((r) => r.monthlyPEN)),
@@ -186,7 +186,7 @@ export function computeDunning(
     {
       key: "trialEndingSoon",
       label: "Trial por vencer (≤3d)",
-      hint: "MRR potencial si convertís antes de que termine el trial",
+      hint: "MRR potencial si conviertes antes de que termine el trial",
       kind: "opportunity",
       count: trialEndingRows.length,
       amountPEN: sum(trialEndingRows.map((r) => planPrice(r.plan))),

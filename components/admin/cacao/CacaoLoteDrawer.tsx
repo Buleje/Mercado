@@ -394,7 +394,7 @@ export default function CacaoLoteDrawer({
                 {ventas.length === 0 ? (
                   <p className="text-[var(--text-tertiary)]">
                     Aún no se registró ninguna venta vinculada a este lote. Al registrar una venta,
-                    elegí este lote como origen.
+                    elige este lote como origen.
                   </p>
                 ) : (
                   <div className="space-y-1.5">

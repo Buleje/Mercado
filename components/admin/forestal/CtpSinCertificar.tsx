@@ -40,13 +40,13 @@ function explicar(d: DespachoSinCertificar): { que: string; donde: string } {
   if (d.motivo === "sin_atribucion") {
     return {
       que: "No cita ninguna corrida: no hay de dónde decir que salió esta madera.",
-      donde: "Abrí la ficha y declarale su corrida de origen.",
+      donde: "Abre la ficha y declárale su corrida de origen.",
     };
   }
   if (d.motivo === "atribucion_parcial") {
     return {
       que: `Le faltan ${fmtM3(d.sinAtribuir)} m³ por atribuir de los ${fmtM3(d.declarado)} que declara.`,
-      donde: "Abrí la ficha y completá el origen del resto.",
+      donde: "Abre la ficha y completa el origen del resto.",
     };
   }
   return {

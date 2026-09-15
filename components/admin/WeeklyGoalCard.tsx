@@ -80,7 +80,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
   const handleSave = () => {
     const val = Number(tempGoal);
     if (!Number.isFinite(val) || val <= 0) {
-      setEditError("Ingresá un monto mayor a 0");
+      setEditError("Ingresa un monto mayor a 0");
       return;
     }
     if (val > MAX_WEEKLY_GOAL) {

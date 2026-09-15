@@ -339,7 +339,7 @@ export default function AICommandCenter() {
                   if (next) {
                     toast.success(
                       `Modo TV activado · cambia de tab cada ${TV_ROTATION_MS / 1000} segundos`,
-                      { duration: 4000, description: "Pulsá Pausar o Esc para detener" },
+                      { duration: 4000, description: "Pulsa Pausar o Esc para detener" },
                     );
                   } else {
                     toast(`Modo TV pausado`, { duration: 2000 });

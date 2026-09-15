@@ -185,8 +185,8 @@ export default function LoginClient() {
             a un toque.
           </p>
           <p className="mt-5 max-w-sm text-base font-medium leading-relaxed text-white/85">
-            Pedí a las bodegas y restaurantes de Ciudad Constitución con delivery
-            rápido. Pagás al recibir — Yape, Plin o efectivo.
+            Pide a las bodegas y restaurantes de Ciudad Constitución con delivery
+            rápido. Pagas al recibir — Yape, Plin o efectivo.
           </p>
           <ul className="mt-8 space-y-3.5">
             {[
@@ -248,17 +248,17 @@ export default function LoginClient() {
               <div className="mb-6 text-center">
                 <h1 className="font-display text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
                   {step === "otp"
-                    ? "Verificá tu número"
+                    ? "Verifica tu número"
                     : phoneView === "form"
-                      ? "Ingresá tu celular"
-                      : "Ingresá o creá tu cuenta"}
+                      ? "Ingresa tu celular"
+                      : "Ingresa o crea tu cuenta"}
                 </h1>
                 <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
                   {step === "otp"
-                    ? "Ingresá el código que te enviamos por WhatsApp"
+                    ? "Ingresa el código que te enviamos por WhatsApp"
                     : phoneView === "form"
                       ? "Te llega un código por WhatsApp al instante"
-                      : "Comprá en las tiendas de tu barrio, seguro y al toque"}
+                      : "Compra en las tiendas de tu barrio, seguro y al toque"}
                 </p>
               </div>
 
@@ -278,7 +278,7 @@ export default function LoginClient() {
                 <div className="flex items-center gap-3">
                   <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
                   <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                    o ingresá con
+                    o ingresa con
                   </span>
                   <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
                 </div>

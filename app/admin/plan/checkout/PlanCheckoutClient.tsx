@@ -100,7 +100,7 @@ const METHODS: PaymentMethodMeta[] = [
   {
     id: "yape",
     label: "Yape",
-    desc: "Escaneá el QR · activación al confirmar",
+    desc: "Escanea el QR · activación al confirmar",
     icon: Wallet,
     recommended: true,
     badge: "Más usado",
@@ -108,7 +108,7 @@ const METHODS: PaymentMethodMeta[] = [
   {
     id: "plin",
     label: "Plin",
-    desc: "Pagás con BCP, Interbank o Scotia",
+    desc: "Pagas con BCP, Interbank o Scotia",
     icon: Wallet,
   },
   {
@@ -120,7 +120,7 @@ const METHODS: PaymentMethodMeta[] = [
   {
     id: "transfer",
     label: "Transferencia bancaria",
-    desc: "BCP · Interbank · BBVA · subí el voucher",
+    desc: "BCP · Interbank · BBVA · sube el voucher",
     icon: Building2,
   },
   {
@@ -184,7 +184,7 @@ export default function PlanCheckoutClient() {
         setCurrentPlan(targetPlan);
         setStep("success");
       } else {
-        toast.error("No pudimos confirmar la activación. Intentá nuevamente.");
+        toast.error("No pudimos confirmar la activación. Intenta nuevamente.");
       }
     } finally {
       setSubmitting(false);
@@ -218,7 +218,7 @@ export default function PlanCheckoutClient() {
         toast.error(
           err instanceof Error
             ? err.message
-            : "Error al iniciar Stripe. Intentá otra vez.",
+            : "Error al iniciar Stripe. Intenta otra vez.",
         );
       }
       return;
@@ -252,7 +252,7 @@ export default function PlanCheckoutClient() {
             <p className="mt-3 text-base text-[var(--text-secondary)]">
               {method === "cash"
                 ? "Un agente te escribirá en menos de 2 horas para coordinar el pago en efectivo y activar tu plan."
-                : `Tu panel ya tiene desbloqueados los ${planDef.unlockedTabs.size} módulos del plan ${planDef.label}. Ingresá a tu panel para empezar.`}
+                : `Tu panel ya tiene desbloqueados los ${planDef.unlockedTabs.size} módulos del plan ${planDef.label}. Ingresa a tu panel para empezar.`}
             </p>
 
             <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
@@ -304,11 +304,11 @@ export default function PlanCheckoutClient() {
             Confirmar suscripción
           </p>
           <PageTitle className="sm:text-4xl lg:text-[2.75rem] text-[var(--text-primary)]">
-            Subí a <span className="text-[var(--accent)]">{planDef.label}</span> en
+            Sube a <span className="text-[var(--accent)]">{planDef.label}</span> en
             menos de un minuto
           </PageTitle>
           <p className="mt-3 max-w-2xl text-base sm:text-lg text-[var(--text-secondary)]">
-            Activá tu plan al confirmar el pago. Cancelás cuando quieras, sin permanencia.
+            Activa tu plan al confirmar el pago. Cancelas cuando quieras, sin permanencia.
           </p>
         </div>
       </section>
@@ -331,7 +331,7 @@ export default function PlanCheckoutClient() {
                         Paso 1
                       </p>
                       <SectionTitle className="mt-1 text-[var(--text-primary)]">
-                        Elegí cómo pagar
+                        Elige cómo pagar
                       </SectionTitle>
                     </div>
                   </div>
@@ -486,7 +486,7 @@ export default function PlanCheckoutClient() {
                   <strong className="text-[var(--text-primary)]">
                     Sin permanencia.
                   </strong>{" "}
-                  Cancelás cuando quieras desde Config → Plan. Activación
+                  Cancelas cuando quieras desde Config → Plan. Activación
                   automática al confirmar el pago.
                 </span>
               </div>
@@ -534,9 +534,9 @@ function PayInstructions({
           </p>
           <SectionTitle className="mt-1 text-[var(--text-primary)]">
             {method === "stripe"
-              ? "Pagá con tarjeta"
+              ? "Paga con tarjeta"
               : method === "yape" || method === "plin"
-                ? `Pagá con ${method === "yape" ? "Yape" : "Plin"}`
+                ? `Paga con ${method === "yape" ? "Yape" : "Plin"}`
                 : method === "transfer"
                   ? "Transferencia bancaria"
                   : "Coordinamos por WhatsApp"}
@@ -549,7 +549,7 @@ function PayInstructions({
         <div className="space-y-5">
           <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 text-center">
             <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-              Escaneá este QR desde {method === "yape" ? "Yape" : "Plin"}
+              Escanea este QR desde {method === "yape" ? "Yape" : "Plin"}
             </p>
             <div className="mx-auto h-44 w-44 rounded-2xl bg-[var(--text-primary)] flex items-center justify-center text-white text-xs font-bold p-4">
               QR placeholder · {method === "yape" ? "Yape" : "Plin"}
@@ -557,7 +557,7 @@ function PayInstructions({
               {amount}
             </div>
             <p className="mt-4 text-sm font-bold text-[var(--text-primary)]">
-              o pagá al número{" "}
+              o paga al número{" "}
               <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[var(--accent)] font-black">
                 929 340 532
               </span>
@@ -571,13 +571,13 @@ function PayInstructions({
               <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-black">
                 1
               </span>
-              Pagá <strong>{amount}</strong> con el QR o número
+              Paga <strong>{amount}</strong> con el QR o número
             </li>
             <li className="flex gap-3">
               <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-black">
                 2
               </span>
-              Apretá &ldquo;Ya pagué&rdquo; abajo. Verificamos en menos de 5 min.
+              Aprieta &ldquo;Ya pagué&rdquo; abajo. Verificamos en menos de 5 min.
             </li>
             <li className="flex gap-3">
               <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-black">
@@ -635,7 +635,7 @@ function PayInstructions({
           </div>
           <div>
             <label htmlFor={voucherInputId} className="block mb-2 text-sm font-bold text-[var(--text-primary)]">
-              Subí el voucher de tu transferencia
+              Sube el voucher de tu transferencia
             </label>
             <input
               id={voucherInputId}
@@ -659,7 +659,7 @@ function PayInstructions({
           <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 flex items-start gap-3">
             <Phone className="h-5 w-5 mt-0.5 shrink-0 text-[var(--accent)]" strokeWidth={2.5} />
             <div className="text-sm leading-relaxed text-[var(--text-primary)]">
-              Apretá <strong>&ldquo;Solicitar contacto&rdquo;</strong> y un agente
+              Aprieta <strong>&ldquo;Solicitar contacto&rdquo;</strong> y un agente
               te escribirá por WhatsApp en menos de 2 horas para coordinar el pago
               en efectivo. Una vez recibido el monto, activamos tu plan{" "}
               <strong className="text-[var(--accent)]">{planLabel}</strong>.

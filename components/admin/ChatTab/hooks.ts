@@ -252,7 +252,7 @@ export function useChatMessages(threadId: string | null) {
     async (items: ChatOrderItem[]) => {
       if (!threadId || items.length === 0) return;
       const lines = items.map((i) => `• ${i.quantity}× ${i.name}`).join("\n");
-      const body = `Te armé este pedido (${fmtSoles(orderTotal(items))}):\n${lines}\n¿Lo confirmás?`;
+      const body = `Te armé este pedido (${fmtSoles(orderTotal(items))}):\n${lines}\n¿Lo confirmas?`;
       const res = await tenantFetch(
         `/api/admin/chat/threads/${encodeURIComponent(threadId)}/messages`,
         {
@@ -274,7 +274,7 @@ export function useChatMessages(threadId: string | null) {
       const methodLabel = payment.method === "plin" ? "Plin" : "Yape";
       const numTxt = payment.number ? ` al ${payment.number}` : "";
       const noteTxt = payment.note ? ` — ${payment.note}` : "";
-      const body = `Cobro por ${methodLabel}: ${fmtSoles(payment.amount)}${numTxt}${noteTxt}. Cuando pagues, tocá "Ya pagué".`;
+      const body = `Cobro por ${methodLabel}: ${fmtSoles(payment.amount)}${numTxt}${noteTxt}. Cuando pagues, toca "Ya pagué".`;
       const res = await tenantFetch(
         `/api/admin/chat/threads/${encodeURIComponent(threadId)}/messages`,
         {

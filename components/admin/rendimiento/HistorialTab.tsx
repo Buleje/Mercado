@@ -63,7 +63,7 @@ export default function HistorialTab() {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
         <p className="text-sm text-[var(--text-secondary)]">
-          No se pudo cargar el historial. Probá recargar la página.
+          No se pudo cargar el historial. Prueba recargar la página.
         </p>
       </div>
     );
@@ -100,7 +100,7 @@ export default function HistorialTab() {
         </p>
         <p className="mx-auto mt-1 max-w-md text-sm text-[var(--text-secondary)]">
           Este historial se llena solo, con la velocidad REAL que sienten tus clientes al
-          entrar a tu tienda — no hay que medir nada a mano. Compartí tu tienda y volvé
+          entrar a tu tienda — no hay que medir nada a mano. Comparte tu tienda y vuelve
           mañana.
         </p>
       </div>

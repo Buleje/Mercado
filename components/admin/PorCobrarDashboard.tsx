@@ -132,7 +132,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
       </div>
 
       <p className="text-xs text-[var(--text-tertiary)]">
-        Resumen de solo lectura. Para registrar cobros o nuevos créditos, entrá a cada sección — la
+        Resumen de solo lectura. Para registrar cobros o nuevos créditos, entra a cada sección — la
         madera se cobra desde la cuenta corriente del Libro CTP.
       </p>
     </div>

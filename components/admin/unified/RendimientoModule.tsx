@@ -47,7 +47,7 @@ export default function RendimientoModule() {
           («Abastecimiento · Compras» sobre un título «Compras») — el mismo
           dato tres veces contando el ítem marcado en el sidebar. */}
       <AdminTabBar
-        heading={{ title: "Rendimiento", description: "Qué tan rápida se siente tu tienda — para vos y para tus clientes", icon: Gauge }} tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
+        heading={{ title: "Rendimiento", description: "Qué tan rápida se siente tu tienda — para ti y para tus clientes", icon: Gauge }} tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "velocidad" && <PerfScoreHero />}
         {sub === "historial" && <HistorialTab />}
         {sub === "salud" && <SystemHealthTab />}

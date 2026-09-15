@@ -220,7 +220,7 @@ export function rellenarGuia(datos: GtfDatos, f: FuentesDeRelleno): ResultadoRel
     transportista.direccion = propietario.direccion;
     completados.push("transportista (el propio CTP: transporte privado)");
   } else if (vacio(transportista.nombre)) {
-    faltantes.push("transportista (es transporte público: cargá la empresa)");
+    faltantes.push("transportista (es transporte público: carga la empresa)");
   } else {
     completados.push("transportista");
   }
@@ -247,11 +247,11 @@ export function rellenarGuia(datos: GtfDatos, f: FuentesDeRelleno): ResultadoRel
   if (vacio(vehiculo.placa)) {
     faltantes.push(
       esFluvial(vehiculo.modo)
-        ? "matrícula de la embarcación (guardá el bote en la libreta y la próxima sale solo)"
-        : "placa del camión (guardalo en la libreta y la próxima sale solo)",
+        ? "matrícula de la embarcación (guarda el bote en la libreta y la próxima sale solo)"
+        : "placa del camión (guárdalo en la libreta y la próxima sale solo)",
     );
   } else completados.push("vehículo");
-  if (vacio(vehiculo.conductor)) faltantes.push("conductor (guardalo en la libreta con su licencia)");
+  if (vacio(vehiculo.conductor)) faltantes.push("conductor (guárdalo en la libreta con su licencia)");
   else completados.push("conductor");
 
   // ── Traslado: de la planta al destino, con la vigencia de siempre ──
@@ -279,7 +279,7 @@ export function rellenarGuia(datos: GtfDatos, f: FuentesDeRelleno): ResultadoRel
     traslado.fechaFin = sumarDias(traslado.fechaInicio, f.diasVigencia ?? DIAS_VIGENCIA_DEFAULT);
   }
   if (vacio(traslado.puntoPartida)) {
-    faltantes.push("punto de partida (cargá el domicilio de la planta en la Ficha CTP y sale en todas)");
+    faltantes.push("punto de partida (carga el domicilio de la planta en la Ficha CTP y sale en todas)");
   }
   if (vacio(traslado.puntoLlegada)) faltantes.push("punto de llegada");
   else completados.push("traslado");

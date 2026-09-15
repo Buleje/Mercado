@@ -39,7 +39,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     tabId: "pedidos",
     title: "Vender y cobrar",
-    text: "Aquí gestionás los pedidos, cobrás a tus clientes y llevás la cuenta de quién te debe.",
+    text: "Aquí gestionas los pedidos, cobras a tus clientes y llevas la cuenta de quién te debe.",
     example: "Ej: Cobrar S/.25 de fideos a doña Rosa",
     Icon: ShoppingCart,
   },
@@ -53,7 +53,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     tabId: "productos",
     title: "Tus productos y sus precios",
-    text: "Aquí agregas productos nuevos, cambiás precios y creas ofertas para tus clientes.",
+    text: "Aquí agregas productos nuevos, cambias precios y creas ofertas para tus clientes.",
     example: "Ej: Subir el aceite de S/.8 a S/.8.50 o hacer 2x1 en galletas",
     Icon: Tag,
   },
@@ -81,7 +81,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     tabId: "config",
     title: "Ajustes del sistema",
-    text: "Aquí agregas cajeros, cambiás permisos y configurás tu página web.",
+    text: "Aquí agregas cajeros, cambias permisos y configuras tu página web.",
     example: "Ej: Dar permiso a Juan para que solo vea ventas, no precios de compra",
     Icon: Settings,
   },

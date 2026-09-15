@@ -356,7 +356,7 @@ export function detectAnomalias(
   const aprov = computeAprovechamiento(movements);
   for (const s of aprov.bySpecies) {
     if (s.trozadoM3 > s.taladoM3 + 1e-4) {
-      out.push({ level: "error", code: "trozado_gt_talado", species: s.species, message: `Trozado (${s.trozadoM3} m³) supera lo talado (${s.taladoM3} m³). Revisá la captura.` });
+      out.push({ level: "error", code: "trozado_gt_talado", species: s.species, message: `Trozado (${s.trozadoM3} m³) supera lo talado (${s.taladoM3} m³). Revisa la captura.` });
     }
   }
   if (aprov.funnel.despachoProductoM3 > aprov.funnel.consumidoM3 + 1e-4 && aprov.funnel.consumidoM3 > 0) {

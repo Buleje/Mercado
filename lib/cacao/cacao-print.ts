@@ -27,7 +27,7 @@ function openInNewWindow(html: string): boolean {
   }
   if (typeof alert === "function")
     alert(
-      "No se pudo abrir la impresión. Permití las ventanas emergentes para este sitio e intentá de nuevo.",
+      "No se pudo abrir la impresión. Permite las ventanas emergentes para este sitio e intenta de nuevo.",
     );
   return false;
 }

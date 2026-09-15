@@ -68,7 +68,7 @@ export function RoutesList({
           Sin rutas hoy
         </p>
         <p className="text-sm text-[var(--text-tertiary)] mt-1 max-w-xs mx-auto leading-snug">
-          Creá una ruta nueva para empezar a despachar pedidos del día.
+          Crea una ruta nueva para empezar a despachar pedidos del día.
         </p>
       </div>
     );

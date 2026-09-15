@@ -65,14 +65,14 @@ export function medir(puntos: LatLng[], modo: ModoMedicion): MedicionResultado {
 
   const resumen =
     puntos.length === 0
-      ? "Tocá el mapa para empezar a medir"
+      ? "Toca el mapa para empezar a medir"
       : modo === "area"
         ? areaHa != null
           ? `${formatArea(areaHa)} · perímetro ${formatDistance(totalM)}`
           : `${puntos.length} punto(s) — faltan ${3 - puntos.length} para cerrar el área`
         : totalM > 0
           ? `${formatDistance(totalM)} en ${puntos.length - 1} tramo(s)`
-          : "1 punto — tocá otro para medir la distancia";
+          : "1 punto — toca otro para medir la distancia";
 
   return {
     modo,

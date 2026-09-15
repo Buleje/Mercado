@@ -189,7 +189,7 @@ export default function EspeciesFotosBiblioteca() {
           <p className="mb-2 text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             {/* Dice «y del catálogo» porque la lista dejó de ser sólo lo cargado:
                 una especie dada de alta y todavía sin madera también va acá. */}
-            Especies sin foto ({faltan.length}) · primero las que más recibís
+            Especies sin foto ({faltan.length}) · primero las que más recibes
           </p>
           <div className="flex flex-wrap gap-2">
             {faltan.map((e) => (
@@ -230,7 +230,7 @@ export default function EspeciesFotosBiblioteca() {
         </div>
       ) : fotos.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-8 text-center text-sm text-[var(--text-secondary)]">
-          Todavía no hay fotos cargadas. Empezá por las especies que más recibís.
+          Todavía no hay fotos cargadas. Empieza por las especies que más recibes.
         </p>
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

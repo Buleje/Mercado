@@ -774,7 +774,7 @@ export function DescuadreChip({ entry }: { entry: WoodEntry }) {
   if (!descuadra(cuadre)) return null;
   return (
     <div
-      title={`El ingreso declara ${fmtM3(Number(entry.volumeM3))} m³ y sus ${entry.trozasCount} piezas suman ${fmtM3(entry.trozasM3 ?? 0)} m³. Abrilo para cargar las que faltan o corregir el volumen.`}
+      title={`El ingreso declara ${fmtM3(Number(entry.volumeM3))} m³ y sus ${entry.trozasCount} piezas suman ${fmtM3(entry.trozasM3 ?? 0)} m³. Ábrelo para cargar las que faltan o corregir el volumen.`}
       className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
     >
       <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />

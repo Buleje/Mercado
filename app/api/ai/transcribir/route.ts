@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   try {
     form = await req.formData();
   } catch {
-    return NextResponse.json({ error: "Mandá el audio como multipart/form-data en el campo 'audio'." }, { status: 400 });
+    return NextResponse.json({ error: "Manda el audio como multipart/form-data en el campo 'audio'." }, { status: 400 });
   }
 
   const archivo = form.get("audio");

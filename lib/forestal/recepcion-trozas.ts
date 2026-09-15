@@ -120,7 +120,7 @@ export function avisosRecepcion(b: BalanceRecepcion, volumenDelIngreso: number |
     if (Math.abs(dif) > 0.001) {
       avisos.push(
         `El ingreso está registrado con ${fmtM3(volumenDelIngreso)} m³ y lo recibido suma ` +
-          `${fmtM3(b.volumenRecibido)} m³. Corregí el volumen del ingreso o explicá la diferencia.`,
+          `${fmtM3(b.volumenRecibido)} m³. Corrige el volumen del ingreso o explica la diferencia.`,
       );
     }
   }

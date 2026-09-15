@@ -169,7 +169,7 @@ export default function CtpCodigosDuplicados() {
           </CardTitle>
           <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
             {total} piezas comparten marca. El código se pinta sobre la testa: mientras dos palos respondan al mismo
-            número, el patio no los distingue. Elegí cuál lo conserva y el resto recibe un correlativo nuevo.
+            número, el patio no los distingue. Elige cuál lo conserva y el resto recibe un correlativo nuevo.
             {anuladas > 0 && (
               <> Hay <b>{anuladas}</b> de ingresos anulados: no tienen madera en el patio, pero su fila sigue
               ocupando la marca y por eso el candado no entra — renumerarlas es gratis.</>

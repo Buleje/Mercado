@@ -203,7 +203,7 @@ export function parseCensoTabla(texto: string, ctx: CensoImportContext = {}): Ce
 
     const { m: dapM, convertido } = dapAMetros(numero(get("dap")));
     if (dapM == null) avisos.push("Sin DAP: no entra al volumen aprovechable del POA");
-    else if (dapM > 3) errores.push(`DAP de ${(dapM * 100).toFixed(0)} cm: revisá la unidad`);
+    else if (dapM > 3) errores.push(`DAP de ${(dapM * 100).toFixed(0)} cm: revisa la unidad`);
     else if (convertido) avisos.push(`DAP leído en cm (${(dapM * 100).toFixed(0)}) → ${dapM.toFixed(2)} m`);
 
     const alturaComercialM = numero(get("altura"));

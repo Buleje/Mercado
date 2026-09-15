@@ -145,7 +145,7 @@ export async function GET(req: NextRequest) {
           ...base,
           excesoSobreMinimo: decision.excesoSobreMinimo,
           motivo: decision.excesoSobreMinimo > 0
-            ? `No se vendió nada en ${VENTANA_DIAS} días y tenés ${stockActual} en stock`
+            ? `No se vendió nada en ${VENTANA_DIAS} días y tienes ${stockActual} en stock`
             : `No se vendió nada en ${VENTANA_DIAS} días`,
         });
         continue;

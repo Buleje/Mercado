@@ -19,7 +19,7 @@ const FirmarSchema = z.discriminatedUnion("accion", [
   }),
   z.object({
     accion: z.literal("rechazar"),
-    motivo: z.string().min(3, "Contanos por qué no lo firmás").max(500),
+    motivo: z.string().min(3, "Contanos por qué no lo firmas").max(500),
   }),
 ]);
 
@@ -27,10 +27,10 @@ const MENSAJES: Record<string, string> = {
   ya_firmo: "Ya firmaste este contrato.",
   rechazado: "Ya habías rechazado este contrato.",
   no_es_su_turno: "Todavía no es tu turno de firmar.",
-  link_vencido: "Este link de firma venció. Pedí uno nuevo.",
+  link_vencido: "Este link de firma venció. Pide uno nuevo.",
   contrato_cerrado: "Este contrato ya no está en circulación.",
   no_encontrado: "Este link no existe o fue revocado.",
-  firma_invalida: "No pudimos leer tu firma. Volvé a dibujarla.",
+  firma_invalida: "No pudimos leer tu firma. Vuelve a dibujarla.",
 };
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {

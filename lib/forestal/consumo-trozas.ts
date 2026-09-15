@@ -466,6 +466,6 @@ export function motivoDeCupo(c: CupoDeGuia): string {
   return (
     `De la guía ${c.gtfNumber ?? "—"} quedan ${fmtM3(c.disponible ?? 0)} m³ sin consumir ` +
     `(declara ${fmtM3(c.declarado ?? 0)} y ya se consumieron ${fmtM3(c.consumido)}), ` +
-    `y estás pidiendo ${fmtM3(c.pedido)} m³. Sacá ${fmtM3(c.exceso)} m³ de esa guía.`
+    `y estás pidiendo ${fmtM3(c.pedido)} m³. Saca ${fmtM3(c.exceso)} m³ de esa guía.`
   );
 }

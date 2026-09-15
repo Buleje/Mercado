@@ -387,7 +387,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                         ? "Procesando…"
                         : items.length > 0
                           ? "Productos reconocidos"
-                          : 'Decí los productos que necesitás'}
+                          : 'Di los productos que necesitas'}
                   </SectionTitle>
                 </div>
               </div>
@@ -441,8 +441,8 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                 </button>
                 <p className="text-sm font-bold text-[var(--text-secondary)]">
                   {isListening
-                    ? 'Decí "listo" para confirmar · "cancelar" para descartar'
-                    : "Tocá el micrófono o empezá a hablar"}
+                    ? 'Di "listo" para confirmar · "cancelar" para descartar'
+                    : "Toca el micrófono o empieza a hablar"}
                 </p>
               </div>
 
@@ -465,7 +465,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
               {!isListening && !transcript && !interimTranscript && items.length === 0 && !processing && !error && (
                 <div>
                   <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2.5">
-                    Probá decir
+                    Prueba decir
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {QUICK_PROMPTS.map((prompt) => (
@@ -501,8 +501,8 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                           Micrófono bloqueado
                         </p>
                         <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
-                          Tocá el ícono del candado en la barra de direcciones del navegador y elegí{" "}
-                          <strong className="text-[var(--text-primary)]">Permitir</strong> para el micrófono. Después volvé a este panel.
+                          Toca el ícono del candado en la barra de direcciones del navegador y elige{" "}
+                          <strong className="text-[var(--text-primary)]">Permitir</strong> para el micrófono. Después vuelve a este panel.
                         </p>
                       </div>
                     </div>

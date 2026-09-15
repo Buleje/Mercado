@@ -260,7 +260,7 @@ export default function CompetitivePricingTab() {
           Sin productos para analizar
         </p>
         <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-          Activá productos en el marketplace para ver el análisis competitivo de precios.
+          Activa productos en el marketplace para ver el análisis competitivo de precios.
         </p>
       </div>
     );
@@ -341,7 +341,7 @@ export default function CompetitivePricingTab() {
               S/{opportunityIncome.toFixed(2)}
             </p>
             <p className="text-sm text-[var(--text-tertiary)] mt-1">
-              Ingreso extra si subís los precios bajos
+              Ingreso extra si subes los precios bajos
             </p>
           </div>
         </div>

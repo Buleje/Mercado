@@ -287,7 +287,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
 const READINESS_META = {
   ready: { Icon: ShieldCheck, box: "border-[var(--data-success-500)]/30 bg-[var(--data-success-50)]", text: "text-[var(--data-success-700)]", title: "El libro resiste una fiscalización" },
   warning: { Icon: AlertTriangle, box: "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]", text: "text-[var(--data-warning-700)]", title: "El libro está en pie, con advertencias" },
-  error: { Icon: ShieldAlert, box: "border-[var(--data-error-500)]/30 bg-[var(--data-error-50)]", text: "text-[var(--data-error-700)]", title: "Corregí antes de una fiscalización" },
+  error: { Icon: ShieldAlert, box: "border-[var(--data-error-500)]/30 bg-[var(--data-error-50)]", text: "text-[var(--data-error-700)]", title: "Corrige antes de una fiscalización" },
 } as const;
 
 function ReadinessBanner({

@@ -93,7 +93,7 @@ async function enviarDigest(params: {
             <span style="font-size:14px;color:#666;">por kg seco</span>
           </div>
           <p style="margin:6px 0 16px;font-weight:bold;color:${colorCambio};">${flecha} ${cambioTxt} vs el cierre anterior</p>
-          ${chartPng ? `<img src="cid:cacao-chart" alt="Gráfico del precio del cacao" style="width:100%;height:auto;border-radius:8px;border:1px solid #e0e0e0;" />` : `<p style="font-size:13px;color:#999;">(No se pudo generar el gráfico hoy — revisá el precio en el panel.)</p>`}
+          ${chartPng ? `<img src="cid:cacao-chart" alt="Gráfico del precio del cacao" style="width:100%;height:auto;border-radius:8px;border:1px solid #e0e0e0;" />` : `<p style="font-size:13px;color:#999;">(No se pudo generar el gráfico hoy — revisa el precio en el panel.)</p>`}
           ${usdTon != null ? `<p style="font-size:13px;color:#666;margin-top:14px;">Referencia internacional (ICE): USD ${usdTon.toFixed(0)} / tonelada.</p>` : ""}
           <p style="font-size:12px;color:#999;margin-top:12px;">Digest automático diario · Buleje · Panel → Cacao y Agricultura → Mercado.</p>
         </div>

@@ -96,7 +96,7 @@ export default function CarpetaLocalPanel({
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
           <span>
             Este navegador no deja elegir una carpeta de tu PC. Funciona en <strong>Chrome, Edge, Brave y Opera</strong>.
-            Con Firefox o Safari, usá el agente de Windows de más abajo.
+            Con Firefox o Safari, usa el agente de Windows de más abajo.
           </span>
         </p>
       </div>
@@ -112,7 +112,7 @@ export default function CarpetaLocalPanel({
           Vincular una carpeta de tu PC
         </CardTitle>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-          Elegís una carpeta del escritorio y queda emparejada con el drive: lo que edites, agregues o borres de
+          Eliges una carpeta del escritorio y queda emparejada con el drive: lo que edites, agregues o borres de
           un lado pasa al otro. No hay que instalar nada — sincroniza mientras tengas el panel abierto.
         </p>
 
@@ -196,7 +196,7 @@ export default function CarpetaLocalPanel({
           <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" />
           <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
             La carpeta del panel con la que estaba emparejada ya no existe. La sincronización queda detenida
-            para no mezclar archivos: desvinculá y volvé a elegir con qué carpeta emparejarla.
+            para no mezclar archivos: desvincula y vuelve a elegir con qué carpeta emparejarla.
           </p>
         </div>
       )}
@@ -205,7 +205,7 @@ export default function CarpetaLocalPanel({
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 p-3">
           <Lock className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning)]" />
           <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-            El navegador pide permiso de nuevo cada vez que volvés a abrir el panel. Es un click.
+            El navegador pide permiso de nuevo cada vez que vuelves a abrir el panel. Es un click.
           </p>
           <button
             type="button"
@@ -305,8 +305,8 @@ export default function CarpetaLocalPanel({
       )}
 
       <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-        Mientras el panel esté abierto se revisa sola cada minuto. Si borrás un archivo en tu PC, el documento va
-        a la papelera del panel (recuperable); si lo borrás en el panel, el archivo se borra de tu carpeta.
+        Mientras el panel esté abierto se revisa sola cada minuto. Si borras un archivo en tu PC, el documento va
+        a la papelera del panel (recuperable); si lo borras en el panel, el archivo se borra de tu carpeta.
       </p>
     </div>
   );

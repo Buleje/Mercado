@@ -297,7 +297,7 @@ export default function CtpTrozasPatio({
                   key={t.key}
                   activo={activo}
                   punto={TONO[t.tono].punto}
-                  titulo="Tocá para ver sólo estas en la lista"
+                  titulo="Toca para ver sólo estas en la lista"
                   onClick={() =>
                     onTramoFiltro(activo ? tramoFiltro.filter((x) => x !== t.key) : [...tramoFiltro, t.key])
                   }

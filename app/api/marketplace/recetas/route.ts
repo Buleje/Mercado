@@ -146,7 +146,7 @@ const DEMO_RECETAS: DemoReceta[] = [
     categoria: "Platos de fondo",
     imageUrl: null,
     pasos: [
-      "Sancoca el pollo y deshilachalo en tiras finas.",
+      "Sancoca el pollo y deshiláchalo en tiras finas.",
       "Licua el aji amarillo con leche y galletas remojadas.",
       "Sofrie cebolla y ajo, agrega la crema de aji.",
       "Incorpora el pollo y cocina 10 minutos.",
@@ -262,7 +262,7 @@ const DEMO_RECETAS: DemoReceta[] = [
     categoria: "Platos de fondo",
     imageUrl: null,
     pasos: [
-      "Cocina el arroz y dejalo enfriar.",
+      "Cocina el arroz y déjalo enfriar.",
       "Corta el pollo en cubos y saltea en wok.",
       "Retira y prepara tortilla de huevo, corta en tiras.",
       "Saltea el arroz frio con aceite a fuego alto.",

@@ -63,7 +63,7 @@ export default function EditarNotasModal({
       setErr(j?.error ?? "No se pudo guardar.");
     } catch (e) {
       logger.error("[adelantos] no se pudo editar notas", { error: String(e) });
-      setErr("No se pudo guardar. Revisá la conexión.");
+      setErr("No se pudo guardar. Revisa la conexión.");
     } finally {
       setSaving(false);
     }

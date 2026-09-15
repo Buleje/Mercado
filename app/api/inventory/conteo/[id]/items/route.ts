@@ -66,7 +66,7 @@ const PatchSchema = z.object({
   ajustado: z.boolean().optional(),
 }).refine(
   (d) => d.stockContado !== undefined || d.ajustado !== undefined,
-  { message: "Mandá stockContado, ajustado, o los dos" },
+  { message: "Manda stockContado, ajustado, o los dos" },
 );
 
 // PATCH — Actualizar stockContado de un item

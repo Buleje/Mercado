@@ -123,7 +123,7 @@ export function MarketplaceComisionesTab() {
           </p>
           <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-sm mx-auto">
             {filterStatus !== "all"
-              ? "Probá con otro filtro o vé al estado anterior del flujo."
+              ? "Prueba con otro filtro o ve al estado anterior del flujo."
               : "Cuando recibas pedidos por marketplace, las comisiones aparecerán acá."}
           </p>
         </div>

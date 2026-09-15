@@ -72,16 +72,16 @@ const PROMPT =
   "Convención peruana: el espesor y el ancho se anotan en PULGADAS, el largo en PIES. Si una fila trae " +
   "explícitamente otra unidad (cm, metros), convertila vos a pulgadas/pies antes de responder — el número " +
   "que devuelvas siempre tiene que quedar en esas unidades.\n\n" +
-  "Para CADA fila/línea que puedas identificar, devolvé:\n" +
+  "Para CADA fila/línea que puedas identificar, devuelve:\n" +
   "- cantidad: cuántas piezas iguales representa esa línea. Si no está escrita, 1.\n" +
   "- espesor: en pulgadas (número).\n" +
   "- ancho: en pulgadas (número).\n" +
   "- largo: en pies (número).\n" +
   "- especie: si está escrita en esa fila o en un encabezado que aplica a todo el bloque; si no hay, dejalo vacío.\n" +
   "- incierto: true si algún número de ESA fila es ambiguo o dudoso, false si se lee con confianza.\n\n" +
-  "Si la foto no parece una planilla de cubicación de madera aserrada, devolvé piezas: [] y advertencia con " +
-  "una frase corta explicando qué ves en cambio. Si hay zonas ilegibles, devolvé las filas que SÍ se puedan " +
-  "leer y dejá esas fuera — nunca inventes un valor para lo que no se lee.";
+  "Si la foto no parece una planilla de cubicación de madera aserrada, devuelve piezas: [] y advertencia con " +
+  "una frase corta explicando qué ves en cambio. Si hay zonas ilegibles, devuelve las filas que SÍ se puedan " +
+  "leer y deja esas fuera — nunca inventes un valor para lo que no se lee.";
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:herramientas");

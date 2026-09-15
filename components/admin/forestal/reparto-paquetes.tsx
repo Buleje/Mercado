@@ -225,7 +225,7 @@ export default function RepartoPaquetesPicker({
         >
           <Check className="h-4 w-4" aria-hidden />
           {elegidos.length === 0
-            ? "Elegí al menos uno"
+            ? "Elige al menos uno"
             : `Agregar ${elegidos.length} bloque${elegidos.length === 1 ? "" : "s"}`}
         </button>
         {elegidos.length > 0 && (

@@ -72,7 +72,7 @@ export function useLookupDocumento(
       logger.warn("[documento] no se pudo consultar el padrón", { error: String(e) });
       setEstado({
         fase: "listo",
-        resultado: { encontrado: false, numero: num, motivo: "No se pudo consultar ahora. Cargá los datos a mano." },
+        resultado: { encontrado: false, numero: num, motivo: "No se pudo consultar ahora. Carga los datos a mano." },
       });
     }
   }, []);

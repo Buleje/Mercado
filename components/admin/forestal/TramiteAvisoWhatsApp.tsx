@@ -43,7 +43,7 @@ export default function TramiteAvisoWhatsApp({
   async function enviar() {
     const limpio = telefono.trim();
     if (!limpio) {
-      setAviso("Poné el número de WhatsApp que recibe el aviso.");
+      setAviso("Pon el número de WhatsApp que recibe el aviso.");
       return;
     }
     setEnviando(true);

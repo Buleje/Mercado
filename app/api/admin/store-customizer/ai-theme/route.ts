@@ -79,17 +79,17 @@ export async function POST(req: NextRequest) {
     // el plan REAL del tenant (antes hardcodeaba "free" → planes pagos capados).
     if (!(await aiCostGuard.canSpend(auth.tenantId, 0.001))) {
       return NextResponse.json(
-        { error: "Llegaste al límite mensual de generaciones con IA. Actualizá tu plan o esperá el próximo mes." },
+        { error: "Llegaste al límite mensual de generaciones con IA. Actualiza tu plan o espera el próximo mes." },
         { status: 429 },
       );
     }
 
-    const prompt = `Sos un diseñador de marca para tiendas online en Perú. A partir de la descripción del negocio, definí un tema visual COHESIVO y profesional.
+    const prompt = `Eres un diseñador de marca para tiendas online en Perú. A partir de la descripción del negocio, define un tema visual COHESIVO y profesional.
 
 Negocio: ${storeName ? `"${storeName}" — ` : ""}${description}
 ${rubro ? `Rubro: ${rubro}` : ""}
 
-Devolvé EXCLUSIVAMENTE un objeto JSON válido (sin markdown, sin comentarios, sin texto antes ni después) con EXACTAMENTE estas claves:
+Devuelve EXCLUSIVAMENTE un objeto JSON válido (sin markdown, sin comentarios, sin texto antes ni después) con EXACTAMENTE estas claves:
 {
   "primaryColor": "#RRGGBB",   // color principal de marca (botones, acentos fuertes)
   "secondaryColor": "#RRGGBB", // color complementario para detalles/ofertas
@@ -106,7 +106,7 @@ Devolvé EXCLUSIVAMENTE un objeto JSON válido (sin markdown, sin comentarios, s
 Reglas de diseño:
 - Los 3 colores deben armonizar entre sí y encajar con el rubro (ej. comida = cálidos/apetitosos; farmacia = limpios/confiables; maderería = tierra/madera).
 - Contraste suficiente: el primario debe leerse bien sobre blanco.
-- Copy en español de Perú natural, tuteo ("Pedí", "Elegí"), NUNCA voseo argentino, sin emojis, sin "¡increíble!".
+- Copy en español de Perú natural, tuteo ("Pide", "Elige"), NUNCA voseo argentino ("Pedí", "Elegí"), sin emojis, sin "¡increíble!".
 - borderRadius, fuente y botón coherentes con el tono (sobrio vs amigable).
 - NO inventes datos del negocio que no estén en la descripción.`;
 
@@ -129,7 +129,7 @@ Reglas de diseño:
     } catch {
       logger.error("[ai-theme] respuesta no-JSON", { raw: raw.slice(0, 200) });
       return NextResponse.json(
-        { error: "La IA no devolvió un tema válido. Probá con otra descripción." },
+        { error: "La IA no devolvió un tema válido. Prueba con otra descripción." },
         { status: 502 },
       );
     }
@@ -138,7 +138,7 @@ Reglas de diseño:
     if (!themed.success) {
       logger.error("[ai-theme] JSON fuera de schema", { issues: themed.error.issues });
       return NextResponse.json(
-        { error: "La IA devolvió un tema incompleto. Probá de nuevo." },
+        { error: "La IA devolvió un tema incompleto. Prueba de nuevo." },
         { status: 502 },
       );
     }

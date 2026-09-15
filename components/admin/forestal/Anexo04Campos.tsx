@@ -283,7 +283,7 @@ export default function Anexo04Campos({
   /** Guarda (o actualiza por nombre) el firmante que está cargado ahora. */
   const guardarEmisor = () => {
     const nuevo: EmisorGuardado = { firmante: datos.firmante.trim(), documento: datos.documento.trim(), cargo: datos.cargo.trim() };
-    if (!nuevo.firmante) { onError?.("Escribí el nombre del emisor antes de guardarlo."); return; }
+    if (!nuevo.firmante) { onError?.("Escribe el nombre del emisor antes de guardarlo."); return; }
     persistirEmisores([nuevo, ...emisores.filter((e) => e.firmante.toLowerCase() !== nuevo.firmante.toLowerCase())].slice(0, 8));
   };
 

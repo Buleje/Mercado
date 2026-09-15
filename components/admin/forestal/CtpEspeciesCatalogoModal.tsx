@@ -278,7 +278,7 @@ export default function CtpEspeciesCatalogoModal({
                           e.deFabrica
                             ? "Dejar de ofrecerla en esta planta (se puede devolver)"
                             : porQuitar === e.clave
-                              ? `Tocá de nuevo para sacar «${e.nombre}» del catálogo`
+                              ? `Toca de nuevo para sacar «${e.nombre}» del catálogo`
                               : "Sacarla del catálogo (pide confirmar)"
                         }
                         className={`grid h-9 w-9 place-items-center rounded-lg transition disabled:opacity-50 ${

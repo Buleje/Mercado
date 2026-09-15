@@ -106,13 +106,13 @@ export default function LothMapaHerramientas({
     const x = Number(este.replace(/[  ,]/g, ""));
     const y = Number(norte.replace(/[  ,]/g, ""));
     if (!Number.isFinite(x) || !Number.isFinite(y) || x <= 0 || y <= 0) {
-      setIrError("Escribí el Este y el Norte en metros.");
+      setIrError("Escribe el Este y el Norte en metros.");
       return;
     }
     const { zone, south } = parseUtmZone(zona);
     const [lat, lng] = fromUtm(x, y, zone, south);
     if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-      setIrError("Esa coordenada cae fuera del planeta: revisá la zona.");
+      setIrError("Esa coordenada cae fuera del planeta: revisa la zona.");
       return;
     }
     setIrError(null);
@@ -173,7 +173,7 @@ export default function LothMapaHerramientas({
           onClick={() => onFajaAncho(fajaAnchoM > 0 ? 0 : FAJA_SUGERIDA.rio)}
           disabled={cauces === 0}
           aria-pressed={fajaAnchoM > 0}
-          title={cauces === 0 ? "Trazá primero un río o quebrada" : "Franja de protección a los lados del cauce"}
+          title={cauces === 0 ? "Traza primero un río o quebrada" : "Franja de protección a los lados del cauce"}
           className={`${CHIP} ${fajaAnchoM > 0 ? "border-transparent bg-[#0284c7] text-white" : OFF}`}
         >
           <Waves className="h-3.5 w-3.5" /> Faja de protección

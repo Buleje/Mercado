@@ -262,7 +262,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
 
       {resumen.truncada && (
         <p className="rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] p-3 text-sm text-[var(--data-info-700)] dark:bg-transparent dark:text-[var(--data-info-500)]">
-          El período tiene {total} ingresos y acá entran los primeros {TOPE}. Los totales de arriba hablan sólo de esos — acortá el período para verlo completo.
+          El período tiene {total} ingresos y acá entran los primeros {TOPE}. Los totales de arriba hablan sólo de esos — acorta el período para verlo completo.
         </p>
       )}
 
@@ -274,7 +274,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
 
       {resumen.sinCosto > 0 && (
         <p className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
-          {resumen.sinCosto} {resumen.sinCosto === 1 ? "ingreso no tiene" : "ingresos no tienen"} costo cargado. Lo que sale de esa madera no puede mostrar margen — no se inventa un costo. Cargá la factura acá cuando llegue.
+          {resumen.sinCosto} {resumen.sinCosto === 1 ? "ingreso no tiene" : "ingresos no tienen"} costo cargado. Lo que sale de esa madera no puede mostrar margen — no se inventa un costo. Carga la factura acá cuando llegue.
         </p>
       )}
 
@@ -303,7 +303,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
                 aria-label="Proveedor a valorizar"
                 className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               >
-                <option value="">Elegí uno…</option>
+                <option value="">Elige uno…</option>
                 {porProveedor.map((p) => (
                   <option key={p.proveedor} value={p.proveedor}>
                     {p.proveedor} — {p.ids.length} ingreso{p.ids.length === 1 ? "" : "s"} · {m3(p.m3)}
@@ -333,9 +333,9 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
               disabled={!grupo || precioNum == null || precioNum < 0 || aplicando !== null}
               title={
                 !grupo
-                  ? "Elegí un proveedor"
+                  ? "Elige un proveedor"
                   : precioNum == null
-                    ? "Poné el precio por m³"
+                    ? "Pon el precio por m³"
                     : `Se van a valorizar ${grupo.ids.length} ingresos por ${soles(precioNum * grupo.m3, resumen.moneda)}`
               }
               className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
@@ -361,7 +361,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
       {pendientes > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-medium text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
-          <span>{pendientes} costo(s) sin guardar. Se pierden si salís de la pestaña.</span>
+          <span>{pendientes} costo(s) sin guardar. Se pierden si sales de la pestaña.</span>
           <button
             type="button"
             onClick={() => void saveTodo()}
@@ -383,7 +383,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <CardTitle as="h3" className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-            {sinPeriodo ? "Todos los ingresos · registrá lo que pagaste" : "Ingresos del período · registrá lo que pagaste"}
+            {sinPeriodo ? "Todos los ingresos · registra lo que pagaste" : "Ingresos del período · registra lo que pagaste"}
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             {/* Sin este botón, la madera parada hace años queda fuera de alcance:
@@ -418,7 +418,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
                 : "No hay ingresos en el período."
               : sinPeriodo
                 ? "Todos los ingresos tienen su costo cargado."
-                : "Todos los ingresos del período están valorizados. Si Antigüedad marca madera sin costo, es más vieja que el período: mirá «Todo el patio»."}
+                : "Todos los ingresos del período están valorizados. Si Antigüedad marca madera sin costo, es más vieja que el período: mira «Todo el patio»."}
           </p>
         ) : (
           <div className="space-y-2">

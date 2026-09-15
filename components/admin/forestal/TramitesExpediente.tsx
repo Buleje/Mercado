@@ -180,10 +180,10 @@ export default function TramitesExpediente({
           </p>
           <p className="mx-auto mt-1 max-w-md text-sm text-[var(--text-tertiary)]">
             {busqueda.trim()
-              ? "Probá con otra palabra o borrá la búsqueda."
+              ? "Prueba con otra palabra o borra la búsqueda."
               : filtro
-                ? "Probá con otro estado o mirá todos."
-                : "Elegí un formato en «Formatos», llenalo y guardalo: acá queda el rastro de qué presentaste, cuándo y ante quién."}
+                ? "Prueba con otro estado o mira todos."
+                : "Elige un formato en «Formatos», llénalo y guárdalo: acá queda el rastro de qué presentaste, cuándo y ante quién."}
           </p>
         </div>
       ) : (

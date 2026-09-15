@@ -108,7 +108,7 @@ export default function CacaoLiquidaciones() {
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
           <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-700)]"><CheckCircle2 className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">{search ? "Sin resultados" : "Todo al día"}</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm">{search ? "Ningún productor coincide con tu búsqueda." : "No le debés liquidación a ningún productor. Cada lote de acopio está pagado."}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm">{search ? "Ningún productor coincide con tu búsqueda." : "No le debes liquidación a ningún productor. Cada lote de acopio está pagado."}</p>
         </div>
       ) : (
         <ul className="space-y-2">

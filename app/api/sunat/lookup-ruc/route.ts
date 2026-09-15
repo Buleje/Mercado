@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
       // el usuario reintentaba con el mismo número esperando otra respuesta.
       if (upstream.status === 422) {
         return NextResponse.json(
-          { error: "SUNAT no reconoce ese RUC: revisá los dígitos.", ruc },
+          { error: "SUNAT no reconoce ese RUC: revisa los dígitos.", ruc },
           { status: 404 },
         );
       }

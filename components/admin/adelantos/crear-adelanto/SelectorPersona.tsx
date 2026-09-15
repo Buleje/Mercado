@@ -51,7 +51,7 @@ export default function SelectorPersona({
       {sugeridas.length > 0 && (
         <div>
           {persona && (
-            <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">O elegí a una recurrente</p>
+            <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">O elige a una recurrente</p>
           )}
           <div className="grid grid-cols-3 gap-1.5">
             {sugeridas.map((p) => (

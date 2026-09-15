@@ -119,8 +119,8 @@ export function avisosDeProcedencia(p?: ProcedenciaBloques | null): AvisoAnexo04
     return [{
       nivel: "aviso",
       mensaje: aserradaDirecta === 1
-        ? "Estas piezas salen de un bloque cargado como madera YA ASERRADA: no hay troza de origen detrás. El respaldo no es una GTF de rolliza — revisá con qué documento entró esa madera antes de firmar."
-        : `Estas piezas salen de ${aserradaDirecta} bloques cargados como madera YA ASERRADA: no hay troza de origen detrás. El respaldo no es una GTF de rolliza — revisá con qué documento entró esa madera antes de firmar.`,
+        ? "Estas piezas salen de un bloque cargado como madera YA ASERRADA: no hay troza de origen detrás. El respaldo no es una GTF de rolliza — revisa con qué documento entró esa madera antes de firmar."
+        : `Estas piezas salen de ${aserradaDirecta} bloques cargados como madera YA ASERRADA: no hay troza de origen detrás. El respaldo no es una GTF de rolliza — revisa con qué documento entró esa madera antes de firmar.`,
     }];
   }
   return [{
@@ -169,7 +169,7 @@ export function validarAnexo04(
   if (sinEspecie > 0) {
     avisos.push({
       nivel: "error",
-      mensaje: `${sinEspecie} bloque${sinEspecie === 1 ? "" : "s"} sin (4) Especie: asigná la especie a esas piezas.`,
+      mensaje: `${sinEspecie} bloque${sinEspecie === 1 ? "" : "s"} sin (4) Especie: asigna la especie a esas piezas.`,
     });
   }
 
@@ -177,12 +177,12 @@ export function validarAnexo04(
   if (raras > 0) {
     avisos.push({
       nivel: "aviso",
-      mensaje: `${raras} medida${raras === 1 ? "" : "s"} fuera de lo común: revisá antes de firmar.`,
+      mensaje: `${raras} medida${raras === 1 ? "" : "s"} fuera de lo común: revisa antes de firmar.`,
     });
   }
 
   if (piezas.length > 0 && anexo.totalM3 <= 0) {
-    avisos.push({ nivel: "error", mensaje: "El (3) volumen total dio 0: revisá las medidas." });
+    avisos.push({ nivel: "error", mensaje: "El (3) volumen total dio 0: revisa las medidas." });
   }
 
   avisos.push(...cotejarConLibro(anexo, piezas, declarado, otrosDelDespacho(datos, emitidos, ctpEntryId)));

@@ -236,7 +236,7 @@ export default function CtpResumenDeJornadasModal({
         <ModalFooter
           nota={
             <>
-              Sólo lectura — para corregir una corrida, entrá por ella en el libro.{" "}
+              Sólo lectura — para corregir una corrida, entra por ella en el libro.{" "}
               {/* El cierre del mes (revisar, cerrar, bajar el paquete oficial) ya
                   existe: este resumen es el paso previo natural, y nadie lo sabía. */}
               <a

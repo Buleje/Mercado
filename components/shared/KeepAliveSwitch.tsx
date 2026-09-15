@@ -110,7 +110,7 @@ export function KeepAliveSwitch() {
                 Mantener sesión activa
               </p>
               <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
-                Que no te saque al login mientras trabajás
+                Que no te saque al login mientras trabajas
               </p>
             </div>
             <button
@@ -163,9 +163,9 @@ export function KeepAliveSwitch() {
       {/* Explicación en lenguaje simple */}
       <p className="border-t-2 border-[var(--rule-base)] px-4 py-2.5 text-[length:var(--ts-xs)] leading-relaxed text-[var(--text-tertiary)]">
         Mientras esté encendido no te saca por estar ausente: renueva tu sesión
-        sola cada pocos minutos y seguís en el panel hasta que lo apagues.{" "}
+        sola cada pocos minutos y sigues en el panel hasta que lo apagues.{" "}
         <span className="font-semibold">No baja la seguridad:</span> no cambia la
-        duración de los tokens, y si cerrás el navegador varios días la sesión
+        duración de los tokens, y si cierras el navegador varios días la sesión
         expira igual y hay que volver a entrar.
       </p>
     </div>

@@ -189,14 +189,14 @@ export default function SyncEscritorioView({
       setCopiado(marca);
       setTimeout(() => setCopiado(null), 2000);
     } catch {
-      setError("El navegador no dejó copiar: seleccioná el texto y copialo a mano.");
+      setError("El navegador no dejó copiar: selecciona el texto y copialo a mano.");
     }
   }
 
   const configJson = `{
   "carpeta": "C:\\\\Users\\\\TU-USUARIO\\\\Buleje-Drive",
   "api": "${typeof window !== "undefined" ? window.location.origin : "https://tu-dominio.com"}",
-  "clave": "${claveNueva ?? "sk_pegá-acá-la-clave"}",
+  "clave": "${claveNueva ?? "sk_pega-acá-la-clave"}",
   "intervaloSegundos": 30
 }`;
 
@@ -210,9 +210,9 @@ export default function SyncEscritorioView({
               Tu carpeta de la PC, acá
             </SectionTitle>
             <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-              Elegís una carpeta de Windows y todo lo que pongas ahí aparece en Documentación. Lo que subís
-              desde el panel o el celular baja a la carpeta. Si borrás un archivo en la PC va a la papelera del
-              panel (se puede recuperar), y si lo renombrás o lo movés de subcarpeta, el panel lo sigue.
+              Eliges una carpeta de Windows y todo lo que pongas ahí aparece en Documentación. Lo que subes
+              desde el panel o el celular baja a la carpeta. Si borras un archivo en la PC va a la papelera del
+              panel (se puede recuperar), y si lo renombras o lo mueves de subcarpeta, el panel lo sigue.
               Hay dos formas: <strong>desde acá mismo</strong> (sin instalar nada, mientras el panel esté
               abierto) o con el <strong>agente de Windows</strong>, que sigue sincronizando con el panel cerrado.
             </p>
@@ -247,7 +247,7 @@ export default function SyncEscritorioView({
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
             Hay <strong>dos equipos sincronizando la misma carpeta</strong> ({duplicadas.join(", ")}). Se van a
-            pisar entre ellos: dejá uno solo activo.
+            pisar entre ellos: deja uno solo activo.
           </span>
         </p>
       )}
@@ -266,7 +266,7 @@ export default function SyncEscritorioView({
             <Monitor className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)] opacity-40" aria-hidden="true" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Todavía no hay ninguna PC conectada</p>
             <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-              Seguí los tres pasos de abajo para conectar la primera.
+              Sigue los tres pasos de abajo para conectar la primera.
             </p>
           </div>
         ) : (
@@ -306,7 +306,7 @@ export default function SyncEscritorioView({
                             {e.conflictos.length} archivo(s) se editaron en los dos lados
                           </p>
                           <p className="mt-0.5">
-                            Se guardó tu versión y la del panel quedó al lado con “(del panel)”. Revisá:{" "}
+                            Se guardó tu versión y la del panel quedó al lado con “(del panel)”. Revisa:{" "}
                             {e.conflictos.slice(0, 3).map((c) => c.ruta).join(", ")}
                           </p>
                         </div>
@@ -334,9 +334,9 @@ export default function SyncEscritorioView({
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Conectar una PC</CardTitle>
         <ol className="mt-3 space-y-4 text-sm text-[var(--text-secondary)]">
           <li>
-            <p className="font-bold text-[var(--text-primary)]">1 · Generá la clave</p>
+            <p className="font-bold text-[var(--text-primary)]">1 · Genera la clave</p>
             <p className="mt-0.5 text-xs">
-              Es la credencial del programita que corre en tu PC. Se muestra una sola vez: si la perdés, generás
+              Es la credencial del programita que corre en tu PC. Se muestra una sola vez: si la pierdes, generas
               otra y listo.
             </p>
             {claveNueva ? (
@@ -371,10 +371,10 @@ export default function SyncEscritorioView({
           </li>
 
           <li>
-            <p className="font-bold text-[var(--text-primary)]">2 · Elegí la carpeta y pegá la configuración</p>
+            <p className="font-bold text-[var(--text-primary)]">2 · Elige la carpeta y pega la configuración</p>
             <p className="mt-0.5 text-xs">
-              Creá la carpeta que querés sincronizar (por ejemplo <code>C:\Users\TU-USUARIO\Buleje-Drive</code>) y
-              guardá este archivo como <code>buleje-sync.config.json</code> al lado del agente.
+              Crea la carpeta que quieres sincronizar (por ejemplo <code>C:\Users\TU-USUARIO\Buleje-Drive</code>) y
+              guarda este archivo como <code>buleje-sync.config.json</code> al lado del agente.
             </p>
             <div className="mt-2 flex items-start gap-2">
               <pre className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-[var(--surface-sunken)] p-2 font-mono text-[length:var(--ts-2xs,11px)] text-[var(--text-primary)]">

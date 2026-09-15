@@ -82,7 +82,7 @@ export default function AnotarGestion({
       setErr(j?.error ?? "No se pudo anotar la gestión.");
     } catch (e) {
       logger.error("[adelantos] no se pudo anotar la gestión", { error: String(e) });
-      setErr("No se pudo anotar. Revisá la conexión.");
+      setErr("No se pudo anotar. Revisa la conexión.");
     } finally {
       setSaving(false);
     }

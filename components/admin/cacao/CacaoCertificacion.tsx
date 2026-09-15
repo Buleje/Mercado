@@ -184,7 +184,7 @@ export default function CacaoCertificacion() {
           <div className="p-12 text-center text-[var(--text-tertiary)]">
             <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><ShieldCheck className="h-7 w-7" /></span>
             <p className="text-base font-bold text-[var(--text-primary)]">{search ? "Sin resultados" : "Aún no tienes productores"}</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm">{search ? "Ningún productor coincide con tu búsqueda." : "Registrá productores y cargá su certificación y ubicación para preparar tu exportación."}</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm">{search ? "Ningún productor coincide con tu búsqueda." : "Registra productores y carga su certificación y ubicación para preparar tu exportación."}</p>
           </div>
         )}
       </div>

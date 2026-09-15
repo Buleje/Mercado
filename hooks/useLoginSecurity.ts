@@ -38,7 +38,7 @@ export function useLoginSecurity() {
   const messageForStatus = useCallback(
     (status: number, opts?: { attemptsLeft?: number }): string | null => {
       if (status === 429) return null;
-      if (status === 400) return "Completá tu usuario y contraseña.";
+      if (status === 400) return "Completa tu usuario y contraseña.";
       if (status === 401 || status === 403) {
         let msg = capsLock
           ? "Usuario o contraseña incorrectos. Ojo: Bloq Mayús está activado."
@@ -52,7 +52,7 @@ export function useLoginSecurity() {
         }
         return msg;
       }
-      if (status >= 500) return "El servidor tuvo un problema. Reintentá en unos segundos.";
+      if (status >= 500) return "El servidor tuvo un problema. Reintenta en unos segundos.";
       return "No se pudo iniciar sesión.";
     },
     [capsLock],
@@ -62,8 +62,8 @@ export function useLoginSecurity() {
   const networkErrorMessage = useCallback(
     () =>
       typeof navigator !== "undefined" && !navigator.onLine
-        ? "Sin conexión. Revisá tu internet e intentá de nuevo."
-        : "No se pudo conectar con el servidor. Reintentá.",
+        ? "Sin conexión. Revisa tu internet e intenta de nuevo."
+        : "No se pudo conectar con el servidor. Reintenta.",
     [],
   );
 

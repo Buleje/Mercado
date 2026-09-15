@@ -95,7 +95,7 @@ export default function QuickNotesTab() {
       toast.success("Nota creada");
       setNewTitle(""); setNewContent(""); setNewColor("yellow"); setShowNew(false);
     } catch {
-      toast.error("Error al crear la nota — revisá tu conexión.");
+      toast.error("Error al crear la nota — revisa tu conexión.");
     }
   };
 
@@ -112,7 +112,7 @@ export default function QuickNotesTab() {
       toast.success("Nota eliminada");
     } catch {
       setNotes(previous);
-      toast.error("Error al eliminar la nota — revisá tu conexión.");
+      toast.error("Error al eliminar la nota — revisa tu conexión.");
     }
   };
 
@@ -134,7 +134,7 @@ export default function QuickNotesTab() {
       }
     } catch {
       setNotes(previous);
-      toast.error("Error al actualizar la nota — revisá tu conexión.");
+      toast.error("Error al actualizar la nota — revisa tu conexión.");
     }
   };
 
@@ -162,7 +162,7 @@ export default function QuickNotesTab() {
       setEditingId(null);
     } catch {
       setNotes(previous);
-      toast.error("Error al guardar la nota — revisá tu conexión.");
+      toast.error("Error al guardar la nota — revisa tu conexión.");
     }
   };
 

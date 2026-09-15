@@ -66,9 +66,9 @@ interface Template {
 }
 
 const TEMPLATES: Template[] = [
-  { id: "ventas-mes",       label: "Ventas del mes",         description: "Cuánto querés facturar este mes",     icon: TrendingUp, category: "ventas",    period: "mensual", unit: "S/",       defaultTarget: 50000, namePrefix: "Ventas " },
+  { id: "ventas-mes",       label: "Ventas del mes",         description: "Cuánto quieres facturar este mes",     icon: TrendingUp, category: "ventas",    period: "mensual", unit: "S/",       defaultTarget: 50000, namePrefix: "Ventas " },
   { id: "ventas-dia",       label: "Meta diaria",            description: "Tu objetivo de ventas por día",        icon: Sparkles,   category: "ventas",    period: "diario",  unit: "S/",       defaultTarget: 1500,  namePrefix: "Meta diaria " },
-  { id: "pedidos-semana",   label: "Pedidos a la semana",    description: "Cuántos pedidos querés cerrar",        icon: BarChart3,  category: "pedidos",   period: "semanal", unit: "pedidos",  defaultTarget: 80,    namePrefix: "Pedidos " },
+  { id: "pedidos-semana",   label: "Pedidos a la semana",    description: "Cuántos pedidos quieres cerrar",        icon: BarChart3,  category: "pedidos",   period: "semanal", unit: "pedidos",  defaultTarget: 80,    namePrefix: "Pedidos " },
   { id: "clientes-nuevos",  label: "Clientes nuevos",        description: "Crecer la base de clientes",           icon: Users,      category: "clientes",  period: "mensual", unit: "clientes", defaultTarget: 30,    namePrefix: "Nuevos clientes " },
   { id: "productos-vendidos", label: "Productos vendidos",   description: "Volumen de productos despachados",     icon: Package,    category: "productos", period: "mensual", unit: "unidades", defaultTarget: 500,   namePrefix: "Unidades " },
   { id: "cobranza-mes",     label: "Cobranza del mes",       description: "Recuperar fiados pendientes",          icon: Coins,      category: "caja",      period: "mensual", unit: "S/",       defaultTarget: 2000,  namePrefix: "Cobranza " },
@@ -554,13 +554,13 @@ export default function GoalsTab() {
       const res = await fetch(`/api/goals/${id}`, { method: "DELETE", headers: csrfHeaders() });
       if (!res.ok) {
         setGoals(prevGoals); // rollback
-        toast.error("No se pudo eliminar la meta. Reintentá.");
+        toast.error("No se pudo eliminar la meta. Reintenta.");
         return;
       }
       if (goal) toast(`Meta eliminada: ${goal.name}`);
     } catch {
       setGoals(prevGoals); // rollback
-      toast.error("Error de conexión. Reintentá.");
+      toast.error("Error de conexión. Reintenta.");
     }
   };
 
@@ -816,7 +816,7 @@ export default function GoalsTab() {
       )}
 
       {/* Templates picker modal */}
-      <AdminModal open={showTemplates} onClose={() => setShowTemplates(false)} title="¿Qué tipo de meta querés crear?" variant="wide">
+      <AdminModal open={showTemplates} onClose={() => setShowTemplates(false)} title="¿Qué tipo de meta quieres crear?" variant="wide">
         <div className="space-y-4 px-5 py-5 sm:px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {TEMPLATES.map(t => {
@@ -836,7 +836,7 @@ export default function GoalsTab() {
                     <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t.description}</p>
                     {auto != null && auto > 0 && (
                       <p className="text-xs text-[var(--data-success-500)] mt-1.5 font-semibold">
-                        Hoy llevás {formatNumber(Math.round(auto), t.unit)}
+                        Hoy llevas {formatNumber(Math.round(auto), t.unit)}
                       </p>
                     )}
                   </div>
@@ -976,8 +976,8 @@ function EmptyStateWithTemplates({ onPick, autoStats }: { onPick: (t: Template) 
     <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-xl p-8 space-y-6">
       <div className="text-center">
         <Target className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
-        <p className="text-[var(--text-primary)] font-bold mb-1">Empezá con una plantilla</p>
-        <p className="text-[var(--text-secondary)] text-sm">Elegí lo que querés trackear — los datos se sincronizan solos con tu negocio.</p>
+        <p className="text-[var(--text-primary)] font-bold mb-1">Empieza con una plantilla</p>
+        <p className="text-[var(--text-secondary)] text-sm">Elige lo que quieres seguir — los datos se sincronizan solos con tu negocio.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {TEMPLATES.map(t => {
@@ -997,7 +997,7 @@ function EmptyStateWithTemplates({ onPick, autoStats }: { onPick: (t: Template) 
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t.description}</p>
                 {auto != null && auto > 0 && (
                   <p className="text-xs text-[var(--data-success-500)] mt-1.5 font-semibold">
-                    Hoy llevás {formatNumber(Math.round(auto), t.unit)}
+                    Hoy llevas {formatNumber(Math.round(auto), t.unit)}
                   </p>
                 )}
               </div>

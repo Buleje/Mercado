@@ -158,7 +158,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
                   </label>
                 );
               })}
-              {especies.length === 0 && <p className="text-sm text-[var(--text-tertiary)]">Cargá el censo para configurar el DMC por especie.</p>}
+              {especies.length === 0 && <p className="text-sm text-[var(--text-tertiary)]">Carga el censo para configurar el DMC por especie.</p>}
             </div>
           </div>
         </div>

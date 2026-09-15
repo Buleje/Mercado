@@ -152,7 +152,7 @@ export function excepcionesDeSaldo(input: EntradaExcepciones): Excepcion[] {
       tono: "error",
       titulo: `${stockNeg.length} ${plural(stockNeg.length, "producto despachado", "productos despachados")} de más`,
       detalle:
-        "Salió más producto del que declaran las corridas de producción. Revisá si falta registrar una corrida o si un despacho duplicó la cantidad.",
+        "Salió más producto del que declaran las corridas de producción. Revisa si falta registrar una corrida o si un despacho duplicó la cantidad.",
       items: stockNeg.map((p) => `${p.producto} (${p.stock.toFixed(2)})`),
       magnitud: Number(total.toFixed(4)),
       ir: "produccion",
@@ -187,7 +187,7 @@ export function excepcionesDeSaldo(input: EntradaExcepciones): Excepcion[] {
       tono: "warning",
       titulo: `${m3(sinDeclarar)} en ${corridasAbiertas} ${plural(corridasAbiertas, "corrida sin declarar", "corridas sin declarar")}`,
       detalle:
-        "Esa madera ya bajó del patio y por eso resta del saldo, pero todavía no dice qué salió de ella. Declarale la producción para que el libro tenga las dos mitades.",
+        "Esa madera ya bajó del patio y por eso resta del saldo, pero todavía no dice qué salió de ella. Declárale la producción para que el libro tenga las dos mitades.",
       items: [],
       magnitud: Number(sinDeclarar.toFixed(4)),
       ir: "produccion",
@@ -202,7 +202,7 @@ export function excepcionesDeSaldo(input: EntradaExcepciones): Excepcion[] {
       tono: "warning",
       titulo: `${m3(pendiente)} sin validar`,
       detalle:
-        "Madera cargada que todavía no computa como existencia y no se puede consumir en producción. Validá los ingresos para que entre al saldo.",
+        "Madera cargada que todavía no computa como existencia y no se puede consumir en producción. Valida los ingresos para que entre al saldo.",
       items: [],
       magnitud: Number(pendiente.toFixed(4)),
       ir: "ingresos",
@@ -284,9 +284,9 @@ function detalleNegativo(
       ? ` ${m3(sinOrigen)} salieron de ${cuantas} ${plural(cuantas, "corrida", "corridas")} que declararon consumo sin ninguna guía atribuida: ahí está el faltante.`
       : " O falta validar un ingreso, o una corrida cargó de más.";
   const salida = alcanza
-    ? ` Tenés ${m3(pendiente)} cargados en guías que todavía no se recepcionaron: alcanzan para cubrirlo. Recepcionalas y el saldo se acomoda solo.`
+    ? ` Tienes ${m3(pendiente)} cargados en guías que todavía no se recepcionaron: alcanzan para cubrirlo. Recepciónalas y el saldo se acomoda solo.`
     : pendiente > EPS
-      ? ` Hay ${m3(pendiente)} esperando recepción, pero no alcanzan: recepcionalos y revisá el volumen que consumieron esas corridas.`
-      : " Cargá el ingreso que las respalda, o corregí el volumen que consumieron.";
+      ? ` Hay ${m3(pendiente)} esperando recepción, pero no alcanzan: recepciónalos y revisa el volumen que consumieron esas corridas.`
+      : " Carga el ingreso que las respalda, o corrige el volumen que consumieron.";
   return `${base}${causa}${salida} Hasta corregirlo, el libro no cuadra ante SERFOR.`;
 }

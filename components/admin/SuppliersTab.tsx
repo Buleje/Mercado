@@ -105,7 +105,7 @@ export default function SuppliersTab() {
         setDeleteError(
           typeof body?.error === "string"
             ? body.error
-            : "No se pudo eliminar el proveedor. Intentá de nuevo.",
+            : "No se pudo eliminar el proveedor. Intenta de nuevo.",
         );
         return;
       }
@@ -113,7 +113,7 @@ export default function SuppliersTab() {
       load();
     } catch (err) {
       console.warn("[SuppliersTab] eliminar proveedor falló", err);
-      setDeleteError("No se pudo eliminar el proveedor. Revisá la conexión.");
+      setDeleteError("No se pudo eliminar el proveedor. Revisa la conexión.");
     } finally {
       setDeleting(false);
     }

@@ -43,7 +43,7 @@ export default function CtpMarcarUsadoModal({
 
   async function confirmar() {
     if (motivo.trim().length < 3) {
-      setError("Poné el motivo por el que se marca como usado.");
+      setError("Pon el motivo por el que se marca como usado.");
       return;
     }
     setGuardando(true);

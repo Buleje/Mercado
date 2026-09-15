@@ -160,7 +160,7 @@ export default function TramiteDocumentoModal({
         {editable && (
           <div className="flex shrink-0 items-center gap-2 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-2 text-xs">
             <PencilLine className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" aria-hidden="true" />
-            <span className="font-bold text-[var(--text-secondary)]">Podés tocar el papel y editar sus datos directamente</span>
+            <span className="font-bold text-[var(--text-secondary)]">Puedes tocar el papel y editar sus datos directamente</span>
           </div>
         )}
 

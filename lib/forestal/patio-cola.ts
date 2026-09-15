@@ -270,7 +270,7 @@ export async function sincronizar(): Promise<ResumenSync> {
         // mensaje humano, se dice qué pasó en criollo y se guarda el código.
         const motivo = j.message?.trim()
           ? j.message
-          : `El libro la rechazó (${j.error ?? `HTTP ${r.status}`}). Revisá los datos y reintentá.`;
+          : `El libro la rechazó (${j.error ?? `HTTP ${r.status}`}). Revisa los datos y reintenta.`;
         await marcar(a.id, { estado: "rechazado", motivo });
         rechazadas++;
       } else {

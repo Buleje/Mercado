@@ -397,7 +397,7 @@ export default function CtpVincularMateriaPrimaModal({
               onChange={(e) => setLoteId(e.target.value)}
               className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             >
-              <option value="">Elegí el lote que entró a la sierra…</option>
+              <option value="">Elige el lote que entró a la sierra…</option>
               {candidatos.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.code} — {l.speciesCommon} · {piezasLibres(l).length} trozas libres
@@ -406,8 +406,8 @@ export default function CtpVincularMateriaPrimaModal({
             </select>
             {candidatos.length === 0 && (
               <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
-                No hay lotes abiertos de {corrida.especie ?? "esa especie"} con trozas libres. Armá el lote
-                primero en <b>Lotes</b> y volvé.
+                No hay lotes abiertos de {corrida.especie ?? "esa especie"} con trozas libres. Arma el lote
+                primero en <b>Lotes</b> y vuelve.
               </span>
             )}
           </label>
@@ -525,7 +525,7 @@ export default function CtpVincularMateriaPrimaModal({
             title={
               revision?.puedeVincular
                 ? "Escribe los consumos, marca las trozas y deja la corrida con su origen"
-                : "Hay algo que no cuadra: mirá los avisos rojos"
+                : "Hay algo que no cuadra: mira los avisos rojos"
             }
             className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
           >

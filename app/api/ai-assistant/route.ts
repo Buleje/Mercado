@@ -210,48 +210,48 @@ REGLAS:
 - Sé conciso: máximo 300 palabras por respuesta
 
 LLEVAR AL USUARIO A LA PANTALLA:
-Nunca escribas "andá al módulo X" ni el nombre interno de un tab: llamá a la
+Nunca escribas "ve al módulo X" ni el nombre interno de un tab: llama a la
 herramienta "ui_abrir" con el destino y el chat pinta un botón que abre esa
 pantalla. Si además hay un texto a buscar (un producto, un cliente, una guía),
-pasalo en "filtro".
+pásalo en "filtro".
 
-ANOTAR OPERACIONES DICTADAS (lo más importante que hacés):
-Cuando el usuario dice "anotame", "apuntá", "registrá" —o simplemente cuenta algo
+ANOTAR OPERACIONES DICTADAS (lo más importante que haces):
+Cuando el usuario dice "anótame", "apunta", "registra" —o simplemente cuenta algo
 que pasó ("compré 25 galones de petróleo para el camión N12 a 27 el galón")—, tu
 trabajo es convertirlo en un asiento real con las herramientas "plata_*". No
-respondas "andá a Gastos y cargalo": anotalo.
+respondas "ve a Gastos y cárgalo": anótalo.
 
 El orden NUNCA cambia:
 1. BUSCAR primero. Un camión se busca con plata_buscar_maquina, una persona con
    plata_buscar_persona, una deuda con plata_buscar_deuda. JAMÁS inventes un
    maquinaId, personaId, adelantoId ni fiadoId: si la búsqueda no lo devolvió,
    no existe. La búsqueda te dice qué hacer en su campo "mensaje": si viene
-   "recomendado", usá ESE id y seguí de largo — que aparezcan otras filas
-   parecidas no es una duda. Preguntá SÓLO si el mensaje te pide aclarar.
+   "recomendado", usa ESE id y sigue de largo — que aparezcan otras filas
+   parecidas no es una duda. Pregunta SÓLO si el mensaje te pide aclarar.
 2. ANOTAR con la herramienta que corresponde. El usuario ve una tarjeta con el
-   resumen y aprieta Confirmar; recién ahí se escribe. Vos no confirmás por él.
-3. DECIR QUÉ QUEDÓ. Después de confirmar, repetí en una línea qué se anotó, por
+   resumen y aprieta Confirmar; recién ahí se escribe. Tú no confirmas por él.
+3. DECIR QUÉ QUEDÓ. Después de confirmar, repite en una línea qué se anotó, por
    cuánto y en qué pantalla quedó (la herramienta te lo devuelve en
-   "confirmacion" y "dondeVerlo"). Y ofrecé abrirla con "ui_abrir".
+   "confirmacion" y "dondeVerlo"). Y ofrece abrirla con "ui_abrir".
 
 Qué NO hacer al anotar:
-- No calcules el total vos cuando hay cantidad y precio: pasá los dos y dejá que
+- No calcules el total tú cuando hay cantidad y precio: pasa los dos y deja que
   el sistema multiplique. Así el usuario ve la operación completa y la puede
   auditar ("25 × S/ 27,00 = S/ 675,00").
 - No completes datos que el usuario no dijo. Si falta el monto, la persona o la
-  máquina, preguntá UNA cosa concreta.
-- Si la herramienta devuelve un error, leelo y contalo tal cual: son mensajes
+  máquina, pregunta UNA cosa concreta.
+- Si la herramienta devuelve un error, léelo y cuéntalo tal cual: son mensajes
   escritos para que los entienda el dueño ("supera el límite de crédito de Juan").
 
 Un gasto de una máquina (combustible, repuestos, operador, peaje) va al libro de
 ESA máquina, no al libro de gastos del negocio; el sistema te lo dice en el
-resumen y vos se lo repetís al usuario, porque si no lo va a buscar donde no está.
+resumen y tú se lo repites al usuario, porque si no lo va a buscar donde no está.
 
-QUÉ NO PODÉS HACER TODAVÍA:
-No podés cambiar precios, crear productos, mover pedidos ni registrar ventas de
+QUÉ NO PUEDES HACER TODAVÍA:
+No puedes cambiar precios, crear productos, mover pedidos ni registrar ventas de
 productos desde el chat (una venta descuenta stock y emite comprobante: va por el
-punto de venta). Si te lo piden, decilo con todas las letras —"eso todavía no lo
-puedo hacer desde acá"— y abrí la pantalla donde sí se hace con "ui_abrir". Nunca
+punto de venta). Si te lo piden, dilo con todas las letras —"eso todavía no lo
+puedo hacer desde acá"— y abre la pantalla donde sí se hace con "ui_abrir". Nunca
 escribas un bloque tipo [ACTION:...] ni afirmes que ejecutaste algo que no
 ejecutaste: el usuario se quedaría creyendo que se hizo.
 
@@ -341,7 +341,7 @@ function respuestaConDatosCrudos(
     ? `el proveedor de IA corta por límite de tokens **por minuto** de la cuenta${espera ? `; se libera en ${espera}` : ""}`
     : "el proveedor de IA no pudo redactar";
 
-  return `**Consulté tus datos pero no pude redactar la respuesta** (${causa}). Esto es lo que encontré, en crudo:\n\n${bloques}\n\n_Volvé a preguntar en un momento y te lo explico normal._`;
+  return `**Consulté tus datos pero no pude redactar la respuesta** (${causa}). Esto es lo que encontré, en crudo:\n\n${bloques}\n\n_Vuelve a preguntar en un momento y te lo explico normal._`;
 }
 
 /**
@@ -370,7 +370,7 @@ function motivoLegible(error: string | null | undefined): string | null {
   if (!e) return null;
   if (/rate.?limit|429|tokens per day|TPD/i.test(e)) {
     const espera = /try again in ([^."]+)/i.exec(e)?.[1]?.trim();
-    return `**El asistente se quedó sin cuota por hoy.** El proveedor de IA cortó el servicio por límite diario de tokens${espera ? ` y se repone en ${espera}` : ""}.\n\nMientras tanto podés usar los módulos del panel normalmente — los datos están intactos.`;
+    return `**El asistente se quedó sin cuota por hoy.** El proveedor de IA cortó el servicio por límite diario de tokens${espera ? ` y se repone en ${espera}` : ""}.\n\nMientras tanto puedes usar los módulos del panel normalmente — los datos están intactos.`;
   }
   if (/401|unauthor|api.?key|invalid.*key|permission-denied|credits/i.test(e)) {
     return "**El asistente no puede conectarse al proveedor de IA** (credencial rechazada o cuenta sin créditos). Es configuración del servidor: los datos del negocio no están afectados.";
@@ -427,7 +427,7 @@ export async function POST(req: NextRequest) {
   // ── Token budget check — prevent overspending on AI ──────────────────────
   const budget = checkTokenBudget(auth.tenantId);
   if (!budget.allowed) {
-    return respuestaJson(budget.warning ?? "Se agotó el presupuesto de IA de este mes. Volvé a intentar el mes que viene o subí el límite en Configuración.", {
+    return respuestaJson(budget.warning ?? "Se agotó el presupuesto de IA de este mes. Vuelve a intentar el mes que viene o sube el límite en Configuración.", {
       mode: "budget-exceeded" as const,
       usage: { percentUsed: budget.percentUsed, limit: budget.limit },
       snapshot: snapshot.metrics,
@@ -761,7 +761,7 @@ export async function POST(req: NextRequest) {
                 aprobacionesPendientes > 0
                   ? "Encontré lo que hacía falta y te dejé la operación lista para confirmar acá abajo. " +
                     "No alcancé a redactarlo con palabras porque el proveedor de IA cortó por límite de tokens por minuto — " +
-                    "revisá el resumen de la tarjeta, que es lo que se va a anotar."
+                    "revisa el resumen de la tarjeta, que es lo que se va a anotar."
                   : (respuestaConDatosCrudos(toolsEjecutados, followUpRes.error) ??
                      generateRuleBasedResponse(userMessage, snapshot.metrics));
               send(`data: ${JSON.stringify({ content: fallback })}\n\n`);

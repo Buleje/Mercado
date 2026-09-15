@@ -140,7 +140,7 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
       u.onerror = (e: SpeechSynthesisErrorEvent) => {
         const propio = e?.error === "canceled" || e?.error === "interrupted";
         if (propio || pausaRef.current || !activaRef.current) return;
-        optsRef.current.onError?.("No se pudo leer en voz alta — revisá el motor de voz del navegador.");
+        optsRef.current.onError?.("No se pudo leer en voz alta — revisa el motor de voz del navegador.");
         detener();
       };
       synth.cancel();

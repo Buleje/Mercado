@@ -83,7 +83,7 @@ function pasaElFreno(telefono: string): boolean {
 const MAX_BYTES_AUDIO = 4 * 1024 * 1024;
 
 export const AYUDA_DUENO =
-  "Contame qué pasó y lo anoto donde va. Escribime o mandame una *nota de voz*.\n\n" +
+  "Cuéntame qué pasó y lo anoto donde va. Escríbeme o mándame una *nota de voz*.\n\n" +
   "*Para anotar*\n" +
   "• «25 galones de petróleo para el camión N12 a 27 el galón»\n" +
   "• «le adelanté 300 soles en efectivo a Juan Pérez»\n" +
@@ -91,8 +91,8 @@ export const AYUDA_DUENO =
   "• «recordame el lunes a las 8 llamar al ingeniero»\n\n" +
   "*Para preguntar*\n" +
   "• «¿cuánto gasté este mes?» · «¿quién me debe?» · «¿cómo viene la caja?»\n\n" +
-  "Podés decirme *varias cosas en un mismo audio* y las anoto todas. Antes de " +
-  "guardar te muestro qué se va a anotar y por cuánto: recién cuando tocás " +
+  "Puedes decirme *varias cosas en un mismo audio* y las anoto todas. Antes de " +
+  "guardar te muestro qué se va a anotar y por cuánto: recién cuando tocas " +
   "*Confirmar* queda en los libros.\n\n" +
   "*Comandos:* hoy · olvidar · desvincular · ayuda";
 
@@ -130,7 +130,7 @@ export async function manejarMensajeDeDueno(msg: MensajeDueno): Promise<void> {
   }
 
   if (!pasaElFreno(telefono)) {
-    await mandarTexto(cred, telefono, "⏳ Vas muy rápido. Esperá un minuto y seguimos.");
+    await mandarTexto(cred, telefono, "⏳ Vas muy rápido. Espera un minuto y seguimos.");
     return;
   }
 
@@ -151,7 +151,7 @@ export async function manejarMensajeDeDueno(msg: MensajeDueno): Promise<void> {
 
   if (comando === "olvidar") {
     olvidar(sesionDe(telefono));
-    await mandarTexto(cred, telefono, "🧹 Listo, empezamos de nuevo. Contame qué pasó.");
+    await mandarTexto(cred, telefono, "🧹 Listo, empezamos de nuevo. Cuéntame qué pasó.");
     return;
   }
 
@@ -161,7 +161,7 @@ export async function manejarMensajeDeDueno(msg: MensajeDueno): Promise<void> {
       cred,
       telefono,
       "🔌 Desvinculado. Ya no puedo anotar nada desde este teléfono.\n\n" +
-        "Si volvés a escribir, te atiende el bot de la tienda como a cualquier cliente.",
+        "Si vuelves a escribir, te atiende el bot de la tienda como a cualquier cliente.",
     );
     return;
   }
@@ -171,14 +171,14 @@ export async function manejarMensajeDeDueno(msg: MensajeDueno): Promise<void> {
   if (msg.audio) {
     const archivo = await bajarMedia(msg.audio.id, cred.token);
     if (!archivo) {
-      await mandarTexto(cred, telefono, "No pude bajar el audio de WhatsApp. Probá mandarlo de nuevo.");
+      await mandarTexto(cred, telefono, "No pude bajar el audio de WhatsApp. Prueba mandarlo de nuevo.");
       return;
     }
     if (archivo.bytes.byteLength > MAX_BYTES_AUDIO) {
       await mandarTexto(
         cred,
         telefono,
-        "🎤 Ese audio es muy largo. Mandame uno más corto, de una operación por vez.",
+        "🎤 Ese audio es muy largo. Mándame uno más corto, de una operación por vez.",
       );
       return;
     }
@@ -204,7 +204,7 @@ export async function manejarMensajeDeDueno(msg: MensajeDueno): Promise<void> {
       cred,
       telefono,
       "📷 Recibí la foto, pero todavía no puedo leer boletas.\n\n" +
-        "Contame en un audio o por escrito qué es y lo anoto: «esta boleta es de 180 soles de combustible del grifo El Sol».",
+        "Cuéntame en un audio o por escrito qué es y lo anoto: «esta boleta es de 180 soles de combustible del grifo El Sol».",
     );
     return;
   }
@@ -261,7 +261,7 @@ export async function manejarMensajeDeDueno(msg: MensajeDueno): Promise<void> {
 
   // Ni texto ni operaciones: hay que decir algo, o el bot se queda mudo.
   if (!r.texto && r.pendientes.length === 0 && r.registradas.length === 0) {
-    await mandarTexto(cred, telefono, "🤔 No terminé de entender. Decímelo de otra forma, o escribime *ayuda*.");
+    await mandarTexto(cred, telefono, "🤔 No terminé de entender. Dímelo de otra forma, o escríbeme *ayuda*.");
   }
 }
 
@@ -377,7 +377,7 @@ export async function intentarVincular(params: {
       cred,
       telefono,
       "❌ Ese código no vale (o ya pasaron los 15 minutos).\n\n" +
-        "Pedí uno nuevo en el panel: *Asistente IA › Automatizaciones › Vincular WhatsApp*.",
+        "Pide uno nuevo en el panel: *Asistente IA › Automatizaciones › Vincular WhatsApp*.",
     );
     return true;
   }
@@ -392,7 +392,7 @@ export async function intentarVincular(params: {
     await mandarTexto(
       cred,
       telefono,
-      "❌ Ese código es de otro negocio. Escribile al WhatsApp del negocio que te lo dio.",
+      "❌ Ese código es de otro negocio. Escríbele al WhatsApp del negocio que te lo dio.",
     );
     logger.warn("[whatsapp/dueño] código canjeado en el número de otro negocio", {
       tenantIdDelNumero,

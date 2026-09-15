@@ -161,7 +161,7 @@ export default function LothTrozadoMultipleModal({
                   onChange={(e) => setArbolId(e.target.value)}
                   className="mt-1 h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-bold text-[var(--text-primary)] outline-none"
                 >
-                  <option value="">Elegí el árbol a trozar…</option>
+                  <option value="">Elige el árbol a trozar…</option>
                   {talas.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.treeCode} · {t.speciesCommon ?? "sin especie"} · {t.volumeM3 ? `${fmtM3(Number(t.volumeM3))} m³` : "sin volumen"}
@@ -279,7 +279,7 @@ export default function LothTrozadoMultipleModal({
                     {excede && (
                       <p className="mt-1.5 flex items-start gap-1.5 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                        Las trozas suman más que el árbol tumbado. Revisá las medidas: el libro lo va a marcar como error de invariante.
+                        Las trozas suman más que el árbol tumbado. Revisa las medidas: el libro lo va a marcar como error de invariante.
                       </p>
                     )}
                   </div>

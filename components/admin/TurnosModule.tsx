@@ -1831,7 +1831,7 @@ export default function TurnosModule() {
                   </div>
                   <div>
                     <CardTitle id={diffConfirmTitleId} className="text-lg font-bold text-[var(--data-error-500)]">Diferencia alta</CardTitle>
-                    <p className="text-sm text-[var(--text-secondary)]">Antes de cerrar, anotá qué pasó</p>
+                    <p className="text-sm text-[var(--text-secondary)]">Antes de cerrar, anota qué pasó</p>
                   </div>
                 </div>
 

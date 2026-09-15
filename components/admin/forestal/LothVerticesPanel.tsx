@@ -150,8 +150,8 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano, 
 
       {rows.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">
-          Dibujá el polígono o <b>importá</b> el cuadro de coordenadas del plan para generar la tabla.
-          {censoCount > 0 && <> Podés partir del censo: <b>{censoCount}</b> árbol(es) georreferenciado(s) en el mapa.</>}
+          Dibuja el polígono o <b>importa</b> el cuadro de coordenadas del plan para generar la tabla.
+          {censoCount > 0 && <> Puedes partir del censo: <b>{censoCount}</b> árbol(es) georreferenciado(s) en el mapa.</>}
         </p>
       ) : (
         <>

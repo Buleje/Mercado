@@ -156,7 +156,7 @@ export default function CtpIngresosFiltros({
             label: legajoDeTodo
               ? `Legajo del filtro (${legajoCount} guía${legajoCount === 1 ? "" : "s"})`
               : `Legajo de lo marcado (${legajoCount} guía${legajoCount === 1 ? "" : "s"})`,
-            hint: "Un solo documento con las guías y su índice. Marcá filas para elegir cuáles.",
+            hint: "Un solo documento con las guías y su índice. Marca filas para elegir cuáles.",
             icon: FileStack,
             busy: armandoLegajo,
             onSelect: onLegajo,

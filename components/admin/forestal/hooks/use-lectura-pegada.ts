@@ -90,7 +90,7 @@ export function useLecturaPegada<T>(opts: {
       } catch (e) {
         setError(
           `No pude leer la captura (${e instanceof Error ? e.message : String(e)}). ` +
-            "Copiá el texto de la tabla en el SNIFFS (seleccionarla y Ctrl+C) y pegalo acá.",
+            "Copia el texto de la tabla en el SNIFFS (seleccionarla y Ctrl+C) y pégalo acá.",
         );
       } finally {
         setLeyendo(false);

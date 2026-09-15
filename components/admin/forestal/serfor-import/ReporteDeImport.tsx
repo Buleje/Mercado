@@ -112,7 +112,7 @@ export default function ReporteDeImport({
 
       {reporte.limpio && escrito && (
         <p className="text-base font-semibold text-[var(--data-success)]">
-          Terminó sin errores. Ya podés cerrar esta ventana: los datos están en el libro.
+          Terminó sin errores. Ya puedes cerrar esta ventana: los datos están en el libro.
         </p>
       )}
       {reporte.limpio && !escrito && (
@@ -204,7 +204,7 @@ export default function ReporteDeImport({
 
       {hayQueRevisar && (
         <p className="text-sm text-[var(--text-tertiary)]">
-          Bajá el reporte, corregí el archivo y volvé a subirlo: lo que ya entró no se duplica.
+          Baja el reporte, corrige el archivo y vuelve a subirlo: lo que ya entró no se duplica.
         </p>
       )}
     </div>

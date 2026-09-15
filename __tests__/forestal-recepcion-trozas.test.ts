@@ -81,7 +81,7 @@ describe("avisos de la recepción", () => {
   it("avisa cuando el ingreso quedó con un volumen distinto del recibido", () => {
     const b = balanceRecepcion([troza({ id: "a", volumenM3: 3, codigoPlanta: "1", parcela: "PC-1" })]);
     // El ingreso está registrado con 5 m³ pero sólo llegaron 3.
-    expect(avisosRecepcion(b, 5).join(" ")).toMatch(/Corregí el volumen del ingreso/);
+    expect(avisosRecepcion(b, 5).join(" ")).toMatch(/Corrige el volumen del ingreso/);
   });
 
   it("con todo cuadrado y completo, no hay avisos", () => {

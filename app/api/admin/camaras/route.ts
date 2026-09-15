@@ -95,7 +95,7 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
     if (!d.id) return { error: "validation_error", message: "No se entendió qué cambiar de la cámara." };
     if (d.accion === "avisos") {
       const p = avisosSchema.safeParse({ whatsapp: d.whatsapp ?? "", cuando: d.cuando ?? "siempre" });
-      if (!p.success) return { error: "validation_error", message: "Revisá el WhatsApp y cuándo avisar." };
+      if (!p.success) return { error: "validation_error", message: "Revisa el WhatsApp y cuándo avisar." };
       const r = await CamarasDB.configurarAvisos(tenantId, d.id, p.data, user);
       if (!r.ok) return { error: "rechazado", message: r.motivo };
       return { camaras: r.camaras, mensaje: r.mensaje };

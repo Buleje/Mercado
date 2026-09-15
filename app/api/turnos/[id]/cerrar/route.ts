@@ -64,7 +64,7 @@ export async function POST(
       const resolvedId = await AdminUsersDB.resolveIdByUsername(auth.tenantId, auth.username);
       if (!resolvedId || existing.adminUserId !== resolvedId) {
         return NextResponse.json(
-          { error: "No tenés permiso para cerrar el turno de otro cajero" },
+          { error: "No tienes permiso para cerrar el turno de otro cajero" },
           { status: 403 },
         );
       }

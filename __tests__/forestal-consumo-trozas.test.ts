@@ -215,7 +215,7 @@ describe("cuposDeGuia — el tope de I2, antes de firmar (ADR-353)", () => {
     // Con consumo previo, es cupo: el arreglo es elegir menos.
     const [sinCupo] = cuposDeGuia([pieza({ volumenM3: 6, guiaVolumenM3: 10, guiaConsumidoM3: 8 })]);
     expect(sinCupo.descuadrado).toBe(false);
-    expect(motivosDeCupo([sinCupo])[0]).toMatch(/Sacá 4.000 m³/);
+    expect(motivosDeCupo([sinCupo])[0]).toMatch(/Saca 4.000 m³/);
   });
 
   it("un litro de redondeo NO es un exceso", () => {

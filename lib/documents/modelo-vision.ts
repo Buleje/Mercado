@@ -64,5 +64,5 @@ export function esModeloInexistente(error: string | undefined): boolean {
 /** Lo que hay que hacer, dicho para quien administra la bodega. */
 export const AVISO_SIN_VISION =
   `Para leer fotos hace falta un modelo de visión, y el configurado (${MODELO_VISION}) no está disponible en tu cuenta: ` +
-  "poné uno vigente en DOC_VISION_MODEL, o apuntá DOC_VISION_BASE_URL a otro proveedor " +
-  "(OpenAI, Gemini, OpenRouter o un Ollama local). Probalo con: node scripts/probar-vision.mjs";
+  "pon uno vigente en DOC_VISION_MODEL, o apunta DOC_VISION_BASE_URL a otro proveedor " +
+  "(OpenAI, Gemini, OpenRouter o un Ollama local). Pruébalo con: node scripts/probar-vision.mjs";

@@ -69,7 +69,7 @@ export default function CtpVehiculoModal({
       return;
     }
     if (duplicado) {
-      setError(`${formatearPlaca(duplicado.placa)} ya está en el directorio. Editá esa ficha en vez de crear otra.`);
+      setError(`${formatearPlaca(duplicado.placa)} ya está en el directorio. Edita esa ficha en vez de crear otra.`);
       return;
     }
     setGuardando(true);

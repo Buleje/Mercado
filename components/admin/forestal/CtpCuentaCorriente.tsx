@@ -238,7 +238,7 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
         <TablaSkeleton />
       ) : saldos.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
-          Ninguna cuenta abierta todavía. Anotá un adelanto o traé los fletes que van a cargo de un proveedor.
+          Ninguna cuenta abierta todavía. Anota un adelanto o trae los fletes que van a cargo de un proveedor.
         </p>
       ) : (
         <ul className="space-y-1.5">

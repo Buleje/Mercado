@@ -154,9 +154,9 @@ const ESPECIES = ESPECIES_MADERA;
 // Solo los errores DUROS cortan el dictado; no-speech/network/aborted son
 // transitorios en modo continuo y el reconocedor se reinicia solo.
 const ERR_MSG: Record<string, string> = {
-  "not-allowed": "Permiso de micrófono denegado. Tocá el candado 🔒 en la barra de direcciones, permití el micrófono y recargá la página.",
-  "service-not-allowed": "El navegador bloqueó el micrófono. Revisá los permisos del sitio y recargá.",
-  "audio-capture": "No se encontró micrófono. Conectá uno y reintentá.",
+  "not-allowed": "Permiso de micrófono denegado. Toca el candado 🔒 en la barra de direcciones, permite el micrófono y recarga la página.",
+  "service-not-allowed": "El navegador bloqueó el micrófono. Revisa los permisos del sitio y recarga.",
+  "audio-capture": "No se encontró micrófono. Conecta uno y reintenta.",
 };
 
 const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -456,7 +456,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   useEffect(() => {
     if (!tablaExpandida) return;
     /* Escape sale, como de cualquier capa que tapa la pantalla. Y el fondo no
-       scrollea detrás: si no, al cerrar aparecés en otra parte de la página. */
+       scrollea detrás: si no, al cerrar apareces en otra parte de la página. */
     const alTeclear = (e: KeyboardEvent) => { if (e.key === "Escape") setTablaExpandida(false); };
     const overflowPrevio = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -708,7 +708,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           setListening(false); setLiveText("");
           try { rec.stop(); } catch { /* ignore */ }
         } else {
-          setErrMsg("No entendí 3 números para la fila. Probá de nuevo.");
+          setErrMsg("No entendí 3 números para la fila. Prueba de nuevo.");
         }
         return;
       }
@@ -755,7 +755,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         ].filter((v): v is number => v != null);
         hablar(
           added > 1 ? `${added} piezas`
-            : raro ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}. Revisá`
+            : raro ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}. Revisa`
               : `${cantDictada > 1 ? `${cantDictada} de ` : ""}${variables.join(", ")}`,
         );
       }
@@ -1330,7 +1330,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       pushToast({
         tono: "success",
         msg: `${ids.size} ${ids.size === 1 ? "fila" : "filas"} → ${etiqueta}`,
-        detail: "Arrastrá el cuadradito de la esquina para repetir un valor.",
+        detail: "Arrastra el cuadradito de la esquina para repetir un valor.",
       });
     },
     [filasVisibles, rows, persist, pushToast, recordarDueno],
@@ -1352,7 +1352,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     pushToast({
       tono: "success",
       msg: `${ids.length} ${ids.length === 1 ? "fila" : "filas"} → ${valor != null ? `Apartado ${valor}` : "sin apartado"}`,
-      detail: "Arrastrá el cuadradito de la esquina para repetir un valor.",
+      detail: "Arrastra el cuadradito de la esquina para repetir un valor.",
     });
   }, [filasVisibles, asignados, pushToast]);
   const rellenoApartado = useRellenoArrastre(rellenarApartado);
@@ -1542,7 +1542,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         const j = await r.json().catch(() => ({}));
         throw new Error(
           j?.error === "specialization_disabled" ? (j.message as string)
-            : j?.error === "validation_error" ? "Revisá los datos de la cubicación."
+            : j?.error === "validation_error" ? "Revisa los datos de la cubicación."
               : (j?.message ?? `HTTP ${r.status}`),
         );
       }
@@ -1981,7 +1981,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         {enviado && (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-100)] px-3 py-2 dark:bg-[var(--data-success-500)]/12">
             <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-              <Check className="h-4 w-4" /> {loteCreado ? <>Registrado como lote <b>{loteCreado}</b>. El certificado + QR está en Lotes; atribuí las guías desde el Libro.</> : <>Registrado en el Libro CTP como producción. Atribuí la materia prima (guías) desde el Libro.</>}
+              <Check className="h-4 w-4" /> {loteCreado ? <>Registrado como lote <b>{loteCreado}</b>. El certificado + QR está en Lotes; atribuye las guías desde el Libro.</> : <>Registrado en el Libro CTP como producción. Atribuye la materia prima (guías) desde el Libro.</>}
             </span>
             <span className="flex gap-2">
               {loteCreado && (
@@ -2087,12 +2087,12 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         )}
         {editingId && (
           <div className="mb-3 flex items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 py-2 text-sm font-bold text-[var(--accent)]">
-            <Mic className="h-4 w-4 animate-pulse" /> Dictá los 3 números para reemplazar esa fila (espesor · ancho · largo)…
+            <Mic className="h-4 w-4 animate-pulse" /> Dicta los 3 números para reemplazar esa fila (espesor · ancho · largo)…
           </div>
         )}
 
         {rows.length === 0 ? (
-          <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no cubicaste nada. Dictá o cargá una pieza para empezar.</p>
+          <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no cubicaste nada. Dicta o carga una pieza para empezar.</p>
         ) : (
           <>
             {/* Filtros de la vista — especie · tipo · buscar medida (no alteran los datos) */}
@@ -2219,7 +2219,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
               <thead>
                 <tr className={`bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] ${virtualizarTabla ? "sticky top-0 z-10" : ""}`}>
                   {/* El tilde manda: lo marcado es lo que se lleva el papel. */}
-                  <th className="w-10 px-2 py-2 text-center" title="Marcá las piezas que van al PDF y al Anexo 04">
+                  <th className="w-10 px-2 py-2 text-center" title="Marca las piezas que van al PDF y al Anexo 04">
                     <input
                       type="checkbox"
                       aria-label="Marcar todas las piezas visibles"
@@ -2344,7 +2344,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                           onCambiar={(t) => editarTipo(r.id, t)}
                           etiqueta={`Tipo comercial de la pieza ${r.espesor}×${r.ancho}×${r.largo}`}
                         />
-                        <AsaRelleno onTomar={() => rellenoTipo.iniciar(pos)} titulo="Arrastrá hacia abajo para poner este tipo en las filas siguientes" />
+                        <AsaRelleno onTomar={() => rellenoTipo.iniciar(pos)} titulo="Arrastra hacia abajo para poner este tipo en las filas siguientes" />
                       </td>
                     )}
                     {colsVisibles.especie && (
@@ -2365,7 +2365,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                             <option value={r.especie}>{r.especie}</option>
                           )}
                         </select>
-                        <AsaRelleno onTomar={() => rellenoEspecie.iniciar(pos)} titulo="Arrastrá hacia abajo para poner esta especie en las filas siguientes" />
+                        <AsaRelleno onTomar={() => rellenoEspecie.iniciar(pos)} titulo="Arrastra hacia abajo para poner esta especie en las filas siguientes" />
                       </td>
                     )}
                     {/* Dueño: sin catálogo cerrado (a diferencia de especie) — input +
@@ -2373,7 +2373,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                     {colsVisibles.dueno && (
                       <td className="group/celda relative px-3 py-2">
                         <DuenoCell valor={r.dueno ?? ""} onCommit={(v) => editarDueno(r.id, v)} />
-                        <AsaRelleno onTomar={() => rellenoDueno.iniciar(pos)} titulo="Arrastrá hacia abajo para poner este dueño en las filas siguientes" />
+                        <AsaRelleno onTomar={() => rellenoDueno.iniciar(pos)} titulo="Arrastra hacia abajo para poner este dueño en las filas siguientes" />
                       </td>
                     )}
                     {/* Apartado: se asigna con "Cerrar apartado" (o arrastrando
@@ -2385,7 +2385,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                         ) : (
                           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">—</span>
                         )}
-                        <AsaRelleno onTomar={() => rellenoApartado.iniciar(pos)} titulo="Arrastrá hacia abajo para poner este apartado en las filas siguientes" />
+                        <AsaRelleno onTomar={() => rellenoApartado.iniciar(pos)} titulo="Arrastra hacia abajo para poner este apartado en las filas siguientes" />
                       </td>
                     )}
                     {colsVisibles.m3 && (
@@ -2397,7 +2397,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                     <td className="px-3 py-2">
                       <div className="flex items-center justify-end gap-1.5">
                         {rara && (
-                          <span title="Medida fuera de lo común — revisá que esté bien" className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                          <span title="Medida fuera de lo común — revisa que esté bien" className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                             <AlertTriangle className="h-4 w-4" />
                           </span>
                         )}

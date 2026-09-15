@@ -120,7 +120,7 @@ export default function CtpDeclararDesdeSniffs({
         if (vivo) {
           setError(
             `No se pudieron leer los paquetes ya declarados (${e instanceof Error ? e.message : String(e)}): ` +
-              "revisá que el código que uses no esté repetido.",
+              "revisa que el código que uses no esté repetido.",
           );
         }
       })

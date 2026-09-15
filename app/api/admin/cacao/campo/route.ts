@@ -249,9 +249,9 @@ export async function PATCH(req: NextRequest) {
         const known: Record<string, string> = {
           labor_not_found: "No se encontró la labor.",
           no_es_cosecha: "Solo se puede enviar a acopio una labor de cosecha.",
-          cosecha_no_hecha: "Marcá la cosecha como hecha antes de enviarla.",
+          cosecha_no_hecha: "Marca la cosecha como hecha antes de enviarla.",
           ya_enviada: "Esta cosecha ya fue enviada a acopio.",
-          sin_cantidad: "Registrá los kg cosechados antes de enviar.",
+          sin_cantidad: "Registra los kg cosechados antes de enviar.",
         };
         if (known[msg]) return NextResponse.json({ error: msg, message: known[msg] }, { status: 400 });
         throw e;

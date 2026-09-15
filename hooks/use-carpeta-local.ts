@@ -36,7 +36,7 @@ function motivoDelNavegador(err: unknown): string {
   const nombre = err instanceof DOMException ? err.name : "";
   const texto = err instanceof Error ? err.message : String(err);
   if (nombre === "NotFoundError" || /could not be found/i.test(texto)) {
-    return "No encuentro la carpeta: puede que la hayas movido, renombrado o borrado. Volvé a vincularla.";
+    return "No encuentro la carpeta: puede que la hayas movido, renombrado o borrado. Vuelve a vincularla.";
   }
   if (nombre === "NotAllowedError" || /permission/i.test(texto)) {
     return "El navegador retiró el permiso sobre la carpeta. Dale permiso de nuevo.";
@@ -189,7 +189,7 @@ export function useCarpetaLocal(opciones: {
       // significaría tratar TODO el drive como si fuera esa carpeta: bajaría a
       // la carpeta del escritorio cientos de archivos que no le corresponden.
       if (v.folderIdRaiz && !carpetasAhora.some((f) => f.id === v.folderIdRaiz)) {
-        setError("La carpeta del panel con la que estaba emparejada ya no existe. Desvinculá y elegí otra.");
+        setError("La carpeta del panel con la que estaba emparejada ya no existe. Desvincula y elige otra.");
         setEstado("error");
         return null;
       }

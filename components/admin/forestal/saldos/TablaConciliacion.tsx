@@ -223,8 +223,8 @@ export default function TablaConciliacion({
               :
             </strong>{" "}
             el libro consumió madera que todavía no tiene ingreso que la respalde. No es un error de
-            cálculo — es una fecha mal puesta o una guía sin cargar. Abrí el Kardex de la especie y
-            compará la fecha de cada corrida contra la de su guía.
+            cálculo — es una fecha mal puesta o una guía sin cargar. Abre el Kardex de la especie y
+            compara la fecha de cada corrida contra la de su guía.
           </p>
         )}
       </div>

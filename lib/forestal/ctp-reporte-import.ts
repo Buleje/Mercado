@@ -91,29 +91,29 @@ export function causaDe(mensaje: string): string {
 /** Qué hacer con cada causa conocida. Lo que no está acá no lleva consejo. */
 function consejoPara(mensaje: string, formato: FormatoCtp): string {
   const m = mensaje.toLowerCase();
-  if (/no existe en el libro|cargá primero el ingreso|no encontrad/.test(m)) {
-    return "Falta el ingreso de esa troza. Agregá su fila a la Sección 1 con el mismo Código de CTP, o importá primero esa sección.";
+  if (/no existe en el libro|carg[aá] primero el ingreso|no encontrad/.test(m)) {
+    return "Falta el ingreso de esa troza. Agrega su fila a la Sección 1 con el mismo Código de CTP, o importa primero esa sección.";
   }
   if (/ya existe|se salta|duplicada/.test(m)) {
     return "No hace falta hacer nada: ya está en el libro y no se sobrescribe.";
   }
   if (/datos distintos/.test(m)) {
-    return "El libro tiene esa fila con otros valores. Si los del archivo son los correctos, corregilos desde la ficha — el importador nunca pisa un dato ya registrado.";
+    return "El libro tiene esa fila con otros valores. Si los del archivo son los correctos, corrígelos desde la ficha — el importador nunca pisa un dato ya registrado.";
   }
   if (/sin especie|sin n° de gtf|sin titular|sin tipo de producto/.test(m)) {
-    return `Completá esa columna en la hoja de ${TITULO_FORMATO[formato]}: sin ella la fila no se puede fiscalizar.`;
+    return `Completa esa columna en la hoja de ${TITULO_FORMATO[formato]}: sin ella la fila no se puede fiscalizar.`;
   }
   if (/fuera de rango|inválid/.test(m)) {
-    return "Revisá el número: probablemente tenga un separador de miles o un dígito de más.";
+    return "Revisa el número: probablemente tenga un separador de miles o un dígito de más.";
   }
   if (/ya se consumió|ya está en el libro/.test(m)) {
-    return "Esa pieza ya se usó. Si el corte es otro, cambiale el código; si es el mismo, no hay nada que importar.";
+    return "Esa pieza ya se usó. Si el corte es otro, cámbiale el código; si es el mismo, no hay nada que importar.";
   }
   if (/período .* cerrado|periodo .* cerrado/.test(m)) {
-    return "El mes ya se presentó. Reabrí el período desde el libro si de verdad hay que corregirlo — queda registrado quién y por qué.";
+    return "El mes ya se presentó. Reabre el período desde el libro si de verdad hay que corregirlo — queda registrado quién y por qué.";
   }
   if (/suman más|supera/.test(m)) {
-    return "Los pedazos suman más que la troza madre. Revisá los volúmenes del Apartado 2.";
+    return "Los pedazos suman más que la troza madre. Revisa los volúmenes del Apartado 2.";
   }
   return "";
 }
@@ -240,7 +240,7 @@ export function reporteACsv(r: ReporteImport, nombreArchivo?: string): string {
   }
 
   if (r.avisosDeFila.length > 0) {
-    lineas.push([], ["Entraron, pero revisá esto"], ["Sección", "Fila", "Código", "Aviso"]);
+    lineas.push([], ["Entraron, pero revisa esto"], ["Sección", "Fila", "Código", "Aviso"]);
     for (const a of r.avisosDeFila) {
       lineas.push([TITULO_FORMATO[a.formato], a.fila != null ? String(a.fila) : "", a.codigo, a.mensaje]);
     }

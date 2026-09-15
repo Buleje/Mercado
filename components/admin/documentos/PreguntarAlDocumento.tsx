@@ -45,7 +45,7 @@ export default function PreguntarAlDocumento({ docId }: { docId: string }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data?.message ?? "No pude responder ahora. Probá de nuevo.");
+        setError(data?.message ?? "No pude responder ahora. Prueba de nuevo.");
         return;
       }
       setR(data as Respuesta);

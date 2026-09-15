@@ -235,7 +235,7 @@ export function agregarCamara(
   meta: { id: string; token: string; ahora?: string },
 ): ResultadoCamaras {
   const nombre = txt(entrada.nombre);
-  if (!nombre) return { ok: false, motivo: "Ponele un nombre a la cámara." };
+  if (!nombre) return { ok: false, motivo: "Ponle un nombre a la cámara." };
   if (nombre.length > 80) return { ok: false, motivo: "El nombre no puede pasar de 80 caracteres." };
   if (camaras.length >= MAX_CAMARAS) {
     return { ok: false, motivo: `Ya hay ${MAX_CAMARAS} cámaras cargadas.` };
@@ -255,7 +255,7 @@ export function agregarCamara(
   return {
     ok: true,
     camaras: [...camaras, camara],
-    mensaje: `«${nombre}» quedó lista. Copiá su dirección en la cámara para que empiece a mandar fotos.`,
+    mensaje: `«${nombre}» quedó lista. Copia su dirección en la cámara para que empiece a mandar fotos.`,
   };
 }
 

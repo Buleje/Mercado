@@ -145,7 +145,7 @@ export function buildLecturas(s: MarketStats, pricePenPerKg: number | null): str
   }
 
   if (s.sensSolPor100Usd != null && pricePenPerKg != null) {
-    out.push(`Regla rápida: cada ±100 USD/t mueve tu compra local ≈ ±S/ ${s.sensSolPor100Usd.toFixed(2)}/kg (pagás ${COMPRA_LOCAL_PCT}% del oficial).`);
+    out.push(`Regla rápida: cada ±100 USD/t mueve tu compra local ≈ ±S/ ${s.sensSolPor100Usd.toFixed(2)}/kg (pagas ${COMPRA_LOCAL_PCT}% del oficial).`);
   }
 
   return out;

@@ -129,7 +129,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
             {creating ? (
               <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><Loader2 className="h-4 w-4 animate-spin" /> Generando enlace…</p>
             ) : !link && conClave ? (
-              <p className="text-sm text-[var(--text-tertiary)]">Escribí la clave acá arriba y generá el enlace.</p>
+              <p className="text-sm text-[var(--text-tertiary)]">Escribe la clave acá arriba y genera el enlace.</p>
             ) : error ? (
               <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>
             ) : (

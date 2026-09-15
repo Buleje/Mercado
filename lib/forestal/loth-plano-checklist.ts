@@ -112,7 +112,7 @@ export function evaluarPlano(opts: {
         : fuera === 0
           ? "Todos los vértices del área caen dentro del predio."
           : `${fuera} vértice(s) del área quedan FUERA del predio.`,
-      comoResolver: "Corregí el contorno que corresponda antes de imprimir.",
+      comoResolver: "Corrige el contorno que corresponda antes de imprimir.",
       accionable: true,
     },
     {

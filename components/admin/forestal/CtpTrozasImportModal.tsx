@@ -88,7 +88,7 @@ export default function CtpTrozasImportModal({
     >
       <ModalBody className="space-y-3">
         <p className="text-sm text-[var(--text-secondary)]">
-          Pegá la lista tal como está en el Excel o en el papel de la guía. Se aceptan tabuladores, comas, punto y coma o
+          Pega la lista tal como está en el Excel o en el papel de la guía. Se aceptan tabuladores, comas, punto y coma o
           columnas separadas por espacios. Si trae encabezados, se leen solos.
         </p>
 

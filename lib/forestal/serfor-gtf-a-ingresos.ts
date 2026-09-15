@@ -166,7 +166,7 @@ export function repartirGtfEnIngresos(gtf: GtfSerfor): ReparteGtf {
     if (volumenM3 <= 0) {
       return {
         ok: false,
-        motivo: `La guía no declara volumen para «${p.comun ?? p.cientifico ?? "un producto"}». Cargá ese ingreso a mano.`,
+        motivo: `La guía no declara volumen para «${p.comun ?? p.cientifico ?? "un producto"}». Carga ese ingreso a mano.`,
       };
     }
     if (declarado == null) {

@@ -335,7 +335,7 @@ export async function parseProduccionXlsx(buffer: ArrayBuffer, opts?: { strict?:
 
     const issues: string[] = [];
     if (!(cantidad > 0)) issues.push("Cantidad producida inválida (≤ 0)");
-    if (consumos.length === 0) issues.push("Sin materia prima atribuida (revisá la hoja «2. Consumos»)");
+    if (consumos.length === 0) issues.push("Sin materia prima atribuida (revisa la hoja «2. Consumos»)");
 
     produccion.push({
       row: rowNum,
@@ -448,8 +448,8 @@ export async function descargarPlantillaLoCtp(): Promise<void> {
   const lines: [string, boolean][] = [
     ["Plantilla — Libro de Operaciones del CTP (LO-CTP · SERFOR, RDE D000025-2023)", true],
     ["", false],
-    ["Completá las 4 hojas y subila con «Importar libro» → «Libro completo».", false],
-    ["Cada hoja trae UNA fila de ejemplo (en gris): reemplazala por tus datos y borrala si no la usás.", false],
+    ["Completa las 4 hojas y súbela con «Importar libro» → «Libro completo».", false],
+    ["Cada hoja trae UNA fila de ejemplo (en gris): reemplázala por tus datos y bórrala si no la usas.", false],
     ["", false],
     ["1. Ingreso — materia prima que entra al CTP. La GTF (N° de Documento) es el origen legal: obligatoria.", false],
     ["2. Consumos — qué GTF de ingreso alimenta cada corrida. «Producción destino» debe decir «Corrida #N» (N = fila de la hoja 3).", false],

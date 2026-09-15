@@ -118,7 +118,7 @@ export async function registrarJornadas(
     partes.push(
       `${abiertas.length} corrida${abiertas.length === 1 ? "" : "s"} quedó${abiertas.length === 1 ? "" : "aron"} ` +
         `abierta${abiertas.length === 1 ? "" : "s"} con su materia prima (N° ${abiertas.map((a) => a.lineNo ?? "?").join(", ")}): ` +
-        `declarales la producción desde la tabla`,
+        `declárales la producción desde la tabla`,
     );
   }
   if (fallidas > 0) partes.push(`${fallidas} no se pudo${fallidas === 1 ? "" : "ieron"} registrar`);

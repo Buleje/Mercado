@@ -32,9 +32,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (!result.ok) {
       const message =
         result.error === "no_text"
-          ? "No pude sacarle texto ni leerlo como imagen. Si es un escaneo, revisá que la página se vea nítida."
+          ? "No pude sacarle texto ni leerlo como imagen. Si es un escaneo, revisa que la página se vea nítida."
           : result.error === "vision_fail"
-          ? "No pude leer la imagen: el servicio que la mira no respondió. Probá de nuevo en un momento."
+          ? "No pude leer la imagen: el servicio que la mira no respondió. Prueba de nuevo en un momento."
           : result.error === "vision_unavailable"
           ? AVISO_SIN_VISION
           : undefined;

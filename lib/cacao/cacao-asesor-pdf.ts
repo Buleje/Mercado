@@ -137,7 +137,7 @@ export async function downloadCacaoAsesorPDF(
 
   y += 8;
   wrap(
-    "Orientativo — no es asesoría financiera. Fuente de precio: ICE (Yahoo Finance). Decidí según tu caja, la calidad de tu lote y tus compromisos de venta.",
+    "Orientativo — no es asesoría financiera. Fuente de precio: ICE (Yahoo Finance). Decide según tu caja, la calidad de tu lote y tus compromisos de venta.",
     8,
     [150, 150, 150],
   );

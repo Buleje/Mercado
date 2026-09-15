@@ -48,7 +48,7 @@ export default function LothMapaDrawBar({
         {esPredio ? "Predio" : "Área de aprovechamiento"}
       </span>
       <span className="text-xs font-bold text-[var(--text-primary)]">
-        Tocá para marcar · arrastrá para mover · click derecho borra ·{" "}
+        Toca para marcar · arrastra para mover · click derecho borra ·{" "}
         <b className="font-mono tabular-nums">{count}</b>
         {count >= 3 && <span className="text-[var(--text-tertiary)]"> · {areaHa.toFixed(1)} ha</span>}
       </span>

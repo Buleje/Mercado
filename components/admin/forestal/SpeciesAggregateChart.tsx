@@ -120,7 +120,7 @@ export default function SpeciesAggregateChart({ period }: { period: CtpPeriod })
 
         {!loading && top.length === 0 && (
           <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-            Sin datos en este período. Probá un rango más amplio o registrá
+            Sin datos en este período. Prueba un rango más amplio o registra
             ingresos validados.
           </div>
         )}

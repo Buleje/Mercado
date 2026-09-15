@@ -44,13 +44,13 @@ export async function POST(req: NextRequest) {
 
   const file = form.get("audio");
   if (!file || typeof file === "string") {
-    return NextResponse.json({ error: "audio_requerido", message: "Subí un archivo de audio." }, { status: 400 });
+    return NextResponse.json({ error: "audio_requerido", message: "Sube un archivo de audio." }, { status: 400 });
   }
   if (file.size === 0) {
     return NextResponse.json({ error: "audio_vacio", message: "El archivo de audio está vacío." }, { status: 400 });
   }
   if (file.size > MAX_AUDIO_BYTES) {
-    return NextResponse.json({ error: "audio_muy_grande", message: "El audio pesa más de 20MB — probá con un archivo más corto." }, { status: 400 });
+    return NextResponse.json({ error: "audio_muy_grande", message: "El audio pesa más de 20MB — prueba con un archivo más corto." }, { status: 400 });
   }
 
   try {
@@ -62,6 +62,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ transcript });
   } catch (e) {
     logger.error("[cubicacion-audio] transcripción falló", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: "transcripcion_fallo", message: "No se pudo transcribir el audio. Probá de nuevo o con otro archivo." }, { status: 502 });
+    return NextResponse.json({ error: "transcripcion_fallo", message: "No se pudo transcribir el audio. Prueba de nuevo o con otro archivo." }, { status: 502 });
   }
 }

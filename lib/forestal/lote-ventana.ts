@@ -80,7 +80,7 @@ export function avisosVentana(lote: VentanaLote): string[] {
   const fin = aDia(lote.fechaFin);
   const avisos: string[] = [];
   if (ini != null && fin != null && fin < ini) {
-    avisos.push("La fecha de fin es anterior a la de inicio: revisá el año.");
+    avisos.push("La fecha de fin es anterior a la de inicio: revisa el año.");
   }
   const dias = diasDeVentana(lote);
   if (dias != null && dias > 365) {

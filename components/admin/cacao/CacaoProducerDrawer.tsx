@@ -342,7 +342,7 @@ export default function CacaoProducerDrawer({
                     </span>
                     {agg.saldo > 0 ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
-                        <AlertTriangle className="h-3 w-3" /> Debés S/ {n2(agg.saldo)}
+                        <AlertTriangle className="h-3 w-3" /> Debes S/ {n2(agg.saldo)}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]">

@@ -137,7 +137,7 @@ export function useDocumentoAcciones({
       setWasap(document);
     } catch (err) {
       logger.error("[ctp-visor] whatsapp failed", { error: String(err) });
-      setDrive({ estado: "error", detalle: "No se pudo preparar el envío por WhatsApp. Probá guardarlo en el expediente primero." });
+      setDrive({ estado: "error", detalle: "No se pudo preparar el envío por WhatsApp. Prueba guardarlo en el expediente primero." });
     } finally {
       setPreparandoWasap(false);
     }

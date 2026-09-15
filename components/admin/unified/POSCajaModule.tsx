@@ -135,7 +135,7 @@ function ShiftCloseModal({
         setError(
           typeof body?.error === "string"
             ? body.error
-            : `No se pudo cerrar el turno (error ${res.status}). Volvé a intentar.`,
+            : `No se pudo cerrar el turno (error ${res.status}). Vuelve a intentar.`,
         );
         return;
       }
@@ -322,7 +322,7 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
     if (pendingCount > 0) {
       void notice({
         title: `Tienes ${pendingCount} ventas pendientes de sincronizar`,
-        description: 'En modo Offline. Conectate a internet y pulsá "Sincronizar ahora" en la barra azul antes de cerrar el turno — si no, esas ventas no se reflejarán en el corte.',
+        description: 'En modo Offline. Conéctate a internet y pulsa "Sincronizar ahora" en la barra azul antes de cerrar el turno — si no, esas ventas no se reflejarán en el corte.',
         intent: "warning",
       });
       return;

@@ -415,7 +415,7 @@ export default function CtpEditarLineaModal({
               <>
                 Esta corrida consumió madera de <b>{permisos.length} permisos distintos</b> (
                 {permisos.join(" · ")}). Lo que escribas acá los <b>unifica</b>: queda el mismo en{" "}
-                {guias.join(", ")} y en todas sus corridas. Si de verdad son dos títulos, corregí cada guía
+                {guias.join(", ")} y en todas sus corridas. Si de verdad son dos títulos, corrige cada guía
                 desde Ingresos.
               </>
             ) : permisoEnAsiento ? (

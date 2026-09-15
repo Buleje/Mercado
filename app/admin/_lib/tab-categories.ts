@@ -206,7 +206,7 @@ export const MODULE_INFO: Partial<
     iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
     priority: "medium",
     desc: "Las fotos que manda la cámara del patio o del local, con lectura automática.",
-    tip: "Mirá qué pasó anoche sin abrir la app de la cámara.",
+    tip: "Mira qué pasó anoche sin abrir la app de la cámara.",
   },
   rendimiento: {
     icon: Gauge,
@@ -291,8 +291,8 @@ export const MODULE_INFO: Partial<
     icon: Share2,
     iconColor: "text-[var(--accent)]",
     priority: "medium",
-    desc: "Canales de venta social: conectá TikTok Shop y Meta (Facebook + Instagram).",
-    tip: "Pegá tus Pixel IDs y los eventos se activan en tu tienda para optimizar anuncios.",
+    desc: "Canales de venta social: conecta TikTok Shop y Meta (Facebook + Instagram).",
+    tip: "Pega tus Pixel IDs y los eventos se activan en tu tienda para optimizar anuncios.",
   },
   // ── Equipo ──
   tareas: {
@@ -323,7 +323,7 @@ export const MODULE_INFO: Partial<
     iconColor: "text-[var(--accent)]",
     priority: "high",
     desc: "Envíos al proveedor automáticos cuando se paga un pedido (el proveedor despacha al cliente).",
-    tip: "Para tiendas dropshipping: vinculá productos a proveedores y trackeá los envíos.",
+    tip: "Para tiendas dropshipping: vincula productos a proveedores y trackea los envíos.",
   },
   // ── Recetas (vertical comida — restaurante) ──
   recetas: {
@@ -331,7 +331,7 @@ export const MODULE_INFO: Partial<
     iconColor: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
     priority: "high",
     desc: "Recetas, producción y recetario: define platos, su costo por insumos y descuenta stock al producir.",
-    tip: "Para negocios de comida: arma cada plato con sus ingredientes y controlá el costo real.",
+    tip: "Para negocios de comida: arma cada plato con sus ingredientes y controla el costo real.",
   },
 };
 

@@ -85,7 +85,7 @@ export default function DeclararReprocesoPicker({
           <>
             <p className="text-xs text-[var(--text-secondary)]">
               {candidatas.length} {candidatas.length === 1 ? "corrida declara" : "corridas declaran"}{" "}
-              <b>{desdeTipo}</b> con saldo. El volumen que sale ya viene puesto — lo que elegís acá es
+              <b>{desdeTipo}</b> con saldo. El volumen que sale ya viene puesto — lo que eliges acá es
               de dónde <b>entra</b> la madera a la sierra.
             </p>
             <ul className="max-h-64 space-y-1.5 overflow-y-auto">
@@ -118,13 +118,13 @@ export default function DeclararReprocesoPicker({
               <>
                 Ninguna corrida con saldo declara <b>{desdeTipo}</b>
                 {especie ? <> de <b>{especie}</b></> : null}. Si esa madera está en el Libro con otro
-                producto, reprocesala desde su fila; si todavía no está declarada, primero hay que
+                producto, reprocésala desde su fila; si todavía no está declarada, primero hay que
                 registrar su producción.
               </>
             ) : (
               <>
                 No se pudo leer el Libro desde acá (puede estar deshabilitado para esta tienda o no
-                tenés permiso). Se puede declarar igual desde el Libro de Operaciones.
+                tienes permiso). Se puede declarar igual desde el Libro de Operaciones.
               </>
             )}
           </p>

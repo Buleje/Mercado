@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     }
     if (!gtf.gtfNumber?.trim()) {
       return NextResponse.json(
-        { error: "guia_incompleta", message: "La guía no trae su N° de GTF. Cargala a mano." },
+        { error: "guia_incompleta", message: "La guía no trae su N° de GTF. Cárgala a mano." },
         { status: 422 },
       );
     }

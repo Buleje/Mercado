@@ -112,7 +112,7 @@ export function accionesDeSeccion({
       {
         id: "simular",
         label: "Simular una corrida",
-        hint: "Previsualizá producido, costo y margen antes de registrarla — no guarda nada",
+        hint: "Previsualiza producido, costo y margen antes de registrarla — no guarda nada",
         icon: Calculator,
         onSelect: onSimular,
       },
@@ -189,7 +189,7 @@ export function accionesDeLotes({
           : libres > 0
             ? `${libres} pieza${libres === 1 ? "" : "s"} esperando la sierra` +
               (margenM3 > 0.01 ? ` · y ${fmtM3(margenM3)} m³ por declarar` : "")
-            : "Sin piezas libres — abrilo para ver qué tiene",
+            : "Sin piezas libres — ábrelo para ver qué tiene",
       meta: soloMargen ? `${fmtM3(margenM3)} m³` : `${fmtM3(volumenM3)} m³`,
       icon: inventario ? ClipboardList : soloMargen ? RotateCcw : Layers,
       activo: loteAbierto === lote.id,

@@ -57,7 +57,7 @@ export default function VelocidadDrive() {
           Cuánto tarda en abrir
         </CardTitle>
         <p className="text-sm text-[var(--text-secondary)]">
-          Todavía no hay mediciones. Se van juntando solas cada vez que abrís esta pantalla.
+          Todavía no hay mediciones. Se van juntando solas cada vez que abres esta pantalla.
         </p>
       </div>
     );
@@ -92,7 +92,7 @@ export default function VelocidadDrive() {
             Cuánto tarda en abrir
           </CardTitle>
           <p className="text-xs text-[var(--text-tertiary)]">
-            Medido en tu navegador, cada vez que entrás. Últimos {conListado.length} día(s).
+            Medido en tu navegador, cada vez que entras. Últimos {conListado.length} día(s).
           </p>
         </div>
         <div className="text-right">

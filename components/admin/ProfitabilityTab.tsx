@@ -148,7 +148,7 @@ export default function ProfitabilityTab() {
       <AdminModuleHeader
         as="h2"
         title="Cuánto gano por producto"
-        description={`Mirá cuánto ganás con cada producto y categoría · ${periodo}`}
+        description={`Mira cuánto ganas con cada producto y categoría · ${periodo}`}
         icon={TrendingUp}
       >
           <div className="flex rounded-lg border border-[var(--rule-base)] overflow-hidden">
@@ -285,8 +285,8 @@ export default function ProfitabilityTab() {
                 </p>
                 <p className="text-sm text-[var(--text-secondary)] mt-1">
                   {lines.length === 0
-                    ? "Cuando registres ventas vas a ver acá cuánto ganás con cada producto."
-                    : "Probá con otra categoría o limpiá la búsqueda."}
+                    ? "Cuando registres ventas vas a ver acá cuánto ganas con cada producto."
+                    : "Prueba con otra categoría o limpia la búsqueda."}
                 </p>
               </td>
             </tr>

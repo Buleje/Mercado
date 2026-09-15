@@ -120,8 +120,8 @@ export function revisarDistribucion(
         donde: rotulo(b),
         que: "No tiene guía ni lote de origen.",
         comoArreglar: directa
-          ? "Escribí de dónde vino esa madera aserrada (compra, inventario, N° de documento) en «Etiqueta»."
-          : "Escribí el N° de GTF o el código del lote en «Etiqueta»: sin eso no se puede rastrear de dónde salió.",
+          ? "Escribe de dónde vino esa madera aserrada (compra, inventario, N° de documento) en «Etiqueta»."
+          : "Escribe el N° de GTF o el código del lote en «Etiqueta»: sin eso no se puede rastrear de dónde salió.",
       });
     }
 
@@ -132,7 +132,7 @@ export function revisarDistribucion(
         bloqueId: b.id,
         donde: rotulo(b),
         que: "No tiene especie.",
-        comoArreglar: "Elegí la especie: el reparto agrupa por especie y el Anexo 04 la declara pieza por pieza.",
+        comoArreglar: "Elige la especie: el reparto agrupa por especie y el Anexo 04 la declara pieza por pieza.",
       });
     }
 
@@ -143,7 +143,7 @@ export function revisarDistribucion(
         bloqueId: b.id,
         donde: rotulo(b),
         que: `No tiene ${directa ? "m³ (A)" : "m³ (R)"} cargados.`,
-        comoArreglar: "Poné el volumen que entró: sin eso el bloque no ampara nada.",
+        comoArreglar: "Pon el volumen que entró: sin eso el bloque no ampara nada.",
       });
     }
 
@@ -154,7 +154,7 @@ export function revisarDistribucion(
         bloqueId: b.id,
         donde: rotulo(b),
         que: "No tiene N° de permiso (título habilitante).",
-        comoArreglar: "Cargalo para que el Anexo 04 no mezcle títulos habilitantes sin que se note.",
+        comoArreglar: "Cárgalo para que el Anexo 04 no mezcle títulos habilitantes sin que se note.",
       });
     }
 
@@ -165,7 +165,7 @@ export function revisarDistribucion(
         bloqueId: b.id,
         donde: rotulo(b),
         que: "No tiene fecha de aserrío.",
-        comoArreglar: "El Libro de Operaciones se registra día por día: poné el día en que se aserró.",
+        comoArreglar: "El Libro de Operaciones se registra día por día: pon el día en que se aserró.",
       });
     }
   }
@@ -178,7 +178,7 @@ export function revisarDistribucion(
       bloqueId: iguales[0].id,
       donde: rotulo(iguales[0]),
       que: `${iguales.length} bloques declaran la misma guía «${iguales[0].etiqueta.trim()}».`,
-      comoArreglar: "Una guía ampara una sola vez: uní los bloques, o corregí la etiqueta del que esté repetido.",
+      comoArreglar: "Una guía ampara una sola vez: une los bloques, o corrige la etiqueta del que esté repetido.",
     });
   }
 
@@ -192,7 +192,7 @@ export function revisarDistribucion(
           bloqueId: d.bloque.id,
           donde: rotulo(d.bloque),
           que: "No le tocó nada: su Anexo 04 saldría vacío.",
-          comoArreglar: "Los bloques se llenan en orden y los de arriba ya se llevaron toda la aserrada de esta especie. Subilo de posición, sacalo, o cubicá más madera.",
+          comoArreglar: "Los bloques se llenan en orden y los de arriba ya se llevaron toda la aserrada de esta especie. Súbelo de posición, sácalo, o cubica más madera.",
         });
       }
       const tope = d.bloque.piezasManual;
@@ -204,7 +204,7 @@ export function revisarDistribucion(
           bloqueId: d.bloque.id,
           donde: rotulo(d.bloque),
           que: `Pediste ${tope} piezas y el reparto sólo encontró ${puestas}.`,
-          comoArreglar: "Bajá el tope a lo que hay, o cubicá las piezas que faltan de esa especie.",
+          comoArreglar: "Baja el tope a lo que hay, o cubica las piezas que faltan de esa especie.",
         });
       }
     }
@@ -222,7 +222,7 @@ export function revisarDistribucion(
         bloqueId: null,
         donde: nombre,
         que: `Quedan ${e.faltanteM3.toFixed(3)} m³ (${piezas} piezas) de aserrada sin respaldo de rolliza.`,
-        comoArreglar: `Agregá un bloque con la rolliza que falta (harían falta ${e.rollizaFaltanteM3.toFixed(3)} m³ al aprovechamiento vigente), o declaralo como madera ya aserrada.`,
+        comoArreglar: `Agrega un bloque con la rolliza que falta (harían falta ${e.rollizaFaltanteM3.toFixed(3)} m³ al aprovechamiento vigente), o decláralo como madera ya aserrada.`,
       });
     }
 
@@ -233,7 +233,7 @@ export function revisarDistribucion(
         bloqueId: null,
         donde: nombre,
         que: `Sobran ${e.libreM3.toFixed(3)} m³ de capacidad sin usar en sus bloques.`,
-        comoArreglar: "Es normal si todavía falta cubicar. Si el lote ya está cerrado, revisá el % aprovechable o el m³ de rolliza cargado.",
+        comoArreglar: "Es normal si todavía falta cubicar. Si el lote ya está cerrado, revisa el % aprovechable o el m³ de rolliza cargado.",
       });
     }
 
@@ -276,8 +276,8 @@ export function revisarDistribucion(
         donde: nombre,
         que: `Rendimiento ${e.rendimientoPct == null ? "—" : `${e.rendimientoPct.toFixed(1)} %`} — ${j.label}.`,
         comoArreglar: imposible
-          ? "De una troza no sale más madera aserrada que la troza misma: revisá el m³ de rolliza cargado o el «ampara» dicho a mano."
-          : "Verificá el m³ de rolliza cargado y que esté cubicada toda la madera que salió de esa troza.",
+          ? "De una troza no sale más madera aserrada que la troza misma: revisa el m³ de rolliza cargado o el «ampara» dicho a mano."
+          : "Verifica el m³ de rolliza cargado y que esté cubicada toda la madera que salió de esa troza.",
       });
     }
   }
@@ -306,7 +306,7 @@ export function revisarDistribucion(
             donde: `${rot} · ${g.label}`,
             que: `La línea dice ${g.m3.toFixed(3)} m³ y sus medidas suman ${suma.toFixed(3)}.`,
             comoArreglar:
-              "El detalle de medidas es lo que respalda la línea: si no suman lo mismo, el Anexo 04 declara un total que su propio detalle no sostiene. Revisá los overrides de esa línea.",
+              "El detalle de medidas es lo que respalda la línea: si no suman lo mismo, el Anexo 04 declara un total que su propio detalle no sostiene. Revisa los overrides de esa línea.",
           });
         }
       }
@@ -339,7 +339,7 @@ export function revisarDistribucion(
           donde: rot,
           que: `Ampara ${d.usadoM3.toFixed(3)} m³ y declara ${d.capacidadM3.toFixed(3)}: ${exceso.toFixed(3)} m³ de más.`,
           comoArreglar:
-            "El reparto cierra hasta 3 piezas por diferencia de medición; más que eso es madera que necesita otro bloque. Subí el m³ del bloque o dejá esas piezas en «Falta por distribuir».",
+            "El reparto cierra hasta 3 piezas por diferencia de medición; más que eso es madera que necesita otro bloque. Sube el m³ del bloque o deja esas piezas en «Falta por distribuir».",
         });
       }
     }
@@ -372,8 +372,8 @@ export function revisarDistribucion(
         ? `El respaldo es ${r.desdeTipo.toLowerCase()} y ampara ${r.m3.toFixed(3)} m³ de ${r.haciaTipo.toLowerCase()}, que de ahí no puede salir.`
         : `El respaldo es ${r.desdeTipo.toLowerCase()} y ampara ${r.m3.toFixed(3)} m³ de ${r.haciaTipo.toLowerCase()}.`,
       comoArreglar: r.imposible
-        ? `${r.porque ?? "Esa conversión no la hace la sierra."} Marcá el bloque con «Lleva sólo», traé un producto de origen del que sí salga, o corregí el tipo de esas piezas.`
-        : "Declará el reproceso en el Libro (Productos disponibles → Reprocesar) o marcá el bloque con «Lleva sólo» para que no ampare otro tipo.",
+        ? `${r.porque ?? "Esa conversión no la hace la sierra."} Marca el bloque con «Lleva sólo», trae un producto de origen del que sí salga, o corrige el tipo de esas piezas.`
+        : "Declara el reproceso en el Libro (Productos disponibles → Reprocesar) o marca el bloque con «Lleva sólo» para que no ampare otro tipo.",
     });
   }
 

@@ -34,7 +34,7 @@ type Feature = { Icon: Icon; title: string; desc: string };
 
 const META_FEATURES: Feature[] = [
   { Icon: ShoppingBag, title: "Facebook Shop / Instagram Shopping", desc: "Tienda y catálogo en Facebook e Instagram, gestionado desde Commerce Manager." },
-  { Icon: Tag, title: "Etiquetado de productos", desc: "Etiquetá productos directamente en publicaciones e historias de Instagram." },
+  { Icon: Tag, title: "Etiquetado de productos", desc: "Etiqueta productos directamente en publicaciones e historias de Instagram." },
   { Icon: BarChart3, title: "Meta Pixel", desc: "Mide cada visitante, optimiza anuncios y permite remarketing a quien ya te visitó." },
   { Icon: ShieldCheck, title: "API de Conversiones (CAPI)", desc: "Envía eventos desde tu servidor: menos afectado por bloqueadores, más control del dato." },
   { Icon: Boxes, title: "Catálogo sincronizado", desc: "Sincroniza el catálogo con Meta para anuncios dinámicos y campañas Advantage+." },
@@ -130,7 +130,7 @@ export default function SalesChannelsTab() {
           borde doble, y sin la serif del resto de las cabeceras. */}
       <AdminModuleHeader
         title="Canales de venta"
-        description="Conectá TikTok Shop, Meta (Facebook + Instagram) y Google Analytics con tus IDs de píxel o medición: los eventos y la conversión de compra se activan solos en tu tienda."
+        description="Conecta TikTok Shop, Meta (Facebook + Instagram) y Google Analytics con tus IDs de píxel o medición: los eventos y la conversión de compra se activan solos en tu tienda."
         icon={Share2}
       />
 
@@ -150,7 +150,7 @@ export default function SalesChannelsTab() {
       {/* Beneficios combinados */}
       <section className="rounded-2xl border-2 border-[var(--accent)] bg-primary/10 p-4">
         <p className="flex items-center gap-2 text-sm font-extrabold text-[var(--accent)] uppercase tracking-wide">
-          <Sparkles className="h-4 w-4" /> Conectando ambos ganás
+          <Sparkles className="h-4 w-4" /> Conectando ambos ganas
         </p>
         <div className="grid sm:grid-cols-2 gap-3 mt-3">
           {COMBINED.map(({ Icon, title, desc }) => (

@@ -66,7 +66,7 @@ export const POST = withApiHandler("forestal-tramites-avisar-post", async (req: 
     });
     if (!queued && !jobId) {
       return NextResponse.json(
-        { error: "whatsapp_no_disponible", message: "El WhatsApp del negocio no está configurado o no respondió. Probá de nuevo en un rato." },
+        { error: "whatsapp_no_disponible", message: "El WhatsApp del negocio no está configurado o no respondió. Prueba de nuevo en un rato." },
         { status: 409 },
       );
     }

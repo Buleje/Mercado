@@ -136,7 +136,7 @@ describe("Guías que no cuadran", () => {
       }),
     );
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.motivo).toMatch(/Cargá ese ingreso a mano/i);
+    if (!r.ok) expect(r.motivo).toMatch(/Carga ese ingreso a mano/i);
   });
 
   it("avisa cuando la suma de los productos no da el total de la guía", () => {

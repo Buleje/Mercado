@@ -133,7 +133,7 @@ export default function CtpProduccionImportModal({
     >
       <ModalBody className="space-y-3">
         <p className="text-sm text-[var(--text-secondary)]">
-          Pegá la planilla del turno. Cada fila entra como una corrida de producción —{" "}
+          Pega la planilla del turno. Cada fila entra como una corrida de producción —{" "}
           <strong>sin origen atribuido</strong>: hay que decir de qué ingresos salió antes de certificar.
         </p>
 
@@ -209,7 +209,7 @@ export default function CtpProduccionImportModal({
             con lo que YA entró no cabe en el pie, así que se queda acá. */}
         {fallo && creadas > 0 && (
           <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-2.5 text-sm font-medium text-[var(--text-secondary)]">
-            Las {creadas} corrida(s) anteriores YA quedaron en el libro — corregí esa fila y volvé a pegar sólo lo que falta.
+            Las {creadas} corrida(s) anteriores YA quedaron en el libro — corrige esa fila y vuelve a pegar sólo lo que falta.
           </p>
         )}
       </ModalBody>

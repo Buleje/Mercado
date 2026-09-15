@@ -295,7 +295,7 @@ export const ForestCtpOperacionesDB = {
     const op = grupo?.operaciones.find((o) => o.slug === slugDestino);
     if (!op || !op.accesible || op.actual) {
       throw new CtpInvariantError(
-        "No podés cambiar a esa operación: no es del grupo o no tenés cuenta ahí.",
+        "No puedes cambiar a esa operación: no es del grupo o no tienes cuenta ahí.",
         "VALIDACION",
       );
     }
@@ -304,7 +304,7 @@ export const ForestCtpOperacionesDB = {
       select: { role: true, name: true },
     });
     if (!cuenta)
-      throw new CtpInvariantError("No tenés cuenta activa en esa operación.", "VALIDACION");
+      throw new CtpInvariantError("No tienes cuenta activa en esa operación.", "VALIDACION");
     return {
       tenantId: op.tenantId,
       slug: op.slug,

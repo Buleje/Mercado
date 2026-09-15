@@ -218,7 +218,7 @@ export class ForestLothDB {
     const cerrado = await ForestLothCierreDB.closedPeriodOf(tenantId, entryDate);
     if (cerrado) {
       throw new LothInvariantError(
-        `El período ${cerrado.label} está cerrado: no se pueden registrar líneas fechadas en un mes cerrado. Reabrilo si necesitás corregir.`,
+        `El período ${cerrado.label} está cerrado: no se pueden registrar líneas fechadas en un mes cerrado. Reábrelo si necesitas corregir.`,
         "PERIODO_CERRADO",
         { periodKey: cerrado.periodKey },
       );
@@ -331,7 +331,7 @@ export class ForestLothDB {
 
     const origen = fuente === "plan" ? "fijado en el plan" : fuente === "oficial" ? "de la norma (RJ 458-2002-INRENA)" : "general (RJ 458-2002-INRENA)";
     throw new LothInvariantError(
-      `El árbol ${treeCode} (${arbol.speciesCommon}) tiene ${dapCm.toFixed(1)} cm de DAP y el DMC ${origen} es ${dmcCm} cm: por debajo del diámetro mínimo de corta no se puede aprovechar. Si igual corresponde talarlo, escribí la justificación.`,
+      `El árbol ${treeCode} (${arbol.speciesCommon}) tiene ${dapCm.toFixed(1)} cm de DAP y el DMC ${origen} es ${dmcCm} cm: por debajo del diámetro mínimo de corta no se puede aprovechar. Si igual corresponde talarlo, escribe la justificación.`,
       "T8_BAJO_DMC",
       { treeCode, especie: arbol.speciesCommon, dapCm: Number(dapCm.toFixed(1)), dmcCm },
     );
@@ -389,7 +389,7 @@ export class ForestLothDB {
         });
         if (dup) {
           throw new LothInvariantError(
-            `La troza ${trozaCode} ya está registrada en Trozado (línea #${dup.lineNo}). Usá un código de troza único.`,
+            `La troza ${trozaCode} ya está registrada en Trozado (línea #${dup.lineNo}). Usa un código de troza único.`,
             "T3_TROZA_DUPLICADA",
             { trozaCode, lineNo: dup.lineNo },
           );
@@ -437,7 +437,7 @@ export class ForestLothDB {
       });
       if (!trozada) {
         throw new LothInvariantError(
-          `La troza ${trozaCode} no está registrada en Trozado. Registrá el trozado antes de despacharla o consumirla.`,
+          `La troza ${trozaCode} no está registrada en Trozado. Registra el trozado antes de despacharla o consumirla.`,
           "T2_TROZA_SIN_TROZADO",
           { trozaCode },
         );
@@ -634,8 +634,8 @@ export class ForestLothDB {
     if (!match) {
       throw new LothInvariantError(
         `La especie "${species}" no está autorizada en el plan de manejo (POA). ` +
-          `Movilizar una especie fuera del título habilitante es infracción — agregala a las especies ` +
-          `autorizadas del plan o corregí el registro antes de emitir la GTF.`,
+          `Movilizar una especie fuera del título habilitante es infracción — agrégala a las especies ` +
+          `autorizadas del plan o corrige el registro antes de emitir la GTF.`,
         "T7_ESPECIE_NO_AUTORIZADA",
         { species, planId },
       );

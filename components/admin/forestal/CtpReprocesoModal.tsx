@@ -109,17 +109,17 @@ export default function CtpReprocesoModal({
   /* El reproceso no CREA madera: de lo que entra sale igual o menos. No es el
      tope del 56 % —eso es troza a tabla—, es la conservación de la materia. */
   const motivos: string[] = [];
-  if (!(entraN > 0)) motivos.push("Poné cuánto producto vuelve a la sierra.");
+  if (!(entraN > 0)) motivos.push("Pon cuánto producto vuelve a la sierra.");
   if (entraN > origen.disponible + 0.0001) {
     motivos.push(`La corrida N° ${origen.lineNo ?? "—"} sólo tiene ${origen.disponible.toFixed(4)} disponible.`);
   }
-  if (!(saleN > 0)) motivos.push("Poné cuánto salió del reproceso.");
+  if (!(saleN > 0)) motivos.push("Pon cuánto salió del reproceso.");
   if (saleN > entraN + 0.0001) motivos.push("De un reproceso no puede salir más de lo que entró.");
-  if (motivo.trim().length < 3) motivos.push("Escribí por qué se reprocesa: queda en el libro.");
+  if (motivo.trim().length < 3) motivos.push("Escribe por qué se reprocesa: queda en el libro.");
   /* Una conversión fuera de lo habitual no se bloquea, pero no pasa con «ok»:
      lo que la sostiene ante un fiscalizador es la explicación. */
   if (aviso && motivo.trim().length < 15) {
-    motivos.push("Esa conversión no es de las habituales: explicá en una frase por qué salió así.");
+    motivos.push("Esa conversión no es de las habituales: explica en una frase por qué salió así.");
   }
 
   async function guardar() {
@@ -170,7 +170,7 @@ export default function CtpReprocesoModal({
       if (!rAtrib.ok) {
         throw new Error(
           `${jAtrib?.message ?? jAtrib?.error ?? `El servidor respondió ${rAtrib.status}`} ` +
-            "(la corrida del reproceso quedó creada sin su origen: atribuísela desde la ficha de la corrida).",
+            "(la corrida del reproceso quedó creada sin su origen: atribúyesela desde la ficha de la corrida).",
         );
       }
       invalidarCtp("/forestal/");

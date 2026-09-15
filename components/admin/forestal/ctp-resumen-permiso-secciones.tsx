@@ -102,7 +102,7 @@ export function SeccionObjetivo({
   return (
     <SeccionResumenPermiso titulo="Objetivo (de una cubicación)">
       <p className="text-xs text-[var(--text-tertiary)]">
-        Elegí una de tus cubicaciones guardadas, o pegá el código que copiaste en Cubicador de madera → Guardadas.
+        Elige una de tus cubicaciones guardadas, o pega el código que copiaste en Cubicador de madera → Guardadas.
       </p>
 
       <label className="block">
@@ -121,8 +121,8 @@ export function SeccionObjetivo({
               {cargandoCubicaciones
                 ? "Buscando tus cubicaciones…"
                 : (cubicaciones?.length ?? 0) === 0
-                  ? "No tenés cubicaciones guardadas todavía"
-                  : "— Elegí una —"}
+                  ? "No tienes cubicaciones guardadas todavía"
+                  : "— Elige una —"}
             </option>
             {cubicaciones?.map((c) => (
               <option key={c.id} value={c.id}>
@@ -143,7 +143,7 @@ export function SeccionObjetivo({
           onKeyDown={(e) => {
             if (e.key === "Enter") onBuscar();
           }}
-          placeholder="o pegá el código: cub-…"
+          placeholder="o pega el código: cub-…"
           aria-label="Código de la cubicación objetivo"
           className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
         />

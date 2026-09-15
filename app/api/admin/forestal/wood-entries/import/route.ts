@@ -391,7 +391,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       }
       if (missing.length) {
         errores++;
-        detalle.push({ row, gtf: label, action: "error", message: `GTF de ingreso no encontrado: ${[...new Set(missing)].join(", ")} — importá los ingresos primero` });
+        detalle.push({ row, gtf: label, action: "error", message: `GTF de ingreso no encontrado: ${[...new Set(missing)].join(", ")} — importa los ingresos primero` });
         continue;
       }
       if (mode === "preview") {
@@ -574,7 +574,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       seenInBatch.add(key);
       if (mode === "preview") {
         creables++;
-        detalle.push({ row, gtf: gtfLabel, action: "crear", message: `${d.quantity} ${d.unit}${d.destino ? ` → ${d.destino}` : ""} · sin atribuir (atribuí luego)` });
+        detalle.push({ row, gtf: gtfLabel, action: "crear", message: `${d.quantity} ${d.unit}${d.destino ? ` → ${d.destino}` : ""} · sin atribuir (atribuye luego)` });
         continue;
       }
       try {
@@ -603,7 +603,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
           message:
             d.origenes.length > 0
               ? `Despacho atribuido a ${d.origenes.length} corrida${d.origenes.length === 1 ? "" : "s"} del lote`
-              : "Despacho importado (sin atribuir: completá el origen)",
+              : "Despacho importado (sin atribuir: completa el origen)",
         });
       } catch (e) {
         errores++;

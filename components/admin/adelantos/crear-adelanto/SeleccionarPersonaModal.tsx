@@ -60,7 +60,7 @@ export default function SeleccionarPersonaModal({
   }, [beneficiarios, q]);
 
   return (
-    <ModalShell title="Elegir persona" subtitle="Buscá entre todas o creá una nueva sin salir de acá." onClose={onClose} size="md">
+    <ModalShell title="Elegir persona" subtitle="Busca entre todas o crea una nueva sin salir de acá." onClose={onClose} size="md">
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
@@ -115,11 +115,11 @@ export default function SeleccionarPersonaModal({
 
       {beneficiarios.length === 0 ? (
         <p className="rounded-xl bg-[var(--surface-sunken)] px-4 py-6 text-center text-base font-semibold text-[var(--text-tertiary)]">
-          Todavía no hay personas cargadas. Creá la primera con «Nueva».
+          Todavía no hay personas cargadas. Crea la primera con «Nueva».
         </p>
       ) : filtradas.length === 0 ? (
         <p className="rounded-xl bg-[var(--surface-sunken)] px-4 py-6 text-center text-base font-semibold text-[var(--text-tertiary)]">
-          Nadie coincide con «{q}». Podés crearla con «Nueva».
+          Nadie coincide con «{q}». Puedes crearla con «Nueva».
         </p>
       ) : (
         <ul
@@ -214,7 +214,7 @@ function NuevaPersonaInline({
 
   const crear = async () => {
     if (!nombre.trim()) {
-      setErr("Poné al menos el nombre.");
+      setErr("Pon al menos el nombre.");
       return;
     }
     setSaving(true);

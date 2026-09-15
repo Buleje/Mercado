@@ -195,7 +195,7 @@ export default function CtpAnalisis() {
               el stock?". */}
           <ChartCard
             title="Flujo mensual de materia prima (m³)"
-            subtitle="Ingresado vs. consumido, y el balance del mes: si la línea cae bajo 0, consumís más de lo que entra."
+            subtitle="Ingresado vs. consumido, y el balance del mes: si la línea cae bajo 0, consumes más de lo que entra."
           >
             <BulejeComposedChart
               data={chartData}
@@ -214,7 +214,7 @@ export default function CtpAnalisis() {
               la lectura. */}
           <ChartCard
             title="Rendimiento promedio por mes (%)"
-            subtitle="Salida / entrada ponderado por volumen. Un salto brusco hacia arriba puede ser sobre-declaración (revisá Cumplimiento)."
+            subtitle="Salida / entrada ponderado por volumen. Un salto brusco hacia arriba puede ser sobre-declaración (revisa Cumplimiento)."
           >
             <BulejeLineChart
               data={chartData}
@@ -407,7 +407,7 @@ function reordenBanner(insight: { criticas: (ReordenProyeccion & { diasHastaAgot
   if (criticas.length > 0) {
     const top = criticas[0];
     const extra = criticas.length > 1 ? ` (+${criticas.length - 1} más)` : "";
-    return { tone: "error", text: `${criticas.length} ${criticas.length === 1 ? "especie se agota" : "especies se agotan"} en ≤14 días — la más urgente: ${top.especie} en ${top.diasHastaAgotar} ${top.diasHastaAgotar === 1 ? "día" : "días"}${extra}. Reponé ya.` };
+    return { tone: "error", text: `${criticas.length} ${criticas.length === 1 ? "especie se agota" : "especies se agotan"} en ≤14 días — la más urgente: ${top.especie} en ${top.diasHastaAgotar} ${top.diasHastaAgotar === 1 ? "día" : "días"}${extra}. Repón ya.` };
   }
   if (pronto.length > 0) {
     const names = pronto.slice(0, 3).map((r) => r.especie).join(", ");

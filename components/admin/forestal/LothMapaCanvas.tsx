@@ -524,7 +524,7 @@ export default function LothMapaCanvas({
         draggable: true,
         keyboard: false,
         icon: L.divIcon({ className: "loth-vertex-handle", html: "", iconSize: [14, 14], iconAnchor: [7, 7] }),
-        title: `${vertexCode(i)} — arrastrá para mover · click derecho para borrar`,
+        title: `${vertexCode(i)} — arrastra para mover · click derecho para borrar`,
       });
       if (rotula) {
         marker.bindTooltip(vertexCode(i), { permanent: true, direction: "top", className: "loth-vertex-label", offset: [0, -8] });

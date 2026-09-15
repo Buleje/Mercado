@@ -44,7 +44,7 @@ function keywordFallback(docs: DbDocument[], question: string): { answer: string
   return {
     answer: scored.length
       ? `Encontré ${scored.length} documento(s) que coinciden con tu búsqueda. (La IA no está configurada; usé coincidencia por palabras.)`
-      : "No encontré documentos que coincidan. Probá describiéndolo con otras palabras.",
+      : "No encontré documentos que coincidan. Prueba describiéndolo con otras palabras.",
     matchedDocs: scored.map((x) => ({ id: x.d.id, name: x.d.name, category: x.d.category })),
   };
 }
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     const docs = all.slice(0, 120);
 
     if (docs.length === 0) {
-      return NextResponse.json({ answer: "Todavía no tenés documentos cargados. Subí algunos y volvé a preguntarme.", matchedDocs: [], source: "empty" });
+      return NextResponse.json({ answer: "Todavía no tienes documentos cargados. Sube algunos y vuelve a preguntarme.", matchedDocs: [], source: "empty" });
     }
 
     if (getActiveProvider() === "none") {
@@ -111,14 +111,14 @@ export async function POST(req: NextRequest) {
 
     // ── Modo streaming: token a token, con protocolo de línea de candidatos ──
     if (wantsStream) {
-      const prompt = `Sos el asistente de documentos de una bodega/negocio peruano.
+      const prompt = `Eres el asistente de documentos de una bodega/negocio peruano.
 
 Índice de sus documentos (cada uno con su número [i]):
 ${index}
 
 ${historyBlock(parsed.data.history)}El usuario pregunta ahora: "${question}"
 
-Escribí la respuesta en español con tuteo peruano, breve y concreta. Si la respuesta está en el contenido de un documento, usala. Para preguntas de dinero/totales (ej. "¿cuánto facturé en julio?"), SUMÁ o CONTÁ los COMPROBANTE(...) que apliquen por su fecha y mostrá el total con su moneda. En la ÚLTIMA línea escribí exactamente: @@DOCS: seguido de los números [i] de los documentos más relevantes separados por coma (máximo 5, el más relevante primero; dejalo vacío si ninguno aplica).`;
+Escribe la respuesta en español con tuteo peruano, breve y concreta. Si la respuesta está en el contenido de un documento, úsala. Para preguntas de dinero/totales (ej. "¿cuánto facturé en julio?"), SUMA o CUENTA los COMPROBANTE(...) que apliquen por su fecha y muestra el total con su moneda. En la ÚLTIMA línea escribe exactamente: @@DOCS: seguido de los números [i] de los documentos más relevantes separados por coma (máximo 5, el más relevante primero; dejalo vacío si ninguno aplica).`;
 
       const result = streamText({ model: smartModel, prompt, temperature: 0.2 });
       const candidates = docs.map((d) => ({ id: d.id, name: d.name, category: d.category }));
@@ -140,17 +140,17 @@ Escribí la respuesta en español con tuteo peruano, breve y concreta. Si la res
     }
 
     // ── Modo no-stream: JSON {answer, docRefs} ──
-    const prompt = `Sos el asistente de documentos de una bodega/negocio peruano.
+    const prompt = `Eres el asistente de documentos de una bodega/negocio peruano.
 
 Índice de sus documentos (cada uno con su número [i]):
 ${index}
 
 ${historyBlock(parsed.data.history)}El usuario pregunta ahora: "${question}"
 
-Para preguntas de dinero/totales (ej. "¿cuánto facturé en julio?"), SUMÁ o CONTÁ los COMPROBANTE(...) que apliquen por su fecha y respondé el total con su moneda.
+Para preguntas de dinero/totales (ej. "¿cuánto facturé en julio?"), SUMA o CUENTA los COMPROBANTE(...) que apliquen por su fecha y responde el total con su moneda.
 
-Devolvé SOLO un objeto JSON válido (sin markdown, sin texto extra) con esta forma:
-{"answer": "<respuesta en español, tuteo peruano, breve y concreta; si la respuesta está en el contenido de un documento, usala>", "docRefs": [<números [i] de los documentos más relevantes, máximo 5, el más relevante primero; vacío si ninguno aplica>]}`;
+Devuelve SOLO un objeto JSON válido (sin markdown, sin texto extra) con esta forma:
+{"answer": "<respuesta en español, tuteo peruano, breve y concreta; si la respuesta está en el contenido de un documento, úsala>", "docRefs": [<números [i] de los documentos más relevantes, máximo 5, el más relevante primero; vacío si ninguno aplica>]}`;
 
     try {
       const { text } = await generateText({ model: smartModel, prompt, temperature: 0.2 });

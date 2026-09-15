@@ -77,7 +77,7 @@ export function useNewWaMessageNotification(
       sendNotification(
         `${newCount} ${newCount === 1 ? "mensaje nuevo" : "mensajes nuevos"} de WhatsApp`,
         {
-          body: "Un cliente te escribió — respondé desde Mensajes → WhatsApp",
+          body: "Un cliente te escribió — responde desde Mensajes → WhatsApp",
           tag: "new-wa-messages",
           requireInteraction: false,
         }

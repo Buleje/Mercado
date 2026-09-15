@@ -121,7 +121,7 @@ export default function CtpParteBarra({ rol, valor, opciones, onAplicar, onElegi
     try {
       const datos = await consultarDocumento(valor.docTipo, valor.docNumero);
       if (!datos) {
-        setError(`No se encontró el ${valor.docTipo} en ${fuente}. Cargalo a mano.`);
+        setError(`No se encontró el ${valor.docTipo} en ${fuente}. Cárgalo a mano.`);
         return;
       }
       onAplicar({

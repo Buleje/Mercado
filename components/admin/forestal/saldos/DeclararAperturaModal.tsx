@@ -34,7 +34,7 @@ export default function DeclararAperturaModal({
 
   async function confirmar() {
     if (!deshacer && motivo.trim().length < 3) {
-      setError("Poné por qué esta corrida es existencia de apertura.");
+      setError("Pon por qué esta corrida es existencia de apertura.");
       return;
     }
     setGuardando(true);

@@ -59,7 +59,7 @@ describe("SessionExpiryGuard con el switch APAGADO", () => {
     act(() => { vi.advanceTimersByTime(28 * 60 * 1000); });
 
     expect(onExpire).not.toHaveBeenCalled();
-    expect(container.textContent).toContain("¿Seguís por acá?");
+    expect(container.textContent).toContain("¿Sigues por acá?");
   });
 });
 
@@ -80,7 +80,7 @@ describe("SessionExpiryGuard con el switch ENCENDIDO", () => {
     const { container } = render(<SessionExpiryGuard panel="admin" onExpire={vi.fn()} />);
     act(() => { vi.advanceTimersByTime(TREINTA_Y_UN_MINUTOS); });
 
-    expect(container.textContent).not.toContain("¿Seguís por acá?");
+    expect(container.textContent).not.toContain("¿Sigues por acá?");
   });
 
   it("renueva al volver a la pestaña (por si el navegador la congeló)", () => {

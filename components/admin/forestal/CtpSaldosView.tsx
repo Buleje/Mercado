@@ -819,7 +819,7 @@ export function CtpSaldosView({
                     lotes.length === 0
                       ? undefined
                       : recortePuesto(filtrosCapacidad.guia)
-                        ? "Un lote junta piezas de varias guías: no se puede acotar a una sola. Quitá el filtro de guía para verlos."
+                        ? "Un lote junta piezas de varias guías: no se puede acotar a una sola. Quita el filtro de guía para verlos."
                         : `Ningún lote de ${textoDeRecortes(filtrosCapacidad)}.`
                   }
                 />

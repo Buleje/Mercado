@@ -329,7 +329,7 @@ export default function CtpTrozasLista({
           ) : trozas.length === 0 ? (
             "Todavía no hay trozas cargadas: llegan con el alta de la guía desde SERFOR."
           ) : (
-            "Ninguna pieza cumple con eso. Probá quitando un filtro."
+            "Ninguna pieza cumple con eso. Prueba quitando un filtro."
           )}
         </p>
       ) : (

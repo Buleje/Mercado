@@ -214,9 +214,9 @@ export function parseImportLineas(
     for (const req of REQUERIDOS[section]) {
       if (fila[req as keyof FilaImport] == null) fila.motivos.push(`Falta ${ETIQUETA[req] ?? req}`);
     }
-    if (val("entryDate") && !fila.entryDate) fila.motivos.push("Fecha ilegible (usá DD/MM/AAAA o AAAA-MM-DD)");
+    if (val("entryDate") && !fila.entryDate) fila.motivos.push("Fecha ilegible (usa DD/MM/AAAA o AAAA-MM-DD)");
     if ((section === "tala" || section === "trozado") && !(fila.volumeM3 && fila.volumeM3 > 0)) {
-      fila.motivos.push("Sin volumen: cargá Ø mayor, Ø menor y longitud, o el volumen directo");
+      fila.motivos.push("Sin volumen: carga Ø mayor, Ø menor y longitud, o el volumen directo");
     }
     // Duplicado DENTRO del archivo: se marca, no se descarta solo.
     const clave = fila.trozaCode ?? fila.treeCode;

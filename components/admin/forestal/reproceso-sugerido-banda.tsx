@@ -51,7 +51,7 @@ export default function ReprocesoSugeridoBanda({
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--text-secondary)]">
         <RefreshCw className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
         <b className="text-[var(--text-primary)]">
-          {pendientes > 1 ? "Traés reprocesos sugeridos:" : "Traés un reproceso sugerido:"}
+          {pendientes > 1 ? "Traes reprocesos sugeridos:" : "Traes un reproceso sugerido:"}
         </b>
         {pendientes > 1 && (
           <span className="rounded-full bg-[var(--accent)]/15 px-2 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">
@@ -98,7 +98,7 @@ export default function ReprocesoSugeridoBanda({
       {candidatas.length > 0 ? (
         <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
           <span>
-            Elegí de qué corrida sale — {candidatas.length}{" "}
+            Elige de qué corrida sale — {candidatas.length}{" "}
             {candidatas.length === 1 ? "tiene" : "tienen"} ese producto con saldo:
           </span>
           {candidatas.slice(0, 6).map((c) => (
@@ -120,7 +120,7 @@ export default function ReprocesoSugeridoBanda({
         /* Sin candidata no se inventa una: el reproceso se declara contra una
            corrida que existe y tiene saldo, o no se declara. */
         <p className="mt-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
-          Ninguna corrida con saldo declara <b>{borrador.desdeTipo}</b>. Reprocesá desde la corrida
+          Ninguna corrida con saldo declara <b>{borrador.desdeTipo}</b>. Reprocesa desde la corrida
           que corresponda —el botón de la fila— y el producto que sale ya viene puesto; si esa madera
           no está en el Libro, primero hay que declarar su producción.
         </p>

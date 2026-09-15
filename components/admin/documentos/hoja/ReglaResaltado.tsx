@@ -120,7 +120,7 @@ export default function ReglaResaltado({
           </p>
 
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            El color queda guardado en el archivo (se deshace con Ctrl+Z). Si después cambian los datos, volvé a aplicar la regla.
+            El color queda guardado en el archivo (se deshace con Ctrl+Z). Si después cambian los datos, vuelve a aplicar la regla.
           </p>
         </div>
 

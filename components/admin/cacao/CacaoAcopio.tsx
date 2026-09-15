@@ -789,8 +789,8 @@ export default function CacaoAcopio() {
               loading={loading}
               empty={rows.length === 0}
               icon={PackageCheck}
-              msg="Empezá tu libro de acopio"
-              hint="Registrá el primer lote de cacao: peso, calidad (prueba de corte) y liquidación al productor — todo se calcula al vuelo."
+              msg="Empieza tu libro de acopio"
+              hint="Registra el primer lote de cacao: peso, calidad (prueba de corte) y liquidación al productor — todo se calcula al vuelo."
               cta={{ label: "Registrar primer lote", onClick: () => setShowLote(true) }}
               searchActive={!!search.trim() || activeFilters > 0 || quick !== "todos"}
             />
@@ -1143,7 +1143,7 @@ function EmptyOrLoading({
       <div className="p-12 text-center text-[var(--text-tertiary)]">
         <Search className="mx-auto mb-3 h-10 w-10 opacity-30" />
         <p className="text-base font-medium">Sin resultados para tu búsqueda.</p>
-        <p className="mt-1 text-sm">Probá con otro término o limpiá los filtros.</p>
+        <p className="mt-1 text-sm">Prueba con otro término o limpia los filtros.</p>
       </div>
     );
   return (

@@ -255,7 +255,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                   />
                 </div>
               ) : traza.corridas.length === 0 ? (
-                <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Sin corridas atribuidas. Usá &quot;Editar atribución&quot; para declarar de dónde salió.</p>
+                <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Sin corridas atribuidas. Usa &quot;Editar atribución&quot; para declarar de dónde salió.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <DataTable className="w-full text-sm">
@@ -331,7 +331,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                   <p className="font-mono text-xl font-bold tabular-nums text-[var(--text-primary)]">{money(cogs.cogs, cogs.moneda)}</p>
                   {cogs.costoUnitario != null && (
                     <p className="text-sm text-[var(--text-secondary)]">
-                      {money(cogs.costoUnitario, cogs.moneda)} por {unitLabel || "unidad"} — compará contra tu precio de venta.
+                      {money(cogs.costoUnitario, cogs.moneda)} por {unitLabel || "unidad"} — compara contra tu precio de venta.
                     </p>
                   )}
                 </div>

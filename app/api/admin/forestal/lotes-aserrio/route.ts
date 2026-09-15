@@ -54,7 +54,7 @@ const Query = z.object({
 export const dia = z
   .string()
   .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD")
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD")
   .nullish()
   .transform((v) => (v === undefined ? undefined : v ? new Date(`${v}T12:00:00.000Z`) : null));
 
@@ -204,7 +204,7 @@ const patchSchema = z.discriminatedUnion("accion", [
     loteId: z.string().trim().min(1).max(60),
     trozaIds: z.array(z.string().trim().min(1).max(60)).max(500).optional(),
     /** Día del consumo, `AAAA-MM-DD`. Sin fecha, hoy. */
-    fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD").optional(),
+    fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD").optional(),
     /** Observación del consumo: va al casillero (11) del libro. */
     observaciones: z.string().trim().max(500).optional(),
   }),
@@ -217,7 +217,7 @@ const patchSchema = z.discriminatedUnion("accion", [
     loteId: z.string().trim().min(1).max(60),
     corridaId: z.string().trim().min(1).max(60),
     trozaIds: z.array(z.string().trim().min(1).max(60)).min(1).max(500),
-    fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD").optional(),
+    fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD").optional(),
   }),
   /**
    * Y el reverso (ADR-364): piezas mal tildadas que salen de una corrida que

@@ -100,7 +100,7 @@ export const POST = withApiHandler("forestal-especies-fotos-post", async (req: N
       return NextResponse.json(
         {
           error: "url_no_permitida",
-          message: "La imagen tiene que estar subida en el propio sistema (usá el botón de subir).",
+          message: "La imagen tiene que estar subida en el propio sistema (usa el botón de subir).",
         },
         { status: 400 },
       );

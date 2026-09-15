@@ -166,10 +166,10 @@ export default function CtpGuiaDatosTab({
         </Bloque>
 
         <Bloque titulo="Datos de la instancia que hace el registro" hint="Sale de la Ficha del CTP: no se tipea en cada guía">
-          <CampoSoloLectura span={3} label="Número de RUC" valor={ficha?.ruc ?? ""} falta="Cargalo en la pestaña Ficha CTP" />
-          <CampoSoloLectura span={3} label="Razón social" valor={ficha?.razonSocial || ficha?.nombreCtp || ""} falta="Cargala en la pestaña Ficha CTP" />
+          <CampoSoloLectura span={3} label="Número de RUC" valor={ficha?.ruc ?? ""} falta="Cárgalo en la pestaña Ficha CTP" />
+          <CampoSoloLectura span={3} label="Razón social" valor={ficha?.razonSocial || ficha?.nombreCtp || ""} falta="Cárgala en la pestaña Ficha CTP" />
           <CampoSoloLectura span={3} label="Código de CTP" valor={ficha?.codigoCtp ?? ""} falta="Lo asigna la ARFFS" />
-          <CampoSoloLectura span={3} label="Domicilio de la planta" valor={direccionDe(ficha)} falta="Cargalo en la pestaña Ficha CTP" />
+          <CampoSoloLectura span={3} label="Domicilio de la planta" valor={direccionDe(ficha)} falta="Cárgalo en la pestaña Ficha CTP" />
         </Bloque>
       </div>
 
@@ -396,7 +396,7 @@ export default function CtpGuiaDatosTab({
               value={datos.titulos[0] ?? ""}
               onChange={(e) => setDatos((p) => ({ ...p, titulos: e.target.value ? [e.target.value] : [] }))}
             >
-              <option value="">Elegí el título</option>
+              <option value="">Elige el título</option>
               {titulosFicha.map((t) => (
                 <option key={t.codigo} value={t.codigo}>{t.codigo}{t.planManejo ? ` · ${t.planManejo}` : ""}</option>
               ))}

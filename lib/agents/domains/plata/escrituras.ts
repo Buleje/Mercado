@@ -46,7 +46,7 @@ export function resolverMonto(
       : null;
 
   if (montoDicho == null && calculado == null) {
-    return { ok: false, error: "Falta el monto. Decime el total, o la cantidad y el precio por unidad." };
+    return { ok: false, error: "Falta el monto. Dime el total, o la cantidad y el precio por unidad." };
   }
   if (montoDicho == null && calculado != null) {
     return {
@@ -66,7 +66,7 @@ export function resolverMonto(
       ok: false,
       error:
         `No cuadra: dijiste ${fmt(montoDicho!)} de total, pero ${cantidad} × ${fmt(precioUnitario!)} = ` +
-        `${fmt(calculado!)} (diferencia ${fmt(diff)}). Preguntale cuál de los dos números va.`,
+        `${fmt(calculado!)} (diferencia ${fmt(diff)}). Pregúntale cuál de los dos números va.`,
     };
   }
   return { ok: true, monto: calculado!, derivado: `${cantidad} × ${fmt(precioUnitario!)} = ${fmt(calculado!)}` };
@@ -95,7 +95,7 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
   if (!monto.ok) return { success: false, error: monto.error };
   if (monto.monto <= 0) return { success: false, error: "El monto tiene que ser mayor a cero." };
   if (monto.monto > 5_000_000) {
-    return { success: false, error: `${fmt(monto.monto)} es un monto fuera de escala. Confirmá la cifra antes de anotarla.` };
+    return { success: false, error: `${fmt(monto.monto)} es un monto fuera de escala. Confirma la cifra antes de anotarla.` };
   }
 
   const f = fechaValida(p.fecha);
@@ -112,7 +112,7 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
         success: false,
         error:
           `No existe una máquina con id "${maquinaId}" en este negocio. ` +
-          `Buscala con plata_buscar_maquina y usá el id que devuelve — no lo inventes.`,
+          `Búscala con plata_buscar_maquina y usa el id que devuelve — no lo inventes.`,
       };
     }
     const catCruda = clave(texto(p.categoria));
@@ -276,7 +276,7 @@ export async function registrarIngreso(task: AgentTask, ctx: AgentContext): Prom
     if (!maquina) {
       return {
         success: false,
-        error: `No existe una máquina con id "${maquinaId}". Buscala con plata_buscar_maquina y usá el id que devuelve.`,
+        error: `No existe una máquina con id "${maquinaId}". Búscala con plata_buscar_maquina y usa el id que devuelve.`,
       };
     }
     const unidad = texto(p.unidad) || maquina.rateUnit || "hora";
@@ -334,7 +334,7 @@ export async function registrarIngreso(task: AgentTask, ctx: AgentContext): Prom
 
   // ── Camino B: entra plata al cajón ────────────────────────────────────────
   if (!descripcion) {
-    return { success: false, error: "Decime de qué es el ingreso: sin concepto, en el cierre de caja es un monto sin dueño." };
+    return { success: false, error: "Dime de qué es el ingreso: sin concepto, en el cierre de caja es un monto sin dueño." };
   }
   const caja = await CashRegistersDB.getOpen(task.tenantId);
   if (!caja) {
@@ -342,7 +342,7 @@ export async function registrarIngreso(task: AgentTask, ctx: AgentContext): Prom
       success: false,
       error:
         "No hay caja abierta, así que un ingreso suelto no tiene dónde entrar. " +
-        "Abrí la caja en Ventas & Caja, o decime a qué máquina corresponde el ingreso.",
+        "Abre la caja en Ventas & Caja, o dime a qué máquina corresponde el ingreso.",
     };
   }
   const metodo = metodoPago(p.metodoPago) ?? "efectivo";
@@ -401,7 +401,7 @@ export async function registrarAdelanto(task: AgentTask, ctx: AgentContext): Pro
 
   const personaId = texto(p.personaId);
   if (!personaId) {
-    return { success: false, error: "Falta la persona. Buscala con plata_buscar_persona y usá el personaId que devuelve." };
+    return { success: false, error: "Falta la persona. Búscala con plata_buscar_persona y usa el personaId que devuelve." };
   }
   const monto = num(p.monto);
   if (monto == null || monto <= 0) return { success: false, error: "El adelanto tiene que tener un monto mayor a cero." };
@@ -411,7 +411,7 @@ export async function registrarAdelanto(task: AgentTask, ctx: AgentContext): Pro
   if (!persona) {
     return {
       success: false,
-      error: `No existe esa persona en el padrón de este negocio. Buscala con plata_buscar_persona — no inventes el id.`,
+      error: `No existe esa persona en el padrón de este negocio. Búscala con plata_buscar_persona — no inventes el id.`,
     };
   }
 
@@ -485,14 +485,14 @@ export async function cobrarFiado(task: AgentTask, ctx: AgentContext): Promise<A
 
   const fiadoId = texto(p.fiadoId);
   if (!fiadoId) {
-    return { success: false, error: "Falta la deuda. Buscala con plata_buscar_deuda y usá el fiadoId que devuelve." };
+    return { success: false, error: "Falta la deuda. Búscala con plata_buscar_deuda y usa el fiadoId que devuelve." };
   }
   const monto = num(p.monto);
   if (monto == null || monto <= 0) return { success: false, error: "El cobro tiene que ser mayor a cero." };
 
   const fiado = await FiadosDB.getById(task.tenantId, fiadoId);
   if (!fiado) {
-    return { success: false, error: `No existe esa deuda en este negocio. Buscala con plata_buscar_deuda — no inventes el id.` };
+    return { success: false, error: `No existe esa deuda en este negocio. Búscala con plata_buscar_deuda — no inventes el id.` };
   }
   if (fiado.status === "CANCELADO") {
     return { success: false, error: "Ese fiado está cancelado: no se puede cobrar." };
@@ -501,7 +501,7 @@ export async function cobrarFiado(task: AgentTask, ctx: AgentContext): Promise<A
   if (soles(monto) > saldo + 0.01) {
     return {
       success: false,
-      error: `El cobro (${fmt(monto)}) supera el saldo de ${fiado.customerName || fiado.customerId}, que es ${fmt(saldo)}. Preguntá cuánto entregó de verdad.`,
+      error: `El cobro (${fmt(monto)}) supera el saldo de ${fiado.customerName || fiado.customerId}, que es ${fmt(saldo)}. Pregunta cuánto entregó de verdad.`,
     };
   }
 
@@ -565,14 +565,14 @@ export async function liquidarAdelanto(task: AgentTask, ctx: AgentContext): Prom
 
   const adelantoId = texto(p.adelantoId);
   if (!adelantoId) {
-    return { success: false, error: "Falta el adelanto. Buscalo con plata_buscar_persona y usá el adelantoId que devuelve." };
+    return { success: false, error: "Falta el adelanto. Búscalo con plata_buscar_persona y usa el adelantoId que devuelve." };
   }
   const valor = num(p.monto) ?? num(p.valor);
   if (valor == null || valor <= 0) return { success: false, error: "La entrega tiene que valer más que cero." };
 
   const adelanto = await AdelantosDB.getById(task.tenantId, adelantoId);
   if (!adelanto) {
-    return { success: false, error: "No existe ese adelanto en este negocio. Buscalo con plata_buscar_persona." };
+    return { success: false, error: "No existe ese adelanto en este negocio. Búscalo con plata_buscar_persona." };
   }
   if (String(adelanto.status).toUpperCase() === "CANCELADO") {
     return { success: false, error: "Ese adelanto está cancelado: no admite entregas." };
@@ -656,19 +656,19 @@ export async function registrarCompra(task: AgentTask, ctx: AgentContext): Promi
 
   const proveedorId = texto(p.proveedorId);
   if (!proveedorId) {
-    return { success: false, error: "Falta el proveedor. Buscalo con plata_buscar_proveedor y usá el proveedorId que devuelve." };
+    return { success: false, error: "Falta el proveedor. Búscalo con plata_buscar_proveedor y usa el proveedorId que devuelve." };
   }
   const proveedor = await SuppliersDB.getById(task.tenantId, proveedorId);
   if (!proveedor) {
-    return { success: false, error: "Ese proveedor no existe en este negocio. Buscalo con plata_buscar_proveedor — no inventes el id." };
+    return { success: false, error: "Ese proveedor no existe en este negocio. Búscalo con plata_buscar_proveedor — no inventes el id." };
   }
 
   const crudos = Array.isArray(p.items) ? (p.items as Record<string, unknown>[]) : [];
   if (crudos.length === 0) {
-    return { success: false, error: "Decime qué se compró: cada ítem necesita el producto, la cantidad y el costo unitario." };
+    return { success: false, error: "Dime qué se compró: cada ítem necesita el producto, la cantidad y el costo unitario." };
   }
   if (crudos.length > 20) {
-    return { success: false, error: "Son demasiados ítems para dictar de una. Cargá la orden en Compras." };
+    return { success: false, error: "Son demasiados ítems para dictar de una. Carga la orden en Compras." };
   }
 
   /**
@@ -682,14 +682,14 @@ export async function registrarCompra(task: AgentTask, ctx: AgentContext): Promi
     const cantidad = num(it.cantidad);
     const costo = num(it.costoUnitario);
     if (!Number.isInteger(productId) || productId <= 0) {
-      return { success: false, error: "Cada ítem necesita el productId exacto. Buscalo con inventory_buscar_producto — no lo inventes." };
+      return { success: false, error: "Cada ítem necesita el productId exacto. Búscalo con inventory_buscar_producto — no lo inventes." };
     }
     if (cantidad == null || cantidad <= 0) return { success: false, error: "Cada ítem necesita una cantidad mayor a cero." };
     if (costo == null || costo < 0) return { success: false, error: "Cada ítem necesita su costo unitario." };
 
     const producto = await ProductsDB.getById(task.tenantId, productId);
     if (!producto) {
-      return { success: false, error: `No existe un producto con id ${productId} en este negocio. Buscalo con inventory_buscar_producto.` };
+      return { success: false, error: `No existe un producto con id ${productId} en este negocio. Búscalo con inventory_buscar_producto.` };
     }
     items.push({
       productId,
@@ -771,7 +771,7 @@ export async function moverTesoreria(task: AgentTask, ctx: AgentContext): Promis
 
   const origenId = texto(p.cuentaId ?? p.cuentaOrigenId);
   if (!origenId) {
-    return { success: false, error: "Falta la cuenta. Buscala con plata_buscar_cuenta y usá el cuentaId que devuelve." };
+    return { success: false, error: "Falta la cuenta. Búscala con plata_buscar_cuenta y usa el cuentaId que devuelve." };
   }
   const monto = num(p.monto);
   if (monto == null || monto <= 0) return { success: false, error: "El monto tiene que ser mayor a cero." };
@@ -779,7 +779,7 @@ export async function moverTesoreria(task: AgentTask, ctx: AgentContext): Promis
   const cuentas = await TreasuryDB.listCuentas(task.tenantId, true);
   const origen = cuentas.find((c) => c.id === origenId);
   if (!origen) {
-    return { success: false, error: "Esa cuenta no existe en este negocio. Buscala con plata_buscar_cuenta." };
+    return { success: false, error: "Esa cuenta no existe en este negocio. Búscala con plata_buscar_cuenta." };
   }
 
   const destinoId = texto(p.cuentaDestinoId);
@@ -789,7 +789,7 @@ export async function moverTesoreria(task: AgentTask, ctx: AgentContext): Promis
   if (destinoId) {
     const destino = cuentas.find((c) => c.id === destinoId);
     if (!destino) {
-      return { success: false, error: "La cuenta de destino no existe en este negocio. Buscala con plata_buscar_cuenta." };
+      return { success: false, error: "La cuenta de destino no existe en este negocio. Búscala con plata_buscar_cuenta." };
     }
     if (destino.id === origen.id) {
       return { success: false, error: "El origen y el destino son la misma cuenta." };
@@ -801,13 +801,13 @@ export async function moverTesoreria(task: AgentTask, ctx: AgentContext): Promis
     if (origen.moneda !== destino.moneda) {
       return {
         success: false,
-        error: `"${origen.nombre}" está en ${origen.moneda} y "${destino.nombre}" en ${destino.moneda}. Un cambio de moneda necesita su tipo de cambio: hacelo en Tesorería.`,
+        error: `"${origen.nombre}" está en ${origen.moneda} y "${destino.nombre}" en ${destino.moneda}. Un cambio de moneda necesita su tipo de cambio: hazlo en Tesorería.`,
       };
     }
     if (soles(monto) > soles(origen.saldo)) {
       return {
         success: false,
-        error: `"${origen.nombre}" tiene ${fmt(origen.saldo)} y querés mover ${fmt(monto)}. No alcanza.`,
+        error: `"${origen.nombre}" tiene ${fmt(origen.saldo)} y quieres mover ${fmt(monto)}. No alcanza.`,
       };
     }
 
@@ -849,10 +849,10 @@ export async function moverTesoreria(task: AgentTask, ctx: AgentContext): Promis
   // ── Movimiento suelto ──────────────────────────────────────────────────
   const entra = String(p.tipo ?? "").toLowerCase().startsWith("ingres");
   if (!descripcion) {
-    return { success: false, error: "Decime de qué es el movimiento: en el libro de tesorería, un monto sin concepto no se puede explicar después." };
+    return { success: false, error: "Dime de qué es el movimiento: en el libro de tesorería, un monto sin concepto no se puede explicar después." };
   }
   if (!entra && soles(monto) > soles(origen.saldo)) {
-    return { success: false, error: `"${origen.nombre}" tiene ${fmt(origen.saldo)} y querés sacar ${fmt(monto)}. No alcanza.` };
+    return { success: false, error: `"${origen.nombre}" tiene ${fmt(origen.saldo)} y quieres sacar ${fmt(monto)}. No alcanza.` };
   }
 
   if (esEnsayo(task)) {
@@ -924,7 +924,7 @@ export async function registrarFlete(task: AgentTask, ctx: AgentContext): Promis
   const placa = texto(p.placa);
   const transportista = texto(p.transportista);
   if (!placa && !transportista) {
-    return { success: false, error: "Decime la placa del camión o quién hizo el viaje: un flete sin ninguno de los dos no se le puede cobrar a nadie." };
+    return { success: false, error: "Dime la placa del camión o quién hizo el viaje: un flete sin ninguno de los dos no se le puede cobrar a nadie." };
   }
 
   const pagaQuien = ["ctp", "proveedor", "destinatario"].includes(String(p.pagaQuien ?? "").toLowerCase())

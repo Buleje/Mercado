@@ -73,7 +73,7 @@ export default function CtpSumarALaCorrida({
         <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
           Al lote <b className="font-mono text-[var(--text-primary)]">{loteCode}</b> le quedan{" "}
           <b className="font-mono tabular-nums text-[var(--text-primary)]">{trozas.length}</b> troza
-          {trozas.length === 1 ? "" : "s"} sin aserrar. Tildá las que entran ahora y elegí abajo si van a{" "}
+          {trozas.length === 1 ? "" : "s"} sin aserrar. Tilda las que entran ahora y elige abajo si van a{" "}
           <b>esta misma corrida</b> (la misma jornada) o a una nueva.
         </p>
       </header>
@@ -106,7 +106,7 @@ export default function CtpSumarALaCorrida({
           disabled={elegidas.length === 0 || guardando}
           title={
             elegidas.length === 0
-              ? "Tildá las trozas que entran a la sierra"
+              ? "Tilda las trozas que entran a la sierra"
               : "Otra jornada: abre una corrida nueva con estas piezas ya elegidas"
           }
           onClick={() => onProducirEstas(elegidas.map((t) => t.id))}
@@ -119,7 +119,7 @@ export default function CtpSumarALaCorrida({
           disabled={elegidas.length === 0 || guardando}
           title={
             elegidas.length === 0
-              ? "Tildá las trozas que entran a la sierra"
+              ? "Tilda las trozas que entran a la sierra"
               : "La misma jornada: entran a la corrida que ya está abierta"
           }
           onClick={() => onSumar(elegidas.map((t) => t.id))}

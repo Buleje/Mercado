@@ -369,7 +369,7 @@ export default function CtpTrozasDeIngreso({
                   title: "¿Corregir el volumen del ingreso?",
                   description:
                     `El volumen del ingreso pasará de ${volumenDelIngreso != null ? fmtM3(volumenDelIngreso) : "—"} a ${fmtM3(total)} m³. ` +
-                    "Hacelo sólo si el volumen estaba mal tipeado. Si lo que falta son piezas por cargar, este cambio haría que el libro declare menos madera de la que ampara la guía.",
+                    "Hazlo sólo si el volumen estaba mal tipeado. Si lo que falta son piezas por cargar, este cambio haría que el libro declare menos madera de la que ampara la guía.",
                   intent: "warning",
                   confirmLabel: "Sí, corregir",
                 }))) return;

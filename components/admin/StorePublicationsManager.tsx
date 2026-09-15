@@ -71,7 +71,7 @@ export default function StorePublicationsManager() {
       setPinned(false);
       await load();
     } catch {
-      setError("Sin conexión. Probá de nuevo.");
+      setError("Sin conexión. Prueba de nuevo.");
     } finally {
       setSaving(false);
     }
@@ -109,7 +109,7 @@ export default function StorePublicationsManager() {
           value={body}
           onChange={(e) => setBody(e.target.value.slice(0, MAX))}
           rows={3}
-          placeholder="Ej: Hoy pollo a la brasa con papas a S/20 🔥 Pedí antes de las 8pm."
+          placeholder="Ej: Hoy pollo a la brasa con papas a S/20 🔥 Pide antes de las 8pm."
           className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
         />
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">

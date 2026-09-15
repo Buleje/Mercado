@@ -338,7 +338,7 @@ const DEFAULT_THEME: StoreTheme = {
   seasonalTheme: "none",
   announcements: [],
   exitIntentEnabled: false,
-  exitIntentTitle: "¡Esperá! No te vayas sin tu descuento",
+  exitIntentTitle: "¡Espera! No te vayas sin tu descuento",
   exitIntentMessage: "Llevate un cupón para tu primera compra.",
   exitIntentCoupon: "VUELVE10",
   scheduleExceptions: [],
@@ -558,7 +558,7 @@ const TITLE_SUGGESTIONS = [
   "Tu bodega de confianza, ahora online",
   "Frescos a tu puerta — Pucallpa",
   "La despensa completa en 1 click",
-  "Pedí lo que falta, llega rapidito",
+  "Pide lo que falta, llega rapidito",
 ];
 
 const SUBTITLE_SUGGESTIONS = [
@@ -566,7 +566,7 @@ const SUBTITLE_SUGGESTIONS = [
   "Productos frescos, calidad de barrio y atención personal.",
   "Más de 500 productos con entrega el mismo día.",
   "Lo que tu vecino te lleva, pero con un click.",
-  "Pagás cuando llega. Confiable, rápido, cercano.",
+  "Pagas cuando llega. Confiable, rápido, cercano.",
 ];
 
 const BADGE_SUGGESTIONS = [
@@ -617,14 +617,14 @@ function HeroTab({
         <div className="min-w-0">
           <p className="text-base font-bold text-[var(--text-primary)]">El primer mensaje que ve tu cliente</p>
           <p className="text-sm text-muted mt-0.5">
-            El hero es el banner grande arriba de tu tienda. Vendé el por qué — qué problema resolves,
-            en cuánto tiempo, con qué garantía. Cambiá los textos abajo y mirá el preview en vivo.
+            El hero es el banner grande arriba de tu tienda. Vende el por qué — qué problema resuelves,
+            en cuánto tiempo, con qué garantía. Cambia los textos abajo y mira el preview en vivo.
           </p>
         </div>
       </div>
 
       {/* ── Layout 2-col (Brandon 2026-06-24): preview STICKY a la derecha
-          (siempre visible mientras editás), form a la izquierda. Mismo patrón
+          (siempre visible mientras editas), form a la izquierda. Mismo patrón
           que el tab Identidad. En mobile apila: preview arriba, form abajo. ── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
       {/* ── Columna preview ── */}
@@ -633,7 +633,7 @@ function HeroTab({
       <StyleSection
         icon={<Eye className="h-5 w-5 text-primary" />}
         title="Vista previa en vivo"
-        description="Idéntico al hero real de tu tienda. Cambiá entre desktop y mobile para ver ambos."
+        description="Idéntico al hero real de tu tienda. Cambia entre desktop y mobile para ver ambos."
       >
         <div className="space-y-3">
           {/* Device toggle + abrir tienda */}
@@ -827,7 +827,7 @@ function HeroTab({
             maxLength={80}
           />
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted">Tip: incluí el resultado o el tiempo. Ej: &ldquo;en 25 min&rdquo;, &ldquo;a tu puerta&rdquo;.</p>
+            <p className="text-xs text-muted">Tip: incluye el resultado o el tiempo. Ej: &ldquo;en 25 min&rdquo;, &ldquo;a tu puerta&rdquo;.</p>
             <span className={cn(
               "text-xs font-mono shrink-0",
               (theme.heroTitle || "").length > 70 ? "text-amber-600 dark:text-amber-400" : "text-muted"
@@ -864,7 +864,7 @@ function HeroTab({
       <StyleSection
         icon={<FileText className="h-5 w-5 text-primary" />}
         title="Subtítulo"
-        description="Refuerza el título — el por qué deberían comprarte a vos. Máximo 2 líneas."
+        description="Refuerza el título — el por qué deberían comprarte a ti. Máximo 2 líneas."
       >
         <div className="space-y-3">
           <input
@@ -876,7 +876,7 @@ function HeroTab({
             maxLength={140}
           />
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted">Mencioná tus 2 ventajas concretas: pagos, garantías, atención.</p>
+            <p className="text-xs text-muted">Menciona tus 2 ventajas concretas: pagos, garantías, atención.</p>
             <span className={cn(
               "text-xs font-mono shrink-0",
               (theme.heroSubtitle || "").length > 120 ? "text-amber-600 dark:text-amber-400" : "text-muted"
@@ -1140,7 +1140,7 @@ function HeroTab({
       <StyleSection
         icon={<ImageIcon className="h-5 w-5 text-primary" />}
         title="Imagen de fondo"
-        description="Opcional. Si dejás vacío, se usa el fondo oscuro editorial con tu color de acento."
+        description="Opcional. Si dejas vacío, se usa el fondo oscuro editorial con tu color de acento."
       >
         <ImageUpload
           value={theme.heroImage}
@@ -1802,7 +1802,7 @@ export default function StoreCustomizer() {
             </>
           ) : (
             <>
-              Logo, colores, tipografía y CSS de tu tienda. Define la <strong>piel</strong> — no qué productos mostrar. Para eso, andá a{" "}
+              Logo, colores, tipografía y CSS de tu tienda. Define la <strong>piel</strong> — no qué productos mostrar. Para eso, ve a{" "}
               <Link
                 href="?tab=pagina-inicio"
                 className="font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
@@ -2138,7 +2138,7 @@ export default function StoreCustomizer() {
                     <input type="text" value={pageFields.aboutTitle} onChange={(e) => updatePage({ aboutTitle: e.target.value })} placeholder="Sobre nosotros" maxLength={200} className={inputCls} />
                   </Field>
                   <Field label="Texto" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
-                    <textarea rows={4} value={pageFields.aboutBody} onChange={(e) => updatePage({ aboutBody: e.target.value })} placeholder="Contá la historia de tu negocio…" maxLength={4000} className={inputCls} />
+                    <textarea rows={4} value={pageFields.aboutBody} onChange={(e) => updatePage({ aboutBody: e.target.value })} placeholder="Cuenta la historia de tu negocio…" maxLength={4000} className={inputCls} />
                   </Field>
                 </div>
               </StyleSection>
@@ -2178,13 +2178,13 @@ export default function StoreCustomizer() {
                   <div className="min-w-0">
                     <p className="text-base font-bold text-[var(--text-primary)]">La paleta de tu marca</p>
                     <p className="text-sm text-muted mt-0.5">
-                      Empezá con una plantilla ya curada o ajustá cada color manual. Cada cambio se previsualiza en vivo abajo y se aplica a botones, links, badges y CTAs en toda tu tienda.
+                      Empieza con una plantilla ya curada o ajusta cada color manual. Cada cambio se previsualiza en vivo abajo y se aplica a botones, links, badges y CTAs en toda tu tienda.
                     </p>
                   </div>
                 </div>
 
                 {/* ── Layout 2-col (Brandon 2026-06-24): preview STICKY a la
-                    derecha (siempre visible mientras elegís colores), form a la
+                    derecha (siempre visible mientras eliges colores), form a la
                     izquierda. Mismo patrón que Hero/Identidad. ── */}
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
                 {/* ── Columna form (izquierda) ── */}
@@ -2263,7 +2263,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Paintbrush className="h-5 w-5 text-primary" />}
                   title="Colores personalizados"
-                  description="Ajustá cada color por separado. Tip: el primario manda en CTAs y links, el secundario en badges de oferta."
+                  description="Ajusta cada color por separado. Tip: el primario manda en CTAs y links, el secundario en badges de oferta."
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                     <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 space-y-2">
@@ -2516,7 +2516,7 @@ export default function StoreCustomizer() {
                   <div className="min-w-0">
                     <p className="text-base font-bold text-[var(--text-primary)]">Las secciones que ve tu cliente</p>
                     <p className="text-sm text-muted mt-0.5">
-                      Activá, desactivá y reordená los bloques de tu tienda con drag &amp; drop.
+                      Activa, desactiva y reordena los bloques de tu tienda con drag &amp; drop.
                       Las secciones desactivadas no se renderizan — la página se compacta automáticamente.
                     </p>
                   </div>
@@ -2611,7 +2611,7 @@ export default function StoreCustomizer() {
                           maxLength={200}
                         />
                       </Field>
-                      <p className="text-xs text-muted">Si tenés local físico — se muestra en el mapa de delivery y JSON-LD para Google Maps.</p>
+                      <p className="text-xs text-muted">Si tienes local físico — se muestra en el mapa de delivery y JSON-LD para Google Maps.</p>
                     </div>
                   </div>
                 </StyleSection>
@@ -2662,7 +2662,7 @@ export default function StoreCustomizer() {
                     ))}
                   </div>
                   <p className="text-xs text-muted mt-2.5 px-1">
-                    Tip: si abrís y cerrás a la misma hora, ese día queda como cerrado en el storefront.
+                    Tip: si abres y cierras a la misma hora, ese día queda como cerrado en el storefront.
                   </p>
                 </StyleSection>
               </div>
@@ -2989,7 +2989,7 @@ export default function StoreCustomizer() {
                   <div className="min-w-0">
                     <p className="text-base font-bold text-[var(--text-primary)]">Textos y mensajes de tu tienda</p>
                     <p className="text-sm text-muted mt-0.5">
-                      Configurá los mensajes que aparecen automáticamente al cliente: el saludo de WhatsApp, el footer con tu storytelling y el popup de bienvenida con cupón.
+                      Configura los mensajes que aparecen automáticamente al cliente: el saludo de WhatsApp, el footer con tu storytelling y el popup de bienvenida con cupón.
                     </p>
                   </div>
                 </div>
@@ -2998,7 +2998,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<MessageSquare className="h-5 w-5 text-primary" />}
                   title="Mensajes automáticos"
-                  description="Textos que el cliente ve sin que vos los escribas en cada interacción."
+                  description="Textos que el cliente ve sin que tú los escribas en cada interacción."
                 >
                   <div className="space-y-5">
                     {/* WhatsApp */}
@@ -3116,7 +3116,7 @@ export default function StoreCustomizer() {
                               maxLength={20}
                             />
                           </Field>
-                          <p className="text-xs text-muted">Asegurate de que este código exista en la sección de cupones.</p>
+                          <p className="text-xs text-muted">Asegúrate de que este código exista en la sección de cupones.</p>
                         </div>
                       </div>
                     )}
@@ -3170,7 +3170,7 @@ export default function StoreCustomizer() {
                   <div className="min-w-0">
                     <p className="text-base font-bold text-[var(--text-primary)]">Qué productos ve el cliente</p>
                     <p className="text-sm text-muted mt-0.5">
-                      Activá o pausá productos del inventario en tu tienda online sin borrarlos. Útil para retirar items de temporada o stockout temporario.
+                      Activa o pausa productos del inventario en tu tienda online sin borrarlos. Útil para retirar items de temporada o stockout temporario.
                     </p>
                   </div>
                 </div>
@@ -3202,7 +3202,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Type className="h-5 w-5 text-primary" />}
                   title="Tipografía"
-                  description="Elegí la fuente que más matchea con tu marca. La preview muestra cómo se verá realmente en tu tienda."
+                  description="Elige la fuente que más matchea con tu marca. La preview muestra cómo se verá realmente en tu tienda."
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                     {FONT_OPTIONS.map((f) => {
@@ -3368,11 +3368,11 @@ export default function StoreCustomizer() {
                         />
                       </div>
                       <div className="flex-1 space-y-2 pt-1">
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">Subí tu favicon</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">Sube tu favicon</p>
                         <ul className="text-xs text-muted space-y-1 list-disc pl-4">
                           <li>Formato cuadrado — 32×32, 180×180 o 512×512 px</li>
                           <li>JPG, PNG, WebP o SVG (recomendado)</li>
-                          <li>Si lo dejás vacío, se usa el logo de tu tienda</li>
+                          <li>Si lo dejas vacío, se usa el logo de tu tienda</li>
                         </ul>
                       </div>
                     </div>
@@ -3395,11 +3395,11 @@ export default function StoreCustomizer() {
                       {theme.slogan && <span className="text-[var(--text-primary)]"> — {theme.slogan}</span>}
                     </p>
                     <p className="text-sm text-[var(--text-secondary)] leading-snug line-clamp-2">
-                      {theme.description || "Configurá tu descripción en la pestaña Identidad para que Google sepa de qué trata tu tienda."}
+                      {theme.description || "Configura tu descripción en la pestaña Identidad para que Google sepa de qué trata tu tienda."}
                     </p>
                   </div>
                   <p className="text-xs text-muted mt-2">
-                    Tip: una buena descripción menciona tu zona, qué vendés y diferencial (ej: &ldquo;Bodega en Pucallpa con delivery en 25 min, pago Yape&rdquo;).
+                    Tip: una buena descripción menciona tu zona, qué vendes y diferencial (ej: &ldquo;Bodega en Pucallpa con delivery en 25 min, pago Yape&rdquo;).
                   </p>
                 </StyleSection>
 
@@ -3407,7 +3407,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Sliders className="h-5 w-5 text-primary" />}
                   title="Tracking y analítica"
-                  description="Pegá tus IDs para medir tráfico y conversiones. Se inyectan en todas las páginas del storefront."
+                  description="Pega tus IDs para medir tráfico y conversiones. Se inyectan en todas las páginas del storefront."
                 >
                   <div className="space-y-5">
                     {/* Google Analytics */}
@@ -3440,7 +3440,7 @@ export default function StoreCustomizer() {
                         />
                       </Field>
                       <p className="text-xs text-muted">
-                        Empieza con <span className="font-mono">G-</span>. Lo obtenés en{" "}
+                        Empieza con <span className="font-mono">G-</span>. Lo obtienes en{" "}
                         <a href="https://analytics.google.com/analytics/web/#/p/admin/streams" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           Google Analytics → Admin → Data Streams ↗
                         </a>
@@ -3477,7 +3477,7 @@ export default function StoreCustomizer() {
                         />
                       </Field>
                       <p className="text-xs text-muted">
-                        14-17 dígitos. Lo encontrás en{" "}
+                        14-17 dígitos. Lo encuentras en{" "}
                         <a href="https://business.facebook.com/events_manager2/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           Facebook Events Manager ↗
                         </a>
@@ -3490,7 +3490,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Paintbrush className="h-5 w-5 text-primary" />}
                   title="CSS personalizado"
-                  description="Reglas CSS inyectadas en tu storefront. Solo si sabés CSS — un error puede romper tu tienda."
+                  description="Reglas CSS inyectadas en tu storefront. Solo si sabes CSS — un error puede romper tu tienda."
                 >
                   <div className="space-y-4">
                     {/* Snippets clickables */}

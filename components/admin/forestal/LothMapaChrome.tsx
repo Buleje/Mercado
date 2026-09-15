@@ -84,7 +84,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
           </>
         ) : (
           <p className="max-w-[190px] text-xs font-semibold text-[var(--text-tertiary)]">
-            Movés el mouse sobre el mapa para leer la coordenada.
+            Mueves el mouse sobre el mapa para leer la coordenada.
           </p>
         )}
       </div>

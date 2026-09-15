@@ -465,7 +465,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
                 <div className="text-center py-10">
                   <FileText className="h-16 w-16 mx-auto text-[var(--text-tertiary)] mb-3" />
                   <p className="text-base font-bold text-[var(--text-secondary)]">{doc.name}</p>
-                  <p className="text-sm text-[var(--text-tertiary)] mt-1">Sin vista previa. Descargá para verlo en tu equipo.</p>
+                  <p className="text-sm text-[var(--text-tertiary)] mt-1">Sin vista previa. Descarga para verlo en tu equipo.</p>
                 </div>
               )}
             </div>
@@ -642,7 +642,7 @@ function VersionsTab({
         {compareMode && (
           <div className="border-b border-[var(--rule-base)] bg-primary/5 px-4 py-3">
             {picked.length < 2 ? (
-              <p className="text-xs text-[var(--text-secondary)]">Elegí <strong>2 versiones</strong> para comparar ({picked.length}/2).</p>
+              <p className="text-xs text-[var(--text-secondary)]">Elige <strong>2 versiones</strong> para comparar ({picked.length}/2).</p>
             ) : (() => {
               // Se busca en `comparables` (incluye la versión ACTUAL): buscar
               // sólo en el historial dejaba `b` en undefined y la ficha se caía
@@ -652,7 +652,7 @@ function VersionsTab({
                 .filter((v): v is DbDocumentVersion => !!v)
                 .sort((x, y) => x.versionNumber - y.versionNumber);
               if (elegidas.length < 2) {
-                return <p className="text-xs text-[var(--text-secondary)]">Elegí <strong>2 versiones</strong> para comparar.</p>;
+                return <p className="text-xs text-[var(--text-secondary)]">Elige <strong>2 versiones</strong> para comparar.</p>;
               }
               const [a, b] = elegidas;
               const etiqueta = (v: DbDocumentVersion) => (v.id === "actual" ? "Actual" : `v${v.versionNumber}`);
@@ -702,7 +702,7 @@ function VersionsTab({
         )}
 
         {versions.length === 0 ? (
-          <p className="text-xs text-[var(--text-tertiary)] italic px-4 py-6">Aún no hay versiones previas. Subí una nueva para crear la primera entrada.</p>
+          <p className="text-xs text-[var(--text-tertiary)] italic px-4 py-6">Aún no hay versiones previas. Sube una nueva para crear la primera entrada.</p>
         ) : (
           <ul className="divide-y divide-[var(--rule-soft)]">
             {(compareMode ? comparables : versions).map((v) => {
@@ -777,7 +777,7 @@ function StructuredCard({ doc }: { doc: DbDocument }) {
       </p>
       {mirado && (
         <p className="mb-2 text-[length:var(--ts-2xs,11px)] leading-snug text-[var(--text-tertiary)]">
-          Salieron de mirar la imagen: cotejá los números con el papel antes de usarlos en la contabilidad.
+          Salieron de mirar la imagen: coteja los números con el papel antes de usarlos en la contabilidad.
         </p>
       )}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">
@@ -822,7 +822,7 @@ function RelatedSection({ doc, allDocs, onChanged }: { doc: DbDocument; allDocs:
       <p className="mb-1 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
         <LinkChain className="h-4 w-4 text-primary" /> Documentos relacionados
       </p>
-      <p className="mb-3 text-xs text-[var(--text-tertiary)]">Vinculá este documento con otros (contrato ↔ adenda, factura ↔ recibo).</p>
+      <p className="mb-3 text-xs text-[var(--text-tertiary)]">Vincula este documento con otros (contrato ↔ adenda, factura ↔ recibo).</p>
 
       {related.length > 0 && (
         <ul className="mb-2 space-y-1.5">
@@ -846,7 +846,7 @@ function RelatedSection({ doc, allDocs, onChanged }: { doc: DbDocument; allDocs:
           disabled={busy}
           className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary dark:bg-[var(--surface-sunken)]"
         >
-          <option value="" disabled>Elegí un documento…</option>
+          <option value="" disabled>Elige un documento…</option>
           {candidates.map((d) => (
             <option key={d.id} value={d.id}>{d.name}</option>
           ))}
@@ -881,8 +881,8 @@ function ApprovalSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d: D
       const nextStatus = action === "request" ? "review" : action === "approve" ? "approved" : "draft";
       const now = new Date().toISOString();
       const nextTrail: ApprovalTrail = action === "request"
-        ? { status: "review", requestedBy: "vos", requestedAt: now, note: note.trim() || undefined }
-        : { ...trail, status: nextStatus, decidedBy: "vos", decidedAt: now, note: note.trim() || undefined };
+        ? { status: "review", requestedBy: "ti", requestedAt: now, note: note.trim() || undefined }
+        : { ...trail, status: nextStatus, decidedBy: "ti", decidedAt: now, note: note.trim() || undefined };
       onChanged({ ...doc, status: nextStatus, ocrMetadata: { ...doc.ocrMetadata, approval: nextTrail } });
       setNote("");
     } finally {
@@ -954,7 +954,7 @@ function PermissionsSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d
       <p className="mb-3 text-xs text-[var(--text-tertiary)]">
         {restricted
           ? "Solo el dueño/admin y los roles marcados pueden ver este documento."
-          : "Ahora lo pueden ver todos los del equipo. Marcá roles para restringirlo."}
+          : "Ahora lo pueden ver todos los del equipo. Marca roles para restringirlo."}
       </p>
       <div className="flex flex-wrap gap-2">
         {DOC_RESTRICTABLE_ROLES.map((r) => {
@@ -1125,7 +1125,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
           <Link2 className="h-4 w-4 text-primary" /> Vincular a
         </p>
         <p className="text-xs text-[var(--text-tertiary)] mb-3">
-          Conectá este documento con un cliente o proveedor para encontrarlo desde su ficha.
+          Conecta este documento con un cliente o proveedor para encontrarlo desde su ficha.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="block">
@@ -1393,7 +1393,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
 
   // Guarda el trazo actual + nombre como "mi firma" (localStorage, por dispositivo).
   function saveMySignature() {
-    if (!signerName.trim()) { setSavedNote("Escribí tu nombre antes de guardar."); return; }
+    if (!signerName.trim()) { setSavedNote("Escribe tu nombre antes de guardar."); return; }
     const png = canvasRef.current!.toDataURL("image/png");
     const sig = { png, name: signerName.trim(), role: signerRole.trim() || undefined };
     try {
@@ -1461,7 +1461,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
           </label>
         </div>
 
-        <p className="text-xs font-bold text-[var(--text-secondary)] mb-1.5">Trazá tu firma:</p>
+        <p className="text-xs font-bold text-[var(--text-secondary)] mb-1.5">Traza tu firma:</p>
         <div className="inline-block border border-dashed border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)]">
           <canvas
             ref={canvasRef}
@@ -1485,7 +1485,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             {signing && <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
             <PencilLine className="h-3.5 w-3.5" /> Firmar PDF
           </button>
-          <button onClick={saveMySignature} className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary inline-flex items-center gap-1.5" title="Guardá tu firma para reusarla con 1 clic">
+          <button onClick={saveMySignature} className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary inline-flex items-center gap-1.5" title="Guarda tu firma para reusarla con 1 clic">
             <Save className="h-3.5 w-3.5" /> Guardar mi firma
           </button>
           {savedNote && <span className="text-xs font-semibold text-[var(--text-tertiary)]">{savedNote}</span>}

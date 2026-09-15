@@ -119,7 +119,7 @@ export default function LoginDevicesCard() {
         <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Dispositivos y accesos</CardTitle>
       </div>
       <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
-        Desde dónde entraste a tu panel. Si ves un acceso que no reconocés, cambiá tu contraseña.
+        Desde dónde entraste a tu panel. Si ves un acceso que no reconoces, cambia tu contraseña.
       </p>
 
       <ul className="mt-4 space-y-2">

@@ -82,19 +82,19 @@ const NOMBRE: Record<SeccionDeJornada, { uno: string; varios: string; titulo: st
     uno: "corrida",
     varios: "corridas",
     titulo: "Día del registro",
-    aviso: "Si es otro turno u otra sierra, seguí; si es la misma, la estarías cargando dos veces.",
+    aviso: "Si es otro turno u otra sierra, sigue; si es la misma, la estarías cargando dos veces.",
   },
   consumo: {
     uno: "consumo",
     varios: "consumos",
     titulo: "Día del consumo",
-    aviso: "Si entró otra tanda a la sierra ese día, seguí; si es la misma, la madera se contaría dos veces.",
+    aviso: "Si entró otra tanda a la sierra ese día, sigue; si es la misma, la madera se contaría dos veces.",
   },
   despacho: {
     uno: "despacho",
     varios: "despachos",
     titulo: "Día del despacho",
-    aviso: "Si salió otro camión ese día, seguí; si es la misma guía, estaría duplicada.",
+    aviso: "Si salió otro camión ese día, sigue; si es la misma guía, estaría duplicada.",
   },
 };
 
@@ -220,7 +220,7 @@ export default function CtpSemanaDeRegistro({
 
       <div
         role="group"
-        aria-label="Elegí el día de la jornada"
+        aria-label="Elige el día de la jornada"
         onKeyDown={onTeclas}
         className="mt-2 grid grid-cols-7 gap-1"
       >
@@ -400,7 +400,7 @@ export default function CtpSemanaDeRegistro({
       <p className="mt-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
         {error ? (
           <span className="text-[var(--data-error-500)]">
-            No se pudo leer lo ya producido ({error}). Elegí el día igual: el registro no depende de
+            No se pudo leer lo ya producido ({error}). Elige el día igual: el registro no depende de
             este dato.
           </span>
         ) : elegidoFuera ? (

@@ -135,14 +135,14 @@ export default function WhatsAppAnotarPanel() {
       {!estado?.activo ? (
         <InfoAlert>
           Este negocio todavía no tiene un número de WhatsApp conectado. Configuralo en{" "}
-          <strong>Ajustes › WhatsApp</strong> y volvé acá para habilitar tu teléfono.
+          <strong>Ajustes › WhatsApp</strong> y vuelve acá para habilitar tu teléfono.
         </InfoAlert>
       ) : (
         <>
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-            Le escribís al <strong>mismo número del negocio</strong> —con texto o una{" "}
+            Le escribes al <strong>mismo número del negocio</strong> —con texto o una{" "}
             <strong>nota de voz</strong>— y te muestra qué se va a anotar con los botones{" "}
-            <strong>Confirmar</strong> y <strong>Cancelar</strong>. Recién cuando tocás Confirmar
+            <strong>Confirmar</strong> y <strong>Cancelar</strong>. Recién cuando tocas Confirmar
             queda en los libros.
           </p>
 
@@ -159,7 +159,7 @@ export default function WhatsAppAnotarPanel() {
           {codigoVivo ? (
             <div className="rounded-lg border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-4 space-y-2">
               <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Mandá esto al WhatsApp del negocio
+                Manda esto al WhatsApp del negocio
               </p>
               <div className="flex items-center gap-2 flex-wrap">
                 <code className="rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] px-3 py-2 font-mono text-base font-bold tracking-widest text-[var(--text-primary)]">

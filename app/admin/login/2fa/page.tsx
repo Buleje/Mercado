@@ -130,7 +130,7 @@ export default function TwoFactorPage() {
               Verificación en dos pasos
             </PageTitle>
             <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
-              Ingresá el código de 6 dígitos de tu app autenticadora.
+              Ingresa el código de 6 dígitos de tu app autenticadora.
             </p>
           </div>
         </div>

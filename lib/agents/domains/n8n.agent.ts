@@ -81,11 +81,11 @@ async function dispararFlujoAccion(task: AgentTask, ctx: AgentContext): Promise<
   if (idExacto) {
     elegido = activos.find((f) => f.id === idExacto);
     if (!elegido) {
-      return { success: false, error: `No existe un flujo activo con id "${idExacto}". Listalos con n8n_listar_flujos.` };
+      return { success: false, error: `No existe un flujo activo con id "${idExacto}". Lístalos con n8n_listar_flujos.` };
     }
   } else {
     if (!pedido) {
-      return { success: false, error: "Decime qué flujo disparar. Listalos primero con n8n_listar_flujos." };
+      return { success: false, error: "Dime qué flujo disparar. Lístalos primero con n8n_listar_flujos." };
     }
     const rank = activos
       .map((f) => ({ f, score: puntuar(f, pedido) }))
@@ -110,7 +110,7 @@ async function dispararFlujoAccion(task: AgentTask, ctx: AgentContext): Promise<
         success: false,
         error:
           `"${pedido}" calza igual con ${rank.slice(0, 3).map((r) => `"${r.f.nombre}"`).join(" y ")}. ` +
-          "Preguntá cuál antes de disparar nada.",
+          "Pregunta cuál antes de disparar nada.",
       };
     }
     elegido = rank[0].f;

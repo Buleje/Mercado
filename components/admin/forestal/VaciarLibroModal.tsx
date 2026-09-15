@@ -120,7 +120,7 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
       onVaciado?.();
     } catch (e) {
       logger.error("[ctp-purga] falló el vaciado", { error: String(e), scope });
-      setErr("No se pudo enviar. Revisá la conexión.");
+      setErr("No se pudo enviar. Revisa la conexión.");
     } finally {
       setBorrando(false);
     }
@@ -248,7 +248,7 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
                         El Libro de Operaciones es lo que acredita el origen legal de tu madera ante SERFOR y OSINFOR.
                         {esParcial
                           ? " Lo que quede fuera de este alcance no se toca."
-                          : " Si lo vaciás, hay que volver a cargarlo o importarlo del SNIFFS."}
+                          : " Si lo vacías, hay que volver a cargarlo o importarlo del SNIFFS."}
                       </p>
                     </div>
 
@@ -270,13 +270,13 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
                         <span>
                           No se puede vaciar: hay {periodos.length} período{periodos.length === 1 ? "" : "s"} cerrado
                           {periodos.length === 1 ? "" : "s"} ({periodos.join(", ")}). Ese mes ya se presentó ante SERFOR
-                          — reabrilo desde el libro si de verdad hay que borrarlo.
+                          — reábrelo desde el libro si de verdad hay que borrarlo.
                         </span>
                       </p>
                     ) : (
                       <div>
                         <label htmlFor="confirmar-purga" className="text-base font-semibold text-[var(--text-primary)]">
-                          Escribí <strong className="font-mono">{palabra}</strong> para confirmar
+                          Escribe <strong className="font-mono">{palabra}</strong> para confirmar
                         </label>
                         <input
                           id="confirmar-purga"

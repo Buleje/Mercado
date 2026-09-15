@@ -104,9 +104,9 @@ export default function CategoryBannersTab({
         <div className="min-w-0 flex-1">
           <p className="text-base font-bold text-[var(--text-primary)]">Promociones por categoría</p>
           <p className="text-sm text-muted mt-0.5">
-            Subí una imagen promocional por cada categoría. Aparece en la sección{" "}
+            Sube una imagen promocional por cada categoría. Aparece en la sección{" "}
             <span className="font-bold">&ldquo;Oferta de Temporada&rdquo;</span> del storefront. Al click, el
-            cliente va directo a la categoría — o a un producto específico si lo vinculás.
+            cliente va directo a la categoría — o a un producto específico si lo vinculas.
           </p>
         </div>
         <div className="hidden sm:block shrink-0 text-right">
@@ -124,7 +124,7 @@ export default function CategoryBannersTab({
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
           <Tag className="h-10 w-10 text-muted mx-auto mb-2" />
           <p className="text-base font-bold text-[var(--text-primary)]">Aún no hay categorías</p>
-          <p className="text-sm text-muted mt-1">Agregá productos primero — las categorías se generan automáticamente.</p>
+          <p className="text-sm text-muted mt-1">Agrega productos primero — las categorías se generan automáticamente.</p>
         </div>
       ) : (
         <div className="space-y-5">
@@ -247,7 +247,7 @@ export default function CategoryBannersTab({
                             ))}
                           </select>
                           <p className="text-[length:var(--ts-xs)] text-muted leading-snug">
-                            Si elegís un producto, el botón lleva directo al detalle de ese producto.
+                            Si eliges un producto, el botón lleva directo al detalle de ese producto.
                             Sin elegir, filtra toda la categoría.
                           </p>
                         </>

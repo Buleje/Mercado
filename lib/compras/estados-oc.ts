@@ -59,7 +59,7 @@ export function transicionValida(desde: string, hasta: string): boolean {
 
 /** Formas de pago aceptadas al emitir la OC. El crédito abre una cuenta por pagar. */
 export const FORMAS_DE_PAGO = [
-  { id: "contado", label: "Contado", dias: 0, ayuda: "Pagás al recibir — no genera cuenta por pagar" },
+  { id: "contado", label: "Contado", dias: 0, ayuda: "Pagas al recibir — no genera cuenta por pagar" },
   { id: "credito_7", label: "Crédito 7 días", dias: 7, ayuda: "Vence a la semana" },
   { id: "credito_15", label: "Crédito 15 días", dias: 15, ayuda: "Vence a los 15 días" },
   { id: "credito_30", label: "Crédito 30 días", dias: 30, ayuda: "Vence al mes" },

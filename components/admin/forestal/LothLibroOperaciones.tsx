@@ -787,7 +787,7 @@ export default function LothLibroOperaciones() {
       {libroTruncado && (
         <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-4 py-3 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
           Se leyeron {libroTruncado.leidas.toLocaleString("es-PE")} de {libroTruncado.total.toLocaleString("es-PE")} líneas del libro. La
-          trazabilidad por árbol y el cuadro de censo se calculan sobre lo leído: para un libro de este tamaño, filtrá por período antes
+          trazabilidad por árbol y el cuadro de censo se calculan sobre lo leído: para un libro de este tamaño, filtra por período antes
           de sacar conclusiones.
         </div>
       )}
@@ -1049,7 +1049,7 @@ export default function LothLibroOperaciones() {
               : "Ninguna línea coincide con el filtro."}
           </p>
           <p className="mt-1 text-sm">
-            {entries.length === 0 ? 'Hacé click en "Nueva línea" para registrar el primer movimiento.' : "Probá con otro período o estado."}
+            {entries.length === 0 ? 'Haz click en "Nueva línea" para registrar el primer movimiento.' : "Prueba con otro período o estado."}
           </p>
         </div>
       )}

@@ -588,7 +588,7 @@ export default function CatalogoTiendaTab() {
         <div className="text-center py-12 rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <Search className="h-10 w-10 mx-auto text-muted mb-3" />
           <p className="text-base font-bold text-[var(--text-primary)]">No se encontraron productos</p>
-          <p className="text-sm text-muted mt-1">Probá con otros filtros o limpiá la búsqueda.</p>
+          <p className="text-sm text-muted mt-1">Prueba con otros filtros o limpia la búsqueda.</p>
           {hasFilters && (
             <button
               type="button"

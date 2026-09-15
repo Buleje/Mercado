@@ -147,7 +147,7 @@ function motivoNoElegible(t: {
   }
   if (t.noRecepcionada) return "no llegó al patio";
   if (t.descarte) return "es descarte del retrozado";
-  if ((t._count?.retrozos ?? 0) > 0) return "se cortó en pedazos: agregá los pedazos";
+  if ((t._count?.retrozos ?? 0) > 0) return "se cortó en pedazos: agrega los pedazos";
   if (!(Number(t.volumenM3) > 0)) return "no tiene volumen registrado";
   return null;
 }
@@ -203,7 +203,7 @@ export class ForestLoteAserrioDB {
     });
     if (enUso) {
       throw new CtpInvariantError(
-        `El código "${limpio}" ya está en uso: elegí otro.`,
+        `El código "${limpio}" ya está en uso: elige otro.`,
         "LOTE_CODIGO_DUPLICADO",
       );
     }
@@ -1344,7 +1344,7 @@ export class ForestLoteAserrioDB {
         if (corrida.quantity != null && !sinOrigen) {
           throw new CtpInvariantError(
             `La corrida N° ${corrida.lineNo} ya declaró su producción y ya tiene materia prima: sumarle más le cambiaría el rendimiento. ` +
-              "Registrá la madera nueva en una corrida aparte, o anulá esta y rehacela.",
+              "Registra la madera nueva en una corrida aparte, o anula esta y rehacela.",
             "LOTE_NO_EDITABLE",
           );
         }
@@ -1641,7 +1641,7 @@ export class ForestLoteAserrioDB {
       if (sumaNueva > volumenTotal) {
         throw new CtpInvariantError(
           `La corrida N° ${corrida.lineNo} quedaría con ${volumenTotal} m³ y tiene ${sumaNueva} m³ atribuidos a sus guías. ` +
-            "Corregí la atribución en la ficha de la corrida antes de sacar estas piezas.",
+            "Corrige la atribución en la ficha de la corrida antes de sacar estas piezas.",
           "I1_SOBRE_ATRIBUCION",
         );
       }
@@ -1735,7 +1735,7 @@ export class ForestLoteAserrioDB {
     const { loteId, motivo, user } = input;
     if (motivo.trim().length < 3) {
       throw new CtpInvariantError(
-        "Poné el motivo por el que se cierra el lote.",
+        "Pon el motivo por el que se cierra el lote.",
         "LOTE_NO_EDITABLE",
       );
     }
@@ -1843,7 +1843,7 @@ export class ForestLoteAserrioDB {
     }
     if (lote.status === "cerrado") {
       throw new CtpInvariantError(
-        `El lote ${lote.code} está cerrado: se produjo y se despachó. Armá un lote nuevo para esta madera.`,
+        `El lote ${lote.code} está cerrado: se produjo y se despachó. Arma un lote nuevo para esta madera.`,
         "LOTE_NO_EDITABLE",
         { status: lote.status },
       );
@@ -2053,7 +2053,7 @@ export class ForestLoteAserrioDB {
     const { loteId, motivo, user, forzar = false } = input;
     if (motivo.trim().length < 3) {
       throw new CtpInvariantError(
-        "Poné el motivo por el que se deshace el lote.",
+        "Pon el motivo por el que se deshace el lote.",
         "LOTE_NO_EDITABLE",
       );
     }
@@ -2102,7 +2102,7 @@ export class ForestLoteAserrioDB {
 
       if (conSalida.length > 0 && !forzar) {
         throw new CtpInvariantError(
-          `La corrida N° ${conSalida.map((c) => c.lineNo).join(", ")} del lote ${lote.code} ya tiene despacho o reproceso registrado: confirmá "forzar" para eliminarlo igual — el despacho ya hecho queda sin corrida de origen.`,
+          `La corrida N° ${conSalida.map((c) => c.lineNo).join(", ")} del lote ${lote.code} ya tiene despacho o reproceso registrado: confirma "forzar" para eliminarlo igual — el despacho ya hecho queda sin corrida de origen.`,
           "LOTE_CON_SALIDA_REGISTRADA",
         );
       }

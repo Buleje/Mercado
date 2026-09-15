@@ -72,7 +72,7 @@ export default function CtpConsumosPicker({
         <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Ingresos consumidos</span>
 
         {consumos.length === 0 ? (
-          <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-3 text-center text-xs text-[var(--text-tertiary)]">Elegí uno o más ingresos en el buscador de arriba.</p>
+          <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-3 text-center text-xs text-[var(--text-tertiary)]">Elige uno o más ingresos en el buscador de arriba.</p>
         ) : (
           <ul className="space-y-1.5">
             {consumos.map((c) => {

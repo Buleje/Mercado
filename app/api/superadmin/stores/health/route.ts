@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
           id: "logo",
           label: "Logo del negocio",
           status: hasLogo ? "done" : "missing",
-          help: "Subí un logo cuadrado (recomendado 512×512). Configurá en /admin/settings/branding.",
+          help: "Sube un logo cuadrado (recomendado 512×512). Configura en /admin/settings/branding.",
           required: true,
         });
 
@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
           id: "banner",
           label: "Banner del marketplace",
           status: store?.banner ? "done" : "missing",
-          help: "Imagen panorámica para la portada de tu tienda. Configurá en /admin/settings/branding.",
+          help: "Imagen panorámica para la portada de tu tienda. Configura en /admin/settings/branding.",
           required: true,
         });
 
@@ -159,7 +159,7 @@ export async function GET(req: NextRequest) {
           id: "yape",
           label: "Yape configurado",
           status: hasYape ? "done" : "missing",
-          help: "Activá Yape e ingresá el número en /admin/settings/payments.",
+          help: "Activa Yape e ingresa el número en /admin/settings/payments.",
           required: true,
         });
 
@@ -180,14 +180,14 @@ export async function GET(req: NextRequest) {
           id: "address",
           label: "Dirección física",
           status: hasAddress ? "done" : "missing",
-          help: "Campo obligatorio para boletas y delivery. Configurá en /admin/settings/business.",
+          help: "Campo obligatorio para boletas y delivery. Configura en /admin/settings/business.",
           required: true,
         });
         checks.push({
           id: "geo",
           label: "Coordenadas (mapa)",
           status: hasGeo ? "done" : "warning",
-          help: "Sin lat/lng no aparecés en 'Cerca tuyo'. Marcá tu ubicación en el mapa del setup.",
+          help: "Sin lat/lng no apareces en 'Cerca tuyo'. Marca tu ubicación en el mapa del setup.",
           required: false,
         });
 
@@ -203,7 +203,7 @@ export async function GET(req: NextRequest) {
           id: "ruc",
           label: "RUC / DNI",
           status: settings?.ruc && settings.ruc.length >= 8 ? "done" : "warning",
-          help: "Necesario para emitir comprobantes electrónicos. Opcional si solo emitís ticket.",
+          help: "Necesario para emitir comprobantes electrónicos. Opcional si solo emites ticket.",
           required: false,
         });
         checks.push({
@@ -251,7 +251,7 @@ export async function GET(req: NextRequest) {
           id: "deliveryZone",
           label: "Zona de delivery",
           status: settings?.deliveryZone || store?.zone ? "done" : "warning",
-          help: "Define a qué zonas hacés delivery. Sin esto, todos te ven pero pocos compran.",
+          help: "Define a qué zonas haces delivery. Sin esto, todos te ven pero pocos compran.",
           required: false,
         });
         checks.push({
@@ -269,7 +269,7 @@ export async function GET(req: NextRequest) {
           status: productCount >= 5 ? "done" : productCount > 0 ? "warning" : "missing",
           help:
             productCount === 0
-              ? "Sin productos. Sin catálogo no recibís pedidos."
+              ? "Sin productos. Sin catálogo no recibes pedidos."
               : `Solo ${productCount} productos. Recomendado: 20+ para conversión decente.`,
           required: true,
         });

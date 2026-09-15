@@ -222,7 +222,7 @@ export default function CtpRadarResumen({
                 </p>
               </div>
               <p className="mb-3 text-sm text-[var(--text-secondary)]">
-                Estos eslabones no trazan (o trazan sólo en parte) hasta su GTF de ingreso. El libro los admite, pero el certificado exige cadena completa — tocá para completarlos.
+                Estos eslabones no trazan (o trazan sólo en parte) hasta su GTF de ingreso. El libro los admite, pero el certificado exige cadena completa — toca para completarlos.
               </p>
               {/*
                 Con tope y no la lista entera. Cada fila mide ~54 px: cuatro

@@ -180,8 +180,8 @@ export function AssistantView({
         {turns.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <span className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)]"><Sparkles className="h-7 w-7" /></span>
-            <p className="text-base font-extrabold text-[var(--text-primary)]">Preguntá por tus documentos</p>
-            <p className="mt-1 max-w-sm text-sm text-[var(--text-secondary)]">Describí lo que buscás en tus palabras y te encuentro el documento + la información que necesitás.</p>
+            <p className="text-base font-extrabold text-[var(--text-primary)]">Pregunta por tus documentos</p>
+            <p className="mt-1 max-w-sm text-sm text-[var(--text-secondary)]">Describe lo que buscas en tus palabras y te encuentro el documento + la información que necesitas.</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((s) => (
                 <button key={s} onClick={() => ask(s)} className="rounded-full border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary">{s}</button>
@@ -205,7 +205,7 @@ export function AssistantView({
                       <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-sm bg-[var(--surface-sunken)] px-3.5 py-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Buscando…</div>
                     )
                   ) : t.error ? (
-                    <div className="rounded-2xl rounded-tl-sm bg-[var(--data-error-50)] px-3.5 py-2 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">No pude procesar la pregunta. Reintentá.</div>
+                    <div className="rounded-2xl rounded-tl-sm bg-[var(--data-error-50)] px-3.5 py-2 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">No pude procesar la pregunta. Reintenta.</div>
                   ) : (
                     <>
                       <div className="whitespace-pre-wrap rounded-2xl rounded-tl-sm bg-[var(--surface-sunken)] px-3.5 py-2 text-sm text-[var(--text-primary)]">{t.a!.answer}</div>
@@ -261,7 +261,7 @@ export function AssistantView({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") ask(input); }}
-            placeholder="Preguntá algo sobre tus documentos…"
+            placeholder="Pregunta algo sobre tus documentos…"
             className="min-w-0 flex-1 bg-transparent h-11 text-sm text-[var(--text-primary)] outline-none"
           />
           <button

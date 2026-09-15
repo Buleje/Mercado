@@ -39,7 +39,7 @@ const SendSchema = z
   })
   .refine(
     (d) => [d.message, d.template, d.media].filter(Boolean).length === 1,
-    { message: "Enviá texto, una plantilla o una imagen (uno solo)" },
+    { message: "Envía texto, una plantilla o una imagen (uno solo)" },
   );
 
 type GraphError = { error?: { code?: number; message?: string } };

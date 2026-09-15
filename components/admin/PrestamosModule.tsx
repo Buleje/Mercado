@@ -320,10 +320,10 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
   const saldoPorCobrar = resumen?.saldoDados ?? porCobrar;
   const health =
     cuotasVencidas > 0
-      ? { cls: "text-[var(--data-warning-500)]", border: "border-l-[var(--data-warning)]", Icon: AlertTriangle, text: `Tenés ${cuotasVencidas} cuota${cuotasVencidas === 1 ? "" : "s"} vencida${cuotasVencidas === 1 ? "" : "s"} · ${formatCurrency(saldoPorCobrar)} por cobrar.` }
+      ? { cls: "text-[var(--data-warning-500)]", border: "border-l-[var(--data-warning)]", Icon: AlertTriangle, text: `Tienes ${cuotasVencidas} cuota${cuotasVencidas === 1 ? "" : "s"} vencida${cuotasVencidas === 1 ? "" : "s"} · ${formatCurrency(saldoPorCobrar)} por cobrar.` }
       : saldoPorCobrar > 0
         ? { cls: "text-[var(--text-primary)]", border: "border-l-[var(--accent)]", Icon: DollarSign, text: `Cartera al día · ${formatCurrency(saldoPorCobrar)} por cobrar, sin atrasos.` }
-        : { cls: "text-[var(--data-success-500)]", border: "border-l-[var(--data-success)]", Icon: TrendingUp, text: "Cartera al día — no tenés nada por cobrar." };
+        : { cls: "text-[var(--data-success-500)]", border: "border-l-[var(--data-success)]", Icon: TrendingUp, text: "Cartera al día — no tienes nada por cobrar." };
 
   return (
     <div className="space-y-6">

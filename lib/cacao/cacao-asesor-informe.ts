@@ -118,7 +118,7 @@ export function printCacaoAsesor(a: AdvisorResult, local: AsesorLocal | null, na
     </div>
   </div>
 
-  <div class="foot">Orientativo — no es asesoría financiera. Fuente de precio: ICE (Yahoo Finance). Decidí según tu caja, la calidad de tu lote y tus compromisos de venta.</div>
+  <div class="foot">Orientativo — no es asesoría financiera. Fuente de precio: ICE (Yahoo Finance). Decide según tu caja, la calidad de tu lote y tus compromisos de venta.</div>
   <script>window.onload=function(){window.print()}</script>
 </body></html>`;
   openPrintable(html);

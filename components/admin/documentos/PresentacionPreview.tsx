@@ -44,7 +44,7 @@ export default function PresentacionPreview({ url, nombre }: { url: string; nomb
       <AvisoArchivo
         error={error}
         titulo="No se pudo leer la presentación"
-        sugerencia="También podés descargarla y abrirla en PowerPoint."
+        sugerencia="También puedes descargarla y abrirla en PowerPoint."
         urlDescarga={url}
         onReintentar={() => setIntento((n) => n + 1)}
       />

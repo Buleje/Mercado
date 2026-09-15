@@ -1656,7 +1656,7 @@ function combinacionObjetivo(
       }
     }
     if (grupos.length === 0) return null;
-    if (celdas * grupos.length > DP2D_TRABAJO_MAX) continue; // probá con menos resolución
+    if (celdas * grupos.length > DP2D_TRABAJO_MAX) continue; // prueba con menos resolución
 
     // 0 = inalcanzable · -1 = el origen (0 piezas, 0 volumen) · g+1 = vino del grupo g.
     const padre = new Int32Array(celdas);

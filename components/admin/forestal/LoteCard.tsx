@@ -140,7 +140,7 @@ function MetaChip({ meta }: { meta?: MetaLote | null }) {
         )}
         title={
           meta.sobreReferencial
-            ? `Rinde ${meta.rendimientoPct}%, sobre el referencial SERFOR — revisá antes de presentar el libro`
+            ? `Rinde ${meta.rendimientoPct}%, sobre el referencial SERFOR — revisa antes de presentar el libro`
             : `Rinde ${meta.rendimientoPct}%`
         }
       >
@@ -148,7 +148,7 @@ function MetaChip({ meta }: { meta?: MetaLote | null }) {
       </span>
       {meta.sobreReferencial && (
         <span className="w-full text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-          Sobre el referencial de SERFOR: revisá el consumo antes de presentar.
+          Sobre el referencial de SERFOR: revisa el consumo antes de presentar.
         </span>
       )}
       {meta.unidadesMezcladas && (

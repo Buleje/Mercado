@@ -189,7 +189,7 @@ export default function CtpTrozasIngresadas({
               disabled={!elegible}
               onChange={() => alternar(t.id)}
               aria-label={`Elegir la troza ${t.codigoPlanta ?? t.codificacion ?? ""}`}
-              title={delLote ? "Apartada en este lote. Destildala para dejarla para otra corrida." : undefined}
+              title={delLote ? "Apartada en este lote. Destíldala para dejarla para otra corrida." : undefined}
               className="h-5 w-5 accent-[var(--accent)] disabled:opacity-40"
             />
           </td>
@@ -348,7 +348,7 @@ export default function CtpTrozasIngresadas({
               {cargando
                 ? "Leyendo el patio…"
                 : totalPatio === 0
-                  ? (vacio ?? "No hay trozas de guías recepcionadas. Recepcioná una guía en Ingresos y sus piezas aparecen acá.")
+                  ? (vacio ?? "No hay trozas de guías recepcionadas. Recepciona una guía en Ingresos y sus piezas aparecen acá.")
                   : "Ninguna troza coincide con el filtro."}
             </FilaVacia>
           )}

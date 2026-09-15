@@ -97,9 +97,9 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
           ) : (
             <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center">
               <Camera className="h-8 w-8 text-[var(--text-tertiary)]" />
-              {camState === "idle" && <p className="text-sm text-[var(--text-secondary)]">Usá la cámara para fotografiar cada página, o subí fotos.</p>}
-              {camState === "denied" && <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">No pudimos acceder a la cámara. Podés subir fotos igual.</p>}
-              {camState === "unsupported" && <p className="text-sm text-[var(--text-secondary)]">Este dispositivo no expone cámara al navegador. Subí fotos.</p>}
+              {camState === "idle" && <p className="text-sm text-[var(--text-secondary)]">Usa la cámara para fotografiar cada página, o sube fotos.</p>}
+              {camState === "denied" && <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">No pudimos acceder a la cámara. Puedes subir fotos igual.</p>}
+              {camState === "unsupported" && <p className="text-sm text-[var(--text-secondary)]">Este dispositivo no expone cámara al navegador. Sube fotos.</p>}
               <div className="flex flex-wrap justify-center gap-2">
                 <button onClick={startCamera} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 min-h-10 text-sm font-semibold text-white hover:bg-primary/90"><Camera className="h-4 w-4" /> Abrir cámara</button>
                 <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 min-h-10 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary"><ImageIcon className="h-4 w-4" /> Subir fotos</button>

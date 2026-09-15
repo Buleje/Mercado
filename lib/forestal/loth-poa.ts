@@ -329,7 +329,7 @@ export function analizarPoa(opts: {
       alertas.push({
         nivel: "info",
         titulo: `${e.especie}: sin volumen aprovechable`,
-        detalle: `Los ${e.sobreDmc} árbol(es) que superan el DMC quedaron como semilleros (reserva mínima de 1 por especie). Bajá el % de semilleros o censá más árboles para poder aprovechar esta especie.`,
+        detalle: `Los ${e.sobreDmc} árbol(es) que superan el DMC quedaron como semilleros (reserva mínima de 1 por especie). Baja el % de semilleros o censa más árboles para poder aprovechar esta especie.`,
       });
     }
     if (e.sinDap > 0) {
@@ -344,7 +344,7 @@ export function analizarPoa(opts: {
     alertas.push({
       nivel: "info",
       titulo: "Sin área declarada",
-      detalle: "Declarala en el plan (o dibujá la parcela en el mapa) para calcular la intensidad en m³/ha.",
+      detalle: "Declárala en el plan (o dibuja la parcela en el mapa) para calcular la intensidad en m³/ha.",
     });
   }
   /**
@@ -364,7 +364,7 @@ export function analizarPoa(opts: {
       titulo: "Sin semilleros reservados",
       detalle:
         `El porcentaje está en 0%, así que los ${totales.aprovechables} árboles sobre el DMC figuran todos como aprovechables. ` +
-        "Revisá qué comprometió el plan aprobado y cargá ese porcentaje en Parámetros: los semilleros se eligen solos, " +
+        "Revisa qué comprometió el plan aprobado y carga ese porcentaje en Parámetros: los semilleros se eligen solos, " +
         "los de mayor diámetro de cada especie.",
     });
   }

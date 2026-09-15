@@ -268,7 +268,7 @@ export default function CtpVincularEnTandaModal({
               disabled={guardando}
               className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             >
-              <option value="">Elegí el lote que entró a la sierra…</option>
+              <option value="">Elige el lote que entró a la sierra…</option>
               {candidatos.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.code} · {l.speciesCommon ?? "sin especie"} · {fmtM3(volumenLibre(l))} m³ libres ·{" "}
@@ -279,7 +279,7 @@ export default function CtpVincularEnTandaModal({
             {candidatos.length === 0 && (
               <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
                 No hay ningún lote abierto con trozas libres
-                {especies.length === 1 ? " de esa especie" : ""}. Armá uno en la pestaña Lotes.
+                {especies.length === 1 ? " de esa especie" : ""}. Arma uno en la pestaña Lotes.
               </span>
             )}
           </label>
@@ -407,7 +407,7 @@ export default function CtpVincularEnTandaModal({
 
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[var(--rule-base)] px-5 py-3.5 sm:px-6">
           <p className="min-w-0 flex-1 text-xs text-[var(--text-secondary)]">
-            {reparto ? resumenDeTanda(reparto, fmtM3) : "Elegí el lote para ver qué le toca a cada una."}
+            {reparto ? resumenDeTanda(reparto, fmtM3) : "Elige el lote para ver qué le toca a cada una."}
           </p>
           <div className="flex items-center gap-2">
             <Btn onClick={onCerrar} disabled={guardando}>

@@ -113,7 +113,7 @@ export default function CacaoReconcileModal({ onClose, onDone }: { onClose: () =
         {!loading && groups.length > 0 && (
           <div className="flex items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)]">
             <AlertTriangle className="h-5 w-5 shrink-0" />
-            <span><strong>{totals.lotes}</strong> lote{totals.lotes === 1 ? "" : "s"} · <strong>S/ {n2(totals.pagado)}</strong> sin vincular. Elegí el productor del padrón (o creá uno) y vinculá.</span>
+            <span><strong>{totals.lotes}</strong> lote{totals.lotes === 1 ? "" : "s"} · <strong>S/ {n2(totals.pagado)}</strong> sin vincular. Elige el productor del padrón (o crea uno) y vincula.</span>
           </div>
         )}
 

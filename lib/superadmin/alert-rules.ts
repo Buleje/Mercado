@@ -158,7 +158,7 @@ export function buildAlerts(
       title: `${input.pendingPayments.count} pago(s) Yape por aprobar`,
       detail:
         severity === "critical"
-          ? `El más viejo lleva ${Math.floor(ageH)}h esperando — aprobá o rechazá`
+          ? `El más viejo lleva ${Math.floor(ageH)}h esperando — aprueba o rechaza`
           : "Comprobantes Yape esperando tu revisión",
       href: "/superadmin/pagos-yape",
       at: input.pendingPayments.oldestAt,

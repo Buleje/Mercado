@@ -17,13 +17,13 @@ export const EMPTY = {
   cart: {
     eyebrow: "Carrito",
     title: "Arma tu pedido",
-    description: "500+ productos esperan. Delivery en 25 min, pagás con Yape o efectivo al recibir.",
+    description: "500+ productos esperan. Delivery en 25 min, pagas con Yape o efectivo al recibir.",
     cta: { label: "Ver catálogo", href: "/tienda" },
   },
   favorites: {
     eyebrow: "Favoritos",
     title: "Guarda tus favoritos",
-    description: "Tocá el corazón en cualquier producto. Los verás aquí cuando vuelvas.",
+    description: "Toca el corazón en cualquier producto. Los verás aquí cuando vuelvas.",
     cta: { label: "Explorar productos", href: "/marketplace" },
   },
   ordersNoHistory: {
@@ -35,11 +35,11 @@ export const EMPTY = {
   ordersFiltered: {
     eyebrow: "Sin resultados",
     title: "Ningún pedido en este filtro",
-    description: "Cambiá el filtro para ver otros pedidos.",
+    description: "Cambia el filtro para ver otros pedidos.",
   },
   pointsNoBalance: {
     eyebrow: "Fidelidad",
-    title: "Ganá puntos en cada compra",
+    title: "Gana puntos en cada compra",
     description: "Por cada S/10 de pedido, 1 punto. 100 puntos = S/5 de descuento.",
     cta: { label: "Hacer un pedido", href: "/marketplace" },
   },
@@ -115,7 +115,7 @@ export const EMPTY = {
   driverAssignmentsNone: {
     eyebrow: "Repartos",
     title: "Sin entregas asignadas",
-    description: "Cuando haya pedidos en tu zona, te avisaremos por WhatsApp. Mantené el WhatsApp activo.",
+    description: "Cuando haya pedidos en tu zona, te avisaremos por WhatsApp. Mantén el WhatsApp activo.",
     cta: { label: "Ver zonas disponibles" },
   },
 } as const satisfies Record<string, EmptyStateCopy | ((...args: never[]) => EmptyStateCopy)>;

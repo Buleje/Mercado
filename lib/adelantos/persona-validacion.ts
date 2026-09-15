@@ -22,7 +22,7 @@ export function revisarDocumento(documento: string): string | null {
   if (v.length === 11) {
     return /^(10|15|16|17|20)/.test(v) ? null : "Un RUC de 11 dígitos arranca con 10, 15, 16, 17 o 20.";
   }
-  return "Un DNI tiene 8 dígitos y un RUC 11. Revisá el número.";
+  return "Un DNI tiene 8 dígitos y un RUC 11. Revisa el número.";
 }
 
 /** Celular peruano: 9 dígitos y empieza con 9. Los fijos con código pasan. */
@@ -73,5 +73,5 @@ export function avisoDeDuplicado(d: Duplicado): string {
   const quien = d.persona.nombre;
   if (d.motivo === "documento") return `Ese documento ya es de ${quien}. ¿Es la misma persona?`;
   if (d.motivo === "telefono") return `Ese teléfono ya es de ${quien}. ¿Es la misma persona?`;
-  return `Ya existe alguien que se llama ${quien}. Si son dos personas distintas, agregá el documento para distinguirlas.`;
+  return `Ya existe alguien que se llama ${quien}. Si son dos personas distintas, agrega el documento para distinguirlas.`;
 }

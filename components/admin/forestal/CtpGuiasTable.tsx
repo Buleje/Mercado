@@ -388,8 +388,8 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
           ) : (
             <p className="mt-1 text-sm">
               {period.from
-                ? 'Puede haber registros fuera de este período: elegí "Todo el histórico" arriba, o registrá uno con "Nuevo ingreso".'
-                : 'Hacé click en "Nuevo ingreso" para registrar el primer movimiento de madera.'}
+                ? 'Puede haber registros fuera de este período: elige "Todo el histórico" arriba, o registra uno con "Nuevo ingreso".'
+                : 'Haz click en "Nuevo ingreso" para registrar el primer movimiento de madera.'}
             </p>
           )}
         </div>
@@ -686,7 +686,7 @@ function FilaGuia({
               chip por línea no se veía y el problema aparecía recién al
               consumir —«esta guía sólo tiene 4.161 m³ sin consumir»—.
               Y es un BOTÓN: el aviso que no lleva a ningún lado se lee como
-              «tenés un problema y arreglate». */}
+              «tienes un problema y arreglate». */}
           {(() => {
             const c = cuadreDeIngreso(guia.volumenM3, guia.trozasM3, guia.trozasCount);
             if (!descuadra(c)) return null;
@@ -695,7 +695,7 @@ function FilaGuia({
               <button
                 type="button"
                 onClick={() => onCuadrar(guia)}
-                title={`La guía declara ${fmtM3(guia.volumenM3)} m³${cuantos} y sus ${guia.trozasCount} piezas suman ${fmtM3(guia.trozasM3 ?? 0)} m³. Abrí el cuadre para ver los dos lados del documento.`}
+                title={`La guía declara ${fmtM3(guia.volumenM3)} m³${cuantos} y sus ${guia.trozasCount} piezas suman ${fmtM3(guia.trozasM3 ?? 0)} m³. Abre el cuadre para ver los dos lados del documento.`}
                 className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] underline-offset-2 hover:underline dark:text-[var(--data-warning-500)]"
               >
                 <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />

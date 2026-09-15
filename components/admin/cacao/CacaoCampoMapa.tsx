@@ -183,7 +183,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       if (!pts) continue;
       const meta = polyMeta(p, colorByRef.current);
       const poly = L.polygon(pts, { color: meta.ring, fillColor: meta.ring, fillOpacity: 0.35, weight: 2 });
-      poly.bindTooltip(`${p.codigo}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""} · ${meta.label}${editingRef.current ? " · tocá para editar" : ""}`, { sticky: true });
+      poly.bindTooltip(`${p.codigo}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""} · ${meta.label}${editingRef.current ? " · toca para editar" : ""}`, { sticky: true });
       poly.on("click", () => {
         if (drawingRef.current || measuringRef.current) return;
         if (editingRef.current) selectForEditRef.current(p);
@@ -285,7 +285,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
         redrawDrawing();
         if (mapRef.current) mapRef.current.panTo(ll);
       },
-      (err: { code: number }) => { setLocating(false); setMapMsg(err.code === 1 ? "Activá el permiso de ubicación para marcar por GPS." : "No pude obtener tu ubicación."); },
+      (err: { code: number }) => { setLocating(false); setMapMsg(err.code === 1 ? "Activa el permiso de ubicación para marcar por GPS." : "No pude obtener tu ubicación."); },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   }
@@ -394,7 +394,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
         locateMarkerRef.current = L.circleMarker([latitude, longitude], { radius: 8, color: "#2563eb", fillColor: "#3b82f6", fillOpacity: 0.9, weight: 3 }).bindTooltip("Estás acá", { direction: "top" }).addTo(map);
         map.flyTo([latitude, longitude], 16);
       },
-      (err: { code: number }) => { setLocating(false); setMapMsg(err.code === 1 ? "Activá el permiso de ubicación en tu navegador para usar el GPS." : "No pude obtener tu ubicación."); },
+      (err: { code: number }) => { setLocating(false); setMapMsg(err.code === 1 ? "Activa el permiso de ubicación en tu navegador para usar el GPS." : "No pude obtener tu ubicación."); },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   }
@@ -416,7 +416,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       const ring = [...pts.map(([lat, lng]) => [lng, lat]), [pts[0][1], pts[0][0]]];
       return { type: "Feature", properties: { codigo: p.codigo, nombre: p.nombre, areaHa: p.areaHa, variedad: p.variedad, estado: p.laborStatus, focosSanidad: p.sanidad?.focos ?? 0 }, geometry: { type: "Polygon", coordinates: [ring] } };
     }).filter(Boolean);
-    if (!features.length) { setMapMsg("Dibujá al menos una sección para exportar."); return; }
+    if (!features.length) { setMapMsg("Dibuja al menos una sección para exportar."); return; }
     const fc = { type: "FeatureCollection", features };
     const blob = new Blob([JSON.stringify(fc, null, 2)], { type: "application/geo+json" });
     const url = URL.createObjectURL(blob);
@@ -447,7 +447,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       <div className="flex flex-wrap items-center gap-2">
         {drawing ? (
           <>
-            <span className="inline-flex h-11 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-700)]">Tocá el mapa para marcar los vértices ({nVerts}){drawPerim > 0 ? ` · ${formatDist(drawPerim)}` : ""}{drawArea > 0 ? ` · ${drawArea.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>
+            <span className="inline-flex h-11 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-700)]">Toca el mapa para marcar los vértices ({nVerts}){drawPerim > 0 ? ` · ${formatDist(drawPerim)}` : ""}{drawArea > 0 ? ` · ${drawArea.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>
             <button type="button" onClick={addGpsPoint} disabled={locating} title="Agregar un vértice en mi ubicación GPS (caminar el terreno)" className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Punto GPS</span></button>
             <button type="button" onClick={undo} disabled={nVerts === 0} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
             <button type="button" onClick={finishDraw} disabled={nVerts < 3} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Terminar ({nVerts})</button>
@@ -467,13 +467,13 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
             </>
           ) : (
             <>
-              <span className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)]"><Edit3 className="h-4 w-4" />Tocá una sección para mover sus límites</span>
+              <span className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)]"><Edit3 className="h-4 w-4" />Toca una sección para mover sus límites</span>
               <button type="button" onClick={exitEdit} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Salir</button>
             </>
           )
         ) : measuring ? (
           <>
-            <span className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-primary)]"><Route className="h-4 w-4 text-[var(--accent)]" />{measurePts < 2 ? "Tocá el mapa para medir" : formatDist(measureDist)}{measureArea > 0 ? ` · ${measureArea.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>
+            <span className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-primary)]"><Route className="h-4 w-4 text-[var(--accent)]" />{measurePts < 2 ? "Toca el mapa para medir" : formatDist(measureDist)}{measureArea > 0 ? ` · ${measureArea.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>
             <button type="button" onClick={undoMeasure} disabled={measurePts === 0} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
             <button type="button" onClick={clearMeasure} disabled={measurePts === 0} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><X className="h-4 w-4" />Limpiar</button>
             <button type="button" onClick={exitMeasure} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Check className="h-4 w-4" />Listo</button>
@@ -514,8 +514,8 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="max-w-xs rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">
               <span className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Pencil className="h-6 w-6" /></span>
-              <p className="text-sm font-bold text-[var(--text-primary)]">Dibujá tu primera sección para verla en el mapa</p>
-              <p className="mt-1 text-xs text-[var(--text-secondary)]">Tocá “Dibujar sección” y marcá el contorno de tu terreno. Aparecerá acá coloreada por su estado.</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Dibuja tu primera sección para verla en el mapa</p>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">Toca “Dibujar sección” y marca el contorno de tu terreno. Aparecerá acá coloreada por su estado.</p>
               <button type="button" onClick={startDraw} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Pencil className="h-4 w-4" />Dibujar sección</button>
             </div>
           </div>
@@ -534,9 +534,9 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       </div>
       {editErr && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{editErr}</p>}
       {mapMsg && <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-700)]">{mapMsg}<button aria-label="Quitar" type="button" onClick={() => setMapMsg(null)} className="shrink-0 text-[var(--data-warning-700)]"><X className="h-4 w-4" /></button></p>}
-      {!fullscreen && !editing && !measuring && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una sección dibujada para ver y registrar sus labores. Dibujá con al menos 3 puntos.</p>}
-      {!fullscreen && editing && <p className="text-xs text-[var(--text-tertiary)]"><Edit3 className="mr-1 inline h-3 w-3" />Arrastrá los puntos azules para mover los límites; el área en hectáreas se recalcula sola. Guardá para aplicar.</p>}
-      {!fullscreen && measuring && <p className="text-xs text-[var(--text-tertiary)]"><Route className="mr-1 inline h-3 w-3" />Tocá puntos en el mapa para medir distancia; con 3+ puntos también calcula el área. No crea ninguna sección.</p>}
+      {!fullscreen && !editing && !measuring && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Toca una sección dibujada para ver y registrar sus labores. Dibuja con al menos 3 puntos.</p>}
+      {!fullscreen && editing && <p className="text-xs text-[var(--text-tertiary)]"><Edit3 className="mr-1 inline h-3 w-3" />Arrastra los puntos azules para mover los límites; el área en hectáreas se recalcula sola. Guarda para aplicar.</p>}
+      {!fullscreen && measuring && <p className="text-xs text-[var(--text-tertiary)]"><Route className="mr-1 inline h-3 w-3" />Toca puntos en el mapa para medir distancia; con 3+ puntos también calcula el área. No crea ninguna sección.</p>}
 
       {pending && <AsignarSeccionModal poligono={pending} suggestedCodigo={suggestedCodigo} onClose={() => setPending(null)} onSaved={() => { setPending(null); cancelDraw(); onChanged(); }} />}
       {coordModal && <CoordenadasModal onClose={() => setCoordModal(false)} onCreate={(pts) => { setCoordModal(false); setPending(pts); }} onGoTo={(lat, lng) => { setCoordModal(false); goToCoord(lat, lng); }} />}
@@ -555,7 +555,7 @@ function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; 
   const area = pts.length >= 3 ? geodesicAreaHa(pts) : 0;
 
   function crear() {
-    if (pts.length < 3) { setError("Necesitás al menos 3 coordenadas válidas (una «lat, lng» por línea)."); return; }
+    if (pts.length < 3) { setError("Necesitas al menos 3 coordenadas válidas (una «lat, lng» por línea)."); return; }
     onCreate(pts);
   }
   function ir() {
@@ -566,11 +566,11 @@ function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; 
 
   const I = "h-11 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
-    <AdminModal open onClose={onClose} variant="wide" icon={Navigation} title="Mapeo por coordenadas" description="Creá una sección desde tu levantamiento GPS o andá a una coordenada exacta.">
+    <AdminModal open onClose={onClose} variant="wide" icon={Navigation} title="Mapeo por coordenadas" description="Crea una sección desde tu levantamiento GPS o ve a una coordenada exacta.">
       <div className="space-y-5 px-5 py-5 sm:px-6">
         <div>
           <p className="mb-1 text-sm font-bold text-[var(--text-primary)]">Crear sección por coordenadas</p>
-          <p className="mb-2 text-xs text-[var(--text-tertiary)]">Pegá los vértices del terreno, una coordenada por línea: <span className="font-mono">latitud, longitud</span> (ej. de tu GPS). Se cierra el polígono solo.</p>
+          <p className="mb-2 text-xs text-[var(--text-tertiary)]">Pega los vértices del terreno, una coordenada por línea: <span className="font-mono">latitud, longitud</span> (ej. de tu GPS). Se cierra el polígono solo.</p>
           <textarea value={text} onChange={(e) => { setText(e.target.value); setError(null); }} rows={6} placeholder={"-8.38200, -74.53100\n-8.38150, -74.52950\n-8.38300, -74.52980"} className={`${I} h-auto py-2 font-mono`} />
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="inline-flex h-9 items-center rounded-lg bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)]">{pts.length} puntos válidos{area > 0 ? ` · ${area.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>

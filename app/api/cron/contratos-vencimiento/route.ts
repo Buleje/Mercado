@@ -59,7 +59,7 @@ export const GET = withCronAuth("contratos-vencimiento", async () => {
     const n = contratos.length;
     const masUrgente = contratos[0];
     const dias = diasHasta(masUrgente.fechaVencimiento);
-    const titulo = n === 1 ? "Tenés 1 contrato por vencer" : `Tenés ${n} contratos por vencer`;
+    const titulo = n === 1 ? "Tienes 1 contrato por vencer" : `Tienes ${n} contratos por vencer`;
 
     try {
       await NotificationCenterDB.createOrReuse({

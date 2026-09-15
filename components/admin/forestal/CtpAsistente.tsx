@@ -77,7 +77,7 @@ export default function CtpAsistente() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        title="Preguntá al Libro en lenguaje natural"
+        title="Pregunta al Libro en lenguaje natural"
         className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition-colors ${
           open
             ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/20"
@@ -85,7 +85,7 @@ export default function CtpAsistente() {
         }`}
       >
         <Sparkles className="h-4 w-4" aria-hidden="true" />
-        <span className="max-sm:sr-only">Preguntá</span>
+        <span className="max-sm:sr-only">Pregunta</span>
       </button>
 
       {open && (
@@ -122,7 +122,7 @@ export default function CtpAsistente() {
             {answer && (
               <div className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-sm text-[var(--text-primary)]">{answer}</div>
             )}
-            <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Responde con los datos del libro. Verificá cifras críticas en las pestañas.</p>
+            <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Responde con los datos del libro. Verifica cifras críticas en las pestañas.</p>
           </div>
         </>
       )}

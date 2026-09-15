@@ -79,7 +79,7 @@ export function analizarLote(rows: PiezaCubicada[], precioDe?: PrecioPt): Insigh
   if (otro && otro.cantidad > 0) {
     out.push({
       nivel: "alerta",
-      texto: `Hay piezas que no caen en ningún tipo comercial: revisá esas medidas antes de vender.`,
+      texto: `Hay piezas que no caen en ningún tipo comercial: revisa esas medidas antes de vender.`,
       dato: `${otro.cantidad} pzas · ${fmtPt(otro.pieTablar)}`,
     });
   }

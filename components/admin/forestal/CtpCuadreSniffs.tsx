@@ -173,7 +173,7 @@ export default function CtpCuadreSniffs({
         <p className="border-t-2 border-[var(--rule-base)] pt-3 text-xs text-[var(--text-tertiary)]">
           {previo
             ? "No se pudo leer el período anterior para comparar."
-            : "«Todo el histórico» no tiene un período anterior contra el cual compararse. Elegí un mes, un trimestre o un año."}
+            : "«Todo el histórico» no tiene un período anterior contra el cual compararse. Elige un mes, un trimestre o un año."}
         </p>
       )}
     </section>

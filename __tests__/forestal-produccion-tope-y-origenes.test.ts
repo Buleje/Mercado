@@ -135,7 +135,7 @@ describe("motivosParaGuardar con el tope", () => {
     expect(m).toHaveLength(1);
     expect(m[0]).toContain("56 %");
     expect(m[0]).toContain("5.600 m³");
-    expect(m[0]).toContain("Sacá 0.400 m³");
+    expect(m[0]).toContain("Saca 0.400 m³");
   });
 
   it("el tope mira la SUMA de los paquetes, no cada uno", () => {

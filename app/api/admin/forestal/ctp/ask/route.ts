@@ -58,9 +58,9 @@ async function buildContext(tenantId: string): Promise<string> {
 
 async function askLLM(context: string, question: string): Promise<string | null> {
   const system =
-    "Sos el asistente del Libro de Operaciones de un aserradero (Centro de Transformación Primaria) en Perú. " +
-    "Respondé la pregunta del operador USANDO ÚNICAMENTE los datos del libro que te paso. Sé breve, concreto y en español peruano. " +
-    "Si el dato exacto no está en los datos, decí que no figura en el libro — NUNCA inventes cifras. No des consejos legales.";
+    "Eres el asistente del Libro de Operaciones de un aserradero (Centro de Transformación Primaria) en Perú. " +
+    "Responde la pregunta del operador USANDO ÚNICAMENTE los datos del libro que te paso. Sé breve, concreto y en español peruano. " +
+    "Si el dato exacto no está en los datos, di que no figura en el libro — NUNCA inventes cifras. No des consejos legales.";
   const prompt = `Datos del libro:\n${context}\n\nPregunta: ${question}`;
 
   const openai = process.env.OPENAI_API_KEY;

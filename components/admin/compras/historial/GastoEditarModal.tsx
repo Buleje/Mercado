@@ -100,7 +100,7 @@ export default function GastoEditarModal({
       onClose();
     } catch (err) {
       console.warn("[GastoEditarModal] guardar falló", err);
-      setError("No se pudo guardar el cambio. Intentá de nuevo.");
+      setError("No se pudo guardar el cambio. Intenta de nuevo.");
     } finally {
       setGuardando(false);
     }
@@ -130,7 +130,7 @@ export default function GastoEditarModal({
       });
     } catch (err) {
       console.warn("[GastoEditarModal] borrar falló", err);
-      setError("No se pudo borrar el gasto. Intentá de nuevo.");
+      setError("No se pudo borrar el gasto. Intenta de nuevo.");
       setBorrando(false);
     }
   };

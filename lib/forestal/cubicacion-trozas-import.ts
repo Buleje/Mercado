@@ -64,7 +64,7 @@ export function parsearFilasTrozas(matriz: Celda[][]): ResultadoImportTrozas {
   if (idxHeader === -1) {
     return {
       trozas: [],
-      errores: [{ fila: 1, motivo: "No encontré las columnas D1 y Largo. Revisá que la primera fila tenga esos títulos." }],
+      errores: [{ fila: 1, motivo: "No encontré las columnas D1 y Largo. Revisa que la primera fila tenga esos títulos." }],
     };
   }
 

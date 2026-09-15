@@ -404,7 +404,7 @@ export async function POST(req: NextRequest) {
         {
           error: "producer_dni_duplicado",
           message: existente
-            ? `Ya existe un productor con ese DNI: ${existente}. Revisá el padrón antes de duplicarlo.`
+            ? `Ya existe un productor con ese DNI: ${existente}. Revisa el padrón antes de duplicarlo.`
             : "Ya existe un productor con ese DNI.",
         },
         { status: 409 },

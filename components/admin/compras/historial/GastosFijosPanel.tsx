@@ -166,7 +166,7 @@ export default function GastosFijosPanel({
       console.warn("[GastosFijosPanel] registrar pago falló", err);
       // El error se queda EN el modal: cerrarlo y avisar atrás dejaba al
       // usuario sin saber si el pago entró o no.
-      setErrorPago("No se pudo registrar el pago. Intentá de nuevo.");
+      setErrorPago("No se pudo registrar el pago. Intenta de nuevo.");
     } finally {
       setPagando(null);
     }

@@ -78,20 +78,20 @@ function pasaElFreno(chatId: number): boolean {
 }
 
 const AYUDA =
-  "Contame qué pasó y lo anoto donde va. Escribime o mandame un <b>audio</b>.\n\n" +
+  "Cuéntame qué pasó y lo anoto donde va. Escríbeme o mándame un <b>audio</b>.\n\n" +
   "<b>Para anotar</b>\n" +
   "• «25 galones de petróleo para el camión N12 a 27 el galón»\n" +
   "• «le adelanté 300 soles en efectivo a Juan Pérez»\n" +
   "• «Doña Rosa me pagó 50 de lo que debía»\n" +
   "• «compré 20 sacos de arroz a 18.50 a Distribuidora Ucayali»\n" +
-  "• «pasá 2000 del BCP a la caja chica»\n" +
+  "• «pasa 2000 del BCP a la caja chica»\n" +
   "• «el flete de la placa A4B-892, 800 soles por 30 m³»\n\n" +
   "<b>Para preguntar</b>\n" +
   "• «¿cuánto gasté este mes?» · «¿quién me debe?» · «¿cómo viene la caja?»\n" +
   "• «¿qué hay de nuevo?» — te cuento lo que vi\n\n" +
-  "Podés decirme <b>varias cosas en un mismo audio</b> y las anoto todas. " +
+  "Puedes decirme <b>varias cosas en un mismo audio</b> y las anoto todas. " +
   "Antes de guardar te muestro qué se va a anotar y por cuánto: recién cuando " +
-  "tocás <b>Confirmar</b> queda en los libros.\n\n" +
+  "tocas <b>Confirmar</b> queda en los libros.\n\n" +
   "<b>Comandos:</b> /hoy · /olvidar · /desvincular · /ayuda";
 
 /**
@@ -137,7 +137,7 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
   const quien = msg.from?.first_name ?? msg.from?.username ?? "alguien";
 
   if (!pasaElFreno(chatId)) {
-    await mandarMensaje(chatId, "⏳ Vas muy rápido. Esperá un minuto y seguimos.");
+    await mandarMensaje(chatId, "⏳ Vas muy rápido. Espera un minuto y seguimos.");
     return;
   }
 
@@ -154,9 +154,9 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
         await mandarMensaje(
           chatId,
           "👋 Soy el asistente de tu negocio.\n\n" +
-            "Este chat todavía <b>no está vinculado</b>. Entrá al panel, andá a " +
-            "<b>Asistente IA › Automatizaciones</b>, tocá <b>Vincular Telegram</b> y " +
-            "mandame acá:\n\n<code>/vincular CÓDIGO</code>",
+            "Este chat todavía <b>no está vinculado</b>. Entra al panel, ve a " +
+            "<b>Asistente IA › Automatizaciones</b>, toca <b>Vincular Telegram</b> y " +
+            "mándame acá:\n\n<code>/vincular CÓDIGO</code>",
         );
         return;
       }
@@ -171,7 +171,7 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
         await mandarMensaje(
           chatId,
           "❌ Ese código no vale (o ya pasaron los 15 minutos).\n\n" +
-            "Pedí uno nuevo en el panel: <b>Asistente IA › Automatizaciones › Vincular Telegram</b>.",
+            "Pide uno nuevo en el panel: <b>Asistente IA › Automatizaciones › Vincular Telegram</b>.",
         );
         return;
       }
@@ -199,7 +199,7 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
 
     if (base === "/olvidar") {
       olvidar(`telegram:${chatId}`);
-      await mandarMensaje(chatId, "🧹 Listo, empezamos de nuevo. Contame qué pasó.");
+      await mandarMensaje(chatId, "🧹 Listo, empezamos de nuevo. Cuéntame qué pasó.");
       return;
     }
 
@@ -224,7 +224,7 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
     await mandarMensaje(
       chatId,
       "🔒 Este chat no está vinculado a ningún negocio, así que no puedo anotar nada.\n\n" +
-        "Pedí el código en <b>Asistente IA › Automatizaciones</b> y mandame " +
+        "Pide el código en <b>Asistente IA › Automatizaciones</b> y mándame " +
         "<code>/vincular CÓDIGO</code>.",
     );
     return;
@@ -236,12 +236,12 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
   if (audio) {
     await mostrarEscribiendo(chatId);
     if (audio.duration > 300) {
-      await mandarMensaje(chatId, "🎤 Ese audio dura más de 5 minutos. Mandame uno más corto, de una operación por vez.");
+      await mandarMensaje(chatId, "🎤 Ese audio dura más de 5 minutos. Mándame uno más corto, de una operación por vez.");
       return;
     }
     const archivo = await bajarArchivo(audio.file_id);
     if (!archivo) {
-      await mandarMensaje(chatId, "No pude bajar el audio de Telegram. Probá mandarlo de nuevo.");
+      await mandarMensaje(chatId, "No pude bajar el audio de Telegram. Prueba mandarlo de nuevo.");
       return;
     }
     const t = await transcribirAudio(archivo.bytes, archivo.nombre);
@@ -310,7 +310,7 @@ async function manejarMensaje(msg: TgMessage): Promise<void> {
 
   // Ni texto ni operaciones: hay que decir algo, o el bot se queda mudo.
   if (!r.texto && r.pendientes.length === 0 && r.registradas.length === 0) {
-    await mandarMensaje(chatId, "🤔 No terminé de entender. Decímelo de otra forma, o mandame /ayuda.");
+    await mandarMensaje(chatId, "🤔 No terminé de entender. Dímelo de otra forma, o mándame /ayuda.");
   }
 }
 
@@ -339,7 +339,7 @@ async function manejarBoton(cb: TgCallback): Promise<void> {
     await editarMensaje(
       chatId,
       messageId,
-      "⌛ Esa operación ya no está pendiente (se confirmó, se canceló, o pasaron los 10 minutos). Mandámela de nuevo.",
+      "⌛ Esa operación ya no está pendiente (se confirmó, se canceló, o pasaron los 10 minutos). Mándamela de nuevo.",
     );
     return;
   }

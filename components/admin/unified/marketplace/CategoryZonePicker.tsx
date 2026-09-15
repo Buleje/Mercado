@@ -649,7 +649,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
       <SectionCard
         icon={MapPin}
         title="Zonas de cobertura"
-        hint="Marca dónde hacés delivery."
+        hint="Marca dónde haces delivery."
         rightSlot={
           <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold tabular-nums">
             {value.coverageZones.length}

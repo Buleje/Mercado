@@ -302,7 +302,7 @@ const patchSchema = z.discriminatedUnion("action", [
         titularNombre: z.string().trim().max(160).optional(),
       })
       .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
-        message: "Mandá al menos un campo con contenido.",
+        message: "Manda al menos un campo con contenido.",
       }),
   }),
   /**
@@ -345,7 +345,7 @@ const patchSchema = z.discriminatedUnion("action", [
           .optional(),
       })
       .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
-        message: "Mandá al menos un campo con contenido.",
+        message: "Manda al menos un campo con contenido.",
       }),
   }),
   /**
@@ -935,7 +935,7 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
       if (!result.ok) {
         const message =
           result.reason === "serie_no_configurada"
-            ? "No hay serie de GTF configurada. Cargá la «Serie GTF autorizada» en la pestaña Ficha CTP."
+            ? "No hay serie de GTF configurada. Carga la «Serie GTF autorizada» en la pestaña Ficha CTP."
             : result.reason === "anulado"
               ? "El despacho está anulado: no se puede emitir su GTF."
               : "No se encontró la línea de despacho.";

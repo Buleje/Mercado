@@ -171,7 +171,7 @@ export function printPlantaPlano(opts: {
 </body></html>`;
 
   const w = window.open("", "_blank", "width=1000,height=760");
-  if (!w) throw new Error("El navegador bloqueó la ventana. Permití pop-ups para imprimir el plano.");
+  if (!w) throw new Error("El navegador bloqueó la ventana. Permite pop-ups para imprimir el plano.");
   w.document.write(html);
   w.document.close();
   w.focus();

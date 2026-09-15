@@ -126,7 +126,7 @@ export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona, onDespa
         ))}
       </ul>
       <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-        El % es sobre el área dibujada, no sobre el terreno real · tocá una zona en el mapa para su ficha.
+        El % es sobre el área dibujada, no sobre el terreno real · toca una zona en el mapa para su ficha.
       </p>
     </div>
   );

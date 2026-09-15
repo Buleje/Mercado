@@ -83,7 +83,7 @@ export function useMarketplaceCoupons() {
       fetchCoupons();
     } catch (err) {
       console.warn("[use-marketplace-coupons] crear cupón falló", err);
-      toast.error("No se pudo crear el cupón — revisá tu conexión.");
+      toast.error("No se pudo crear el cupón — revisa tu conexión.");
     } finally {
       setSaving(false);
     }
@@ -104,7 +104,7 @@ export function useMarketplaceCoupons() {
       fetchCoupons();
     } catch (err) {
       console.warn("[use-marketplace-coupons] cambiar estado falló", err);
-      toast.error("No se pudo cambiar el estado del cupón — revisá tu conexión.");
+      toast.error("No se pudo cambiar el estado del cupón — revisa tu conexión.");
     }
   };
 
@@ -124,7 +124,7 @@ export function useMarketplaceCoupons() {
       fetchCoupons();
     } catch (err) {
       console.warn("[use-marketplace-coupons] eliminar cupón falló", err);
-      toast.error("No se pudo eliminar el cupón — revisá tu conexión.");
+      toast.error("No se pudo eliminar el cupón — revisa tu conexión.");
     }
   };
 

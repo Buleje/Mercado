@@ -734,7 +734,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         const j = await r.json().catch(() => ({}));
         throw new Error(
           j?.error === "specialization_disabled" ? (j.message as string)
-            : j?.error === "validation_error" ? "Revisá los datos de los bloques."
+            : j?.error === "validation_error" ? "Revisa los datos de los bloques."
               : (j?.message ?? `HTTP ${r.status}`),
         );
       }
@@ -1183,7 +1183,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     {
       key: "tipo",
       node: (
-        <ThAyuda alinear="left" ayuda={<><b>Rolliza</b>: entró troza y el sistema calcula qué ampara (m³ × % aprovechable) — la forma de siempre. <b>Aserrada directa</b>: la madera ya vino aserrada, así que el m³ que cargás ES el amparado y las piezas se declaran a mano; no suma rolliza ni entra en el rendimiento de la sierra. Se puede cambiar en cualquier momento.</>}>
+        <ThAyuda alinear="left" ayuda={<><b>Rolliza</b>: entró troza y el sistema calcula qué ampara (m³ × % aprovechable) — la forma de siempre. <b>Aserrada directa</b>: la madera ya vino aserrada, así que el m³ que cargas ES el amparado y las piezas se declaran a mano; no suma rolliza ni entra en el rendimiento de la sierra. Se puede cambiar en cualquier momento.</>}>
           Cargado como
         </ThAyuda>
       ),
@@ -1255,7 +1255,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
 {
       key: "ampara",
       node: (
-        <ThAyuda ayuda={<>Metros cúbicos de madera ASERRADA (A) que este bloque respalda — lo que declarás como salido de esta rolliza. Se calcula solo (m³ × % aprovechable) salvo que lo escribas a mano. En un bloque de aserrada directa es el mismo m³ (A) de la columna anterior, así que no se edita dos veces. Debajo, en chico, va lo <b>real</b>: los m³ que el reparto le asignó de verdad. Si es menos, a ese bloque le sobra respaldo sin usar.</>}>
+        <ThAyuda ayuda={<>Metros cúbicos de madera ASERRADA (A) que este bloque respalda — lo que declaras como salido de esta rolliza. Se calcula solo (m³ × % aprovechable) salvo que lo escribas a mano. En un bloque de aserrada directa es el mismo m³ (A) de la columna anterior, así que no se edita dos veces. Debajo, en chico, va lo <b>real</b>: los m³ que el reparto le asignó de verdad. Si es menos, a ese bloque le sobra respaldo sin usar.</>}>
           Ampara m³ (A)
         </ThAyuda>
       ),
@@ -1279,7 +1279,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     {
       key: "grupos",
       node: (
-        <ThAyuda alinear="left" ayuda={<>Qué lleva este bloque, de lo que hay cubicado. Vacío = <b>de todo</b> (lo de siempre): el bloque toma una tajada proporcional de todos los tipos pendientes. Elegí uno o más para que lleve <b>sólo esos</b> — «este bloque es todo Comercial, el de al lado todo Corta». A diferencia del largo, esto es <b>excluyente</b>: lo que no elegiste no entra ni aunque al bloque le sobre capacidad, queda en «Falta por distribuir». La lista sale de cómo esté agrupada la tabla (el selector «Agrupar» de arriba), así que si cambiás de vista hay que volver a elegir.</>}>
+        <ThAyuda alinear="left" ayuda={<>Qué lleva este bloque, de lo que hay cubicado. Vacío = <b>de todo</b> (lo de siempre): el bloque toma una tajada proporcional de todos los tipos pendientes. Elige uno o más para que lleve <b>sólo esos</b> — «este bloque es todo Comercial, el de al lado todo Corta». A diferencia del largo, esto es <b>excluyente</b>: lo que no elegiste no entra ni aunque al bloque le sobre capacidad, queda en «Falta por distribuir». La lista sale de cómo esté agrupada la tabla (el selector «Agrupar» de arriba), así que si cambias de vista hay que volver a elegir.</>}>
           Lleva sólo
         </ThAyuda>
       ),
@@ -1287,7 +1287,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     {
       key: "largo",
       node: (
-        <ThAyuda alinear="left" ayuda={<>Prioridad para estos largos (en pies) — «esta troza va primero a 12 pies». Escribí o elegí de la lista (son los largos que hay pendientes de cubicar) para agregar uno; tocá su chip para decidir si se lleva TODO lo pendiente de ese largo (completo) o sólo una parte (parcial, en %; el resto queda reservado para otro lado). Si a esos largos les sobra capacidad al bloque, SE COMPLETA con lo que haya (otros largos, otros tipos) — no se desperdicia. Vacío = cualquier largo, sin prioridad, como siempre.</>}>
+        <ThAyuda alinear="left" ayuda={<>Prioridad para estos largos (en pies) — «esta troza va primero a 12 pies». Escribe o elige de la lista (son los largos que hay pendientes de cubicar) para agregar uno; toca su chip para decidir si se lleva TODO lo pendiente de ese largo (completo) o sólo una parte (parcial, en %; el resto queda reservado para otro lado). Si a esos largos les sobra capacidad al bloque, SE COMPLETA con lo que haya (otros largos, otros tipos) — no se desperdicia. Vacío = cualquier largo, sin prioridad, como siempre.</>}>
           Largo (pies)
         </ThAyuda>
       ),
@@ -1299,7 +1299,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           <span className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
             Anexo 4
             <AdminTooltip
-              content="Marcá dos o más bloques para juntarlos en un solo Anexo 04 — como si fuera una sola guía. Cada pieza conserva su especie, así que da igual si los bloques marcados son de especies distintas."
+              content="Marca dos o más bloques para juntarlos en un solo Anexo 04 — como si fuera una sola guía. Cada pieza conserva su especie, así que da igual si los bloques marcados son de especies distintas."
               className="max-w-[220px] font-normal normal-case tracking-normal"
             >
               <button type="button" aria-label="Qué significa Anexo 4" className="text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent)]">
@@ -1420,12 +1420,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       ayuda={
         <>
           Cada bloque ampara hasta su <b>capacidad</b> y no más. Un bloque de <b>rolliza</b> la calcula
-          (m³ × % aprovechable); uno de <b>madera ya aserrada</b> ampara el m³ (A) que cargás, sin troza de origen.
+          (m³ × % aprovechable); uno de <b>madera ya aserrada</b> ampara el m³ (A) que cargas, sin troza de origen.
           Los dos conviven en la misma tabla y reciben medidas por el mismo reparto. Lo que no entra pasa al bloque
           siguiente; lo que no entra en ninguno queda abajo, en <b>Falta por distribuir</b>.
           <br /><br />
           En la tabla, el número <b>grande</b> de «Ampara» y «Piezas» es lo que el reparto asignó <b>de verdad</b> —
-          lo que va a imprimirse en el Anexo 04. El «tope» de abajo es sólo el techo que le ponés al bloque.
+          lo que va a imprimirse en el Anexo 04. El «tope» de abajo es sólo el techo que le pones al bloque.
         </>
       }
       acciones={
@@ -1446,7 +1446,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             </select>
           </label>
           {/* Separador — agrupar es una cosa (cómo se lee la tabla), exportar
-              es otra (qué te llevás); antes las cuatro cosas se leían como un
+              es otra (qué te llevas); antes las cuatro cosas se leían como un
               solo racimo de controles sueltos. */}
           <div className="h-6 w-px shrink-0 bg-[var(--rule-base)]" aria-hidden />
           {/* Tres salidas para tres usos: el PDF se firma y se archiva, el
@@ -1695,9 +1695,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               className="h-auto rounded-lg border-2 px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               items={[
                 { label: "Rolliza nueva", icon: TreePine, description: "La forma de siempre: m³ (R) de troza × % aprovechable", onClick: agregarBloqueManual },
-                { label: "Madera ya aserrada", icon: Ruler, description: "Sin troza de origen: cargás m³ (A) y piezas, y se le reparten las medidas", onClick: agregarBloqueAserrada },
+                { label: "Madera ya aserrada", icon: Ruler, description: "Sin troza de origen: cargas m³ (A) y piezas, y se le reparten las medidas", onClick: agregarBloqueAserrada },
                 { label: "Paquete ya declarado…", icon: Boxes, description: "Elegilo del Libro: baja con su m³ y sus piezas, sin retipear", onClick: () => setMostrarPaquetes(true) },
-                { label: "Importar planilla…", icon: FileSpreadsheet, description: "Pegá el rango de Excel o subí el .xlsx/.csv: una fila, un bloque", onClick: () => setMostrarImportar(true) },
+                { label: "Importar planilla…", icon: FileSpreadsheet, description: "Pega el rango de Excel o sube el .xlsx/.csv: una fila, un bloque", onClick: () => setMostrarImportar(true) },
                 ...(lotesConRolliza.length > 0
                   ? lotesConRolliza.map(
                       (x, i): ModuleActionItem => ({
@@ -1718,7 +1718,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               type="button"
               onClick={() => setMostrarGuardar((v) => !v)}
               disabled={bloques.length === 0}
-              title={bloques.length === 0 ? "Cargá al menos un bloque para guardar" : distribucionActual ? `Actualizar «${distribucionActual.nombre}»` : "Guardar esta distribución con un nombre"}
+              title={bloques.length === 0 ? "Carga al menos un bloque para guardar" : distribucionActual ? `Actualizar «${distribucionActual.nombre}»` : "Guardar esta distribución con un nombre"}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-40"
             >
               <Save className="h-3.5 w-3.5" /> {distribucionActual ? "Actualizar" : "Guardar"}
@@ -1736,7 +1736,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
 
         {distribucionActual && (
           <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            <FolderOpen className="h-3.5 w-3.5" aria-hidden /> Editando la distribución guardada «{distribucionActual.nombre}» — «Actualizar» la pisa, o guardá con otro nombre para crear una nueva.
+            <FolderOpen className="h-3.5 w-3.5" aria-hidden /> Editando la distribución guardada «{distribucionActual.nombre}» — «Actualizar» la pisa, o guarda con otro nombre para crear una nueva.
           </p>
         )}
 
@@ -1825,8 +1825,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
 
         {bloques.length === 0 ? (
           <p className="py-3 text-center text-sm text-[var(--text-tertiary)]">
-            Cargá la rolliza que entró (GTF, lote o troza) para distribuirla sobre lo que salió aserrado — o, si la
-            madera ya vino aserrada, agregá un bloque de <b>Madera ya aserrada</b> y poné directamente su m³ y sus piezas.
+            Carga la rolliza que entró (GTF, lote o troza) para distribuirla sobre lo que salió aserrado — o, si la
+            madera ya vino aserrada, agrega un bloque de <b>Madera ya aserrada</b> y pon directamente su m³ y sus piezas.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -2005,7 +2005,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                           {directa ? (
                             <span className="block text-right font-mono text-sm tabular-nums text-[var(--text-tertiary)]" title="No aplica: la madera ya vino aserrada">—</span>
                           ) : (
-                            <input value={valorTexto(b.id, "aprovechablePct", b.aprovechablePct, true)} onChange={onCambioDecimal(b.id, "aprovechablePct")} onBlur={onBlurDecimal(b.id, "aprovechablePct")} inputMode="decimal" placeholder={String(APROVECHABLE_DEFAULT)} aria-label="Porcentaje aprovechable del bloque" title={b.aprovechablePct == null ? `Supuesto: ${APROVECHABLE_DEFAULT} % (centro del rango normal de aserrío). Escribí el tuyo.` : undefined} className={`h-10 w-20 rounded-xl border bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.aprovechablePct == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`} />
+                            <input value={valorTexto(b.id, "aprovechablePct", b.aprovechablePct, true)} onChange={onCambioDecimal(b.id, "aprovechablePct")} onBlur={onBlurDecimal(b.id, "aprovechablePct")} inputMode="decimal" placeholder={String(APROVECHABLE_DEFAULT)} aria-label="Porcentaje aprovechable del bloque" title={b.aprovechablePct == null ? `Supuesto: ${APROVECHABLE_DEFAULT} % (centro del rango normal de aserrío). Escribe el tuyo.` : undefined} className={`h-10 w-20 rounded-xl border bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.aprovechablePct == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`} />
                           )}
                         </td>
                       ),
@@ -2078,7 +2078,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                               contradecirse. */}
                           <TopeDeBloque alerta={sobraCapacidad} titulo={directa
                             ? "Máximo del bloque: el mismo m³ (A) que cargaste, porque la madera ya vino aserrada. No es lo amparado — lo amparado es el número de arriba."
-                            : "Máximo del bloque: hasta acá puede llegar (m³ de troza × % aprovechable). NO es lo que ampara: lo amparado es el número de arriba, la suma de las medidas distribuidas. Escribí otro si querés bajarle el techo a mano."}>
+                            : "Máximo del bloque: hasta acá puede llegar (m³ de troza × % aprovechable). NO es lo que ampara: lo amparado es el número de arriba, la suma de las medidas distribuidas. Escribe otro si quieres bajarle el techo a mano."}>
                             {directa ? (
                               <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-tertiary)]">{fmtM3(Number(b.m3) || 0)}</span>
                             ) : (
@@ -2223,7 +2223,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border-2 border-dashed border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/8 px-3 py-2 print:hidden">
             <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
             <span className="text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-              Sobra aserrada sin respaldo — cubrila con:
+              Sobra aserrada sin respaldo — cúbrela con:
             </span>
             {/* Dos formas de taparlo, y la elección no es cosmética: pedir
                 TROZA (m³ (R), pasa por el % aprovechable) o declarar que esa
@@ -2234,7 +2234,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                 <button
                   type="button"
                   onClick={() => agregarBloqueSugerido(e.especie, e.rollizaFaltanteM3)}
-                  title={`Agrega una fila arriba con ${e.especie || "sin especie"} y ${fmtM3(e.rollizaFaltanteM3)} m³ de ROLLIZA ya cargados — la troza que haría falta al aprovechamiento vigente. Completá la etiqueta (GTF/lote) con la guía real cuando llegue.`}
+                  title={`Agrega una fila arriba con ${e.especie || "sin especie"} y ${fmtM3(e.rollizaFaltanteM3)} m³ de ROLLIZA ya cargados — la troza que haría falta al aprovechamiento vigente. Completa la etiqueta (GTF/lote) con la guía real cuando llegue.`}
                   className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-sm font-bold text-[var(--data-warning-700)] transition-colors hover:brightness-95 dark:text-[var(--data-warning-500)]"
                 >
                   <TreePine className="h-3.5 w-3.5" aria-hidden /> {e.especie || "Sin especie"} · {fmtM3(e.rollizaFaltanteM3)} m³ (R)

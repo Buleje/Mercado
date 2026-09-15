@@ -126,5 +126,5 @@ export const ARQUEO_DETALLE: Record<ArqueoEstado, string> = {
   sobrante: "Se contó más efectivo del esperado.",
   faltante: "Se contó menos efectivo del esperado.",
   sin_conteo: "La cerró el sistema por inactividad: el monto es el calculado, nadie contó el efectivo.",
-  imposible: "El esperado es negativo: una caja no puede tener menos que cero. Revisá los movimientos del turno.",
+  imposible: "El esperado es negativo: una caja no puede tener menos que cero. Revisa los movimientos del turno.",
 };

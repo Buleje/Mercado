@@ -96,7 +96,7 @@ export default function LothImportLineasModal({
               Importar · {SECTION_META[section].label}
             </p>
             <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-              Pegá el cuadro de Excel o subí un CSV. Nada se escribe hasta que lo confirmes.
+              Pega el cuadro de Excel o sube un CSV. Nada se escribe hasta que lo confirmes.
             </p>
           </div>
           <button
@@ -171,7 +171,7 @@ export default function LothImportLineasModal({
                 }}
                 rows={5}
                 spellCheck={false}
-                placeholder={`Pegá acá el cuadro con su fila de encabezados.\n\n${EJEMPLO[section] ?? ""}`}
+                placeholder={`Pega acá el cuadro con su fila de encabezados.\n\n${EJEMPLO[section] ?? ""}`}
                 className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 font-mono text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
 

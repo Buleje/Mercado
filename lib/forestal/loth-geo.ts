@@ -239,7 +239,7 @@ export function computeEudrReadiness(ops: OpForEudr[], parcela: LothParcela): Eu
       ok: declarada,
       detail: declarada
         ? `Polígono de ${parcela.vertices.length} vértices · ${areaHa.toFixed(2)} ha`
-        : "Dibujá el polígono del área de aprovechamiento en el mapa",
+        : "Dibuja el polígono del área de aprovechamiento en el mapa",
       weight: 30,
     },
     {

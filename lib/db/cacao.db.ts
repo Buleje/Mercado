@@ -296,7 +296,7 @@ export class CacaoDB {
    */
   private static async assertCampañaAbierta(tenantId: string, fecha: Date | null | undefined, accion: string): Promise<void> {
     const cerrado = await CacaoCierreDB.closedPeriodOf(tenantId, fecha ?? new Date());
-    if (cerrado) throw new Error(`El período ${cerrado.label} está cerrado: no se puede ${accion} en un mes cerrado. Reabrí el período para corregir.`);
+    if (cerrado) throw new Error(`El período ${cerrado.label} está cerrado: no se puede ${accion} en un mes cerrado. Reabre el período para corregir.`);
   }
 
   /**

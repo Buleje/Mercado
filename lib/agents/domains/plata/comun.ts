@@ -65,7 +65,7 @@ export function fechaValida(raw: unknown): { ok: true; fecha: Date } | { ok: fal
   if (!s) return { ok: true, fecha: new Date() };
   const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s}T12:00:00` : s);
   if (Number.isNaN(d.getTime())) {
-    return { ok: false, error: `No entendí la fecha "${s}". Usá el formato AAAA-MM-DD.` };
+    return { ok: false, error: `No entendí la fecha "${s}". Usa el formato AAAA-MM-DD.` };
   }
   const manana = Date.now() + 86_400_000;
   if (d.getTime() > manana) {

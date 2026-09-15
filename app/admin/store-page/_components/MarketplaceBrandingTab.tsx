@@ -208,7 +208,7 @@ export default function MarketplaceBrandingTab() {
             WhatsApp de contacto (opcional)
           </label>
           <p className="text-xs text-[var(--text-tertiary)] mt-0.5 mb-1.5">
-            Si lo cargás, los clientes ven un botón de WhatsApp en tu tienda (mobile). Ej: 999 888 777.
+            Si lo cargas, los clientes ven un botón de WhatsApp en tu tienda (mobile). Ej: 999 888 777.
           </p>
           <div className="flex items-center gap-2">
             <input

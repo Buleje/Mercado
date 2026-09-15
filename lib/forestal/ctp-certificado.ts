@@ -137,7 +137,7 @@ export async function printCertificadoTrazabilidad(
     <div class="verif">
       <img src="${qrDataUrl}" alt="QR de verificación" />
       <div class="vt">
-        <b>Verificable en línea:</b> escaneá el QR para contrastar esta cadena de custodia
+        <b>Verificable en línea:</b> escanea el QR para contrastar esta cadena de custodia
         en vivo contra el Libro de Operaciones del establecimiento.
         <div class="vu">${esc(verifyUrl)}</div>
       </div>
@@ -149,7 +149,7 @@ export async function printCertificadoTrazabilidad(
   </body></html>`;
 
   const w = window.open("", "_blank", "width=900,height=700");
-  if (!w) throw new Error("El navegador bloqueó la ventana. Permití pop-ups para imprimir el certificado.");
+  if (!w) throw new Error("El navegador bloqueó la ventana. Permite pop-ups para imprimir el certificado.");
   w.document.write(html);
   w.document.close();
   w.focus();

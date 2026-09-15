@@ -37,7 +37,7 @@ const GRUPOS: LibroGroup[] = [
     id: "tramites",
     label: "Trámites",
     views: [
-      { key: "catalogo", label: "Formatos", icon: FileText, hint: "Elegí el trámite y llenalo" },
+      { key: "catalogo", label: "Formatos", icon: FileText, hint: "Elige el trámite y llénalo" },
       { key: "expediente", label: "Expediente", icon: Inbox, hint: "Qué se presentó y en qué estado está" },
       { key: "plantaciones", label: "Plantaciones", icon: TreePine, hint: "Registro RNPF — inscripción y actualización" },
     ],
@@ -227,7 +227,7 @@ export default function ForestalTramites() {
               : t.diasRestantes === 0
                 ? "vence hoy"
                 : `vence en ${t.diasRestantes} ${t.diasRestantes === 1 ? "día" : "días"}`}
-            . Tocá para abrirlo.
+            . Toca para abrirlo.
           </span>
         </button>
       ))}
@@ -246,7 +246,7 @@ export default function ForestalTramites() {
             {plantacionesListas.length === 1
               ? <><strong>{plantacionesListas[0].codigoInterno}</strong> está lista para presentar ante SERFOR</>
               : <><strong>{plantacionesListas.length} registros de plantación</strong> están listos para presentar ante SERFOR</>}
-            . Tocá para abrir Plantaciones.
+            . Toca para abrir Plantaciones.
           </span>
         </button>
       )}
@@ -275,7 +275,7 @@ export default function ForestalTramites() {
           <CalendarClock className="mt-0.5 h-5 w-5 shrink-0" />
           <span>
             <strong>{f.nombre}</strong>: la última {aviso.numeroDocumento ? `(N° ${aviso.numeroDocumento}) ` : ""}
-            cubrió hasta el {aviso.periodoHasta} — pasaron {aviso.dias} días sin declarar el siguiente tramo. Tocá para abrirlo.
+            cubrió hasta el {aviso.periodoHasta} — pasaron {aviso.dias} días sin declarar el siguiente tramo. Toca para abrirlo.
           </span>
         </button>
       ))}

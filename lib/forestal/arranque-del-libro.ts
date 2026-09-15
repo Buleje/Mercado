@@ -69,7 +69,7 @@ export function pasosDeArranque(e: EstadoDelLibro): PasoDeArranque[] {
   const pasos: Omit<PasoDeArranque, "estado">[] = [
     {
       clave: "ficha",
-      titulo: "Completá la Ficha del CTP",
+      titulo: "Completa la Ficha del CTP",
       porque:
         "Es la identidad del centro: código de CTP, RUC, registro ante la ARFFS y la serie del talonario. Sin esto, los papeles que emitas salen incompletos.",
       detalle:
@@ -82,14 +82,14 @@ export function pasosDeArranque(e: EstadoDelLibro): PasoDeArranque[] {
     },
     {
       clave: "especies",
-      titulo: "Cargá las especies que trabajás",
+      titulo: "Carga las especies que trabajas",
       porque: "El libro las pide en cada ingreso y en cada corrida; tenerlas antes evita tipearlas distinto cada vez.",
       detalle: e.especies === 0 ? "El catálogo está vacío." : `${e.especies} en el catálogo.`,
       vista: "especies",
     },
     {
       clave: "historico",
-      titulo: "Traé lo que ya declaraste en el SNIFFS",
+      titulo: "Trae lo que ya declaraste en el SNIFFS",
       porque:
         "Si el centro ya venía operando, el histórico entra de una en vez de tipearse: el libro arranca cuadrado con lo que la autoridad ya tiene.",
       detalle: "Opcional: sólo si el CTP ya declaraba antes de usar el libro.",
@@ -97,21 +97,21 @@ export function pasosDeArranque(e: EstadoDelLibro): PasoDeArranque[] {
     },
     {
       clave: "ingreso",
-      titulo: "Registrá la primera guía de ingreso",
+      titulo: "Registra la primera guía de ingreso",
       porque: "Toda la madera del libro entra por una GTF: es el origen legal, y sin ella no hay nada que aserrar.",
       detalle: e.ingresos === 0 ? "Ninguna guía cargada." : `${e.ingresos} cargada${e.ingresos === 1 ? "" : "s"}.`,
       vista: "ingresos",
     },
     {
       clave: "lote",
-      titulo: "Armá el primer lote de aserrío",
+      titulo: "Arma el primer lote de aserrío",
       porque: "El lote junta las trozas de una especie que entran juntas al carro. Es lo que después consume Producción.",
       detalle: e.lotes === 0 ? "Ningún lote armado." : `${e.lotes} armado${e.lotes === 1 ? "" : "s"}.`,
       vista: "lotes",
     },
     {
       clave: "produccion",
-      titulo: "Declará la primera corrida",
+      titulo: "Declara la primera corrida",
       porque: "Lo que salió de la sierra: producto, volumen y piezas. Es la mitad del libro que mira SERFOR.",
       detalle: e.corridas === 0 ? "Ninguna corrida declarada." : `${e.corridas} declarada${e.corridas === 1 ? "" : "s"}.`,
       vista: "produccion",
@@ -127,7 +127,7 @@ export function pasosDeArranque(e: EstadoDelLibro): PasoDeArranque[] {
         e.despachos > 0
           ? `${e.despachos} emitida${e.despachos === 1 ? "" : "s"}.`
           : sinSerie
-            ? "Ninguna emitida. Antes cargá la serie del talonario en la Ficha."
+            ? "Ninguna emitida. Antes carga la serie del talonario en la Ficha."
             : "Ninguna emitida.",
       vista: "despacho",
     },

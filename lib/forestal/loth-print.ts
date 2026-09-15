@@ -153,7 +153,7 @@ function caratulaBlock(c: AnyCaratula): string {
     .join("");
   return `<div class="caratula">
     <div class="cara-title">${titular}</div>
-    <div class="cara-grid">${cells || '<div class="muted">Carátula sin configurar — completá los datos del titular en el módulo.</div>'}</div>
+    <div class="cara-grid">${cells || '<div class="muted">Carátula sin configurar — completa los datos del titular en el módulo.</div>'}</div>
   </div>`;
 }
 
@@ -220,7 +220,7 @@ export async function printLothLibro(): Promise<void> {
   </body></html>`;
 
   const w = window.open("", "_blank", "width=1100,height=800");
-  if (!w) throw new Error("El navegador bloqueó la ventana de impresión. Permití pop-ups para este sitio.");
+  if (!w) throw new Error("El navegador bloqueó la ventana de impresión. Permite pop-ups para este sitio.");
   w.document.write(html);
   w.document.close();
   w.focus();

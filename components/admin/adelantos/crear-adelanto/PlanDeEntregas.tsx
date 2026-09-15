@@ -80,7 +80,7 @@ export default function PlanDeEntregas({
             type="button"
             disabled={!(montoAdelantado > 0)}
             onClick={() => onCambiar(conKeys(repartirCuotas(montoAdelantado, n, "mensual")))}
-            title={montoAdelantado > 0 ? `${n} cuotas mensuales de ${formatCurrency(montoAdelantado / n)}` : "Poné primero el monto"}
+            title={montoAdelantado > 0 ? `${n} cuotas mensuales de ${formatCurrency(montoAdelantado / n)}` : "Pon primero el monto"}
             className="h-9 rounded-lg bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
           >
             {n}

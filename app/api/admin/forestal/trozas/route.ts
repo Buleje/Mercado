@@ -67,7 +67,7 @@ const patchSchema = z.object({
          * en la zona del servidor y correría un día en Lima (UTC-5), el mismo
          * off-by-one que ya muerde a `entryDate`.
          */
-        fechaRecepcion: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD").nullish(),
+        fechaRecepcion: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD").nullish(),
         noRecepcionada: z.boolean().optional(),
         recepcionObs: z.string().trim().max(300).nullish(),
       }),

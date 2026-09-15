@@ -608,7 +608,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                       )}
                       title={paused
                         ? "El bot NO responde en este hilo — click para reactivarlo"
-                        : "El bot responde solo — click para pausarlo y atender vos"}
+                        : "El bot responde solo — click para pausarlo y atenderlo tú mismo"}
                     >
                       <Bot className="h-4 w-4" />
                       {paused ? "Bot pausado" : "Bot activo"}
@@ -618,7 +618,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               </div>
               {pausedPhones.includes(selected.customerPhone) && (
                 <div className="border-b border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-4 py-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10">
-                  🤖💤 Bot pausado en este hilo — los mensajes llegan pero respondés vos
+                  🤖💤 Bot pausado en este hilo — los mensajes llegan pero respondes tú
                 </div>
               )}
               {/* Resumen IA (dismissible) */}

@@ -130,7 +130,7 @@ export function useStockMovements(onDone: () => void) {
       onDone();
     } catch (err) {
       console.error("[useStockMovements] addProduct error", err);
-      toast.error("Error de conexión. Reintentá.");
+      toast.error("Error de conexión. Reintenta.");
     }
     setSaving(false);
   }, [saving, addForm, onDone]);

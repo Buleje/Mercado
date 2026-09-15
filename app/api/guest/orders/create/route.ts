@@ -264,7 +264,7 @@ export async function POST(req: NextRequest) {
       err: err instanceof Error ? err.message : String(err),
     });
     return NextResponse.json(
-      { error: "Error al guardar tu pedido. Intentá de nuevo." },
+      { error: "Error al guardar tu pedido. Intenta de nuevo." },
       { status: 503 },
     );
   }

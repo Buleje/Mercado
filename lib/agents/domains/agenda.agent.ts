@@ -47,19 +47,19 @@ function cuando(raw: unknown): { ok: true; fecha: Date } | { ok: false; error: s
     return {
       ok: false,
       error:
-        "Falta CUÁNDO. Preguntale al usuario el día (y la hora si la dijo) y mandalo en formato AAAA-MM-DD o AAAA-MM-DDTHH:mm.",
+        "Falta CUÁNDO. Pregúntale al usuario el día (y la hora si la dijo) y mándalo en formato AAAA-MM-DD o AAAA-MM-DDTHH:mm.",
     };
   }
   const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s}T09:00:00` : s);
   if (Number.isNaN(d.getTime())) {
-    return { ok: false, error: `No entendí la fecha "${s}". Usá AAAA-MM-DD o AAAA-MM-DDTHH:mm.` };
+    return { ok: false, error: `No entendí la fecha "${s}". Usa AAAA-MM-DD o AAAA-MM-DDTHH:mm.` };
   }
   // Un margen de un día hacia atrás: «recordame hoy a las 8» dictado a las 9
   // sigue siendo una intención válida, no un error de tipeo.
   if (d.getTime() < Date.now() - unDia) {
     return {
       ok: false,
-      error: `Esa fecha (${s}) ya pasó. Un recordatorio se agenda hacia adelante — confirmá el día con el usuario.`,
+      error: `Esa fecha (${s}) ya pasó. Un recordatorio se agenda hacia adelante — confirma el día con el usuario.`,
     };
   }
   if (d.getTime() > Date.now() + 3 * 365 * unDia) {
@@ -82,7 +82,7 @@ async function agendar(task: AgentTask): Promise<AgentResult> {
 
   const titulo = texto(p.titulo);
   if (!titulo) {
-    return { success: false, error: "Falta QUÉ hay que hacer. Preguntale al usuario y mandalo en `titulo`." };
+    return { success: false, error: "Falta QUÉ hay que hacer. Pregúntale al usuario y mándalo en `titulo`." };
   }
 
   const f = cuando(p.cuando);
@@ -189,7 +189,7 @@ async function completar(task: AgentTask): Promise<AgentResult> {
   if (!id) {
     return {
       success: false,
-      error: "Falta el id del recordatorio. Buscalo con agenda_ver y usá el id que devuelve — no lo inventes.",
+      error: "Falta el id del recordatorio. Búscalo con agenda_ver y usa el id que devuelve — no lo inventes.",
     };
   }
 

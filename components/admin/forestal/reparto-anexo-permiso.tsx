@@ -306,7 +306,7 @@ export default function AnexoPorPermiso({
                 <span>
                   No cuadra: el detalle suma {fmtM3(actual.totalM3)} m³ y sus bloques amparan{" "}
                   {fmtM3(actual.amparadoM3)} ({actual.diferenciaM3 > 0 ? "+" : ""}
-                  {fmtM3(actual.diferenciaM3)}). Revisá los overrides de línea antes de imprimir.
+                  {fmtM3(actual.diferenciaM3)}). Revisa los overrides de línea antes de imprimir.
                 </span>
               </>
             )}

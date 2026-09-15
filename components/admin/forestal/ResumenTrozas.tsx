@@ -140,7 +140,7 @@ export default function ResumenTrozas() {
       icon={Layers}
       titulo="Cubicación de trozas (patio)"
       hint={`${rows.length} ${rows.length === 1 ? "troza" : "trozas"} · ${fmtPt(resumen.total.pt)} PT · ${fmtM3(resumen.total.m3)} m³ en total`}
-      ayuda="La rolliza que hay en el patio, leída tal cual se cubicó en «Cubicador de trozas»: piezas, PT y m³ por especie y por tipo. Se actualiza sola mientras cargás. Es otro lote que el de la aserrada — acá no se distribuye nada, sólo se lee lo que entró."
+      ayuda="La rolliza que hay en el patio, leída tal cual se cubicó en «Cubicador de trozas»: piezas, PT y m³ por especie y por tipo. Se actualiza sola mientras cargas. Es otro lote que el de la aserrada — acá no se distribuye nada, sólo se lee lo que entró."
       acciones={
         <>
           <button type="button" onClick={recargar} title="Volver a leer el patio del cubicador de trozas" className={`${BTN} print:hidden`}>

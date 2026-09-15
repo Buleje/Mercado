@@ -134,7 +134,7 @@ export default function WhatsAppBotConfig() {
           <p className="text-xs text-[var(--text-tertiary)]">
             {configs.length > 0
               ? "El bot responde por cada número activo. Las conversaciones llegan al inbox WhatsApp."
-              : "Pegá las credenciales de Meta WhatsApp Business para que el bot tome pedidos 24/7."}
+              : "Pega las credenciales de Meta WhatsApp Business para que el bot tome pedidos 24/7."}
           </p>
         </div>
       </div>

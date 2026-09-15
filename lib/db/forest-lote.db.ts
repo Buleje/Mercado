@@ -439,7 +439,7 @@ export class ForestLoteDB {
     const ids = miembros.map((m) => m.produccionEntryId);
     if (new Set(ids).size !== ids.length) {
       throw new CtpInvariantError(
-        "Una misma corrida aparece dos veces: sumá las cantidades en una sola línea.",
+        "Una misma corrida aparece dos veces: suma las cantidades en una sola línea.",
         "I4_SOBRE_ATRIBUCION_DESPACHO",
       );
     }
@@ -573,7 +573,7 @@ export class ForestLoteDB {
       throw new CtpInvariantError("Un lote vacío no se puede cerrar ni despachar.", "TENANT_MISMATCH");
     }
     if (next === "anulado" && (!reason || reason.trim().length < 3)) {
-      throw new CtpInvariantError("Indicá el motivo de la anulación (mín. 3 caracteres).", "TENANT_MISMATCH");
+      throw new CtpInvariantError("Indica el motivo de la anulación (mín. 3 caracteres).", "TENANT_MISMATCH");
     }
 
     const updated = await prisma.forestProdLote.update({

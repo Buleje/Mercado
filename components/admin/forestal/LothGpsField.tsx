@@ -77,13 +77,13 @@ export default function LothGpsField({ lat, lng, onChange, censo }: Props) {
     const x = Number(este.replace(/[  ,]/g, ""));
     const y = Number(norte.replace(/[  ,]/g, ""));
     if (!Number.isFinite(x) || !Number.isFinite(y) || x <= 0 || y <= 0) {
-      setError("Escribí el Este y el Norte en metros (ej. 545060.02 / 9012340.07).");
+      setError("Escribe el Este y el Norte en metros (ej. 545060.02 / 9012340.07).");
       return;
     }
     const { zone, south } = parseUtmZone(zona);
     const [la, ln] = fromUtm(x, y, zone, south);
     if (Math.abs(la) > 90 || Math.abs(ln) > 180) {
-      setError("Esas coordenadas caen fuera del planeta: revisá la zona UTM.");
+      setError("Esas coordenadas caen fuera del planeta: revisa la zona UTM.");
       return;
     }
     onChange(la, ln);

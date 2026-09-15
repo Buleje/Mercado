@@ -106,7 +106,7 @@ export default function CtpUbigeoSelects({
              sería declarar un distrito que no existe en el departamento nuevo. */
           onChange={(e) => onChange({ departamento: e.target.value, provincia: "", distrito: "" })}
         >
-          <option value="">Elegí el departamento</option>
+          <option value="">Elige el departamento</option>
           {opDep.map((d) => (
             <option key={d} value={d}>{d}</option>
           ))}
@@ -115,7 +115,7 @@ export default function CtpUbigeoSelects({
       <Field
         span={span}
         label="Provincia"
-        hint={valor.departamento ? undefined : "Elegí primero el departamento"}
+        hint={valor.departamento ? undefined : "Elige primero el departamento"}
       >
         <select
           className={I}
@@ -123,7 +123,7 @@ export default function CtpUbigeoSelects({
           disabled={!valor.departamento}
           onChange={(e) => onChange({ provincia: e.target.value, distrito: "" })}
         >
-          <option value="">{valor.departamento ? "Elegí la provincia" : "—"}</option>
+          <option value="">{valor.departamento ? "Elige la provincia" : "—"}</option>
           {opProv.map((p) => (
             <option key={p} value={p}>{p}</option>
           ))}
@@ -132,7 +132,7 @@ export default function CtpUbigeoSelects({
       <Field
         span={span}
         label="Distrito"
-        hint={valor.provincia ? undefined : "Elegí primero la provincia"}
+        hint={valor.provincia ? undefined : "Elige primero la provincia"}
       >
         <select
           className={I}
@@ -140,7 +140,7 @@ export default function CtpUbigeoSelects({
           disabled={!valor.provincia}
           onChange={(e) => onChange({ distrito: e.target.value })}
         >
-          <option value="">{valor.provincia ? "Elegí el distrito" : "—"}</option>
+          <option value="">{valor.provincia ? "Elige el distrito" : "—"}</option>
           {opDist.map((d) => (
             <option key={d} value={d}>{d}</option>
           ))}

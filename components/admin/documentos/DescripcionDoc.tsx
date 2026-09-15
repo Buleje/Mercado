@@ -65,7 +65,7 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
       onPatched(await patchDocument(doc.id, { descripcion: borrador.trim() }));
       setEditando(false);
     } catch {
-      setError("No se pudo guardar. Probá de nuevo.");
+      setError("No se pudo guardar. Prueba de nuevo.");
     } finally {
       setGuardando(false);
     }
@@ -87,8 +87,8 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
       onAnalizado?.();
     } catch (e) {
       setError(e instanceof Error && /422|no_text/.test(e.message)
-        ? "No pude sacarle texto ni leerlo como imagen. Si es un escaneo, revisá que se vea nítido."
-        : "No se pudo describir ahora. Probá de nuevo en un momento.");
+        ? "No pude sacarle texto ni leerlo como imagen. Si es un escaneo, revisa que se vea nítido."
+        : "No se pudo describir ahora. Prueba de nuevo en un momento.");
     } finally {
       setAnalizando(false);
     }
@@ -196,7 +196,7 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
             <div className="min-w-0">
               <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Tu descripción</p>
               <p className={cn("mt-0.5 text-sm leading-relaxed", descPropia ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)] italic")}>
-                {descPropia || "Agregá con tus palabras qué es: se busca por eso, y vale más que lo que dedujo la IA."}
+                {descPropia || "Agrega con tus palabras qué es: se busca por eso, y vale más que lo que dedujo la IA."}
               </p>
             </div>
             <button

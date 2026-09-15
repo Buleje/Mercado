@@ -190,7 +190,7 @@ export default function VentasHeatmap() {
     );
   }
 
-  const _insightText = insight || `Tu hora pico es los ${DOW_LABELS[peakDow]} a las ${formatHour(peakHour)}. Asegurate de tener personal suficiente en ese horario.`;
+  const _insightText = insight || `Tu hora pico es los ${DOW_LABELS[peakDow]} a las ${formatHour(peakHour)}. Asegúrate de tener personal suficiente en ese horario.`;
 
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">

@@ -112,7 +112,7 @@ export async function updateSupplierReturnEstado(
         if (nuevoStock < 0) {
           // Se registra igual: el kardex tiene que decir la verdad, y un saldo
           // negativo es la señal de que el inventario ya venía mal.
-          avisos.push(`"${producto.name}" quedó en ${nuevoStock}: revisá el inventario, faltaba stock antes de esta devolución.`);
+          avisos.push(`"${producto.name}" quedó en ${nuevoStock}: revisa el inventario, faltaba stock antes de esta devolución.`);
         }
       }
     }

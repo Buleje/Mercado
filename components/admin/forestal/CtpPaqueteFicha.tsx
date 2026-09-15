@@ -162,7 +162,7 @@ export default function CtpPaqueteFicha({
         p && !varios
           ? `${p.productType ?? p.corrida.productType ?? "—"} · ${p.corrida.speciesCommon ?? "—"} · corrida N° ${p.corrida.lineNo}`
           : varios
-            ? `${resultados.length} coincidencias — elegí cuál`
+            ? `${resultados.length} coincidencias — elige cuál`
             : undefined
       }
     >
@@ -184,7 +184,7 @@ export default function CtpPaqueteFicha({
             <p className="font-bold text-[var(--text-primary)]">Ningún paquete se llama así.</p>
             <p className="mt-1">
               El código se pinta al declarar la producción. Si el atado es viejo puede estar cargado con otro
-              código —probá con una parte, se busca por pedazo— o pertenecer a una corrida anulada.
+              código —prueba con una parte, se busca por pedazo— o pertenecer a una corrida anulada.
             </p>
           </div>
         )}

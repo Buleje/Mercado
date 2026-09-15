@@ -193,7 +193,7 @@ export default function CtpCuadreSniffsModal({
                       {cuadre.produccionPendiente || cuadre.estado === "pendiente" ? "Declarar" : "Completar"}
                     </Btn>
                   ) : (
-                    <Btn size="sm" variant="ghost" onClick={() => onVer(lote)} title="No hay corrida viva que declarar: mirá la ficha">
+                    <Btn size="sm" variant="ghost" onClick={() => onVer(lote)} title="No hay corrida viva que declarar: mira la ficha">
                       Ver la ficha
                     </Btn>
                   )}

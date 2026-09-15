@@ -209,7 +209,7 @@ export default function PlantacionPasoMapa({
               </option>
             ))}
           </select>
-          {activoValido !== null && <span className="text-xs text-[var(--text-tertiary)]">Tocá el mapa para agregar un vértice</span>}
+          {activoValido !== null && <span className="text-xs text-[var(--text-tertiary)]">Toca el mapa para agregar un vértice</span>}
         </div>
       )}
 
@@ -231,7 +231,7 @@ export default function PlantacionPasoMapa({
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
             <div className="pointer-events-auto max-w-sm rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-5 text-center shadow-lg backdrop-blur">
               <MapPin className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" aria-hidden="true" />
-              <p className="text-sm font-bold text-[var(--text-primary)]">Agregá un bloque en el paso anterior para verlo acá</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Agrega un bloque en el paso anterior para verlo acá</p>
               <p className="mt-1 text-xs text-[var(--text-tertiary)]">El mapa dibuja el polígono de cada bloque en cuanto tenga sus vértices.</p>
             </div>
           </div>

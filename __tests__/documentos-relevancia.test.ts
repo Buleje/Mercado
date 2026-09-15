@@ -181,7 +181,7 @@ describe("motivoDeFalloIA — el error del proveedor, en castellano", () => {
   });
 
   it("cualquier otra cosa invita a reintentar", () => {
-    expect(motivoDeFalloIA("socket hang up")).toMatch(/probá de nuevo/i);
+    expect(motivoDeFalloIA("socket hang up")).toMatch(/prueba de nuevo/i);
   });
 });
 

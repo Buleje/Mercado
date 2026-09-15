@@ -113,7 +113,7 @@ function metaBackgroundLabel(bg: ImageValidationResult["meta"]["estimatedBackgro
     case "light":
       return "fondo claro (casi blanco)";
     case "colored":
-      return "fondo con color — considerá cambiarlo";
+      return "fondo con color — considera cambiarlo";
     default:
       return "fondo no analizable";
   }

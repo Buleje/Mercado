@@ -166,7 +166,7 @@ export default function LothCierrePanel({
             </Btn>
           ) : (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-[var(--data-warning-700)]">Bloquea el mes (solo reabrible con motivo). ¿Confirmás?</span>
+              <span className="text-xs font-bold text-[var(--data-warning-700)]">Bloquea el mes (solo reabrible con motivo). ¿Confirmas?</span>
               <Btn variant="danger" size="md" onClick={() => void cerrar()} disabled={busy}>
                 {busy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />} Sí, cerrar
               </Btn>
@@ -263,7 +263,7 @@ export default function LothCierrePanel({
         </div>
         {(cierres ?? []).length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-            Ningún período cerrado todavía. Cerrá un mes cuando termines de registrar sus operaciones.
+            Ningún período cerrado todavía. Cierra un mes cuando termines de registrar sus operaciones.
           </div>
         ) : (
           <div className="space-y-2">

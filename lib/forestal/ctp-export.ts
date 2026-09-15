@@ -588,7 +588,7 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
     }
   }
   if (!ficha || !ficha.codigoCtp || !ficha.ruc) {
-    const warn = wc.addRow(["⚠ Ficha del CTP incompleta — completá 'Ficha CTP' antes de presentar este libro.", ""]);
+    const warn = wc.addRow(["⚠ Ficha del CTP incompleta — completa 'Ficha CTP' antes de presentar este libro.", ""]);
     warn.getCell(1).font = { bold: true, color: { argb: "FFB45309" } };
   }
 

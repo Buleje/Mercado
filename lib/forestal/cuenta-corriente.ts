@@ -110,7 +110,7 @@ export interface MovimientoCuenta {
 const texto = (max: number) => z.string().trim().max(max);
 
 export const movimientoInputSchema = z.object({
-  parteId: texto(40).min(1, "Elegí con quién es la cuenta"),
+  parteId: texto(40).min(1, "Elige con quién es la cuenta"),
   parteNombre: texto(200).min(1),
   fecha: texto(10).min(10, "La fecha es obligatoria"),
   tipo: z.enum(TIPOS_MOV),

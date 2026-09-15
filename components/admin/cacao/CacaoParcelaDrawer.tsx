@@ -129,7 +129,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
                 </li>
               ); })}
             </ul>
-            <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--data-error-700)]">Seguí su tratamiento en la pestaña Sanidad.</p>
+            <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--data-error-700)]">Sigue su tratamiento en la pestaña Sanidad.</p>
           </div>
         )}
 
@@ -286,7 +286,7 @@ function DuplicarParcelaModal({ parcela, onClose, onDone }: { parcela: Parcela; 
     <AdminModal open onClose={onClose} variant="centered-sm" icon={Copy} title="Duplicar sección" description={`Copia los datos de ${parcela.codigo} en una sección nueva (sin labores ni polígono).`}>
       <form onSubmit={submit} className="space-y-4 px-5 py-5 sm:px-6">
         <label className="block text-sm font-bold text-[var(--text-primary)]">Código de la nueva sección<input value={codigo} onChange={(e) => setCodigo(e.target.value)} className={`mt-1 ${I}`} autoFocus /></label>
-        <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se copian nombre, área, variedad, año y plantas. Dibujá su polígono y registrá sus labores aparte.</p>
+        <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se copian nombre, área, variedad, año y plantas. Dibuja su polígono y registra sus labores aparte.</p>
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
@@ -322,7 +322,7 @@ function CosechaAcopioModal({ labor, onClose, onSent }: { labor: Labor; onClose:
   return (
     <AdminModal open onClose={onClose} variant="centered-sm" icon={Warehouse} title="Enviar cosecha a Acopio" description={`${kg.toLocaleString("es-PE")} kg cosechados el ${fdate(labor.fechaHecho)}.`}>
       <div className="space-y-4 px-5 py-5 sm:px-6">
-        <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se creará un lote en <strong className="text-[var(--text-primary)]">Acopio</strong> con estos {kg} kg y el origen de esta sección (trazabilidad NTP 208.040). Podés ajustarlo luego en Acopio.</p>
+        <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se creará un lote en <strong className="text-[var(--text-primary)]">Acopio</strong> con estos {kg} kg y el origen de esta sección (trazabilidad NTP 208.040). Puedes ajustarlo luego en Acopio.</p>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-bold text-[var(--text-primary)]">Precio S/ por kg<input type="number" step="0.01" min="0" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="opcional" className={`mt-1 ${I}`} autoFocus /></label>
           <label className="text-sm font-bold text-[var(--text-primary)]">Productor<input value={productor} onChange={(e) => setProductor(e.target.value)} placeholder="opcional" className={`mt-1 ${I}`} /></label>
@@ -355,7 +355,7 @@ function RegistrarLaborForm({ parcelaId, responsables, onDone }: { parcelaId: st
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting) return;
-    if (fechaFutura) { setError("Si ya la hiciste, la fecha no puede ser futura. Cambiá el estado a “Programada” para agendarla."); return; }
+    if (fechaFutura) { setError("Si ya la hiciste, la fecha no puede ser futura. Cambia el estado a “Programada” para agendarla."); return; }
     if (f.cantidad && Number(f.cantidad) < 0) { setError("La cantidad no puede ser negativa."); return; }
     setSubmitting(true); setError(null);
     try {

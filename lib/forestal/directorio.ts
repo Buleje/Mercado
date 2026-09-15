@@ -184,7 +184,7 @@ export function motivoLogoInvalido(dataUrl: string): string | null {
   const m = /^data:([a-z/+.-]+);base64,/i.exec(v);
   if (!m) return "El logo tiene que ser una imagen (PNG, JPG o WEBP).";
   if (!(LOGO_MIMES as readonly string[]).includes(m[1].toLowerCase())) {
-    return "Formato no admitido: usá PNG, JPG o WEBP.";
+    return "Formato no admitido: usa PNG, JPG o WEBP.";
   }
   if (v.length > LOGO_MAX_BYTES) {
     return `La imagen pesa ${Math.round(v.length / 1024)} KB y el tope son ${Math.round(LOGO_MAX_BYTES / 1024)} KB.`;
@@ -209,7 +209,7 @@ export const adjuntoSchema = z.object({
 const texto = (max: number) => z.string().trim().max(max);
 
 export const parteInputSchema = z.object({
-  roles: z.array(z.enum(ROLES_PARTE)).min(1, "Elegí al menos un rol").max(4),
+  roles: z.array(z.enum(ROLES_PARTE)).min(1, "Elige al menos un rol").max(4),
   nombre: texto(200).min(2, "El nombre es obligatorio"),
   categoria: z.enum(CATEGORIAS_PARTE).optional().nullable(),
   /** Código de CTP de la parte, cuando ella misma es otro aserradero/CTP. */

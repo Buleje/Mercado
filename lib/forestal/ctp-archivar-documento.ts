@@ -149,7 +149,7 @@ export async function archivarEnDrive(o: ArchivarDocumento): Promise<ResultadoAr
     const mb = (o.archivo.size / 1024 / 1024).toFixed(1);
     throw new Error(
       `El documento pesa ${mb} MB y el expediente acepta hasta ${Math.round(MAX_UPLOAD_SIZE / 1024 / 1024)} MB. ` +
-        `Armá el legajo en tandas más chicas (filtrá por mes o marcá menos guías).`,
+        `Arma el legajo en tandas más chicas (filtra por mes o marca menos guías).`,
     );
   }
 

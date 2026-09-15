@@ -223,7 +223,7 @@ export default function StoreReviewsAdminModule() {
         <div>
           <SectionTitle className="text-[var(--text-primary)]">Reseñas de tu tienda</SectionTitle>
           <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
-            Aprobá las que querés publicar, ocultá las que no, respondé a tus clientes.
+            Aprueba las que quieres publicar, oculta las que no, responde a tus clientes.
           </p>
         </div>
         <button

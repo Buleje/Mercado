@@ -495,8 +495,8 @@ export async function POST(req: NextRequest) {
           ok: false,
           message:
             r.error === "no-active-conversation"
-              ? "No encontramos un pedido activo para tu número. Hablá con la tienda primero."
-              : "No pudimos procesar la imagen. Probá de nuevo.",
+              ? "No encontramos un pedido activo para tu número. Habla con la tienda primero."
+              : "No pudimos procesar la imagen. Prueba de nuevo.",
         },
         { status: r.status },
       );
@@ -510,7 +510,7 @@ export async function POST(req: NextRequest) {
       {
         ok: false,
         message:
-          "Hubo un problema descargando la imagen. Probá enviarla de nuevo en un minuto.",
+          "Hubo un problema descargando la imagen. Prueba enviarla de nuevo en un minuto.",
       },
       { status: 200 },
     );

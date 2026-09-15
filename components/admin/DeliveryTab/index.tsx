@@ -189,7 +189,7 @@ export default function DeliveryTab() {
         <p className="text-base font-extrabold text-[var(--text-primary)] mt-1">
           {selectedRoute
             ? `${selectedRoute.completedStops}/${selectedRoute.totalStops} entregadas`
-            : "Seleccioná una ruta"}
+            : "Selecciona una ruta"}
         </p>
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -208,7 +208,7 @@ export default function DeliveryTab() {
               Sin ruta seleccionada
             </p>
             <p className="text-sm text-[var(--text-tertiary)] mt-1">
-              Hacé clic en una ruta para ver sus paradas con timeline.
+              Haz clic en una ruta para ver sus paradas con timeline.
             </p>
           </div>
         )}
@@ -622,7 +622,7 @@ export default function DeliveryTab() {
               <p className="text-sm text-[var(--text-tertiary)] mt-1">
                 {feedFilter === "all"
                   ? "Cuando inicien entregas verás los eventos en tiempo real."
-                  : "Cambiá el filtro para ver otros eventos."}
+                  : "Cambia el filtro para ver otros eventos."}
               </p>
             </div>
           ) : (
@@ -682,7 +682,7 @@ export default function DeliveryTab() {
           )}
           {filteredEvents.length > 12 && (
             <p className="text-sm text-[var(--text-tertiary)] font-bold text-center mt-4">
-              Mostrando 12 de {filteredEvents.length} eventos · refrescá para ver más
+              Mostrando 12 de {filteredEvents.length} eventos · refresca para ver más
             </p>
           )}
         </div>

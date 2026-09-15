@@ -199,7 +199,7 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
               </div>
             ) : registros.length === 0 ? (
               <p className="p-4 text-center text-sm text-[var(--text-tertiary)]">
-                Sin registros. Anotá el día 1 abajo (temperatura de la masa al voltear).
+                Sin registros. Anota el día 1 abajo (temperatura de la masa al voltear).
               </p>
             ) : (
               <DataTable className="w-full text-sm">

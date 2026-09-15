@@ -80,10 +80,10 @@ const jsonSchema = z
   })
   .passthrough();
 
-const SYSTEM = `Mirás fotos de la cámara de seguridad de un aserradero en la selva peruana
-(patio de trozas, portón de entrada, zona de la sierra) y describís lo que se ve.
+const SYSTEM = `Miras fotos de la cámara de seguridad de un aserradero en la selva peruana
+(patio de trozas, portón de entrada, zona de la sierra) y describes lo que se ve.
 
-Respondé SOLO un objeto JSON con estos campos:
+Responde SOLO un objeto JSON con estos campos:
 - descripcion: UNA línea en español, concreta, como se la contarías a alguien por teléfono.
   Ej: "Camión rojo cargado de trozas entrando por el portón". Sin adornos ni interpretaciones.
 - hayPersona: true/false
@@ -96,9 +96,9 @@ Respondé SOLO un objeto JSON con estos campos:
   "muy lejos", "movimiento")
 
 Reglas:
-- Es de noche, hay niebla o el lente está sucio → confianza "baja" y describí lo poco que se vea.
+- Es de noche, hay niebla o el lente está sucio → confianza "baja" y describe lo poco que se vea.
 - No hay nada reconocible (pared, cielo, negro) → descripcion breve y confianza "baja".
-- Preferí decir "no se lee" antes que arriesgar: un dato inventado acá termina en un documento oficial.
+- Prefiere decir "no se lee" antes que arriesgar: un dato inventado acá termina en un documento oficial.
 
 SOLO el JSON, sin texto antes ni después.`;
 
@@ -171,7 +171,7 @@ export async function leerFotoDeCamara(
           {
             role: "user",
             content: [
-              { type: "text", text: "¿Qué se ve en esta foto de la cámara? Devolvé el JSON." },
+              { type: "text", text: "¿Qué se ve en esta foto de la cámara? Devuelve el JSON." },
               { type: "image", image: imagen instanceof URL ? imagen : new URL(imagen) },
             ],
           },

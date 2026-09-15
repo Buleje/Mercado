@@ -480,7 +480,7 @@ export default function LothMapaView({
       const muestras = muestrearTraza(traza, 60);
       const elevaciones = await cargarElevaciones(muestras);
       if (elevaciones.length === 0) {
-        setError("El servicio de altitudes no respondió. Probá de nuevo en un momento.");
+        setError("El servicio de altitudes no respondió. Prueba de nuevo en un momento.");
         return;
       }
       setPerfil(construirPerfil(muestras, elevaciones));
@@ -949,7 +949,7 @@ export default function LothMapaView({
               <div className="absolute inset-x-3 top-3 z-30 flex flex-wrap items-center gap-2 rounded-2xl border-2 border-[#a21caf] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-lg backdrop-blur">
                 <Route className="h-4 w-4 text-[#a21caf]" />
                 <span className="text-xs font-bold text-[var(--text-primary)]">
-                  Tocá el mapa para trazar la vía · <b className="font-mono tabular-nums">{viaDraft.length}</b> punto(s)
+                  Toca el mapa para trazar la vía · <b className="font-mono tabular-nums">{viaDraft.length}</b> punto(s)
                   {viaDraft.length >= 2 && (
                     <span className="text-[var(--text-tertiary)]"> · {formatDistance(lineLengthM(viaDraft))}</span>
                   )}
@@ -989,8 +989,8 @@ export default function LothMapaView({
                   <MapPin className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" />
                   <p className="text-sm font-bold text-[var(--text-primary)]">Todavía no hay geolocalización</p>
                   <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                    Dibujá la <b>parcela de aprovechamiento</b> (botón en la cabina EUDR), cargá el <b>censo</b> con sus coordenadas UTM y
-                    capturá el <b>GPS</b> al registrar cada tala. Los tres alimentan el plano y el cumplimiento EUDR.
+                    Dibuja la <b>parcela de aprovechamiento</b> (botón en la cabina EUDR), carga el <b>censo</b> con sus coordenadas UTM y
+                    captura el <b>GPS</b> al registrar cada tala. Los tres alimentan el plano y el cumplimiento EUDR.
                   </p>
                 </div>
               </div>
@@ -998,7 +998,7 @@ export default function LothMapaView({
           </div>
 
           <p className="inline-flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
-            <Camera className="h-3.5 w-3.5" /> Tocá un punto para ver su coordenada UTM, la especie y la foto de campo.
+            <Camera className="h-3.5 w-3.5" /> Toca un punto para ver su coordenada UTM, la especie y la foto de campo.
           </p>
         </div>
 

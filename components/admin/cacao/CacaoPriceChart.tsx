@@ -217,7 +217,7 @@ export default function CacaoPriceChart({
           </div>
 
           {onPointSelect && (
-            <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Tocá un punto del gráfico para fijar ese precio en los indicadores de arriba.</p>
+            <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Toca un punto del gráfico para fijar ese precio en los indicadores de arriba.</p>
           )}
           <ResponsiveContainer width="100%" height={240} minWidth={0}>
             <AreaChart

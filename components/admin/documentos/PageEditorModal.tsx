@@ -38,7 +38,7 @@ export function PageEditorModal({ doc, onClose, onDone }: { doc: DbDocument; onC
   });
 
   const save = async () => {
-    if (pages.length === 0) { setError("Dejá al menos una página."); return; }
+    if (pages.length === 0) { setError("Deja al menos una página."); return; }
     setBusy(true);
     setError(null);
     try {
@@ -77,7 +77,7 @@ export function PageEditorModal({ doc, onClose, onDone }: { doc: DbDocument; onC
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando páginas…</div>
         ) : pages.length === 0 ? (
-          <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">No quedan páginas. Agregá al menos una o cancelá.</p>
+          <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">No quedan páginas. Agrega al menos una o cancela.</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {pages.map((pg, i) => (

@@ -181,7 +181,7 @@ const inventoryTools = defineTools("inventory", [
     function: {
       name: "inventory_buscar_producto",
       description:
-        "Busca productos por nombre, SKU o código de barras y devuelve su id, precio y stock. SIEMPRE usar esto ANTES de modificar un producto: si hay más de una coincidencia, preguntale al usuario cuál antes de tocar nada.",
+        "Busca productos por nombre, SKU o código de barras y devuelve su id, precio y stock. SIEMPRE usar esto ANTES de modificar un producto: si hay más de una coincidencia, pregúntale al usuario cuál antes de tocar nada.",
       parameters: {
         type: "object",
         properties: { texto: { type: "string", description: "Parte del nombre, SKU o código de barras" } },
@@ -193,7 +193,7 @@ const inventoryTools = defineTools("inventory", [
     function: {
       name: "inventory_ajustar_stock",
       description:
-        "Deja el stock de un producto en la cantidad indicada y lo registra en el kardex con su motivo. Requiere el productId exacto (buscalo antes con inventory_buscar_producto) y un motivo. El usuario tiene que confirmar antes de que se ejecute.",
+        "Deja el stock de un producto en la cantidad indicada y lo registra en el kardex con su motivo. Requiere el productId exacto (búscalo antes con inventory_buscar_producto) y un motivo. El usuario tiene que confirmar antes de que se ejecute.",
       parameters: {
         type: "object",
         properties: {
@@ -476,7 +476,7 @@ const avisosTool = defineTools("analytics", [
     function: {
       name: "analytics_avisos",
       description:
-        "Lo que vale la pena contarle al dueño HOY sin que pregunte: combustible que se disparó en una máquina, fletes sin pagar, adelantos vencidos, fiados de más de un mes, máquinas paradas. Usar cuando pregunten «¿qué hay de nuevo?», «¿algo urgente?», «¿cómo viene todo?». Si devuelve cero, decilo tal cual: no inventes una alerta para no venir con las manos vacías.",
+        "Lo que vale la pena contarle al dueño HOY sin que pregunte: combustible que se disparó en una máquina, fletes sin pagar, adelantos vencidos, fiados de más de un mes, máquinas paradas. Usar cuando pregunten «¿qué hay de nuevo?», «¿algo urgente?», «¿cómo viene todo?». Si devuelve cero, dilo tal cual: no inventes una alerta para no venir con las manos vacías.",
       parameters: { type: "object", properties: {} },
     },
   },
@@ -702,7 +702,7 @@ const forestalTools = defineTools("forestal", [
     function: {
       name: "forestal_buscar_guia",
       description:
-        "Busca ingresos de madera del libro CTP por N° de guía GTF, proveedor o especie. La GTF es el documento que acredita el origen legal de la madera. Usar para 'buscá la guía 001-0000123', '¿qué me trajo el proveedor X?'.",
+        "Busca ingresos de madera del libro CTP por N° de guía GTF, proveedor o especie. La GTF es el documento que acredita el origen legal de la madera. Usar para 'busca la guía 001-0000123', '¿qué me trajo el proveedor X?'.",
       parameters: {
         type: "object",
         properties: {
@@ -743,7 +743,7 @@ const uiTools = defineTools("ui", [
     function: {
       name: "ui_abrir",
       description:
-        "Devuelve un botón que abre la pantalla del panel donde se resuelve lo que el usuario pide. Usalo SIEMPRE que la respuesta implique 'andá a…' o 'revisá en…', en vez de nombrar el módulo en texto. Destinos: inventario, kardex, conteo-fisico, ventas, pos, caja, pedidos, clientes, fiados, compras, historial-gastos, sugerencias-compra, plata, adelantos, productos, promociones, analytics, documentos, libro-ctp, ctp-existencias, ctp-ingresos, ctp-ficha, libro-th.",
+        "Devuelve un botón que abre la pantalla del panel donde se resuelve lo que el usuario pide. Úsalo SIEMPRE que la respuesta implique 've a…' o 'revisa en…', en vez de nombrar el módulo en texto. Destinos: inventario, kardex, conteo-fisico, ventas, pos, caja, pedidos, clientes, fiados, compras, historial-gastos, sugerencias-compra, plata, adelantos, productos, promociones, analytics, documentos, libro-ctp, ctp-existencias, ctp-ingresos, ctp-ficha, libro-th.",
       parameters: {
         type: "object",
         properties: {
@@ -764,7 +764,7 @@ const documentosTools = defineTools("documentos", [
     function: {
       name: "documentos_buscar",
       description:
-        "Busca archivos en el drive del negocio por nombre, etiqueta o por el TEXTO DENTRO del archivo (OCR): facturas, contratos, guías, comprobantes. Usar para 'buscá la factura de X', '¿dónde está el contrato de alquiler?'.",
+        "Busca archivos en el drive del negocio por nombre, etiqueta o por el TEXTO DENTRO del archivo (OCR): facturas, contratos, guías, comprobantes. Usar para 'busca la factura de X', '¿dónde está el contrato de alquiler?'.",
       parameters: {
         type: "object",
         properties: { texto: { type: "string", description: "Qué buscar: proveedor, número de documento, palabra que aparece adentro" } },
@@ -902,7 +902,7 @@ const plataTools = defineTools("plata", [
     function: {
       name: "plata_registrar_gasto",
       description:
-        "Anota un gasto (plata que salió). Con maquinaId va al libro de esa máquina; sin él, al libro de gastos del negocio. Para combustible pasá cantidad (galones) y precioUnitario, no el total.",
+        "Anota un gasto (plata que salió). Con maquinaId va al libro de esa máquina; sin él, al libro de gastos del negocio. Para combustible pasa cantidad (galones) y precioUnitario, no el total.",
       parameters: {
         type: "object",
         properties: {
@@ -1098,7 +1098,7 @@ const n8nTools = defineTools("n8n", [
         type: "object",
         properties: {
           flujo: { type: "string", description: "Nombre o descripción del flujo, tal como lo dijo el usuario" },
-          flujoId: { type: "string", description: "Id exacto, si ya lo sabés por n8n_listar_flujos" },
+          flujoId: { type: "string", description: "Id exacto, si ya lo sabes por n8n_listar_flujos" },
           mensaje: { type: "string", description: "Texto a mandarle al flujo" },
           datos: { type: "object", description: "Datos estructurados para el flujo, si el usuario los dio" },
         },

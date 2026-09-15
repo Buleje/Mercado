@@ -195,7 +195,7 @@ export default function TramitesCatalogo({
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-[var(--rule-base)] py-10 text-center">
             <Search className="h-8 w-8 text-[var(--text-tertiary)]" aria-hidden="true" />
             <p className="font-bold text-[var(--text-primary)]">Ningún formato coincide</p>
-            <p className="text-sm text-[var(--text-tertiary)]">Probá con otra palabra o quitá el filtro de autoridad.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">Prueba con otra palabra o quita el filtro de autoridad.</p>
           </div>
         ) : (
           <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

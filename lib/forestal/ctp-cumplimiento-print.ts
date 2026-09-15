@@ -42,7 +42,7 @@ export interface CumplimientoReportData {
 
 const READINESS: Record<ReportReadiness, { title: string; fg: string; bg: string; border: string }> = {
   ready: { title: "Listo para cerrar el período", fg: "#0f5132", bg: "#d1e7dd", border: "#a3cfbb" },
-  warning: { title: "Podés cerrar el período", fg: "#664d03", bg: "#fff3cd", border: "#ffe69c" },
+  warning: { title: "Puedes cerrar el período", fg: "#664d03", bg: "#fff3cd", border: "#ffe69c" },
   error: { title: "Aún no conviene cerrar el período", fg: "#842029", bg: "#f8d7da", border: "#f1aeb5" },
 };
 

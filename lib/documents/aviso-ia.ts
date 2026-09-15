@@ -20,10 +20,10 @@ export function motivoDeFalloIA(err: string): string {
   const espera = /try again in (.+?)\.(?:\s|$)/i.exec(err)?.[1];
   if (/rate limit|tokens per day|\bTPD\b|429/i.test(err)) {
     const cuando = espera ? ` (se libera en ${esperaLegible(espera)})` : "";
-    return `El servicio de IA llegó a su tope por hoy${cuando}. El texto quedó guardado; volvé a describir más tarde.`;
+    return `El servicio de IA llegó a su tope por hoy${cuando}. El texto quedó guardado; vuelve a describir más tarde.`;
   }
   if (/api key|unauthorized|\b401\b|\b403\b/i.test(err)) {
-    return "El servicio de IA rechazó la credencial: revisá la API key configurada.";
+    return "El servicio de IA rechazó la credencial: revisa la API key configurada.";
   }
-  return "El servicio de IA no respondió. El texto quedó guardado; probá de nuevo en un rato.";
+  return "El servicio de IA no respondió. El texto quedó guardado; prueba de nuevo en un rato.";
 }

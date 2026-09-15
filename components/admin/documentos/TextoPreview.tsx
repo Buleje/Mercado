@@ -75,7 +75,7 @@ export default function TextoPreview({ url, mimeType, nombre, miniaturaUrl }: {
       <AvisoArchivo
         error={error}
         titulo="No se pudo mostrar el documento"
-        sugerencia="También podés descargarlo y abrirlo en Word."
+        sugerencia="También puedes descargarlo y abrirlo en Word."
         urlDescarga={url}
         onReintentar={() => setIntento((n) => n + 1)}
       />
@@ -138,7 +138,7 @@ export default function TextoPreview({ url, mimeType, nombre, miniaturaUrl }: {
 
         {restantes > 0 && (
           <p className="border-t border-[var(--rule-soft)] pt-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            y {restantes} párrafos más — abrí «Editar documento» para verlo completo.
+            y {restantes} párrafos más — abre «Editar documento» para verlo completo.
           </p>
         )}
       </article>

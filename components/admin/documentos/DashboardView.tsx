@@ -174,7 +174,7 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
             ))}
           </div>
         ) : (
-          <p className="py-6 text-center text-sm text-[var(--text-tertiary)]">Todavía no hay etiquetas. Analizá documentos con IA para generarlas.</p>
+          <p className="py-6 text-center text-sm text-[var(--text-tertiary)]">Todavía no hay etiquetas. Analiza documentos con IA para generarlas.</p>
         )}
       </section>
 

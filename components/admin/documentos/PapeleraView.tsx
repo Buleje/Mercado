@@ -95,7 +95,7 @@ export function PapeleraView({
         </div>
         <p className="text-lg font-extrabold text-[var(--text-primary)]">La papelera está vacía</p>
         <p className="text-sm text-[var(--text-secondary)] mt-1.5">
-          Los documentos que elimines aparecen acá y los podés recuperar.
+          Los documentos que elimines aparecen acá y los puedes recuperar.
         </p>
       </div>
     );
@@ -194,7 +194,7 @@ export function PapeleraView({
           />
           <span className="text-xs text-[var(--text-tertiary)] inline-flex items-center gap-1.5">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            Restaurá lo que se borró por error; lo demás se puede eliminar definitivamente.
+            Restaura lo que se borró por error; lo demás se puede eliminar definitivamente.
           </span>
         </div>
         <ul className="divide-y divide-[var(--rule-soft)]">

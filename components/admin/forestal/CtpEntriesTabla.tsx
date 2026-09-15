@@ -152,7 +152,7 @@ function AtribucionBadge({ entry }: { entry: CtpEntry }) {
   if (!faltaAtribuir(estado)) return null;
   return (
     <div
-      title="Este volumen salió de la planta sin corrida de producción atribuida. Abrí la cadena de custodia para completarlo: sin origen no se puede certificar."
+      title="Este volumen salió de la planta sin corrida de producción atribuida. Abre la cadena de custodia para completarlo: sin origen no se puede certificar."
       className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
     >
       <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
@@ -249,7 +249,7 @@ function OrigenBadge({ entry }: { entry: CtpEntry }) {
 
   return (
     <div
-      title="Esta corrida consumió madera que no está atada a ningún ingreso con GTF. Atribuila desde su ficha: sin origen no se puede certificar la cadena."
+      title="Esta corrida consumió madera que no está atada a ningún ingreso con GTF. Atribúyela desde su ficha: sin origen no se puede certificar la cadena."
       className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
     >
       <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
@@ -314,7 +314,7 @@ function RendimientoCell({ productType, rendimientoPct }: { productType: string 
       {alto && (
         <AlertCircle
           className="h-3.5 w-3.5 text-[var(--data-warning-600)]"
-          aria-label={`Rendimiento sobre el referencial SERFOR (${ref}%): revisá que no haya sobre-declaración`}
+          aria-label={`Rendimiento sobre el referencial SERFOR (${ref}%): revisa que no haya sobre-declaración`}
         />
       )}
       <span className={`font-mono text-xs font-bold tabular-nums ${alto ? "text-[var(--data-warning-700)]" : "text-[var(--data-info-700)]"}`}>

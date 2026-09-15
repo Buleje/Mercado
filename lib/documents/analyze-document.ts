@@ -162,7 +162,7 @@ export async function analyzeDocumentContent(
         const { text: out } = await generateText({ model: smartModel, prompt, temperature: 0.2 });
         const parsed = ResultSchema.safeParse(JSON.parse(cleanJSONResponse(out)));
         if (parsed.success) ia = parsed.data;
-        else aviso = "La IA contestó algo que no pude entender. Probá de nuevo.";
+        else aviso = "La IA contestó algo que no pude entender. Prueba de nuevo.";
       } catch (err) {
         const detalle = err instanceof Error ? err.message : String(err);
         logger.warn("documents.analyze.ai_fail", { err: detalle });

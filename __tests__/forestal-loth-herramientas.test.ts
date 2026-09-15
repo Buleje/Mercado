@@ -35,11 +35,11 @@ describe("medición de distancia", () => {
   it("con un solo punto guía en vez de mostrar cero", () => {
     const r = medir([[-9, -75]], "distancia");
     expect(r.totalM).toBe(0);
-    expect(r.resumen).toContain("tocá otro");
+    expect(r.resumen).toContain("toca otro");
   });
 
   it("sin puntos invita a empezar", () => {
-    expect(medir([], "distancia").resumen).toContain("Tocá el mapa");
+    expect(medir([], "distancia").resumen).toContain("Toca el mapa");
   });
 });
 

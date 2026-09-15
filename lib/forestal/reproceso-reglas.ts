@@ -115,7 +115,7 @@ export function porQueNoSePuede(
   const De = (desde ?? "").toLowerCase();
   const A = (hacia ?? "").toLowerCase();
   if (h === "otro") {
-    return "«Otro» no es un producto del Libro: corregí la medida o el tipo de esas piezas antes de ampararlas.";
+    return "«Otro» no es un producto del Libro: corrige la medida o el tipo de esas piezas antes de ampararlas.";
   }
   if (salidasDeReproceso(d).length === 0) {
     return `De ${De} no sale ${A}: es un producto terminado, no un origen de reproceso.`;
@@ -200,5 +200,5 @@ export function avisoDeConversion(
 ): string | null {
   if (esConversionHabitual(desde, hacia)) return null;
   const porque = porQueNoSePuede(desde, hacia);
-  return `${porque ?? ""} Si igual pasó, explicá abajo por qué: queda en el libro y es lo que se muestra en una fiscalización.`.trim();
+  return `${porque ?? ""} Si igual pasó, explica abajo por qué: queda en el libro y es lo que se muestra en una fiscalización.`.trim();
 }

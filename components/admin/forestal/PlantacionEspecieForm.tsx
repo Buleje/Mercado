@@ -176,7 +176,7 @@ export default function PlantacionEspecieForm({
             value={especie.tipoVegetativo ?? ""}
             disabled={soloLectura}
             onChange={(e) => set("tipoVegetativo", e.target.value)}
-            placeholder="Seleccioná o escribí"
+            placeholder="Selecciona o escribe"
             className={inputCls}
           />
           <datalist id={`tipo-vegetativo-${index}`}>

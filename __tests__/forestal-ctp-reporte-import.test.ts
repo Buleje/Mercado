@@ -50,7 +50,7 @@ describe("armarReporte", () => {
   });
 
   it("cada problema conocido trae qué hacer", () => {
-    const r = armarReporte([sec("consumos", [{ fila: 7, codigo: "X", accion: "error", mensaje: "Ese código no existe en el libro: cargá primero el ingreso." }])]);
+    const r = armarReporte([sec("consumos", [{ fila: 7, codigo: "X", accion: "error", mensaje: "Ese código no existe en el libro: carga primero el ingreso." }])]);
     expect(r.problemas[0].comoArreglar).toContain("Sección 1");
   });
 

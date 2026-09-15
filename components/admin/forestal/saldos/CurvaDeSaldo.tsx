@@ -177,7 +177,7 @@ export default function CurvaDeSaldo({
       {valleEnRojo && (
         <p className="mt-3 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]">
           El saldo estuvo bajo cero durante el período: hubo consumo declarado antes de que
-          ingresara la madera que lo respalda. Revisá las fechas de las corridas contra las de sus
+          ingresara la madera que lo respalda. Revisa las fechas de las corridas contra las de sus
           guías.
         </p>
       )}

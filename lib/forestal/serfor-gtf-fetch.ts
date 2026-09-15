@@ -91,7 +91,7 @@ async function consultarUno(
     });
     if (!r.ok) {
       logger.warn("[gtf.serfor] respuesta no OK", { numero, modo, status: r.status });
-      return { ok: false, mensaje: `El servicio de SERFOR respondió ${r.status}. Probá de nuevo en un rato.` };
+      return { ok: false, mensaje: `El servicio de SERFOR respondió ${r.status}. Prueba de nuevo en un rato.` };
     }
     return { ok: true, resultado: parsearConsultaGtf(await r.text(), numero) };
   } catch (e) {
@@ -100,7 +100,7 @@ async function consultarUno(
     return {
       ok: false,
       mensaje: abortado
-        ? "SERFOR no respondió en 20 segundos. Podés cargar la guía a mano y consultarla después."
+        ? "SERFOR no respondió en 20 segundos. Puedes cargar la guía a mano y consultarla después."
         : "No se pudo conectar con SERFOR.",
     };
   } finally {

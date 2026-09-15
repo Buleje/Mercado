@@ -99,7 +99,7 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
   }, [guias, sel, rend, procesoStr, precioStr]);
 
   return (
-    <AdminModal open onClose={onClose} variant="info" title="Simulador de corrida" description="Previsualizá producido, costo y margen antes de registrar" icon={Calculator}>
+    <AdminModal open onClose={onClose} variant="info" title="Simulador de corrida" description="Previsualiza producido, costo y margen antes de registrar" icon={Calculator}>
       <div className={`space-y-4 ${MODAL_BODY}`}>
         {loading && <LoadingState message="Cargando guías disponibles…" className="py-8" />}
         {error && (
@@ -119,7 +119,7 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
               <Stat label="Materia prima" value={`${fmtM3(sim.inputM3)} m³`} sub={`${sim.nGuias} guía${sim.nGuias === 1 ? "" : "s"}`} />
               <Stat label={`Producido (${rend}%)`} value={`${fmtM3(sim.producidoM3)} m³`} sub={`${sim.producidoPt.toFixed(0)} pt`} tone="ok" />
               <Stat label="COGS estimado" value={sim.cogsTotal != null ? money(sim.cogsTotal) : "—"} sub={sim.costoUnit != null ? `${money(sim.costoUnit)}/m³` : cogsMotivo(sim.motivo)} tone={sim.cogsTotal != null ? undefined : "muted"} />
-              <Stat label="Margen a precio meta" value={sim.margenPct != null ? `${sim.margenPct.toFixed(1)}%` : "—"} sub={sim.margenPct == null ? "cargá precio y costo" : sim.margenPct < 0 ? "pérdida" : "ganancia"} tone={sim.margenPct == null ? "muted" : sim.margenPct < 0 ? "bad" : "ok"} />
+              <Stat label="Margen a precio meta" value={sim.margenPct != null ? `${sim.margenPct.toFixed(1)}%` : "—"} sub={sim.margenPct == null ? "carga precio y costo" : sim.margenPct < 0 ? "pérdida" : "ganancia"} tone={sim.margenPct == null ? "muted" : sim.margenPct < 0 ? "bad" : "ok"} />
             </div>
             </div>
 
@@ -145,7 +145,7 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
             <div>
               <CardTitle as="h3" className="mb-2 text-sm font-bold text-[var(--text-primary)]">Guías de ingreso disponibles</CardTitle>
               {guias.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">No hay materia prima validada sin consumir. Validá ingresos primero.</p>
+                <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">No hay materia prima validada sin consumir. Valida ingresos primero.</p>
               ) : (
                 <div className="space-y-2">
                   {guias.map((g) => {
@@ -170,7 +170,7 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
               )}
             </div>
 
-            <p className="text-xs text-[var(--text-tertiary)]">Es una simulación — no registra nada. Cuando decidas, cargá la corrida real en «{"Declarar producción"}», eligiendo el lote con estas guías.</p>
+            <p className="text-xs text-[var(--text-tertiary)]">Es una simulación — no registra nada. Cuando decidas, carga la corrida real en «{"Declarar producción"}», eligiendo el lote con estas guías.</p>
             </div>
             </div>
           </>
@@ -181,7 +181,7 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
 }
 
 function cogsMotivo(m: string): string {
-  if (m === "sin_guias") return "elegí guías";
+  if (m === "sin_guias") return "elige guías";
   if (m === "falta_costo") return "una guía sin factura → desconocido";
   if (m === "monedas") return "monedas mezcladas";
   return "";

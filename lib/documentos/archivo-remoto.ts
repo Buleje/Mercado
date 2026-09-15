@@ -37,7 +37,7 @@ export class ErrorArchivo extends Error {
 
 const MENSAJES: Record<MotivoArchivo, string> = {
   limite: "El servidor recibió muchas solicitudes seguidas y pidió esperar un momento.",
-  permiso: "Tu sesión venció o no tenés permiso para ver este archivo. Probá de nuevo; si sigue igual, volvé a entrar al panel.",
+  permiso: "Tu sesión venció o no tienes permiso para ver este archivo. Prueba de nuevo; si sigue igual, vuelve a entrar al panel.",
   "no-esta": "El archivo ya no está en el drive.",
   servidor: "El servidor no pudo entregar el archivo.",
   red: "No se pudo conectar con el servidor.",

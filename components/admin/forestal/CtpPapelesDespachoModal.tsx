@@ -171,10 +171,10 @@ export default function CtpPapelesDespachoModal({
     if (ok > 0) {
       onListo(
         `${ok} papel${ok === 1 ? "" : "es"} archivado${ok === 1 ? "" : "s"} en el expediente` +
-          (ok < papeles.length ? ` · ${papeles.length - ok} falló(aron), mirá el detalle` : ""),
+          (ok < papeles.length ? ` · ${papeles.length - ok} falló(aron), mira el detalle` : ""),
       );
     } else {
-      setError("Ningún papel se pudo archivar. Mirá el detalle de cada uno.");
+      setError("Ningún papel se pudo archivar. Mira el detalle de cada uno.");
     }
   }
 
@@ -228,7 +228,7 @@ export default function CtpPapelesDespachoModal({
         >
           <Upload className="h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
           <span className="text-sm font-bold text-[var(--text-primary)]">
-            Arrastrá los papeles o hacé clic para elegirlos
+            Arrastra los papeles o haz clic para elegirlos
           </span>
           <span className="text-sm text-[var(--text-secondary)]">
             PDF, fotos del celular, escaneos — todos juntos o de a uno
@@ -276,11 +276,11 @@ export default function CtpPapelesDespachoModal({
                           onChange={(e) =>
                             setPapeles((prev) => prev.map((x) => (x.id === p.id ? { ...x, numero: e.target.value } : x)))
                           }
-                          placeholder="Confirmá el número"
+                          placeholder="Confirma el número"
                           className="h-8 w-44 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--surface-base)] px-2 font-mono text-xs text-[var(--text-primary)]"
                         />
                         <span className="text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                          se leyó de la imagen: confirmalo
+                          se leyó de la imagen: confírmalo
                         </span>
                       </label>
                     )}
@@ -325,7 +325,7 @@ export default function CtpPapelesDespachoModal({
                       <span className="text-[var(--text-tertiary)]">{p.clasificacion.confianza} %</span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                        <AlertTriangle className="h-4 w-4" /> revisá
+                        <AlertTriangle className="h-4 w-4" /> revisa
                       </span>
                     )}
                   </span>
@@ -352,7 +352,7 @@ export default function CtpPapelesDespachoModal({
         <p className="px-1 text-sm text-[var(--text-tertiary)]">
           El tipo sale del <b>contenido</b>: la capa de texto del PDF y, si viene vacía (un escaneo) o es una foto,
           el sistema lo <b>mira</b> y transcribe lo que se lee. Cuando ni así se puede, cae al nombre del archivo y
-          se marca «revisá». Se archiva en el Drive, en «Papeles de despacho (CTP)», con su etiqueta y la GTF, que
+          se marca «revisa». Se archiva en el Drive, en «Papeles de despacho (CTP)», con su etiqueta y la GTF, que
           es como se lo busca después.
         </p>
       </ModalBody>

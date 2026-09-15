@@ -281,7 +281,7 @@ function CacaoResultado({
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Resultado</p>
               <p className="inline-flex items-center gap-1 text-sm font-bold" style={{ color }}>
                 {gano ? <TrendingUp className="h-4 w-4" aria-hidden /> : <AlertCircle className="h-4 w-4" aria-hidden />}
-                {gano ? "Ganás" : "Perdés"}{margen !== null && ` · margen ${margen.toFixed(0)}%`}
+                {gano ? "Ganas" : "Pierdes"}{margen !== null && ` · margen ${margen.toFixed(0)}%`}
               </p>
             </div>
             <p className="font-mono text-2xl font-extrabold tabular-nums" style={{ color }}>
@@ -312,7 +312,7 @@ function CampaignVerdict({ stats, inv }: { stats: Stats; inv: Inventory | null }
   const meta = {
     solida: { label: "Campaña sólida", color: "var(--data-success-700,#047857)", border: "var(--data-success-500)", Icon: Award },
     curso: { label: "Campaña en curso", color: "var(--accent-dark)", border: "var(--accent)", Icon: Leaf },
-    vigilar: { label: "Vigilá la calidad", color: "var(--data-warning-700,#b45309)", border: "var(--data-warning-500)", Icon: AlertCircle },
+    vigilar: { label: "Vigila la calidad", color: "var(--data-warning-700,#b45309)", border: "var(--data-warning-500)", Icon: AlertCircle },
   }[verdict];
   const qColor = q >= 50 ? "var(--data-success-700,#047857)" : "var(--data-warning-700,#b45309)";
   const hColor = h >= 80 ? "var(--data-success-700,#047857)" : "var(--data-warning-700,#b45309)";

@@ -124,7 +124,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
                   )}
                 </div>
                 <p className="text-xs text-[var(--text-tertiary)]">
-                  Tocá el mapa para marcar la parcela, o usá el GPS del teléfono si estás ahí. Sirve
+                  Toca el mapa para marcar la parcela, o usa el GPS del teléfono si estás ahí. Sirve
                   para logística de recojo y trazabilidad de origen.
                 </p>
                 <div className="overflow-hidden rounded-xl border border-[var(--rule-base)]">

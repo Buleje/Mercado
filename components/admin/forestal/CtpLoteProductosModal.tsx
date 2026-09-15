@@ -135,7 +135,7 @@ export default function CtpLoteProductosModal({
           nota={
             despachable && despachable.corridas > 0
               ? `${despachable.corridas} producto${despachable.corridas === 1 ? "" : "s"} en patio · ${fmtM3(despachable.m3)} m³ listos para una guía.`
-              : "Los saldos salen del libro: para corregir una corrida, entrá por ella."
+              : "Los saldos salen del libro: para corregir una corrida, entra por ella."
           }
         >
           {onDespachar && despachable && despachable.corridas > 0 && (

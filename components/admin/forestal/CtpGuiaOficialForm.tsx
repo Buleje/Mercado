@@ -219,7 +219,7 @@ export default function CtpGuiaOficialForm({ datos, onChange, directorio, titula
           </Btn>
           {!ficha && (
             <span className="text-xs text-[var(--text-tertiary)]">
-              Completá la Ficha del CTP para poder copiarla de una.
+              Completa la Ficha del CTP para poder copiarla de una.
             </span>
           )}
           {datos.destinatario.nombre.trim() && ficha?.ruc && datos.destinatario.docNumero === ficha.ruc && (

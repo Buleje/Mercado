@@ -142,7 +142,7 @@ export default function CacaoMapa() {
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
-      {sinUbicar > 0 && <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-sm text-[var(--text-secondary)]"><Navigation className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" /><span><strong className="text-[var(--text-primary)]">{sinUbicar}</strong> productor{sinUbicar === 1 ? "" : "es"} sin ubicación. Agregá su parcela con GPS desde Productores.</span></div>}
+      {sinUbicar > 0 && <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-sm text-[var(--text-secondary)]"><Navigation className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" /><span><strong className="text-[var(--text-primary)]">{sinUbicar}</strong> productor{sinUbicar === 1 ? "" : "es"} sin ubicación. Agrega su parcela con GPS desde Productores.</span></div>}
 
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => setShowProd((v) => !v)} className={`${btn} ${showProd ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Users className="h-4 w-4" />Productores</button>
@@ -165,7 +165,7 @@ export default function CacaoMapa() {
             <div className="max-w-sm rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center shadow-[var(--shadow-lg)]">
               <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><MapPin className="h-7 w-7" /></span>
               <p className="text-base font-bold text-[var(--text-primary)]">Nada que mapear aún</p>
-              <p className="mx-auto mt-1 text-sm text-[var(--text-secondary)]">Ubicá tus productores con GPS (pestaña Productores) o dibujá tus secciones (Campo → Mapa) para verlos acá juntos.</p>
+              <p className="mx-auto mt-1 text-sm text-[var(--text-secondary)]">Ubica tus productores con GPS (pestaña Productores) o dibuja tus secciones (Campo → Mapa) para verlos acá juntos.</p>
             </div>
           </div>
         )}

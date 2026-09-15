@@ -93,7 +93,7 @@ export default function WaNumberForm({ initial, onSaved, onCancel, onVerifyToken
       }
       onSaved();
     } catch {
-      setError("Error de red. Reintentá.");
+      setError("Error de red. Reintenta.");
     } finally {
       setSaving(false);
     }
@@ -128,7 +128,7 @@ export default function WaNumberForm({ initial, onSaved, onCancel, onVerifyToken
 
       <Field
         label="Token de acceso (WhatsApp Token)"
-        hint={isNew ? "Token permanente de la app de Meta." : "Dejá vacío para mantener el actual. Pegá uno nuevo solo si cambió."}
+        hint={isNew ? "Token permanente de la app de Meta." : "Deja vacío para mantener el actual. Pega uno nuevo solo si cambió."}
       >
         <input
           type="password"

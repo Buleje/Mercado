@@ -68,7 +68,7 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
 
   if (loading && secciones.length === 0) return <div className="rounded-2xl border border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Calculando…</p></div>;
   if (error) return <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error} <button onClick={load} className="ml-2 underline">reintentar</button></div></div>;
-  if (secciones.length === 0) return <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]"><span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><TrendingUp className="h-7 w-7" /></span><p className="text-base font-bold text-[var(--text-primary)]">Sin datos para analizar</p><p className="mx-auto mt-1 max-w-sm text-sm">Registrá cosechas y costos de labores en tus secciones y acá verás rendimiento, ingresos y margen por sección.</p></div>;
+  if (secciones.length === 0) return <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]"><span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><TrendingUp className="h-7 w-7" /></span><p className="text-base font-bold text-[var(--text-primary)]">Sin datos para analizar</p><p className="mx-auto mt-1 max-w-sm text-sm">Registra cosechas y costos de labores en tus secciones y acá verás rendimiento, ingresos y margen por sección.</p></div>;
 
   return (
     <div className="space-y-5">
@@ -154,7 +154,7 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
           </tbody>
         </DataTable>
       </div>
-      <p className="text-xs text-[var(--text-tertiary)]">Ingresos = valor de los lotes de acopio generados por las cosechas de la sección. Costos = labores con costo (posteadas a Finanzas). Tocá una fila para ver la sección. Las cosechas sin precio no suman a ingresos (se cuentan como “sin valorar”). Próxima cosecha = estimado a partir del historial de cada sección (pasá el mouse sobre el valor para ver el método); con menos de 2 años de datos no se proyecta.</p>
+      <p className="text-xs text-[var(--text-tertiary)]">Ingresos = valor de los lotes de acopio generados por las cosechas de la sección. Costos = labores con costo (posteadas a Finanzas). Toca una fila para ver la sección. Las cosechas sin precio no suman a ingresos (se cuentan como “sin valorar”). Próxima cosecha = estimado a partir del historial de cada sección (pasa el mouse sobre el valor para ver el método); con menos de 2 años de datos no se proyecta.</p>
     </div>
   );
 }

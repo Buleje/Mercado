@@ -130,7 +130,7 @@ export default function ConfirmarPagoModal({
           )}
           {!montoValido && (
             <p className="mt-1.5 text-sm font-semibold text-[var(--data-error-500)]" role="alert">
-              Poné un monto mayor que cero.
+              Pon un monto mayor que cero.
             </p>
           )}
         </div>
@@ -141,7 +141,7 @@ export default function ConfirmarPagoModal({
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
             <p className="text-sm text-[var(--text-primary)]">
               <span className="font-bold">Este gasto ya figura pagado en el período.</span>{" "}
-              Si seguís, queda registrado dos veces.
+              Si sigues, queda registrado dos veces.
             </p>
           </div>
         )}

@@ -142,7 +142,7 @@ export default function CtpPatioAging({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <div>
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Clock className="h-4 w-4" /> Antigüedad de materia prima (patio)</CardTitle>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Guías con saldo sin consumir, de más vieja a más nueva. Procesá primero lo más antiguo (FIFO) — la troza parada se degrada.</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Guías con saldo sin consumir, de más vieja a más nueva. Procesa primero lo más antiguo (FIFO) — la troza parada se degrada.</p>
         </div>
         <div className="flex items-center gap-3 text-right">
           <div>

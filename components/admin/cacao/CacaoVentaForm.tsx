@@ -140,13 +140,13 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
     if (submitting || !isValid || excedeLote) {
       if (excedeLote)
         setError(
-          `El peso supera el remanente vendible del lote (${loteRemanente!.toFixed(2)} kg). Reducí el peso o elegí otro lote.`,
+          `El peso supera el remanente vendible del lote (${loteRemanente!.toFixed(2)} kg). Reduce el peso o elige otro lote.`,
         );
       else if (!isValid)
         setError(
           needsFx && !(Number(tipoCambio) > 0)
-            ? "Ingresá el tipo de cambio (USD→PEN)."
-            : "Ingresá el peso vendido.",
+            ? "Ingresa el tipo de cambio (USD→PEN)."
+            : "Ingresa el peso vendido.",
         );
       return;
     }
@@ -317,7 +317,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
                   </div>
                 ) : (
                   <p className="text-xs text-[var(--text-secondary)]">
-                    Vinculá el lote del que sale este cacao para trazabilidad lote→venta (opcional).
+                    Vincula el lote del que sale este cacao para trazabilidad lote→venta (opcional).
                   </p>
                 )}
                 <div className="relative">
@@ -515,7 +515,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
               {excede && (
                 <div className="mt-2 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-2.5 text-xs text-[var(--data-warning-700)]">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> Estás vendiendo más que tu
-                  stock disponible. Revisá el peso o registrá más acopio/beneficio.
+                  stock disponible. Revisa el peso o registra más acopio/beneficio.
                 </div>
               )}
               {selLote && loteRemanente != null && (

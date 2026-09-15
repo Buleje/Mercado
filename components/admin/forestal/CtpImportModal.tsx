@@ -299,7 +299,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         {(phase === "idle" || phase === "parsing") && (
           <>
             <div>
-              <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">¿Qué importás?</p>
+              <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">¿Qué importas?</p>
               <div className="inline-flex flex-wrap gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1">
                 {(["completo", "ingresos", "produccion", "salida"] as ImportMode[]).map((m) => (
                   <button
@@ -323,22 +323,22 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
             >
               {phase === "parsing" ? <Loader2 className="h-9 w-9 animate-spin text-[var(--brand-ink)] dark:text-[var(--text-primary)]" /> : <FileSpreadsheet className="h-9 w-9 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />}
               <div>
-                <p className="text-base font-bold text-[var(--text-primary)]">{phase === "parsing" ? `Leyendo ${fileName}…` : "Elegí el Excel del libro (.xlsx)"}</p>
+                <p className="text-base font-bold text-[var(--text-primary)]">{phase === "parsing" ? `Leyendo ${fileName}…` : "Elige el Excel del libro (.xlsx)"}</p>
                 <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-                  El mismo que exportás como «Formato oficial SERFOR».{" "}
+                  El mismo que exportas como «Formato oficial SERFOR».{" "}
                   {mode === "completo"
                     ? "Se leen las 3 hojas (Ingreso, Producción, Salida) y se importan en orden — Producción resuelve la GTF del ingreso y Salida valida contra lo producido."
                     : mode === "produccion"
-                      ? "Se leen las corridas de «3. Producción» y su materia prima de «2. Consumos» — importá los Ingresos primero."
+                      ? "Se leen las corridas de «3. Producción» y su materia prima de «2. Consumos» — importa los Ingresos primero."
                       : mode === "salida"
-                        ? "Se leen los despachos de «4. Salida». Importá la Producción primero (se valida contra el stock producido)."
+                        ? "Se leen los despachos de «4. Salida». Importa la Producción primero (se valida contra el stock producido)."
                         : "Se leen los ingresos de la hoja «1. Ingreso»."}
                 </p>
               </div>
             </button>
             <input ref={fileRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
-              <p className="text-sm text-[var(--text-secondary)]">¿No tenés el Excel? Bajá la plantilla oficial con las 4 hojas y una fila de ejemplo por hoja.</p>
+              <p className="text-sm text-[var(--text-secondary)]">¿No tienes el Excel? Baja la plantilla oficial con las 4 hojas y una fila de ejemplo por hoja.</p>
               <button
                 type="button"
                 onClick={() => void descargarPlantilla()}
@@ -440,7 +440,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                 <p className="mt-1 text-xs text-[var(--text-tertiary)]">
                   {faltantesDelMapeo(mapeo).length > 0
                     ? `Falta asignar: ${faltantesDelMapeo(mapeo).map((f) => f.label).join(", ")}. Sin eso las filas entran incompletas.`
-                    : "Detectadas automáticamente. Abrí si tu planilla usa otros nombres."}
+                    : "Detectadas automáticamente. Abre si tu planilla usa otros nombres."}
                 </p>
                 {verMapeo && (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -490,7 +490,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                   </strong>{" "}
                   — {duplicados.slice(0, 3).map((d) => `${d.gtfNumber} (filas ${d.filas.join(", ")})`).join(" · ")}
                   {duplicados.length > 3 ? ` y ${duplicados.length - 3} más` : ""}. Cada una se importa{" "}
-                  <strong>una sola vez</strong> (la primera); revisá el archivo si esperabas dos ingresos distintos.
+                  <strong>una sola vez</strong> (la primera); revisa el archivo si esperabas dos ingresos distintos.
                 </span>
               </p>
             )}
@@ -534,7 +534,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                     <CheckCircle2 className="h-5 w-5" />
                     {isCombined
                       ? `Libro importado: ${describeCombined(creadosPorReg)}.`
-                      : `Importad${mode === "produccion" ? "as" : "os"} ${resumen.creados} ${singleNoun}${mode === "ingresos" ? " (quedan pendientes de validar)" : mode === "salida" ? " (sin atribuir — completá la cadena luego)" : ""}.`}
+                      : `Importad${mode === "produccion" ? "as" : "os"} ${resumen.creados} ${singleNoun}${mode === "ingresos" ? " (quedan pendientes de validar)" : mode === "salida" ? " (sin atribuir — completa la cadena luego)" : ""}.`}
                   </p>
                   <button type="button" onClick={onClose} className="inline-flex h-11 items-center rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90">Cerrar</button>
                 </>

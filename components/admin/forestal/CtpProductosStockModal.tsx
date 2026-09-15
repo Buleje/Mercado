@@ -177,7 +177,7 @@ export default function CtpProductosStockModal({
       onClose={onCerrar}
       variant="wide"
       title="Productos en stock"
-      description="Lo aserrado que sigue en la planta: elegí qué sube al camión y con qué cantidad"
+      description="Lo aserrado que sigue en la planta: elige qué sube al camión y con qué cantidad"
       icon={Boxes}
       className="sm:w-[min(96vw,100rem)] sm:max-w-none"
       footer={

@@ -182,10 +182,10 @@ export default function CtpCargarSierra({
           camino para dejar reserva sin salir de esta pantalla. */}
       {yaEnElLote.length === 0 && (
         <p className="text-sm text-[var(--text-tertiary)]">
-          &ldquo;Revisar y consumir&rdquo; cierra el lote con lo que tildaste. Si querés
-          tildar de más y dejar una parte apartada para otro día, usá{" "}
+          &ldquo;Revisar y consumir&rdquo; cierra el lote con lo que tildaste. Si quieres
+          tildar de más y dejar una parte apartada para otro día, usa{" "}
           <b className="text-[var(--text-secondary)]">Adjuntar sin consumir</b> — el lote
-          sigue abierto y volvés a elegirlo la próxima vez.
+          sigue abierto y vuelves a elegirlo la próxima vez.
         </p>
       )}
 

@@ -437,7 +437,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
     setShowGuias(false);
     const items = Array.isArray(gtf.items) ? gtf.items : [];
     if (items.length === 1) { fillFromItem(items[0]); setGtfMsg({ ok: true, text: `Guía cargada: ${gtf.titularName ?? "titular"} · datos importados.` }); }
-    else if (items.length > 1) { setGtfItems(items); setGtfMsg({ ok: true, text: `Guía cargada. Tiene ${items.length} ítems — elegí cuál registrar en este ingreso.` }); }
+    else if (items.length > 1) { setGtfItems(items); setGtfMsg({ ok: true, text: `Guía cargada. Tiene ${items.length} ítems — elige cuál registrar en este ingreso.` }); }
     else { setData((prev) => ({ ...prev, volumeM3: gtf.volumenTotalM3 != null ? String(gtf.volumenTotalM3) : prev.volumeM3, pieces: gtf.piezasTotal != null ? String(gtf.piezasTotal) : prev.pieces })); setGtfMsg({ ok: true, text: "Guía cargada (sin detalle de ítems)." }); }
   };
 
@@ -472,7 +472,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         originCode: j.origen || prev.originCode,
       }));
       const esp = [j.especie, j.especieCientifica].filter(Boolean).join(" · ");
-      setGtfMsg({ ok: true, text: `GTF escaneada.${esp ? ` Especie detectada: ${esp} — seleccionala en el picker.` : ""} Revisá los datos antes de guardar.` });
+      setGtfMsg({ ok: true, text: `GTF escaneada.${esp ? ` Especie detectada: ${esp} — selecciónala en el picker.` : ""} Revisa los datos antes de guardar.` });
     } catch (e) {
       setGtfMsg({ ok: false, text: e instanceof Error ? e.message : String(e) });
     } finally {
@@ -492,7 +492,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
    */
   async function consultarSerfor() {
     const n = nroRegistroSerfor.trim();
-    if (!n) { setSerforMsg({ ok: false, text: "Escribí el N° de registro de la guía (ej. 1-19-0313629)." }); return; }
+    if (!n) { setSerforMsg({ ok: false, text: "Escribe el N° de registro de la guía (ej. 1-19-0313629)." }); return; }
     setSerforCargando(true); setSerforMsg(null);
     try {
       const r = await fetch(`/api/admin/forestal/gtf/serfor?numeroRegistro=${encodeURIComponent(n)}`, { credentials: "include" });
@@ -500,7 +500,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
       if (!r.ok) { setSerforMsg({ ok: false, text: j?.message ?? `El servidor respondió ${r.status}` }); return; }
       if (j.estado !== "encontrada" || !j.gtf) {
         setSerforMsg({ ok: false, text: j.mensaje ?? "SERFOR no encontró esa guía." });
-        pushToast?.({ tono: "warning", msg: "SERFOR no encontró esa guía", detail: "Revisá el N° de registro (va con guiones)." });
+        pushToast?.({ tono: "warning", msg: "SERFOR no encontró esa guía", detail: "Revisa el N° de registro (va con guiones)." });
         return;
       }
       const g = j.gtf as GtfSerforLite;
@@ -613,11 +613,11 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
 
   async function cargarGuia(num?: string) {
     const n = (num ?? data.gtfNumber).trim();
-    if (!n) { setGtfMsg({ ok: false, text: "Escribí el N° de guía primero." }); return; }
+    if (!n) { setGtfMsg({ ok: false, text: "Escribe el N° de guía primero." }); return; }
     setLoadingGtf(true); setGtfMsg(null); setGtfItems([]); setError(null);
     try {
       const r = await fetch(`/api/admin/forestal/gtf?gtfNumber=${encodeURIComponent(n)}`, { credentials: "include" });
-      if (r.status === 404) { setGtfMsg({ ok: false, text: `No hay una guía emitida con el N° ${n}. Revisá el número.` }); return; }
+      if (r.status === 404) { setGtfMsg({ ok: false, text: `No hay una guía emitida con el N° ${n}. Revisa el número.` }); return; }
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       aplicarGuia((await r.json()).gtf as GtfRecord);
     } catch (e) { setGtfMsg({ ok: false, text: e instanceof Error ? e.message : String(e) }); }
@@ -773,7 +773,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   const avisoPlazo = useMemo(() => {
     if (!data.entryDate) return null;
     if (data.gtfDate && data.entryDate < data.gtfDate) {
-      return "El ingreso al CTP es anterior a la fecha de la guía: revisá las fechas.";
+      return "El ingreso al CTP es anterior a la fecha de la guía: revisa las fechas.";
     }
     const tarde = estaFueraDePlazo({ entryDate: data.entryDate, createdAt: new Date().toISOString() });
     return tarde
@@ -818,7 +818,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
     e.preventDefault();
     if (submitting) return;
     if (!isValid) {
-      setError("Completá los campos obligatorios marcados con asterisco.");
+      setError("Completa los campos obligatorios marcados con asterisco.");
       return;
     }
 
@@ -859,7 +859,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               : `Guía ${j.gtfNumber ?? ""} registrada`,
           detail:
             avisos.length > 0
-              ? `${avisos[0]} Queda marcada en Ingresos con el aviso naranja: tocalo para cuadrarla.`
+              ? `${avisos[0]} Queda marcada en Ingresos con el aviso naranja: tócalo para cuadrarla.`
               : `${j.ingresos?.length ?? 0} ingreso(s) · ${j.trozas ?? 0} troza(s)`,
         });
         onSaved();
@@ -1060,7 +1060,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
             {fichaFaltante.length > 0 && (
               <div className="mb-6 flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm text-[var(--data-warning-700)]">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <div><strong>Ficha del CTP incompleta.</strong> Faltan datos legales (Código CTP, RUC…) que los documentos SERFOR necesitan. Completala en la pestaña «Ficha CTP» — podés registrar igual, pero el libro no tendrá identidad legal completa.</div>
+                <div><strong>Ficha del CTP incompleta.</strong> Faltan datos legales (Código CTP, RUC…) que los documentos SERFOR necesitan. Complétala en la pestaña «Ficha CTP» — puedes registrar igual, pero el libro no tendrá identidad legal completa.</div>
               </div>
             )}
 
@@ -1111,7 +1111,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               />
               <p className="min-w-0 flex-1 text-xs text-[var(--text-secondary)]">
                 {modo === "manual"
-                  ? "Llenás la guía a mano, campo por campo."
+                  ? "Llenas la guía a mano, campo por campo."
                   : "Se pide la guía a SERFOR por su N° de registro y se registra lo que dice el documento oficial."}
               </p>
             </div>
@@ -1240,7 +1240,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     className={I}
                   />
                 </Field>
-              <Field span={12} label="N° GTF" required hint="Escribí el número y tocá «Cargar guía» para traer todos los datos.">
+              <Field span={12} label="N° GTF" required hint="Escribe el número y toca «Cargar guía» para traer todos los datos.">
                 {/* El número manda: fila propia. Con los tres botones al lado,
                     al input le quedaban 35px de ancho y no se veía lo tipeado. */}
                 <div className="flex flex-wrap gap-2">
@@ -1272,7 +1272,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     <Search className="h-4 w-4" /> Ver guías
                   </button>
                   <label
-                    title="Escaneá una foto de la GTF para pre-llenar el ingreso con IA"
+                    title="Escanea una foto de la GTF para pre-llenar el ingreso con IA"
                     className={`inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3 text-sm font-bold transition-colors ${scanning ? "border-[var(--rule-base)] text-[var(--text-tertiary)] opacity-70" : "border-[var(--brand-ink)] text-[var(--brand-ink)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"}`}
                   >
                     {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} Escanear
@@ -1313,7 +1313,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               )}
               {gtfItems.length > 1 && (
                 <div className="space-y-1 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-2">
-                  <span className="px-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-700)]">Elegí el ítem de la guía</span>
+                  <span className="px-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-700)]">Elige el ítem de la guía</span>
                   <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                     {gtfItems.map((it, i) => (
                       <button key={i} type="button" onClick={() => fillFromItem(it)} className="flex w-full items-center justify-between gap-3 px-3 min-h-10 text-left transition-colors hover:bg-[var(--data-success-50)]">
@@ -1474,7 +1474,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>
                     <span className="font-bold">Especie CITES.</span>{" "}
-                    Requiere permiso de exportación. Verificá el sello en la GTF.
+                    Requiere permiso de exportación. Verifica el sello en la GTF.
                   </div>
                 </div>
               )}
@@ -1484,7 +1484,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   {permisosCites.length > 0 ? (
                     <Field span={12} label="Permiso CITES vinculado" required hint="Del listado cargado en la Ficha del CTP">
                       <select className={I} value={citesPermiso} onChange={(e) => setCitesPermiso(e.target.value)}>
-                        <option value="">Elegí el permiso CITES…</option>
+                        <option value="">Elige el permiso CITES…</option>
                         {permisosCites.map((p, i) => (
                           <option key={i} value={p.numero}>{p.especie} · {p.numero}{p.vencimiento ? ` (vence ${p.vencimiento})` : ""}</option>
                         ))}
@@ -1492,14 +1492,14 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                       {citesPermisoVencidoAlIngreso && permisoCitesSel && (
                         <p className="mt-2 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2.5 text-xs font-medium text-[var(--data-warning-700)]">
                           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                          <span>El permiso <strong>{permisoCitesSel.numero}</strong> venció el {permisoCitesSel.vencimiento}, antes de la fecha de ingreso ({data.entryDate}). Verificá que exista una renovación vigente — un permiso vencido al momento del ingreso debilita el respaldo legal del origen CITES.</span>
+                          <span>El permiso <strong>{permisoCitesSel.numero}</strong> venció el {permisoCitesSel.vencimiento}, antes de la fecha de ingreso ({data.entryDate}). Verifica que exista una renovación vigente — un permiso vencido al momento del ingreso debilita el respaldo legal del origen CITES.</span>
                         </p>
                       )}
                     </Field>
                   ) : (
                     <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2.5 text-xs font-medium text-[var(--data-error-700)]">
                       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-                      <span>No hay permisos CITES cargados en la Ficha del CTP. Cargá el permiso de esta especie en «Ficha CTP» antes de registrar — sin permiso archivado, un ingreso CITES no tiene respaldo legal.</span>
+                      <span>No hay permisos CITES cargados en la Ficha del CTP. Carga el permiso de esta especie en «Ficha CTP» antes de registrar — sin permiso archivado, un ingreso CITES no tiene respaldo legal.</span>
                     </p>
                   )}
                 </div>
@@ -1595,7 +1595,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 {cubicajeDivergente && (
                   <p className="mt-1.5 flex items-start gap-1.5 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-medium text-[var(--data-warning-700)]">
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>El volumen declarado ({Number(data.volumeM3).toFixed(2)} m³) difiere más de 15% del cubicaje calculado ({autoVolume.toFixed(2)} m³). Verificá las medidas o justificá la diferencia en Observaciones (obligatorio).</span>
+                    <span>El volumen declarado ({Number(data.volumeM3).toFixed(2)} m³) difiere más de 15% del cubicaje calculado ({autoVolume.toFixed(2)} m³). Verifica las medidas o justifica la diferencia en Observaciones (obligatorio).</span>
                   </p>
                 )}
               </Field>
@@ -1830,7 +1830,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     className={`${I} font-mono`}
                   />
                 </Field>
-                <Field span={6} label="Código que asigna el CTP" casillero={10} hint="El que vos le ponés a la troza o al paquete">
+                <Field span={6} label="Código que asigna el CTP" casillero={10} hint="El que tú le pones a la troza o al paquete">
                   <input
                     type="text"
                     value={data.ctpProductCode}
@@ -1981,7 +1981,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                       className={I}
                     />
                   </Field>
-                  <Field span={6} label="Código que asigna el CTP" casillero={10} hint="El que le ponés a la troza o al paquete">
+                  <Field span={6} label="Código que asigna el CTP" casillero={10} hint="El que le pones a la troza o al paquete">
                     <input
                       type="text"
                       value={data.ctpProductCode}

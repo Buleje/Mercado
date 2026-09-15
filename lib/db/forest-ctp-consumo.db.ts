@@ -224,7 +224,7 @@ export class ForestCtpConsumoDB {
     const ids = consumos.map((c) => c.woodEntryId);
     if (new Set(ids).size !== ids.length) {
       throw new CtpInvariantError(
-        "Un mismo ingreso aparece dos veces: sumá los m³ en una sola línea.",
+        "Un mismo ingreso aparece dos veces: suma los m³ en una sola línea.",
         "I1_SOBRE_ATRIBUCION",
       );
     }
@@ -351,7 +351,7 @@ export class ForestCtpConsumoDB {
               ? `La guía ${ingreso.gtfNumber} declara ${r4(Number(ingreso.volumeM3))} m³ en su cabecera, ` +
                   `pero las piezas que estás llevando a la sierra suman ${r4(Number(c.volumeM3))} m³. ` +
                   `La guía no cuadra consigo misma — el total del lote no es el problema, es esa guía. ` +
-                  `Cuadrala en Ingresos: tocá el aviso naranja de su fila.`
+                  `Cuádrala en Ingresos: toca el aviso naranja de su fila.`
               : `De la guía ${ingreso.gtfNumber} quedan ${r4(disponible)} m³ sin consumir ` +
                   `(declara ${r4(Number(ingreso.volumeM3))} y ya se consumieron ` +
                   `${r4(yaConsumido.get(c.woodEntryId) ?? 0)}), y estás pidiendo ${r4(Number(c.volumeM3))} m³.`,

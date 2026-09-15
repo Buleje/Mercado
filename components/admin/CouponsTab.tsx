@@ -136,7 +136,7 @@ export default function CouponsTab() {
       }
     } catch (e) {
       console.error("[CouponsTab] handleCreate error", e);
-      showUndo({ message: "Error de conexión", detail: "No se pudo crear el cupón. Reintentá." });
+      showUndo({ message: "Error de conexión", detail: "No se pudo crear el cupón. Reintenta." });
     }
   };
 

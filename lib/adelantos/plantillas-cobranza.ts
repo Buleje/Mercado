@@ -31,12 +31,12 @@ export type Plantillas = Record<TramoId, string>;
  * agresivo cuesta el cliente además de la plata.
  */
 export const PLANTILLAS_POR_DEFECTO: Plantillas = {
-  corriente: "Hola {nombre}, ¿cómo estás? Te recuerdo que tenés {saldo} pendiente. Cuando puedas lo vemos. ¡Gracias!",
-  t30: "Hola {nombre}, te recuerdo que tenés {saldo} pendiente desde hace {dias} días. ¿Cuándo lo podés pasar?",
-  t60: "Hola {nombre}, ya van {dias} días de los {saldo} que quedaron pendientes. Necesito que me digas para cuándo lo tenés.",
-  t90: "Hola {nombre}, tenés {saldo} sin liquidar hace {dias} días. Vamos a tener que acordar una fecha firme esta semana.",
+  corriente: "Hola {nombre}, ¿cómo estás? Te recuerdo que tienes {saldo} pendiente. Cuando puedas lo vemos. ¡Gracias!",
+  t30: "Hola {nombre}, te recuerdo que tienes {saldo} pendiente desde hace {dias} días. ¿Cuándo lo puedes pasar?",
+  t60: "Hola {nombre}, ya van {dias} días de los {saldo} que quedaron pendientes. Necesito que me digas para cuándo lo tienes.",
+  t90: "Hola {nombre}, tienes {saldo} sin liquidar hace {dias} días. Vamos a tener que acordar una fecha firme esta semana.",
   t90mas:
-    "Hola {nombre}, la deuda de {saldo} lleva {dias} días. Necesito que nos sentemos a resolverlo — decime cuándo podés pasar.",
+    "Hola {nombre}, la deuda de {saldo} lleva {dias} días. Necesito que nos sentemos a resolverlo — dime cuándo puedes pasar.",
 };
 
 /** Reemplaza los huecos. Lo que no se reconoce se deja tal cual, no se borra. */

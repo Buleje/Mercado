@@ -520,7 +520,7 @@ export default function CashRegisterTab() {
       setArqueoDenoms({});
       fetchData();
     } catch (err) {
-      setArqueoError(err instanceof Error ? err.message : "No se pudo registrar el arqueo. Intentá de nuevo.");
+      setArqueoError(err instanceof Error ? err.message : "No se pudo registrar el arqueo. Intenta de nuevo.");
     } finally {
       setAddingArqueo(false);
     }

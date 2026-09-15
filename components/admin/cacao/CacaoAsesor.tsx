@@ -341,15 +341,15 @@ export default function CacaoAsesor() {
                     <div className="flex-1 min-w-[180px]">
                       {(() => { const s = data.local.spreadPct; const below = s < 0;
                         return <p className="text-sm leading-relaxed" style={{ color: below ? "var(--data-success-700)" : "var(--data-warning-700)" }}>
-                          <b>{below ? "Comprás" : "Comprás"} {Math.abs(s).toFixed(1)}% {below ? "por DEBAJO" : "por ENCIMA"}</b> del referencial internacional.{" "}
-                          <span className="text-[var(--text-secondary)]">{below ? "Buen margen — el spread cubre tu beneficio/secado y ganancia." : "Cuidá tu margen: estás pagando caro vs. el precio de venta de referencia."}</span>
+                          <b>{below ? "Compras" : "Compras"} {Math.abs(s).toFixed(1)}% {below ? "por DEBAJO" : "por ENCIMA"}</b> del referencial internacional.{" "}
+                          <span className="text-[var(--text-secondary)]">{below ? "Buen margen — el spread cubre tu beneficio/secado y ganancia." : "Cuida tu margen: estás pagando caro vs. el precio de venta de referencia."}</span>
                         </p>;
                       })()}
                     </div>
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-[var(--text-tertiary)]">Aún no registraste lotes de cacao <b>seco</b> con precio para comparar. Registrá tus compras y acá verás si comprás por debajo o por encima del mercado internacional.</p>
+                <p className="text-sm text-[var(--text-tertiary)]">Aún no registraste lotes de cacao <b>seco</b> con precio para comparar. Registra tus compras y acá verás si compras por debajo o por encima del mercado internacional.</p>
               )}
             </Card>
           )}

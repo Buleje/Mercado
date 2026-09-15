@@ -211,7 +211,7 @@ export function documentoGtfDesdeLibro(
       <b>De dónde salen estos datos.</b> De los asientos de esta guía en el Libro de Operaciones del CTP.
       Esta guía <b>no</b> se consultó en el registro público del SNIFFS, así que los casilleros que sólo
       publica la autoridad —N° de registro, instancia que registra, vencimiento— van en blanco.
-      Para completarlos, consultá la guía desde el formulario de ingreso.
+      Para completarlos, consulta la guía desde el formulario de ingreso.
     </div>
   </div>
 

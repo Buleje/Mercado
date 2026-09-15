@@ -153,7 +153,7 @@ export function MarketplaceResenasTab() {
           <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-sm mx-auto">
             {filter === "all"
               ? "Cuando los clientes valoren tus productos, las reseñas aparecerán acá."
-              : "Probá con otro filtro para ver más resultados."}
+              : "Prueba con otro filtro para ver más resultados."}
           </p>
         </div>
       ) : (

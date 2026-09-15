@@ -279,7 +279,7 @@ const TITLE_SUGGESTIONS: Record<string, string[]> = {
   countdown:         ["Apurate, se termina", "Oferta por tiempo limitado", "Quedan pocas horas", "Última oportunidad"],
   flash_deals:       ["Ofertas flash", "Solo hoy a este precio", "Liquidación exprés", "Precio bomba"],
   popular_products:  ["Lo más vendido", "Los favoritos del barrio", "Top 10 de esta semana", "Lo que más se llevan"],
-  featured_carousel: ["Productos destacados", "Recomendados para vos", "Selección de la casa", "Los mejor calificados"],
+  featured_carousel: ["Productos destacados", "Recomendados para ti", "Selección de la casa", "Los mejor calificados"],
   combos:            ["Combos imperdibles", "Pack ahorrador", "Más por menos", "Combinaciones perfectas"],
   recipes:           ["Para cocinar hoy", "Ideas peruanas", "Recetas con ingredientes que tenemos", "Inspirate en la cocina"],
   favorites:         ["Tus favoritos", "Productos que te gustaron", "Tu lista guardada"],
@@ -289,14 +289,14 @@ const TITLE_SUGGESTIONS: Record<string, string[]> = {
 
 // Tips contextuales por sección — guían al dueño sobre qué productos elegir.
 const SECTION_TIPS: Record<string, string> = {
-  daily_special:     "Tip: elegí 1 producto estrella con precio agresivo. Funciona mejor con stock limitado real.",
-  seasonal_promo:    "Tip: agrupá 2-4 productos relacionados con la temporada (panetón, parrilla, helados, etc.).",
-  countdown:         "Tip: usá esto para promos REALES con tiempo límite. Si abusas, el cliente deja de creerte.",
+  daily_special:     "Tip: elige 1 producto estrella con precio agresivo. Funciona mejor con stock limitado real.",
+  seasonal_promo:    "Tip: agrupa 2-4 productos relacionados con la temporada (panetón, parrilla, helados, etc.).",
+  countdown:         "Tip: usa esto para promos REALES con tiempo límite. Si abusas, el cliente deja de creerte.",
   flash_deals:       "Tip: 4-8 productos con descuento real que duren pocas horas. Genera FOMO sano.",
   popular_products:  "Tip: 6-12 best-sellers del último mes. Aumenta confianza social y ticket promedio.",
-  featured_carousel: "Tip: elegí los productos con mejor margen y mejor foto — se llevan la atención del cliente.",
+  featured_carousel: "Tip: elige los productos con mejor margen y mejor foto — se llevan la atención del cliente.",
   combos:            "Tip: combinaciones que aumentan ticket: pollo + papa + bebida, salchipapa + gaseosa, etc.",
-  recipes:           "Tip: recetas peruanas con ingredientes que TENÉS en stock. Linkea cada paso a un producto.",
+  recipes:           "Tip: recetas peruanas con ingredientes que TIENES en stock. Linkea cada paso a un producto.",
   favorites:         "Tip: esta sección es automática — el cliente arma su lista. No necesita configuración.",
   recently_viewed:   "Tip: automática — recuerda los productos que el cliente vio hace poco.",
   last_units:        "Tip: productos con stock < 10 unidades. Genera urgencia honesta — si lo hace falso, te rebota.",
@@ -529,7 +529,7 @@ function SectionEditorModal({
                     <Package className="h-7 w-7 text-primary" />
                   </div>
                   <p className="text-base font-bold text-[var(--text-primary)]">Sin productos todavía</p>
-                  <p className="text-sm text-muted mt-1">Buscá y agregá productos del catálogo de la derecha.</p>
+                  <p className="text-sm text-muted mt-1">Busca y agrega productos del catálogo de la derecha.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -669,7 +669,7 @@ function SectionEditorModal({
                     {searchQuery || categoryFilter !== "todos" ? "Sin resultados" : "Todos los productos están asignados"}
                   </p>
                   <p className="text-sm text-muted mt-1">
-                    {searchQuery || categoryFilter !== "todos" ? "Probá con otros filtros." : "Sumá más productos en Inventario."}
+                    {searchQuery || categoryFilter !== "todos" ? "Prueba con otros filtros." : "Suma más productos en Inventario."}
                   </p>
                 </div>
               ) : (
@@ -710,7 +710,7 @@ function SectionEditorModal({
 
               {availableFiltered.length > 60 && (
                 <p className="text-xs text-center text-muted mt-4">
-                  Mostrando primeros 60 — usá el buscador o filtros para encontrar más.
+                  Mostrando primeros 60 — usa el buscador o filtros para encontrar más.
                 </p>
               )}
             </div>

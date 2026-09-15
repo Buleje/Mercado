@@ -121,7 +121,7 @@ test("de tildar lotes a los uid que entran a la guía", async () => {
   expect(document.body.innerText).not.toContain("16-2026");
 
   /* Sin lotes elegidos, la derecha invita a elegir y el botón no se puede usar. */
-  expect(document.body.innerText).toContain("Elegí un lote para ver su madera");
+  expect(document.body.innerText).toContain("Elige un lote para ver su madera");
   const armar = () =>
     [...document.querySelectorAll("button")].find((b) => /Armar la guía/.test(b.innerText || ""))!;
   expect(armar().disabled).toBe(true);

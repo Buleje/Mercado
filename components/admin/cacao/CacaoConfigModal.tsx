@@ -119,7 +119,7 @@ export default function CacaoConfigModal({ onClose, onSaved }: Props) {
                 Alertas del módulo
               </CardTitle>
               <p className="text-xs text-[var(--text-tertiary)]">
-                Configurá los umbrales que disparan avisos
+                Configura los umbrales que disparan avisos
               </p>
             </div>
           </div>

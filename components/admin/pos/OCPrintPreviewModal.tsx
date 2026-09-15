@@ -254,7 +254,7 @@ export default function OCPrintPreviewModal({
           <div role="alert" className="mx-4 mb-1 flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-warning-500)]" aria-hidden />
             <p className="text-sm text-[var(--text-secondary)]">
-              Elegí el proveedor para imprimir o descargar. Sin él es una lista de precios,
+              Elige el proveedor para imprimir o descargar. Sin él es una lista de precios,
               no una orden de compra que alguien pueda aceptar.
             </p>
           </div>

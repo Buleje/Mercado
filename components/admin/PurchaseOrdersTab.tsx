@@ -212,7 +212,7 @@ function FleteTardio({
     <div className="mt-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3.5 space-y-2.5">
       <p className="text-xs text-[var(--text-secondary)]">
         Lo que costó traer esta compra (mototaxi, carga, estiba). Se reparte entre las unidades
-        que todavía tenés en stock, para que el costo del producto deje de ser optimista.
+        que todavía tienes en stock, para que el costo del producto deje de ser optimista.
       </p>
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative">
@@ -374,7 +374,7 @@ export default function PurchaseOrdersTab() {
         body: JSON.stringify({ generar: true }),
       });
       if (!res.ok) { avisar("No se pudo crear la orden", "error"); return; }
-      avisar("Orden creada — revisá las cantidades antes de enviarla");
+      avisar("Orden creada — revisa las cantidades antes de enviarla");
       load();
       cargarRecurrentes();
     } catch {
@@ -788,7 +788,7 @@ export default function PurchaseOrdersTab() {
           <SectionTitle className="text-lg font-extrabold">Órdenes de Compra</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             {orders.length === 0
-              ? "Creá la primera orden a un proveedor. Después podés duplicarla o hacerla recurrente."
+              ? "Crea la primera orden a un proveedor. Después puedes duplicarla o hacerla recurrente."
               : `${orders.length} ${orders.length === 1 ? "orden registrada" : "órdenes registradas"} · Total acumulado S/${kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}${
                   // Decir qué quedó afuera: un total que baja sin explicación
                   // se lee como un error del sistema.
@@ -888,7 +888,7 @@ export default function PurchaseOrdersTab() {
           {f.hayFiltros && (
             <p className="text-sm font-bold text-[var(--text-secondary)]">
               {f.filtradas.length === 0
-                ? "Ninguna orden coincide con lo que buscás."
+                ? "Ninguna orden coincide con lo que buscas."
                 : `${f.filtradas.length} de ${orders.length} ${orders.length === 1 ? "orden" : "órdenes"}`}
             </p>
           )}
@@ -1036,7 +1036,7 @@ export default function PurchaseOrdersTab() {
               </p>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                 El costo de esos productos —y el margen que ves— está por debajo del real.
-                Abrí el detalle de cada una y cargá el flete: se reparte entre lo que quede en stock.
+                Abre el detalle de cada una y carga el flete: se reparte entre lo que quede en stock.
               </p>
             </div>
           </section>
@@ -1331,7 +1331,7 @@ export default function PurchaseOrdersTab() {
               </span>
               <div className="flex-1 min-w-0">
                 <SectionTitle id="create-oc-title" className="text-lg font-extrabold">Nueva orden de compra</SectionTitle>
-                <p className="text-sm text-[var(--text-secondary)]">Elegí proveedor, sumá productos y guardá. Después podés marcarla como recibida cuando llegue la mercadería.</p>
+                <p className="text-sm text-[var(--text-secondary)]">Elige proveedor, suma productos y guarda. Después puedes marcarla como recibida cuando llegue la mercadería.</p>
               </div>
               <button
                 type="button"
@@ -1658,7 +1658,7 @@ export default function PurchaseOrdersTab() {
                       <p className="text-xs text-[var(--text-secondary)]">{items.length} producto{items.length === 1 ? "" : "s"} · {items.reduce((s, i) => s + i.quantity, 0)} unidades</p>
                       {discount > 0 && (
                         <p className="text-xs text-[var(--data-success-500)] font-bold mt-0.5">
-                          Subtotal S/{itemsTotal.toFixed(2)} − {discount}% = ahorrás S/{(itemsTotal - totalConDescuento).toFixed(2)}
+                          Subtotal S/{itemsTotal.toFixed(2)} − {discount}% = ahorras S/{(itemsTotal - totalConDescuento).toFixed(2)}
                         </p>
                       )}
                       {sobrecostos > 0 && (
@@ -1672,7 +1672,7 @@ export default function PurchaseOrdersTab() {
                         S/{totalConDescuento.toFixed(2)}
                       </p>
                       {sobrecostos > 0 && (
-                        <p className="text-xs text-[var(--text-tertiary)] font-bold">le pagás al proveedor</p>
+                        <p className="text-xs text-[var(--text-tertiary)] font-bold">le pagas al proveedor</p>
                       )}
                     </div>
                   </div>
@@ -1715,8 +1715,8 @@ export default function PurchaseOrdersTab() {
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md mx-auto">
             {f.hayFiltros
-              ? "Probá con otro texto, ampliá el rango de fechas o sacá los filtros."
-              : "Llevá registro de lo que pedís a tus proveedores: fechas, cantidades, costos. Después podés duplicar pedidos frecuentes o hacerlos recurrentes."}
+              ? "Prueba con otro texto, amplía el rango de fechas o saca los filtros."
+              : "Lleva registro de lo que pides a tus proveedores: fechas, cantidades, costos. Después puedes duplicar pedidos frecuentes o hacerlos recurrentes."}
           </p>
           {f.hayFiltros ? (
             <button

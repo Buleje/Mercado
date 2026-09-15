@@ -420,7 +420,7 @@ export default function CtpResumenPermisoModal({
       description={
         grupo
           ? `${nf(grupo.piezas)} trozas · ${fmtM3(grupo.volumenM3)} m³`
-          : "Elegí un permiso o un lote, o pegá un objetivo para compararlo"
+          : "Elige un permiso o un lote, o pega un objetivo para compararlo"
       }
     >
       <div className="space-y-4 px-5 py-5 sm:px-6">
@@ -518,7 +518,7 @@ export default function CtpResumenPermisoModal({
               {disponiblesOrdenados.length > 0 && (
                 <SeccionResumenPermiso titulo="Productos disponibles (aserrados, ya producidos)">
                   <p className="text-xs text-[var(--text-tertiary)]">
-                    No se suman a la distribución de rolliza — es aserrada YA hecha. Tildá para compararla contra el
+                    No se suman a la distribución de rolliza — es aserrada YA hecha. Tilda para compararla contra el
                     objetivo de arriba{objetivo ? " (con candado si el tipo no es del objetivo)" : ""}.
                   </p>
                   <ul className="max-h-56 overflow-y-auto overflow-x-hidden rounded-xl border border-[var(--rule-base)]">
@@ -610,7 +610,7 @@ export default function CtpResumenPermisoModal({
                     ) : (
                       <>
                         <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
-                        Cubrís el objetivo en total{sobranteCuadreM3 > 1e-4 ? ` — sobran ≈${fmtM3(sobranteCuadreM3)} m³` : ""}.
+                        Cubres el objetivo en total{sobranteCuadreM3 > 1e-4 ? ` — sobran ≈${fmtM3(sobranteCuadreM3)} m³` : ""}.
                       </>
                     )}
                   </p>

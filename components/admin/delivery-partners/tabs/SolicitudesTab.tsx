@@ -95,7 +95,7 @@ export function SolicitudesTab() {
               <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
                 {apps.length === 0
                   ? "Aún no llegaron solicitudes. Los nuevos repartidores aparecerán acá para que las revises."
-                  : `${apps.length} ${apps.length === 1 ? "solicitud recibida" : "solicitudes recibidas"} · revisá KYC, aprobá o rechazá.`}
+                  : `${apps.length} ${apps.length === 1 ? "solicitud recibida" : "solicitudes recibidas"} · revisa KYC, aprueba o rechaza.`}
               </p>
             </div>
           </div>

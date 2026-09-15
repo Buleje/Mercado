@@ -116,7 +116,7 @@ export default function LothPlanTalaPanel({
 
       {plan.lineas.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-5 text-center text-sm text-[var(--text-secondary)]">
-          No hay árboles aprovechables para proponer. Revisá el censo, el DMC de cada especie y el saldo del plan.
+          No hay árboles aprovechables para proponer. Revisa el censo, el DMC de cada especie y el saldo del plan.
         </p>
       ) : (
         <div className="overflow-x-auto">

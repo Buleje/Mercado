@@ -464,7 +464,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
           <FileText className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p className="text-base font-medium">No hay planes de manejo cargados.</p>
-          <p className="mt-1 text-sm">Creá el plan (permiso + resolución + titular) para empezar a censar árboles.</p>
+          <p className="mt-1 text-sm">Crea el plan (permiso + resolución + titular) para empezar a censar árboles.</p>
         </div>
       )}
     </div>
@@ -566,7 +566,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
       onChange();
     } catch (err) {
       console.warn("[LothPlanView] agregar especie falló", err);
-      toast.error("No se pudo agregar la especie — revisá tu conexión.");
+      toast.error("No se pudo agregar la especie — revisa tu conexión.");
     } finally { setBusy(false); }
   }
   async function del(s: Species) {
@@ -590,7 +590,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
       onChange();
     } catch (err) {
       console.warn("[LothPlanView] borrar especie falló", err);
-      toast.error("No se pudo borrar la especie — revisá tu conexión.");
+      toast.error("No se pudo borrar la especie — revisa tu conexión.");
     }
   }
 
@@ -629,7 +629,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
       onChange();
     } catch (err) {
       console.warn("[LothPlanView] guardar especie falló", err);
-      toast.error("No se pudo guardar la especie — revisá tu conexión.");
+      toast.error("No se pudo guardar la especie — revisa tu conexión.");
     } finally { setBusy(false); }
   }
 
@@ -690,7 +690,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
             </Cell>
           </tr>
         ))}
-        {species.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Sin especies. Agregá las aprobadas en la resolución.</td></tr>}
+        {species.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Sin especies. Agrega las aprobadas en la resolución.</td></tr>}
       </Table>
     </Panel>
   );
@@ -757,7 +757,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
       onChange();
     } catch (err) {
       console.warn("[LothPlanView] agregar árbol falló", err);
-      toast.error("No se pudo agregar el árbol — revisá tu conexión.");
+      toast.error("No se pudo agregar el árbol — revisa tu conexión.");
     } finally { setBusy(false); }
   }
   /** Importa las filas ya validadas por el modal (shape del endpoint bulk). */
@@ -782,7 +782,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
       setImporting(false); onChange();
     } catch (err) {
       console.warn("[LothPlanView] importar censo falló", err);
-      toast.error("No se pudo importar el censo — revisá tu conexión.");
+      toast.error("No se pudo importar el censo — revisa tu conexión.");
     } finally { setBusy(false); }
   }
 
@@ -806,7 +806,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
       onChange();
     } catch (err) {
       console.warn("[LothPlanView] borrar árbol falló", err);
-      toast.error("No se pudo borrar el árbol — revisá tu conexión.");
+      toast.error("No se pudo borrar el árbol — revisa tu conexión.");
     }
   }
 
@@ -904,7 +904,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
           </tr>
           );
         })}
-        {trees.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin árboles censados. Agregá o importá el censo (CSV).</td></tr>}
+        {trees.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin árboles censados. Agrega o importa el censo (CSV).</td></tr>}
         {trees.length > 0 && filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Ningún árbol coincide con el filtro.</td></tr>}
       </Table>
       {filtered.length > visibles && (
@@ -918,7 +918,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
           </button>
           {truncado && (
             <p className="text-center text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-              Además hay {(total - trees.length).toLocaleString("es-PE")} árboles que no se cargaron: filtrá por estado para alcanzarlos.
+              Además hay {(total - trees.length).toLocaleString("es-PE")} árboles que no se cargaron: filtra por estado para alcanzarlos.
             </p>
           )}
         </div>
@@ -1044,7 +1044,7 @@ function QualityAlerts({ rows, onResolver }: { rows: ControlRow[]; onResolver?: 
           <div className="min-w-0 flex-1">
             <span className="font-bold">Especie(s) censada(s) fuera del plan aprobado: </span>
             {noAut.map((r) => r.species).join(", ")}.{" "}
-            <span className="font-medium">Talar o movilizar una especie no autorizada es infracción — corregí el plan o el censo antes de emitir GTF.</span>
+            <span className="font-medium">Talar o movilizar una especie no autorizada es infracción — corrige el plan o el censo antes de emitir GTF.</span>
             {/* El aviso trae el camino: antes decía qué estaba mal y había que
                 salir a buscar dónde se arregla. */}
             <span className="mt-2 flex flex-wrap gap-1.5">

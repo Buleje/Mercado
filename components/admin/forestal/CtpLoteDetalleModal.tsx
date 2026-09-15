@@ -595,7 +595,7 @@ export default function CtpLoteDetalleModal({
               <TbodyCtp>
                 {lote.trozas.length === 0 && (
                   <FilaVacia cols={abierto ? 7 : 6}>
-                    El lote está vacío. Cargalo desde Consumos eligiendo este lote.
+                    El lote está vacío. Cárgalo desde Consumos eligiendo este lote.
                   </FilaVacia>
                 )}
                 {piezasEnPagina.map((t) => (

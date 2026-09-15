@@ -72,7 +72,7 @@ export function useDocumentoLookup(numero: string, opts: { auto?: boolean } = {}
       const valor: ResultadoDocumento = j ?? {
         encontrado: false,
         numero: n,
-        motivo: "No se pudo consultar el padrón. Cargá los datos a mano.",
+        motivo: "No se pudo consultar el padrón. Carga los datos a mano.",
       };
       pedidos.current.set(n, valor);
       if (!vivo.current) return;
@@ -83,7 +83,7 @@ export function useDocumentoLookup(numero: string, opts: { auto?: boolean } = {}
       setResultado({
         encontrado: false,
         numero: n,
-        motivo: `No se pudo consultar el padrón (${e instanceof Error ? e.message : String(e)}). Cargá los datos a mano.`,
+        motivo: `No se pudo consultar el padrón (${e instanceof Error ? e.message : String(e)}). Carga los datos a mano.`,
       });
       setNumeroConsultado(n);
     } finally {

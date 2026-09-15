@@ -168,7 +168,7 @@ export default function DocumentosModule() {
       // QuotaExceeded — el demo guarda dataURLs y se llena rápido. Avisar al user.
       const e = err as DOMException;
       if (e.name === "QuotaExceededError") {
-        setUploadError("Almacenamiento local lleno. Eliminá archivos o conectá Supabase Storage.");
+        setUploadError("Almacenamiento local lleno. Elimina archivos o conecta Supabase Storage.");
       }
     }
   }, [docs]);
@@ -284,7 +284,7 @@ export default function DocumentosModule() {
         <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
           <div className="bg-[var(--surface-raised)] border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
             <Upload className="h-12 w-12 mx-auto text-primary mb-3" />
-            <p className="text-xl font-extrabold text-[var(--text-primary)]">Soltá los archivos para subir</p>
+            <p className="text-xl font-extrabold text-[var(--text-primary)]">Suelta los archivos para subir</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">PDF, imágenes, docs, hojas de cálculo</p>
           </div>
         </div>
@@ -829,10 +829,10 @@ function EmptyState({ category, onUpload }: { category: DocCategory; onUpload: (
         <Upload className="h-7 w-7" />
       </div>
       <p className="text-lg font-extrabold text-[var(--text-primary)]">
-        {isFiltered ? `Sin documentos en "${category}"` : "Subí tu primer documento"}
+        {isFiltered ? `Sin documentos en "${category}"` : "Sube tu primer documento"}
       </p>
       <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-md mx-auto">
-        Arrastrá y soltá archivos en cualquier parte de la pantalla, o usá el botón.
+        Arrastra y suelta archivos en cualquier parte de la pantalla, o usa el botón.
         Aceptamos PDF, imágenes, hojas de cálculo, documentos de Word, ZIP y más.
       </p>
       <button

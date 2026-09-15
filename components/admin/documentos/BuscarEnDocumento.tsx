@@ -74,7 +74,7 @@ export default function BuscarEnDocumento({ docId, ocrText, origen, escaneo, con
         <FileText className="mx-auto mb-3 h-12 w-12 text-[var(--text-tertiary)]" aria-hidden />
         <p className="text-sm font-bold text-[var(--text-secondary)]">Todavía no leí el texto de este documento.</p>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Usá <span className="font-bold">Analizar con IA</span> (o <span className="font-bold">Escanear</span> si es una
+          Usa <span className="font-bold">Analizar con IA</span> (o <span className="font-bold">Escanear</span> si es una
           foto) y después vas a poder buscar acá adentro.
         </p>
       </div>
@@ -139,7 +139,7 @@ export default function BuscarEnDocumento({ docId, ocrText, origen, escaneo, con
           ? "Este PDF es un escaneo: la IA leyó su PRIMERA PÁGINA mirándola. Lo que esté en las otras páginas todavía no se busca."
           : origen === "vision"
           ? "Este texto lo leyó la IA mirando la foto: puede tener errores de transcripción."
-          : "Texto extraído del archivo. Buscá sin preocuparte por tildes ni mayúsculas."}
+          : "Texto extraído del archivo. Busca sin preocuparte por tildes ni mayúsculas."}
       </p>
 
       <div ref={contenedor} className="flex-1 overflow-auto bg-[var(--surface-canvas)] px-4 py-3">

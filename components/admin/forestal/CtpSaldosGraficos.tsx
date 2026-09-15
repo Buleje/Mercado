@@ -146,7 +146,7 @@ export default function CtpSaldosGraficos({
             apertura != null
               ? "En m³. La existencia final incluye lo heredado del cierre anterior; el KPI «Saldo de materia prima» cuenta sólo el movimiento del período."
               : aperturaPendiente
-                ? "En m³. Señalá una barra para ver el acumulado."
+                ? "En m³. Señala una barra para ver el acumulado."
                 : "En m³. Sin cierre previo, la cascada arranca en el ingreso del período."
           }
           height={250}

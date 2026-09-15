@@ -170,7 +170,7 @@ export function SessionExpiryGuard({
             <Clock className="h-5 w-5" strokeWidth={2} aria-hidden />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-[var(--text-primary)]">¿Seguís por acá?</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">¿Sigues por acá?</p>
             <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
               Por seguridad cerraremos tu sesión en{" "}
               <span className="font-bold tabular-nums text-[var(--data-warning-700)]">{mmss}</span>{" "}

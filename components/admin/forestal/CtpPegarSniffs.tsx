@@ -215,7 +215,7 @@ export default function CtpPegarSniffs({
     validar: (d, fuente) =>
       d.productos.length === 0
         ? fuente === "captura"
-          ? "Leí la captura pero no encontré la tabla «Resumen de Producción por PMF y Producto». Probá con una captura donde se vea entera, o copiá el texto de la tabla y pegalo acá."
+          ? "Leí la captura pero no encontré la tabla «Resumen de Producción por PMF y Producto». Prueba con una captura donde se vea entera, o copia el texto de la tabla y pégalo acá."
           : (d.avisos[0] ?? "No encontré filas de producto en lo que pegaste.")
         : null,
     parece: pareceDetalleSniffs,
@@ -238,7 +238,7 @@ export default function CtpPegarSniffs({
     if (loteSniffsEsperado && detalle.lote && normalizarTexto(detalle.lote) !== normalizarTexto(loteSniffsEsperado)) {
       lista.push({
         tono: "error",
-        texto: `Esta captura es del lote ${detalle.lote} y acá esperábamos el ${loteSniffsEsperado}. Si la agregás, el cotejo pasa a ser contra ${detalle.lote}.`,
+        texto: `Esta captura es del lote ${detalle.lote} y acá esperábamos el ${loteSniffsEsperado}. Si la agregas, el cotejo pasa a ser contra ${detalle.lote}.`,
       });
     }
     if (detalle.especieComun && !mismaEspecie(material.especie, detalle.especieComun)) {
@@ -390,7 +390,7 @@ export default function CtpPegarSniffs({
                         aria-label={`Producto de ${f.leida.productoCrudo}`}
                         className={CAMPO}
                       >
-                        <option value="">— elegí el producto —</option>
+                        <option value="">— elige el producto —</option>
                         {TIPOS_PRODUCTO_SALIDA.map((t) => (
                           <option key={t.valor} value={t.valor} title={t.label}>
                             {t.valor}
@@ -440,7 +440,7 @@ export default function CtpPegarSniffs({
               variant="primary"
               onClick={confirmar}
               disabled={!puedeAgregar}
-              title={sinProducto > 0 ? "Elegí el producto de cada fila incluida (o desmarcala)" : undefined}
+              title={sinProducto > 0 ? "Elige el producto de cada fila incluida (o desmárcala)" : undefined}
             >
               <Check className="h-4 w-4" /> Agregar {incluidas.length} paquete{incluidas.length === 1 ? "" : "s"}
             </Btn>
@@ -456,7 +456,7 @@ export default function CtpPegarSniffs({
       compacto={compacto}
       texto={
         <>
-          pegá la captura del «Detalle de la programación de producción» (<Tecla>Ctrl+V</Tecla>) o el texto copiado de
+          pega la captura del «Detalle de la programación de producción» (<Tecla>Ctrl+V</Tecla>) o el texto copiado de
           su tabla{compacto ? "" : ". Los productos y sus m³ entran solos, para revisar antes de agregar"}.
         </>
       }

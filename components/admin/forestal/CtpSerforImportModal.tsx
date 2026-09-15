@@ -188,7 +188,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
         if (!propia) {
           const otras = leidas.map((x) => TITULO_FORMATO[x.formato]).join(", ");
           return otras
-            ? `Este archivo es de ${otras}, no de acá. Soltalo en su caja.`
+            ? `Este archivo es de ${otras}, no de acá. Suéltalo en su caja.`
             : "No reconozco ninguna sección del libro en este archivo.";
         }
         setSecciones((prev) => [...prev.filter((x) => x.formato !== formato), propia]);
@@ -365,7 +365,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
       if (mode === "commit") onImportado?.();
     } catch (e) {
       logger.error("[ctp-serfor-import] falló el envío", { error: String(e) });
-      setErr("No se pudo enviar. Revisá la conexión.");
+      setErr("No se pudo enviar. Revisa la conexión.");
       setResultados(acumulado.length > 0 ? acumulado : null);
     } finally {
       setCargando(false);
@@ -455,7 +455,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
             >
               <Upload className="h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
               <span className="text-base font-bold text-[var(--text-primary)]">
-                {nombreArchivo ?? "Soltá el archivo o tocá para elegirlo"}
+                {nombreArchivo ?? "Suelta el archivo o toca para elegirlo"}
               </span>
               <span className="text-sm text-[var(--text-tertiary)]">Excel (.xlsx) o CSV · las 5 secciones del libro</span>
             </button>
@@ -519,7 +519,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                   <span>
                     {ignoradas.length === 1 ? "Esta hoja tiene datos" : "Estas hojas tienen datos"} pero no reconozco su
-                    formato: <strong>{ignoradas.join(", ")}</strong>. No se van a importar — revisá que los nombres de
+                    formato: <strong>{ignoradas.join(", ")}</strong>. No se van a importar — revisa que los nombres de
                     las columnas sean los del SNIFFS.
                   </span>
                 </p>
@@ -569,7 +569,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
               {/* El número contra el que hay que cuadrarlo: sin decir de dónde
                   sale, el operador no sabe si su inventario está bien. */}
               <p className="text-sm text-[var(--text-secondary)]">
-                Cuadrá esto contra el «Saldo Inicial» del Cuadro Resumen 2 del SNIFFS (aserrada) y el saldo de trozas
+                Cuadra esto contra el «Saldo Inicial» del Cuadro Resumen 2 del SNIFFS (aserrada) y el saldo de trozas
                 del Cuadro 1. Si no coinciden, falta o sobra algo en el conteo.
               </p>
             </div>
@@ -621,7 +621,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                       {estado.aperturaNecesariaM3.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³
                     </strong>{" "}
                     de existencia inicial, pero el número exacto NO se estima: lo declara el «Saldo Inicial» del Cuadro
-                    Resumen 2 del SNIFFS. Bajá ese cuadro y cargalo como existencia de apertura.
+                    Resumen 2 del SNIFFS. Baja ese cuadro y cárgalo como existencia de apertura.
                   </span>
                 </p>
               )}
@@ -638,7 +638,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
           {/* ── Lo que un fiscalizador levantaría de este libro ───────────── */}
           {avisos.length > 0 && (
             <div className="space-y-2 rounded-xl bg-[var(--surface-sunken)] p-4">
-              <p className="text-base font-extrabold text-[var(--text-primary)]">Revisá esto antes de importar</p>
+              <p className="text-base font-extrabold text-[var(--text-primary)]">Revisa esto antes de importar</p>
               {avisos.slice(0, 8).map((a, i) => (
                 <p
                   key={`${a.lote}-${i}`}

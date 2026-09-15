@@ -236,7 +236,7 @@ export function BarraSeleccion({
 
         {porColumna.length === 0 ? (
           <span className="text-sm text-[var(--text-tertiary)]">
-            Sin números en la selección — marcá Cant., Pie tablar o m³ para ver la cuenta.
+            Sin números en la selección — marca Cant., Pie tablar o m³ para ver la cuenta.
           </span>
         ) : (
           porColumna.map(({ col, stats }) => {

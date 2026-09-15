@@ -325,7 +325,7 @@ function getRecetasDemo() {
       ],
       totalIngredientes: 34.50,
       pasos: [
-        "Sancoca el pollo y deshilachalo en tiras finas",
+        "Sancoca el pollo y deshiláchalo en tiras finas",
         "Licua el aji amarillo con la leche y las galletas remojadas",
         "Sofrie cebolla y ajo, agrega la crema de aji",
         "Incorpora el pollo deshilachado y cocina 10 minutos",
@@ -542,7 +542,7 @@ function getRecetasDemo() {
       ],
       totalIngredientes: 29.22,
       pasos: [
-        "Cocina el arroz y dejalo enfriar (mejor si es del dia anterior)",
+        "Cocina el arroz y déjalo enfriar (mejor si es del dia anterior)",
         "Corta el pollo en cubos pequenos y saltea en wok a fuego alto",
         "Retira el pollo y prepara tortilla de huevo, corta en tiras",
         "En el mismo wok con aceite, agrega el arroz frio y saltea",

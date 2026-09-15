@@ -145,7 +145,7 @@ export default function LoteMiembrosEditor({
       )}
       {!loading && available.length === 0 && (
         <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-3 text-center text-xs text-[var(--text-tertiary)]">
-          No hay corridas de producción con saldo disponible. Registrá producción en el Libro CTP primero.
+          No hay corridas de producción con saldo disponible. Registra producción en el Libro CTP primero.
         </p>
       )}
 

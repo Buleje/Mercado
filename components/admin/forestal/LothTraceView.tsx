@@ -136,7 +136,7 @@ export default function LothTraceView({
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
         <TreePine className="mx-auto mb-3 h-10 w-10 opacity-30" />
         <p className="text-base font-medium">No hay operaciones para trazar todavía.</p>
-        <p className="mt-1 text-sm">Registrá una tala en la sección 1 para iniciar la trazabilidad de un árbol.</p>
+        <p className="mt-1 text-sm">Registra una tala en la sección 1 para iniciar la trazabilidad de un árbol.</p>
       </div>
     );
   }
@@ -272,7 +272,7 @@ export default function LothTraceView({
 
       {visibles.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-10 text-center text-sm text-[var(--text-tertiary)]">
-          Ningún árbol coincide con el filtro. Probá con otro término o quitá los filtros.
+          Ningún árbol coincide con el filtro. Prueba con otro término o quita los filtros.
         </div>
       ) : modo === "tabla" ? (
         <LothTraceTabla

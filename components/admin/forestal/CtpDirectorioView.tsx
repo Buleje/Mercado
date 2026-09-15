@@ -368,7 +368,7 @@ function ListaVehiculos({
   onBorrar: (v: Vehiculo) => void;
 }) {
   if (vehiculos.length === 0) {
-    return <Vacio texto="Todavía no hay vehículos cargados. Agregá el primero para elegirlo por placa en la guía." />;
+    return <Vacio texto="Todavía no hay vehículos cargados. Agrega el primero para elegirlo por placa en la guía." />;
   }
   return (
     <ul className="space-y-1.5">

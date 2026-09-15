@@ -62,7 +62,7 @@ async function qrPara(id: string): Promise<{ url: string; dataUrl: string }> {
 
 function abrir(html: string, errCtx: string): void {
   const w = window.open("", "_blank", "width=900,height=700");
-  if (!w) throw new Error(`El navegador bloqueó la ventana. Permití pop-ups para ${errCtx}.`);
+  if (!w) throw new Error(`El navegador bloqueó la ventana. Permite pop-ups para ${errCtx}.`);
   w.document.write(html);
   w.document.close();
   w.focus();
@@ -172,7 +172,7 @@ export async function printCertificadoLote(
     <div class="verif">
       <img src="${dataUrl}" alt="QR de verificación" />
       <div class="vt">
-        <b>Verificable en línea:</b> escaneá el QR para contrastar este lote y su cadena
+        <b>Verificable en línea:</b> escanea el QR para contrastar este lote y su cadena
         de custodia en vivo contra el Libro de Operaciones del establecimiento.
         <div class="vu">${esc(url)}</div>
       </div>
@@ -221,7 +221,7 @@ export async function printEtiquetaLote(lote: LoteCertData, totalCantidad: numbe
         <div><span class="k">Destino</span><br/><b>${esc(lote.destino ?? "—")}</b></div>
         <div><span class="k">Científico</span><br/><b>${esc(lote.speciesScientific ?? "—")}</b></div>
       </div>
-      <div class="foot">Escaneá el QR para verificar el origen · Libro de Operaciones CTP</div>
+      <div class="foot">Escanea el QR para verificar el origen · Libro de Operaciones CTP</div>
     </div>
     <script>setTimeout(function(){ window.print(); }, 400);</script>
   </body></html>`;

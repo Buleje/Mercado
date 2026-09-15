@@ -79,7 +79,7 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
       open
       onClose={onClose}
       title={titulo}
-      description="Elegí qué paquetes salen en este viaje; el resto se queda apartado"
+      description="Elige qué paquetes salen en este viaje; el resto se queda apartado"
       icon={Truck}
       className="max-w-4xl"
       footer={

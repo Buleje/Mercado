@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
       nextMonth.setDate(1);
       const resetTs = Math.floor(nextMonth.getTime() / 1000);
       return NextResponse.json(
-        { error: "Límite mensual de generaciones IA alcanzado. Actualizá tu plan o esperá el próximo mes." },
+        { error: "Límite mensual de generaciones IA alcanzado. Actualiza tu plan o espera el próximo mes." },
         {
           status: 429,
           headers: { "Retry-After": String(resetTs) },
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const prompt = `Generá una descripción de producto para una bodega/marketplace en Perú.
+    const prompt = `Genera una descripción de producto para una bodega/marketplace en Perú.
 
 Producto: ${name}
 ${category ? `Categoría: ${category}` : ""}
@@ -85,14 +85,14 @@ Tono: ${TONE_HINTS[tone]}
 Reglas estrictas:
 - Español de Perú natural, NUNCA voseo argentino.
 - 2 a 3 oraciones, máximo 280 caracteres en total.
-- Comenzá describiendo qué es y para qué sirve.
-- Mencioná sin exagerar 1-2 atributos diferenciadores (origen, calidad, presentación, uso típico).
+- Comienza describiendo qué es y para qué sirve.
+- Menciona sin exagerar 1-2 atributos diferenciadores (origen, calidad, presentación, uso típico).
 - NO inventes datos nutricionales, ingredientes específicos ni certificaciones.
 - NO uses emojis.
 - NO uses palabras vacías como "increíble", "lo mejor del mercado".
 - NO uses muletillas tipo "¡Descubrí!" o "¡Llevátelo!".
 
-Devolvé EXCLUSIVAMENTE el texto de la descripción, sin comillas, sin markdown, sin prefijos.`;
+Devuelve EXCLUSIVAMENTE el texto de la descripción, sin comillas, sin markdown, sin prefijos.`;
 
     // Round 20: trackAiUsage envuelve la llamada — captura tokens reales
     // del SDK + recordSpend automático. Reemplaza el manual recordSpend de abajo.

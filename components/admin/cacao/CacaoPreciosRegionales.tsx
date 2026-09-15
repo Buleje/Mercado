@@ -48,7 +48,7 @@ export default function CacaoPreciosRegionales({
       <Header fino={fino} setFino={setFino} present={presentBtn} />
       <p className="mb-3 text-xs text-[var(--text-tertiary)]">
         Estimado en <b className="text-[var(--text-secondary)]">S//kg</b> desde el precio internacional de hoy
-        (S/ {sol(model.refSolKg)}/kg{usdPen ? ` · FX S/ ${sol(usdPen)}/USD` : ""}). Pasá el cursor por cada plaza para el detalle.
+        (S/ {sol(model.refSolKg)}/kg{usdPen ? ` · FX S/ ${sol(usdPen)}/USD` : ""}). Pasa el cursor por cada plaza para el detalle.
       </p>
 
       {/* Una línea por plaza: nombre · barra · precio · % */}

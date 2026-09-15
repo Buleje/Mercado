@@ -104,7 +104,7 @@ export default function CacaoProductores() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Productores" value={String(kpis.total)} subValue={`${kpis.conCompras} con compras`} icon={Users} emphasis="neutral" />
         <StatCard label="Kg comprado" value={`${n2(kpis.totalKg)} kg`} icon={Scale} emphasis="success" />
-        <StatCard label="A pagar" value={`S/ ${n2(kpis.totalPagado)}`} subValue={kpis.totalSaldo > 0 ? `debés S/ ${n2(kpis.totalSaldo)}` : "al día"} icon={Coins} emphasis={kpis.totalSaldo > 0 ? "warning" : "success"} />
+        <StatCard label="A pagar" value={`S/ ${n2(kpis.totalPagado)}`} subValue={kpis.totalSaldo > 0 ? `debes S/ ${n2(kpis.totalSaldo)}` : "al día"} icon={Coins} emphasis={kpis.totalSaldo > 0 ? "warning" : "success"} />
         <StatCard label="Productor top" value={kpis.top ? `S/ ${n2(kpis.top.pagado)}` : "—"} subValue={kpis.top?.nombre ?? "sin compras"} icon={Trophy} emphasis={kpis.top ? "success" : "neutral"} />
       </div>
 
@@ -154,7 +154,7 @@ export default function CacaoProductores() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-[var(--text-primary)]">{p.nombre}</span>
                     {p.certificacion && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><Award className="h-3 w-3" />{CERT_LABEL[p.certificacion] ?? p.certificacion}</span>}
-                    {p.stats.saldo > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"><AlertTriangle className="h-3 w-3" />Debés S/ {n2(p.stats.saldo)}</span>}
+                    {p.stats.saldo > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"><AlertTriangle className="h-3 w-3" />Debes S/ {n2(p.stats.saldo)}</span>}
                   </div>
                   <span className="text-xs text-[var(--text-tertiary)]"><span className="font-mono">{p.codigo ?? "—"}</span>{p.variedad ? ` · ${p.variedad}` : ""}{p.status === "inactivo" ? " · inactivo" : ""}</span>
                 </Td>
@@ -175,7 +175,7 @@ export default function CacaoProductores() {
           : <div className="p-12 text-center text-[var(--text-tertiary)]">
               <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-7 w-7" /></span>
               <p className="text-base font-bold text-[var(--text-primary)]">Aún no tienes productores</p>
-              <p className="mx-auto mt-1 max-w-sm text-sm">Registrá a tus proveedores para vincularlos a los lotes y ver su historial de compras y calidad.</p>
+              <p className="mx-auto mt-1 max-w-sm text-sm">Registra a tus proveedores para vincularlos a los lotes y ver su historial de compras y calidad.</p>
               <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Agregar productor</button>
             </div>
         )}

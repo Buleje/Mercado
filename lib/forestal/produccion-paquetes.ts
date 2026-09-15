@@ -99,7 +99,7 @@ export function motivosParaGuardar(
   } = {},
 ): string[] {
   const motivos: string[] = [];
-  if (paquetes.length === 0) motivos.push("Agregá al menos un paquete de producción.");
+  if (paquetes.length === 0) motivos.push("Agrega al menos un paquete de producción.");
   const sinCodigo = paquetes.filter((p) => !p.codigo.trim()).length;
   if (sinCodigo > 0) motivos.push(`${sinCodigo} paquete(s) sin código: es lo que se busca en la pila.`);
   const codigos = paquetes.map((p) => p.codigo.trim().toLowerCase()).filter(Boolean);
@@ -125,7 +125,7 @@ export function motivosParaGuardar(
       motivos.push(
         `Los paquetes suman ${fmtM3(declarado)} m³ y el tope de rendimiento (${pct} %) permite ` +
           `${fmtM3(tope)} m³ con los ${fmtM3(Number(opts.consumidoM3))} m³ que entraron. ` +
-          `Sacá ${fmtM3(declarado - tope)} m³.`,
+          `Saca ${fmtM3(declarado - tope)} m³.`,
       );
     }
   }

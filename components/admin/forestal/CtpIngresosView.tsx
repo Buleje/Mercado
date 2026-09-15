@@ -418,7 +418,7 @@ export default function CtpIngresosView({
         pushToast({
           tono: "warning",
           msg: `El legajo toma los primeros ${LEGAJO_MAX} ingresos`,
-          detail: `El filtro tiene ${todas.length}: quedaron afuera ${acotado}. Filtrá por mes o marcá las que necesitás.`,
+          detail: `El filtro tiene ${todas.length}: quedaron afuera ${acotado}. Filtra por mes o marca las que necesitas.`,
         });
       }
       componerLegajo(todas.slice(0, LEGAJO_MAX), acotado);
@@ -671,7 +671,7 @@ export default function CtpIngresosView({
         tono: truncated ? "warning" : "success",
         msg: truncated ? `Descargados los primeros ${CTP_EXPORT_MAX}` : `${todos.length} ingresos descargados`,
         detail: truncated
-          ? `El filtro tiene más de ${CTP_EXPORT_MAX} registros. Acotá el período para bajar el resto.`
+          ? `El filtro tiene más de ${CTP_EXPORT_MAX} registros. Acota el período para bajar el resto.`
           : "Se abre en Excel con las columnas ya separadas.",
       });
     } catch (err) {
@@ -1130,7 +1130,7 @@ export default function CtpIngresosView({
               setFichaGuia(null);
               setFichaTrozas(null);
             } else {
-              setFichaError("No se pudo recepcionar la guía. Probá de nuevo o revisá sus piezas.");
+              setFichaError("No se pudo recepcionar la guía. Prueba de nuevo o revisa sus piezas.");
             }
           })()}
           onVerDocumento={() => {

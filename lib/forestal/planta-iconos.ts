@@ -128,7 +128,7 @@ export function fichaItemHtml(d: {
     d.cites ? `<span class="ctp-pop-cites">CITES</span>` : "",
     `</div>`,
     `<div class="ctp-pop-body">${filas}</div>`,
-    `<div class="ctp-pop-pie">Arrastrá el icono para moverlo dentro de la zona`,
+    `<div class="ctp-pop-pie">Arrastra el icono para moverlo dentro de la zona`,
     `<button type="button" class="ctp-pop-btn" data-quitar="${esc(d.entryId)}">Quitar del mapa</button>`,
     `</div>`,
     `</div>`,

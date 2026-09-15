@@ -113,7 +113,7 @@ export default function CacaoTablaConversion({
             <Table className="h-4 w-4 text-[var(--accent)]" />
             Tabla de conversión del cacao
           </CardTitle>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Equivalente de compra local ({COMPRA_LOCAL_PCT}% del oficial, calibrado con {ANCLA_CC_LABEL}) según la variación internacional. Tocá una fila para fijarla como base.</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Equivalente de compra local ({COMPRA_LOCAL_PCT}% del oficial, calibrado con {ANCLA_CC_LABEL}) según la variación internacional. Toca una fila para fijarla como base.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">

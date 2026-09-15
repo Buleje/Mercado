@@ -70,7 +70,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (submitting || !isValid) { if (!isValid) setError("Elegí o nombrá el lote."); return; }
+    if (submitting || !isValid) { if (!isValid) setError("Elige o nombra el lote."); return; }
     setSubmitting(true); setError(null);
     try {
       const payload = {
@@ -120,7 +120,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
                 <div className="relative"><Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" /><input value={lq} onChange={(e) => setLq(e.target.value)} placeholder="Buscar lote…" className={`${I} h-9 pl-8`} /></div>
                 <div className="max-h-32 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                   {loadingL ? <div className="flex items-center gap-2 px-3 py-3 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
-                    : filtered.length === 0 ? <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">Sin lotes pendientes de beneficio. Registrá un acopio primero (o escribí el código abajo).</div>
+                    : filtered.length === 0 ? <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">Sin lotes pendientes de beneficio. Registra un acopio primero (o escribe el código abajo).</div>
                     : filtered.map((l) => (
                       <button key={l.id} type="button" onClick={() => pick(l)} className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-primary/10 ${loteId === l.id ? "bg-primary/10" : ""}`}>
                         <span className="truncate"><span className="font-mono text-xs font-bold text-[var(--text-primary)]">{l.loteCode}</span> <span className="text-[var(--text-secondary)]">{l.variedad ?? ""}</span></span>

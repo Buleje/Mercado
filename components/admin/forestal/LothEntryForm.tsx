@@ -294,12 +294,12 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     }
   }
   const SOURCE_TITLE: Record<LothSection, string> = {
-    tala: "Elegí el árbol del censo",
-    trozado: "Elegí la tala a trozar",
-    despacho_troza: "Elegí la troza a despachar",
-    consumo_troza: "Elegí la troza a consumir",
-    producto_terminado: "Elegí la troza consumida (materia prima)",
-    despacho_producto: "Elegí el producto a despachar",
+    tala: "Elige el árbol del censo",
+    trozado: "Elige la tala a trozar",
+    despacho_troza: "Elige la troza a despachar",
+    consumo_troza: "Elige la troza a consumir",
+    producto_terminado: "Elige la troza consumida (materia prima)",
+    despacho_producto: "Elige el producto a despachar",
   };
   const filteredSources = useMemo(() => {
     const q = srcQuery.trim().toLowerCase();
@@ -419,7 +419,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     if (fields.has("volumeManual") && !(Number(volumeM3) > 0)) m.push("Volumen (m³)");
     // Tala/Trozado: exigir volumen > 0 (manual o calculado por Smalian) — antes se
     // podía registrar con Ø/longitud vacíos y quedaba una línea con volumen 0.
-    if (fields.has("volume") && !(Number(volumeM3) > 0) && !(autoVolume > 0)) m.push("Volumen — completá Ø mayor, Ø menor y longitud");
+    if (fields.has("volume") && !(Number(volumeM3) > 0) && !(autoVolume > 0)) m.push("Volumen — completa Ø mayor, Ø menor y longitud");
     if (fields.has("quantity") && !(Number(quantity) > 0)) m.push("Cantidad");
     if (fields.has("productType") && !productType.trim()) m.push("Tipo de producto");
     if (corrigeLineNo && correctionNote.trim().length < 3) m.push("Motivo de la corrección");
@@ -489,7 +489,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     e.preventDefault();
     if (submitting) return;
     if (!isValid) {
-      setError("Completá los campos obligatorios marcados con asterisco.");
+      setError("Completa los campos obligatorios marcados con asterisco.");
       return;
     }
     setError(null);
@@ -677,7 +677,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 <div className="flex items-center gap-2 px-3 py-4 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
               ) : filteredSources.length === 0 ? (
                 <div className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">
-                  Nada disponible en este plan para esta etapa.{section !== "tala" && " Registrá primero la etapa anterior."}
+                  Nada disponible en este plan para esta etapa.{section !== "tala" && " Registra primero la etapa anterior."}
                 </div>
               ) : (
                 filteredSources.map((it, i) => (
@@ -701,7 +701,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               )}
             </div>
             <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-700)]">
-              Seleccioná de la lista para autocompletar, o cargá manualmente abajo.
+              Selecciona de la lista para autocompletar, o carga manualmente abajo.
             </p>
           </div>
 
@@ -731,7 +731,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 {censusTree.estado === "talado" && (
                   <span className="ml-1 font-bold text-[var(--data-warning-700)]">· ya marcado como talado</span>
                 )}
-                <div className="mt-0.5 text-[var(--data-success-700)] opacity-80">Especie y medidas precargadas — ajustá los Ø y el largo a lo medido en campo.</div>
+                <div className="mt-0.5 text-[var(--data-success-700)] opacity-80">Especie y medidas precargadas — ajusta los Ø y el largo a lo medido en campo.</div>
               </div>
             </div>
           )}
@@ -773,12 +773,12 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           {section === "despacho_producto" && !trozaCode.trim() && (
             <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-3 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] sm:col-span-2">
               Sin troza de origen esta salida no se puede atribuir a un árbol: su volumen se reparte por especie entre todos los de{" "}
-              {speciesName || "esa especie"}. Elegí el producto desde la lista de arriba para que herede su troza.
+              {speciesName || "esa especie"}. Elige el producto desde la lista de arriba para que herede su troza.
             </div>
           )}
 
           {fields.has("despachoCode") && (
-            <Field label="Código de despacho" hint="Solo si despachás con un código distinto al de la troza">
+            <Field label="Código de despacho" hint="Solo si despachas con un código distinto al de la troza">
               <input type="text" value={despachoCode} onChange={(e) => setDespachoCode(e.target.value)} placeholder="Opcional" className={cls.input} />
             </Field>
           )}
@@ -888,10 +888,10 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                       {permiso.vencimiento && (
                         <> · vence {permiso.vencimiento}{est === "vencido" ? " — VENCIDO" : est === "por_vencer" ? " — por vencer" : ""}</>
                       )}
-                      {est === "vencido" && ". Renová el permiso en la carátula antes de movilizar."}
+                      {est === "vencido" && ". Renueva el permiso en la carátula antes de movilizar."}
                     </>
                   ) : (
-                    <>Sin permiso CITES cargado para esta especie. Cargalo en <span className="font-bold">Configurar carátula → Permisos CITES</span> para acreditar el origen.</>
+                    <>Sin permiso CITES cargado para esta especie. Cárgalo en <span className="font-bold">Configurar carátula → Permisos CITES</span> para acreditar el origen.</>
                   )}
                 </div>
               </div>
@@ -983,7 +983,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           {fields.has("discarded") && (
             <label className="flex items-center gap-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
               <input type="checkbox" checked={discarded} onChange={(e) => setDiscarded(e.target.checked)} className="h-4 w-4 accent-[var(--data-error-600)]" />
-              Descartado <span className="text-[var(--text-tertiary)]">(no aprovechable — anotá el motivo abajo)</span>
+              Descartado <span className="text-[var(--text-tertiary)]">(no aprovechable — anota el motivo abajo)</span>
             </label>
           )}
 

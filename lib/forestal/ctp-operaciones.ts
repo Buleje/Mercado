@@ -50,7 +50,7 @@ export function slugDeOperacion(slugBase: string, nombre: string): string {
 /** Un nombre válido: corto, con letras, sin espacios sobrantes. */
 export function nombreDeOperacionValido(nombre: string): string | null {
   const n = nombre.trim();
-  if (n.length < 2) return "Poné un nombre de al menos 2 letras";
+  if (n.length < 2) return "Pon un nombre de al menos 2 letras";
   if (n.length > NOMBRE_OPERACION_MAX) return `Máximo ${NOMBRE_OPERACION_MAX} caracteres`;
   if (!/[a-zA-ZáéíóúñÁÉÍÓÚÑ]/.test(n)) return "El nombre necesita alguna letra";
   return null;

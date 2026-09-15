@@ -762,7 +762,7 @@ export default function PromotionsTab() {
           <div className="space-y-1">
             <CardTitle className="text-[var(--text-primary)]">Todavía no tienes promociones</CardTitle>
             <p className="mx-auto max-w-sm text-sm text-[var(--text-secondary)]">
-              Creá tu primera oferta y mandala por WhatsApp a tus clientes — o pedile ideas a la IA según tu negocio.
+              Crea tu primera oferta y mándala por WhatsApp a tus clientes — o pídele ideas a la IA según tu negocio.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2">

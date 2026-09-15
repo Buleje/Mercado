@@ -548,7 +548,7 @@ export default function CategoriesEditorTab() {
                   onDragStart={canReorder ? () => setDragIdx(i) : undefined}
                   onDragEnd={() => setDragIdx(null)}
                   className={cn("shrink-0 text-[var(--text-tertiary)]", canReorder ? "cursor-grab active:cursor-grabbing" : "opacity-30")}
-                  title={canReorder ? "Arrastrá para reordenar" : "Limpiá el buscador para reordenar"}
+                  title={canReorder ? "Arrastra para reordenar" : "Limpia el buscador para reordenar"}
                   aria-hidden
                 >
                   <GripVertical className="h-4 w-4" />

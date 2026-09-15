@@ -293,7 +293,7 @@ export default function CtpPlantaMapa({
           // Fuera de su zona: vuelve a donde estaba y se avisa. Reasignar de
           // zona arrastrando el icono sería fácil de hacer sin querer.
           mk.setLatLng(m.pos);
-          setMapMsg("Ese punto queda fuera de la zona. Para cambiarla, arrastrá desde la lista.");
+          setMapMsg("Ese punto queda fuera de la zona. Para cambiarla, arrastra desde la lista.");
         }
       });
       mk.on("click", () => {
@@ -326,7 +326,7 @@ export default function CtpPlantaMapa({
       const meta = zonaTipoMeta(z.tipo);
       if (pts) {
         const poly = L.polygon(pts, { color: meta.ring, fillColor: meta.ring, fillOpacity: 0.35, weight: 2 });
-        poly.bindTooltip(`${z.codigo} · ${meta.label}${editingRef.current ? " · tocá para mover límites" : ""}`, { sticky: true });
+        poly.bindTooltip(`${z.codigo} · ${meta.label}${editingRef.current ? " · toca para mover límites" : ""}`, { sticky: true });
         poly.on("click", () => {
           if (drawingRef.current || measuringRef.current) return;
           // Con un ítem en la mano, tocar la zona lo UBICA ahí. Abrir la ficha
@@ -480,7 +480,7 @@ export default function CtpPlantaMapa({
         redrawDrawing();
         if (mapRef.current) mapRef.current.panTo(ll);
       },
-      (err: { code: number }) => { setLocating(false); setMapMsg(err.code === 1 ? "Activá el permiso de ubicación para marcar por GPS." : "No pude obtener tu ubicación."); },
+      (err: { code: number }) => { setLocating(false); setMapMsg(err.code === 1 ? "Activa el permiso de ubicación para marcar por GPS." : "No pude obtener tu ubicación."); },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   }
@@ -643,7 +643,7 @@ export default function CtpPlantaMapa({
         locateMarkerRef.current = L.circleMarker([latitude, longitude], { radius: 8, color: "#2563eb", fillColor: "#3b82f6", fillOpacity: 0.9, weight: 3 }).bindTooltip("Estás acá", { direction: "top" }).addTo(map);
         map.flyTo([latitude, longitude], 18);
       },
-      (err: { code: number }) => { setLocating(false); setMapMsg(err.code === 1 ? "Activá el permiso de ubicación en tu navegador para usar el GPS." : "No pude obtener tu ubicación."); },
+      (err: { code: number }) => { setLocating(false); setMapMsg(err.code === 1 ? "Activa el permiso de ubicación en tu navegador para usar el GPS." : "No pude obtener tu ubicación."); },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   }
@@ -662,7 +662,7 @@ export default function CtpPlantaMapa({
       const ring = [...pts.map(([lat, lng]) => [lng, lat]), [pts[0][1], pts[0][0]]];
       return { type: "Feature", properties: { codigo: z.codigo, nombre: z.nombre, tipo: z.tipo, areaM2: z.areaM2 }, geometry: { type: "Polygon", coordinates: [ring] } };
     }).filter(Boolean);
-    if (!features.length) { setMapMsg("Dibujá al menos una zona para exportar."); return; }
+    if (!features.length) { setMapMsg("Dibuja al menos una zona para exportar."); return; }
     const fc = { type: "FeatureCollection", features };
     const blob = new Blob([JSON.stringify(fc, null, 2)], { type: "application/geo+json" });
     const url = URL.createObjectURL(blob);
@@ -687,7 +687,7 @@ export default function CtpPlantaMapa({
       <div className="flex flex-wrap items-center gap-1.5">
         {drawing ? (
           <>
-            <span className="inline-flex h-9 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-700)]">Tocá el mapa para marcar la zona ({nVerts}){drawPerim > 0 ? ` · ${formatDist(drawPerim)}` : ""}{drawArea > 0 ? ` · ${fmtArea(drawArea)}` : ""}</span>
+            <span className="inline-flex h-9 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-700)]">Toca el mapa para marcar la zona ({nVerts}){drawPerim > 0 ? ` · ${formatDist(drawPerim)}` : ""}{drawArea > 0 ? ` · ${fmtArea(drawArea)}` : ""}</span>
             <button type="button" onClick={addGpsPoint} disabled={locating} title="Agregar un vértice en mi ubicación GPS (caminar la planta)" className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Punto GPS</span></button>
             <button type="button" onClick={undo} disabled={nVerts === 0} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
             <button type="button" onClick={finishDraw} disabled={nVerts < 3} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Terminar ({nVerts})</button>
@@ -702,13 +702,13 @@ export default function CtpPlantaMapa({
             </>
           ) : (
             <>
-              <span className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)]"><Edit3 className="h-4 w-4" />Tocá una zona para mover sus límites</span>
+              <span className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)]"><Edit3 className="h-4 w-4" />Toca una zona para mover sus límites</span>
               <button type="button" onClick={exitEdit} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Salir</button>
             </>
           )
         ) : measuring ? (
           <>
-            <span className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-primary)]"><Route className="h-4 w-4 text-[var(--accent)]" />{measurePts < 2 ? "Tocá el mapa para medir" : formatDist(measureDist)}{measureArea > 0 ? ` · ${fmtArea(measureArea)}` : ""}</span>
+            <span className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-primary)]"><Route className="h-4 w-4 text-[var(--accent)]" />{measurePts < 2 ? "Toca el mapa para medir" : formatDist(measureDist)}{measureArea > 0 ? ` · ${fmtArea(measureArea)}` : ""}</span>
             <button type="button" onClick={undoMeasure} disabled={measurePts === 0} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
             <button type="button" onClick={clearMeasure} disabled={measurePts === 0} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><X className="h-4 w-4" />Limpiar</button>
             <button type="button" onClick={exitMeasure} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Check className="h-4 w-4" />Listo</button>
@@ -768,7 +768,7 @@ export default function CtpPlantaMapa({
         {enMano && (
           <div aria-hidden className="pointer-events-none absolute inset-0 rounded-2xl ring-4 ring-inset ring-[var(--accent)]">
             <span className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-bold text-white shadow-[var(--shadow-md)]">
-              Tocá la zona donde está {enMano.label}
+              Toca la zona donde está {enMano.label}
             </span>
           </div>
         )}
@@ -776,8 +776,8 @@ export default function CtpPlantaMapa({
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="max-w-xs rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">
               <span className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Pencil className="h-6 w-6" /></span>
-              <p className="text-sm font-bold text-[var(--text-primary)]">Dibujá la primera zona de tu aserradero</p>
-              <p className="mt-1 text-xs text-[var(--text-secondary)]">Tocá “Dibujar zona”, marcá el contorno del patio de trozas, la sierra o el despacho, y asignale su tipo. Aparecerá coloreada en el mapa.</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Dibuja la primera zona de tu aserradero</p>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">Toca “Dibujar zona”, marca el contorno del patio de trozas, la sierra o el despacho, y asígnale su tipo. Aparecerá coloreada en el mapa.</p>
               <button type="button" onClick={startDraw} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Pencil className="h-4 w-4" /><span className="hidden sm:inline">Dibujar zona</span></button>
             </div>
           </div>
@@ -819,7 +819,7 @@ export default function CtpPlantaMapa({
       </div>
       {editErr && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{editErr}</p>}
       {mapMsg && <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-700)]">{mapMsg}<button aria-label="Quitar" type="button" onClick={() => setMapMsg(null)} className="shrink-0 text-[var(--data-warning-700)]"><X className="h-4 w-4" /></button></p>}
-      {!fullscreen && !editing && !measuring && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una zona para ver/editar su ficha. Dibujá el contorno con al menos 3 puntos.</p>}
+      {!fullscreen && !editing && !measuring && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Toca una zona para ver/editar su ficha. Dibuja el contorno con al menos 3 puntos.</p>}
 
       {/* Estilos de las chapitas del mapa. Van acá y no en el módulo de iconos
           porque Leaflet inserta ese HTML fuera del árbol de React: un CSS module
@@ -840,7 +840,7 @@ function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; 
   const [error, setError] = useState<string | null>(null);
   const pts = parseCoordText(text);
   const area = pts.length >= 3 ? geodesicAreaM2(pts) : 0;
-  function crear() { if (pts.length < 3) { setError("Necesitás al menos 3 coordenadas válidas (una «lat, lng» por línea)."); return; } onCreate(pts); }
+  function crear() { if (pts.length < 3) { setError("Necesitas al menos 3 coordenadas válidas (una «lat, lng» por línea)."); return; } onCreate(pts); }
   function ir() {
     const lat = parseFloat(goLat), lng = parseFloat(goLng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) { setError("Coordenada inválida."); return; }
@@ -853,7 +853,7 @@ function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; 
       variant="wide"
       icon={Navigation}
       title="Mapeo por coordenadas"
-      description="Creá una zona desde tu levantamiento GPS o andá a una coordenada exacta."
+      description="Crea una zona desde tu levantamiento GPS o ve a una coordenada exacta."
       footer={
         <ModalFooter error={error} nota={`${pts.length} punto(s) válido(s)${area > 0 ? ` · ${fmtArea(area)}` : ""}`}>
           <Btn variant="ghost" onClick={onClose}>Cerrar</Btn>
@@ -867,7 +867,7 @@ function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; 
       <ModalBody className="space-y-5">
         <div>
           <p className="mb-1 text-sm font-bold text-[var(--text-primary)]">Crear zona por coordenadas</p>
-          <p className="mb-2 text-xs text-[var(--text-tertiary)]">Pegá los vértices, una coordenada por línea: <span className="font-mono">latitud, longitud</span>. Se cierra el polígono solo.</p>
+          <p className="mb-2 text-xs text-[var(--text-tertiary)]">Pega los vértices, una coordenada por línea: <span className="font-mono">latitud, longitud</span>. Se cierra el polígono solo.</p>
           <textarea value={text} onChange={(e) => { setText(e.target.value); setError(null); }} rows={6} placeholder={"-8.38200, -74.53100\n-8.38150, -74.52950\n-8.38300, -74.52980"} className={`${I} h-auto py-2 font-mono`} />
         </div>
         <div className="border-t border-[var(--rule-base)] pt-4">

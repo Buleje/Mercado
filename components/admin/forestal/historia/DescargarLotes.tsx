@@ -150,7 +150,7 @@ export default function DescargarLotes({
           {elegidos.size > TOPE && (
             <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-              Son {elegidos.size} lotes: cada uno es una consulta con su cadena de salida. Bajá de a {TOPE} o menos para
+              Son {elegidos.size} lotes: cada uno es una consulta con su cadena de salida. Baja de a {TOPE} o menos para
               que no se caiga a mitad.
             </p>
           )}
@@ -170,7 +170,7 @@ export default function DescargarLotes({
           </div>
           <p className="mt-2 text-xs text-[var(--text-tertiary)]">
             {elegidos.size === 0
-              ? "Elegí al menos un lote."
+              ? "Elige al menos un lote."
               : `${elegidos.size} ${elegidos.size === 1 ? "lote" : "lotes"} · el PDF sale con uno por página; el Excel, en cuatro hojas.`}
           </p>
         </div>

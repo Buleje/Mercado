@@ -324,7 +324,7 @@ export default function CtpCorridaSinDeclarar({
             disabled={sumando || enProduccion.size === 0}
             title={
               enProduccion.size === 0
-                ? "Tildá al menos una troza: una corrida sin materia prima se anula, no se declara"
+                ? "Tilda al menos una troza: una corrida sin materia prima se anula, no se declara"
                 : fuera.length > 0
                   ? `Saca ${fuera.length === 1 ? "la destildada" : `las ${fuera.length} destildadas`} de la corrida y declara la producción de ${enProduccion.size === 1 ? "la que queda" : `las ${enProduccion.size} que quedan`}`
                   : undefined
@@ -389,7 +389,7 @@ export default function CtpCorridaSinDeclarar({
               {fmtM3(entrada - volumenFuera)} m³
             </b>{" "}
             y esa madera vuelve a estar libre.{" "}
-            <b>«Declarar producción» las saca y sigue</b>; acá las sacás sin declarar todavía.
+            <b>«Declarar producción» las saca y sigue</b>; acá las sacas sin declarar todavía.
           </p>
           {/* Los dos juntos y a tamaño táctil: en el celular quedaban de 36 px y
               uno en cada renglón — el destructivo suelto, que es el peor de

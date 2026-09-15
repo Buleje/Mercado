@@ -58,7 +58,7 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
         <select
           value={loteId ?? ""}
           onChange={(e) => setLoteId(e.target.value || null)}
-          aria-label="Elegí el lote"
+          aria-label="Elige el lote"
           className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
         >
           {cargandoLotes && <option value="">Cargando lotes…</option>}
@@ -93,7 +93,7 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
       {cargando && !h && <PanelSkeleton kpis={4} />}
       {!cargando && !h && !error && lotes.length === 0 && (
         <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
-          Todavía no hay lotes de aserrío. Armá uno en «Lotes de aserrío» y su historia empieza acá.
+          Todavía no hay lotes de aserrío. Arma uno en «Lotes de aserrío» y su historia empieza acá.
         </p>
       )}
 

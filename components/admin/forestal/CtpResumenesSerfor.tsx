@@ -258,7 +258,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
             {negativos} fila(s) con saldo negativo. Un saldo negativo dice que salió o se consumió más
-            de lo que entró: revisá las atribuciones antes de presentar el libro.
+            de lo que entró: revisa las atribuciones antes de presentar el libro.
           </span>
         </p>
       )}

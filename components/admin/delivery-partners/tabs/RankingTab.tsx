@@ -157,7 +157,7 @@ export function RankingTab() {
             Sin datos de ranking
           </p>
           <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-            No hay entregas registradas {periodLabel}. Cambia el periodo o esperá a que tus repartidores acumulen actividad.
+            No hay entregas registradas {periodLabel}. Cambia el periodo o espera a que tus repartidores acumulen actividad.
           </p>
         </div>
       ) : (

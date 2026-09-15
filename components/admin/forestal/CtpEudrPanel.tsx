@@ -205,7 +205,7 @@ export default function CtpEudrPanel({
               Cumplimiento EUDR · Planta
             </div>
             <p className="mt-1 text-base font-bold leading-tight text-[var(--text-primary)]">
-              {readiness.total === 0 ? "Cargá orígenes para evaluar el EUDR" : readiness.listo ? "Tu planta resiste el Reglamento UE Antideforestación" : "Faltan pasos para acreditar el EUDR"}
+              {readiness.total === 0 ? "Carga orígenes para evaluar el EUDR" : readiness.listo ? "Tu planta resiste el Reglamento UE Antideforestación" : "Faltan pasos para acreditar el EUDR"}
             </p>
             <p className="mt-1 text-xs text-[var(--text-tertiary)]">
               {readiness.geolocalizados}/{readiness.total} orígenes geolocalizados · {readiness.deforestationFree}/{readiness.total} sin deforestación · {readiness.ingresosCubiertos}/{readiness.ingresosTotal} ingresos cubiertos.
@@ -215,7 +215,7 @@ export default function CtpEudrPanel({
             type="button"
             onClick={exportGeoJson}
             disabled={readiness.geolocalizados === 0}
-            title={readiness.geolocalizados > 0 ? "Descargar la geolocalización de los orígenes en GeoJSON (dossier UE)" : "Geolocalizá al menos un origen"}
+            title={readiness.geolocalizados > 0 ? "Descargar la geolocalización de los orígenes en GeoJSON (dossier UE)" : "Geolocaliza al menos un origen"}
             className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
           >
             <Download className="h-4 w-4" /> GeoJSON
@@ -242,7 +242,7 @@ export default function CtpEudrPanel({
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Globe className="h-5 w-5" /></span>
           <div className="min-w-0">
             <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Geolocalización de orígenes (EUDR)</CardTitle>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">La UE exige la geolocalización de la parcela de cosecha (Reg. 2023/1115). Cargá las coordenadas de cada concesión/predio del que compraste — se reusan en todos sus ingresos.{origins ? ` ${geolocalizados}/${origins.length} orígenes geolocalizados.` : ""}</p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">La UE exige la geolocalización de la parcela de cosecha (Reg. 2023/1115). Carga las coordenadas de cada concesión/predio del que compraste — se reusan en todos sus ingresos.{origins ? ` ${geolocalizados}/${origins.length} orígenes geolocalizados.` : ""}</p>
           </div>
         </div>
 
@@ -283,10 +283,10 @@ export default function CtpEudrPanel({
                   </div>
                   <input inputMode="decimal" value={d.lat} onChange={(e) => setDraftField(o.originCode, "lat", e.target.value)} placeholder="lat" className="h-11 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
                   <input inputMode="decimal" value={d.lng} onChange={(e) => setDraftField(o.originCode, "lng", e.target.value)} placeholder="lng" className="h-11 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
-                  <button type="button" onClick={() => setPickerFor(o.originCode)} title="Marcá el punto de la parcela en el mapa en vez de tipear las coordenadas" className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-3 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/15">
+                  <button type="button" onClick={() => setPickerFor(o.originCode)} title="Marca el punto de la parcela en el mapa en vez de tipear las coordenadas" className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-3 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/15">
                     <MapPin className="h-4 w-4" /> <span className="hidden sm:inline">Punto</span>
                   </button>
-                  <button type="button" onClick={() => setPolygonFor(o.originCode)} title="Dibujá el polígono de la parcela (EUDR exige polígono para > 4 ha)" className={`inline-flex h-11 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-semibold ${g?.polygonJson ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--accent)]/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/15"}`}>
+                  <button type="button" onClick={() => setPolygonFor(o.originCode)} title="Dibuja el polígono de la parcela (EUDR exige polígono para > 4 ha)" className={`inline-flex h-11 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-semibold ${g?.polygonJson ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--accent)]/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/15"}`}>
                     <PenTool className="h-4 w-4" /> <span className="hidden sm:inline">{g?.polygonJson ? "Polígono ✓" : "Polígono"}</span>
                   </button>
                   <label className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
@@ -305,10 +305,10 @@ export default function CtpEudrPanel({
       {/* DDS por despacho */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><FileText className="h-4 w-4" /> Generar Declaración de Diligencia Debida (DDS)</CardTitle>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">Elegí un despacho del período: el DDS camina su cadena de custodia, adjunta la geolocalización de cada origen y evalúa el riesgo (solo «negligible» si traza + geo + sin-deforestación).</p>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">Elige un despacho del período: el DDS camina su cadena de custodia, adjunta la geolocalización de cada origen y evalúa el riesgo (solo «negligible» si traza + geo + sin-deforestación).</p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <select value={selDesp} onChange={(e) => setSelDesp(e.target.value)} aria-label="Elegir despacho para generar la DDS" className="h-12 min-w-[16rem] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-bold text-[var(--text-primary)] focus:border-[var(--accent)]">
-            <option value="">Elegí un despacho…</option>
+            <option value="">Elige un despacho…</option>
             {despachos.map((d) => (
               <option key={d.id} value={d.id}>#{d.lineNo} · {d.productType ?? "—"} · {d.speciesCommon ?? "—"}{d.gtfNumber ? ` · ${d.gtfNumber}` : ""}{d.destino ? ` → ${d.destino}` : ""}</option>
             ))}

@@ -290,7 +290,7 @@ export default function CobranzaView({
           </p>
           <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--data-success)]">{fmtMonedas(recuperado)}</p>
           {avance.porcentaje == null ? (
-            <p className="text-sm text-[var(--text-secondary)]">Tocá para poner una meta</p>
+            <p className="text-sm text-[var(--text-secondary)]">Toca para poner una meta</p>
           ) : (
             <>
               <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]">

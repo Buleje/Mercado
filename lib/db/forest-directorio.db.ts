@@ -48,7 +48,7 @@ const CACHE_PREFIX = "forest-directorio";
 /** Se intentó guardar una placa que ya está en el directorio (otro id). */
 export class PlacaDuplicadaError extends Error {
   constructor(readonly placa: string) {
-    super(`La placa ${placa} ya está en el directorio. Editá el vehículo existente en vez de crear otro.`);
+    super(`La placa ${placa} ya está en el directorio. Edita el vehículo existente en vez de crear otro.`);
     this.name = "PlacaDuplicadaError";
   }
 }

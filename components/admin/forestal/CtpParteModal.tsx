@@ -168,7 +168,7 @@ export default function CtpParteModal({
       return;
     }
     if (coincideBloquea && coincide) {
-      setError(`Ese documento ya lo tiene ${coincide.nombre}. Editá esa ficha en vez de repetir el documento acá.`);
+      setError(`Ese documento ya lo tiene ${coincide.nombre}. Edita esa ficha en vez de repetir el documento acá.`);
       return;
     }
     setEstado("guardando");
@@ -296,7 +296,7 @@ export default function CtpParteModal({
           <Field label="Zona" span={6} hint="Sector o caserío — identifica el punto de llegada cuando la dirección no tiene numeración">
             <input type="text" className={I} value={b.zona ?? ""} onChange={(e) => set({ zona: e.target.value })} />
           </Field>
-          <Field label="Ubigeo" span={6} hint="Código INEI de 6 dígitos, si lo tenés a mano">
+          <Field label="Ubigeo" span={6} hint="Código INEI de 6 dígitos, si lo tienes a mano">
             <input type="text" className={`${I} font-mono`} value={b.ubigeo ?? ""} onChange={(e) => set({ ubigeo: e.target.value })} />
           </Field>
           <Field label="Teléfono" span={6}>

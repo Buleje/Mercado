@@ -59,25 +59,25 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const texto = (doc.ocrText ?? "").trim();
     if (!texto) {
       return NextResponse.json(
-        { error: "sin_texto", message: "Todavía no leí el texto de este documento. Usá «Analizar con IA» (o «Escanear» si es una foto) y volvé a preguntar." },
+        { error: "sin_texto", message: "Todavía no leí el texto de este documento. Usa «Analizar con IA» (o «Escanear» si es una foto) y vuelve a preguntar." },
         { status: 422 },
       );
     }
     if (getActiveProvider() === "none") {
       return NextResponse.json(
-        { error: "sin_ia", message: "No hay ningún servicio de IA configurado, así que no puedo leer el documento por vos." },
+        { error: "sin_ia", message: "No hay ningún servicio de IA configurado, así que no puedo leer el documento por ti." },
         { status: 503 },
       );
     }
 
-    const prompt = `Sos el asistente de una bodega peruana. Contestá la pregunta USANDO SOLO el documento de abajo.
+    const prompt = `Eres el asistente de una bodega peruana. Contesta la pregunta USANDO SOLO el documento de abajo.
 
 Reglas:
-- Si el documento no lo dice, respondé exactamente: "El documento no lo dice." y dejá "cita" en null. NO adivines.
+- Si el documento no lo dice, responde exactamente: "El documento no lo dice." y deja "cita" en null. NO adivines.
 - "cita" tiene que ser una frase COPIADA TAL CUAL del documento (máximo 200 caracteres), la que sostiene tu respuesta.
 - Español, tuteo peruano, breve y concreto. Los montos con su moneda.
 
-Devolvé SOLO este JSON: {"respuesta": "<respuesta breve>", "cita": "<frase textual del documento o null>", "seguro": <true si la respuesta está literal en el documento, false si la dedujiste>}
+Devuelve SOLO este JSON: {"respuesta": "<respuesta breve>", "cita": "<frase textual del documento o null>", "seguro": <true si la respuesta está literal en el documento, false si la dedujiste>}
 
 Documento "${doc.name}":
 ${texto.slice(0, 12000)}
@@ -89,7 +89,7 @@ Pregunta: ${parsed.data.pregunta.trim()}`;
       const { text } = await generateText({ model: smartModel, prompt, temperature: 0.1 });
       const r = Respuesta.safeParse(JSON.parse(cleanJSONResponse(text)));
       if (!r.success) {
-        return NextResponse.json({ error: "respuesta_invalida", message: "La IA contestó algo que no pude entender. Probá de nuevo." }, { status: 502 });
+        return NextResponse.json({ error: "respuesta_invalida", message: "La IA contestó algo que no pude entender. Prueba de nuevo." }, { status: 502 });
       }
       salida = r.data;
     } catch (err) {

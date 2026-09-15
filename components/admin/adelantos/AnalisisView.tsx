@@ -176,7 +176,7 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
       </div>
 
       {monedas.length > 1 && (
-        <p className="text-sm text-[var(--text-tertiary)] -mt-2">Mostrando <strong className="text-[var(--text-secondary)]">{monedaLabel(cur)}</strong>. Cambiá la moneda arriba.</p>
+        <p className="text-sm text-[var(--text-tertiary)] -mt-2">Mostrando <strong className="text-[var(--text-secondary)]">{monedaLabel(cur)}</strong>. Cambia la moneda arriba.</p>
       )}
 
       {/* KPIs */}

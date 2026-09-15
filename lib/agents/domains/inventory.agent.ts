@@ -376,7 +376,7 @@ async function movementSummary(
 async function buscarProducto(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
   const log = scopedLogger(ctx);
   const q = String(task.payload.texto ?? "").trim().toLowerCase();
-  if (!q) return { success: false, error: "Decime qué producto buscar." };
+  if (!q) return { success: false, error: "Dime qué producto buscar." };
   log.info("Buscando producto", { q });
 
   const products = await ProductsDB.getAll(task.tenantId);
@@ -402,7 +402,7 @@ async function buscarProducto(task: AgentTask, ctx: AgentContext): Promise<Agent
       })),
       ...(match.length === 0 && { mensaje: `Ningún producto contiene "${q}".` }),
       ...(match.length > 1 && {
-        mensaje: "Hay más de uno: preguntá cuál antes de modificar nada.",
+        mensaje: "Hay más de uno: pregunta cuál antes de modificar nada.",
       }),
     },
   };

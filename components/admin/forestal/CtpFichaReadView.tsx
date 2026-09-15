@@ -197,7 +197,7 @@ function TituloCard({ t, esDeGuia }: { t: CtpTituloHabilitante; esDeGuia: boolea
           {esDeGuia && (
             <span
               className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-muted)] px-2.5 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent-dark)] dark:bg-[var(--accent)]/15 dark:text-[var(--accent)]"
-              title="Es el que cada guía de salida propone. En el formulario de la guía se puede elegir otro; para cambiar el predeterminado, entrá a editar y subilo."
+              title="Es el que cada guía de salida propone. En el formulario de la guía se puede elegir otro; para cambiar el predeterminado, entra a editar y súbelo."
             >
               <FileText className="h-3.5 w-3.5" aria-hidden /> Predeterminado en la GTF
             </span>

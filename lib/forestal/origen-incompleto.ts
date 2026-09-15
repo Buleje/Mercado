@@ -98,8 +98,8 @@ export const MOTIVO_LABEL: Record<MotivoOrigen, string> = {
 };
 
 export const MOTIVO_REMEDIO: Record<MotivoOrigen, string> = {
-  sin_materia_prima: "Abrí la corrida y atá los ingresos (o las piezas) de los que salió",
-  ingreso_sin_titulo: "Completá el casillero (6) en la ficha de la guía",
+  sin_materia_prima: "Abre la corrida y ata los ingresos (o las piezas) de los que salió",
+  ingreso_sin_titulo: "Completa el casillero (6) en la ficha de la guía",
   existencia_apertura:
     "Madera anterior al libro: no hay qué atar. No certificable desde este libro",
 };

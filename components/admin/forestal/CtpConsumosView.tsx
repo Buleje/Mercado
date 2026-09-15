@@ -886,7 +886,7 @@ export default function CtpConsumosView({
               {lotesParaElegir.length > 0 && (
                 <ActionMenu
                   label={loteElegido ? `Lote ${loteElegido.code}` : "Consumir en un lote…"}
-                  title="Elegí el lote que entra a la sierra, o revisá uno ya cerrado"
+                  title="Elige el lote que entra a la sierra, o revisa uno ya cerrado"
                   icon={Boxes}
                   variant={loteCarga ? "accent" : "outline"}
                   size="md"
@@ -1060,7 +1060,7 @@ export default function CtpConsumosView({
           />
           {lotesAbiertos.length > 0 && (
             <p className="text-sm text-[var(--text-tertiary)]">
-              Para llevar piezas a la sierra, elegí un lote arriba en{" "}
+              Para llevar piezas a la sierra, elige un lote arriba en{" "}
               <b className="text-[var(--text-secondary)]">«Consumir en un lote…»</b>.
             </p>
           )}

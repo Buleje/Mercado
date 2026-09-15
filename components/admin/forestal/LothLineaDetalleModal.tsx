@@ -140,7 +140,7 @@ export default function LothLineaDetalleModal({
               )}
               {corregidaPorLineNo != null && (
                 <p className="text-[var(--text-secondary)]">
-                  Fue corregida por la línea N° {corregidaPorLineNo}: para lo vigente, mirá esa.
+                  Fue corregida por la línea N° {corregidaPorLineNo}: para lo vigente, mira esa.
                 </p>
               )}
             </div>

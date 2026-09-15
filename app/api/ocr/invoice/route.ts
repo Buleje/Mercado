@@ -245,7 +245,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "La lectura automática de facturas todavía no está activada en esta tienda. Podés cargar la compra a mano mientras tanto.",
+            "La lectura automática de facturas todavía no está activada en esta tienda. Puedes cargar la compra a mano mientras tanto.",
         },
         { status: 503 },
       );

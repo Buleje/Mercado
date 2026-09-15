@@ -81,6 +81,6 @@ export function preloadTab(tabId: string): void {
   if (!loader) return;
   preloaded.add(tabId);
   loader().catch(() => {
-    preloaded.delete(tabId); // falló (offline/chunk) — permití reintentar luego
+    preloaded.delete(tabId); // falló (offline/chunk) — permite reintentar luego
   });
 }

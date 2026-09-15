@@ -231,7 +231,7 @@ export default function PlantacionWizard({
           {datos.tipoTramite === "actualizacion" && (
             <Field
               label="Código de Plantación / N° de Registro"
-              hint="Lo emite la ARFFS/SERFOR al inscribir — escribilo sólo si ya lo tenés. Nunca se genera acá; distinto del código interno de abajo."
+              hint="Lo emite la ARFFS/SERFOR al inscribir — escríbelo sólo si ya lo tienes. Nunca se genera acá; distinto del código interno de abajo."
             >
               <input className={I} disabled={soloLectura} value={datos.codigoPlantacionSerfor ?? ""} onChange={(e) => onChange({ codigoPlantacionSerfor: e.target.value || null })} />
             </Field>

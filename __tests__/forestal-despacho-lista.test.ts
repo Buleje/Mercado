@@ -105,7 +105,7 @@ describe("saldo de la corrida (I5 antes de guardar)", () => {
 
 describe("problemas de la lista", () => {
   it("una lista vacía pide productos", () => {
-    expect(problemasDeLista([])).toEqual(["Agregá al menos un producto a la lista."]);
+    expect(problemasDeLista([])).toEqual(["Agrega al menos un producto a la lista."]);
   });
 
   it("avisa del producto sin volumen", () => {

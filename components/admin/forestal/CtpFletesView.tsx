@@ -266,7 +266,7 @@ function ListaViajes({
   if (fletes.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
-        Todavía no hay viajes anotados en el período. Anotá el primero cuando llegue el camión — el precio se puede cerrar después.
+        Todavía no hay viajes anotados en el período. Anota el primero cuando llegue el camión — el precio se puede cerrar después.
       </p>
     );
   }

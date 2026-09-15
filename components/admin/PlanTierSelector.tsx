@@ -307,7 +307,7 @@ export default function PlanTierSelector({
             Cambio inmediato.
           </strong>{" "}
           Al elegir un plan nuevo, los módulos del sidebar se actualizan al
-          instante. Subís y bajás cuando quieras, sin permanencia ni penalidades.
+          instante. Subes y bajas cuando quieras, sin permanencia ni penalidades.
           La facturación real se gestiona desde Stripe en producción.
         </div>
       </div>

@@ -14,11 +14,11 @@ export type SanidadSeveridad = "baja" | "media" | "alta";
 export type SanidadEstado = "activo" | "controlado" | "resuelto";
 
 export const CACAO_PLAGAS: { tipo: CacaoPlaga; label: string; cientifico: string; icon: LucideIcon; tip: string }[] = [
-  { tipo: "monilia", label: "Monilia", cientifico: "Moniliophthora roreri", icon: ShieldX, tip: "Moho de la mazorca. Cosecha sanitaria semanal: retirá y enterrá las mazorcas enfermas antes de que esporulen." },
-  { tipo: "escoba_bruja", label: "Escoba de bruja", cientifico: "Moniliophthora perniciosa", icon: Flower2, tip: "Poda y quema de escobas; retirá los cojines florales y ramas infectadas." },
-  { tipo: "phytophthora", label: "Mazorca negra", cientifico: "Phytophthora spp.", icon: CloudRain, tip: "Mejorá drenaje y ventilación (poda); fungicida cúprico en época lluviosa." },
+  { tipo: "monilia", label: "Monilia", cientifico: "Moniliophthora roreri", icon: ShieldX, tip: "Moho de la mazorca. Cosecha sanitaria semanal: retira y entierra las mazorcas enfermas antes de que esporulen." },
+  { tipo: "escoba_bruja", label: "Escoba de bruja", cientifico: "Moniliophthora perniciosa", icon: Flower2, tip: "Poda y quema de escobas; retira los cojines florales y ramas infectadas." },
+  { tipo: "phytophthora", label: "Mazorca negra", cientifico: "Phytophthora spp.", icon: CloudRain, tip: "Mejora drenaje y ventilación (poda); fungicida cúprico en época lluviosa." },
   { tipo: "mazorquero", label: "Mazorquero / barrenador", cientifico: "Carmenta / barrenadores", icon: Activity, tip: "Recojo frecuente de mazorcas; trampas y control focalizado." },
-  { tipo: "chinche", label: "Chinche / mirídeos", cientifico: "Monalonion spp.", icon: Leaf, tip: "Monitoreá brotes tiernos; control biológico o químico si supera el umbral." },
+  { tipo: "chinche", label: "Chinche / mirídeos", cientifico: "Monalonion spp.", icon: Leaf, tip: "Monitorea brotes tiernos; control biológico o químico si supera el umbral." },
   { tipo: "otros", label: "Otros", cientifico: "", icon: AlertTriangle, tip: "Describí el problema en las notas." },
 ];
 

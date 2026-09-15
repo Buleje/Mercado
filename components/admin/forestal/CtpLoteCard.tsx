@@ -380,7 +380,7 @@ export default function CtpLoteCard({
         <p
           title={
             cuadre.deltaProducidoM3 == null
-              ? `La lista del SNIFFS no trae los productos, así que sólo se compara el consumido: allá ${cuadre.consumidoSniffsM3 != null ? `${fmtM3(cuadre.consumidoSniffsM3)} m³` : "no se leyó"}, acá ${fmtM3(cuadre.consumidoLoteM3)} m³. Pegá el detalle del lote para comparar también la producción.`
+              ? `La lista del SNIFFS no trae los productos, así que sólo se compara el consumido: allá ${cuadre.consumidoSniffsM3 != null ? `${fmtM3(cuadre.consumidoSniffsM3)} m³` : "no se leyó"}, acá ${fmtM3(cuadre.consumidoLoteM3)} m³. Pega el detalle del lote para comparar también la producción.`
               : cuadre.estado === "pendiente"
                 ? `El SNIFFS declara ${fmtM3(cuadre.producidoSniffsM3)} m³ en ${cuadre.productosSniffs} producto(s); el libro todavía no declaró producción para este lote.`
                 : `SNIFFS: ${fmtM3(cuadre.producidoSniffsM3)} m³ producidos${cuadre.consumidoSniffsM3 != null ? ` de ${fmtM3(cuadre.consumidoSniffsM3)} m³ consumidos` : ""} · Libro: ${fmtM3(cuadre.producidoLoteM3)} m³ de ${fmtM3(cuadre.consumidoLoteM3)} m³`
@@ -406,7 +406,7 @@ export default function CtpLoteCard({
                 ? `el consumo difiere en ${fmtM3(Math.abs(cuadre.deltaConsumidoM3 ?? 0))} m³`
                 : cuadre.produccionPendiente
                   ? "falta declarar acá lo que salió"
-                  : "el consumo cuadra · pegá el detalle para comparar la producción"
+                  : "el consumo cuadra · pega el detalle para comparar la producción"
               : cuadre.estado === "cuadra"
                 ? "cuadra con el libro"
                 : cuadre.estado === "pendiente"

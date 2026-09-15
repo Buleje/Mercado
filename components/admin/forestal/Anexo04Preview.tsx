@@ -83,7 +83,7 @@ const Anexo04Preview = forwardRef<HTMLDivElement, {
       </div>
       {editando && (
         <p className="mb-2 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-          Tocá una celda amarilla (Cant./E/A/L) y escribí el valor correcto — el pie tablar, el m³ y los totales se recalculan solos.
+          Toca una celda amarilla (Cant./E/A/L) y escribe el valor correcto — el pie tablar, el m³ y los totales se recalculan solos.
         </p>
       )}
       {checklist}

@@ -117,7 +117,7 @@ export default function CubicadorKpis({
   const ptPorPieza = totales.piezas > 0 ? totales.pt / totales.piezas : 0;
 
   /* Plegado se lleva los tres números con él: esconder el resumen no puede
-     costar saber cuánto llevás medido, que es justo para lo que está. */
+     costar saber cuánto llevas medido, que es justo para lo que está. */
   if (oculto) {
     return (
       <button
@@ -150,7 +150,7 @@ export default function CubicadorKpis({
     >
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          Lo que llevás medido
+          Lo que llevas medido
         </p>
         <div className="flex items-center gap-3">
           {/* Que el total es el del lote ENTERO se dice acá, no se deduce. */}
@@ -200,7 +200,7 @@ export default function CubicadorKpis({
               ? hayPreciosEspecie
                 ? "precio por especie"
                 : `S/ ${soles(precio)} por PT`
-              : "cargá el precio por PT"
+              : "carga el precio por PT"
           }
           apagado={!conValor}
         />
@@ -284,7 +284,7 @@ export default function CubicadorKpis({
         <p className="mt-2 flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
           {nf(resumen.raras)} {resumen.raras === 1 ? "pieza tiene" : "piezas tienen"} una medida fuera de
-          lo común — revisala antes de declarar el total.
+          lo común — revísala antes de declarar el total.
         </p>
       )}
     </section>

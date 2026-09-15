@@ -16,7 +16,7 @@ describe("estado de la zafra", () => {
     const r = analizarZafra({ ...base, vigenciaDesde: null, vigenciaHasta: null, movilizadoM3: 10, hoy: new Date("2026-06-01") });
     expect(r.estado).toBe("sin_vigencia");
     expect(r.diasTotales).toBe(0);
-    expect(r.mensaje).toContain("Cargá la vigencia");
+    expect(r.mensaje).toContain("Carga la vigencia");
   });
 
   it("antes del inicio: cuenta los días y el ritmo que va a hacer falta", () => {

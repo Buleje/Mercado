@@ -64,7 +64,7 @@ export function FiltroGruposCelda({
         aria-label="Tipos que lleva este bloque"
         title={elegidosLabels.length > 0
           ? `Sólo: ${elegidosLabels.join(", ")}. Lo demás no entra a este bloque aunque le sobre capacidad.`
-          : "Este bloque lleva de todo. Elegí uno o más tipos para que lleve sólo esos."}
+          : "Este bloque lleva de todo. Elige uno o más tipos para que lleve sólo esos."}
         className={`inline-flex h-10 w-full items-center justify-between gap-1 rounded-xl border-2 bg-[var(--surface-raised)] px-2 text-sm font-semibold outline-none focus:border-[var(--accent)] ${elegidosLabels.length > 0
           ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"
           : "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}

@@ -695,7 +695,7 @@ async function guardCodigoPlantaUnico(
   if (repetidos.size > 0) {
     throw new CtpInvariantError(
       `El código de planta ${[...repetidos].join(", ")} está puesto en más de una troza de esta misma lista. ` +
-        "Cada pieza lleva su propio número: usá «Generar códigos» para renumerar.",
+        "Cada pieza lleva su propio número: usa «Generar códigos» para renumerar.",
       "CODIGO_PLANTA_DUPLICADO",
       { codigos: [...repetidos] },
     );
@@ -961,7 +961,7 @@ export class WoodEntriesDB {
     });
     if (yaEsta > 0) {
       throw new CtpInvariantError(
-        `La guía ${input.gtfNumber.trim()} ya está registrada en el libro (${yaEsta} ingreso(s)). Si hay que corregirla, anulá los ingresos y volvé a cargarla.`,
+        `La guía ${input.gtfNumber.trim()} ya está registrada en el libro (${yaEsta} ingreso(s)). Si hay que corregirla, anula los ingresos y vuelve a cargarla.`,
         "GTF_DUPLICADA",
         { gtfNumber: input.gtfNumber.trim() },
       );
@@ -1158,7 +1158,7 @@ export class WoodEntriesDB {
       const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, entry.entryDate);
       if (cerrado) {
         throw new CtpInvariantError(
-          `El período ${cerrado.label} está cerrado: no se puede cambiar la recepción de una guía de un mes cerrado. Reabrí el período para corregir.`,
+          `El período ${cerrado.label} está cerrado: no se puede cambiar la recepción de una guía de un mes cerrado. Reabre el período para corregir.`,
           "PERIODO_CERRADO",
           { periodKey: cerrado.periodKey },
         );
@@ -1209,7 +1209,7 @@ export class WoodEntriesDB {
         throw new CtpInvariantError(
           `No se puede marcar como no recibida${contradicen.length === 1 ? "" : "s"} ` +
             `${contradicen.map((t) => t.codificacion ?? t.id).join(", ")}: ya entró a una corrida de producción. ` +
-            "Sacala primero del consumo de esa corrida.",
+            "Sácala primero del consumo de esa corrida.",
           "ESTADO_NO_EDITABLE",
           { trozas: contradicen.map((t) => t.id) },
         );
@@ -1920,7 +1920,7 @@ export class WoodEntriesDB {
       const cerradoCorrida = await ForestCtpCierreDB.closedPeriodOf(tenantId, corrida.entryDate);
       if (cerradoCorrida) {
         throw new CtpInvariantError(
-          `El período ${cerradoCorrida.label} está cerrado: no se pueden cambiar las trozas de una corrida de un mes cerrado. Reabrí el período para corregir.`,
+          `El período ${cerradoCorrida.label} está cerrado: no se pueden cambiar las trozas de una corrida de un mes cerrado. Reabre el período para corregir.`,
           "PERIODO_CERRADO",
           { periodKey: cerradoCorrida.periodKey },
         );
@@ -2177,7 +2177,7 @@ export class WoodEntriesDB {
       const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, despacho.entryDate);
       if (cerrado) {
         throw new CtpInvariantError(
-          `El período ${cerrado.label} está cerrado: no se pueden cambiar las trozas de un despacho de un mes cerrado. Reabrí el período para corregir.`,
+          `El período ${cerrado.label} está cerrado: no se pueden cambiar las trozas de un despacho de un mes cerrado. Reabre el período para corregir.`,
           "PERIODO_CERRADO",
           { periodKey: cerrado.periodKey },
         );
@@ -2332,7 +2332,7 @@ export class WoodEntriesDB {
       const cerradoCorte = await ForestCtpCierreDB.closedPeriodOf(tenantId, fechaCorte);
       if (cerradoCorte) {
         throw new CtpInvariantError(
-          `El período ${cerradoCorte.label} está cerrado: no se puede registrar un retrozado con fecha de un mes cerrado. Reabrí el período para corregir.`,
+          `El período ${cerradoCorte.label} está cerrado: no se puede registrar un retrozado con fecha de un mes cerrado. Reabre el período para corregir.`,
           "PERIODO_CERRADO",
           { periodKey: cerradoCorte.periodKey },
         );
@@ -3331,7 +3331,7 @@ export class WoodEntriesDB {
     const cerrado = cur ? await ForestCtpCierreDB.closedPeriodOf(tenantId, cur.entryDate) : null;
     if (cerrado) {
       throw new CtpInvariantError(
-        `El período ${cerrado.label} está cerrado: no se puede ${accion} un ingreso de un mes cerrado. Reabrí el período para corregir.`,
+        `El período ${cerrado.label} está cerrado: no se puede ${accion} un ingreso de un mes cerrado. Reabre el período para corregir.`,
         "PERIODO_CERRADO",
         { periodKey: cerrado.periodKey },
       );
@@ -3537,7 +3537,7 @@ export class WoodEntriesDB {
     if (!actual) throw new Error("Ingreso no encontrado");
     if (actual.status !== "pendiente") {
       throw new CtpInvariantError(
-        `Sólo se corrige un ingreso pendiente. Este está ${actual.status}: anulalo con motivo y registralo de nuevo.`,
+        `Sólo se corrige un ingreso pendiente. Este está ${actual.status}: anúlalo con motivo y regístralo de nuevo.`,
         "ESTADO_NO_EDITABLE",
         { status: actual.status },
       );
@@ -4108,7 +4108,7 @@ export class WoodEntriesDB {
     });
     if (consumido > 0) {
       throw new Error(
-        "Este ingreso ya se consumió en una corrida de producción. Corregí o anulá esas corridas antes de anular el ingreso.",
+        "Este ingreso ya se consumió en una corrida de producción. Corrige o anula esas corridas antes de anular el ingreso.",
       );
     }
     const entry = await prisma.woodEntry.update({
@@ -4189,7 +4189,7 @@ export class WoodEntriesDB {
       }
       if (troza.consumidaEnId) {
         throw new CtpInvariantError(
-          `La pieza ${troza.codificacion ?? "—"} ya entró a la sierra: no se le puede cambiar el volumen. Corregí o anulá esa corrida primero.`,
+          `La pieza ${troza.codificacion ?? "—"} ya entró a la sierra: no se le puede cambiar el volumen. Corrige o anula esa corrida primero.`,
           "TROZA_CONSUMIDA",
           { trozaId: troza.id },
         );
@@ -4199,7 +4199,7 @@ export class WoodEntriesDB {
         (await prisma.woodEntryTroza.count({ where: { tenantId, trozaOrigenId: troza.id } })) > 0
       ) {
         throw new CtpInvariantError(
-          `La pieza ${troza.codificacion ?? "—"} está retrozada: cuadrá el retrozado antes de tocar su volumen.`,
+          `La pieza ${troza.codificacion ?? "—"} está retrozada: cuadra el retrozado antes de tocar su volumen.`,
           "TROZA_RETROZADA",
           { trozaId: troza.id },
         );
