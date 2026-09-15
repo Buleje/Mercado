@@ -7,6 +7,7 @@
  * pedido de más.
  */
 
+import { leerMembrete, logoParaPdf } from "@/lib/admin/membrete-cliente";
 import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 import { descargarHojaSemanal, type FilaHojaSemanalPdf } from "@/lib/rrhh/asistencia-semanal-pdf";
 import type { AsistenciaDTO, ColaboradorDTO, ColaboradorMinDTO, EstadoAsistencia, FechaKey, GanadoPersona, NivelRrhh } from "@/lib/rrhh/tipos";
@@ -41,11 +42,11 @@ export async function descargarPdfDeLaSemana(p: {
   lunes: FechaKey;
   hoy: FechaKey;
   nivel: NivelRrhh;
-  negocio: string | null;
   total: number | null;
 }): Promise<void> {
   const conPlata = p.nivel === "completo";
-  const documentos = await documentosPorId(p.nivel);
+  const [documentos, membrete] = await Promise.all([documentosPorId(p.nivel), leerMembrete()]);
+  const logo = await logoParaPdf(membrete.logoUrl);
 
   const filas: FilaHojaSemanalPdf[] = p.filas.map((f) => ({
     nombre: f.c.nombre,
@@ -69,7 +70,8 @@ export async function descargarPdfDeLaSemana(p: {
   }));
 
   await descargarHojaSemanal({
-    negocio: p.negocio,
+    negocio: membrete.nombre,
+    logo,
     semana: etiquetaSemana(p.lunes),
     encabezadosDias: p.dias.map(encabezadoDia),
     filas,

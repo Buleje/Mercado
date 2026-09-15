@@ -24,7 +24,7 @@ import { esDniValido } from "@/lib/rrhh/documento";
 import { cn, limaDateKey } from "@/lib/utils";
 import { BOTON, CLASE_AREA, CLASE_CAMPO, SeccionForm } from "../rrhh-form";
 import { etiquetaModalidad, formatearPEN } from "../rrhh-ui";
-import type { ColaboradorDTO, Modalidad, NivelRrhh, PuestoDTO, TipoDocumento } from "@/lib/rrhh/tipos";
+import { GRUPOS_SANGUINEOS, type ColaboradorDTO, type GrupoSanguineo, type Modalidad, type NivelRrhh, type PuestoDTO, type TipoDocumento } from "@/lib/rrhh/tipos";
 
 interface Props {
   open: boolean;
@@ -54,6 +54,8 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
   const [direccion, setDireccion] = useState(initial?.direccion ?? "");
   const [contactoNombre, setContactoNombre] = useState(initial?.contactoEmergencia.nombre ?? "");
   const [contactoCelular, setContactoCelular] = useState(initial?.contactoEmergencia.celular ?? "");
+  const [grupoSanguineo, setGrupoSanguineo] = useState<GrupoSanguineo | "">(initial?.grupoSanguineo ?? "");
+  const [alergias, setAlergias] = useState(initial?.alergias ?? "");
   const [puestoId, setPuestoId] = useState(initial?.puesto?.id ?? "");
   const [fechaIngreso, setFechaIngreso] = useState(initial?.fechaIngreso ?? "");
   const [observaciones, setObservaciones] = useState(initial?.observaciones ?? "");
@@ -182,6 +184,9 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
       direccion: direccion.trim() || null,
       contactoEmergenciaNombre: contactoNombre.trim() || null,
       contactoEmergenciaCelular: contactoCelular.trim() || null,
+      // Seguridad (ADR-417): vacío se guarda como `null` —«no se sabe»—, nunca como «Ninguna».
+      grupoSanguineo: grupoSanguineo || null,
+      alergias: alergias.trim() || null,
       puestoId: puestoId || null,
       fechaIngreso: fechaIngreso || null,
       observaciones: observaciones.trim() || null,
@@ -325,6 +330,32 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
           <Field label="Celular del contacto">
             {(id) => (
               <input id={id} type="tel" inputMode="tel" value={contactoCelular} onChange={(e) => setContactoCelular(e.target.value)} maxLength={20} autoComplete="off" className={CLASE_CAMPO} />
+            )}
+          </Field>
+          {/* Seguridad (ADR-417): se imprime en el dorso del fotocheck, que en el aserradero hace de credencial. */}
+          <Field label="Grupo sanguíneo" hint="Se imprime grande en el dorso del fotocheck.">
+            {(id) => (
+              <select id={id} value={grupoSanguineo} onChange={(e) => setGrupoSanguineo(e.target.value as GrupoSanguineo | "")} className={CLASE_CAMPO}>
+                <option value="">No se sabe</option>
+                {GRUPOS_SANGUINEOS.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <Field label="Alergias" hint="Déjalo vacío si no se le conoce ninguna.">
+            {(id) => (
+              <input
+                id={id}
+                value={alergias}
+                onChange={(e) => setAlergias(e.target.value)}
+                maxLength={200}
+                autoComplete="off"
+                className={CLASE_CAMPO}
+                placeholder="Ej. penicilina, picadura de avispa"
+              />
             )}
           </Field>
         </SeccionForm>

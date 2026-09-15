@@ -18,7 +18,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Search, UserPlus, Users } from "@buleje/design-system/icons";
+import { Plus, QrCode, Search, UserPlus, Users } from "@buleje/design-system/icons";
 import { DataTable, EmptyState, LoadingState, StatCard } from "@buleje/design-system";
 import { useRrhhColaboradores } from "@/hooks/use-rrhh-colaboradores";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
@@ -26,8 +26,8 @@ import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
 import { BOTON, CLASE_CAMPO, CLASE_CHIP, claseChipFiltro } from "../rrhh-form";
 import { CLASE_FOCUS_FILA, COLABORADOR_ESTADO_META, filaClicableProps, formatearFecha } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
-import BotonFotocheck from "./BotonFotocheck";
 import ColaboradorFormModal from "./ColaboradorFormModal";
+import FotochecksVista from "./FotochecksVista";
 import FichaColaboradorModal from "./FichaColaboradorModal";
 import TraerDesdeAdelantosModal from "./TraerDesdeAdelantosModal";
 import type { EstadoColaborador, NivelRrhh } from "@/lib/rrhh/tipos";
@@ -49,6 +49,9 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [traerAbierta, setTraerAbierta] = useState(false);
   const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
+  // «Que la tabla cambie a formato de fotocheck y LUEGO aparezca el botón de
+  // descargar» (Brandon 2026-09-15): la lista se ve como tarjetas antes de imprimir.
+  const [modoFotocheck, setModoFotocheck] = useState(false);
 
   // El QR del fotocheck trae `?persona=<id>`: abre esa ficha (ADR-416).
   const personaDelQr = useSearchParams().get("persona");
@@ -82,7 +85,9 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
 
   const filtrados = chip === "TODOS" ? colaboradores : colaboradores.filter((c) => c.estado === chip);
   const puedeEditar = nivel === "gestion" || nivel === "completo";
+  // Un cesado no lleva fotocheck: se excluye de la vista y del PDF, aunque el chip lo muestre.
   const paraFotocheck = filtrados.filter((c) => c.estado !== "CESADO");
+  const enFotocheck = modoFotocheck && paraFotocheck.length > 0;
   // «Primera carga» es sólo la primera. Con `colaboradores.length === 0` como
   // señal, una búsqueda sin resultados volvía a desmontar el buscador en la
   // tecla siguiente y se perdía el foco otra vez.
@@ -137,7 +142,14 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           </button>
         )}
         {puedeEditar && paraFotocheck.length > 0 && (
-          <BotonFotocheck colaboradores={paraFotocheck} etiqueta={`Fotochecks (${paraFotocheck.length})`} className={BOTON.secundario} />
+          <button
+            type="button"
+            aria-pressed={modoFotocheck}
+            onClick={() => setModoFotocheck((v) => !v)}
+            className={cn(BOTON.secundario, modoFotocheck && "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]")}
+          >
+            <QrCode className="h-4 w-4" /> {modoFotocheck ? "Ver la tabla" : `Fotochecks (${paraFotocheck.length})`}
+          </button>
         )}
         {puedeEditar && (
           <button type="button" onClick={() => setAltaAbierta(true)} className={cn(BOTON.primario, "ml-auto")}>
@@ -184,6 +196,12 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
                 }
               : undefined
           }
+        />
+      ) : enFotocheck ? (
+        <FotochecksVista
+          colaboradores={paraFotocheck}
+          cesadosOmitidos={filtrados.length - paraFotocheck.length}
+          onVolver={() => setModoFotocheck(false)}
         />
       ) : (
         <div aria-busy={recargando} className={cn("transition-opacity", recargando && "opacity-60")}>

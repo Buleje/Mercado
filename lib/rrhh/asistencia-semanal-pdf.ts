@@ -11,6 +11,7 @@
  */
 
 import { STORE_TIMEZONE } from "@/lib/utils";
+import type { LogoPdf } from "@/lib/admin/membrete";
 
 export interface FilaHojaSemanalPdf {
   nombre: string;
@@ -42,6 +43,8 @@ export interface DatosHojaSemanalPdf {
   total?: number | null;
   /** Líneas al pie de cada página: la leyenda y, con plata, la aclaración de referencia. */
   notas: string[];
+  /** Logo del negocio listo para jsPDF; sin logo, el encabezado va con el nombre solo. */
+  logo?: LogoPdf | null;
   /** Nombre del archivo, sin `.pdf`. */
   archivo: string;
 }
@@ -61,15 +64,23 @@ export async function descargarHojaSemanal(d: DatosHojaSemanalPdf): Promise<void
 
   // Hoy en Lima: en UTC, un PDF sacado a las 20:00 salía emitido «mañana».
   const emitido = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: STORE_TIMEZONE });
+  // Con logo, el encabezado se corre a su derecha (alto 14 mm, ancho según su proporción, hasta 36 mm).
+  let izquierda = margen;
+  if (d.logo) {
+    const altoLogo = 14;
+    const anchoLogo = Math.min(36, (d.logo.ancho / d.logo.alto) * altoLogo);
+    doc.addImage(d.logo.dataUrl, "PNG", margen, 9, anchoLogo, altoLogo);
+    izquierda = margen + anchoLogo + 4;
+  }
   doc.setTextColor(90);
   doc.setFontSize(9);
-  if (d.negocio) doc.text(d.negocio.toUpperCase(), margen, 12);
+  if (d.negocio) doc.text(d.negocio.toUpperCase(), izquierda, 12);
   doc.text(`Emitido el ${emitido}`, ancho - margen, 12, { align: "right" });
   doc.setTextColor(20);
   doc.setFontSize(15);
-  doc.text("Hoja de asistencia semanal", margen, 20);
+  doc.text("Hoja de asistencia semanal", izquierda, 20);
   doc.setFontSize(10);
-  doc.text(`Semana del ${d.semana}`, margen, 26);
+  doc.text(`Semana del ${d.semana}`, izquierda, 26);
 
   // Anchos en mm: la tabla entra en los 277 mm útiles de un A4 apaisado.
   const anchoDia = d.conPlata ? 13 : 15;

@@ -32,6 +32,9 @@ export default function FichaDatos({ colaborador: c, mostrarTarifa }: { colabora
         <dl>
           <Dato k="Avisar a" v={c.contactoEmergencia.nombre} />
           <Dato k="Celular" v={c.contactoEmergencia.celular} telefono />
+          {/* Seguridad (ADR-417): lo mismo que se imprime en el dorso del fotocheck. */}
+          <Dato k="Grupo sanguíneo" v={c.grupoSanguineo} vacio="No se sabe" destacado />
+          <Dato k="Alergias" v={c.alergias} vacio="Sin registrar" />
         </dl>
       </Tarjeta>
       <Tarjeta titulo="Trabajo">
@@ -66,13 +69,21 @@ function Tarjeta({ titulo, children, className }: { titulo: string; children: Re
   );
 }
 
-function Dato({ k, v, telefono, numeros }: { k: string; v: string | null | undefined; telefono?: boolean; numeros?: boolean }) {
+/**
+ * Una fila clave/valor. `vacio` cambia el «—» por un texto cuando la ausencia
+ * significa algo (ADR-417: en alergias, «no se sabe» y «ninguna» no son lo
+ * mismo). `destacado` pinta el valor como chip: para el grupo sanguíneo, que se
+ * busca de un vistazo.
+ */
+function Dato({ k, v, telefono, numeros, vacio, destacado }: { k: string; v: string | null | undefined; telefono?: boolean; numeros?: boolean; vacio?: string; destacado?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-b border-[var(--rule-soft)] py-2 last:border-0">
       <dt className="shrink-0 text-sm text-[var(--text-tertiary)]">{k}</dt>
       <dd className={cn("min-w-0 break-words text-right text-sm font-medium text-[var(--text-primary)]", numeros && "tabular-nums")}>
         {!v ? (
-          <span className="font-normal text-[var(--text-tertiary)]">—</span>
+          <span className="font-normal text-[var(--text-tertiary)]">{vacio ?? "—"}</span>
+        ) : destacado ? (
+          <span className="inline-block rounded-md bg-[var(--accent-muted)] px-2 py-0.5 text-sm font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{v}</span>
         ) : telefono ? (
           <a href={`tel:${v.replace(/\s+/g, "")}`} className="tabular-nums text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
             {v}

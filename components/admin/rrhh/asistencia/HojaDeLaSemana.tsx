@@ -14,7 +14,6 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Download, Users } from "@buleje/design-system/icons";
 import { DataTable, EmptyState, LoadingState, StatCard } from "@buleje/design-system";
-import { useSettingsSafe } from "@/contexts/settings-context";
 import { avisarFallos, useRrhhAsistencia } from "@/hooks/use-rrhh-asistencia";
 import { useRrhhGanado } from "@/hooks/use-rrhh-ganado";
 import { sinDato } from "@/lib/errores/sin-dato";
@@ -48,7 +47,6 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
   const conPlata = nivel === "completo";
   const { hoja, loading, error, pendientes, erroresPorCelda, marcar, guardarAhora, recargar } = useRrhhAsistencia(desde, hasta);
   const { ganado, error: errorGanado, recargar: recargarGanado } = useRrhhGanado(desde, hasta, undefined, conPlata);
-  const settings = useSettingsSafe();
   const [historial, setHistorial] = useState<{ colaborador: ColaboradorMinDTO; fecha: string } | null>(null);
   const [descargando, setDescargando] = useState(false);
 
@@ -102,7 +100,7 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
   const descargar = async () => {
     setDescargando(true);
     try {
-      await descargarPdfDeLaSemana({ filas, dias, lunes: desde, hoy, nivel, negocio: settings?.businessName ?? null, total: totales.ganado });
+      await descargarPdfDeLaSemana({ filas, dias, lunes: desde, hoy, nivel, total: totales.ganado });
     } catch (err) {
       sinDato("RRHH PDF de la semana")(err);
       toast.error("No se pudo armar el PDF. Reintenta.");

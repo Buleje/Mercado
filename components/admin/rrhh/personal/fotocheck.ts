@@ -3,6 +3,7 @@
  * `lib/rrhh/fotocheck-pdf.ts` con lo que la pantalla ya tiene.
  */
 
+import { leerMembrete, logoParaPdf } from "@/lib/admin/membrete-cliente";
 import { descargarFotochecks, type PersonaFotocheck } from "@/lib/rrhh/fotocheck-pdf";
 import type { ColaboradorDTO } from "@/lib/rrhh/tipos";
 import { formatearFecha } from "../rrhh-ui";
@@ -20,18 +21,11 @@ export function personaParaFotocheck(c: ColaboradorDTO, origen: string): Persona
     ingreso: c.fechaIngreso ? formatearFecha(c.fechaIngreso) : null,
     fotoUrl: c.fotoUrl,
     emergencia: { nombre: c.contactoEmergencia.nombre, celular: c.contactoEmergencia.celular },
+    // Seguridad (ADR-417): lo que se lee en el momento. Vacío se pasa como `null`
+    // para que el dorso no imprima la etiqueta sin dato.
+    grupoSanguineo: c.grupoSanguineo,
+    alergias: c.alergias?.trim() || null,
     urlFicha: urlDeLaFicha(origen, c.id),
-  };
-}
-
-/** Nombre y contacto del negocio para la tarjeta, desde la configuración del panel. */
-export function negocioDelPanel(
-  s: { businessName?: string | null; storeTheme?: { phone?: string; whatsapp?: string; address?: string } | null } | null | undefined,
-): { nombre: string | null; contacto: string | null } {
-  const tema = s?.storeTheme;
-  return {
-    nombre: s?.businessName?.trim() || null,
-    contacto: tema?.phone?.trim() || tema?.whatsapp?.trim() || tema?.address?.trim() || null,
   };
 }
 
@@ -50,15 +44,15 @@ export function archivoDeFotocheck(colaboradores: { nombre: string }[]): string 
   return `fotochecks-${colaboradores.length}-personas`;
 }
 
-export async function descargarFotochecksDe(
-  colaboradores: ColaboradorDTO[],
-  negocio: { nombre: string | null; contacto: string | null },
-  archivo: string,
-): Promise<void> {
+/** Trae el membrete (el nombre registrado si no hay uno configurado) y descarga los fotochecks. */
+export async function descargarFotochecksDe(colaboradores: ColaboradorDTO[], archivo: string): Promise<void> {
   const origen = window.location.origin;
+  const membrete = await leerMembrete();
+  const logo = await logoParaPdf(membrete.logoUrl);
   await descargarFotochecks({
-    negocio: negocio.nombre,
-    contacto: negocio.contacto,
+    negocio: membrete.nombre,
+    contacto: membrete.telefono ?? membrete.direccion,
+    logo,
     personas: colaboradores.map((c) => personaParaFotocheck(c, origen)),
     archivo,
   });
