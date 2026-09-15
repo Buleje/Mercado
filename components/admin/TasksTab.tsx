@@ -1,11 +1,12 @@
 "use client";
 
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ClipboardList, ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { toast } from "sonner";
 import { Field } from "@/components/admin/shared/Field";
 
 type Priority = "baja" | "media" | "alta" | "urgente";
@@ -55,13 +56,24 @@ export default function TasksTab() {
   const [saving, setSaving] = useState(false);
   const [filterStatus, setFilterStatus] = useState<TaskStatus | "todas">("todas");
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // Una carga que salió antes de un cambio trae la lista vieja. Medido
+  // 2026-09-14: el GET del doble montaje llegó 470 ms después del clic en
+  // Eliminar y la tarea volvió a la pantalla aunque ya no estaba en la base.
+  // Sólo aplica su lista la carga más nueva, y sólo si no hubo cambios mientras
+  // viajaba; cada cambio termina con una carga silenciosa que trae lo guardado.
+  const cargasRef = useRef({ ultima: 0, cambios: 0 });
+  const load = useCallback(async (opciones?: { silenciosa?: boolean }) => {
+    const esta = ++cargasRef.current.ultima;
+    const cambiosAlSalir = cargasRef.current.cambios;
+    if (!opciones?.silenciosa) setLoading(true);
     try {
       const res = await fetch("/api/tasks");
-      if (res.ok) setTasks(await res.json());
+      if (res.ok) {
+        const lista = (await res.json()) as Task[];
+        if (esta === cargasRef.current.ultima && cambiosAlSalir === cargasRef.current.cambios) setTasks(lista);
+      }
     } catch { /* silent */ }
-    setLoading(false);
+    if (esta === cargasRef.current.ultima) setLoading(false);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
@@ -76,27 +88,59 @@ export default function TasksTab() {
   const save = async () => {
     if (!form.title.trim()) return;
     setSaving(true);
-    const body = { title: form.title.trim(), description: form.description || undefined, priority: form.priority, assignedTo: form.assignedTo || undefined, dueDate: form.dueDate || undefined, module: form.module || undefined };
+    // null borra el campo al editar; undefined lo dejaba como estaba (ADR-415).
+    cargasRef.current.cambios += 1;
+    const body = { title: form.title.trim(), description: form.description || null, priority: form.priority, assignedTo: form.assignedTo || null, dueDate: form.dueDate || null, module: form.module || null };
     try {
-      if (editId) {
-        await fetch(`/api/tasks/${editId}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
-      } else {
-        await fetch("/api/tasks", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
+      const res = editId
+        ? await fetch(`/api/tasks/${editId}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) })
+        : await fetch("/api/tasks", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
+      // Antes no se miraba la respuesta: si el servidor fallaba, el modal se cerraba igual.
+      if (!res.ok) {
+        const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+        toast.error(errBody.error || `No se pudo guardar la tarea (HTTP ${res.status})`);
+        setSaving(false);
+        return;
       }
       setShowForm(false);
       await load();
-    } catch { /* silent */ }
+    } catch {
+      toast.error("No se pudo guardar la tarea. Revisa tu conexión.");
+    }
     setSaving(false);
   };
 
+  /** Cambia en pantalla al toque y vuelve atrás si el servidor no lo guarda. `completedAt` lo pone el servidor. */
   const changeStatus = async (id: string, status: TaskStatus) => {
-    await fetch(`/api/tasks/${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status, ...(status === "completada" ? { completedAt: new Date().toISOString() } : {}) }) });
+    cargasRef.current.cambios += 1;
+    const previo = tasks.find(t => t.id === id);
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+    try {
+      const res = await fetch(`/api/tasks/${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status }) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const guardada = (await res.json()) as Task;
+      setTasks(prev => prev.map(t => t.id === id ? guardada : t));
+    } catch {
+      if (previo) setTasks(prev => prev.map(t => t.id === id ? previo : t));
+      toast.error("No se pudo cambiar el estado. Reintenta.");
+    } finally {
+      void load({ silenciosa: true });
+    }
   };
 
   const deleteTask = async (id: string) => {
-    await fetch(`/api/tasks/${id}`, { method: "DELETE", headers: csrfHeaders() });
+    cargasRef.current.cambios += 1;
+    const previas = tasks;
     setTasks(prev => prev.filter(t => t.id !== id));
+    try {
+      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch {
+      setTasks(previas);
+      toast.error("No se pudo eliminar la tarea. Reintenta.");
+    } finally {
+      void load({ silenciosa: true });
+    }
   };
 
   const filtered = filterStatus === "todas" ? tasks : tasks.filter(t => t.status === filterStatus);

@@ -2174,6 +2174,50 @@ model Asistencia {
   @@index([tenantId, colaboradorId, fecha])
 }
 
+// ─── Metas y tareas del panel (ADR-415) ──────────────────
+
+/// Meta del panel (ADR-415). Antes vivía en local-data/goals.json, sin tenantId.
+/// Listas cerradas (category, period): CHECK en SQL + z.enum en lib/admin/metas-tareas.ts.
+/// La API devuelve target/current como number y dueDate como "YYYY-MM-DD" (DTO en la DB class).
+model AdminGoal {
+  id        String    @id @default(cuid())
+  tenantId  String
+  name      String
+  category  String    @default("ventas")
+  period    String    @default("mensual")
+  target    Decimal   @db.Decimal(14, 2)
+  current   Decimal   @default(0) @db.Decimal(14, 2)
+  unit      String    @default("S/")
+  dueDate   DateTime? @db.Date
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([tenantId, id])
+  @@index([tenantId, createdAt])
+}
+
+/// Tarea del equipo (ADR-415). Antes vivía en local-data/tasks.json, sin tenantId.
+/// `completedAt` lo pone el servidor; CHECK (status = 'completada') = (completedAt IS NOT NULL) sólo en SQL.
+model AdminTask {
+  id          String    @id @default(cuid())
+  tenantId    String
+  title       String
+  description String?
+  priority    String    @default("media")
+  status      String    @default("pendiente")
+  assignedTo  String?
+  module      String?
+  dueDate     DateTime? @db.Date
+  completedAt DateTime?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([tenantId, id])
+  @@index([tenantId, createdAt])
+}
+
 // ─── Message Templates ───────────────────────────────────
 model MessageTemplate {
   id            String   @id @default(cuid())

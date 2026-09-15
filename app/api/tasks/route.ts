@@ -1,77 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { esClaveInexistente, readData, writeData } from "@/lib/file-store";
-import { randomUUID } from "crypto";
+import { assertCsrf } from "@/lib/auth/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
+import { AdminTasksDB } from "@/lib/db/admin-tasks.db";
+import { tareaCrearSchema } from "@/lib/admin/metas-tareas";
 
-const KEY = "tasks";
+/**
+ * /api/tasks — tareas del equipo del negocio de la sesión (ADR-415).
+ *
+ * Antes era `local-data/tasks.json`: una sola lista para todos los negocios, y
+ * en Vercel (disco de sólo lectura) no se guardaba ninguna.
+ */
 
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  priority: string;
-  status: string;
-  assignedTo?: string;
-  dueDate?: string;
-  module?: string;
-  createdAt: string;
-  completedAt?: string;
-}
-
-async function getTasks(): Promise<Task[]> {
-  // Sin archivo todavía no hay tareas. Cualquier otra falla (JSON corrupto,
-  // permiso) se relanza: tratarla como lista vacía hacía que la escritura
-  // siguiente reescribiera el archivo y se perdieran todas (auditoría 2026-09-14).
-  const data = await readData<{ tasks?: Task[] }>(KEY).catch((err: unknown) => {
-    if (esClaveInexistente(err)) return null;
-    throw err;
-  });
-  return data?.tasks ?? [];
-}
-async function saveTasks(tasks: Task[]): Promise<void> {
-  await writeData(KEY, { tasks });
-}
-
+/** GET — array de tareas, las más nuevas primero. */
 export async function GET(req: NextRequest) {
-  try {
-    const auth = await requireAdmin(req);
-    if (auth instanceof NextResponse) return auth;
-    const tasks = await getTasks();
-    return NextResponse.json(tasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
 
+  try {
+    const tareas = await AdminTasksDB.listar(auth.tenantId);
+    return NextResponse.json(tareas, { headers: { "Cache-Control": "private, no-store" } });
   } catch (e) {
-    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    logger.error("[tasks] GET error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "No se pudieron cargar las tareas" }, { status: 503 });
   }
 }
 
+/** POST — crear una tarea; siempre nace `pendiente`. */
 export async function POST(req: NextRequest) {
-  try {
-    const _rl = await applyRateLimit(req, "MODERATE", "tasks"); if (_rl) return _rl;
-    const auth = await requireAdmin(req);
-    if (auth instanceof NextResponse) return auth;
-    const body = await req.json();
-    if (!body.title) return NextResponse.json({ error: "title required" }, { status: 400 });
-    const tasks = await getTasks();
-    const task: Task = {
-      id: randomUUID(),
-      title: body.title,
-      description: body.description,
-      priority: body.priority ?? "media",
-      status: "pendiente",
-      assignedTo: body.assignedTo,
-      dueDate: body.dueDate,
-      module: body.module,
-      createdAt: new Date().toISOString(),
-    };
-    tasks.push(task);
-    await saveTasks(tasks);
-    return NextResponse.json(task, { status: 201 });
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
+  const _rl = applyRateLimit(req, "MODERATE", "tasks");
+  if (_rl) return _rl;
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
 
+  const parsed = tareaCrearSchema.safeParse(await leerJson(req));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Revisa los datos de la tarea", code: "validation_error", issues: parsed.error.issues },
+      { status: 422 },
+    );
+  }
+
+  try {
+    const tarea = await AdminTasksDB.crear(auth.tenantId, parsed.data, auth.username);
+    return NextResponse.json(tarea, { status: 201 });
   } catch (e) {
-    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    logger.error("[tasks] POST error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "No se pudo guardar la tarea. Reintenta." }, { status: 503 });
   }
 }

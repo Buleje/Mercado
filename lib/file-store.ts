@@ -1,6 +1,7 @@
 /**
- * Simple JSON file-based key-value store for admin features
- * (goals, tasks, etc.) that don't need a full Prisma model.
+ * Simple JSON file-based key-value store. Hoy sólo lo usa beta-feedback: metas
+ * y tareas pasaron a la base (ADR-415) porque este archivo no tiene tenant y en
+ * Vercel el disco del proyecto es de sólo lectura.
  * Files are stored in local-data/<key>.json.
  */
 import path from "path";

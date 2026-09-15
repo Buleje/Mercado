@@ -2,7 +2,7 @@
 
 import { SectionTitle, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Target, TrendingUp, Plus, Pencil, Trash2, Check, BarChart3,
   Calendar, AlertTriangle, CheckCircle2, Clock, RefreshCw, Sparkles,
@@ -325,13 +325,24 @@ export default function GoalsTab() {
   const puedeSales = puedePedir("/api/sales", rol);
   const puedeCustomers = puedePedir("/api/customers", rol);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // Una carga que salió antes de un cambio trae la lista vieja: en Tareas el GET
+  // del doble montaje llegó 470 ms después de Eliminar y lo borrado volvió a la
+  // pantalla (medido 2026-09-14). Sólo aplica su lista la carga más nueva, y sólo
+  // si no hubo cambios mientras viajaba; cada cambio termina con una carga
+  // silenciosa que trae lo guardado.
+  const cargasRef = useRef({ ultima: 0, cambios: 0 });
+  const load = useCallback(async (opciones?: { silenciosa?: boolean }) => {
+    const esta = ++cargasRef.current.ultima;
+    const cambiosAlSalir = cargasRef.current.cambios;
+    if (!opciones?.silenciosa) setLoading(true);
     try {
       const res = await fetch("/api/goals");
-      if (res.ok) setGoals(await res.json());
+      if (res.ok) {
+        const lista = (await res.json()) as Goal[];
+        if (esta === cargasRef.current.ultima && cambiosAlSalir === cargasRef.current.cambios) setGoals(lista);
+      }
     } catch { /* silent */ }
-    setLoading(false);
+    if (esta === cargasRef.current.ultima) setLoading(false);
   }, []);
 
   // Auto-track: cargar ventas + clientes + dashboard para sincronización auto.
@@ -500,6 +511,7 @@ export default function GoalsTab() {
     if (saving) return;
     if (!form.name.trim() || !form.target) return;
     setSaving(true);
+    cargasRef.current.cambios += 1;
     const targetNum  = parseFloat(form.target);
     const currentNum = parseFloat(form.current) || 0;
     const wasCompleted = editId
@@ -512,7 +524,8 @@ export default function GoalsTab() {
       target: targetNum,
       current: currentNum,
       unit: form.unit.trim() || "S/",
-      dueDate: form.dueDate || undefined,
+      // null borra la fecha al editar; undefined la dejaba como estaba (ADR-415).
+      dueDate: form.dueDate || null,
     };
     try {
       const res = editId
@@ -546,6 +559,7 @@ export default function GoalsTab() {
   };
 
   const remove = async (id: string) => {
+    cargasRef.current.cambios += 1;
     const goal = goals.find(g => g.id === id);
     // BUG-FIX (audit 2026-05-05): optimistic update con rollback si el API falla
     const prevGoals = goals;
@@ -561,6 +575,8 @@ export default function GoalsTab() {
     } catch {
       setGoals(prevGoals); // rollback
       toast.error("Error de conexión. Reintenta.");
+    } finally {
+      void load({ silenciosa: true });
     }
   };
 
@@ -569,6 +585,7 @@ export default function GoalsTab() {
     if (!goal) return;
     const wasCompleted = goal.current >= goal.target;
     // BUG-FIX (audit 2026-05-05): rollback en error de PATCH
+    cargasRef.current.cambios += 1;
     const prevCurrent = goal.current;
     setGoals(prev => prev.map(g => g.id === id ? { ...g, current } : g));
     try {
@@ -587,6 +604,8 @@ export default function GoalsTab() {
     } catch {
       setGoals(prev => prev.map(g => g.id === id ? { ...g, current: prevCurrent } : g));
       toast.error("Error de conexión");
+    } finally {
+      void load({ silenciosa: true });
     }
   };
 
