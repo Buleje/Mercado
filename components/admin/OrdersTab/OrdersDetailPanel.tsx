@@ -22,6 +22,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import {
   X, Printer, Check, Phone, MapPin as MapPinIcon, FileText, MessageCircle,
@@ -130,6 +131,11 @@ export function OrdersDetailPanel({
   onSaveCustomDriver,
   onPatchOrder,
 }: OrdersDetailPanelProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const adminNotes = (order as DbOrder & { adminNotes?: string }).adminNotes;
   const initial = order.customer.name.trim().charAt(0).toUpperCase() || "?";
   // FIX 2026-05-07: estado del modal "Entrega manual" — pide método y nota antes
@@ -192,7 +198,7 @@ export function OrdersDetailPanel({
     if (order.status === "confirmado") {
       return {
         label: "Confirmado · listo para preparar",
-        sub: "Marcá cuando empieces a armar el pedido",
+        sub: "Marca cuando empieces a armar el pedido",
         primary: { label: "Empezar preparación", onClick: () => onPatchOrder(order.id, { status: "preparando" }), tone: "primary" as const },
         // FIX 2026-05-07: entrega manual sin pasar por delivery. Abre modal
         // que pide método (mostrador / propia / encargo / otro) + nota
@@ -203,7 +209,7 @@ export function OrdersDetailPanel({
     if (order.status === "preparando") {
       return {
         label: "Preparando · armando el pedido",
-        sub: "Asigná un motorizado abajo y avanzá cuando salga",
+        sub: "Asigna un motorizado abajo y avanza cuando salga",
         primary: { label: "Marcar en camino", onClick: () => onPatchOrder(order.id, { status: "en_camino" }), tone: "primary" as const },
         secondary: { label: "Entregado (manual)", onClick: openManual, tone: "success" as const },
       };
@@ -219,7 +225,7 @@ export function OrdersDetailPanel({
   })();
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
@@ -229,7 +235,7 @@ export function OrdersDetailPanel({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative w-full max-w-3xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[calc(100vh-3rem)] overflow-hidden focus:outline-none"
+        className="relative w-full max-w-3xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[calc(100vh-3rem)] overflow-hidden focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ─── 1. HEADER — patrón estándar admin (CardTitle DS, sin italic) ── */}
@@ -237,7 +243,7 @@ export function OrdersDetailPanel({
           <div className="flex items-start gap-3 min-w-0">
             <span
               aria-hidden
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base font-bold tracking-tight"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl shrink-0 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-base font-bold tracking-tight"
             >
               {initial}
             </span>
@@ -310,7 +316,7 @@ export function OrdersDetailPanel({
                 type="button"
                 onClick={actionBanner.primary.onClick}
                 className={cn(
-                  "inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold transition-colors text-white",
+                  "inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold transition-colors text-white",
                   actionBanner.primary.tone === "success"
                     ? "bg-[var(--data-success-500)] hover:opacity-90"
                     : "bg-primary hover:bg-primary/90",
@@ -324,7 +330,7 @@ export function OrdersDetailPanel({
                   type="button"
                   onClick={actionBanner.secondary.onClick}
                   className={cn(
-                    "inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold border bg-white dark:bg-surface transition-colors",
+                    "inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold border bg-[var(--surface-raised)] transition-colors",
                     actionBanner.secondary.tone === "success"
                       ? "border-[var(--data-success-500)]/40 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/5"
                       : "border-[var(--data-error-500)]/40 text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/5",
@@ -408,7 +414,7 @@ export function OrdersDetailPanel({
                     )}
                   </>
                 )}
-                <div className="flex justify-between items-center px-4 py-2.5 border-t border-[var(--rule-soft)]">
+                <div className="flex justify-between items-center border-t border-[var(--rule-soft)] px-5 py-2.5 sm:px-6">
                   <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                     Total a cobrar
                   </span>
@@ -426,7 +432,7 @@ export function OrdersDetailPanel({
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               {/* Teléfono */}
               {phone && (
-                <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-[var(--rule-soft)]">
+                <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] px-5 py-2.5 sm:px-6">
                   <Phone className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={2} />
                   <span className="font-mono text-sm font-semibold text-[var(--text-primary)] flex-1 min-w-0 truncate">
                     {phone}
@@ -473,7 +479,7 @@ export function OrdersDetailPanel({
 
               {/* Notas del cliente — inline si existen */}
               {order.notes && (
-                <div className="px-4 py-2.5 border-t border-[var(--rule-soft)] bg-[var(--accent-soft)]/30">
+                <div className="border-t border-[var(--rule-soft)] bg-primary/10 px-5 py-2.5 sm:px-6">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                     Nota del cliente
                   </p>
@@ -511,7 +517,7 @@ export function OrdersDetailPanel({
                   className={cn(
                     "inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider",
                     order.paymentMethod === "efectivo"
-                      ? "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/30"
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-[var(--accent)]/30"
                       : "bg-[var(--surface-sunken)] text-[var(--text-primary)] border border-[var(--rule-base)]",
                   )}
                 >
@@ -536,7 +542,7 @@ export function OrdersDetailPanel({
                     <button
                       type="button"
                       onClick={() => onMarkDeudaPaid(order.id)}
-                      className="ml-auto inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-semibold text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 transition-colors"
+                      className="ml-auto inline-flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-semibold text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 transition-colors"
                     >
                       <Check className="h-3.5 w-3.5" /> Marcar cobrado
                     </button>
@@ -588,13 +594,13 @@ export function OrdersDetailPanel({
                     onChange={(e) => onAdminNoteChange(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && onSaveAdminNote(order.id)}
                     placeholder="Agregar nota interna…"
-                    className="flex-1 h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
+                    className="flex-1 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => onSaveAdminNote(order.id)}
                     disabled={savingNote || !adminNote.trim()}
-                    className="h-10 px-4 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="h-10 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     {savingNote ? "…" : "Guardar"}
                   </button>
@@ -678,7 +684,7 @@ export function OrdersDetailPanel({
             <button
               type="button"
               onClick={() => onShowRejectModal(order.id)}
-              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg text-sm font-semibold text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 hover:bg-[var(--data-error-500)]/10 transition-colors"
+              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-semibold text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 hover:bg-[var(--data-error-500)]/10 transition-colors"
             >
               <X className="h-4 w-4" />
               Rechazar
@@ -687,7 +693,7 @@ export function OrdersDetailPanel({
           <button
             type="button"
             onClick={() => printComanda(order)}
-            className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-surface hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
             <Printer className="h-4 w-4" />
             Imprimir comanda
@@ -695,7 +701,7 @@ export function OrdersDetailPanel({
           <button
             type="button"
             onClick={() => window.open(`/api/invoices/${order.id}`, "_blank", "noopener,noreferrer")}
-            className="ml-auto inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
+            className="ml-auto inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
           >
             <FileText className="h-4 w-4" strokeWidth={2} />
             Generar boleta

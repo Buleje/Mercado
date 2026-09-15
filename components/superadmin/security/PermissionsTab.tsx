@@ -160,7 +160,7 @@ export function PermissionsTab() {
   const toggleGroup = useCallback((group: string) => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
-      next.has(group) ? next.delete(group) : next.add(group);
+      if (next.has(group)) next.delete(group); else next.add(group);
       return next;
     });
   }, []);
@@ -199,7 +199,7 @@ export function PermissionsTab() {
   return (
     <div className="space-y-6">
       {/* ─── Info banner ─────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-start gap-3 rounded-2xl border-2 border-sky-300/60 bg-sky-50 px-5 py-4 dark:border-sky-700/40 dark:bg-sky-500/10">
+      <div className="flex flex-col sm:flex-row items-start gap-3 rounded-2xl border border-sky-300/60 bg-sky-50 px-5 py-4 dark:border-sky-700/40 dark:bg-sky-500/10">
         <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
           <Shield className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
@@ -218,7 +218,7 @@ export function PermissionsTab() {
           href="https://github.com/Buleje/Mercado/blob/master/bodega-san-martin/lib/auth/role-permissions.ts"
           target="_blank"
           rel="noreferrer"
-          className="shrink-0 inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-sky-300/60 bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-sky-700 hover:bg-sky-100 dark:border-sky-700/40 dark:text-sky-300 dark:hover:bg-sky-500/20"
+          className="shrink-0 inline-flex h-11 items-center gap-1.5 rounded-xl border border-sky-300/60 bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-sky-700 hover:bg-sky-100 dark:border-sky-700/40 dark:text-sky-300 dark:hover:bg-sky-500/20"
         >
           <FileText className="h-4 w-4" aria-hidden />
           Ver código
@@ -232,7 +232,7 @@ export function PermissionsTab() {
           onClick={expandAll}
           disabled={!allCollapsed && collapsedGroups.size === 0}
           title="Expandir todo"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <Maximize2 className="h-4 w-4" aria-hidden />
           Expandir todo
@@ -241,14 +241,14 @@ export function PermissionsTab() {
           onClick={collapseAll}
           disabled={allCollapsed}
           title="Colapsar todo"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <Minimize2 className="h-4 w-4" aria-hidden />
           Colapsar todo
         </button>
         <button
           onClick={exportMatrixCSV}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
         >
           <Download className="h-4 w-4" aria-hidden />
           CSV matriz
@@ -322,7 +322,7 @@ export function PermissionsTab() {
             onChange={(e) => setFilterRaw(e.target.value)}
             placeholder="Filtrar recurso o grupo…"
             aria-label="Filtrar matriz"
-            className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="w-full h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
       </div>
@@ -360,7 +360,7 @@ export function PermissionsTab() {
             </p>
             <button
               onClick={() => setFilterRaw("")}
-              className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+              className="mt-3 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
             >
               Limpiar filtro
             </button>
@@ -478,7 +478,7 @@ export function PermissionsTab() {
                 href="https://github.com/Buleje/Mercado/commits/master/bodega-san-martin/lib/auth/role-permissions.ts"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+                className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
               >
                 <FileText className="h-4 w-4" aria-hidden />
                 Ver historial git
@@ -486,7 +486,7 @@ export function PermissionsTab() {
               </a>
               <a
                 href="/superadmin/activity"
-                className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+                className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
               >
                 <FileText className="h-4 w-4" aria-hidden />
                 Ver audit log de runtime
@@ -497,7 +497,7 @@ export function PermissionsTab() {
       </section>
 
       {/* ─── Roles custom (no disponible) ────────────────────────── */}
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-8 text-center">
+      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-8 text-center">
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
           <Users className="h-5 w-5 text-[var(--text-tertiary)]" aria-hidden />
         </div>

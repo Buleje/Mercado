@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ShieldCheck, CheckCircle, AlertCircle, Loader2 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import {
   SUNAT_BLOCKER_LABEL,
   type SunatModoOficialState,
@@ -55,7 +56,7 @@ export default function SunatModoOficialCard() {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-extrabold text-[var(--text-primary)]">Modo SUNAT Oficial</h3>
+            <CardTitle as="h3" className="text-base font-extrabold text-[var(--text-primary)]">Modo SUNAT Oficial</CardTitle>
             <span
               className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)]"
               style={
@@ -107,8 +108,8 @@ export default function SunatModoOficialCard() {
               </ul>
               <p className="mt-3 rounded-xl bg-[var(--surface-sunken)] px-3.5 py-2.5 text-xs text-[var(--text-secondary)]">
                 {configReady
-                  ? "Todo listo. Contactá a soporte de Buleje para activar la facturación electrónica oficial."
-                  : "Completá los requisitos de arriba y luego soporte de Buleje activa el modo oficial."}
+                  ? "Todo listo. Contacta a soporte de Buleje para activar la facturación electrónica oficial."
+                  : "Completa los requisitos de arriba y luego soporte de Buleje activa el modo oficial."}
               </p>
             </div>
           )}

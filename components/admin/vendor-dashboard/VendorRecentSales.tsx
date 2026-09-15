@@ -48,7 +48,7 @@ export function VendorRecentSales({ sales }: Props) {
         Ventas recientes de hoy
       </CardTitle>
 
-      <ul className="divide-y divide-gray-100 dark:divide-card-border">
+      <ul className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
         {sales.map((sale) => (
           <li key={sale.id} className="py-3 flex items-start gap-3">
             <div className="flex-1 min-w-0">

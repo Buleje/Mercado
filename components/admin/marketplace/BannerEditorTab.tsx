@@ -2,6 +2,7 @@
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import {
   DndContext,
   closestCenter,
@@ -71,13 +72,61 @@ const SECTION_LABELS: Record<BannerSection, string> = {
   promo: "Promociones",
 };
 
+// ── API mapping ─────────────────────────────────────────────────────────────
+// La API (StoreBanner) usa `isActive`; el componente usa `active`. Las fechas
+// del form son `YYYY-MM-DD` (input date) y la API exige datetime ISO.
+
+type ApiBanner = {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  imageUrl?: string | null;
+  linkUrl?: string | null;
+  isActive?: boolean;
+  active?: boolean;
+  section: BannerSection;
+  position?: number;
+  startDate?: string | null;
+  endDate?: string | null;
+};
+
+function normalizeBanner(b: ApiBanner): Banner {
+  return {
+    id: b.id,
+    title: b.title,
+    subtitle: b.subtitle ?? null,
+    imageUrl: b.imageUrl ?? null,
+    linkUrl: b.linkUrl ?? null,
+    active: b.isActive ?? b.active ?? true,
+    section: b.section,
+    position: b.position ?? 0,
+    startDate: b.startDate ?? null,
+    endDate: b.endDate ?? null,
+  };
+}
+
+function toBannerPayload(data: BannerFormData, section: BannerSection, position?: number) {
+  const p: Record<string, unknown> = {
+    title: data.title.trim(),
+    section,
+    isActive: data.active,
+  };
+  if (data.subtitle) p.subtitle = data.subtitle;
+  if (data.imageUrl) p.imageUrl = data.imageUrl;
+  if (data.linkUrl) p.linkUrl = data.linkUrl;
+  if (position !== undefined) p.position = position;
+  if (data.startDate) p.startDate = new Date(data.startDate).toISOString();
+  if (data.endDate) p.endDate = new Date(data.endDate).toISOString();
+  return p;
+}
+
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
 function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
       "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
+      type === "success" ? "bg-primary/10 text-white" : "bg-[var(--data-error)] text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
       {msg}
@@ -107,51 +156,48 @@ function BannerModal({
 
   return (
     <AdminModal open onClose={onClose} title={`Banner — ${SECTION_LABELS[section]}`}>
-      <div className="p-5 space-y-4">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {[
           { key: "title", label: "Título", placeholder: "Ej: Oferta de la semana" },
           { key: "subtitle", label: "Subtítulo", placeholder: "Ej: Hasta 30% de descuento" },
           { key: "imageUrl", label: "URL imagen", placeholder: "https://..." },
           { key: "linkUrl", label: "URL destino", placeholder: "https://..." },
         ].map(({ key, label, placeholder }) => (
-          <div key={key}>
-            <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">{label}</label>
+          <Field key={key} label={label} labelClassName="text-sm font-medium text-[var(--text-secondary)] block mb-1">
             <input
               type="text"
               value={form[key as keyof BannerFormData] as string}
               onChange={(e) => set(key as keyof BannerFormData, e.target.value)}
               placeholder={placeholder}
-              className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
+              className="w-full h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
             />
-          </div>
+          </Field>
         ))}
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Inicio</label>
+          <Field label="Inicio" labelClassName="text-sm font-medium text-[var(--text-secondary)] block mb-1">
             <input
               type="date"
               value={form.startDate}
               onChange={(e) => set("startDate", e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
+              className="w-full h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
             />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Fin</label>
+          </Field>
+          <Field label="Fin" labelClassName="text-sm font-medium text-[var(--text-secondary)] block mb-1">
             <input
               type="date"
               value={form.endDate}
               onChange={(e) => set("endDate", e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
+              className="w-full h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
             />
-          </div>
+          </Field>
         </div>
 
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-[var(--text-secondary)]">Activo</span>
           <button onClick={() => set("active", !form.active)}>
             {form.active
-              ? <ToggleRight className="h-6 w-6 text-[#00A0A0]" />
+              ? <ToggleRight className="h-6 w-6 text-[var(--accent)]" />
               : <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />}
           </button>
         </div>
@@ -160,14 +206,14 @@ function BannerModal({
           <button
             onClick={onClose}
             disabled={saving}
-            className="flex-1 h-10 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+            className="flex-1 h-10 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={() => onSave(form)}
             disabled={saving || !form.title.trim()}
-            className="flex-1 h-10 rounded-lg bg-[#00A0A0] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 h-10 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Guardar
@@ -205,7 +251,7 @@ function SortableBannerCard({
       style={style}
       className={cn(
         "flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-shadow",
-        isDragging && "ring-2 ring-[#00A0A0] opacity-90"
+        isDragging && "ring-2 ring-[var(--accent)] opacity-90"
       )}
     >
       {/* Drag handle — min 44px touch target */}
@@ -247,16 +293,16 @@ function SortableBannerCard({
       <div className="flex items-center gap-2 shrink-0">
         <button onClick={() => onToggle(banner.id)} aria-label="Alternar activo">
           {banner.active
-            ? <ToggleRight className="h-5 w-5 text-[#00A0A0]" />
+            ? <ToggleRight className="h-5 w-5 text-[var(--accent)]" />
             : <ToggleLeft className="h-5 w-5 text-[var(--text-tertiary)]" />}
         </button>
-        <button
+        <button aria-label="Editar"
           onClick={() => onEdit(banner)}
           className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
         >
           <Pencil className="h-3.5 w-3.5" />
         </button>
-        <button
+        <button aria-label="Eliminar"
           onClick={() => onDelete(banner.id)}
           className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 text-[var(--text-secondary)] hover:text-[var(--data-error)]"
         >
@@ -300,30 +346,29 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/marketplace/stores/${storeSlug}/banners`);
+        // scope=admin → TODOS los banners (incluye inactivos/fuera de ventana).
+        const res = await fetch(`/api/marketplace/stores/${storeSlug}/banners?scope=admin`);
         if (!res.ok) throw new Error("fetch fail");
         const data = await res.json();
-        const list: Banner[] = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        const raw: ApiBanner[] = Array.isArray(data?.banners)
+          ? data.banners
+          : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data)
+              ? data
+              : [];
         const grouped: Record<BannerSection, Banner[]> = { hero: [], featured: [], promo: [] };
-        for (const b of list) {
-          if (b.section in grouped) grouped[b.section].push(b);
+        for (const b of raw) {
+          const banner = normalizeBanner(b);
+          if (banner.section in grouped) grouped[banner.section].push(banner);
         }
         for (const s of Object.keys(grouped) as BannerSection[]) {
           grouped[s].sort((a, b) => a.position - b.position);
         }
         setBannersBySection(grouped);
       } catch {
-        // Fallback: mock banners when API unavailable
-        const mock: Record<BannerSection, Banner[]> = {
-          hero: [
-            { id: "h1", title: "Bienvenidos a tu tienda", subtitle: "Los mejores precios", imageUrl: null, linkUrl: null, active: true, section: "hero", position: 0 },
-          ],
-          featured: [],
-          promo: [
-            { id: "p1", title: "Oferta de fin de semana", subtitle: "30% de descuento en abarrotes", imageUrl: null, linkUrl: null, active: false, section: "promo", position: 0 },
-          ],
-        };
-        setBannersBySection(mock);
+        // Sin datos de muestra: estado vacío honesto si la API falla.
+        setBannersBySection({ hero: [], featured: [], promo: [] });
       } finally {
         setLoading(false);
       }
@@ -345,7 +390,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
       // POST reorder al backend (fire-and-forget)
       fetch(`/api/marketplace/stores/${storeSlug}/banners/reorder`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ section, order: reordered.map((b) => b.id) }),
       }).catch((err) => { /* fire-and-forget */ void err; });
 
@@ -361,8 +406,8 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
         const updated = { ...b, active: !b.active };
         fetch(`/api/marketplace/stores/${storeSlug}/banners/${bannerId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ active: updated.active }),
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ isActive: updated.active }),
         }).catch((err) => { /* fire-and-forget */ void err; });
         return updated;
       }),
@@ -386,11 +431,12 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
         // Editar existente
         const res = await fetch(`/api/marketplace/stores/${storeSlug}/banners/${editingBanner.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...data, section }),
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify(toBannerPayload(data, section)),
         });
         if (!res.ok) throw new Error("Error al actualizar banner");
-        const saved = await res.json().then((d) => d?.data ?? { ...editingBanner, ...data });
+        const d = await res.json();
+        const saved: Banner = d?.banner ? normalizeBanner(d.banner) : { ...editingBanner, ...data };
         setBannersBySection((prev) => ({
           ...prev,
           [section]: prev[section].map((b) => (b.id === editingBanner.id ? { ...b, ...saved } : b)),
@@ -400,16 +446,14 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
         // Crear nuevo
         const res = await fetch(`/api/marketplace/stores/${storeSlug}/banners`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...data, section, position: bannersBySection[section].length }),
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify(toBannerPayload(data, section, bannersBySection[section].length)),
         });
         if (!res.ok) throw new Error("Error al crear banner");
-        const saved: Banner = await res.json().then((d) => d?.data ?? {
-          id: `new-${Date.now()}`,
-          ...data,
-          section,
-          position: bannersBySection[section].length,
-        });
+        const d = await res.json();
+        const saved: Banner = d?.banner
+          ? normalizeBanner(d.banner)
+          : { id: `new-${Date.now()}`, ...data, section, position: bannersBySection[section].length };
         setBannersBySection((prev) => ({
           ...prev,
           [section]: [...prev[section], saved],
@@ -446,14 +490,14 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
             </CardTitle>
             <button
               onClick={() => { setEditingBanner(null); setModalSection(section); }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#00A0A0]/10 dark:bg-[#00A0A0]/20 text-[#00A0A0] text-xs font-medium hover:bg-[#00A0A0]/20 dark:hover:bg-[#00A0A0]/30 min-h-[44px]"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 text-[var(--accent)] text-xs font-medium hover:bg-[var(--accent)]/20 dark:hover:bg-[var(--accent)]/30 min-h-[44px]"
             >
               <Plus className="h-3.5 w-3.5" /> Nuevo banner
             </button>
           </div>
 
           {bannersBySection[section].length === 0 ? (
-            <div className="py-8 border-2 border-dashed border-[var(--rule-base)] rounded-xl text-center text-sm text-[var(--text-tertiary)]">
+            <div className="py-8 border border-dashed border-[var(--rule-base)] rounded-xl text-center text-sm text-[var(--text-tertiary)]">
               Sin banners en esta sección
             </div>
           ) : (

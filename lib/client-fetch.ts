@@ -137,7 +137,7 @@ export async function clientFetch<T = unknown>(
           status: res.status,
           message:
             res.status >= 500
-              ? "Tuvimos un problema temporal. Probá refrescar."
+              ? "Tuvimos un problema temporal. Prueba refrescar."
               : "No pudimos cargar esta sección.",
         });
       }
@@ -151,7 +151,7 @@ export async function clientFetch<T = unknown>(
       if (!silent) {
         emitError({
           url,
-          message: "Sin conexión. Revisá tu internet e intentá de nuevo.",
+          message: "Sin conexión. Revisa tu internet e intenta de nuevo.",
         });
       }
       throw err;

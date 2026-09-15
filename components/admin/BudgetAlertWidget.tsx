@@ -40,8 +40,8 @@ const LEVEL_CONFIG: Record<AlertLevel, {
   label: string;
 }> = {
   ok: {
-    bar: "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bar: "bg-primary/10 dark:bg-primary/10",
+    bg: "bg-primary/10 dark:bg-primary/15",
     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
     text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     label: "Presupuesto bajo control",
@@ -154,7 +154,7 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
 
           {/* Barra de progreso */}
           <div>
-            <div className="h-2.5 w-full rounded-full bg-[var(--rule-soft)] dark:bg-gray-700 overflow-hidden">
+            <div className="h-2.5 w-full rounded-full bg-[var(--rule-soft)] overflow-hidden">
               <div
                 className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", cfg.bar)}
                 style={{ width: `${pct}%` }}

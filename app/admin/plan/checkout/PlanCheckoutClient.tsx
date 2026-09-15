@@ -20,7 +20,9 @@
  * En producción, el webhook Stripe actualiza Tenant.plan en la DB.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -39,15 +41,15 @@ import {
   Building2,
   Loader2,
   Phone,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { setCurrentPlan } from "@/lib/billing/plan-tiers";
 import {
   PLANS,
-  PLAN_ORDER,
   type PlanTier,
 } from "@/lib/billing/plan-tiers";
 
+import { PageTitle, SectionTitle } from "@buleje/design-system";
 const PLAN_ICONS: Record<PlanTier, typeof Sparkles> = {
   basico: Sparkles,
   pro: Zap,
@@ -98,7 +100,7 @@ const METHODS: PaymentMethodMeta[] = [
   {
     id: "yape",
     label: "Yape",
-    desc: "Escaneá el QR · activación al confirmar",
+    desc: "Escanea el QR · activación al confirmar",
     icon: Wallet,
     recommended: true,
     badge: "Más usado",
@@ -106,7 +108,7 @@ const METHODS: PaymentMethodMeta[] = [
   {
     id: "plin",
     label: "Plin",
-    desc: "Pagás con BCP, Interbank o Scotia",
+    desc: "Pagas con BCP, Interbank o Scotia",
     icon: Wallet,
   },
   {
@@ -118,7 +120,7 @@ const METHODS: PaymentMethodMeta[] = [
   {
     id: "transfer",
     label: "Transferencia bancaria",
-    desc: "BCP · Interbank · BBVA · subí el voucher",
+    desc: "BCP · Interbank · BBVA · sube el voucher",
     icon: Building2,
   },
   {
@@ -177,12 +179,12 @@ export default function PlanCheckoutClient() {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ plan: targetPlan, method }),
         credentials: "include",
-      }).catch(() => null);
+      }).catch(sinDato("Plan checkout /api/admin/plan/checkout/confirm"));
       if (res && res.ok) {
         setCurrentPlan(targetPlan);
         setStep("success");
       } else {
-        alert("No pudimos confirmar la activación. Intentá nuevamente.");
+        toast.error("No pudimos confirmar la activación. Intenta nuevamente.");
       }
     } finally {
       setSubmitting(false);
@@ -213,10 +215,10 @@ export default function PlanCheckoutClient() {
         window.location.href = data.url;
       } catch (err) {
         setSubmitting(false);
-        alert(
+        toast.error(
           err instanceof Error
             ? err.message
-            : "Error al iniciar Stripe. Intentá otra vez.",
+            : "Error al iniciar Stripe. Intenta otra vez.",
         );
       }
       return;
@@ -240,23 +242,23 @@ export default function PlanCheckoutClient() {
               <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
               {method === "cash" ? "Solicitud recibida" : "¡Plan activado!"}
             </p>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+            <PageTitle className="sm:text-4xl text-[var(--text-primary)]">
               {method === "cash" ? (
                 <>Te contactamos por <span className="text-[var(--accent)]">WhatsApp</span></>
               ) : (
                 <>Bienvenido a <span className="text-[var(--accent)]">{planDef.label}</span></>
               )}
-            </h1>
+            </PageTitle>
             <p className="mt-3 text-base text-[var(--text-secondary)]">
               {method === "cash"
                 ? "Un agente te escribirá en menos de 2 horas para coordinar el pago en efectivo y activar tu plan."
-                : `Tu panel ya tiene desbloqueados los ${planDef.unlockedTabs.size} módulos del plan ${planDef.label}. Ingresá a tu panel para empezar.`}
+                : `Tu panel ya tiene desbloqueados los ${planDef.unlockedTabs.size} módulos del plan ${planDef.label}. Ingresa a tu panel para empezar.`}
             </p>
 
             <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
               <Link
                 href="/admin?tab=config"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-sm font-bold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-sm font-bold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 Volver a Config
               </Link>
@@ -301,12 +303,12 @@ export default function PlanCheckoutClient() {
             <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
             Confirmar suscripción
           </p>
-          <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-            Subí a <span className="text-[var(--accent)]">{planDef.label}</span> en
+          <PageTitle className="sm:text-4xl lg:text-[2.75rem] text-[var(--text-primary)]">
+            Sube a <span className="text-[var(--accent)]">{planDef.label}</span> en
             menos de un minuto
-          </h1>
+          </PageTitle>
           <p className="mt-3 max-w-2xl text-base sm:text-lg text-[var(--text-secondary)]">
-            Activá tu plan al confirmar el pago. Cancelás cuando quieras, sin permanencia.
+            Activa tu plan al confirmar el pago. Cancelas cuando quieras, sin permanencia.
           </p>
         </div>
       </section>
@@ -319,7 +321,7 @@ export default function PlanCheckoutClient() {
             {step === "select" && (
               <>
                 {/* Selector de método */}
-                <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-8 shadow-sm">
+                <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-8 shadow-sm">
                   <div className="mb-5 flex items-center gap-3">
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-base font-black text-white shadow-sm">
                       1
@@ -328,9 +330,9 @@ export default function PlanCheckoutClient() {
                       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-none">
                         Paso 1
                       </p>
-                      <h2 className="mt-1 text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                        Elegí cómo pagar
-                      </h2>
+                      <SectionTitle className="mt-1 text-[var(--text-primary)]">
+                        Elige cómo pagar
+                      </SectionTitle>
                     </div>
                   </div>
 
@@ -346,7 +348,7 @@ export default function PlanCheckoutClient() {
                           className={cn(
                             "w-full flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-all",
                             active
-                              ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm"
+                              ? "border-[var(--accent)] bg-primary/10 shadow-sm"
                               : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-sunken)]",
                           )}
                         >
@@ -425,7 +427,7 @@ export default function PlanCheckoutClient() {
           <aside className="order-1 lg:order-2">
             <div className="sticky top-20 space-y-4">
               <div className="rounded-3xl border-2 border-[var(--accent)]/25 bg-[var(--surface-canvas)] p-6 shadow-sm">
-                <p className="mb-3 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] rounded-full bg-[var(--accent-soft)] border-2 border-[var(--accent)]/25 px-2.5 py-1">
+                <p className="mb-3 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] rounded-full bg-primary/10 border-2 border-[var(--accent)]/25 px-2.5 py-1">
                   <Icon className="h-3 w-3" strokeWidth={2.5} />
                   Plan {planDef.label}
                 </p>
@@ -475,7 +477,7 @@ export default function PlanCheckoutClient() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-2.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 text-xs leading-relaxed text-[var(--text-secondary)]">
+              <div className="flex items-start gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 text-xs leading-relaxed text-[var(--text-secondary)]">
                 <ShieldCheck
                   className="h-4 w-4 mt-0.5 shrink-0 text-[var(--data-success-500)]"
                   strokeWidth={2.5}
@@ -484,7 +486,7 @@ export default function PlanCheckoutClient() {
                   <strong className="text-[var(--text-primary)]">
                     Sin permanencia.
                   </strong>{" "}
-                  Cancelás cuando quieras desde Config → Plan. Activación
+                  Cancelas cuando quieras desde Config → Plan. Activación
                   automática al confirmar el pago.
                 </span>
               </div>
@@ -519,8 +521,9 @@ function PayInstructions({
   onConfirm,
   onBack,
 }: PayInstructionsProps) {
+  const voucherInputId = useId();
   return (
-    <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-8 shadow-sm">
+    <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-8 shadow-sm">
       <div className="mb-5 flex items-center gap-3">
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-base font-black text-white shadow-sm">
           2
@@ -529,24 +532,24 @@ function PayInstructions({
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-none">
             Paso 2
           </p>
-          <h2 className="mt-1 text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+          <SectionTitle className="mt-1 text-[var(--text-primary)]">
             {method === "stripe"
-              ? "Pagá con tarjeta"
+              ? "Paga con tarjeta"
               : method === "yape" || method === "plin"
-                ? `Pagá con ${method === "yape" ? "Yape" : "Plin"}`
+                ? `Paga con ${method === "yape" ? "Yape" : "Plin"}`
                 : method === "transfer"
                   ? "Transferencia bancaria"
                   : "Coordinamos por WhatsApp"}
-          </h2>
+          </SectionTitle>
         </div>
       </div>
 
       {/* ── Yape / Plin ──────────────────────────────────────── */}
       {(method === "yape" || method === "plin") && (
         <div className="space-y-5">
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 text-center">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 text-center">
             <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-              Escaneá este QR desde {method === "yape" ? "Yape" : "Plin"}
+              Escanea este QR desde {method === "yape" ? "Yape" : "Plin"}
             </p>
             <div className="mx-auto h-44 w-44 rounded-2xl bg-[var(--text-primary)] flex items-center justify-center text-white text-xs font-bold p-4">
               QR placeholder · {method === "yape" ? "Yape" : "Plin"}
@@ -554,8 +557,8 @@ function PayInstructions({
               {amount}
             </div>
             <p className="mt-4 text-sm font-bold text-[var(--text-primary)]">
-              o pagá al número{" "}
-              <span className="rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[var(--accent)] font-black">
+              o paga al número{" "}
+              <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[var(--accent)] font-black">
                 929 340 532
               </span>
             </p>
@@ -568,13 +571,13 @@ function PayInstructions({
               <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-black">
                 1
               </span>
-              Pagá <strong>{amount}</strong> con el QR o número
+              Paga <strong>{amount}</strong> con el QR o número
             </li>
             <li className="flex gap-3">
               <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-black">
                 2
               </span>
-              Apretá &ldquo;Ya pagué&rdquo; abajo. Verificamos en menos de 5 min.
+              Aprieta &ldquo;Ya pagué&rdquo; abajo. Verificamos en menos de 5 min.
             </li>
             <li className="flex gap-3">
               <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-black">
@@ -589,7 +592,7 @@ function PayInstructions({
       {/* ── Stripe ──────────────────────────────────────────── */}
       {method === "stripe" && (
         <div className="space-y-5">
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5">
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
               Te llevamos a la pasarela segura de{" "}
               <strong className="text-[var(--text-primary)]">Stripe</strong> para
@@ -607,7 +610,7 @@ function PayInstructions({
       {/* ── Transferencia ───────────────────────────────────── */}
       {method === "transfer" && (
         <div className="space-y-5">
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 space-y-3">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 space-y-3">
             <div>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Cuenta BCP soles
@@ -631,10 +634,11 @@ function PayInstructions({
             </div>
           </div>
           <div>
-            <label className="block mb-2 text-sm font-bold text-[var(--text-primary)]">
-              Subí el voucher de tu transferencia
+            <label htmlFor={voucherInputId} className="block mb-2 text-sm font-bold text-[var(--text-primary)]">
+              Sube el voucher de tu transferencia
             </label>
             <input
+              id={voucherInputId}
               type="file"
               accept="image/*,application/pdf"
               onChange={(e) => onVoucherChange(e.target.files?.[0] ?? null)}
@@ -652,10 +656,10 @@ function PayInstructions({
       {/* ── Efectivo ────────────────────────────────────────── */}
       {method === "cash" && (
         <div className="space-y-5">
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 flex items-start gap-3">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 flex items-start gap-3">
             <Phone className="h-5 w-5 mt-0.5 shrink-0 text-[var(--accent)]" strokeWidth={2.5} />
             <div className="text-sm leading-relaxed text-[var(--text-primary)]">
-              Apretá <strong>&ldquo;Solicitar contacto&rdquo;</strong> y un agente
+              Aprieta <strong>&ldquo;Solicitar contacto&rdquo;</strong> y un agente
               te escribirá por WhatsApp en menos de 2 horas para coordinar el pago
               en efectivo. Una vez recibido el monto, activamos tu plan{" "}
               <strong className="text-[var(--accent)]">{planLabel}</strong>.
@@ -670,7 +674,7 @@ function PayInstructions({
           type="button"
           onClick={onBack}
           disabled={submitting}
-          className="inline-flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-sm font-bold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+          className="inline-flex h-14 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
           Volver

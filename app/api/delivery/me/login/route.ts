@@ -22,7 +22,7 @@ const BodySchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-  const rl = applyRateLimit(req, "AUTH", "delivery-login");
+  const rl = applyRateLimit(req, "LOGIN", "delivery-login");
   if (rl) return rl;
 
   let body: unknown;

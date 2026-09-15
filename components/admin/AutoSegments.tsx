@@ -9,7 +9,6 @@ import {
   Moon,
   UserPlus,
   User,
-  Loader2,
   AlertCircle,
   ChevronDown,
   ChevronRight,
@@ -113,7 +112,7 @@ export default function AutoSegments() {
         description: "Entre S/100 y S/500 al mes",
         icon: ShoppingCart,
         color: "text-primary dark:text-[var(--data-success-500)]",
-        bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+        bg: "bg-primary/10 dark:bg-primary/15",
         border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
       },
       {
@@ -122,7 +121,7 @@ export default function AutoSegments() {
         description: "Menos de S/100 al mes",
         icon: User,
         color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-        bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+        bg: "bg-primary/10 dark:bg-primary/15",
         border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
       },
       {
@@ -189,7 +188,7 @@ export default function AutoSegments() {
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-[var(--surface-alt)] disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
+          className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 min-h-10 text-sm text-[var(--text-secondary)] transition hover:bg-[var(--surface-alt)] disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] "
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -245,7 +244,7 @@ export default function AutoSegments() {
                       <span className={cn("font-semibold", seg.color)}>
                         {seg.label}
                       </span>
-                      <span className="rounded-full bg-white dark:bg-[var(--color-card)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]  dark:bg-gray-900 dark:text-[var(--text-tertiary)]">
+                      <span className="rounded-full bg-[var(--surface-raised)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">
                         {seg.customers.length} clientes
                       </span>
                       <span className="text-xs text-[var(--text-tertiary)]">{pct}%</span>
@@ -279,7 +278,7 @@ export default function AutoSegments() {
                         {seg.customers.map((c) => (
                           <div
                             key={c.phone}
-                            className="flex items-center justify-between rounded-lg bg-white px-3 py-2  dark:bg-gray-900"
+                            className="flex items-center justify-between rounded-lg bg-[var(--surface-raised)] px-3 py-2 "
                           >
                             <div className="min-w-0">
                               <p className="truncate text-sm font-medium text-[var(--text-primary)]">

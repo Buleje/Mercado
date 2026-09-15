@@ -19,6 +19,7 @@
  * con rate-limit + no-store en este commit).
  */
 
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search,
@@ -57,22 +58,22 @@ const ACTION_META: Record<
   },
   login_failed: {
     label: "login_failed",
-    cls: "border-amber-300/60 bg-amber-50 text-amber-700 dark:border-amber-700/40 dark:bg-amber-500/15 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50 text-teal-700 dark:border-teal-700/40 dark:bg-teal-500/15 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   login_locked: {
     label: "login_locked",
-    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500",
   },
   login_honeypot: {
     label: "login_honeypot",
-    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500",
   },
   "2fa_failed": {
     label: "2fa_failed",
-    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500",
   },
   "2fa_challenge": {
@@ -87,8 +88,8 @@ const ACTION_META: Record<
   },
   sessions_revoked_all: {
     label: "sessions_revoked_all",
-    cls: "border-amber-300/60 bg-amber-50 text-amber-700 dark:border-amber-700/40 dark:bg-amber-500/15 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50 text-teal-700 dark:border-teal-700/40 dark:bg-teal-500/15 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
 };
 
@@ -232,11 +233,7 @@ export function AuditLogTab() {
   }, [reload]);
 
   // Auto-refresh 60s
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => void reload(true), 60_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, reload]);
+  useVisiblePolling(() => void reload(true), 60_000, autoRefresh);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -371,7 +368,7 @@ export function AuditLogTab() {
                   }}
                   aria-pressed={isActive}
                   className={cn(
-                    "inline-flex h-10 items-center rounded-lg px-3 text-xs font-bold transition",
+                    "inline-flex h-10 items-center rounded-xl px-3 text-xs font-bold transition",
                     isActive
                       ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                       : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
@@ -389,7 +386,7 @@ export function AuditLogTab() {
               setPage(1);
             }}
             aria-label="Ventana de tiempo"
-            className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             <option value={1}>Últimas 24h</option>
             <option value={7}>Últimos 7d</option>
@@ -403,7 +400,7 @@ export function AuditLogTab() {
             onClick={() => reload()}
             disabled={refreshing}
             title="Recargar (R)"
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
           >
             <RefreshCw
               className={cn("h-4 w-4", refreshing && "animate-spin")}
@@ -411,7 +408,7 @@ export function AuditLogTab() {
             />
             Recargar
           </button>
-          <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+          <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
             <input
               type="checkbox"
               checked={autoRefresh}
@@ -424,14 +421,14 @@ export function AuditLogTab() {
             type="button"
             onClick={handleExportCsv}
             disabled={filtered.length === 0}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-40"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-40"
           >
             <Download className="h-4 w-4" aria-hidden />
             CSV ({filtered.length})
           </button>
           <a
             href="/superadmin/activity"
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
           >
             <FileText className="h-4 w-4" aria-hidden />
             Log completo
@@ -473,7 +470,7 @@ export function AuditLogTab() {
               onChange={(e) => setFilterDetailRaw(e.target.value)}
               placeholder="Filtrar por contenido del detalle…"
               aria-label="Buscar en detalles"
-              className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+              className="w-full h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
             />
           </div>
           <select
@@ -483,7 +480,7 @@ export function AuditLogTab() {
               setPage(1);
             }}
             aria-label="Filtrar por acción"
-            className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             <option value="">Todas las acciones</option>
             {uniqueActions.map((a) => (
@@ -499,7 +496,7 @@ export function AuditLogTab() {
               setPage(1);
             }}
             aria-label="Filas por página"
-            className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             <option value={15}>15 por página</option>
             <option value={50}>50 por página</option>
@@ -510,7 +507,7 @@ export function AuditLogTab() {
         {error ? (
           <div
             role="alert"
-            className="m-5 rounded-xl border-2 border-rose-300 bg-rose-50 p-4 flex items-start gap-2 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/10 dark:text-rose-300"
+            className="m-5 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 flex items-start gap-2 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/10 dark:text-[var(--data-error-500)]"
           >
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <span className="text-sm">{error}</span>
@@ -587,7 +584,7 @@ export function AuditLogTab() {
                                 setQuick("all");
                                 setPage(1);
                               }}
-                              className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                              className="mt-3 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
                             >
                               Limpiar filtros
                             </button>
@@ -617,7 +614,7 @@ export function AuditLogTab() {
                     type="button"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={safePage <= 1}
-                    className="inline-flex h-11 items-center gap-1 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 disabled:opacity-40"
+                    className="inline-flex h-11 items-center gap-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 disabled:opacity-40"
                   >
                     <ChevronLeft className="h-4 w-4" aria-hidden />
                     Anterior
@@ -626,7 +623,7 @@ export function AuditLogTab() {
                     type="button"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={safePage >= totalPages}
-                    className="inline-flex h-11 items-center gap-1 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 disabled:opacity-40"
+                    className="inline-flex h-11 items-center gap-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 disabled:opacity-40"
                   >
                     Siguiente
                     <ChevronRight className="h-4 w-4" aria-hidden />
@@ -671,8 +668,8 @@ function MiniStat({
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
+    danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   return (

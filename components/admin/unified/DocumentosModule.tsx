@@ -26,7 +26,9 @@
  * en papel necesita un drive serio para pasar a digital.
  */
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useId, useMemo, useCallback, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { DataTable } from "@buleje/design-system";
 import {
   Upload,
   Search,
@@ -50,7 +52,7 @@ import {
   X,
   CheckCircle,
   Tag,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
@@ -166,7 +168,7 @@ export default function DocumentosModule() {
       // QuotaExceeded — el demo guarda dataURLs y se llena rápido. Avisar al user.
       const e = err as DOMException;
       if (e.name === "QuotaExceededError") {
-        setUploadError("Almacenamiento local lleno. Eliminá archivos o conectá Supabase Storage.");
+        setUploadError("Almacenamiento local lleno. Elimina archivos o conecta Supabase Storage.");
       }
     }
   }, [docs]);
@@ -280,9 +282,9 @@ export default function DocumentosModule() {
       {/* Drag overlay */}
       {dragOver && (
         <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
-          <div className="bg-white border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
+          <div className="bg-[var(--surface-raised)] border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
             <Upload className="h-12 w-12 mx-auto text-primary mb-3" />
-            <p className="text-xl font-extrabold text-[var(--text-primary)]">Soltá los archivos para subir</p>
+            <p className="text-xl font-extrabold text-[var(--text-primary)]">Suelta los archivos para subir</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">PDF, imágenes, docs, hojas de cálculo</p>
           </div>
         </div>
@@ -295,7 +297,7 @@ export default function DocumentosModule() {
       >
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shadow-sm"
         >
           {uploading ? (
             <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -333,7 +335,7 @@ export default function DocumentosModule() {
           label="Espacio usado"
           value={formatBytes(totalSize)}
           icon={HardDrive}
-          tint="text-blue-500"
+          tint="text-[var(--data-info)]"
           progress={usagePct}
         />
         <StatBlock
@@ -352,7 +354,7 @@ export default function DocumentosModule() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5">
         {/* ── Sidebar de carpetas ── */}
-        <aside className="bg-white border border-[var(--rule-base)] rounded-2xl p-3 h-fit">
+        <aside className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-3 h-fit">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 py-2">Carpetas</p>
           <ul className="space-y-1">
             {CATEGORIES.map((cat) => {
@@ -364,9 +366,9 @@ export default function DocumentosModule() {
                   <button
                     onClick={() => setCategory(cat.id)}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors",
+                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors",
                       active
-                        ? "bg-primary/10 text-primary"
+                        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                     )}
                   >
@@ -398,14 +400,14 @@ export default function DocumentosModule() {
                 placeholder="Buscar por nombre, tag o tipo…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full pl-9 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
-            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-white overflow-hidden">
+            <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               <button
                 onClick={() => setView("grid")}
                 className={cn(
-                  "px-3 py-2 transition-colors",
+                  "px-3 min-h-10 transition-colors",
                   view === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
                 )}
                 aria-label="Vista grilla"
@@ -415,7 +417,7 @@ export default function DocumentosModule() {
               <button
                 onClick={() => setView("list")}
                 className={cn(
-                  "px-3 py-2 transition-colors border-l-2 border-[var(--rule-base)]",
+                  "px-3 min-h-10 transition-colors border-l-2 border-[var(--rule-base)]",
                   view === "list" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
                 )}
                 aria-label="Vista lista"
@@ -440,8 +442,8 @@ export default function DocumentosModule() {
               ))}
             </div>
           ) : (
-            <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
+              <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                   <tr>
                     <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Nombre</th>
@@ -474,16 +476,16 @@ export default function DocumentosModule() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="inline-flex items-center gap-1">
-                            <button onClick={() => setPreview(doc)} className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary text-[var(--text-tertiary)] transition-colors" title="Ver"><Eye className="h-4 w-4" /></button>
-                            <button onClick={() => toggleFav(doc.id)} className="p-1.5 rounded-md hover:bg-[var(--data-warning)]/10 hover:text-[var(--data-warning)] text-[var(--text-tertiary)] transition-colors" title="Favorito"><Star className={cn("h-4 w-4", doc.favorite && "fill-[var(--data-warning)] text-[var(--data-warning)]")} /></button>
-                            <button onClick={() => removeDoc(doc.id)} className="p-1.5 rounded-md hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] text-[var(--text-tertiary)] transition-colors" title="Eliminar"><Trash2 className="h-4 w-4" /></button>
+                            <button onClick={() => setPreview(doc)} className="p-1.5 rounded-xl hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] text-[var(--text-tertiary)] transition-colors" title="Ver"><Eye className="h-4 w-4" /></button>
+                            <button onClick={() => toggleFav(doc.id)} className="p-1.5 rounded-xl hover:bg-[var(--data-warning)]/10 hover:text-[var(--data-warning)] text-[var(--text-tertiary)] transition-colors" title="Favorito"><Star className={cn("h-4 w-4", doc.favorite && "fill-[var(--data-warning)] text-[var(--data-warning)]")} /></button>
+                            <button onClick={() => removeDoc(doc.id)} className="p-1.5 rounded-xl hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] text-[var(--text-tertiary)] transition-colors" title="Eliminar"><Trash2 className="h-4 w-4" /></button>
                           </div>
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           )}
         </div>
@@ -516,7 +518,7 @@ function StatBlock({
   progress?: number;
 }) {
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-4">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
@@ -547,7 +549,7 @@ function DocCard({
   const { Icon, tint, bg } = getFileIcon(doc.type);
   const isImage = doc.type.startsWith("image/") && doc.dataUrl;
   return (
-    <div className="group relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-white hover:border-primary/40 hover:shadow-md transition-all">
+    <div className="group relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary/40 hover:shadow-md transition-all">
       {/* Thumbnail */}
       <button
         onClick={onPreview}
@@ -612,7 +614,7 @@ function DocCard({
         {doc.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {doc.tags.slice(0, 2).map((t) => (
-              <span key={t} className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">#{t}</span>
+              <span key={t} className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold">#{t}</span>
             ))}
             {doc.tags.length > 2 && (
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums font-bold">+{doc.tags.length - 2}</span>
@@ -638,18 +640,21 @@ function PreviewModal({
   const isPdf = doc.type === "application/pdf" && doc.dataUrl;
   const isVideo = doc.type.startsWith("video/") && doc.dataUrl;
   const { Icon, tint, bg } = getFileIcon(doc.type);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const tituloId = useId();
+  // Escape lo maneja el hook (cede si hay otro diálogo encima).
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-white rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
+        className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
       >
         {/* Header */}
         <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
@@ -658,7 +663,7 @@ function PreviewModal({
               <Icon className={cn("h-5 w-5", tint)} />
             </span>
             <div className="min-w-0">
-              <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
+              <p id={tituloId} className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
               <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
                 {formatBytes(doc.size)} · {doc.type || "Desconocido"} · {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
               </p>
@@ -716,7 +721,7 @@ function PreviewModal({
           </div>
 
           {/* Sidebar info */}
-          <aside className="border-l border-[var(--rule-base)] overflow-y-auto p-5 space-y-5 bg-white">
+          <aside className="border-l border-[var(--rule-base)] overflow-y-auto p-5 space-y-5 bg-[var(--surface-raised)]">
             {/* Categoría */}
             <div>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Carpeta</p>
@@ -754,7 +759,7 @@ function PreviewModal({
                   <span className="text-xs text-[var(--text-tertiary)] italic">Sin etiquetas</span>
                 ) : (
                   doc.tags.map((t) => (
-                    <span key={t} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold">
+                    <span key={t} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold">
                       #{t}
                       <button
                         onClick={() => onRemoveTag(t)}
@@ -767,7 +772,7 @@ function PreviewModal({
                   ))
                 )}
               </div>
-              <div className="flex items-stretch rounded-lg border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+              <div className="flex items-stretch rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
                 <input
                   type="text"
                   value={tagInput}
@@ -779,9 +784,9 @@ function PreviewModal({
                     }
                   }}
                   placeholder="Nueva etiqueta…"
-                  className="flex-1 min-w-0 px-3 py-2 bg-transparent text-xs text-[var(--text-primary)] outline-none"
+                  className="flex-1 min-w-0 px-3 h-10 bg-transparent text-xs text-[var(--text-primary)] outline-none"
                 />
-                <button
+                <button aria-label="Agregar"
                   onClick={() => { onAddTag(tagInput); setTagInput(""); }}
                   disabled={!tagInput.trim()}
                   className="px-3 bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
@@ -819,20 +824,20 @@ function PreviewModal({
 function EmptyState({ category, onUpload }: { category: DocCategory; onUpload: () => void }) {
   const isFiltered = category !== "all";
   return (
-    <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
-      <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-primary mb-4">
+    <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
+      <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
         <Upload className="h-7 w-7" />
       </div>
       <p className="text-lg font-extrabold text-[var(--text-primary)]">
-        {isFiltered ? `Sin documentos en "${category}"` : "Subí tu primer documento"}
+        {isFiltered ? `Sin documentos en "${category}"` : "Sube tu primer documento"}
       </p>
       <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-md mx-auto">
-        Arrastrá y soltá archivos en cualquier parte de la pantalla, o usá el botón.
+        Arrastra y suelta archivos en cualquier parte de la pantalla, o usa el botón.
         Aceptamos PDF, imágenes, hojas de cálculo, documentos de Word, ZIP y más.
       </p>
       <button
         onClick={onUpload}
-        className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+        className="mt-5 inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
       >
         <Upload className="h-4 w-4" /> Subir archivos
       </button>

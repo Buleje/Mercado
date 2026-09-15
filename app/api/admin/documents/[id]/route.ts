@@ -6,6 +6,8 @@ import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { getSignedUrl, deleteFromStorage } from "@/lib/documents/storage";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { ESTADOS_DOC } from "@/lib/documents/estados-doc";
+import { conDescripcionPropia } from "@/lib/documents/texto-buscable";
 
 
 const PatchBody = z.object({
@@ -14,18 +16,25 @@ const PatchBody = z.object({
   category: z.string().max(40).optional(),
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
   favorite: z.boolean().optional(),
+  status: z.enum(ESTADOS_DOC).optional(),
   expiresAt: z.string().nullable().optional(),
+  // Permisos por documento (roles admin que pueden verlo; vacío = todos).
+  allowedRoles: z.array(z.string().max(30)).max(10).optional(),
   // ADR-119 — vincular el documento a una entidad del negocio.
   customerId: z.string().nullable().optional(),
   orderId: z.string().nullable().optional(),
   supplierId: z.string().nullable().optional(),
+  // Descripción escrita por una persona: corrige o refuerza a la de la IA y
+  // entra al texto buscable, así el archivo aparece por lo que vos dijiste
+  // que es. Vacío = borrarla.
+  descripcion: z.string().max(2000).optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
   try {
-    const rl = await applyRateLimit(req, "MODERATE", "documents:get");
+    const rl = await applyRateLimit(req, "DRIVE_READ", "documents:get");
     if (rl) return rl;
     const csrfFail = assertCsrf(req);
     if (csrfFail) return csrfFail;
@@ -33,7 +42,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const doc = await DocumentsDB.getById(auth.tenantId, id);
+    const doc = await DocumentsDB.getById(auth.tenantId, id, auth.role);
     if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     const signedUrl = await getSignedUrl(doc.storagePath);
@@ -71,7 +80,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const before = await DocumentsDB.getById(auth.tenantId, id);
+    const before = await DocumentsDB.getById(auth.tenantId, id, auth.role);
     if (!before) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     const expiresAtDate =
@@ -81,13 +90,32 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         ? null
         : new Date(parsed.data.expiresAt);
 
+    // La descripción propia toca DOS campos: queda guardada aparte (para poder
+    // mostrarla y editarla) y se agrega al final del texto buscable, que es
+    // contra lo que busca el listado.
+    const descripcion = parsed.data.descripcion;
+    const metaDesc =
+      descripcion === undefined
+        ? {}
+        : {
+            ocrMetadata: {
+              ...((before.ocrMetadata ?? {}) as Record<string, unknown>),
+              descripcionUsuario: descripcion.trim(),
+              descripcionUsuarioAt: new Date().toISOString(),
+            },
+            ocrText: conDescripcionPropia(before.ocrText, descripcion),
+          };
+
     const updated = await DocumentsDB.update(auth.tenantId, id, {
+      ...metaDesc,
       name: parsed.data.name,
       folderId: parsed.data.folderId,
       category: parsed.data.category,
       tags: parsed.data.tags,
       favorite: parsed.data.favorite,
+      status: parsed.data.status,
       expiresAt: expiresAtDate,
+      allowedRoles: parsed.data.allowedRoles,
       customerId: parsed.data.customerId,
       orderId: parsed.data.orderId,
       supplierId: parsed.data.supplierId,
@@ -100,6 +128,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (parsed.data.name && parsed.data.name !== before.name) changes.push("rename");
     if (parsed.data.folderId !== undefined && parsed.data.folderId !== before.folderId) changes.push("move");
     if (parsed.data.tags) changes.push("tag");
+    if (descripcion !== undefined) changes.push("tag");
     if (parsed.data.expiresAt !== undefined && parsed.data.expiresAt !== before.expiresAt) changes.push("tag");
     if (
       (parsed.data.customerId !== undefined && parsed.data.customerId !== before.customerId) ||

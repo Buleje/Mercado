@@ -1,4 +1,5 @@
 import React from "react";
+import { DataTable } from "@buleje/design-system";
 import { ChevronUp, ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -44,12 +45,12 @@ function AdminTable({
 
   return (
     <div className={cn("overflow-x-auto", className)}>
-      <table className="w-full">
+      <DataTable className="w-full">
         <thead>
           <tr
             className={cn(
-              "bg-[var(--surface-alt)] dark:bg-zinc-800/50",
-              stickyHeader && "sticky top-0 z-10 bg-white dark:bg-zinc-900",
+              "bg-[var(--surface-alt)] ",
+              stickyHeader && "sticky top-0 z-10 bg-[var(--surface-raised)] ",
             )}
           >
             {columns.map((col) => {
@@ -60,7 +61,7 @@ function AdminTable({
                 <th
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium select-none",
+                    "px-4 py-3 text-xs text-[var(--text-secondary)] font-medium select-none",
                     alignCls,
                     col.width,
                     col.sortable && onSort && "cursor-pointer hover:text-[var(--text-primary)] dark:hover:text-zinc-200 transition-colors",
@@ -80,7 +81,7 @@ function AdminTable({
                             "h-3.5 w-3.5",
                             isSorted && sortDir === "asc"
                               ? "text-[var(--text-primary)]"
-                              : "text-[var(--text-tertiary)] dark:text-zinc-600",
+                              : "text-[var(--text-tertiary)] ",
                           )}
                         />
                         <ChevronDown
@@ -88,7 +89,7 @@ function AdminTable({
                             "h-3.5 w-3.5",
                             isSorted && sortDir === "desc"
                               ? "text-[var(--text-primary)]"
-                              : "text-[var(--text-tertiary)] dark:text-zinc-600",
+                              : "text-[var(--text-tertiary)] ",
                           )}
                         />
                       </span>
@@ -104,7 +105,7 @@ function AdminTable({
             <tr>
               <td colSpan={columns.length} className="py-12">
                 {emptyState ?? (
-                  <p className="text-center text-sm text-[var(--text-tertiary)] dark:text-zinc-500">
+                  <p className="text-center text-sm text-[var(--text-tertiary)] ">
                     Sin datos disponibles
                   </p>
                 )}
@@ -114,7 +115,7 @@ function AdminTable({
             children
           )}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }

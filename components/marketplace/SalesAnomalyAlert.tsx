@@ -11,6 +11,7 @@ import { useVisiblePolling } from "@/hooks/use-visible-polling";
 import { m, AnimatePresence } from "framer-motion";
 import { TrendingDown, TrendingUp, X, AlertCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -97,6 +98,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
     try {
       await fetch(`/api/marketplace/anomalies/${encodeURIComponent(id)}/acknowledge`, {
         method: "POST",
+        headers: csrfHeaders(),
       });
       setItems((prev) => prev.filter((a) => a.id !== id));
     } catch {

@@ -1,9 +1,12 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState } from "react";
+import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck, DollarSign } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
+import type { ActivityEntry } from "@/app/api/activity-log/route";
 
 type ExportModule = { id: string; label: string; icon: React.ElementType };
 type ImportRecord = { id: string; module: string; filename: string; records: number; status: "success" | "partial" | "error"; date: string; errors: number };
@@ -18,9 +21,28 @@ const EXPORT_MODULES: ExportModule[] = [
   { id: "gastos", label: "Gastos", icon: FileText },
 ];
 
-const IMPORT_HISTORY: ImportRecord[] = [];
-
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
+
+/** El historial no tiene tabla propia — se reconstruye del audit log real
+ *  (`logActivity("Importar", ...)` en cada endpoint de importación, hoy sólo
+ *  `/api/products/import`). El detail es texto libre por diseño del audit
+ *  log genérico; acá se parsea el único formato que los endpoints escriben. */
+const HISTORY_RE = /^Importaci[oó]n Excel "([^"]*)":\s*(\d+)\s+creados,\s*(\d+)\s+errores/;
+function parseImportRecord(entry: ActivityEntry): ImportRecord | null {
+  const m = HISTORY_RE.exec(entry.detail);
+  if (!m) return null;
+  const records = Number(m[2]);
+  const errors = Number(m[3]);
+  return {
+    id: entry.id,
+    module: entry.entity,
+    filename: m[1] || "(sin nombre)",
+    records,
+    errors,
+    status: errors === 0 ? "success" : records > 0 ? "partial" : "error",
+    date: entry.createdAt,
+  };
+}
 
 // Fetch real data and return CSV rows per module
 async function fetchModuleData(moduleId: string): Promise<Record<string, unknown>[]> {
@@ -121,16 +143,28 @@ export default function ImportExportTab() {
   const [view, setView] = useState<"export" | "import" | "history">("export");
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ success: boolean; count: number; errors: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ success: boolean; count: number; errors: number; message?: string } | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [history, setHistory] = useState<ImportRecord[] | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (view !== "history" || history !== null) return;
+    setHistoryLoading(true);
+    fetch("/api/activity-log?action=Importar&limit=50", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((d: { items: ActivityEntry[] }) => setHistory(d.items.map(parseImportRecord).filter((r): r is ImportRecord => r != null)))
+      .catch(() => setHistory([]))
+      .finally(() => setHistoryLoading(false));
+  }, [view, history]);
 
   const handleExport = async (moduleId: string, format: "csv" | "excel") => {
     setExporting(`${moduleId}-${format}`);
     try {
       const rows = await fetchModuleData(moduleId);
       if (rows.length === 0) {
-        alert("No hay datos disponibles para exportar.");
+        toast.info("No hay datos disponibles para exportar.");
         return;
       }
       const filename = `${moduleId}_${new Date().toISOString().slice(0, 10)}`;
@@ -140,7 +174,7 @@ export default function ImportExportTab() {
         downloadExcel(rows, filename);
       }
     } catch {
-      alert("Error al exportar. Intenta de nuevo.");
+      toast.error("Error al exportar. Intenta de nuevo.");
     } finally {
       setExporting(null);
     }
@@ -149,20 +183,36 @@ export default function ImportExportTab() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file) simulateImport();
+    if (file) importFile(file);
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) simulateImport();
+    if (file) importFile(file);
   };
 
-  const simulateImport = () => {
+  // Importa productos REAL contra /api/products/import (FormData). Antes era una
+  // maqueta (simulateImport) que ignoraba el archivo y mostraba un número random.
+  const importFile = async (file: File) => {
     setImporting(true); setImportResult(null);
-    setTimeout(() => {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/products/import", { method: "POST", headers: csrfHeaders(), body: fd, credentials: "include" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setImportResult({ success: false, count: 0, errors: 0, message: typeof data?.error === "string" ? data.error : "No se pudo importar el archivo" });
+        return;
+      }
+      const count = Number(data?.created ?? 0);
+      const errs = Array.isArray(data?.errors) ? data.errors.length : Number(data?.errors ?? 0);
+      setImportResult({ success: true, count, errors: errs });
+      setHistory(null); // fuerza refetch la próxima vez que se abra "Historial"
+    } catch {
+      setImportResult({ success: false, count: 0, errors: 0, message: "Error de red al importar. Intenta de nuevo." });
+    } finally {
       setImporting(false);
-      setImportResult({ success: true, count: Math.floor(Math.random() * 100) + 10, errors: Math.floor(Math.random() * 3) });
-    }, 2000);
+    }
   };
 
   return (
@@ -174,7 +224,7 @@ export default function ImportExportTab() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {(["export", "import", "history"] as const).map(v => (
-            <button key={v} onClick={() => setView(v)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === v ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+            <button key={v} onClick={() => setView(v)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === v ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted")}>
               {v === "export" ? "Descargar" : v === "import" ? "Subir" : "Historial"}
             </button>
           ))}
@@ -190,7 +240,7 @@ export default function ImportExportTab() {
             return (
               <div key={mod.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
                 <div className="flex flex-wrap items-center gap-3 mb-4">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Icon className="h-5 w-5 text-primary" /></div>
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Icon className="h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)]" /></div>
                   <div>
                     <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{mod.label}</CardTitle>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Datos reales desde la base de datos</p>
@@ -200,7 +250,7 @@ export default function ImportExportTab() {
                   <button
                     onClick={() => handleExport(mod.id, "csv")}
                     disabled={!!exporting}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
                   >
                     {isExportingCSV ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                     CSV
@@ -208,7 +258,7 @@ export default function ImportExportTab() {
                   <button
                     onClick={() => handleExport(mod.id, "excel")}
                     disabled={!!exporting}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-60"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-60"
                   >
                     {isExportingXLS ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                     Excel
@@ -227,7 +277,7 @@ export default function ImportExportTab() {
             <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">1. Elige a dónde van los datos</CardTitle>
             <div className="flex flex-wrap gap-2">
               {EXPORT_MODULES.map(m => (
-                <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-lg text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary")}>
+                <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-xl text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary")}>
                   {m.label}
                 </button>
               ))}
@@ -247,9 +297,19 @@ export default function ImportExportTab() {
                 <LoadingState message="Procesando archivo..." />
               ) : importResult ? (
                 <div className="flex flex-col items-center gap-3">
-                  <CheckCircle className="h-8 w-8 text-[var(--data-success-500)]" />
-                  <p className="text-sm font-bold text-[var(--data-success-500)]">{importResult.count} registros importados</p>
-                  {importResult.errors > 0 && <p className="text-xs text-[var(--data-warning-500)]">{importResult.errors} errores encontrados</p>}
+                  {importResult.success ? (
+                    <>
+                      <CheckCircle className="h-8 w-8 text-[var(--data-success-500)]" />
+                      <p className="text-sm font-bold text-[var(--data-success-500)]">{importResult.count} productos importados</p>
+                      {importResult.errors > 0 && <p className="text-xs text-[var(--data-warning-500)]">{importResult.errors} filas con errores</p>}
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+                      <p className="text-sm font-bold text-[var(--data-error-500)]">No se pudo importar</p>
+                      {importResult.message && <p className="text-xs text-[var(--text-tertiary)]">{importResult.message}</p>}
+                    </>
+                  )}
                   <button onClick={() => setImportResult(null)} className="text-xs text-primary font-bold underline">Importar otro</button>
                 </div>
               ) : (
@@ -285,32 +345,40 @@ export default function ImportExportTab() {
       )}
 
       {view === "history" && (
-        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-y-hidden overflow-x-auto">
-          <table className="w-full min-w-150 text-sm">
-            <thead><tr className="bg-[var(--surface-alt)] dark:bg-surface text-left">
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Archivo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Módulo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Registros</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Estado</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
+        historyLoading ? (
+          <LoadingState />
+        ) : !history || history.length === 0 ? (
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
+            <FileText className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" />
+            <p className="mt-3 text-sm font-semibold text-[var(--text-secondary)]">Todavía no importaste ningún archivo</p>
+            <p className="mt-1 text-xs text-[var(--text-tertiary)]">Cuando importes, cada corrida queda registrada acá.</p>
+          </div>
+        ) : (
+        <DataTable className="min-w-150">
+            <thead><tr>
+              <th>Archivo</th>
+              <th>Módulo</th>
+              <th>Registros</th>
+              <th>Estado</th>
+              <th>Fecha</th>
             </tr></thead>
             <tbody>
-              {IMPORT_HISTORY.map(r => (
-                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-2"><FileText className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" /><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-48">{r.filename}</span></td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.records}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : r.status === "partial" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
+              {history.map(r => (
+                <tr key={r.id}>
+                  <td className="flex flex-wrap items-center gap-2"><FileText className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" /><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-48">{r.filename}</span></td>
+                  <td className="text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
+                  <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.records}</td>
+                  <td>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : r.status === "partial" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                       {r.status === "success" ? "Exitoso" : r.status === "partial" ? `${r.errors} errores` : "Error"}
                     </span>
                   </td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(r.date)}</td>
+                  <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(r.date)}</td>
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
+        )
       )}
     </div>
   );

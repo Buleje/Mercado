@@ -122,3 +122,26 @@ if [ -n "$STAGED_UI" ]; then
   echo "🎨 Running design-strict preview (ADR-075 Sprint D6 — warnings only)..."
   npx tsx scripts/lint-design-tokens.ts --staged --design-strict || true
 fi
+
+# 6. Anidado HTML válido: bloque dentro de `<p>`, control dentro de control.
+#    El navegador no tolera ese HTML: lo re-arma al parsear, así que el árbol
+#    que React hidrata deja de ser el que renderizó. tsc/eslint/vitest NO lo
+#    ven — el bug que lo motivó (ModalFooter, 2026-08-08) pasó los tres en
+#    verde y llegó a la consola del panel.
+#    Corre sobre CUALQUIER .tsx staged (no sólo admin/store): el `<p>` vive en
+#    un componente y el bloque en otro, así que escanea el repo entero (~7s).
+#    Emergency bypass: HUSKY=0 git commit ...
+STAGED_TSX=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.tsx$' || true)
+if [ -n "$STAGED_TSX" ]; then
+  echo "🧬 Running html-nesting gate..."
+  node scripts/check-html-nesting.mjs || {
+    echo ""
+    echo "❌ Anidado HTML inválido — React va a tirar error de hidratación."
+    echo "   Bloque dentro de <p> → usá <div>. Control dentro de <button>/<a> →"
+    echo "   sacalo afuera, o el contenedor va <div role=\"button\" tabIndex={0} onKeyDown>."
+    echo "   Wrappers en riesgo (no bloquean): npm run lint:nesting:strict"
+    echo "   Emergency bypass: HUSKY=0 git commit ..."
+    exit 1
+  }
+  echo "✅ Anidado HTML limpio"
+fi

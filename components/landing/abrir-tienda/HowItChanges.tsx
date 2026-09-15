@@ -142,7 +142,7 @@ export default function HowItChanges() {
                     </div>
 
                     {/* Después */}
-                    <div className="px-5 sm:px-6 py-5 flex items-start gap-3 bg-[var(--accent-soft)]">
+                    <div className="px-5 sm:px-6 py-5 flex items-start gap-3 bg-primary/10">
                       <span aria-hidden className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-md">
                         <Check className="h-4 w-4" strokeWidth={2.75} />
                       </span>

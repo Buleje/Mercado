@@ -27,6 +27,7 @@ export {
   Label,
   Kicker,
   type TypographyProps,
+  BlockTitle,
 } from "./typography";
 
 // ── Canonical layout (ADR-075) ──────────────────────────────────────────────

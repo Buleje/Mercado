@@ -27,7 +27,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import KPICard from "@/components/admin/shared/KPICard";
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 interface FunnelStats {
@@ -164,18 +164,18 @@ export default function LeadsFunnelModule() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         eyebrow="Clientes · CEO Dashboard"
         title="Funnel de Leads"
-        description="Prospectos que llenaron el formulario público. Movele el status conforme los contactes y cerrá ventas."
+        description="Prospectos que llenaron el formulario público. Muévele el status conforme los contactes y cierra ventas."
         icon={UserPlus}
       >
         <button
           onClick={fetchAll}
           disabled={refreshing}
           className={cn(
-            "px-4 h-12 rounded-2xl border-2 border-[var(--rule-soft)] text-base font-medium",
+            "px-4 h-12 rounded-2xl border border-[var(--rule-soft)] text-base font-medium",
             "bg-[var(--surface-raised)] text-[var(--text-primary)]",
             "hover:bg-[var(--surface-hover)] transition-colors",
             "disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2",
@@ -187,7 +187,7 @@ export default function LeadsFunnelModule() {
       </AdminModuleHeader>
 
       {error && (
-        <div className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-900)] border border-[var(--data-error-500)] text-[var(--data-error-700)] dark:text-[var(--data-error-300)] rounded-xl p-4 text-base">
+        <div className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-700)] border border-[var(--data-error-500)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] rounded-xl p-4 text-base">
           {error}
         </div>
       )}
@@ -243,7 +243,7 @@ export default function LeadsFunnelModule() {
                       key={source}
                       onClick={() => setSourceFilter(source === sourceFilter ? "" : source)}
                       className={cn(
-                        "w-full flex justify-between items-center px-3 py-2 rounded-xl text-base transition-colors",
+                        "w-full flex justify-between items-center px-3 min-h-10 rounded-xl text-base transition-colors",
                         source === sourceFilter
                           ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
                           : "bg-[var(--surface-base)] text-[var(--text-primary)] hover:bg-[var(--surface-hover)]",
@@ -283,7 +283,8 @@ export default function LeadsFunnelModule() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-12 rounded-2xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] px-4"
+              aria-label="Filtrar por status"
+              className="h-12 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] px-4"
             >
               <option value="">Todos los status</option>
               {Object.entries(STATUS_LABELS).map(([key, { label }]) => (
@@ -304,7 +305,7 @@ export default function LeadsFunnelModule() {
 
           {/* Lead list */}
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl overflow-hidden">
-            <table className="w-full">
+            <DataTable className="w-full">
               <thead className="bg-[var(--surface-base)] border-b border-[var(--rule-soft)]">
                 <tr className="text-left text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
                   <th className="px-4 py-3">Nombre</th>
@@ -388,7 +389,7 @@ export default function LeadsFunnelModule() {
                   })
                 )}
               </tbody>
-            </table>
+            </DataTable>
           </div>
 
           {/* Hint */}

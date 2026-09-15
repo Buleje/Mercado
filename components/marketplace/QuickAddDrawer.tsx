@@ -211,7 +211,7 @@ function QuickAddContent({ product, onClose }: ContentProps) {
       <div className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 overflow-y-auto px-6 pt-7 pb-4 md:px-7 md:pt-9">
           {product.category && (
-            <span className="inline-flex items-center h-6 px-2.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-[11px] font-extrabold uppercase tracking-wider">
+            <span className="inline-flex items-center h-6 px-2.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[11px] font-extrabold uppercase tracking-wider">
               {product.category}
             </span>
           )}
@@ -276,7 +276,7 @@ function QuickAddContent({ product, onClose }: ContentProps) {
                 onFocus={(e) => e.currentTarget.select()}
                 disabled={outOfStock}
                 aria-label="Cantidad"
-                className="w-14 text-center text-base font-extrabold tabular-nums text-[var(--text-primary)] bg-transparent border-x-2 border-[var(--rule-base)] outline-none focus:bg-[var(--accent-soft)] disabled:opacity-40"
+                className="w-14 text-center text-base font-extrabold tabular-nums text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] bg-transparent border-x-2 border-[var(--rule-base)] outline-none focus:bg-primary/10 disabled:opacity-40"
               />
               <button
                 type="button"

@@ -86,14 +86,28 @@ export function coordsFromLocation(
   fallbackLat?: number | null,
   fallbackLon?: number | null
 ): LatLon {
+  return (
+    parseGpsCoords(loc) ?? {
+      lat: fallbackLat ?? DEFAULT_STORE_LAT,
+      lon: fallbackLon ?? DEFAULT_STORE_LON,
+    }
+  );
+}
+
+/**
+ * Versión estricta de {@link coordsFromLocation}: devuelve `null` cuando el
+ * texto NO contiene un par "GPS: lat, lon" bien formado, en vez de caer a las
+ * coords de la bodega. Úsalo para distinguir "tiene GPS real" de "no tiene":
+ * un `customerLocation` con "GPS:" mal formado no debe fingir una ubicación
+ * (ponía un pin en la bodega y marcaba el pedido como geolocalizado).
+ */
+export function parseGpsCoords(loc: string): LatLon | null {
   const match = loc.match(/GPS:\s*([-\d.]+),\s*([-\d.]+)/);
-  if (match) {
-    return { lat: parseFloat(match[1]), lon: parseFloat(match[2]) };
-  }
-  return {
-    lat: fallbackLat ?? DEFAULT_STORE_LAT,
-    lon: fallbackLon ?? DEFAULT_STORE_LON,
-  };
+  if (!match) return null;
+  const lat = parseFloat(match[1]);
+  const lon = parseFloat(match[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return { lat, lon };
 }
 
 /**

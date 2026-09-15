@@ -58,7 +58,7 @@ export default function ReferralBanner() {
 
         {/* Section label */}
         <div className="flex flex-col items-center text-center mb-10">
-          <span className="inline-flex items-center gap-2 bg-primary/8 dark:bg-primary/15 text-primary text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-2 bg-primary/8 dark:bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
             <Users className="w-3.5 h-3.5" />
             Programa de referidos
           </span>

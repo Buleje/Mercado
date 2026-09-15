@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, order });
   } catch {
     return NextResponse.json(
-      { error: "No pudimos procesar tu compra. Intentá de nuevo." },
+      { error: "No pudimos procesar tu compra. Intenta de nuevo." },
       { status: 500 },
     );
   }

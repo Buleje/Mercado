@@ -1,8 +1,9 @@
 "use client";
 
 import { LoadingState } from "@buleje/design-system";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { useState, useEffect, useCallback } from "react";
-import { DollarSign, Loader2, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
+import { DollarSign, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -74,8 +75,8 @@ export default function ProfitLossAutoCard() {
     setError(null);
     try {
       const [dashRes, expRes, salesRes] = await Promise.all([
-        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(sinDato("Ganancias del mes /api/daily-report")),
+        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(sinDato("Ganancias del mes /api/expenses/summary")),
         fetch("/api/sales").then(r => r.ok ? r.json() : []).catch(() => []),
       ]);
 
@@ -158,7 +159,7 @@ export default function ProfitLossAutoCard() {
                 className={cn(
                   "flex items-center justify-between py-2",
                   row.isFinal
-                    ? "border-t-2 border-[var(--rule-base)] dark:border-gray-600 pt-3 mt-2"
+                    ? "border-t-2 border-[var(--rule-base)] pt-3 mt-2"
                     : i < rows.length - 2
                     ? "border-b border-[var(--rule-base)]"
                     : ""

@@ -182,7 +182,7 @@ export default function ChatIAModule() {
         aria-label="Configuración"
         title="Configuración del asistente"
         className={cn(
-          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors min-h-[44px]",
+          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors min-h-[44px]",
           settingsOpen
             ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-primary)]"
             : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
@@ -196,7 +196,7 @@ export default function ChatIAModule() {
         onClick={() => setMaximized((m) => !m)}
         aria-label={maximized ? "Minimizar" : "Maximizar"}
         title={maximized ? "Volver al panel" : "Pantalla completa (Esc para salir)"}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors min-h-[44px]"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors min-h-[44px]"
       >
         {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
         <span>{maximized ? "Salir" : "Maximizar"}</span>
@@ -219,6 +219,7 @@ export default function ChatIAModule() {
           className={cn("h-full rounded-full transition-all duration-300", usageColor)}
           style={{ width: `${usagePct}%` }}
           role="progressbar"
+          aria-label={`Consultas usadas del plan ${usage.plan}`}
           aria-valuenow={usage.used}
           aria-valuemin={0}
           aria-valuemax={usage.limit}
@@ -249,7 +250,7 @@ export default function ChatIAModule() {
       {/* Barra superior: progress + toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 px-4 sm:px-5 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
             <Sparkles className="h-4 w-4 text-[var(--data-success-500)]" />
           </span>
           <div className="min-w-0">
@@ -358,7 +359,7 @@ function SettingsPanel({
                 type="button"
                 onClick={() => onUpdate("model", m)}
                 className={cn(
-                  "w-full text-left px-3 py-2.5 rounded-lg border text-sm transition-colors flex items-start gap-3",
+                  "w-full text-left px-3 min-h-11 rounded-xl border text-sm transition-colors flex items-start gap-3",
                   active
                     ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
                     : "border-[var(--rule-soft)] hover:border-[var(--rule-base)]",
@@ -403,7 +404,7 @@ function SettingsPanel({
                 type="button"
                 onClick={() => onUpdate("tone", t)}
                 className={cn(
-                  "w-full text-left px-3 py-2.5 rounded-lg border text-sm transition-colors",
+                  "w-full text-left px-3 min-h-11 rounded-xl border text-sm transition-colors",
                   active
                     ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
                     : "border-[var(--rule-soft)] hover:border-[var(--rule-base)]",
@@ -464,6 +465,7 @@ function SettingsPanel({
           step={100}
           value={settings.maxTokens}
           onChange={(e) => onUpdate("maxTokens", Number(e.target.value))}
+          aria-label="Longitud máxima de la respuesta"
           className="w-full accent-[var(--text-primary)]"
         />
         <div className="flex justify-between text-xs text-[var(--text-tertiary)] mt-1">
@@ -499,11 +501,12 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex items-start gap-3 cursor-pointer">
+    <span className="flex items-start gap-3 cursor-pointer">
       <button
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
         className={cn(
           "relative h-5 w-9 rounded-full transition-colors shrink-0 mt-0.5",
@@ -512,7 +515,7 @@ function ToggleRow({
       >
         <span
           className={cn(
-            "absolute top-0.5 h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] transition-all shadow-sm",
+            "absolute top-0.5 h-4 w-4 rounded-full bg-[var(--surface-raised)] transition-all shadow-sm",
             checked ? "left-4" : "left-0.5",
           )}
         />
@@ -521,6 +524,6 @@ function ToggleRow({
         <p className="text-sm font-semibold text-[var(--text-primary)] leading-tight">{label}</p>
         <p className="text-xs text-[var(--text-tertiary)] leading-snug mt-0.5">{description}</p>
       </div>
-    </label>
+    </span>
   );
 }

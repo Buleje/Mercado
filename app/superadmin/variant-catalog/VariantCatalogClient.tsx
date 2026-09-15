@@ -382,7 +382,7 @@ function ImageDropzone({ value, onChange, folder = "variant-catalog" }: ImageDro
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://cdn.tu-cdn.com/imagen.jpg"
-          className="w-full mt-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary"
+          className="w-full mt-2 px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary"
         />
       </details>
     </div>
@@ -503,7 +503,7 @@ function NewTemplateModal({
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       {p.required && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           Obligatorio
                         </span>
                       )}
@@ -523,7 +523,7 @@ function NewTemplateModal({
 
               <button
                 onClick={startBlank}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-[var(--text-primary)] border-2 border-dashed border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border border-dashed border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all"
               >
                 <Plus className="h-4 w-4" />
                 Crear plantilla en blanco
@@ -537,7 +537,7 @@ function NewTemplateModal({
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     placeholder="Pollería, Pizzería, Heladería…"
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </Field>
                 <Field label="Nombre *" hint="Lo que verá el dueño al importar">
@@ -545,7 +545,7 @@ function NewTemplateModal({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Cremas, Presas, Tamaño…"
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </Field>
               </div>
@@ -556,7 +556,7 @@ function NewTemplateModal({
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
                   placeholder="Cremas de la casa para acompañar el pollo"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
                 />
               </Field>
 
@@ -584,7 +584,7 @@ function NewTemplateModal({
                       type="number" min={0} max={20}
                       value={minSelect}
                       onChange={(e) => setMinSelect(Number(e.target.value) || 0)}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
                     />
                   </Field>
                   <Field label="Máximo" hint="1 = single, 2+ = multi">
@@ -592,7 +592,7 @@ function NewTemplateModal({
                       type="number" min={1} max={20}
                       value={maxSelect}
                       onChange={(e) => setMaxSelect(Number(e.target.value) || 1)}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
                     />
                   </Field>
                 </div>
@@ -614,14 +614,14 @@ function NewTemplateModal({
                 <div className="flex gap-2">
                   <button
                     onClick={() => onOpenChange(false)}
-                    className="px-4 py-2 rounded-xl text-sm font-medium text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+                    className="px-4 min-h-10 rounded-xl text-sm font-medium text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={submit}
                     disabled={saving}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 transition-colors"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Crear plantilla
@@ -684,7 +684,7 @@ function TemplateCard({
                 {template.options.length} {template.options.length === 1 ? "opción" : "opciones"}
               </span>
               {template.required && (
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   Obligatorio
                 </span>
               )}
@@ -730,7 +730,7 @@ function TemplateCard({
 
             <button
               onClick={() => setOptionModal({ mode: "new" })}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary border border-dashed border-primary/40 hover:bg-primary/5 transition-colors"
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] border border-dashed border-primary/40 hover:bg-primary/5 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Añadir opción
@@ -906,7 +906,7 @@ function OptionModal({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Crema huancaína"
                   autoFocus
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </Field>
               <Field label="Delta de precio (S/)" hint="0 si no afecta">
@@ -915,7 +915,7 @@ function OptionModal({
                   step="0.10"
                   value={priceDelta}
                   onChange={(e) => setPriceDelta(Number(e.target.value) || 0)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
                 />
               </Field>
             </div>
@@ -951,14 +951,14 @@ function OptionModal({
           <div className="sticky bottom-0 bg-[var(--surface-raised)] border-t border-[var(--rule-soft)] px-6 py-4 flex justify-end gap-2">
             <button
               onClick={() => onOpenChange(false)}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+              className="px-4 min-h-10 rounded-xl text-sm font-medium text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={submit}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {editing ? "Guardar cambios" : "Crear opción"}

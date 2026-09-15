@@ -68,7 +68,7 @@ function PlanOption({
       aria-checked={active}
       onClick={onClick}
       className={cn(
-        "relative rounded-lg px-4 py-2.5 text-left transition-colors min-w-[140px]",
+        "relative flex-1 rounded-lg px-4 py-2.5 text-left transition-colors min-w-[130px]",
         active
           ? "bg-[var(--surface-raised)] border border-[var(--rule-base)] elev-1"
           : "hover:bg-[var(--surface-raised)]/60",

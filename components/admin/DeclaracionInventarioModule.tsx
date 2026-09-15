@@ -1,6 +1,8 @@
 "use client";
 
-import { CardTitle, DataTable, LoadingState, PageTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect } from "react";
 import {
   Loader2, AlertTriangle, Calendar, Package, DollarSign,
@@ -209,20 +211,17 @@ export default function DeclaracionInventarioModule() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header — Mejora 20 */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center ">
-          <BarChart3 className="h-5 w-5" />
-        </div>
-        <div>
-          <PageTitle className="text-xl font-bold text-[var(--text-primary)]">Declaración de Inventario</PageTitle>
-          <p className="text-sm text-[var(--text-secondary)]">Snapshot oficial de tu inventario</p>
-        </div>
-      </div>
+      {/* Header estándar (antes: ícono + PageTitle armados a mano). */}
+      <AdminModuleHeader
+        as="h2"
+        title="Declaración de inventario"
+        description="La foto oficial de tu almacén en un momento dado"
+        icon={BarChart3}
+      />
 
       {/* Card informativa */}
       {!infoDismissed ? (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-5">
+        <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-5">
           <CardTitle className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-2">Para que sirve la Declaracion de Inventario?</CardTitle>
           <div className="space-y-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             <p><strong>Que es:</strong> Es un documento oficial que muestra todos tus productos, cuantos tienes y cuanto valen. Es como una &quot;foto&quot; de tu almacen en un momento especifico.</p>
@@ -243,7 +242,7 @@ export default function DeclaracionInventarioModule() {
           </div>
           <button
             onClick={handleDismissInfo}
-            className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+            className="mt-3 px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
           >
             Entendido, no mostrar de nuevo
           </button>
@@ -252,7 +251,7 @@ export default function DeclaracionInventarioModule() {
         <div className="flex justify-end">
           <button
             onClick={handleShowInfo}
-            className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success-500)] hover:text-[var(--data-success-500)] transition-colors"
+            className="p-1.5 rounded-xl hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:text-[var(--data-success-500)] transition-colors"
             title="Que es la Declaracion de Inventario?"
           >
             <HelpCircle className="h-4 w-4" />
@@ -263,9 +262,9 @@ export default function DeclaracionInventarioModule() {
       {/* Mejora 18: Resumen ejecutivo siempre visible */}
       {resumenLoading ? (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6  animate-pulse">
-          <div className="h-4 bg-[var(--rule-soft)] dark:bg-white/10 rounded w-1/3 mb-3" />
-          <div className="h-8 bg-[var(--rule-soft)] dark:bg-white/10 rounded w-1/2 mb-2" />
-          <div className="h-3 bg-[var(--rule-soft)] dark:bg-white/10 rounded w-2/3" />
+          <div className="h-4 bg-[var(--rule-soft)] rounded w-1/3 mb-3" />
+          <div className="h-8 bg-[var(--rule-soft)] rounded w-1/2 mb-2" />
+          <div className="h-3 bg-[var(--rule-soft)] rounded w-2/3" />
         </div>
       ) : resumen ? (() => {
         const valorTotal = resumen.valorCosto ?? 0;
@@ -299,21 +298,25 @@ export default function DeclaracionInventarioModule() {
       {/* Date selector + Generate */}
       <div className="flex flex-col sm:flex-row gap-3 items-end">
         <div>
-          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha de declaración</label>
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input
-              type="date"
-              value={fecha}
-              onChange={e => setFecha(e.target.value)}
-              className="pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
+          <Field label="Fecha de declaración" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+            {(id) => (
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                <input
+                  id={id}
+                  type="date"
+                  value={fecha}
+                  onChange={e => setFecha(e.target.value)}
+                  className="pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            )}
+          </Field>
         </div>
         <button
           onClick={handleGenerar}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
+          className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
           Generar Declaración
@@ -340,9 +343,9 @@ export default function DeclaracionInventarioModule() {
           {/* Summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Total Productos", value: (data.totalProductos ?? 0).toLocaleString(), icon: Package, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Total Productos", value: (data.totalProductos ?? 0).toLocaleString(), icon: Package, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
               { label: "Total Unidades", value: (data.totalUnidades ?? 0).toLocaleString(), icon: Layers, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-              { label: "Valor a Costo", value: formatCurrency(data.valorCosto ?? 0), icon: DollarSign, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Valor a Costo", value: formatCurrency(data.valorCosto ?? 0), icon: DollarSign, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
               { label: "Valor a Precio Venta", value: formatCurrency(data.valorPrecio ?? 0), icon: DollarSign, color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]" },
             ].map(card => {
               const CardIcon = card.icon;
@@ -363,12 +366,12 @@ export default function DeclaracionInventarioModule() {
           {/* Actions */}
           <div className="flex gap-2">
             <button onClick={handleExport}
-              className="inline-flex flex-col items-start gap-0.5 px-4 py-2 rounded-lg text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors">
+              className="inline-flex flex-col items-start gap-0.5 px-4 py-2 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors">
               <span className="inline-flex items-center gap-2"><Download className="h-4 w-4" /> Descargar para mi Contador</span>
               <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-secondary)]">Tu contador puede usar este archivo para la declaracion ante SUNAT</span>
             </button>
             <button onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] dark:hover:bg-white/10 transition-colors">
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
               <Printer className="h-4 w-4" /> Imprimir
             </button>
           </div>
@@ -390,8 +393,8 @@ export default function DeclaracionInventarioModule() {
             const pctTotal = prevTotal > 0 ? ((diffTotal / prevTotal) * 100) : 0;
 
             return (
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
-                <div className="px-4 py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+              <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
+                <div className="px-4 py-3 bg-primary/10 dark:bg-primary/15 border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                     Comparativa con declaracion anterior ({formatDate(prevDecl.fecha + "T00:00:00")})
                   </p>
@@ -431,7 +434,7 @@ export default function DeclaracionInventarioModule() {
                     })}
                   </tbody>
                 </DataTable>
-                <div className="px-4 py-3 border-t border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between text-xs">
+                <div className="px-4 py-3 border-t border-[var(--rule-soft)] flex items-center justify-between text-xs">
                   <span className="text-[var(--text-secondary)]">Valor total anterior: <strong>{formatCurrency(prevTotal)}</strong></span>
                   <span className="text-[var(--text-secondary)]">Actual: <strong>{formatCurrency(currentTotal)}</strong></span>
                   <span className={cn("font-bold", diffTotal > 0 ? "text-[var(--data-success-500)]" : diffTotal < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)]")}>
@@ -441,22 +444,22 @@ export default function DeclaracionInventarioModule() {
               </div>
             );
           })() : (
-            <div className="bg-[var(--surface-alt)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
+            <div className="bg-[var(--surface-alt)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
               <p className="text-xs text-[var(--text-tertiary)]">Primera declaracion -- sin datos anteriores para comparar</p>
             </div>
           )}
 
           {/* Table grouped by category */}
           <div className="space-y-4 print:space-y-2">
-            {Object.entries((data.porCategoria ?? data.categorias ?? {}) ?? data.categorias ?? {}).map(([category, items]) => {
+            {Object.entries(data.porCategoria ?? data.categorias ?? {}).map(([category, items]) => {
               const productItems = items as ProductItem[];
               const catCosto = productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.costPrice, 0);
               const catPrecio = productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.price, 0);
               const catUnidades = productItems.reduce((s: number, p: ProductItem) => s + p.stock, 0);
               return (
-                <div key={category} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
+                <div key={category} className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
                   {/* Category header */}
-                  <div className="px-4 py-3 bg-[var(--surface-alt)] dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between">
+                  <div className="px-4 py-3 bg-[var(--surface-alt)] border-b border-[var(--rule-soft)] flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Layers className="h-4 w-4 text-primary" />
                       <span className="font-bold text-sm text-[var(--text-primary)]">{category}</span>
@@ -469,34 +472,32 @@ export default function DeclaracionInventarioModule() {
                     </div>
                   </div>
                   {/* Products */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                  <DataTable>
                       <thead>
-                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs">SKU</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs">Nombre</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs text-right">Stock</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs text-right hidden sm:table-cell">Costo unit.</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs text-right hidden sm:table-cell">Valor costo</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs text-right hidden md:table-cell">Precio unit.</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs text-right hidden md:table-cell">Valor precio</th>
+                        <tr>
+                          <th>SKU</th>
+                          <th>Nombre</th>
+                          <th className="text-right">Stock</th>
+                          <th className="text-right hidden sm:table-cell">Costo unit.</th>
+                          <th className="text-right hidden sm:table-cell">Valor costo</th>
+                          <th className="text-right hidden md:table-cell">Precio unit.</th>
+                          <th className="text-right hidden md:table-cell">Valor precio</th>
                         </tr>
                       </thead>
                       <tbody>
                         {productItems.map((p: ProductItem) => (
-                          <tr key={p.id} className="border-b border-gray-50 dark:border-white/5">
-                            <td className="px-4 py-2 font-mono text-xs text-[var(--text-secondary)]">{p.sku}</td>
-                            <td className="px-4 py-2 text-[var(--text-primary)] truncate max-w-[200px]">{p.name}</td>
-                            <td className="px-4 py-2 text-right font-medium text-[var(--text-primary)]">{p.stock}</td>
-                            <td className="px-4 py-2 text-right text-[var(--text-tertiary)] hidden sm:table-cell">{formatCurrency(p.costPrice)}</td>
-                            <td className="px-4 py-2 text-right font-medium text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(p.stock * p.costPrice)}</td>
-                            <td className="px-4 py-2 text-right text-[var(--text-tertiary)] hidden md:table-cell">{formatCurrency(p.price)}</td>
-                            <td className="px-4 py-2 text-right font-medium text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(p.stock * p.price)}</td>
+                          <tr key={p.id}>
+                            <td className="font-mono text-xs text-[var(--text-secondary)]">{p.sku}</td>
+                            <td className="text-[var(--text-primary)] truncate max-w-[200px]">{p.name}</td>
+                            <td className="text-right font-medium text-[var(--text-primary)]">{p.stock}</td>
+                            <td className="text-right text-[var(--text-tertiary)] hidden sm:table-cell">{formatCurrency(p.costPrice)}</td>
+                            <td className="text-right font-medium text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(p.stock * p.costPrice)}</td>
+                            <td className="text-right text-[var(--text-tertiary)] hidden md:table-cell">{formatCurrency(p.price)}</td>
+                            <td className="text-right font-medium text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(p.stock * p.price)}</td>
                           </tr>
                         ))}
                       </tbody>
-                    </table>
-                  </div>
+                    </DataTable>
                 </div>
               );
             })}
@@ -505,37 +506,37 @@ export default function DeclaracionInventarioModule() {
       )}
 
       {/* Mejora 17: Historial de declaraciones */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl  overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
         <button
           onClick={() => setShowHistorial(!showHistorial)}
-          className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--surface-alt)] transition-colors"
         >
           <div className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" />
             <span className="text-sm font-bold text-[var(--text-primary)]">Declaraciones anteriores</span>
             {historial.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold">{historial.length}</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-bold">{historial.length}</span>
             )}
           </div>
           <span className="text-xs text-[var(--text-tertiary)]">{showHistorial ? "Ocultar" : "Mostrar"}</span>
         </button>
         {showHistorial && (
-          <div className="border-t border-[var(--rule-soft)] dark:border-white/5">
+          <div className="border-t border-[var(--rule-soft)] ">
             {historial.length === 0 ? (
               <div className="text-center py-8 px-4">
                 <p className="text-sm text-[var(--text-tertiary)]">Genera tu primera declaración para empezar el historial</p>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="w-full min-w-[500px] sm:min-w-0 text-sm">
+              <div className="-mx-4 sm:mx-0">
+                <DataTable className="min-w-[500px] sm:min-w-0">
                   <thead>
-                    <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)]">Fecha</th>
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] text-right">Productos</th>
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] text-right hidden sm:table-cell">Unidades</th>
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] text-right">Valor costo</th>
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] text-right hidden sm:table-cell">Valor venta</th>
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] text-center">Acción</th>
+                    <tr>
+                      <th>Fecha</th>
+                      <th className="text-right">Productos</th>
+                      <th className="text-right hidden sm:table-cell">Unidades</th>
+                      <th className="text-right">Valor costo</th>
+                      <th className="text-right hidden sm:table-cell">Valor venta</th>
+                      <th className="text-center">Acción</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -544,11 +545,11 @@ export default function DeclaracionInventarioModule() {
                       const prev = realIdx > 0 ? historial[realIdx - 1] : null;
                       const diff = prev ? h.valorCosto - prev.valorCosto : 0;
                       return (
-                        <tr key={i} className={cn("border-b border-gray-50 dark:border-white/5", comparingIdx === realIdx && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
-                          <td className="px-4 py-2 text-[var(--text-secondary)]">{formatDate(h.fecha + "T00:00:00")}</td>
-                          <td className="px-4 py-2 text-right text-[var(--text-primary)] font-medium">{h.totalProductos}</td>
-                          <td className="px-4 py-2 text-right text-[var(--text-primary)] hidden sm:table-cell">{h.totalUnidades}</td>
-                          <td className="px-4 py-2 text-right font-medium text-[var(--text-primary)]">
+                        <tr key={i} className={cn(comparingIdx === realIdx && "bg-primary/10 dark:bg-primary/15")}>
+                          <td className="text-[var(--text-secondary)]">{formatDate(h.fecha + "T00:00:00")}</td>
+                          <td className="text-right text-[var(--text-primary)] font-medium">{h.totalProductos}</td>
+                          <td className="text-right text-[var(--text-primary)] hidden sm:table-cell">{h.totalUnidades}</td>
+                          <td className="text-right font-medium text-[var(--text-primary)]">
                             {formatCurrency(h.valorCosto)}
                             {prev && (
                               <span className={cn("ml-1 text-[length:var(--ts-2xs)]", diff > 0 ? "text-[var(--data-success-500)]" : diff < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>
@@ -556,11 +557,11 @@ export default function DeclaracionInventarioModule() {
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(h.valorPrecio)}</td>
-                          <td className="px-4 py-2 text-center">
+                          <td className="text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(h.valorPrecio)}</td>
+                          <td className="text-center">
                             <button
                               onClick={() => setComparingIdx(comparingIdx === realIdx ? null : realIdx)}
-                              className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-primary transition-colors"
+                              className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-primary transition-colors"
                               title="Comparar"
                             >
                               <Eye className="h-3.5 w-3.5" />
@@ -570,7 +571,7 @@ export default function DeclaracionInventarioModule() {
                       );
                     })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             )}
           </div>
@@ -580,12 +581,12 @@ export default function DeclaracionInventarioModule() {
       {/* Empty state when no data yet */}
       {!data && !loading && !error && (
         <div className="text-center py-16 px-4">
-          <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center mx-auto mb-4">
+          <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-4">
             <BarChart3 className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted" />
           </div>
           <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin declaraciones</CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Genera un snapshot de tu inventario actual</p>
-          <button onClick={handleGenerar} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Generar declaración</button>
+          <button onClick={handleGenerar} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Generar declaración</button>
         </div>
       )}
     </div>

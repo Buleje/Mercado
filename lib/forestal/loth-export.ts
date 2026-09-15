@@ -8,23 +8,24 @@
  *  - Hoja "Resumen": conteo + volumen por sección.
  * Cada hoja marca anuladas (tachado) y registro fuera de plazo (15 días).
  */
-import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
+import {
+  LOTH_SECTIONS,
+  diasDeRegistro,
+  estaFueraDePlazo,
+  type LothSection,
+} from "@/lib/forestal/loth-constants";
 
 type AnyEntry = Record<string, unknown>;
 type AnyCaratula = Record<string, unknown> | null;
 
-const PLAZO_DIAS = 15;
 const num = (v: unknown) => (v == null || v === "" ? null : Number(v));
 const dateOnly = (v: unknown) => (v ? new Date(v as string) : null);
 
-/** Días entre actividad y registro; >15 = fuera de plazo SERFOR. */
-function lateDays(entry: AnyEntry): number | null {
-  const act = dateOnly(entry.entryDate);
-  const reg = dateOnly(entry.createdAt);
-  if (!act || !reg) return null;
-  const d = Math.floor((reg.getTime() - act.getTime()) / 86_400_000);
-  return d > 0 ? d : 0;
-}
+/** Días de registro / fuera de plazo — predicado ÚNICO (loth-constants). */
+const lateDays = (e: AnyEntry): number | null =>
+  diasDeRegistro(e.entryDate as string | null, e.createdAt as string | null);
+const isLate = (e: AnyEntry): boolean =>
+  estaFueraDePlazo(e.entryDate as string | null, e.createdAt as string | null);
 
 const SECTION_TITLE: Record<LothSection, string> = {
   tala: "1. Tala (volteo)",
@@ -165,7 +166,7 @@ export async function buildLothWorkbook(opts: {
       const r = ws.addRow(cols.map((c) => c.get(e) ?? ""));
       cols.forEach((c, i) => { if (c.numFmt) r.getCell(i + 1).numFmt = c.numFmt; });
       const annulled = e.status === "anulado";
-      const late = (lateDays(e) ?? 0) > PLAZO_DIAS;
+      const late = isLate(e);
       if (annulled) r.font = { strike: true, color: { argb: "FF9CA3AF" } };
       if (late && !annulled) {
         // resalta la celda de "Días registro" en ámbar
@@ -194,7 +195,7 @@ export async function buildLothWorkbook(opts: {
       SECTION_TITLE[section],
       reg.length,
       rows.length - reg.length,
-      reg.filter((e) => (lateDays(e) ?? 0) > PLAZO_DIAS).length,
+      reg.filter((e) => isLate(e)).length,
       Math.round(reg.reduce((a, e) => a + (num(e.volumeM3) ?? 0), 0) * 10000) / 10000,
     ]);
     r.getCell(5).numFmt = "0.0000";

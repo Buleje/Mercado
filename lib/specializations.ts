@@ -37,8 +37,11 @@ export interface Specialization {
 
 export type SpecializationKey =
   | "spec:forestal:ctp-libro"
+  | "spec:forestal:lotes"
   | "spec:forestal:loth-libro"
   | "spec:forestal:gtf-emisor"
+  | "spec:forestal:herramientas"
+  | "spec:forestal:tramites"
   | "spec:agricola:cacao-acopio"
   | "spec:salud:recetas-medicas"
   | "spec:textil:cuero";
@@ -51,6 +54,27 @@ export const SPECIALIZATIONS: Record<SpecializationKey, Specialization> = {
     description:
       "Registra ingresos de madera al Centro de Transformación Primaria. Compatible con LOE-CTP SERFOR (interno, no oficial).",
     moduleId: "ctp-libro-operaciones",
+    recommendedIndustry: "madereria",
+    status: "available",
+  },
+  "spec:forestal:tramites": {
+    key: "spec:forestal:tramites",
+    vertical: "forestal",
+    name: "Trámites y Oficios (Forestal)",
+    description:
+      "Genera las solicitudes que el CTP presenta a la autoridad (visado de talonario de GTF, inspección de campo, actualización de datos, descargo ante supervisión, permiso CITES) con el membrete legal y los datos del Libro, y lleva el expediente de qué se presentó (ADR-308).",
+    moduleId: "forestal-tramites",
+    recommendedIndustry: "madereria",
+    status: "available",
+  },
+  "spec:forestal:lotes": {
+    key: "spec:forestal:lotes",
+    vertical: "forestal",
+    name: "Lotes de Producción",
+    description:
+      "Agrupa corridas de producción del CTP en lotes comerciales con código, grado de calidad, estado y cadena de custodia heredada. Certificado y QR verificable por lote. Requiere el Libro CTP.",
+    moduleId: "forestal-lotes",
+    requires: ["spec:forestal:ctp-libro"],
     recommendedIndustry: "madereria",
     status: "available",
   },
@@ -74,6 +98,16 @@ export const SPECIALIZATIONS: Record<SpecializationKey, Specialization> = {
     requires: ["spec:forestal:ctp-libro"],
     recommendedIndustry: "madereria",
     status: "coming-soon",
+  },
+  "spec:forestal:herramientas": {
+    key: "spec:forestal:herramientas",
+    vertical: "forestal",
+    name: "Herramientas Forestales",
+    description:
+      "Utilidades para el negocio forestal. Incluye el cubicador de madera aserrada por voz (pie tablar + m³) con conversiones. Extensible a más herramientas.",
+    moduleId: "forestal-herramientas",
+    recommendedIndustry: "madereria",
+    status: "available",
   },
   "spec:agricola:cacao-acopio": {
     key: "spec:agricola:cacao-acopio",

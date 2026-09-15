@@ -115,7 +115,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
         const r = await fetch(`/api/admin/overview${rangeQuery}`);
         if (cancelled) return;
         if (!r.ok) {
-          setFetchError(`Error del servidor (${r.status}). Reintentá en unos segundos.`);
+          setFetchError(`Error del servidor (${r.status}). Reintenta en unos segundos.`);
           return;
         }
         const json = await r.json();
@@ -126,7 +126,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
           setFetchError(typeof json.error === "string" ? json.error : "Respuesta inválida.");
         }
       } catch {
-        if (!cancelled) setFetchError("Error de red. Verificá tu conexión.");
+        if (!cancelled) setFetchError("Error de red. Verifica tu conexión.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -164,7 +164,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
         <button
           type="button"
           onClick={() => { setFetchError(null); setLoading(true); /* effect re-corre por cambio en setLoading? no — uso reload */ window.location.reload(); }}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--data-error-500)] text-white text-sm font-extrabold hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--data-error-500)] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
         >
           Reintentar
         </button>
@@ -179,7 +179,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
           Sin datos
         </p>
         <p className="text-sm text-[var(--text-secondary)]">
-          No pudimos cargar tu resumen. Recargá la página.
+          No pudimos cargar tu resumen. Recarga la página.
         </p>
       </div>
     );
@@ -263,7 +263,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   // está concentrado únicamente en medianoche.
   const allOrdersForPeak = (sharedRaw?.data?.orders ?? []) as Array<{ createdAt: string; status: string }>;
   const allSalesForPeak = (sharedRaw?.data?.sales ?? []) as Array<{ createdAt: string }>;
-  const hourCount = new Array(24).fill(0);
+  const hourCount = Array.from({ length: 24 }, () => 0);
   allOrdersForPeak.forEach((o) => {
     if (o.status === "cancelado") return;
     hourCount[new Date(o.createdAt).getHours()] += 1;
@@ -317,7 +317,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
             </div>
             <div className="flex items-center gap-2 flex-wrap shrink-0">
               {peakHourLabel && (
-                <span className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
                   <span className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                     Hora pico
                   </span>
@@ -326,7 +326,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
                   </span>
                 </span>
               )}
-              <span className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
                 <span className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   {PRESET_PROYECCION[presetKey] ?? PRESET_PROYECCION.mensual}
                 </span>

@@ -2,6 +2,7 @@
 
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from '@/components/admin/shared/Field';
 import { useState, useEffect, useCallback } from "react";
 import {
   Users,
@@ -47,7 +48,7 @@ const ROLE_ICONS: Record<Role, React.ReactNode> = {
 
 const ROLE_COLORS: Record<Role, string> = {
   admin: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  cajero: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  cajero: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   almacenero: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
 };
 
@@ -157,7 +158,7 @@ export default function TeamTab() {
       confirmLabel: "Eliminar acceso",
     });
     if (!ok) return;
-    const res = await fetch(`/api/admin-users?id=${u.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin-users?id=${u.id}`, { method: "DELETE", headers: csrfHeaders() });
     if (res.ok) {
       showUndo({ message: `Usuario "${u.name}" eliminado`, duration: 5000 });
       fetchUsers();
@@ -183,7 +184,7 @@ export default function TeamTab() {
           className={cn(
             "fixed top-4 right-4 z-50 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm font-medium",
             toast.ok
-              ? "bg-[var(--accent-soft)] text-white"
+              ? "bg-primary/10 text-white"
               : "bg-[var(--data-error-500)] text-white"
           )}
         >
@@ -241,7 +242,7 @@ export default function TeamTab() {
             >
               {/* Avatar + info */}
               <div className="flex flex-wrap items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-sm flex items-center justify-center shrink-0">
                   {u.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
@@ -260,19 +261,19 @@ export default function TeamTab() {
                 <button
                   onClick={() => handleToggleActive(u)}
                   title={u.active ? "Desactivar" : "Activar"}
-                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
+                  className="p-1.5 rounded-xl hover:bg-(--color-surface) text-muted hover:text-foreground"
                 >
                   {u.active ? <CheckCircle2 className="w-4 h-4 text-[var(--data-success-500)]" /> : <XCircle className="w-4 h-4" />}
                 </button>
-                <button
+                <button aria-label="Editar"
                   onClick={() => openEdit(u)}
-                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
+                  className="p-1.5 rounded-xl hover:bg-(--color-surface) text-muted hover:text-foreground"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button
+                <button aria-label="Eliminar"
                   onClick={() => handleDelete(u)}
-                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-muted hover:text-[var(--data-error-500)]"
+                  className="p-1.5 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-muted hover:text-[var(--data-error-500)]"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -284,69 +285,70 @@ export default function TeamTab() {
 
       {/* Create / Edit form modal */}
       <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editingId ? "Editar usuario" : "Nuevo usuario"} variant="default">
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
             {/* Username (only on create) */}
             {!editingId && (
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted uppercase">Usuario</label>
+              <Field label="Usuario" labelClassName="text-xs font-semibold text-muted uppercase" className="space-y-1">
                 <input
                   type="text"
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value.toLowerCase() })}
                   placeholder="ej: cajero1"
-                  className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
+                  className="w-full border border-(--color-card-border) rounded-xl px-3 h-10 text-sm bg-(--color-surface)"
                 />
-              </div>
+              </Field>
             )}
 
             {/* Name */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted uppercase">Nombre completo</label>
+            <Field label="Nombre completo" labelClassName="text-xs font-semibold text-muted uppercase" className="space-y-1">
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="ej: María García"
-                className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
+                className="w-full border border-(--color-card-border) rounded-xl px-3 h-10 text-sm bg-(--color-surface)"
               />
-            </div>
+            </Field>
 
             {/* Role */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted uppercase">Rol</label>
+            <Field label="Rol" labelClassName="text-xs font-semibold text-muted uppercase" className="space-y-1">
               <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-                className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
+                className="w-full border border-(--color-card-border) rounded-xl px-3 h-10 text-sm bg-(--color-surface)"
               >
                 <option value="admin">Administrador — acceso total</option>
                 <option value="cajero">Cajero — POS + pedidos</option>
                 <option value="almacenero">Almacenero — inventario + compras</option>
               </select>
-            </div>
+            </Field>
 
             {/* Password */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted uppercase">
-                Contraseña {editingId && <span className="font-normal">(deja vacío para no cambiar)</span>}
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder={editingId ? "Nueva contraseña (opcional)" : "Mínimo 6 caracteres"}
-                  className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface) pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
+            <Field
+              label={<>Contraseña {editingId && <span className="font-normal">(deja vacío para no cambiar)</span>}</>}
+              labelClassName="text-xs font-semibold text-muted uppercase"
+              className="space-y-1"
+            >
+              {(id) => (
+                <div className="relative">
+                  <input
+                    id={id}
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    placeholder={editingId ? "Nueva contraseña (opcional)" : "Mínimo 6 caracteres"}
+                    className="w-full border border-(--color-card-border) rounded-xl px-3 h-10 text-sm bg-(--color-surface) pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              )}
+            </Field>
 
             {/* Active toggle (only on edit) */}
             {editingId && (
@@ -365,14 +367,14 @@ export default function TeamTab() {
             <div className="flex flex-wrap gap-2 pt-1">
               <button
                 onClick={() => setShowForm(false)}
-                className="flex-1 py-2 rounded-lg border border-(--color-card-border) text-sm font-medium hover:bg-(--color-surface)"
+                className="flex-1 py-2 rounded-xl border border-(--color-card-border) text-sm font-medium hover:bg-(--color-surface)"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
+                className="flex-1 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {editingId ? "Guardar cambios" : "Crear usuario"}

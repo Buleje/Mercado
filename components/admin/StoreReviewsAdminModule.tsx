@@ -25,6 +25,7 @@ import {
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 
+import { SectionTitle } from "@buleje/design-system";
 type Status = "pending" | "approved" | "rejected" | "hidden" | "all";
 
 interface AdminReview {
@@ -58,16 +59,16 @@ const STATUS_COLORS: Record<AdminReview["status"], string> = {
   pending:  "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
   approved: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
   rejected: "bg-rose-100 text-[var(--data-error-500)] dark:bg-rose-900/30 dark:text-[var(--data-error-500)]",
-  hidden:   "bg-gray-200 text-[var(--text-primary)] dark:bg-gray-800 dark:text-gray-300",
+  hidden:   "bg-[var(--rule-base)] text-[var(--text-primary)] ",
 };
 
 function StarsDisplay({ rating }: { rating: number }) {
   return (
-    <span className="flex items-center gap-0.5" aria-label={`${rating} estrellas`}>
+    <span role="img" className="flex items-center gap-0.5" aria-label={`${rating} estrellas`}>
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
-          className={cn("h-3.5 w-3.5", n <= rating ? "fill-amber-400 text-amber-400" : "text-[var(--text-tertiary)] dark:text-gray-700")}
+          className={cn("h-3.5 w-3.5", n <= rating ? "fill-amber-400 text-amber-400" : "text-[var(--text-tertiary)] ")}
           strokeWidth={1.5}
           aria-hidden
         />
@@ -119,7 +120,7 @@ function ReplyBox({ review, onReplied }: { review: AdminReview; onReplied: () =>
   }
   if (!open && review.adminReply) {
     return (
-      <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--accent)]/20 p-3">
+      <div className="rounded-lg bg-primary/10 border border-[var(--accent)]/20 p-3">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)] mb-1">
           Tu respuesta · {review.adminReplyDate ? new Date(review.adminReplyDate).toLocaleDateString("es-PE") : ""}
         </p>
@@ -142,7 +143,7 @@ function ReplyBox({ review, onReplied }: { review: AdminReview; onReplied: () =>
         rows={3}
         maxLength={2000}
         placeholder="Gracias por tu reseña…"
-        className="w-full rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] resize-none"
+        className="w-full rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] resize-none"
       />
       {err && <p className="text-xs text-[var(--data-error-500)]">{err}</p>}
       <div className="flex items-center justify-end gap-2">
@@ -220,9 +221,9 @@ export default function StoreReviewsAdminModule() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black tracking-tight text-[var(--text-primary)]">Reseñas de tu tienda</h2>
+          <SectionTitle className="text-[var(--text-primary)]">Reseñas de tu tienda</SectionTitle>
           <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
-            Aprobá las que querés publicar, ocultá las que no, respondé a tus clientes.
+            Aprueba las que quieres publicar, oculta las que no, responde a tus clientes.
           </p>
         </div>
         <button
@@ -247,7 +248,7 @@ export default function StoreReviewsAdminModule() {
               type="button"
               onClick={() => setStatus(s)}
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap",
+                "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap",
                 status === s
                   ? "bg-[var(--accent-600,var(--accent))] text-white"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",

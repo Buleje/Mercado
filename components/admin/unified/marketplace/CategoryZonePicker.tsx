@@ -22,6 +22,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Tag,
   MapPin,
@@ -37,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { CardTitle } from "@buleje/design-system";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Tipos compartidos con el endpoint ─────────────────────────────────────
 
@@ -129,7 +131,7 @@ function SectionCard({
   return (
     <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
       <header className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-[var(--rule-soft)]">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
           <Icon className="h-4 w-4" strokeWidth={2.25} />
         </span>
         <div className="min-w-0 flex-1">
@@ -170,8 +172,8 @@ function CategoryCard({
       className={cn(
         "group relative w-full text-left rounded-xl overflow-hidden border-2 transition-colors flex items-center gap-3 p-2.5",
         selected
-          ? "border-[var(--accent)] bg-[var(--accent-soft)]/50"
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/20",
+          ? "border-[var(--accent)] bg-primary/10"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10",
       )}
     >
       <div className="relative h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)]">
@@ -199,7 +201,7 @@ function CategoryCard({
           {label}
         </p>
         {badge && (
-          <span className="inline-flex items-center mt-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <span className="inline-flex items-center mt-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
             {badge}
           </span>
         )}
@@ -209,7 +211,7 @@ function CategoryCard({
           <Check className="h-3.5 w-3.5" strokeWidth={3} />
         </span>
       ) : (
-        <span className="shrink-0 h-6 w-6 rounded-full border-2 border-[var(--rule-base)]" aria-hidden />
+        <span className="shrink-0 h-6 w-6 rounded-full border border-[var(--rule-base)]" aria-hidden />
       )}
     </button>
   );
@@ -251,39 +253,36 @@ function CustomCategoryEditor({
         onClick={onClose}
         className="absolute inset-0 bg-black/55 backdrop-blur-sm"
       />
-      <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] shadow-2xl">
+      <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)]">
         <header className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-base)] sticky top-0 bg-[var(--surface-canvas)] z-10">
-          <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="text-lg font-extrabold text-[var(--text-primary)]">
             {initial ? "Editar categoría propia" : "Nueva categoría propia"}
-          </h3>
+          </CardTitle>
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="h-9 w-9 rounded-xl border-2 border-[var(--rule-base)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="h-9 w-9 rounded-xl border border-[var(--rule-base)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <X className="h-4 w-4" />
           </button>
         </header>
         <div className="p-6 space-y-5">
-          <div className="space-y-2">
-            <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-              Nombre de la categoría
-            </label>
+          <Field label="Nombre de la categoría" labelClassName="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]" className="space-y-2">
             <input
               type="text"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder="Ej: Pizzas, Postres, Repuestos"
               maxLength={60}
-              className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full h-12 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
-          </div>
+          </Field>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+            <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
               <ImageIcon className="h-4 w-4" /> Imagen de la categoría
-            </label>
+            </span>
             <ImageUpload
               value={imageUrl}
               onChange={(url) => setImageUrl(url)}
@@ -296,14 +295,14 @@ function CustomCategoryEditor({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+            <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
               Subcategorías (opcional)
-            </label>
+            </span>
             <div className="flex flex-wrap items-center gap-2">
               {subs.map((s) => (
                 <span
                   key={s.id}
-                  className="inline-flex items-center gap-1.5 h-9 pl-3 pr-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-sm font-bold"
+                  className="inline-flex items-center gap-1.5 h-9 pl-3 pr-1.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-bold"
                 >
                   {s.label}
                   <button
@@ -330,13 +329,13 @@ function CustomCategoryEditor({
                 }}
                 placeholder="Ej: Pizza familiar"
                 maxLength={40}
-                className="flex-1 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="flex-1 h-12 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
               <button
                 type="button"
                 onClick={addSub}
                 disabled={newSub.trim().length < 2}
-                className="h-12 px-4 rounded-2xl bg-[var(--accent)] text-white font-extrabold inline-flex items-center gap-1.5 disabled:opacity-50"
+                className="h-12 px-4 rounded-2xl bg-[var(--accent)] text-white font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" /> Agregar
               </button>
@@ -347,7 +346,7 @@ function CustomCategoryEditor({
           <button
             type="button"
             onClick={onClose}
-            className="h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="h-12 px-5 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             Cancelar
           </button>
@@ -363,7 +362,7 @@ function CustomCategoryEditor({
               });
               onClose();
             }}
-            className="h-12 px-6 rounded-2xl bg-[var(--accent)] text-white text-base font-extrabold inline-flex items-center gap-2 disabled:opacity-50"
+            className="h-12 px-6 rounded-2xl bg-[var(--accent)] text-white text-base font-semibold inline-flex items-center gap-2 disabled:opacity-50"
           >
             <Check className="h-4 w-4" strokeWidth={3} />
             Guardar categoría
@@ -377,6 +376,7 @@ function CustomCategoryEditor({
 // ── Componente principal ──────────────────────────────────────────────────
 
 export default function CategoryZonePicker({ value, onChange }: Props) {
+  const { confirm } = useConfirm();
   const [catalog, setCatalog] = useState<CatalogCategory[]>([]);
   // Empieza en true; el primer fetch (success o fail) lo pone false en finally.
   const [catalogLoading, setCatalogLoading] = useState<boolean>(true);
@@ -486,7 +486,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
         hint="Elige cómo aparece tu tienda en filtros del marketplace."
         rightSlot={
           value.category ? (
-            <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold">
+            <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">
               <Check className="h-3 w-3" strokeWidth={3} />
               Elegida
             </span>
@@ -543,9 +543,13 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                     </button>
                     <button
                       type="button"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        if (confirm(`¿Eliminar la categoría "${c.label}"?`)) deleteCustomCategory(c.id);
+                        if (await confirm({
+                          title: `¿Eliminar la categoría "${c.label}"?`,
+                          intent: "danger",
+                          confirmLabel: "Sí, eliminar",
+                        })) deleteCustomCategory(c.id);
                       }}
                       aria-label={`Eliminar ${c.label}`}
                       title="Eliminar"
@@ -562,7 +566,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                   setEditing(null);
                   setShowEditor(true);
                 }}
-                className="h-[68px] rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+                className="h-[68px] rounded-xl border border-dashed border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-primary/10 flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
               >
                 <Plus className="h-4 w-4" strokeWidth={2.5} />
                 <span className="text-sm font-extrabold">Crear propia</span>
@@ -598,7 +602,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
               className={cn(
                 "h-9 px-3.5 rounded-full border-2 text-xs font-extrabold transition-colors",
                 value.subcategory === null
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
@@ -614,7 +618,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                   className={cn(
                     "h-9 px-3.5 rounded-full border-2 text-xs font-extrabold transition-colors",
                     active
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
                   )}
                 >
@@ -645,11 +649,11 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
       <SectionCard
         icon={MapPin}
         title="Zonas de cobertura"
-        hint="Marca dónde hacés delivery."
+        hint="Marca dónde haces delivery."
         rightSlot={
-          <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold tabular-nums">
+          <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold tabular-nums">
             {value.coverageZones.length}
-            <span className="text-[10px] uppercase tracking-wider opacity-75">marcadas</span>
+            <span className="text-[length:var(--ts-2xs)] uppercase tracking-wider opacity-75">marcadas</span>
           </span>
         }
       >
@@ -664,7 +668,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
                   {city}
                 </h4>
-                <span className="text-[10px] font-bold text-[var(--text-tertiary)] tabular-nums">
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
                   {countOn}/{zones.length}
                 </span>
                 <button
@@ -680,7 +684,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                       onChange({ ...value, coverageZones: Array.from(merged) });
                     }
                   }}
-                  className="ml-auto text-[11px] font-bold text-[var(--accent)] hover:underline shrink-0"
+                  className="ml-auto text-xs font-bold text-[var(--accent)] hover:underline shrink-0"
                 >
                   {allOn ? "Quitar todas" : "Marcar todas"}
                 </button>
@@ -697,7 +701,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                       className={cn(
                         "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-2 text-xs font-extrabold transition-colors",
                         active
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
                       )}
                     >
@@ -729,13 +733,13 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
               }}
               placeholder="Ej: Sector San Juan, AAHH Las Palmeras"
               maxLength={100}
-              className="flex-1 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-[var(--accent)]"
+              className="flex-1 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-[var(--accent)]"
             />
             <button
               type="button"
               onClick={addCustomZone}
               disabled={customZoneInput.trim().length < 2}
-              className="h-10 px-3.5 rounded-xl bg-[var(--accent)] text-white font-extrabold inline-flex items-center gap-1.5 text-sm disabled:opacity-50"
+              className="h-10 px-3.5 rounded-xl bg-[var(--accent)] text-white font-semibold inline-flex items-center gap-1.5 text-sm disabled:opacity-50"
             >
               <Plus className="h-3.5 w-3.5" /> Agregar
             </button>
@@ -747,7 +751,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                 .map((z) => (
                   <span
                     key={z}
-                    className="inline-flex items-center gap-1 h-9 pl-3 pr-1 rounded-full border-2 border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold"
+                    className="inline-flex items-center gap-1 h-9 pl-3 pr-1 rounded-full border-2 border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold"
                   >
                     {z}
                     <button

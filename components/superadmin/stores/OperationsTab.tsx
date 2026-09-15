@@ -111,20 +111,20 @@ const DANGER_META: Record<
   },
   warn: {
     label: "Demora",
-    pill: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
-    dot: "bg-amber-500",
-    border: "border-l-amber-500/60",
-    valueColor: "text-amber-700 dark:text-amber-300",
-    iconBg: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    pill: "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
+    dot: "bg-teal-500",
+    border: "border-l-teal-500/60",
+    valueColor: "text-teal-700 dark:text-teal-300",
+    iconBg: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
     icon: Clock,
   },
   danger: {
     label: "Crítico",
-    pill: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    pill: "border-[var(--data-error-500)] bg-rose-50/60 text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500 animate-pulse",
     border: "border-l-rose-500",
     valueColor: "text-[var(--accent)] dark:text-[var(--accent)]",
-    iconBg: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+    iconBg: "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     icon: AlertTriangle,
   },
 };
@@ -377,7 +377,7 @@ export function OperationsTab() {
                 setCountdown(REFRESH_MS / 1000);
               }}
               disabled={refreshing}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
@@ -458,9 +458,9 @@ export function OperationsTab() {
                       isActive
                         ? "bg-[var(--accent)]/15 text-[var(--accent)]"
                         : opt.k === "danger"
-                          ? "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
+                          ? "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
                           : opt.k === "delayed"
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+                            ? "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300"
                             : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
                     }`}
                   >
@@ -524,7 +524,7 @@ export function OperationsTab() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -532,17 +532,17 @@ export function OperationsTab() {
 
       {/* ── Tiendas con problemas (solo si hay filtro o problemas) ── */}
       {problemTenants.length > 0 && (filter === "delayed" || filter === "danger") && (
-        <section className="rounded-2xl border border-amber-300/60 bg-amber-50/30 overflow-hidden dark:border-amber-700/40 dark:bg-amber-950/20">
-          <header className="flex items-center justify-between gap-3 border-b border-amber-200/60 dark:border-amber-700/40 px-5 py-3">
+        <section className="rounded-2xl border border-teal-300/60 bg-teal-50/30 overflow-hidden dark:border-teal-700/40 dark:bg-teal-950/20">
+          <header className="flex items-center justify-between gap-3 border-b border-teal-200/60 dark:border-teal-700/40 px-5 py-3">
             <div className="flex items-center gap-3">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
                 <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
               </span>
               <div>
-                <h3 className="font-display text-sm font-extrabold tracking-tight text-amber-800 dark:text-amber-200">
+                <h3 className="font-display text-sm font-extrabold tracking-tight text-teal-800 dark:text-teal-200">
                   Tiendas con problemas
                 </h3>
-                <p className="text-xs text-amber-700/80 dark:text-amber-400/80">
+                <p className="text-xs text-teal-700/80 dark:text-teal-400/80">
                   {problemTenants.length} tiendas con al menos un pedido demorado
                 </p>
               </div>
@@ -560,15 +560,15 @@ export function OperationsTab() {
                   key={t.tenantId}
                   className={`flex items-center gap-2 rounded-xl border bg-[var(--surface-raised)] px-3 py-2.5 ${
                     isCritical
-                      ? "border-rose-300/60 dark:border-rose-700/40"
-                      : "border-amber-300/40 dark:border-amber-700/30"
+                      ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
+                      : "border-teal-300/40 dark:border-teal-700/30"
                   }`}
                 >
                   <span
                     className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                       isCritical
-                        ? "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
-                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+                        ? "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
+                        : "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300"
                     }`}
                   >
                     <StoreIcon className="h-4 w-4" strokeWidth={1.75} />
@@ -620,7 +620,7 @@ export function OperationsTab() {
 
       {/* ── Empty ────────────────────────────────────────────── */}
       {orders && filtered.length === 0 && (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--data-success-500)]/10 mb-3">
             <CheckCircle2
               className="h-6 w-6 text-[var(--data-success-500)]"
@@ -909,8 +909,8 @@ function KpiCard({
 }) {
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
+    danger: "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   const Tag = onClick ? "button" : "div";

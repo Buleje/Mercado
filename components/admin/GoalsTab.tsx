@@ -1,8 +1,8 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Target, TrendingUp, Plus, Pencil, Trash2, Check, BarChart3,
   Calendar, AlertTriangle, CheckCircle2, Clock, RefreshCw, Sparkles,
@@ -11,6 +11,9 @@ import {
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
+import { Field } from "@/components/admin/shared/Field";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 
 type GoalPeriod = "diario" | "semanal" | "mensual";
 // FIX 2026-05-07 (C): nuevas categorías auto-trackeables.
@@ -33,12 +36,12 @@ interface Goal {
 }
 
 const CATEGORY_META: Record<GoalCategory, { label: string; color: string; bg: string; icon: React.ElementType; trackable: boolean }> = {
-  ventas:           { label: "Ventas",           color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: TrendingUp, trackable: true  },
+  ventas:           { label: "Ventas",           color: "text-[var(--data-success-500)]", bg: "bg-primary/10",     icon: TrendingUp, trackable: true  },
   pedidos:          { label: "Pedidos",          color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]", icon: BarChart3,  trackable: true  },
   clientes:         { label: "Clientes",         color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Users,      trackable: true  },
-  productos:        { label: "Productos",        color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: Package,    trackable: false },
+  productos:        { label: "Productos",        color: "text-[var(--data-success-500)]", bg: "bg-primary/10",     icon: Package,    trackable: false },
   caja:             { label: "Caja",             color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Coins,      trackable: false },
-  ticket_promedio:  { label: "Ticket promedio",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: Coins,      trackable: true  },
+  ticket_promedio:  { label: "Ticket promedio",  color: "text-[var(--data-success-500)]", bg: "bg-primary/10",     icon: Coins,      trackable: true  },
   retencion:        { label: "Retención",        color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Users,      trackable: true  },
 };
 
@@ -63,9 +66,9 @@ interface Template {
 }
 
 const TEMPLATES: Template[] = [
-  { id: "ventas-mes",       label: "Ventas del mes",         description: "Cuánto querés facturar este mes",     icon: TrendingUp, category: "ventas",    period: "mensual", unit: "S/",       defaultTarget: 50000, namePrefix: "Ventas " },
+  { id: "ventas-mes",       label: "Ventas del mes",         description: "Cuánto quieres facturar este mes",     icon: TrendingUp, category: "ventas",    period: "mensual", unit: "S/",       defaultTarget: 50000, namePrefix: "Ventas " },
   { id: "ventas-dia",       label: "Meta diaria",            description: "Tu objetivo de ventas por día",        icon: Sparkles,   category: "ventas",    period: "diario",  unit: "S/",       defaultTarget: 1500,  namePrefix: "Meta diaria " },
-  { id: "pedidos-semana",   label: "Pedidos a la semana",    description: "Cuántos pedidos querés cerrar",        icon: BarChart3,  category: "pedidos",   period: "semanal", unit: "pedidos",  defaultTarget: 80,    namePrefix: "Pedidos " },
+  { id: "pedidos-semana",   label: "Pedidos a la semana",    description: "Cuántos pedidos quieres cerrar",        icon: BarChart3,  category: "pedidos",   period: "semanal", unit: "pedidos",  defaultTarget: 80,    namePrefix: "Pedidos " },
   { id: "clientes-nuevos",  label: "Clientes nuevos",        description: "Crecer la base de clientes",           icon: Users,      category: "clientes",  period: "mensual", unit: "clientes", defaultTarget: 30,    namePrefix: "Nuevos clientes " },
   { id: "productos-vendidos", label: "Productos vendidos",   description: "Volumen de productos despachados",     icon: Package,    category: "productos", period: "mensual", unit: "unidades", defaultTarget: 500,   namePrefix: "Unidades " },
   { id: "cobranza-mes",     label: "Cobranza del mes",       description: "Recuperar fiados pendientes",          icon: Coins,      category: "caja",      period: "mensual", unit: "S/",       defaultTarget: 2000,  namePrefix: "Cobranza " },
@@ -218,24 +221,12 @@ function KPISummary({ goals }: { goals: Goal[] }) {
     ? Math.round(goals.reduce((s, g) => s + Math.min(100, g.target > 0 ? (g.current / g.target) * 100 : 0), 0) / total)
     : 0;
 
-  const cards = [
-    { label: "Activas",        value: String(total - completed), icon: Target,          color: "text-primary" },
-    { label: "Logradas",       value: String(completed),         icon: CheckCircle2,    color: "text-[var(--data-success-500)]" },
-    { label: "Vencidas",       value: String(overdue),           icon: AlertTriangle,   color: "text-[var(--data-error-500)]" },
-    { label: "Promedio global", value: `${avgPct}%`,             icon: BarChart3,       color: "text-primary" },
-  ];
-
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {cards.map((c) => (
-        <div key={c.label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{c.label}</p>
-            <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", c.color)}>{c.value}</p>
-          </div>
-          <c.icon className={cn("h-5 w-5 shrink-0", c.color)} />
-        </div>
-      ))}
+      <StatCard label="Activas" value={total - completed} icon={Target} density="compact" />
+      <StatCard label="Logradas" value={completed} icon={CheckCircle2} emphasis="success" density="compact" />
+      <StatCard label="Vencidas" value={overdue} icon={AlertTriangle} emphasis="error" density="compact" />
+      <StatCard label="Promedio global" value={`${avgPct}%`} icon={BarChart3} density="compact" />
     </div>
   );
 }
@@ -327,28 +318,48 @@ export default function GoalsTab() {
   const [filter, setFilter] = useState<FilterKey>("todas");
   const [autoStats, setAutoStats] = useState<AutoStats>(ZERO_STATS);
   const [showTemplates, setShowTemplates] = useState(false);
+  // Gate de rol (2026-09-14): /api/customers sólo deja pasar admin; /api/sales
+  // deja pasar admin/cajero/owner/manager/tienda_owner (requireAdmin). Un
+  // cajero abriendo esta tab pedía ambas igual — customers le tiraba 403.
+  const rol = useMiRol();
+  const puedeSales = puedePedir("/api/sales", rol);
+  const puedeCustomers = puedePedir("/api/customers", rol);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // Una carga que salió antes de un cambio trae la lista vieja: en Tareas el GET
+  // del doble montaje llegó 470 ms después de Eliminar y lo borrado volvió a la
+  // pantalla (medido 2026-09-14). Sólo aplica su lista la carga más nueva, y sólo
+  // si no hubo cambios mientras viajaba; cada cambio termina con una carga
+  // silenciosa que trae lo guardado.
+  const cargasRef = useRef({ ultima: 0, cambios: 0 });
+  const load = useCallback(async (opciones?: { silenciosa?: boolean }) => {
+    const esta = ++cargasRef.current.ultima;
+    const cambiosAlSalir = cargasRef.current.cambios;
+    if (!opciones?.silenciosa) setLoading(true);
     try {
       const res = await fetch("/api/goals");
-      if (res.ok) setGoals(await res.json());
+      if (res.ok) {
+        const lista = (await res.json()) as Goal[];
+        if (esta === cargasRef.current.ultima && cambiosAlSalir === cargasRef.current.cambios) setGoals(lista);
+      }
     } catch { /* silent */ }
-    setLoading(false);
+    if (esta === cargasRef.current.ultima) setLoading(false);
   }, []);
 
-  // Auto-track: cargar ventas + clientes + dashboard para sincronización auto
+  // Auto-track: cargar ventas + clientes + dashboard para sincronización auto.
+  // Cada fetch se gatea por separado (rol todavía en carga → null → ninguno
+  // de los dos pide todavía): un rol como cajero puede leer ventas pero no
+  // clientes, y no tiene sentido pedir la que igual va a 403.
   const loadAutoStats = useCallback(async () => {
     try {
       const [salesRes, customersRes] = await Promise.all([
-        fetch("/api/sales?limit=500", { credentials: "include" }),
-        fetch("/api/customers", { credentials: "include" }),
+        puedeSales ? fetch("/api/sales?limit=500", { credentials: "include" }) : Promise.resolve(null),
+        puedeCustomers ? fetch("/api/customers", { credentials: "include" }) : Promise.resolve(null),
       ]);
 
-      const sales: Array<{ total?: number; createdAt?: string }> = salesRes.ok
+      const sales: Array<{ total?: number; createdAt?: string }> = salesRes?.ok
         ? await salesRes.json()
         : [];
-      const customers: Array<{ createdAt?: string }> = customersRes.ok
+      const customers: Array<{ createdAt?: string }> = customersRes?.ok
         ? await customersRes.json().then((d) => Array.isArray(d) ? d : (d.customers ?? []))
         : [];
 
@@ -410,7 +421,7 @@ export default function GoalsTab() {
         retencionMes, retencionSemana, retencionDia,
       });
     } catch { /* silent */ }
-  }, []);
+  }, [puedeSales, puedeCustomers]);
 
   useEffect(() => { void load(); void loadAutoStats(); }, [load, loadAutoStats]);
 
@@ -500,6 +511,7 @@ export default function GoalsTab() {
     if (saving) return;
     if (!form.name.trim() || !form.target) return;
     setSaving(true);
+    cargasRef.current.cambios += 1;
     const targetNum  = parseFloat(form.target);
     const currentNum = parseFloat(form.current) || 0;
     const wasCompleted = editId
@@ -512,7 +524,8 @@ export default function GoalsTab() {
       target: targetNum,
       current: currentNum,
       unit: form.unit.trim() || "S/",
-      dueDate: form.dueDate || undefined,
+      // null borra la fecha al editar; undefined la dejaba como estaba (ADR-415).
+      dueDate: form.dueDate || null,
     };
     try {
       const res = editId
@@ -546,6 +559,7 @@ export default function GoalsTab() {
   };
 
   const remove = async (id: string) => {
+    cargasRef.current.cambios += 1;
     const goal = goals.find(g => g.id === id);
     // BUG-FIX (audit 2026-05-05): optimistic update con rollback si el API falla
     const prevGoals = goals;
@@ -554,13 +568,15 @@ export default function GoalsTab() {
       const res = await fetch(`/api/goals/${id}`, { method: "DELETE", headers: csrfHeaders() });
       if (!res.ok) {
         setGoals(prevGoals); // rollback
-        toast.error("No se pudo eliminar la meta. Reintentá.");
+        toast.error("No se pudo eliminar la meta. Reintenta.");
         return;
       }
       if (goal) toast(`Meta eliminada: ${goal.name}`);
     } catch {
       setGoals(prevGoals); // rollback
-      toast.error("Error de conexión. Reintentá.");
+      toast.error("Error de conexión. Reintenta.");
+    } finally {
+      void load({ silenciosa: true });
     }
   };
 
@@ -569,6 +585,7 @@ export default function GoalsTab() {
     if (!goal) return;
     const wasCompleted = goal.current >= goal.target;
     // BUG-FIX (audit 2026-05-05): rollback en error de PATCH
+    cargasRef.current.cambios += 1;
     const prevCurrent = goal.current;
     setGoals(prev => prev.map(g => g.id === id ? { ...g, current } : g));
     try {
@@ -587,6 +604,8 @@ export default function GoalsTab() {
     } catch {
       setGoals(prev => prev.map(g => g.id === id ? { ...g, current: prevCurrent } : g));
       toast.error("Error de conexión");
+    } finally {
+      void load({ silenciosa: true });
     }
   };
 
@@ -651,7 +670,7 @@ export default function GoalsTab() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" /> Nueva Meta
         </button>
@@ -679,7 +698,7 @@ export default function GoalsTab() {
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
                 filter === p.id
                   ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
               )}
             >
               {p.label}
@@ -700,7 +719,7 @@ export default function GoalsTab() {
       ) : goals.length === 0 ? (
         <EmptyStateWithTemplates onPick={applyTemplate} autoStats={autoStats} />
       ) : visible.length === 0 ? (
-        <div className="bg-white dark:bg-[var(--color-card)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
+        <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
           <Target className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
           <p className="text-[var(--text-secondary)] font-semibold">No hay metas en este filtro</p>
           <button onClick={() => setFilter("todas")} className="mt-3 text-sm text-primary font-semibold hover:underline">Ver todas</button>
@@ -710,7 +729,6 @@ export default function GoalsTab() {
           {visible.map(({ goal: g, status }) => {
             const meta = CATEGORY_META[g.category];
             const Icon = meta.icon;
-            const pct  = Math.min(100, g.target > 0 ? Math.round((g.current / g.target) * 100) : 0);
             const dueInfo = g.dueDate ? formatDaysRemaining(g.dueDate) : null;
             const forecast = computeForecast(g);
             const autoValue = pickAutoCurrent(g.category, g.period, autoStats);
@@ -720,7 +738,7 @@ export default function GoalsTab() {
               <div
                 key={g.id}
                 className={cn(
-                  "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] border-l-4 rounded-xl p-5 space-y-4 hover:shadow-[var(--shadow-sm)] transition-shadow",
+                  "bg-[var(--surface-raised)] border border-[var(--rule-base)] border-l-4 rounded-xl p-5 space-y-4 hover:shadow-[var(--shadow-sm)] transition-shadow",
                   getStatusBorder(status)
                 )}
               >
@@ -740,10 +758,10 @@ export default function GoalsTab() {
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
                     <StatusIcon status={status} />
-                    <button onClick={() => openEdit(g)} aria-label="Editar" className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+                    <button onClick={() => openEdit(g)} aria-label="Editar" className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                       <Pencil className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                     </button>
-                    <button onClick={() => remove(g.id)} aria-label="Eliminar" className="p-1 rounded-lg hover:bg-[var(--data-error-50)] transition-colors">
+                    <button onClick={() => remove(g.id)} aria-label="Eliminar" className="p-1 rounded-xl hover:bg-[var(--data-error-50)] transition-colors">
                       <Trash2 className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]" />
                     </button>
                   </div>
@@ -791,7 +809,7 @@ export default function GoalsTab() {
                     <button
                       onClick={() => void syncFromData(g)}
                       title={`Auto-actualizar a ${formatNumber(Math.round(autoValue ?? 0), g.unit)}`}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold hover:bg-primary/20 transition-colors"
                     >
                       <RefreshCw className="h-3 w-3" />
                       Sync
@@ -805,7 +823,7 @@ export default function GoalsTab() {
                       const v = parseFloat(e.target.value);
                       if (!isNaN(v) && v !== g.current) void updateProgress(g.id, v);
                     }}
-                    className="flex-1 min-w-0 px-3 py-1.5 text-xs rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="flex-1 min-w-0 px-3 py-1.5 text-xs rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     placeholder="Actualizar manualmente"
                   />
                   <span className="text-xs text-[var(--text-tertiary)] font-mono shrink-0">{g.unit}</span>
@@ -817,8 +835,8 @@ export default function GoalsTab() {
       )}
 
       {/* Templates picker modal */}
-      <AdminModal open={showTemplates} onClose={() => setShowTemplates(false)} title="¿Qué tipo de meta querés crear?" variant="wide">
-        <div className="p-5 space-y-4">
+      <AdminModal open={showTemplates} onClose={() => setShowTemplates(false)} title="¿Qué tipo de meta quieres crear?" variant="wide">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {TEMPLATES.map(t => {
               const auto = pickAutoCurrent(t.category, t.period, autoStats);
@@ -837,7 +855,7 @@ export default function GoalsTab() {
                     <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t.description}</p>
                     {auto != null && auto > 0 && (
                       <p className="text-xs text-[var(--data-success-500)] mt-1.5 font-semibold">
-                        Hoy llevás {formatNumber(Math.round(auto), t.unit)}
+                        Hoy llevas {formatNumber(Math.round(auto), t.unit)}
                       </p>
                     )}
                   </div>
@@ -847,7 +865,7 @@ export default function GoalsTab() {
           </div>
           <button
             onClick={() => { setShowTemplates(false); setForm(EMPTY_FORM); setEditId(null); setShowForm(true); }}
-            className="w-full py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
+            className="w-full min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
           >
             Crear meta personalizada
           </button>
@@ -856,65 +874,60 @@ export default function GoalsTab() {
 
       {/* Create/Edit Modal */}
       <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editId ? "Editar meta" : "Nueva meta"} variant="default">
-        <div className="p-5 space-y-4">
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Nombre de la meta</label>
+        <div className="space-y-4 px-5 py-5 sm:px-6">
+          <Field label="Nombre de la meta" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                 <input
                   type="text"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="ej. Ventas del mes"
-                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
-              </div>
+              </Field>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Categoría</label>
+                <Field label="Categoría" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <select
                     value={form.category}
                     onChange={e => setForm(f => ({ ...f, category: e.target.value as GoalCategory }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   >
                     {Object.entries(CATEGORY_META).map(([k, v]) => (
                       <option key={k} value={k}>{v.label}</option>
                     ))}
                   </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Período</label>
+                </Field>
+                <Field label="Período" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <select
                     value={form.period}
                     onChange={e => setForm(f => ({ ...f, period: e.target.value as GoalPeriod }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   >
                     {Object.entries(PERIOD_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
                     ))}
                   </select>
-                </div>
+                </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Meta (cantidad)</label>
+                <Field label="Meta (cantidad)" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <input
                     type="number"
                     min={0}
                     value={form.target}
                     onChange={e => setForm(f => ({ ...f, target: e.target.value }))}
                     placeholder="5000"
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Unidad</label>
+                </Field>
+                <Field label="Unidad" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <input
                     type="text"
                     value={form.unit}
                     onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
                     placeholder="S/ ó pedidos"
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
-                </div>
+                </Field>
               </div>
 
               {suggestedTargets.length > 0 && (
@@ -926,7 +939,7 @@ export default function GoalsTab() {
                         key={s.label}
                         type="button"
                         onClick={() => setForm(f => ({ ...f, target: String(s.value) }))}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 transition-colors"
                       >
                         <Sparkles className="h-3 w-3" />
                         {s.label}: {formatNumber(s.value, form.unit || "S/")}
@@ -936,37 +949,35 @@ export default function GoalsTab() {
                 </div>
               )}
 
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Fecha límite (opcional)</label>
+              <Field label="Fecha límite (opcional)" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                 <input
                   type="date"
                   value={form.dueDate}
                   onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                  className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                 />
-              </div>
+              </Field>
 
               {editId && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Progreso actual</label>
+                <Field label="Progreso actual" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <input
                     type="number"
                     min={0}
                     value={form.current}
                     onChange={e => setForm(f => ({ ...f, current: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
-                </div>
+                </Field>
               )}
 
           <div className="flex gap-3 pt-1">
-            <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-alt)] transition-colors">
+            <button onClick={() => setShowForm(false)} className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-alt)] transition-colors">
               Cancelar
             </button>
             <button
               onClick={save}
               disabled={saving || !form.name.trim() || !form.target}
-              className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
             >
               {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear meta"}</>}
             </button>
@@ -981,11 +992,11 @@ export default function GoalsTab() {
 
 function EmptyStateWithTemplates({ onPick, autoStats }: { onPick: (t: Template) => void; autoStats: AutoStats }) {
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-8 space-y-6">
+    <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-xl p-8 space-y-6">
       <div className="text-center">
         <Target className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
-        <p className="text-[var(--text-primary)] font-bold mb-1">Empezá con una plantilla</p>
-        <p className="text-[var(--text-secondary)] text-sm">Elegí lo que querés trackear — los datos se sincronizan solos con tu negocio.</p>
+        <p className="text-[var(--text-primary)] font-bold mb-1">Empieza con una plantilla</p>
+        <p className="text-[var(--text-secondary)] text-sm">Elige lo que quieres seguir — los datos se sincronizan solos con tu negocio.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {TEMPLATES.map(t => {
@@ -1005,7 +1016,7 @@ function EmptyStateWithTemplates({ onPick, autoStats }: { onPick: (t: Template) 
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t.description}</p>
                 {auto != null && auto > 0 && (
                   <p className="text-xs text-[var(--data-success-500)] mt-1.5 font-semibold">
-                    Hoy llevás {formatNumber(Math.round(auto), t.unit)}
+                    Hoy llevas {formatNumber(Math.round(auto), t.unit)}
                   </p>
                 )}
               </div>

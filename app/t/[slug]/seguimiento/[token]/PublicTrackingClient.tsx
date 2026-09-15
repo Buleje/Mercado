@@ -38,8 +38,11 @@ export default function PublicTrackingClient({ initialSnapshot, token }: Props) 
     }
   }, [token]);
 
-  // Mock advance local — para demos sin backend.
+  // Mock advance local — SOLO en desarrollo (audit 2026-06-26: en producción corría
+  // incondicionalmente y corrompía la posición real del repartidor). En prod se usa
+  // el snapshot/polling real, nunca esta simulación.
   useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
     const tick = window.setInterval(() => {
       setSnapshot((prev) => {
         if (prev.status === "delivered" || prev.status === "canceled") return prev;

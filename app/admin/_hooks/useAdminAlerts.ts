@@ -12,9 +12,17 @@
  * (Cloudflare tunnels y algunos proxies matan conexiones SSE largas).
  *
  * Extraído de app/admin/page.tsx (Paso 4 del refactor).
+ *
+ * Gate de rol (2026-09-14): almacenero no puede pedir ni /api/admin/stats ni
+ * /api/admin/sse (requireAdmin los rechaza con 403) — antes este hook los
+ * pedía igual en cada carga del panel. `puedePedir` espeja el allowedRoles
+ * real de cada ruta (lib/auth/roles-rutas-panel.ts), así que si el backend
+ * cambia a quién deja pasar, este hook lo sigue sin tocar código acá.
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
+import type { AdminRole } from "./useAdminAuth";
 
 export interface QuickStats {
   pendingOrders: number;
@@ -22,6 +30,8 @@ export interface QuickStats {
   lowStockProducts: number;
   overduePayables?: number;
   oldPendingOrders?: number;
+  /** Mensajes WhatsApp entrantes sin leer (badge de Mensajes). */
+  waUnread?: number;
 }
 
 interface StatsResponse {
@@ -30,6 +40,7 @@ interface StatsResponse {
   lowStockProducts: number;
   overduePayables?: number;
   oldPendingOrders?: number;
+  waUnread?: number;
 }
 
 export interface UseAdminAlertsResult {
@@ -43,9 +54,11 @@ const POLL_INITIAL_DELAY_MS = 3000;
 const SSE_MAX_FAILURES = 3;
 const SSE_BACKOFF_BASE_MS = 5000;
 
-export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
+export function useAdminAlerts(authReady: boolean, userRole: AdminRole | null): UseAdminAlertsResult {
   const [alerts, setAlerts] = useState<Record<string, number>>({});
   const [quickStats, setQuickStats] = useState<QuickStats | null>(null);
+  const puedeStats = authReady && puedePedir("/api/admin/stats", userRole);
+  const puedeSSE = authReady && puedePedir("/api/admin/sse", userRole);
 
   const fetchAlerts = useCallback(() => {
     // Skip si la pestaña está oculta — evita invocar /api/admin/stats mientras
@@ -54,6 +67,9 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
     if (typeof document !== "undefined" && document.visibilityState === "hidden") {
       return;
     }
+    // Rol sin permiso (p.ej. almacenero) → ni intentarlo, requireAdmin lo
+    // rechaza siempre con 403.
+    if (!puedeStats) return;
     fetch("/api/admin/stats")
       .then((r) => (r.ok ? r.json() : null))
       .then((d: StatsResponse | null) => {
@@ -61,6 +77,12 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
         const a: Record<string, number> = {};
         if (d.lowStockProducts > 0) a["inventario"] = d.lowStockProducts;
         if (d.pendingOrders > 0) a.pedidos = d.pendingOrders;
+        // Mensajes WhatsApp sin leer → badge en el tab WhatsApp del sidebar
+        // (y en Mensajes/marketplace-chat, que también contiene el inbox)
+        if ((d.waUnread ?? 0) > 0) {
+          a["whatsapp-inbox"] = d.waUnread!;
+          a["marketplace-chat"] = d.waUnread!;
+        }
         setAlerts(a);
         setQuickStats({
           pendingOrders: d.pendingOrders,
@@ -68,10 +90,11 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
           lowStockProducts: d.lowStockProducts,
           overduePayables: d.overduePayables,
           oldPendingOrders: d.oldPendingOrders,
+          waUnread: d.waUnread,
         });
       })
       .catch(() => {});
-  }, []);
+  }, [puedeStats]);
 
   // Polling: 3 s delay inicial + cada 60 s + reactivación al volver a la pestaña
   useEffect(() => {
@@ -91,7 +114,7 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
 
   // SSE: update instantáneo al recibir un pedido nuevo
   useEffect(() => {
-    if (!authReady) return;
+    if (!puedeSSE) return;
     let failCount = 0;
     let es: EventSource | null = null;
     let stopped = false;
@@ -100,6 +123,11 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
       if (stopped || failCount >= SSE_MAX_FAILURES) return;
       es = new EventSource("/api/admin/sse");
       es.addEventListener("new_order", () => {
+        failCount = 0;
+        fetchAlerts();
+      });
+      // Mensaje WhatsApp entrante → refrescar el badge de Mensajes al instante
+      es.addEventListener("wa_message_new", () => {
         failCount = 0;
         fetchAlerts();
       });
@@ -120,7 +148,7 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
       stopped = true;
       es?.close();
     };
-  }, [authReady, fetchAlerts]);
+  }, [puedeSSE, fetchAlerts]);
 
   return { alerts, quickStats, fetchAlerts };
 }

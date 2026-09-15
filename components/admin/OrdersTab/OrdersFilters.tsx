@@ -1,7 +1,10 @@
 "use client";
 
+import { useId, useRef } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { X, Search } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import type { OrderFilters, FiltersAction, OrderSource } from "./types";
 import { STATUS_LABELS } from "./types";
@@ -19,24 +22,35 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
     onClose();
   };
 
+  const titleId = useId();
+  const dateFromId = useId();
+  const dateToId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose });
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
       onClick={onClose}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Filtros Avanzados</CardTitle>
+            <CardTitle id={titleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Filtros Avanzados</CardTitle>
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">Afina tu búsqueda de pedidos</p>
           </div>
-          <button
+          <button aria-label="Cerrar"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -53,8 +67,8 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
                     filters.statuses.has(status)
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
                   )}
                 >
                   <input
@@ -83,10 +97,10 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   key={src || "all"}
                   onClick={() => dispatch({ type: "SET_SOURCE", value: src })}
                   className={cn(
-                    "flex-1 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
+                    "flex-1 px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors",
                     filters.source === src
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
                   )}
                 >
                   {src === "" ? "Todos" : src === "direct" ? "Tienda Personal" : "Marketplace"}
@@ -107,10 +121,10 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                     value: filters.paymentMethod === method ? "" : method,
                   })}
                   className={cn(
-                    "flex-1 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
+                    "flex-1 px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors",
                     filters.paymentMethod === method
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
                   )}
                 >
                   {method === "yape" ? "Yape" : "Efectivo"}
@@ -122,21 +136,23 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
           {/* Date range */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha desde</p>
+              <label htmlFor={dateFromId} className="block text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha desde</label>
               <input
+                id={dateFromId}
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => dispatch({ type: "SET_DATE_FROM", value: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha hasta</p>
+              <label htmlFor={dateToId} className="block text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha hasta</label>
               <input
+                id={dateToId}
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => dispatch({ type: "SET_DATE_TO", value: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             </div>
           </div>
@@ -152,7 +168,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   value={filters.amountMin}
                   onChange={(e) => dispatch({ type: "SET_AMOUNT_MIN", value: e.target.value })}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                  className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -165,7 +181,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   value={filters.amountMax}
                   onChange={(e) => dispatch({ type: "SET_AMOUNT_MAX", value: e.target.value })}
                   placeholder="999.99"
-                  className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                  className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -181,37 +197,47 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                 value={filters.customerSearch}
                 onChange={(e) => dispatch({ type: "SET_CUSTOMER_SEARCH", value: e.target.value })}
                 placeholder="Nombre o teléfono..."
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             </div>
           </div>
 
           {/* Checkboxes */}
           <div className="space-y-2">
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.hasDebt}
-                onChange={(e) => dispatch({ type: "SET_HAS_DEBT", value: e.target.checked })}
-                className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
-              />
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tiene deuda pendiente</p>
-                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con deuda sin cobrar</p>
-              </div>
-            </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.hasAdminNotes}
-                onChange={(e) => dispatch({ type: "SET_HAS_ADMIN_NOTES", value: e.target.checked })}
-                className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
-              />
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tiene notas internas</p>
-                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con comentarios del equipo</p>
-              </div>
-            </label>
+            <Field label="Tiene deuda pendiente" className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] cursor-pointer" labelClassName="sr-only">
+              {(id) => (
+                <>
+                  <input
+                    id={id}
+                    type="checkbox"
+                    checked={filters.hasDebt}
+                    onChange={(e) => dispatch({ type: "SET_HAS_DEBT", value: e.target.checked })}
+                    className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tiene deuda pendiente</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con deuda sin cobrar</p>
+                  </div>
+                </>
+              )}
+            </Field>
+            <Field label="Tiene notas internas" className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] cursor-pointer" labelClassName="sr-only">
+              {(id) => (
+                <>
+                  <input
+                    id={id}
+                    type="checkbox"
+                    checked={filters.hasAdminNotes}
+                    onChange={(e) => dispatch({ type: "SET_HAS_ADMIN_NOTES", value: e.target.checked })}
+                    className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tiene notas internas</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con comentarios del equipo</p>
+                  </div>
+                </>
+              )}
+            </Field>
           </div>
         </div>
 
@@ -219,13 +245,13 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
         <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 flex gap-3">
           <button
             onClick={handleClearAndClose}
-            className="flex-1 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Limpiar filtros
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors"
+            className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
           >
             Aplicar filtros
           </button>

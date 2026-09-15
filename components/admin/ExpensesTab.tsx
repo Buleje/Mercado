@@ -1,14 +1,16 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo } from "react";
 import {
-  Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, X, BarChart2,
+  Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, BarChart2,
   Home, Lightbulb, Users, Truck, Sparkles, Megaphone, Wrench, Package,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { decodeExpenseDescription } from "@/lib/expense-meta";
 
 type Expense = { id: string; category: string; description: string; amount: number; date: string; recurring: boolean };
 type Summary = { category: string; total: number; count: number };
@@ -46,6 +48,11 @@ export default function ExpensesTab() {
   const [saving, setSaving] = useState(false);
   const [tick, setTick] = useState(0);
   const [historicExpenses, setHistoricExpenses] = useState<Expense[]>([]);
+  // Los gastos fijos configurados (Expense.recurring=true) son PLANTILLAS: el
+  // acuerdo de pagar el alquiler, no el alquiler pagado. Desde que dejaron de
+  // sumar al total —contarlos inflaba el P&L con plata que nadie desembolsó—
+  // hay que decir que existen, o desaparecen sin explicación.
+  const [templates, setTemplates] = useState<Expense[]>([]);
 
   // filters
   const [from, setFrom] = useState(() => {
@@ -64,10 +71,12 @@ export default function ExpensesTab() {
     Promise.all([
       fetch(`/api/expenses?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []),
       fetch("/api/expenses/summary").then(r => r.ok ? r.json() : []),
-    ]).then(([exp, sum]) => {
+      fetch("/api/expenses?recurring=true").then(r => r.ok ? r.json() : []),
+    ]).then(([exp, sum, tpl]) => {
       if (active) {
         setExpenses(exp);
         setSummary(sum);
+        setTemplates(Array.isArray(tpl) ? tpl : []);
         setLoading(false);
       }
     }).catch(() => { if (active) setLoading(false); });
@@ -118,7 +127,7 @@ export default function ExpensesTab() {
   };
 
   const remove = async (id: string) => {
-    await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+    await fetch(`/api/expenses/${id}`, { method: "DELETE", headers: csrfHeaders() });
     setTick(v => v + 1);
   };
 
@@ -132,16 +141,16 @@ export default function ExpensesTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Wallet className="h-6 w-6 text-primary" />Control de Gastos</SectionTitle>
-        <button onClick={() => setShowForm(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition flex flex-wrap items-center gap-2"><Plus className="h-4 w-4" />Nuevo Gasto</button>
+        <button onClick={() => setShowForm(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition flex flex-wrap items-center gap-2"><Plus className="h-4 w-4" />Nuevo Gasto</button>
       </div>
 
       {/* Date filter + stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="sm:col-span-2 flex flex-wrap items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
           <Calendar className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} aria-label="Desde" className="bg-transparent text-sm flex-1 min-w-0" />
           <span className="text-[var(--text-tertiary)]">→</span>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
+          <input type="date" value={to} onChange={e => setTo(e.target.value)} aria-label="Hasta" className="bg-transparent text-sm flex-1 min-w-0" />
         </div>
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)]">S/{totalPeriod.toFixed(2)}</p>
@@ -153,6 +162,26 @@ export default function ExpensesTab() {
         </div>
       </div>
 
+      {/* Los fijos configurados: existen, pero todavía no son plata gastada. */}
+      {templates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+          <Calendar className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" />
+          <p className="flex-1 min-w-[200px] text-sm text-[var(--text-secondary)]">
+            <span className="font-bold text-[var(--text-primary)]">
+              {templates.length} gasto{templates.length === 1 ? "" : "s"} fijo{templates.length === 1 ? "" : "s"} configurado{templates.length === 1 ? "" : "s"}
+            </span>{" "}
+            por S/{templates.reduce((s, t) => s + Number(t.amount), 0).toFixed(2)} al período. No suman
+            acá hasta que registres el pago.
+          </p>
+          <a
+            href="?tab=compras&vista=punto-compra"
+            className="inline-flex h-9 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
+          >
+            Ver el catálogo
+          </a>
+        </div>
+      )}
+
       {/* Category summary */}
       {summary.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -160,7 +189,7 @@ export default function ExpensesTab() {
             <div key={s.category} className={cn("bg-[var(--surface-raised)] border rounded-xl p-3 text-center", s.category === maxCat?.category ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
               <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(s.total).toFixed(0)}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">{s.category} ({s.count})</p>
-              {totalAll > 0 && <div className="mt-1 h-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></div>}
+              {totalAll > 0 && <div className="mt-1 h-1 bg-[var(--surface-sunken)] rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></div>}
             </div>
           ))}
         </div>
@@ -199,34 +228,28 @@ export default function ExpensesTab() {
       })()}
 
       {/* Form modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-3 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-lg">Registrar Gasto</CardTitle>
-              <button onClick={() => setShowForm(false)}><X className="h-5 w-5 text-[var(--text-tertiary)]" /></button>
+      <AdminModal open={showForm} onClose={() => setShowForm(false)} title="Registrar Gasto">
+        <div className={cn(MODAL_BODY, "space-y-4")}>
+          <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} aria-label="Categoría del gasto" className="w-full px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm">
+            {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+          <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
+          <div className="flex flex-wrap gap-3">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm">S/</span>
+              <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full pl-8 pr-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
             </div>
-            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm">
-              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
-            <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            <div className="flex flex-wrap gap-3">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm">S/</span>
-                <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full pl-8 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-              </div>
-              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <label className="flex flex-wrap items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.recurring} onChange={e => setForm(f => ({ ...f, recurring: e.target.checked }))} className="rounded" />
-              Gasto recurrente (mensual)
-            </label>
-            <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full py-2.5 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Guardar Gasto
-            </button>
+            <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} aria-label="Fecha del gasto" className="px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
           </div>
+          <label className="flex flex-wrap items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.recurring} onChange={e => setForm(f => ({ ...f, recurring: e.target.checked }))} className="rounded" />
+            Gasto recurrente (mensual)
+          </label>
+          <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full min-h-11 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Guardar Gasto
+          </button>
         </div>
-      )}
+      </AdminModal>
 
       {/* Expenses list */}
       {expenses.length === 0 ? (
@@ -245,11 +268,11 @@ export default function ExpensesTab() {
                 <CatIcon className="h-4 w-4" strokeWidth={1.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{e.description}</p>
+                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{decodeExpenseDescription(e.description).description || "—"}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
               </div>
               <p className="font-extrabold text-[var(--data-error-500)] shrink-0">-S/{Number(e.amount).toFixed(2)}</p>
-              <button onClick={() => remove(e.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition"><Trash2 className="h-4 w-4" /></button>
+              <button aria-label="Eliminar" onClick={() => remove(e.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition"><Trash2 className="h-4 w-4" /></button>
             </div>
             );
           })}

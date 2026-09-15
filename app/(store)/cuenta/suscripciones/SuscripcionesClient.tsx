@@ -202,7 +202,7 @@ export default function SuscripcionesClient() {
                     <span
                       className={cn(
                         "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-extrabold tabular-nums",
-                        isActive ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--rule-soft)] text-[var(--text-tertiary)]",
+                        isActive ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--rule-soft)] text-[var(--text-tertiary)]",
                       )}
                     >
                       {counts[tab.id]}

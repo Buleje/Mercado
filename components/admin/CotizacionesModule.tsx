@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { useState, useEffect, useCallback, useMemo, useId, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   FileText, User, Calendar, Printer, Send, Check, XCircle, ShoppingCart,
@@ -15,8 +18,11 @@ const CotizacionesChart = dynamic(() => import("./CotizacionesChart"), {
     <div className="h-56 animate-pulse bg-[var(--surface-sunken)] rounded-xl" />
   ),
 });
-import { CardTitle, ErrorAlert, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, ErrorAlert, LoadingState, BlockTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
+import { Field } from "@/components/admin/shared/Field";
+import { printCotizacion, type EmpresaEmisor } from "@/lib/documentos/cotizacion-print";
 import { cn } from "@/lib/utils";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 
@@ -36,7 +42,8 @@ type CotizacionItem = {
 
 type Cotizacion = {
   id: string;
-  número: number;
+  /** Ya viene formateado del backend (ej. "Buleje-COT-0001"): no re-prefijar ni padStart. */
+  numero: string;
   clienteNombre: string;
   clienteRuc?: string;
   customerId?: string;
@@ -55,8 +62,8 @@ type Cotizacion = {
 
 const STATUS_META: Record<CotizacionStatus, { label: string; color: string; bg: string }> = {
   BORRADOR:   { label: "Borrador",   color: "text-[var(--text-primary)]",      bg: "bg-[var(--surface-sunken)]" },
-  ENVIADA:    { label: "Enviada",    color: "text-[var(--data-success-500)]",      bg: "bg-[var(--accent-soft)]" },
-  ACEPTADA:   { label: "Aceptada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
+  ENVIADA:    { label: "Enviada",    color: "text-[var(--data-success-500)]",      bg: "bg-primary/10" },
+  ACEPTADA:   { label: "Aceptada",   color: "text-[var(--data-success-500)]", bg: "bg-primary/10" },
   RECHAZADA:  { label: "Rechazada",  color: "text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)]" },
   VENCIDA:    { label: "Vencida",    color: "text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)]" },
   CONVERTIDA: { label: "Convertida", color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
@@ -74,9 +81,9 @@ const PER_PAGE = 10;
 function CotizacionPreview({ cotizacion }: { cotizacion: Cotizacion }) {
   const meta = STATUS_META[cotizacion.status];
   return (
-    <div className="w-[300px] bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
+    <div className="w-[300px] bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-[var(--text-secondary)]">COT-{String(cotizacion.número).padStart(4, "0")}</span>
+        <span className="font-mono text-xs text-[var(--text-secondary)]">{cotizacion.numero}</span>
         <span className={cn("inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>
       </div>
       <p className="font-bold text-[var(--text-primary)] text-sm">{cotizacion.clienteNombre}</p>
@@ -168,9 +175,9 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
   // Funnel
   const stages = [
-    { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-gray-300", text: "text-[var(--text-primary)]" },
-    { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
-    { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
+    { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-primary)]" },
+    { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-primary/10", text: "text-[var(--data-success-500)]" },
+    { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-primary/10", text: "text-[var(--data-success-500)]" },
     { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]" },
   ];
   const maxFunnel = Math.max(...stages.map(s => s.count), 1);
@@ -209,7 +216,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Emitidas mes", value: String(emitidasMes), valueTone: "neutral" as const },
@@ -230,7 +237,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
       {/* Funnel */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6 ">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Funnel de conversión</CardTitle>
         {cotizaciones.length > 0 ? (
           <div className="space-y-2.5">
@@ -266,8 +273,30 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+const MODULE_ID = "cotizaciones";
+
+/** Las vistas direccionables, estables: el hook las usa como dependencia. */
+const COTIZACIONES_VISTAS = ["dashboard", "lista", "nueva"] as const;
+
+const COTIZACIONES_TABS: AdminTab[] = [
+  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+  { id: "lista", label: "Lista", icon: List },
+  { id: "nueva", label: "Nueva Cotización", shortLabel: "Nueva", icon: Plus },
+];
+
+/**
+ * Este módulo usa `useSubvistaModulo` (`?sub=`) y no `?vista=`: se renderiza
+ * DENTRO de DocumentosHubModule, que ya es dueño de ese parámetro. Dos componentes
+ * escribiendo el mismo se pisarían — el de adentro le cambiaría la pestaña al
+ * de afuera en cada click.
+ */
 export default function CotizacionesModule() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "lista" | "nueva">("dashboard");
+  // Recuerda el último tab, igual que los hubs y Mi Plata.
+  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo(
+    MODULE_ID,
+    COTIZACIONES_VISTAS,
+    COTIZACIONES_VISTAS[0],
+  );
 
   // ── LIST STATE ──
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
@@ -289,6 +318,20 @@ export default function CotizacionesModule() {
   const [selected, setSelected] = useState<Cotizacion | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const detailTituloId = useId();
+  const cerrarDetalle = useCallback(() => setSelected(null), []);
+  useModalAccesible(detailPanelRef, { onCerrar: cerrarDetalle, activo: !!selected });
+  // Datos del emisor (para el header del PDF); best-effort desde la config SUNAT.
+  const [empresa, setEmpresa] = useState<EmpresaEmisor | null>(null);
+  useEffect(() => {
+    fetch("/api/admin/sunat/config", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.data?.razonSocial) setEmpresa({ razonSocial: j.data.razonSocial, ruc: j.data.ruc, direccionFiscal: j.data.direccionFiscal ?? null });
+      })
+      .catch(() => { /* sin datos de empresa → el PDF usa un header neutro */ });
+  }, []);
 
   // ── NEW FORM STATE (multi-step) ──
   const [step, setStep] = useState(1);
@@ -503,7 +546,12 @@ export default function CotizacionesModule() {
 
   // ── Print ───────────────────────────────────────────────────────────────────
 
-  const handlePrint = () => window.print();
+  // PDF profesional del presupuesto (documento limpio, branded), en vez de
+  // imprimir toda la página del admin con window.print().
+  const handlePrint = () => {
+    if (selected) printCotizacion(selected, empresa);
+    else window.print();
+  };
 
   // ── Template handlers ─────────────────────────────────────────────────────
 
@@ -570,27 +618,19 @@ export default function CotizacionesModule() {
         })()}
       </AdminModuleHeader>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-[var(--surface-sunken)] rounded-xl p-1 w-fit">
-        {([["dashboard", "Dashboard"], ["lista", "Lista"], ["nueva", "Nueva Cotización"]] as const).map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id)}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5",
-              activeTab === id
-                ? "bg-white dark:bg-[var(--color-card)] text-primary "
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            {id === "dashboard" && <BarChart3 className="h-3.5 w-3.5" />}
-            {label}
-            {id === "lista" && cotizaciones.length > 0 && (
-              <span className="bg-[var(--rule-soft)] text-xs px-1.5 rounded-full">{cotizaciones.length}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* AdminTabBar como el resto del panel (antes: segmented control propio,
+          con su propio alto/radio/estado activo y sin persistencia del último
+          tab). El contador de la lista viaja como `badge`, que AdminTabBar ya
+          sabe dibujar. Ojo: `moduleId` sólo persiste el ORDEN de arrastre; la
+          memoria del último tab la pone el llamador, igual que en los hubs. */}
+      <AdminTabBar
+        tabs={COTIZACIONES_TABS.map((t) =>
+          t.id === "lista" && cotizaciones.length > 0 ? { ...t, badge: cotizaciones.length } : t,
+        )}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as "dashboard" | "lista" | "nueva")}
+        moduleId={MODULE_ID}
+      />
 
       {/* ── TAB: DASHBOARD ──────────────────────────────────────────────── */}
       {activeTab === "dashboard" && <CotizacionesDashboard cotizaciones={cotizaciones} loading={loading} />}
@@ -655,13 +695,13 @@ export default function CotizacionesModule() {
           {!loading && cotizaciones.length > 0 && (() => {
             const stages = [
               { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-[var(--rule-soft)]", text: "text-[var(--text-primary)]" },
-              { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
-              { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
+              { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-primary/10", text: "text-[var(--data-success-500)]" },
+              { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-primary/10", text: "text-[var(--data-success-500)]" },
               { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]" },
             ];
             const maxCount = Math.max(...stages.map(s => s.count), 1);
             return (
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 ">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
                 <p className="text-xs uppercase font-bold text-[var(--text-tertiary)] mb-3">Funnel de conversión</p>
                 <div className="space-y-2">
                   {stages.map((stage, i) => {
@@ -698,13 +738,13 @@ export default function CotizacionesModule() {
                   aria-label="Buscar cotizaciones"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setShowQuickClient(true)}
-                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-primary hover:text-white hover:border-primary text-[var(--text-secondary)] transition-colors"
+                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-primary hover:text-white hover:border-primary text-[var(--text-secondary)] transition-colors"
                 title="Crear cliente rápido"
               >
                 <Plus className="h-4 w-4" />
@@ -741,7 +781,7 @@ export default function CotizacionesModule() {
                   description={
                     <>
                       <span className="line-clamp-2 block">
-                        {vencidas.slice(0, 3).map(c => `COT-${String(c.número).padStart(4, "0")} para ${c.clienteNombre} (${formatCurrency(c.total)})`).join(" \u00B7 ")}
+                        {vencidas.slice(0, 3).map(c => `${c.numero} para ${c.clienteNombre} (${formatCurrency(c.total)})`).join(" \u00B7 ")}
                         {vencidas.length > 3 && ` y ${vencidas.length - 3} mas...`}
                       </span>
                       <div className="flex gap-2 mt-3">
@@ -788,23 +828,23 @@ export default function CotizacionesModule() {
           </AnimatePresence>
 
           {/* Table */}
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+          <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
             {loading ? (
               <LoadingState />
             ) : error ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-2">
+              <div className="flex flex-col items-center justify-center py-12 gap-2 border border-[var(--rule-base)] rounded-xl">
                 <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
                 <p className="text-sm text-[var(--data-error-500)]">{error}</p>
                 <button onClick={fetchCotizaciones} className="text-xs text-primary hover:underline font-semibold mt-1">Reintentar</button>
               </div>
             ) : cotizaciones.length === 0 ? (
-              <div className="text-center py-16 px-4">
+              <div className="text-center py-16 px-4 border border-[var(--rule-base)] rounded-xl">
                 <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-4">
                   <FileText className="h-8 w-8 text-[var(--text-tertiary)]" />
                 </div>
                 <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin cotizaciones</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Envía presupuestos profesionales a tus clientes</p>
-                <button onClick={() => setActiveTab("nueva")} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Nueva cotización</button>
+                <button onClick={() => setActiveTab("nueva")} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Nueva cotización</button>
               </div>
             ) : (
               <>
@@ -823,12 +863,20 @@ export default function CotizacionesModule() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 py-2">
                     {paginated.map(c => {
                       const meta = STATUS_META[c.status];
-                      const headerColor = c.status === "BORRADOR" ? "bg-[var(--surface-sunken)]" : c.status === "ENVIADA" ? "bg-[var(--accent-soft)]" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-50)]";
+                      const headerColor = c.status === "BORRADOR" ? "bg-[var(--surface-sunken)]" : c.status === "ENVIADA" ? "bg-primary/10" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-primary/10" : "bg-[var(--data-error-50)]";
                       const diasValidez = Math.max(0, Math.ceil((new Date(c.validoHasta).getTime() - Date.now()) / 86400000));
                       return (
-                        <div key={c.id} onClick={() => openDetail(c)} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-[var(--shadow-lg)] cursor-pointer transition-all group">
+                        <div
+                          key={c.id}
+                          onClick={() => openDetail(c)}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Ver cotización ${c.numero} de ${c.clienteNombre}`}
+                          onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(c); } }}
+                          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden hover:shadow-[var(--shadow-lg)] cursor-pointer transition-all group"
+                        >
                           <div className={cn("px-4 py-2 flex items-center justify-between", headerColor)}>
-                            <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">COT-{String(c.número).padStart(4, "0")}</span>
+                            <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">{c.numero}</span>
                             <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>
                           </div>
                           <div className="p-4 space-y-2">
@@ -838,8 +886,8 @@ export default function CotizacionesModule() {
                               <span className="text-xs text-[var(--text-tertiary)]">{formatDate(c.createdAt)} · {diasValidez > 0 ? `${diasValidez}d válido` : "Vencida"}</span>
                             </div>
                             <div className="flex gap-2 pt-2 border-t border-[var(--rule-soft)]">
-                              <button onClick={(e) => { e.stopPropagation(); openDetail(c); }} className="flex-1 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 py-1.5 rounded-lg transition-colors">Ver</button>
-                              <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización COT-${String(c.número).padStart(4, "0")} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] py-1.5 rounded-lg transition-colors">WhatsApp</button>
+                              <button onClick={(e) => { e.stopPropagation(); openDetail(c); }} className="flex-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 py-1.5 rounded-lg transition-colors">Ver</button>
+                              <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización ${c.numero} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 py-1.5 rounded-lg transition-colors">WhatsApp</button>
                             </div>
                           </div>
                         </div>
@@ -847,15 +895,15 @@ export default function CotizacionesModule() {
                     })}
                   </div>
                 ) : (
-                <div className="overflow-x-auto -mx-4 sm:mx-0">
-                  <table className="w-full min-w-[600px] sm:min-w-0 text-sm">
+                <div className="-mx-4 sm:mx-0">
+                  <DataTable className="min-w-[600px] sm:min-w-0">
                     <thead>
-                      <tr className="border-b border-[var(--rule-soft)] text-left">
-                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">N°</th>
-                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Cliente</th>
-                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Total</th>
-                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Válido hasta</th>
-                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Status</th>
+                      <tr>
+                        <th>N°</th>
+                        <th>Cliente</th>
+                        <th className="text-right">Total</th>
+                        <th className="hidden sm:table-cell">Válido hasta</th>
+                        <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -865,15 +913,18 @@ export default function CotizacionesModule() {
                           <tr
                             key={c.id}
                             onClick={() => openDetail(c)}
-                            className="border-b border-gray-50 hover:bg-[var(--surface-alt)] cursor-pointer transition-colors group"
+                            tabIndex={0}
+                            aria-label={`Ver cotización ${c.numero} de ${c.clienteNombre}`}
+                            onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(c); } }}
+                            className="hover:bg-[var(--surface-alt)] cursor-pointer transition-colors group"
                           >
-                            <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
+                            <td className="font-mono text-xs text-[var(--text-secondary)]">
                               {/* Mejora 17: Preview al hover */}
                               <HoverPreviewRow preview={<CotizacionPreview cotizacion={c} />}>
-                                <span>{String(c.número).padStart(4, "0")}</span>
+                                <span>{c.numero}</span>
                               </HoverPreviewRow>
                             </td>
-                            <td className="px-4 py-3">
+                            <td>
                               <div className="flex items-center gap-2">
                                 <div className="h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
                                   <User className="h-4 w-4 text-secondary" />
@@ -884,9 +935,9 @@ export default function CotizacionesModule() {
                                 </div>
                               </div>
                             </td>
-                            <td className="num px-4 py-3 font-bold text-[var(--text-primary)]">{formatCurrency(c.total)}</td>
-                            <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(c.validoHasta)}</td>
-                            <td className="px-4 py-3">
+                            <td className="num font-bold text-[var(--text-primary)]">{formatCurrency(c.total)}</td>
+                            <td className="text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(c.validoHasta)}</td>
+                            <td>
                               <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
                                 {meta.label}
                               </span>
@@ -895,7 +946,7 @@ export default function CotizacionesModule() {
                         );
                       })}
                     </tbody>
-                  </table>
+                  </DataTable>
                 </div>
                 )}
                 {totalPages > 1 && (
@@ -904,10 +955,10 @@ export default function CotizacionesModule() {
                       {cotizaciones.length} cotizaci{cotizaciones.length !== 1 ? "ones" : "ón"} — Pág. {page}/{totalPages}
                     </p>
                     <div className="flex gap-1">
-                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
+                      <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                         <ChevronLeft className="h-4 w-4" />
                       </button>
-                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
+                      <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                         <ChevronRight className="h-4 w-4" />
                       </button>
                     </div>
@@ -921,7 +972,7 @@ export default function CotizacionesModule() {
 
       {/* ── TAB: NUEVA COTIZACIÓN (multi-step) ──────────────────────────── */}
       {activeTab === "nueva" && (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  p-5 space-y-5">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-5">
           {/* Step indicators */}
           <div className="flex items-center gap-2">
             {[1, 2, 3].map(s => (
@@ -943,37 +994,41 @@ export default function CotizacionesModule() {
           {/* Step 1: Cliente */}
           {step === 1 && (
             <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre del cliente</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                  <input
-                    type="text"
-                    value={clienteNombre}
-                    onChange={e => setClienteNombre(e.target.value)}
-                    placeholder="Nombre o razón social"
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">RUC (opcional)</label>
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                  <input
-                    type="text"
-                    value={clienteRuc}
-                    onChange={e => setClienteRuc(e.target.value)}
-                    placeholder="20XXXXXXXXX"
-                    maxLength={20}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                </div>
-              </div>
+              <Field label="Nombre del cliente" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                {(id) => (
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                    <input
+                      id={id}
+                      type="text"
+                      value={clienteNombre}
+                      onChange={e => setClienteNombre(e.target.value)}
+                      placeholder="Nombre o razón social"
+                      className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                )}
+              </Field>
+              <Field label="RUC (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                {(id) => (
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                    <input
+                      id={id}
+                      type="text"
+                      value={clienteRuc}
+                      onChange={e => setClienteRuc(e.target.value)}
+                      placeholder="20XXXXXXXXX"
+                      maxLength={20}
+                      className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                )}
+              </Field>
               <div className="flex justify-end pt-2">
                 <button
                   onClick={() => { if (clienteNombre.trim()) setStep(2); else setCreateError("Nombre del cliente requerido"); }}
-                  className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+                  className="px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
                 >
                   Siguiente
                 </button>
@@ -989,7 +1044,7 @@ export default function CotizacionesModule() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowTemplateModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
                   >
                     <Copy className="h-3.5 w-3.5" /> Desde plantilla
                   </button>
@@ -1020,7 +1075,7 @@ export default function CotizacionesModule() {
                       const desc = (parseFloat(item.descuento) || 0) / 100;
                       const sub = qty * price * (1 - desc);
                       return (
-                        <tr key={idx} className="border-b border-gray-50">
+                        <tr key={idx} className="border-b border-[var(--rule-soft)]">
                           <td className="py-2 pr-2 relative">
                             <input
                               type="text"
@@ -1028,10 +1083,10 @@ export default function CotizacionesModule() {
                               onChange={e => { updateItem(idx, "descripcion", e.target.value); setProductSearch(e.target.value); setActiveItemIdx(idx); }}
                               onFocus={() => setActiveItemIdx(idx)}
                               placeholder="Buscar producto o escribir..."
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
+                              className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
                             />
                             {activeItemIdx === idx && productResults.length > 0 && (
-                              <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl max-h-40 overflow-y-auto">
+                              <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-40 overflow-y-auto">
                                 {productResults.map(p => (
                                   <button
                                     key={p.id}
@@ -1047,21 +1102,24 @@ export default function CotizacionesModule() {
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="1" step="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)}
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
+                              aria-label={`Cantidad de ${item.descripcion || `item ${idx + 1}`}`}
+                              className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" step="0.01" value={item.precioUnit} onChange={e => updateItem(idx, "precioUnit", e.target.value)}
                               placeholder="0.00"
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-right" />
+                              aria-label={`Precio unitario de ${item.descripcion || `item ${idx + 1}`}`}
+                              className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-right" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" max="100" step="1" value={item.descuento} onChange={e => updateItem(idx, "descuento", e.target.value)}
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
+                              aria-label={`Descuento % de ${item.descripcion || `item ${idx + 1}`}`}
+                              className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
                           </td>
                           <td className="py-2 text-right font-medium text-[var(--text-primary)]">{formatCurrency(sub)}</td>
                           <td className="py-2 pl-1">
                             {items.length > 1 && (
-                              <button onClick={() => removeItem(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors">
+                              <button aria-label="Eliminar" onClick={() => removeItem(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             )}
@@ -1090,10 +1148,10 @@ export default function CotizacionesModule() {
               </div>
 
               <div className="flex gap-2 justify-between pt-2">
-                <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
+                <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Atrás
                 </button>
-                <button onClick={() => setStep(3)} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
+                <button onClick={() => setStep(3)} className="px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">
                   Siguiente
                 </button>
               </div>
@@ -1108,39 +1166,40 @@ export default function CotizacionesModule() {
                 <p className="text-sm"><span className="font-bold text-[var(--text-primary)]">Items:</span> {items.filter(i => i.descripcion.trim()).length}</p>
                 <p className="text-sm"><span className="font-bold text-[var(--text-primary)]">Total:</span> <span className="font-bold text-primary">{formatCurrency(computedTotal)}</span></p>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Válido hasta</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                  <input
-                    type="date"
-                    value={validoHasta}
-                    onChange={e => setValidoHasta(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
+              <Field label="Válido hasta" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                {(id) => (
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                    <input
+                      id={id}
+                      type="date"
+                      value={validoHasta}
+                      onChange={e => setValidoHasta(e.target.value)}
+                      className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                )}
+              </Field>
+              <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <textarea
                   value={notas}
                   onChange={e => setNotas(e.target.value)}
                   placeholder="Condiciones, observaciones..."
                   rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
-              </div>
+              </Field>
 
               {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
               <div className="flex gap-2 justify-between pt-1">
-                <button onClick={() => setStep(2)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
+                <button onClick={() => setStep(2)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Atrás
                 </button>
                 <button
                   onClick={handleCreate}
                   disabled={creating}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
+                  className="flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                 >
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Crear Cotización
@@ -1161,20 +1220,25 @@ export default function CotizacionesModule() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="modal-backdrop" style={{ zIndex: 40 }}
-              onClick={() => setSelected(null)}
+              onClick={cerrarDetalle}
             />
             <m.div
               key="cot-panel"
+              ref={detailPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={detailTituloId}
+              tabIndex={-1}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Cotización #{String(selected.número).padStart(4, "0")}</CardTitle>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+                  <CardTitle id={detailTituloId} className="text-lg font-bold text-[var(--text-primary)]">Cotización {selected.numero}</CardTitle>
+                  <button aria-label="Cerrar" onClick={cerrarDetalle} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1209,7 +1273,7 @@ export default function CotizacionesModule() {
                   <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
                 ) : (
                   <div>
-                    <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Items</h4>
+                    <BlockTitle className="mb-3">Items</BlockTitle>
                     <div className="space-y-2">
                       {(selected.items ?? []).map((item, i) => (
                         <div key={i} className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl">
@@ -1226,7 +1290,7 @@ export default function CotizacionesModule() {
 
                 {/* Mejora 5: Timeline de seguimiento */}
                 <div>
-                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Seguimiento</h4>
+                  <BlockTitle className="mb-3">Seguimiento</BlockTitle>
                   <div className="space-y-0">
                     {([
                       { label: "Creada", status: "BORRADOR" as const, date: selected.createdAt },
@@ -1241,10 +1305,10 @@ export default function CotizacionesModule() {
                       return (
                         <div key={idx} className="flex gap-3 items-start">
                           <div className="flex flex-col items-center">
-                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs", isDone ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")}>
+                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs", isDone ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")}>
                               {isDone ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                             </div>
-                            {idx < 3 && <div className={cn("w-0.5 h-6", isDone ? "bg-[var(--accent-soft)]" : "bg-[var(--rule-soft)]")} />}
+                            {idx < 3 && <div className={cn("w-0.5 h-6", isDone ? "bg-primary/10" : "bg-[var(--rule-soft)]")} />}
                           </div>
                           <div className="pb-3">
                             <p className={cn("text-xs font-bold", isDone ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{step.label}</p>
@@ -1284,7 +1348,7 @@ export default function CotizacionesModule() {
                     }
                     if (diasEnviada > 3) {
                       const _phone = selected.customerId || "";
-                      const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${String(selected.número).padStart(4, "0")} por S/${Number(selected.total).toFixed(2)}. ¿Te interesa?`;
+                      const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${selected.numero} por S/${Number(selected.total).toFixed(2)}. ¿Te interesa?`;
                       return (
                         <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3 space-y-2">
                           <p className="text-xs font-bold text-[var(--data-warning-500)]">Sin respuesta hace {diasEnviada} días — ¿Enviar recordatorio?</p>
@@ -1308,7 +1372,7 @@ export default function CotizacionesModule() {
                   {selected.status === "BORRADOR" && (
                     <>
                       <button onClick={() => updateStatus("ENVIADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
                         <Send className="h-4 w-4" /> Enviar
                       </button>
                     </>
@@ -1316,18 +1380,18 @@ export default function CotizacionesModule() {
                   {selected.status === "ENVIADA" && (
                     <>
                       <button onClick={() => updateStatus("ACEPTADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
                         <Check className="h-4 w-4" /> Aceptada
                       </button>
                       <button onClick={() => updateStatus("RECHAZADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 transition-colors">
                         <XCircle className="h-4 w-4" /> Rechazada
                       </button>
                     </>
                   )}
                   {selected.status === "ACEPTADA" && (
                     <button onClick={convertirAOrden} disabled={actionLoading}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors">
+                      className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors">
                       <ShoppingCart className="h-4 w-4" /> Convertir a Orden
                     </button>
                   )}
@@ -1339,7 +1403,7 @@ export default function CotizacionesModule() {
                         `${i + 1}. ${it.descripcion} x ${it.cantidad} — S/ ${Number(it.subtotal).toFixed(2)}`
                       ).join("\n");
                       const texto = [
-                        `*Cotizacion #${String(c.número).padStart(4, "0")} — Buleje*`,
+                        `*Cotización ${c.numero} — Buleje*`,
                         `Cliente: ${c.clienteNombre}`,
                         `Fecha: ${formatDate(c.createdAt)}`,
                         `Valida hasta: ${formatDate(c.validoHasta)}`,
@@ -1358,7 +1422,7 @@ export default function CotizacionesModule() {
                       const url = phone ? `https://wa.me/${phone}?text=${encodedText}` : `https://wa.me/?text=${encodedText}`;
                       window.open(url, "_blank");
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
+                    className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
                   >
                     <MessageCircle className="h-4 w-4" /> WhatsApp
                   </button>
@@ -1375,17 +1439,17 @@ export default function CotizacionesModule() {
                       setActiveTab("nueva");
                       setStep(2);
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
                   >
                     <Copy className="h-4 w-4" /> Duplicar
                   </button>
                   <button onClick={handlePrint}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                     <Printer className="h-4 w-4" /> Imprimir PDF
                   </button>
                   <button
                     onClick={() => { setShowSaveTemplate(true); setTemplateName(""); }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
                   >
                     <Bookmark className="h-4 w-4" /> Guardar como plantilla
                   </button>
@@ -1401,20 +1465,20 @@ export default function CotizacionesModule() {
                       onChange={e => setTemplateName(e.target.value)}
                       placeholder="Nombre de la plantilla..."
                       maxLength={60}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                       onKeyDown={e => e.key === "Enter" && handleSaveTemplate()}
                     />
                     <div className="flex gap-2">
                       <button
                         onClick={() => setShowSaveTemplate(false)}
-                        className="flex-1 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
+                        className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                       >
                         Cancelar
                       </button>
                       <button
                         onClick={handleSaveTemplate}
                         disabled={!templateName.trim()}
-                        className="flex-1 px-3 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                        className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                       >
                         Guardar
                       </button>
@@ -1428,130 +1492,80 @@ export default function CotizacionesModule() {
       </AnimatePresence>
 
       {/* ── Template Selection Modal ─────────────────────────────────────── */}
-      <AnimatePresence>
-        {showTemplateModal && (
-          <>
-            <m.div
-              key="tpl-select-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop" style={{ zIndex: 60 }}
-              onClick={() => setShowTemplateModal(false)}
-            />
-            <m.div
-              key="tpl-select-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowTemplateModal(false)}
-            >
-              <div className="w-full max-w-md bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Seleccionar plantilla</CardTitle>
-                  <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)]">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
-                {templates.length === 0 ? (
-                  <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No hay plantillas guardadas</p>
-                ) : (
-                  <div className="space-y-2">
-                    {templates.map(tpl => (
-                      <button
-                        key={tpl.id}
-                        onClick={() => handleLoadTemplate(tpl)}
-                        className="w-full text-left p-3 bg-[var(--surface-alt)] rounded-lg hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <Bookmark className="h-4 w-4 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tpl.nombre}</p>
-                            <p className="text-xs text-[var(--text-tertiary)]">
-                              {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+      <AdminModal open={showTemplateModal} onClose={() => setShowTemplateModal(false)} title="Seleccionar plantilla">
+        <div className={MODAL_BODY}>
+          {templates.length === 0 ? (
+            <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No hay plantillas guardadas</p>
+          ) : (
+            <div className="space-y-2">
+              {templates.map(tpl => (
+                <button
+                  key={tpl.id}
+                  onClick={() => handleLoadTemplate(tpl)}
+                  className="w-full text-left p-3 bg-[var(--surface-alt)] rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Bookmark className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tpl.nombre}</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">
+                        {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </AdminModal>
 
       {/* ── Template Management Modal ────────────────────────────────────── */}
-      <AnimatePresence>
-        {showTemplateList && (
-          <>
-            <m.div
-              key="tpl-manage-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop" style={{ zIndex: 60 }}
-              onClick={() => setShowTemplateList(false)}
-            />
-            <m.div
-              key="tpl-manage-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowTemplateList(false)}
-            >
-              <div className="w-full max-w-md bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Plantillas guardadas</CardTitle>
-                  <button onClick={() => setShowTemplateList(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)]">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
+      <AdminModal
+        open={showTemplateList}
+        onClose={() => setShowTemplateList(false)}
+        title="Plantillas guardadas"
+        description={`${templates.length} de ${MAX_TEMPLATES} plantillas usadas`}
+      >
+        <div className={MODAL_BODY}>
+          {templates.length === 0 ? (
+            <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No hay plantillas. Guarda una desde una cotizacion existente.</p>
+          ) : (
+            <div className="space-y-2">
+              {templates.map(tpl => (
+                <div
+                  key={tpl.id}
+                  className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl"
+                >
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Bookmark className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tpl.nombre}</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                      {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleLoadTemplate(tpl)}
+                    className="px-2 py-1 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
+                  >
+                    Usar
+                  </button>
+                  <button aria-label="Eliminar"
+                    onClick={() => handleDeleteTemplate(tpl.id)}
+                    className="p-1.5 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <p className="text-xs text-[var(--text-tertiary)]">{templates.length} de {MAX_TEMPLATES} plantillas usadas</p>
-                {templates.length === 0 ? (
-                  <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No hay plantillas. Guarda una desde una cotizacion existente.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {templates.map(tpl => (
-                      <div
-                        key={tpl.id}
-                        className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl"
-                      >
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Bookmark className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tpl.nombre}</p>
-                          <p className="text-xs text-[var(--text-tertiary)]">
-                            {tpl.items.length} item{tpl.items.length !== 1 ? "s" : ""} &middot; {formatDate(tpl.createdAt)}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleLoadTemplate(tpl)}
-                          className="px-2 py-1 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
-                        >
-                          Usar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTemplate(tpl.id)}
-                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+              ))}
+            </div>
+          )}
+        </div>
+      </AdminModal>
 
       {/* Quick client creation modal */}
       <ClienteFormModal

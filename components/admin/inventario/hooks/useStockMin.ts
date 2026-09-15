@@ -41,7 +41,7 @@ export interface StockStats {
   noImageCount: number;
 }
 
-export function useStockMin(products: DbProduct[], movements: DbInventoryMovement[]): StockStats {
+export function useStockMin(products: DbProduct[], _movements: DbInventoryMovement[]): StockStats {
   const isLowStock = (p: DbProduct) =>
     p.stockMin != null && p.stock != null && p.stock <= p.stockMin;
 

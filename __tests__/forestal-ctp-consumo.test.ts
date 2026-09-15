@@ -1,0 +1,1145 @@
+/**
+ * Libro CTP · atribución N:M + invariantes + costeo — REAL DB integration (ADR-134).
+ *
+ * ── Por qué este archivo existe ───────────────────────────────────────────
+ * Estas invariantes son la diferencia entre un libro de operaciones y una
+ * planilla: I2 impide consumir dos veces el mismo ingreso, que es el patrón de
+ * blanqueo que fiscaliza SERFOR (legitimar madera sin origen contra una guía
+ * real). Postgres NO puede garantizarlas — son agregadas y el aislamiento de
+ * Buleje es app-level, no RLS. Si `ForestCtpConsumoDB` deja de aplicarlas, no
+ * las aplica nadie, y el módulo miente en silencio.
+ *
+ * ── Por qué DB real y no mocks ────────────────────────────────────────────
+ * Mismo criterio que `security/multi-tenant-isolation.test.ts`: un mock prueba
+ * que el código llama al where correcto, no que Postgres se comporte como
+ * creemos bajo Decimal, transacciones y locks. El test de concurrencia de abajo
+ * es la prueba: encontró un TOCTOU real (2026-07-15) que ningún mock habría
+ * mostrado — el lock estaba sobre la línea y no sobre el ingreso disputado, y
+ * dos corridas paralelas consumían 20 m³ de un ingreso de 10.
+ *
+ * Todo lo creado lleva prefijo `TEST-CTP-<runId>` y `afterAll` lo borra en
+ * orden inverso de FKs.
+ *
+ * Para correr:
+ *   node --env-file=.env.local node_modules/.bin/vitest run \
+ *     __tests__/forestal-ctp-consumo.test.ts
+ */
+
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
+process.env.AUDIT_CHAIN_ENABLED ??= "false";
+
+import { prisma } from "@/lib/prisma";
+import { ForestCtpConsumoDB, CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
+import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
+import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
+
+const TENANT = "main";
+const runId = Math.random().toString(36).slice(2, 8);
+const P = `TEST-CTP-${runId}`;
+
+const woodIds: string[] = [];
+const lineIds: string[] = [];
+
+/**
+ * Ingreso validado con costo opcional (sin costo = factura que aún no llegó).
+ * `cites` es explícito a propósito: el nombre de la especie NO lo deduce —
+ * `speciesCites` es un booleano que marca el operador al registrar la guía.
+ */
+async function crearIngreso(
+  vol: number,
+  costoTotal?: number,
+  especie = "Tornillo",
+  cites = false,
+) {
+  const w = await WoodEntriesDB.create(TENANT, {
+    gtfNumber: `${P}-${woodIds.length}`,
+    providerName: `${P} proveedor`,
+    speciesCommonName: especie,
+    speciesCites: cites,
+    volumeM3: vol,
+    costoTotal: costoTotal ?? null,
+    moneda: "PEN",
+    createdBy: P,
+  });
+  await prisma.woodEntry.update({ where: { id: w.id }, data: { status: "validado" } });
+  woodIds.push(w.id);
+  return w;
+}
+
+/** Línea de producción. `declarado: null` deja I1 fuera de juego (sólo I2 protege). */
+async function crearLinea(declarado: number | null, producido = 0, costoProceso?: number) {
+  const l = await prisma.forestCtpEntry.create({
+    data: {
+      tenantId: TENANT,
+      section: "produccion",
+      lineNo: 90_000 + lineIds.length,
+      speciesCommon: "Tornillo",
+      productType: `${P}-prod`,
+      volumeInputM3: declarado,
+      quantity: producido || null,
+      unit: producido ? "m3" : null,
+      costoProceso: costoProceso ?? null,
+      moneda: "PEN",
+      status: "registrado",
+      createdBy: P,
+    },
+  });
+  lineIds.push(l.id);
+  return l;
+}
+
+/**
+ * Limpieza por PATRÓN, no por los ids de esta corrida.
+ *
+ * Barre todo lo que matchee `TEST-CTP-`, incluida la basura que haya dejado una
+ * corrida ANTERIOR que murió sin poder limpiar. Pasó de verdad (2026-07-15): se
+ * cayó el DNS del pooler a mitad de los tests, el `afterAll` explotó con
+ * EAI_AGAIN, y quedaron 11 ingresos + 12 líneas de prueba visibles en el módulo
+ * real. Limpiar sólo los ids en memoria no cubre ese caso.
+ *
+ * El patrón es seguro: ningún dato real puede llamarse `TEST-CTP-…`.
+ */
+async function purgarDatosDePrueba() {
+  const wood = { gtfNumber: { startsWith: `TEST-CTP-` } };
+  const linea = { tenantId: TENANT, createdBy: { startsWith: `TEST-CTP-` } };
+  // Orden inverso de FKs: el RESTRICT de woodEntryId exige borrar consumos antes.
+  await prisma.forestCtpConsumo.deleteMany({
+    where: { OR: [{ ctpEntry: linea }, { woodEntry: wood }, { createdBy: { startsWith: `TEST-CTP-` } }] },
+  });
+  await prisma.forestCtpDespachoOrigen.deleteMany({
+    where: { OR: [{ despacho: linea }, { produccion: linea }, { createdBy: { startsWith: `TEST-CTP-` } }] },
+  });
+  await prisma.forestCtpEntry.deleteMany({ where: linea });
+  await prisma.woodEntry.deleteMany({ where: wood });
+  // Desde ADR-134 cada create/validate/setConsumos deja rastro en ActivityLog.
+  await prisma.activityLog.deleteMany({ where: { tenantId: TENANT, user: { startsWith: `TEST-CTP-` } } });
+}
+
+/**
+ * Son tests de INTEGRACIÓN: necesitan la DB accesible. El pre-commit y
+ * `vitest --changed` corren SIN `--env-file=.env.local`, así que no hay
+ * DATABASE_URL y Prisma se cuelga hasta el timeout del hook. En vez de romper
+ * el commit por eso, se saltan — mismo criterio y mismo patrón que
+ * `security/multi-tenant-isolation.test.ts`.
+ *
+ * Ping real en lugar de mirar `process.env.DATABASE_URL`: la var puede estar
+ * definida y la red caída igual (pasó el 2026-07-15 con un EAI_AGAIN del pooler).
+ */
+/**
+ * OJO — top-level await, NO `beforeAll`.
+ *
+ * `describe.skipIf(cond)` evalúa `cond` en tiempo de COLECCIÓN, antes de que
+ * corra ningún hook. Si `HAS_DB` se setea en un `beforeAll`, al momento del
+ * `skipIf` todavía vale `false` y el suite se saltea SIEMPRE — incluso con la
+ * DB arriba. Eso es peor que fallar: parece verde y no prueba nada.
+ * (Verificado el 2026-07-15: con esa forma, 17/17 "skipped" teniendo DB.)
+ */
+const HAS_DB: boolean = await prisma
+  .$queryRaw`SELECT 1`
+  // Y la migración ADR-134 tiene que haber corrido en este entorno.
+  .then(() => prisma.forestCtpConsumo.count({ where: { tenantId: TENANT } }))
+  .then(() => true)
+  .catch(() => false);
+
+beforeAll(async () => {
+  if (!HAS_DB) return;
+  // Si una corrida anterior murió sin limpiar, su basura se va acá.
+  await purgarDatosDePrueba();
+}, 30_000);
+
+afterAll(async () => {
+  if (!HAS_DB) return;
+  try {
+    await purgarDatosDePrueba();
+  } catch (err) {
+    // Si la limpieza falla (red caída, por ejemplo) hay que GRITARLO: el módulo
+    // queda con datos de prueba a la vista. Silenciarlo es cómo pasó la primera vez.
+    console.error(
+      "\n🔴 LA LIMPIEZA DE LOS TESTS FALLÓ — quedan datos TEST-CTP- en la DB.\n" +
+        "   Corré de nuevo estos tests (el beforeAll purga) o limpiá a mano.\n",
+      err,
+    );
+    throw err;
+  }
+}, 30_000);
+
+describe.skipIf(!HAS_DB)("I2 · sobre-consumo de un ingreso (patrón de blanqueo)", () => {
+  it("rechaza consumir más m³ de los que el ingreso tiene", async () => {
+    const ing = await crearIngreso(8.45);
+    const linea = await crearLinea(null); // sin declarado ⇒ I1 no aplica
+
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 999_999 }], P),
+    ).rejects.toMatchObject({ code: "I2_SOBRE_CONSUMO" });
+  }, 30_000);
+
+  it("cuenta lo que YA consumen otras líneas: un ingreso no se consume dos veces", async () => {
+    const ing = await crearIngreso(10);
+    const a = await crearLinea(null);
+    const b = await crearLinea(null);
+
+    await ForestCtpConsumoDB.setConsumos(TENANT, a.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+    // La guía ya está agotada por la línea A.
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, b.id, [{ woodEntryId: ing.id, volumeM3: 1 }], P),
+    ).rejects.toMatchObject({ code: "I2_SOBRE_CONSUMO" });
+  }, 30_000);
+
+  /**
+   * REGRESIÓN — bug real encontrado el 2026-07-15.
+   * `setConsumos` lockeaba la ForestCtpEntry pero no el WoodEntry. Dos líneas
+   * distintas sobre la misma guía lockeaban filas distintas, no se bloqueaban,
+   * y bajo READ COMMITTED ambas leían el mismo "disponible" ⇒ 20 m³ consumidos
+   * de un ingreso de 10. El fix lockea los ingresos (ordenados por id).
+   * Si alguien saca ese `FOR UPDATE`, este test vuelve a rojo.
+   */
+  it("aguanta concurrencia: dos líneas en paralelo sobre la misma guía", async () => {
+    const ing = await crearIngreso(10);
+    const a = await crearLinea(null);
+    const b = await crearLinea(null);
+
+    const res = await Promise.allSettled([
+      ForestCtpConsumoDB.setConsumos(TENANT, a.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P),
+      ForestCtpConsumoDB.setConsumos(TENANT, b.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P),
+    ]);
+
+    // Exactamente una gana; la otra se rechaza. Nunca las dos.
+    expect(res.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+
+    const total = await prisma.forestCtpConsumo.aggregate({
+      where: { tenantId: TENANT, woodEntryId: ing.id },
+      _sum: { volumeM3: true },
+    });
+    expect(Number(total._sum.volumeM3 ?? 0)).toBeLessThanOrEqual(10);
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("Una línea muerta no secuestra su materia prima", () => {
+  /**
+   * REGRESIÓN — bug real encontrado el 2026-07-15 al planear ADR-135.
+   * El soft-delete NO dispara el `onDelete: Cascade` del FK, y los agregados de
+   * I2/`availableSource` sumaban sobre ForestCtpConsumo sin mirar el estado de
+   * la línea padre. Resultado: `saldos()` decía "5.2 m³ libres" y el picker
+   * decía "no queda nada", del MISMO ingreso y en el mismo momento. Anular una
+   * corrida secuestraba su materia prima para siempre, invisible.
+   */
+  it("anular la corrida devuelve el ingreso al disponible (I2 deja de contarlo)", async () => {
+    const ing = await crearIngreso(10);
+    const a = await crearLinea(10);
+    await ForestCtpConsumoDB.setConsumos(TENANT, a.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+
+    // Con la corrida viva, el ingreso está agotado.
+    const b = await crearLinea(10);
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, b.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P),
+    ).rejects.toMatchObject({ code: "I2_SOBRE_CONSUMO" });
+
+    // Se anula la corrida A → su consumo deja de contar.
+    await ForestCtpDB.annul(TENANT, a.id, "error de carga", P);
+
+    // Ahora los 10 m³ vuelven a estar disponibles para otra corrida.
+    const res = await ForestCtpConsumoDB.setConsumos(TENANT, b.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+    expect(res).toHaveLength(1);
+  }, 30_000);
+
+  it("una corrida borrada tampoco aparece consumiendo en el picker", async () => {
+    const ing = await crearIngreso(7);
+    const a = await crearLinea(7);
+    await ForestCtpConsumoDB.setConsumos(TENANT, a.id, [{ woodEntryId: ing.id, volumeM3: 7 }], P);
+
+    await ForestCtpDB.softDelete(TENANT, a.id, P);
+
+    const items = await ForestCtpDB.availableSource(TENANT, "produccion");
+    // `availableSource` devuelve una unión (ingreso | producto); el filtro por
+    // `kind` la estrecha para que `disponible` exista.
+    const guia = items
+      .filter((i): i is Extract<typeof i, { kind: "ingreso" }> => i.kind === "ingreso")
+      .find((i) => i.id === ing.id);
+    // Vuelve a ofrecerse con su volumen entero.
+    expect(guia?.disponible).toBe(7);
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("I1 · sobre-atribución vs. el acta", () => {
+  it("rechaza atribuir más de lo que la línea declara consumido", async () => {
+    const ing = await crearIngreso(50);
+    const linea = await crearLinea(8.45);
+
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 9 }], P),
+    ).rejects.toMatchObject({ code: "I1_SOBRE_ATRIBUCION" });
+  }, 30_000);
+
+  it("acepta atribución PARCIAL y la reporta como sinAtribuir", async () => {
+    // I1 es `≤`, no `==`: exigir el 100% obligaría a inventar un origen para
+    // poder guardar — la regla fabricaría el fraude que previene.
+    const ing = await crearIngreso(10);
+    const linea = await crearLinea(8, 5);
+
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 3 }], P);
+    const costo = await ForestCtpConsumoDB.costoDeLinea(TENANT, linea.id);
+
+    expect(costo.atribuidoM3).toBe(3);
+    expect(costo.sinAtribuirM3).toBe(5);
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("Guards de tenant y payload", () => {
+  it("rechaza un ingreso que no existe o es de otro tenant", async () => {
+    const linea = await crearLinea(null);
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: `${P}-inexistente`, volumeM3: 1 }], P),
+    ).rejects.toMatchObject({ code: "TENANT_MISMATCH" });
+  }, 30_000);
+
+  it("rechaza el mismo ingreso dos veces en el payload", async () => {
+    const ing = await crearIngreso(10);
+    const linea = await crearLinea(null);
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [
+        { woodEntryId: ing.id, volumeM3: 1 },
+        { woodEntryId: ing.id, volumeM3: 1 },
+      ], P),
+    ).rejects.toBeInstanceOf(CtpInvariantError);
+  }, 30_000);
+
+  it("rechaza un consumo de 0 m³", async () => {
+    const ing = await crearIngreso(10);
+    const linea = await crearLinea(null);
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 0 }], P),
+    ).rejects.toBeInstanceOf(CtpInvariantError);
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("Costeo ponderado (ADR-134 D6)", () => {
+  it("promedia POR VOLUMEN al mezclar guías de distinto precio", async () => {
+    // La razón de ser del modelo N:M: con FK escalar este número no se puede expresar.
+    const a = await crearIngreso(3, 1260); // S/420/m³
+    const b = await crearIngreso(5.45, 2725); // S/500/m³
+    const linea = await crearLinea(8.45, 6.2, 300);
+
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [
+      { woodEntryId: a.id, volumeM3: 3 },
+      { woodEntryId: b.id, volumeM3: 5.45 },
+    ], P);
+
+    const c = await ForestCtpConsumoDB.costoDeLinea(TENANT, linea.id);
+    expect(c.costoMateriaPrima).toBe(3985); // 3×420 + 5.45×500 — ni 420 ni 500
+    expect(c.costoTotal).toBe(4285); // + proceso
+    expect(c.costoUnitario).toBe(691.13); // 4285 / 6.2
+    expect(c.motivo).toBe("ok");
+  }, 30_000);
+
+  it("sin factura → costo null, NUNCA 0 (un 0 fingiría margen 100%)", async () => {
+    const ing = await crearIngreso(10); // sin costoTotal
+    const linea = await crearLinea(10, 8);
+
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+    const c = await ForestCtpConsumoDB.costoDeLinea(TENANT, linea.id);
+
+    expect(c.costoMateriaPrima).toBeNull();
+    expect(c.motivo).toBe("falta_factura");
+  }, 30_000);
+
+  it("una sola guía sin factura envenena el costo de toda la línea", async () => {
+    const conFactura = await crearIngreso(5, 2000);
+    const sinFactura = await crearIngreso(5);
+    const linea = await crearLinea(10, 8);
+
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [
+      { woodEntryId: conFactura.id, volumeM3: 5 },
+      { woodEntryId: sinFactura.id, volumeM3: 5 },
+    ], P);
+
+    const c = await ForestCtpConsumoDB.costoDeLinea(TENANT, linea.id);
+    expect(c.costoMateriaPrima).toBeNull(); // no se suma lo que no se sabe
+    expect(c.motivo).toBe("falta_factura");
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("Corrida real: mezcla de N guías", () => {
+  /**
+   * REGRESIÓN — el caso que rompía (2026-07-15).
+   * La UI resume las N guías en `gtfIngreso` ("001-0000120, 001-0000131, …"),
+   * pero el zod del POST tenía `max(60)`, dimensionado para UN código: con 5
+   * guías el resumen daba 63 chars ⇒ 400, y mezclar guías es la razón de ser
+   * del modelo N:M. La columna es TEXT; el límite era sólo del schema.
+   */
+  it("5 guías: atribuye, resume el acta y pondera el costo entre las 5", async () => {
+    const guias = await Promise.all([
+      crearIngreso(2, 800), // S/400/m³
+      crearIngreso(2, 900), // S/450/m³
+      crearIngreso(2, 1000), // S/500/m³
+      crearIngreso(2, 1100), // S/550/m³
+      crearIngreso(2, 1200), // S/600/m³
+    ]);
+    const linea = await crearLinea(10, 7); // 10 m³ consumidos → 7 producidos
+
+    await ForestCtpConsumoDB.setConsumos(
+      TENANT,
+      linea.id,
+      guias.map((g) => ({ woodEntryId: g.id, volumeM3: 2 })),
+      P,
+    );
+
+    const c = await ForestCtpConsumoDB.costoDeLinea(TENANT, linea.id);
+    // 2×(400+450+500+550+600) = 5000. Ningún precio individual da eso.
+    expect(c.costoMateriaPrima).toBe(5000);
+    expect(c.atribuidoM3).toBe(10);
+    expect(c.motivo).toBe("ok");
+
+    // El acta resumida supera de largo los 60 chars del límite viejo.
+    const resumen = guias.map((g) => g.gtfNumber).join(", ");
+    expect(resumen.length).toBeGreaterThan(60);
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("I3 · sobre-despacho (no se despacha lo que no se produjo)", () => {
+  /** Producto único por corrida: el stock se agrupa por tipo+especie. */
+  const prodTipo = `${P}-tablon`;
+
+  async function producir(cantidad: number, tipo = prodTipo) {
+    const l = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "produccion", lineNo: 91_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: tipo, quantity: cantidad, unit: "m3",
+        status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(l.id);
+    return l;
+  }
+  const despachar = (cantidad: number, tipo = prodTipo) =>
+    ForestCtpDB.create(TENANT, {
+      section: "despacho", speciesCommon: "Tornillo", productType: tipo,
+      quantity: cantidad, unit: "m3", gtfNumber: `${P}-salida`, createdBy: P,
+    });
+
+  it("rechaza despachar un producto que nunca se produjo", async () => {
+    await expect(despachar(5, `${P}-fantasma`)).rejects.toMatchObject({ code: "I3_SOBRE_DESPACHO" });
+  }, 30_000);
+
+  it("rechaza despachar más de lo producido", async () => {
+    await producir(10);
+    await expect(despachar(11)).rejects.toMatchObject({ code: "I3_SOBRE_DESPACHO" });
+  }, 30_000);
+
+  it("permite despachos parciales hasta agotar el stock, y ni uno más", async () => {
+    const tipo = `${P}-parcial`;
+    await producir(10, tipo);
+
+    const d1 = await despachar(6, tipo);
+    lineIds.push(d1.id);
+    const d2 = await despachar(4, tipo); // justo hasta 10
+    lineIds.push(d2.id);
+
+    // El stock quedó en 0: el siguiente no pasa.
+    await expect(despachar(0.5, tipo)).rejects.toMatchObject({ code: "I3_SOBRE_DESPACHO" });
+  }, 30_000);
+
+  it("agrupa por tipo+especie SIN importar mayúsculas ni espacios", async () => {
+    // Antes el stock se llaveaba sin normalizar: "Tablones" y "tablones " eran
+    // productos distintos ⇒ se podía despachar el doble cambiando el tipeo.
+    const tipo = `${P}-Norm`;
+    await producir(5, tipo);
+    await expect(despachar(8, `  ${tipo.toUpperCase()}  `)).rejects.toMatchObject({
+      code: "I3_SOBRE_DESPACHO",
+    });
+  }, 30_000);
+
+  /** Misma lección que I2: sin lock, dos despachos concurrentes leen el mismo stock. */
+  it("aguanta concurrencia: dos despachos en paralelo del mismo producto", async () => {
+    const tipo = `${P}-race`;
+    await producir(10, tipo);
+
+    const res = await Promise.allSettled([despachar(10, tipo), despachar(10, tipo)]);
+    for (const r of res) if (r.status === "fulfilled") lineIds.push(r.value.id);
+
+    expect(res.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("I4/I5 · cadena de custodia del despacho (ADR-135)", () => {
+  const tipo = () => `${P}-cad-${Math.random().toString(36).slice(2, 6)}`;
+
+  async function corrida(cantidad: number, t: string) {
+    const l = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "produccion", lineNo: 92_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: t, quantity: cantidad, unit: "m3",
+        status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(l.id);
+    return l;
+  }
+  async function despacho(cantidad: number, t: string) {
+    const l = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "despacho", lineNo: 93_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: t, quantity: cantidad, unit: "m3",
+        gtfNumber: `${P}-out`, status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(l.id);
+    return l;
+  }
+
+  it("I4 rechaza atribuir a corridas más de lo que el despacho declara", async () => {
+    const t = tipo();
+    const c = await corrida(50, t);
+    const d = await despacho(5, t);
+    await expect(
+      ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [{ produccionEntryId: c.id, quantity: 6 }], P),
+    ).rejects.toMatchObject({ code: "I4_SOBRE_ATRIBUCION_DESPACHO" });
+  }, 30_000);
+
+  /**
+   * ESCENARIO B del ADR-135 — la razón de ser de I5.
+   * El agregado de I3 CUADRA (producido 16.2 − despachado 16.2 = 0) mientras
+   * una corrida de 6.2 sostiene 16.2. I3 no puede verlo porque suma por
+   * producto; I5 lo ve porque razona fila por fila. Es la pregunta de EUDR.
+   */
+  it("I5 atrapa la corrida drenada dos veces — lo que I3 no puede ver", async () => {
+    const t = tipo();
+    const c1 = await corrida(6.2, t);
+    await corrida(10, t); // el agregado por producto cuadra gracias a ésta
+    const d1 = await despacho(6.2, t);
+    const d2 = await despacho(10, t);
+
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d1.id, [{ produccionEntryId: c1.id, quantity: 6.2 }], P);
+    // d2 también cita c1: I3 y I4 lo dejan pasar, I5 no.
+    await expect(
+      ForestCtpDespachoDB.setOrigenes(TENANT, d2.id, [{ produccionEntryId: c1.id, quantity: 10 }], P),
+    ).rejects.toMatchObject({ code: "I5_SOBRE_SALIDA_PRODUCCION" });
+  }, 30_000);
+
+  it("rechaza citar otro despacho como origen (orientación)", async () => {
+    const t = tipo();
+    await corrida(10, t);
+    const d1 = await despacho(5, t);
+    const d2 = await despacho(5, t);
+    await expect(
+      ForestCtpDespachoDB.setOrigenes(TENANT, d1.id, [{ produccionEntryId: d2.id, quantity: 5 }], P),
+    ).rejects.toMatchObject({ code: "TENANT_MISMATCH" });
+  }, 30_000);
+
+  it("rechaza mezclar productos distintos (tablones no salen de un despacho de leña)", async () => {
+    const t1 = tipo();
+    const c = await corrida(10, t1);
+    const d = await despacho(5, tipo()); // otro producto
+    await expect(
+      ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [{ produccionEntryId: c.id, quantity: 5 }], P),
+    ).rejects.toMatchObject({ code: "TENANT_MISMATCH" });
+  }, 30_000);
+
+  it("aguanta concurrencia: dos despachos en paralelo sobre la misma corrida", async () => {
+    const t = tipo();
+    const c = await corrida(10, t);
+    const d1 = await despacho(10, t);
+    const d2 = await despacho(10, t);
+
+    const res = await Promise.allSettled([
+      ForestCtpDespachoDB.setOrigenes(TENANT, d1.id, [{ produccionEntryId: c.id, quantity: 10 }], P),
+      ForestCtpDespachoDB.setOrigenes(TENANT, d2.id, [{ produccionEntryId: c.id, quantity: 10 }], P),
+    ]);
+    expect(res.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  }, 30_000);
+
+  it("trazabilidadCompleta: el libro admite huecos, el certificado no", async () => {
+    const t = tipo();
+    const ing = await crearIngreso(10);
+    const c = await corrida(8, t);
+    const d = await despacho(8, t);
+
+    // Atribución PARCIAL → el libro la acepta…
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [{ produccionEntryId: c.id, quantity: 5 }], P);
+    let tz = await ForestCtpDespachoDB.trazabilidadCompleta(TENANT, d.id);
+    expect(tz.completa).toBe(false);
+    expect(tz.motivo).toBe("atribucion_parcial");
+    expect(tz.sinAtribuir).toBe(3);
+
+    // …atribuido al 100%, pero la corrida no sabe de qué ingreso salió:
+    // la cadena se corta un eslabón más atrás y el certificado mentiría igual.
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [{ produccionEntryId: c.id, quantity: 8 }], P);
+    tz = await ForestCtpDespachoDB.trazabilidadCompleta(TENANT, d.id);
+    expect(tz.completa).toBe(false);
+    expect(tz.motivo).toBe("corrida_sin_origen");
+
+    // Recién con la cadena entera (ingreso → corrida → despacho) queda completa.
+    await ForestCtpConsumoDB.setConsumos(TENANT, c.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+    tz = await ForestCtpDespachoDB.trazabilidadCompleta(TENANT, d.id);
+    expect(tz.completa).toBe(true);
+    expect(tz.corridas[0].guias).toContain(ing.gtfNumber);
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("COGS · costo de lo despachado (ADR-135 D7)", () => {
+  /**
+   * Escenario completo de punta a punta, que es lo que el módulo no podía
+   * responder antes: guías con precios distintos → 2 corridas → 1 despacho.
+   * La ponderación es DOBLE y encadenada: cada corrida promedia sus guías por
+   * volumen, y el despacho promedia las corridas por lo que sacó de cada una.
+   */
+  it("pondera dos veces: guías dentro de la corrida, corridas dentro del despacho", async () => {
+    const tipo = `${P}-cogs`;
+    // Corrida A: 2 guías a precios distintos → 4 m³ producidos
+    const g1 = await crearIngreso(3, 1200); // S/400/m³
+    const g2 = await crearIngreso(2, 1000); // S/500/m³
+    const cA = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "produccion", lineNo: 94_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: tipo, volumeInputM3: 5, quantity: 4, unit: "m3",
+        status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(cA.id);
+    await ForestCtpConsumoDB.setConsumos(TENANT, cA.id, [
+      { woodEntryId: g1.id, volumeM3: 3 },
+      { woodEntryId: g2.id, volumeM3: 2 },
+    ], P);
+    // materia prima A = 3×400 + 2×500 = 2200 → /4 producidos = S/550 por m³
+
+    // Corrida B: 1 guía cara → 2 m³
+    const g3 = await crearIngreso(2, 1600); // S/800/m³
+    const cB = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "produccion", lineNo: 94_500 + lineIds.length,
+        speciesCommon: "Tornillo", productType: tipo, volumeInputM3: 2, quantity: 2, unit: "m3",
+        status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(cB.id);
+    await ForestCtpConsumoDB.setConsumos(TENANT, cB.id, [{ woodEntryId: g3.id, volumeM3: 2 }], P);
+    // materia prima B = 2×800 = 1600 → /2 = S/800 por m³
+
+    // Despacho: 3 de A + 1 de B = 4
+    const d = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "despacho", lineNo: 95_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: tipo, quantity: 4, unit: "m3",
+        gtfNumber: `${P}-out`, status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(d.id);
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [
+      { produccionEntryId: cA.id, quantity: 3 },
+      { produccionEntryId: cB.id, quantity: 1 },
+    ], P);
+
+    const c = await ForestCtpDespachoDB.cogsDeDespacho(TENANT, d.id);
+    // 3×550 + 1×800 = 2450 · /4 despachados = S/612.50
+    expect(c.cogs).toBe(2450);
+    expect(c.costoUnitario).toBe(612.5);
+    expect(c.motivo).toBe("ok");
+    // Ningún precio individual (400/500/800/550) da 612.50: la doble ponderación
+    // es el único camino a ese número.
+    expect([400, 500, 800, 550]).not.toContain(c.costoUnitario);
+  }, 30_000);
+
+  it("una corrida sin factura envenena el COGS entero: null, nunca 0", async () => {
+    const tipo = `${P}-cogsnull`;
+    const conF = await crearIngreso(2, 800);
+    const cA = await prisma.forestCtpEntry.create({
+      data: { tenantId: TENANT, section: "produccion", lineNo: 96_000 + lineIds.length, speciesCommon: "Tornillo", productType: tipo, volumeInputM3: 2, quantity: 2, unit: "m3", status: "registrado", createdBy: P },
+    });
+    lineIds.push(cA.id);
+    await ForestCtpConsumoDB.setConsumos(TENANT, cA.id, [{ woodEntryId: conF.id, volumeM3: 2 }], P);
+
+    const sinF = await crearIngreso(2); // sin costoTotal
+    const cB = await prisma.forestCtpEntry.create({
+      data: { tenantId: TENANT, section: "produccion", lineNo: 96_500 + lineIds.length, speciesCommon: "Tornillo", productType: tipo, volumeInputM3: 2, quantity: 2, unit: "m3", status: "registrado", createdBy: P },
+    });
+    lineIds.push(cB.id);
+    await ForestCtpConsumoDB.setConsumos(TENANT, cB.id, [{ woodEntryId: sinF.id, volumeM3: 2 }], P);
+
+    const d = await prisma.forestCtpEntry.create({
+      data: { tenantId: TENANT, section: "despacho", lineNo: 97_000 + lineIds.length, speciesCommon: "Tornillo", productType: tipo, quantity: 4, unit: "m3", gtfNumber: `${P}-o2`, status: "registrado", createdBy: P },
+    });
+    lineIds.push(d.id);
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [
+      { produccionEntryId: cA.id, quantity: 2 },
+      { produccionEntryId: cB.id, quantity: 2 },
+    ], P);
+
+    const c = await ForestCtpDespachoDB.cogsDeDespacho(TENANT, d.id);
+    expect(c.cogs).toBeNull();
+    expect(c.motivo).toBe("falta_costo");
+    // El detalle igual muestra lo que SÍ se sabe: la corrida con factura tiene costo.
+    expect(c.detalle.find((x) => x.lineNo === cA.lineNo)?.costo).toBe(800);
+    expect(c.detalle.find((x) => x.lineNo === cB.lineNo)?.costo).toBeNull();
+  }, 30_000);
+
+  it("no costea lo que no sabe de dónde salió: atribución parcial → null", async () => {
+    const tipo = `${P}-cogsparc`;
+    const g = await crearIngreso(4, 1600); // S/400/m³
+    const c1 = await prisma.forestCtpEntry.create({
+      data: { tenantId: TENANT, section: "produccion", lineNo: 98_000 + lineIds.length, speciesCommon: "Tornillo", productType: tipo, volumeInputM3: 4, quantity: 4, unit: "m3", status: "registrado", createdBy: P },
+    });
+    lineIds.push(c1.id);
+    await ForestCtpConsumoDB.setConsumos(TENANT, c1.id, [{ woodEntryId: g.id, volumeM3: 4 }], P);
+
+    const d = await prisma.forestCtpEntry.create({
+      data: { tenantId: TENANT, section: "despacho", lineNo: 98_500 + lineIds.length, speciesCommon: "Tornillo", productType: tipo, quantity: 4, unit: "m3", gtfNumber: `${P}-o3`, status: "registrado", createdBy: P },
+    });
+    lineIds.push(d.id);
+    // Sólo 2 de los 4 declarados tienen origen.
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [{ produccionEntryId: c1.id, quantity: 2 }], P);
+
+    const c = await ForestCtpDespachoDB.cogsDeDespacho(TENANT, d.id);
+    expect(c.cogs).toBeNull();
+    expect(c.motivo).toBe("sin_atribucion");
+    expect(c.sinAtribuir).toBe(2);
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("Auditoría — quién hizo qué (Ley 29733 + SERFOR)", () => {
+  /**
+   * Hasta 2026-07-15 el módulo no escribía NI UNA entrada de auditoría: se podía
+   * validar un ingreso o reatribuir el origen de una corrida sin dejar autor.
+   * A diferencia de casi todo lo demás, esto no se puede reconstruir después.
+   */
+  it("registra validar, reatribuir y congelar, con autor y detalle legible", async () => {
+    const user = `${P}-auditor`;
+    const ing = await crearIngreso(6, 3000, "Shihuahuaco", true); // CITES marcado
+    const linea = await crearLinea(6, 4);
+
+    await WoodEntriesDB.validate(TENANT, ing.id, user);
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 6 }], user);
+    await ForestCtpConsumoDB.congelarCosto(TENANT, linea.id, user);
+
+    // `auditCtp` es fire-and-forget a propósito (no debe frenar el write).
+    await new Promise((r) => setTimeout(r, 1500));
+
+    const logs = await prisma.activityLog.findMany({
+      where: { tenantId: TENANT, user },
+      select: { action: true, entity: true, detail: true },
+    });
+    const acciones = logs.map((l) => l.action);
+
+    expect(acciones).toContain("ctp_ingreso_validate");
+    expect(acciones).toContain("ctp_consumos_set");
+    expect(acciones).toContain("ctp_costo_congelar");
+
+    // El detalle tiene que servirle a un humano, no ser "entidad actualizada".
+    const validado = logs.find((l) => l.action === "ctp_ingreso_validate");
+    expect(validado?.detail).toContain(ing.gtfNumber);
+    expect(validado?.detail).toContain("CITES"); // Shihuahuaco está en CITES
+
+    // La reatribución debe decir DE QUÉ A QUÉ, no sólo "cambió".
+    const atribucion = logs.find((l) => l.action === "ctp_consumos_set");
+    expect(atribucion?.detail).toContain("→");
+    expect(atribucion?.detail).toContain(ing.gtfNumber);
+
+    await prisma.activityLog.deleteMany({ where: { tenantId: TENANT, user } });
+  }, 30_000);
+
+  it("un ingreso registrado tarde queda marcado como FUERA DE PLAZO en el log", async () => {
+    const user = `${P}-tarde`;
+    const hace60dias = new Date(Date.now() - 60 * 86_400_000);
+    const w = await WoodEntriesDB.create(TENANT, {
+      entryDate: hace60dias, // la operación fue hace 60 días; se registra recién ahora
+      gtfNumber: `${P}-tarde`,
+      providerName: `${P} proveedor`,
+      speciesCommonName: "Tornillo",
+      volumeM3: 1,
+      createdBy: user,
+    });
+    woodIds.push(w.id);
+    await new Promise((r) => setTimeout(r, 1500));
+
+    const log = await prisma.activityLog.findFirst({
+      where: { tenantId: TENANT, user, action: "ctp_ingreso_create" },
+      select: { detail: true },
+    });
+    expect(log?.detail).toContain("FUERA DE PLAZO");
+
+    await prisma.activityLog.deleteMany({ where: { tenantId: TENANT, user } });
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("Congelado al cierre de período (ADR-134 D8)", () => {
+  it("no congela un costo que no se sabe", async () => {
+    const ing = await crearIngreso(10); // sin factura
+    const linea = await crearLinea(10, 8);
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+
+    await expect(ForestCtpConsumoDB.congelarCosto(TENANT, linea.id, P)).rejects.toMatchObject({
+      code: "CONGELADO",
+    });
+  }, 30_000);
+
+  it("congela snap + fecha juntos, y la línea queda inmutable", async () => {
+    const ing = await crearIngreso(10, 4200); // S/420/m³
+    const linea = await crearLinea(10, 8);
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+
+    const frozen = await ForestCtpConsumoDB.congelarCosto(TENANT, linea.id, P);
+    expect(frozen.every((f) => f.costoUnitarioSnap != null && f.congeladoAt != null)).toBe(true);
+
+    // Congelado ⇒ la atribución ya no se toca (el período ya se reportó).
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 5 }], P),
+    ).rejects.toMatchObject({ code: "CONGELADO" });
+  }, 30_000);
+
+  it("el snap congelado gana sobre la factura viva (una nota de crédito no reescribe el pasado)", async () => {
+    const ing = await crearIngreso(10, 4200); // S/420/m³
+    const linea = await crearLinea(10, 10);
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+    await ForestCtpConsumoDB.congelarCosto(TENANT, linea.id, P);
+
+    // El proveedor corrige la factura DESPUÉS del cierre.
+    await prisma.woodEntry.update({ where: { id: ing.id }, data: { costoTotal: 9999 } });
+
+    const c = await ForestCtpConsumoDB.costoDeLinea(TENANT, linea.id);
+    expect(c.costoMateriaPrima).toBe(4200); // el costo con el que se reportó, no el nuevo
+    expect(c.congelado).toBe(true);
+  }, 30_000);
+});
+
+/**
+ * Cierre de período × trozas (auditoría adversarial 2026-08-01).
+ *
+ * El cierre existe para que el acta de un mes presentado sea inmutable. Los tres
+ * caminos que tocan trozas —recepción (ADR-325), consumo por pieza (ADR-326) y
+ * retrozado (ADR-313)— NO consultaban el cierre: se podía cambiar qué llegó, qué
+ * entró a la sierra y qué se cortó en un libro ya entregado a la autoridad.
+ *
+ * Se prueba contra la DB real por lo mismo que el resto del archivo: lo que
+ * importa es que el guard corra DENTRO de la transacción, no que exista.
+ */
+describe.skipIf(!HAS_DB)("Cierre de período: las trozas también quedan congeladas", () => {
+  const KEY = `ctp-cierre:${TENANT}`;
+  /** Enero 2099: mes sin datos reales, así cerrar es inofensivo. */
+  const AÑO = 2099;
+  const MES = 0;
+  const FECHA = new Date(Date.UTC(AÑO, MES, 15));
+
+  async function conMesCerrado<T>(fn: () => Promise<T>): Promise<T> {
+    const { PlatformSettingsDB } = await import("@/lib/db/platform-settings.db");
+    const { ForestCtpCierreDB } = await import("@/lib/db/forest-ctp-cierre.db");
+    const previo: unknown = await PlatformSettingsDB.get(KEY);
+    try {
+      const { monthRange } = await import("@/lib/forestal/ctp-cierre-types");
+      const { from, to, periodKey, label } = monthRange(AÑO, MES);
+      await ForestCtpCierreDB.save(
+        TENANT,
+        {
+          periodKey, from: from.toISOString(), to: to.toISOString(), label,
+          closedAt: new Date().toISOString(), closedBy: P,
+          saldoCierre: { materiaPrima: [], productos: [] },
+          totales: { corridas: 0, despachos: 0, ingresosCount: 0, volumenIngresado: 0, corridasCongeladas: 0, corridasSinCostear: 0, especiesEnNegativo: 0 },
+        },
+        P,
+      );
+      return await fn();
+    } finally {
+      // Se restaura el KV entero: dejar un mes cerrado rompería otros tests.
+      await PlatformSettingsDB.set(KEY, previo ?? [], P);
+    }
+  }
+
+  it("no se cambia la recepción de una guía de un mes cerrado", async () => {
+    const w = await crearIngreso(10);
+    await prisma.woodEntry.update({ where: { id: w.id }, data: { entryDate: FECHA } });
+    const t = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-T1`, volumenM3: 5 },
+    });
+    await conMesCerrado(async () => {
+      await expect(
+        WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "999" }], P),
+      ).rejects.toMatchObject({ code: "PERIODO_CERRADO" });
+    });
+    // Con el mes abierto, el MISMO cambio pasa: el guard no bloquea de más.
+    await expect(
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "999" }], P),
+    ).resolves.toMatchObject({ actualizadas: 1 });
+  }, 40_000);
+
+  it("no se cambian las trozas de una corrida de un mes cerrado", async () => {
+    const w = await crearIngreso(10);
+    const t = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-T2`, volumenM3: 4 },
+    });
+    const linea = await crearLinea(null, 2);
+    await prisma.forestCtpEntry.update({ where: { id: linea.id }, data: { entryDate: FECHA } });
+    await conMesCerrado(async () => {
+      await expect(
+        WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [t.id], { usuario: P }),
+      ).rejects.toMatchObject({ code: "PERIODO_CERRADO" });
+    });
+    await expect(
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [t.id], { usuario: P }),
+    ).resolves.toMatchObject({ consumidas: 1 });
+  }, 40_000);
+
+  it("no se registra un retrozado con fecha de un mes cerrado", async () => {
+    const w = await crearIngreso(10);
+    const madre = await prisma.woodEntryTroza.create({
+      data: {
+        tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-M1`,
+        d1Cm: 80, d2Cm: 70, largoM: 6, volumenM3: 2.6,
+      },
+    });
+    const pedazo = { d1Cm: 80, d2Cm: 75, largoM: 3 };
+    await conMesCerrado(async () => {
+      await expect(
+        WoodEntriesDB.retrozar(TENANT, madre.id, [pedazo], { fecha: FECHA, usuario: P }),
+      ).rejects.toMatchObject({ code: "PERIODO_CERRADO" });
+    });
+    // La fecha que manda es la del CORTE, no la de la guía: con otra fecha pasa.
+    await expect(
+      WoodEntriesDB.retrozar(TENANT, madre.id, [pedazo], { fecha: new Date(), usuario: P }),
+    ).resolves.toMatchObject({ retrozos: expect.any(Array) });
+  }, 40_000);
+});
+
+/**
+ * I5/I6 × consumo por pieza (auditoría adversarial 2026-08-01).
+ *
+ * El consumo del libro vive en dos lugares desde el ADR-326: los m³ por guía
+ * (`ForestCtpConsumo`) y las PIEZAS que entraron a la sierra
+ * (`WoodEntryTroza.consumidaEnId`). Son dos caras del mismo hecho, así que las
+ * reglas que congelan una tienen que congelar la otra.
+ *
+ * Lo que la auditoría encontró: el costo congelado dejaba los m³ inmutables y
+ * las piezas editables. Se podía reescribir de qué trozas salió un producto ya
+ * costeado y certificado.
+ */
+describe.skipIf(!HAS_DB)("Consumo por pieza: mismas reglas que el consumo en m³", () => {
+  async function corridaConTroza() {
+    const w = await crearIngreso(10, 1000);
+    const t = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-P${Date.now()}`, volumenM3: 5 },
+    });
+    const linea = await crearLinea(null, 6);
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: w.id, volumeM3: 4 }], P);
+    await WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [t.id], { usuario: P });
+    return { w, t, linea };
+  }
+
+  it("costo congelado ⇒ las PIEZAS también quedan inmutables", async () => {
+    const { linea } = await corridaConTroza();
+    await ForestCtpConsumoDB.congelarCosto(TENANT, linea.id, P);
+    // La atribución en m³ ya estaba protegida (ADR-134 D6)…
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: (await prisma.forestCtpConsumo.findFirst({ where: { ctpEntryId: linea.id } }))!.woodEntryId, volumeM3: 2 }], P),
+    ).rejects.toMatchObject({ code: "CONGELADO" });
+    // …y ahora las piezas, que son la evidencia física de esa misma atribución.
+    await expect(
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [], { usuario: P }),
+    ).rejects.toMatchObject({ code: "CONGELADO" });
+  }, 40_000);
+
+  it("sin congelar, las piezas se corrigen igual que los m³", async () => {
+    const { linea } = await corridaConTroza();
+    // Un guard que bloquea siempre sería otro bug: corregir una atribución
+    // equivocada es corregir, no borrar historia (ADR-134).
+    await expect(
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [], { usuario: P }),
+    ).resolves.toMatchObject({ consumidas: 0 });
+  }, 40_000);
+
+  it("despachar NO congela: los dos caminos siguen editables, simétricos", async () => {
+    const { linea } = await corridaConTroza();
+    const despacho = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "despacho", lineNo: 96_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: `${P}-prod`, quantity: 6, unit: "m3",
+        gtfNumber: `${P}-SAL`, status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(despacho.id);
+    await ForestCtpDespachoDB.setOrigenes(TENANT, despacho.id, [{ produccionEntryId: linea.id, quantity: 6 }], P);
+    // Es el criterio deliberado del módulo: el consumo es detalle editable hasta
+    // que se congela el costo o se cierra el mes. Lo que importa acá es que las
+    // piezas hagan LO MISMO que los m³, no que bloqueen por su cuenta.
+    await expect(
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [], { usuario: P }),
+    ).resolves.toMatchObject({ consumidas: 0 });
+  }, 40_000);
+});
+
+/**
+ * Concurrencia del consumo por pieza (auditoría adversarial 2026-08-01).
+ *
+ * Espejo del TOCTOU de I2, del otro lado del mismo hecho: sin lock sobre la
+ * troza disputada, dos operadores que tildan la MISMA pieza a la vez leen los
+ * dos "está libre" y la segunda pisa a la primera. La misma troza física
+ * alimentando dos corridas es justo lo que I2 evita en m³.
+ *
+ * Es el escenario real de un aserradero con dos tablets en el patio.
+ */
+describe.skipIf(!HAS_DB)("Consumo por pieza: dos operadores, una troza", () => {
+  it("exactamente una corrida se queda con la pieza", async () => {
+    const w = await crearIngreso(10);
+    const troza = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-RACE`, volumenM3: 5 },
+    });
+    const a = await crearLinea(null, 3);
+    const b = await crearLinea(null, 3);
+
+    const res = await Promise.allSettled([
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, a.id, [troza.id], { usuario: P }),
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, b.id, [troza.id], { usuario: P }),
+    ]);
+
+    // Una gana, la otra se rechaza. Nunca las dos: la pieza es una sola.
+    expect(res.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+
+    // Y la base queda coherente: la troza pertenece a UNA corrida.
+    const final = await prisma.woodEntryTroza.findUnique({
+      where: { id: troza.id },
+      select: { consumidaEnId: true },
+    });
+    expect([a.id, b.id]).toContain(final?.consumidaEnId);
+  }, 40_000);
+
+  /**
+   * El `ORDER BY id` del lock no es decorativo: dos transacciones que piden el
+   * MISMO conjunto en orden distinto se abrazarían en un deadlock. Si alguien lo
+   * saca, este test se vuelve flaky con "deadlock detected".
+   */
+  it("dos corridas pidiendo el mismo par de trozas en orden inverso no se abrazan", async () => {
+    const w = await crearIngreso(20);
+    const t1 = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-DL-A`, volumenM3: 5 },
+    });
+    const t2 = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 2, codificacion: `${P}-DL-B`, volumenM3: 5 },
+    });
+    const a = await crearLinea(null, 3);
+    const b = await crearLinea(null, 3);
+
+    const res = await Promise.allSettled([
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, a.id, [t1.id, t2.id], { usuario: P }),
+      WoodEntriesDB.marcarTrozasConsumidas(TENANT, b.id, [t2.id, t1.id], { usuario: P }),
+    ]);
+
+    expect(res.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    // Y el rechazo es por la REGLA, no por un deadlock de Postgres.
+    const rechazo = res.find((r) => r.status === "rejected") as PromiseRejectedResult;
+    expect(rechazo.reason).toMatchObject({ code: "T1_TROZA_NO_CONSUMIBLE" });
+  }, 40_000);
+});
+
+/**
+ * Recepción × consumo: una troza no puede haberse aserrado y no haber llegado
+ * nunca (auditoría adversarial 2026-08-01).
+ *
+ * El libro quedaba declarando las dos cosas a la vez —`noRecepcionada` y
+ * `consumidaEnId` poblados— y eso es consumir madera que no existe: el mismo
+ * patrón que I2 previene del lado del volumen, pero del lado de las piezas.
+ */
+describe.skipIf(!HAS_DB)("Una troza no puede estar consumida y no recibida", () => {
+  async function trozaConsumida() {
+    const w = await crearIngreso(10);
+    const t = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-C${Date.now()}`, volumenM3: 5 },
+    });
+    const linea = await crearLinea(null, 3);
+    await WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [t.id], { usuario: P });
+    return { w, t, linea };
+  }
+
+  it("no se marca 'no llegó' una pieza que ya entró a una corrida", async () => {
+    const { w, t } = await trozaConsumida();
+    await expect(
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, noRecepcionada: true }], P),
+    ).rejects.toMatchObject({ code: "ESTADO_NO_EDITABLE" });
+    // El mensaje tiene que decir el camino, no sólo "no se puede".
+    await WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, noRecepcionada: true }], P).catch(
+      (e: { message: string }) => expect(e.message).toMatch(/Sacala primero del consumo/),
+    );
+  }, 40_000);
+
+  it("sacándola de la corrida primero, sí se puede", async () => {
+    const { w, t, linea } = await trozaConsumida();
+    await WoodEntriesDB.marcarTrozasConsumidas(TENANT, linea.id, [], { usuario: P });
+    await expect(
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, noRecepcionada: true }], P),
+    ).resolves.toMatchObject({ actualizadas: 1 });
+  }, 40_000);
+
+  it("si la corrida se ANULÓ, la pieza está libre y no contradice nada", async () => {
+    const { w, t, linea } = await trozaConsumida();
+    // Anular ya suelta la troza; el guard no debe bloquear por un id muerto.
+    await ForestCtpDB.annul(TENANT, linea.id, "prueba de coherencia", P);
+    await expect(
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, noRecepcionada: true }], P),
+    ).resolves.toMatchObject({ actualizadas: 1 });
+  }, 40_000);
+
+  it("mandar un campo no borra los que no se mandaron", async () => {
+    // La recepción pasó a UNA query con `UPDATE … FROM (VALUES …)` para no hacer
+    // un round-trip por troza. El flag `set_*` de cada columna distingue "no lo
+    // mandó" de "lo mandó vacío": sin eso, corregir la parcela borraría el
+    // código de planta que ya estaba puesto.
+    const w = await crearIngreso(10);
+    const t = await prisma.woodEntryTroza.create({
+      data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-SET${Date.now()}`, volumenM3: 5 },
+    });
+    await WoodEntriesDB.actualizarRecepcion(
+      TENANT, w.id, [{ id: t.id, codigoPlanta: "118", parcela: "PC-03", recepcionObs: "rajadura" }], P,
+    );
+    // Segunda pasada: SÓLO la parcela.
+    await WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, parcela: "PC-09" }], P);
+    const final = await prisma.woodEntryTroza.findUnique({
+      where: { id: t.id },
+      select: { codigoPlanta: true, parcela: true, recepcionObs: true, noRecepcionada: true },
+    });
+    expect(final).toMatchObject({
+      codigoPlanta: "118",       // intacto
+      parcela: "PC-09",          // cambiado
+      recepcionObs: "rajadura",  // intacto
+      noRecepcionada: false,
+    });
+    // Y mandarlo VACÍO sí lo borra: es una corrección, no una omisión.
+    await WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "" }], P);
+    const borrado = await prisma.woodEntryTroza.findUnique({
+      where: { id: t.id }, select: { codigoPlanta: true, parcela: true },
+    });
+    expect(borrado).toMatchObject({ codigoPlanta: null, parcela: "PC-09" });
+  }, 40_000);
+
+  it("varias trozas en una sola llamada, cada una con lo suyo", async () => {
+    const w = await crearIngreso(20);
+    const ts = await Promise.all(
+      [1, 2, 3].map((i) =>
+        prisma.woodEntryTroza.create({
+          data: { tenantId: TENANT, woodEntryId: w.id, orden: i, codificacion: `${P}-M${i}-${Date.now()}`, volumenM3: 5 },
+        }),
+      ),
+    );
+    await WoodEntriesDB.actualizarRecepcion(
+      TENANT, w.id,
+      [
+        { id: ts[0].id, codigoPlanta: "201" },
+        { id: ts[1].id, parcela: "PC-07" },
+        { id: ts[2].id, noRecepcionada: true, recepcionObs: "no llegó en el camión" },
+      ],
+      P,
+    );
+    const finales = await prisma.woodEntryTroza.findMany({
+      where: { id: { in: ts.map((t) => t.id) } },
+      orderBy: { orden: "asc" },
+      select: { codigoPlanta: true, parcela: true, noRecepcionada: true, recepcionObs: true },
+    });
+    expect(finales[0]).toMatchObject({ codigoPlanta: "201", parcela: null, noRecepcionada: false });
+    expect(finales[1]).toMatchObject({ codigoPlanta: null, parcela: "PC-07", noRecepcionada: false });
+    expect(finales[2]).toMatchObject({ noRecepcionada: true, recepcionObs: "no llegó en el camión" });
+  }, 40_000);
+
+  it("los demás campos de recepción se editan igual en una pieza consumida", async () => {
+    const { w, t } = await trozaConsumida();
+    // Poner el código de planta o la parcela no contradice nada: sólo el
+    // "no llegó" es incompatible con haberla aserrado.
+    await expect(
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "118", parcela: "PC-03" }], P),
+    ).resolves.toMatchObject({ actualizadas: 1 });
+  }, 40_000);
+});

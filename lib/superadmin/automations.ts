@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { USAGE_TIERS, type TierName } from "@/lib/billing/wire-up/usage-tiers";
+import type { NotifyLog } from "@/lib/superadmin/automation-cooldown";
 
 /**
  * Automatizaciones del superadmin (Brandon 2026-06-14). Reglas PRESET que
@@ -18,28 +19,28 @@ export const RULES: { key: RuleKey; title: string; trigger: string; action: stri
     title: "Trial por vencer",
     trigger: "El trial vence en ≤3 días",
     action: "Avisar al dueño (WhatsApp + push)",
-    message: { title: "⏳ Tu prueba de Buleje está por terminar", body: "Tu período de prueba vence pronto. Activá tu plan para no perder acceso. ¿Te ayudamos?" },
+    message: { title: "⏳ Tu prueba de Buleje está por terminar", body: "Tu período de prueba vence pronto. Activa tu plan para no perder acceso. ¿Te ayudamos?" },
   },
   {
     key: "no-login-14d",
     title: "Sin actividad",
     trigger: "Sin iniciar sesión en 14 días",
     action: "Reenganchar al dueño (WhatsApp + push)",
-    message: { title: "👋 Te extrañamos en Buleje", body: "Hace rato no entrás a tu panel. ¿Necesitás una mano para sacarle provecho a tu tienda?" },
+    message: { title: "👋 Te extrañamos en Buleje", body: "Hace rato no entras a tu panel. ¿Necesitas una mano para sacarle provecho a tu tienda?" },
   },
   {
     key: "near-limit",
     title: "Cerca del límite",
     trigger: "Pedidos del mes ≥90% del plan",
     action: "Ofrecer upgrade (WhatsApp + push)",
-    message: { title: "🚀 Tu tienda está creciendo", body: "Estás cerca del límite de pedidos de tu plan. Subí de plan para no frenar tus ventas." },
+    message: { title: "🚀 Tu tienda está creciendo", body: "Estás cerca del límite de pedidos de tu plan. Sube de plan para no frenar tus ventas." },
   },
   {
     key: "stale-30d",
     title: "Tienda dormida",
     trigger: "Sin pedidos en 30 días",
     action: "Reactivar al dueño (WhatsApp + push)",
-    message: { title: "🔔 Reactivá tu tienda Buleje", body: "Hace 30 días que no registrás pedidos. ¿Querés que te ayudemos a reactivar tus ventas?" },
+    message: { title: "🔔 Reactiva tu tienda Buleje", body: "Hace 30 días que no registras pedidos. ¿Quieres que te ayudemos a reactivar tus ventas?" },
   },
 ];
 
@@ -108,5 +109,21 @@ export async function setAutomationState(state: AutomationState, updatedBy: stri
     where: { key: "automations" },
     create: { key: "automations", value: state, updatedBy },
     update: { value: state, updatedBy },
+  });
+}
+
+const NOTIFY_LOG_KEY = "automation-notify-log";
+
+/** Log de dedup: a quien se aviso y cuando, por regla. */
+export async function getNotifyLog(): Promise<NotifyLog> {
+  const row = await prisma.platformSetting.findUnique({ where: { key: NOTIFY_LOG_KEY } });
+  return (row?.value as NotifyLog) ?? {};
+}
+
+export async function setNotifyLog(log: NotifyLog, updatedBy: string): Promise<void> {
+  await prisma.platformSetting.upsert({
+    where: { key: NOTIFY_LOG_KEY },
+    create: { key: NOTIFY_LOG_KEY, value: log, updatedBy },
+    update: { value: log, updatedBy },
   });
 }

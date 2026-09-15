@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { toast } from "sonner";
 import { X, Package, Check, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
+import { SectionTitle } from "@buleje/design-system";
 export interface ReorderCandidate {
   id: string | number;
   name: string;
@@ -29,6 +32,14 @@ interface Props {
  * Usado por el botón "Generar OC" en InventarioCharts (stockout section).
  */
 export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
   const [selection, setSelection] = useState<Map<string, number>>(new Map());
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -72,7 +83,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
 
   async function handleSubmit() {
     if (selectedCount === 0) {
-      toast.error("Seleccioná al menos un producto");
+      toast.error("Selecciona al menos un producto");
       return;
     }
     setSubmitting(true);
@@ -131,33 +142,33 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
               "fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none",
             )}
           >
-            <div
+            <div ref={cajaRef} tabIndex={-1}
               role="dialog"
               aria-modal="true"
               aria-labelledby="reorder-title"
               className={cn(
                 "pointer-events-auto w-full max-w-2xl max-h-[85vh] flex flex-col",
                 "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]",
-                "shadow-2xl shadow-black/20",
+                "shadow-[var(--shadow-xl)] shadow-black/20",
                 "overflow-hidden",
               )}
             >
               {/* Header */}
-              <div className="flex items-start justify-between px-6 py-4 border-b border-[var(--rule-soft)]">
+              <div className="flex items-start justify-between border-b border-[var(--rule-soft)] px-5 py-4 sm:px-6">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                     <Package className="h-5 w-5" />
                   </span>
                   <div>
                     <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                       Inventario
                     </p>
-                    <h2
+                    <SectionTitle
                       id="reorder-title"
-                      className="text-lg font-extrabold text-[var(--text-primary)] leading-tight"
+                      className="text-[var(--text-primary)]"
                     >
                       Generar orden de compra
-                    </h2>
+                    </SectionTitle>
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">
                       Ajusta las cantidades sugeridas y genera la OC borrador.
                     </p>
@@ -167,7 +178,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                   type="button"
                   onClick={onClose}
                   aria-label="Cerrar"
-                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                  className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -188,6 +199,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                       return (
                         <li key={id}>
                           <label
+                            aria-label={c.name}
                             className={cn(
                               "flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors",
                               selected
@@ -218,7 +230,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                                 onChange={(e) => setQty(id, Number(e.target.value))}
                                 onClick={(e) => e.preventDefault()}
                                 className={cn(
-                                  "w-20 px-2 py-1 text-sm font-semibold text-right rounded-md",
+                                  "w-20 px-2 py-1 text-sm font-semibold text-right rounded-xl",
                                   "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
                                   "text-[var(--text-primary)]",
                                   "disabled:opacity-40",
@@ -236,26 +248,25 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
               </div>
 
               {/* Notes */}
-              <div className="px-6 py-3 border-t border-[var(--rule-soft)]">
-                <label className="block text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-                  Notas
-                </label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Ej: urgente, confirmar precios, etc."
-                  className={cn(
-                    "w-full px-3 py-2 text-sm rounded-md",
-                    "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
-                    "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
-                    "focus:outline-none focus:ring-2 focus:ring-primary/40",
-                  )}
-                />
+              <div className="border-t border-[var(--rule-soft)] px-5 py-3 sm:px-6">
+                <Field label="Notas" labelClassName="block text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+                  <input
+                    type="text"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Ej: urgente, confirmar precios, etc."
+                    className={cn(
+                      "w-full px-3 h-10 text-sm rounded-xl",
+                      "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
+                      "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
+                      "focus:outline-none focus:ring-2 focus:ring-primary/40",
+                    )}
+                  />
+                </Field>
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+              <div className="flex items-center justify-between border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-5 py-4 sm:px-6">
                 <div className="text-sm">
                   <span className="text-[var(--text-tertiary)]">Resumen:</span>{" "}
                   <span className="font-semibold text-[var(--text-primary)]">
@@ -271,7 +282,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                     type="button"
                     onClick={onClose}
                     disabled={submitting}
-                    className="px-4 py-2 text-sm font-semibold rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] border border-[var(--rule-base)] transition-colors"
+                    className="px-4 min-h-10 text-sm font-semibold rounded-xl text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] border border-[var(--rule-base)] transition-colors"
                   >
                     Cancelar
                   </button>
@@ -280,7 +291,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                     onClick={handleSubmit}
                     disabled={submitting || selectedCount === 0}
                     className={cn(
-                      "inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all",
+                      "inline-flex items-center gap-2 px-4 min-h-10 text-sm font-semibold rounded-xl transition-all",
                       "bg-primary text-white shadow-sm hover:shadow-md",
                       "disabled:opacity-50 disabled:cursor-not-allowed",
                     )}

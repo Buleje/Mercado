@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MapPin, Navigation, ChevronLeft, ChevronRight as ChevronRightIcon } from "@buleje/design-system/icons";
+import { Navigation, ChevronLeft, ChevronRight as ChevronRightIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Geolocation prompt ── */

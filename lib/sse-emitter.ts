@@ -78,7 +78,7 @@ export function emitAdminSSE(arg1: string, arg2: unknown, arg3?: unknown): void 
   const bucket = buckets.get(tenantId);
   if (!bucket || bucket.size === 0) return;
   const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  for (const send of [...bucket]) {
+  for (const send of bucket) {
     try {
       send(message);
     } catch {

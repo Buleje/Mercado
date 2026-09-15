@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { modalVariants, popoverVariants, tapPress } from "@/components/ui-system";
+import { modalVariants, tapPress } from "@/components/ui-system";
 import { BTN } from "@/lib/copy";
 
 /**

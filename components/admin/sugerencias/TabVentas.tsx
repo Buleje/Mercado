@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { TrendingUp, TrendingDown, Tag, Megaphone, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
+import { normalizeProducts, aggregateSalesByProduct, isoDaysAgo } from "./normalize";
 
 interface Product {
   id: string | number;
@@ -64,11 +65,11 @@ export default function TabVentas() {
     try {
       const [pr, sr] = await Promise.all([
         fetch("/api/products?active=true&limit=200", { cache: "no-store" }),
-        fetch("/api/sales?days=7&groupBy=product", { cache: "no-store" }),
+        fetch(`/api/sales?from=${isoDaysAgo(7)}`, { cache: "no-store" }),
       ]);
       let failed = false;
-      if (pr.ok) setProducts((await pr.json()).products ?? []); else failed = true;
-      if (sr.ok) setSales((await sr.json()).items ?? []); else failed = true;
+      if (pr.ok) setProducts(normalizeProducts(await pr.json())); else failed = true;
+      if (sr.ok) setSales(aggregateSalesByProduct(await sr.json())); else failed = true;
       if (failed) throw new Error("partial");
     } catch {
       setProducts(MOCK_PRODS);
@@ -115,7 +116,7 @@ export default function TabVentas() {
         </div>
         <button
           onClick={load}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Refrescar
@@ -124,9 +125,9 @@ export default function TabVentas() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top movers — promocionar */}
-        <section className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
+        <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <header className="flex items-center gap-2 mb-4">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
               <TrendingUp className="h-5 w-5 text-[var(--data-success-500)]" />
             </span>
             <div>
@@ -170,7 +171,7 @@ export default function TabVentas() {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{fmt(i.weeklyRevenue)}</p>
-                    <button className="mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]">
+                    <button className="mt-0.5 inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--data-success-500)] hover:bg-primary/10">
                       <Megaphone className="h-3 w-3" />
                       Promocionar
                     </button>
@@ -182,7 +183,7 @@ export default function TabVentas() {
         </section>
 
         {/* Slow movers — descontar */}
-        <section className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
+        <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <header className="flex items-center gap-2 mb-4">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--data-warning-50,#fffbeb)]">
               <TrendingDown className="h-5 w-5 text-[var(--data-warning-500)]" />
@@ -235,7 +236,7 @@ export default function TabVentas() {
                       <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
                         {fmt(newPrice)}
                       </p>
-                      <button className="mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50,#fffbeb)]">
+                      <button className="mt-0.5 inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50,#fffbeb)]">
                         <Tag className="h-3 w-3" />
                         Bajar precio
                       </button>

@@ -338,7 +338,7 @@ export function NavegacionTab() {
               type="button"
               onClick={undo}
               disabled={history.length === 0}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-40 disabled:cursor-not-allowed"
               title="Deshacer último cambio"
             >
               <Undo2 className="h-3.5 w-3.5" strokeWidth={2.25} />
@@ -445,10 +445,10 @@ export function NavegacionTab() {
             }`}
           >
             {/* Browser chrome */}
-            <div className="rounded-t-2xl border-2 border-b-0 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2 flex items-center gap-2">
+            <div className="rounded-t-2xl border border-b-0 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2 flex items-center gap-2">
               <div className="flex gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                <span className="h-2.5 w-2.5 rounded-full bg-teal-400" />
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
               </div>
               <div className="flex-1 rounded-md bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate">
@@ -457,7 +457,7 @@ export function NavegacionTab() {
             </div>
 
             {/* Navbar mockup */}
-            <div className="rounded-b-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+            <div className="rounded-b-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               {previewDevice === "desktop" ? (
                 <div className="flex items-center gap-2 px-5 py-4 border-b border-[var(--rule-soft)]">
                   {/* Brand */}
@@ -587,8 +587,8 @@ export function NavegacionTab() {
             const Icon = mode.icon;
             const tonePill = {
               accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-              violet: "bg-violet-100 text-[var(--accent)] dark:bg-violet-950/40 dark:text-[var(--accent)]",
-              amber: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+              violet: "bg-primary/10 text-[var(--accent)] bg-primary/10 dark:text-[var(--accent)]",
+              amber: "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300",
             }[mode.tone];
             return (
               <button
@@ -728,7 +728,7 @@ function Pill({
     success:
       "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]",
     warning:
-      "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
+      "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
     accent: "border-[var(--accent)]/30 bg-[var(--accent)]/10 text-[var(--accent)]",
     neutral: "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
   }[tone];
@@ -788,7 +788,7 @@ function MobileNavLink({
       type="button"
       onClick={onHide}
       title={`Click para ocultar "${label}"\n${href}`}
-      className="group flex w-full items-center justify-between gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 text-left transition hover:border-rose-300 hover:bg-rose-50 dark:hover:border-rose-700/40 dark:hover:bg-rose-950/30"
+      className="group flex w-full items-center justify-between gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 text-left transition hover:border-rose-300 hover:bg-rose-50 dark:hover:border-rose-700/40 dark:hover:bg-rose-950/30"
     >
       <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[var(--accent)] dark:group-hover:text-[var(--accent)]">
         {label}
@@ -841,12 +841,12 @@ function NavScopeSection({
             className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${
               hiddenCount === 0
                 ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
-                : "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
+                : "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300"
             }`}
           >
             <span
               className={`h-1 w-1 rounded-full ${
-                hiddenCount === 0 ? "bg-[var(--data-success-500)]" : "bg-amber-500"
+                hiddenCount === 0 ? "bg-[var(--data-success-500)]" : "bg-teal-500"
               }`}
             />
             {visibleCount}/{links.length}
@@ -936,9 +936,9 @@ function NavScopeSection({
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform ${
-                    visible ? "translate-x-6" : "translate-x-1"
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-[var(--surface-raised)] shadow-md transition-transform ${
+ visible ? "translate-x-6" : "translate-x-1"
+ }`}
                 />
               </button>
             </li>

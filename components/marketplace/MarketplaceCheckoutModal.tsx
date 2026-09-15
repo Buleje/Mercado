@@ -75,7 +75,7 @@ function StepIndicator({ current }: { current: Step }) {
                   isActive
                     ? "bg-primary text-white shadow-md shadow-primary/30"
                     : isDone
-                      ? "bg-primary/20 text-primary"
+                      ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
                 )}
               >
@@ -991,7 +991,7 @@ export default function MarketplaceCheckoutModal({
                           className={cn(
                             "flex h-12 w-12 items-center justify-center rounded-xl",
                             payMethod === "efectivo"
-                              ? "bg-primary/10 text-primary"
+                              ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                               : "bg-gray-100 dark:bg-gray-800 text-gray-400"
                           )}
                         >

@@ -7,6 +7,7 @@ import { getCategoryOrder, setCategoryOrder } from "@/lib/store-category-order";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * GET/PUT /api/superadmin/stores/[slug]/category-order
@@ -53,7 +54,7 @@ export async function PUT(
   const denied = await authGuard(req);
   if (denied) return denied;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   const parsed = PutSchema.safeParse(body);
   if (!parsed.success) {

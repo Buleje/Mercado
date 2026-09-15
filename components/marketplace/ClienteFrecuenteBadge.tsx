@@ -44,9 +44,9 @@ function getTier(count: number): Tier | null {
       level: "embajador",
       label: "Cliente Embajador",
       Icon: Crown,
-      color: "#B45309",
-      bg: "#FEF3C7",
-      border: "#F59E0B",
+      color: "#c93b2c",
+      bg: "#fff1ef",
+      border: "#ff6b5b",
       discountPct: 10,
     };
   }
@@ -55,9 +55,9 @@ function getTier(count: number): Tier | null {
       level: "vip",
       label: "Cliente VIP",
       Icon: Award,
-      color: "#92400E",
-      bg: "#FED7AA",
-      border: "#EA580C",
+      color: "#842e25",
+      bg: "#ffe1dd",
+      border: "#f0503f",
       discountPct: 7,
     };
   }

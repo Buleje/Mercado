@@ -134,7 +134,7 @@ export function DespachoSection({
 
       {/* Asignado actual */}
       {currentDriver && (
-        <div className="flex items-center gap-3 px-5 py-3 bg-[var(--accent-soft)]/40 border-b border-[var(--rule-soft)]">
+        <div className="flex items-center gap-3 px-5 py-3 bg-primary/10 border-b border-[var(--rule-soft)]">
           <span
             aria-hidden
             className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white font-bold text-sm shrink-0"
@@ -185,16 +185,16 @@ export function DespachoSection({
         <div className="px-5 py-6 text-center">
           <Bike className="h-10 w-10 mx-auto text-[var(--text-tertiary)]" strokeWidth={1.5} />
           <p className="mt-3 text-sm font-bold text-[var(--text-secondary)]">
-            Aún no tenés motorizados registrados
+            Aún no tienes motorizados registrados
           </p>
           <p className="mt-1 text-xs text-[var(--text-tertiary)] max-w-xs mx-auto">
-            Andá a <strong className="text-[var(--accent)]">Delivery Partners</strong> para
+            Ve a <strong className="text-[var(--accent)]">Delivery Partners</strong> para
             registrar al personal de tu tienda con su WhatsApp y vehículo.
           </p>
           <button
             type="button"
             onClick={() => setShowAdHoc(true)}
-            className="mt-4 inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border-2 border-[var(--accent)] text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors"
+            className="mt-4 inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border-2 border-[var(--accent)] text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors"
           >
             <Sparkles className="h-4 w-4" /> Asignar nombre ad-hoc
           </button>
@@ -212,7 +212,7 @@ export function DespachoSection({
                 disabled={assigning !== null}
                 className={cn(
                   "w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors",
-                  "hover:bg-[var(--accent-soft)]/40 disabled:opacity-50 disabled:cursor-not-allowed",
+                  "hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed",
                 )}
               >
                 <span
@@ -250,7 +250,7 @@ export function DespachoSection({
                     )}
                   </p>
                 </div>
-                <span className="shrink-0 inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-[var(--text-primary)] text-[var(--surface-canvas)] text-xs font-bold uppercase tracking-wider">
+                <span className="shrink-0 inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-primary text-white text-xs font-bold uppercase tracking-wider">
                   {assigning === p.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
@@ -332,14 +332,14 @@ export function DespachoSection({
                 value={customDriver}
                 onChange={(e) => onCustomDriverChange(e.target.value)}
                 placeholder="Ej: María (vecina), Juan (sobrino)…"
-                className="flex-1 h-12 px-3.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] transition-colors"
+                className="flex-1 h-12 px-3.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] transition-colors"
                 onKeyDown={(e) => e.key === "Enter" && handleSaveAdHoc()}
               />
               <button
                 type="button"
                 onClick={handleSaveAdHoc}
                 disabled={savingDriver || !customDriver.trim()}
-                className="h-12 px-4 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-bold hover:bg-[var(--accent)] transition-colors disabled:opacity-50"
+                className="h-12 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
                 {savingDriver ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
               </button>

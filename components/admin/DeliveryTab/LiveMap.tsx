@@ -223,7 +223,7 @@ export function LiveMap({
               `<strong>#${stop.sequence} ${escapeHtml(stop.customerName)}</strong><br/>` +
               `<span style="color:#666;font-size:12px">${escapeHtml(stop.address)}</span><br/>` +
               `<em style="text-transform:uppercase;font-size:11px;font-weight:700;` +
-                `color:${isDelivered ? "#16a34a" : isFailed ? "#dc2626" : "#f59e0b"}">${stop.status}</em>` +
+                `color:${isDelivered ? "#16a34a" : isFailed ? "#dc2626" : "#ff6b5b"}">${stop.status}</em>` +
               (stop.customerPhone ? `<br/><span style="font-size:12px">📞 ${escapeHtml(stop.customerPhone)}</span>` : "") +
               `</div>`,
           );
@@ -506,8 +506,8 @@ export function LiveMap({
           justify-content: center;
           border: 2px solid white;
         }
-        .delivery-stop-marker .stop-pending  .stop-house  { border-color: #f59e0b; }
-        .delivery-stop-marker .stop-pending  .stop-badge  { background: #f59e0b; }
+        .delivery-stop-marker .stop-pending  .stop-house  { border-color: #ff6b5b; }
+        .delivery-stop-marker .stop-pending  .stop-badge  { background: #ff6b5b; }
         .delivery-stop-marker .stop-arrived  .stop-house  { border-color: #2563eb; }
         .delivery-stop-marker .stop-arrived  .stop-badge  { background: #2563eb; }
         .delivery-stop-marker .stop-delivered .stop-house { border-color: #16a34a; }

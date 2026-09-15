@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   X,
   Building2,
@@ -32,6 +33,8 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { VendorIdentityBadge } from "./VendorIdentityBadge";
+import { ApplicationScoreBreakdown } from "./ApplicationScoreBadge";
+import type { ApplicationScore } from "@/lib/marketplace/application-score";
 
 export interface VendorApplication {
   id: string;
@@ -53,6 +56,7 @@ export interface VendorApplication {
   reviewedAt?: string;
   rejectReason?: string;
   requestedInfo?: string;
+  score: ApplicationScore;
 }
 
 function fmtDate(iso: string) {
@@ -87,6 +91,9 @@ export function ApplicationDetailsDrawer({
   onReopen,
   onCopy,
 }: Props) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
   const [requestingInfo, setRequestingInfo] = useState(false);
@@ -147,14 +154,10 @@ export function ApplicationDetailsDrawer({
   };
 
   const statusStyles = {
-    pendiente:
-      "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
-    aprobada:
-      "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
-    rechazada:
-      "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
-    info_solicitada:
-      "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
+    pendiente: "bg-teal-100 text-teal-800 dark:bg-teal-500/15 dark:text-teal-200",
+    aprobada: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
+    rechazada: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
+    info_solicitada: "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
   } as const;
 
   const statusLabels = {
@@ -165,19 +168,21 @@ export function ApplicationDetailsDrawer({
   } as const;
 
   return (
-    <div
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- backdrop modal (cierra al click; Escape también cierra)
+    <div ref={cajaRef} tabIndex={-1}
       className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/50 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="drawer-title"
     >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- contenedor del drawer: stopPropagation, no interactivo */}
       <div
-        className="bg-white dark:bg-gray-900 w-full max-w-full sm:max-w-lg h-full shadow-2xl overflow-y-auto flex flex-col"
+        className="bg-[var(--surface-raised)] w-full max-w-full sm:max-w-lg h-full shadow-2xl overflow-y-auto flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-900 z-10 flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 dark:border-gray-800">
+        <div className="sticky top-0 bg-[var(--surface-raised)] z-10 flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-[var(--rule-soft)] ">
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-11 w-11 rounded-xl bg-linear-to-br from-[var(--accent)] to-emerald-500 text-white flex items-center justify-center shrink-0">
               <Building2 className="h-5 w-5" />
@@ -185,11 +190,11 @@ export function ApplicationDetailsDrawer({
             <div className="min-w-0">
               <h3
                 id="drawer-title"
-                className="font-extrabold text-base text-gray-900 dark:text-white truncate"
+                className="font-extrabold text-base text-[var(--text-primary)] truncate"
               >
                 {application.businessName}
               </h3>
-              <p className="text-xs text-gray-500 font-mono truncate">
+              <p className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] font-mono truncate">
                 {application.id}
               </p>
             </div>
@@ -198,7 +203,7 @@ export function ApplicationDetailsDrawer({
             ref={closeBtnRef}
             onClick={onClose}
             aria-label="Cerrar"
-            className="h-11 w-11 inline-flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 shrink-0"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-xl text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] hover:text-gray-900 dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] dark:hover:bg-[var(--surface-sunken)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -206,10 +211,8 @@ export function ApplicationDetailsDrawer({
 
         <div className="p-4 sm:p-5 space-y-4 sm:space-y-5 flex-1">
           {/* Estado */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Estado
-            </span>
+          <div className="flex items-center justify-between p-3 bg-[var(--surface-sunken)] rounded-xl">
+            <span className="text-sm font-semibold text-[var(--text-primary)] ">Estado</span>
             <span
               className={cn(
                 "inline-flex px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider",
@@ -220,30 +223,33 @@ export function ApplicationDetailsDrawer({
             </span>
           </div>
 
+          {/* Triage de revisión (completitud + riesgo) */}
+          <ApplicationScoreBreakdown score={application.score} />
+
           {/* Info del negocio */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] uppercase tracking-wide">
               Datos del negocio
             </p>
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl divide-y divide-[var(--rule-soft)] ">
               <InfoRow
-                icon={<Building2 className="h-4 w-4 text-gray-400" />}
+                icon={<Building2 className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 label="Razón social"
                 value={application.businessName}
               />
               <InfoRow
-                icon={<FileText className="h-4 w-4 text-gray-400" />}
+                icon={<FileText className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 label="RUC"
                 value={application.ruc}
                 onCopy={() => handleCopy(application.ruc, "RUC")}
               />
               <InfoRow
-                icon={<Package className="h-4 w-4 text-gray-400" />}
+                icon={<Package className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 label="Categoría"
                 value={application.category}
               />
               <InfoRow
-                icon={<Wallet className="h-4 w-4 text-gray-400" />}
+                icon={<Wallet className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 label="Ingreso mensual estimado"
                 value={application.monthlyRevenue}
               />
@@ -252,39 +258,36 @@ export function ApplicationDetailsDrawer({
 
           {/* Verificación de identidad — TD-058 */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] uppercase tracking-wide">
               Verificación de identidad
             </p>
-            <VendorIdentityBadge
-              ruc={application.ruc}
-              ownerName={application.ownerName}
-            />
-            <p className="text-[length:var(--ts-2xs)] text-gray-400">
-              Consulta RENIEC/SUNAT en vivo. Resultados cacheados 24h. No se
-              persiste — sirve para decidir si aprobar.
+            <VendorIdentityBadge ruc={application.ruc} ownerName={application.ownerName} />
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              Consulta RENIEC/SUNAT en vivo. Resultados cacheados 24h. No se persiste — sirve para
+              decidir si aprobar.
             </p>
           </div>
 
           {/* Contacto */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] uppercase tracking-wide">
               Contacto
             </p>
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl divide-y divide-[var(--rule-soft)] ">
               <InfoRow
-                icon={<User className="h-4 w-4 text-gray-400" />}
+                icon={<User className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 label="Propietario"
                 value={application.ownerName}
               />
               <InfoRow
-                icon={<Phone className="h-4 w-4 text-gray-400" />}
+                icon={<Phone className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 label="Teléfono"
                 value={application.phone}
                 href={`tel:${application.phone}`}
                 onCopy={() => handleCopy(application.phone, "Teléfono")}
               />
               <InfoRow
-                icon={<Mail className="h-4 w-4 text-gray-400" />}
+                icon={<Mail className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 label="Email"
                 value={application.email}
                 href={`mailto:${application.email}`}
@@ -295,17 +298,17 @@ export function ApplicationDetailsDrawer({
 
           {/* Ubicación */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] uppercase tracking-wide">
               Ubicación
             </p>
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl divide-y divide-[var(--rule-soft)] ">
               <InfoRow
-                icon={<MapPin className="h-4 w-4 text-gray-400" />}
+                icon={<MapPin className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 label="Distrito"
                 value={application.district}
               />
               <InfoRow
-                icon={<MapPin className="h-4 w-4 text-gray-400" />}
+                icon={<MapPin className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 label="Dirección"
                 value={application.address}
               />
@@ -314,18 +317,20 @@ export function ApplicationDetailsDrawer({
 
           {/* Capacidades */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] uppercase tracking-wide">
               Capacidades
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3">
-                <p className="text-xs text-gray-500">Productos</p>
-                <p className="text-lg font-extrabold text-gray-900 dark:text-white">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
+                <p className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">Productos</p>
+                <p className="text-lg font-extrabold text-[var(--text-primary)] ">
                   {application.productsCount}
                 </p>
               </div>
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3">
-                <p className="text-xs text-gray-500">Funcionalidades</p>
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
+                <p className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">
+                  Funcionalidades
+                </p>
                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
                   {application.hasDelivery && (
                     <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200">
@@ -338,7 +343,7 @@ export function ApplicationDetailsDrawer({
                     </span>
                   )}
                   {!application.hasDelivery && !application.hasPos && (
-                    <span className="text-xs text-gray-400">—</span>
+                    <span className="text-xs text-[var(--text-tertiary)]">—</span>
                   )}
                 </div>
               </div>
@@ -348,11 +353,11 @@ export function ApplicationDetailsDrawer({
           {/* Descripción */}
           {application.description && (
             <div className="space-y-2">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+              <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] uppercase tracking-wide">
                 Descripción
               </p>
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3">
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
+                <p className="text-sm text-[var(--text-primary)] leading-relaxed">
                   {application.description}
                 </p>
               </div>
@@ -361,26 +366,26 @@ export function ApplicationDetailsDrawer({
 
           {/* Cronología */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] uppercase tracking-wide">
               Cronología
             </p>
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl divide-y divide-[var(--rule-soft)] ">
               <div className="flex items-center justify-between px-3 py-2.5">
-                <span className="text-xs text-gray-500 flex items-center gap-1.5">
+                <span className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
                   Enviada
                 </span>
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <span className="text-sm font-semibold text-[var(--text-primary)] ">
                   {fmtDate(application.submittedAt)}
                 </span>
               </div>
               {application.reviewedAt && (
                 <div className="flex items-center justify-between px-3 py-2.5">
-                  <span className="text-xs text-gray-500 flex items-center gap-1.5">
+                  <span className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] flex items-center gap-1.5">
                     <CheckCircle className="h-3.5 w-3.5" />
                     Revisada
                   </span>
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <span className="text-sm font-semibold text-[var(--text-primary)] ">
                     {fmtDate(application.reviewedAt)}
                   </span>
                 </div>
@@ -390,13 +395,11 @@ export function ApplicationDetailsDrawer({
 
           {/* Motivos previos */}
           {application.rejectReason && (
-            <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 rounded-xl">
-              <p className="text-xs font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wide mb-1">
+            <div className="p-3 bg-[var(--data-error-50)] dark:bg-rose-500/10 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl">
+              <p className="text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)] uppercase tracking-wide mb-1">
                 Motivo de rechazo
               </p>
-              <p className="text-sm text-rose-800 dark:text-rose-200">
-                {application.rejectReason}
-              </p>
+              <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{application.rejectReason}</p>
             </div>
           )}
           {application.requestedInfo && (
@@ -404,25 +407,20 @@ export function ApplicationDetailsDrawer({
               <p className="text-xs font-bold text-sky-700 dark:text-sky-300 uppercase tracking-wide mb-1">
                 Info solicitada
               </p>
-              <p className="text-sm text-sky-800 dark:text-sky-200">
-                {application.requestedInfo}
-              </p>
+              <p className="text-sm text-sky-800 dark:text-sky-200">{application.requestedInfo}</p>
             </div>
           )}
 
           {/* Forms de acción */}
           {rejecting && (
-            <div className="space-y-2 p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 rounded-xl">
-              <div className="flex items-start gap-2 text-xs text-rose-700 dark:text-rose-300">
+            <div className="space-y-2 p-3 bg-[var(--data-error-50)] dark:bg-rose-500/10 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl">
+              <div className="flex items-start gap-2 text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <p>
-                  El solicitante recibirá un email con el motivo. Podrá volver
-                  a aplicar luego.
-                </p>
+                <p>El solicitante recibirá un email con el motivo. Podrá volver a aplicar luego.</p>
               </div>
               <label
                 htmlFor="reject-reason"
-                className="text-xs font-bold text-gray-700 dark:text-gray-300"
+                className="text-xs font-bold text-[var(--text-primary)] "
               >
                 Motivo del rechazo
               </label>
@@ -432,20 +430,19 @@ export function ApplicationDetailsDrawer({
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 placeholder="Explica el motivo de forma clara y constructiva..."
-                className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm resize-none focus:outline-none focus:border-[var(--accent)]"
-                autoFocus
+                className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm resize-none focus:outline-none focus:border-[var(--accent)]"
               />
               <div className="flex gap-2">
                 <button
                   onClick={() => setRejecting(false)}
-                  className="flex-1 h-11 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  className="flex-1 h-11 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] "
                 >
                   Volver
                 </button>
                 <button
                   onClick={handleReject}
                   disabled={!reason.trim()}
-                  className="flex-1 h-11 rounded-lg text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50"
+                  className="flex-1 h-11 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50"
                 >
                   Confirmar rechazo
                 </button>
@@ -458,13 +455,13 @@ export function ApplicationDetailsDrawer({
               <div className="flex items-start gap-2 text-xs text-sky-700 dark:text-sky-300">
                 <MessageSquare className="h-4 w-4 shrink-0 mt-0.5" />
                 <p>
-                  El solicitante recibirá un email con tu mensaje y podrá
-                  completar la info faltante.
+                  El solicitante recibirá un email con tu mensaje y podrá completar la info
+                  faltante.
                 </p>
               </div>
               <label
                 htmlFor="info-needed"
-                className="text-xs font-bold text-gray-700 dark:text-gray-300"
+                className="text-xs font-bold text-[var(--text-primary)] "
               >
                 Info que necesitas
               </label>
@@ -474,20 +471,19 @@ export function ApplicationDetailsDrawer({
                 onChange={(e) => setInfo(e.target.value)}
                 rows={3}
                 placeholder="Ej: Enviar foto del letrero exterior, copia del RUC, etc..."
-                className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm resize-none focus:outline-none focus:border-[var(--accent)]"
-                autoFocus
+                className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm resize-none focus:outline-none focus:border-[var(--accent)]"
               />
               <div className="flex gap-2">
                 <button
                   onClick={() => setRequestingInfo(false)}
-                  className="flex-1 h-11 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  className="flex-1 h-11 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] "
                 >
                   Volver
                 </button>
                 <button
                   onClick={handleRequestInfo}
                   disabled={!info.trim()}
-                  className="flex-1 h-11 rounded-lg text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 disabled:opacity-50"
+                  className="flex-1 h-11 rounded-xl text-sm font-semibold text-white bg-sky-600 hover:bg-sky-700 disabled:opacity-50"
                 >
                   Enviar solicitud
                 </button>
@@ -498,10 +494,10 @@ export function ApplicationDetailsDrawer({
 
         {/* Acciones principales — sticky footer en mobile */}
         {application.status === "pendiente" && !rejecting && !requestingInfo && (
-          <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 sm:p-5 space-y-2">
+          <div className="sticky bottom-0 bg-[var(--surface-raised)] border-t border-[var(--rule-soft)] p-4 sm:p-5 space-y-2">
             <button
               onClick={() => onApprove(application.id)}
-              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
             >
               <CheckCircle className="h-5 w-5" />
               Aprobar solicitud
@@ -509,14 +505,14 @@ export function ApplicationDetailsDrawer({
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setRequestingInfo(true)}
-                className="inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold text-sky-700 bg-sky-100 hover:bg-sky-200 dark:text-sky-200 dark:bg-sky-500/15 dark:hover:bg-sky-500/25 transition-colors"
+                className="inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-sky-700 bg-sky-100 hover:bg-sky-200 dark:text-sky-200 dark:bg-sky-500/15 dark:hover:bg-sky-500/25 transition-colors"
               >
                 <MessageSquare className="h-4 w-4" />
                 Solicitar info
               </button>
               <button
                 onClick={() => setRejecting(true)}
-                className="inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 dark:text-rose-200 dark:bg-rose-500/15 dark:hover:bg-rose-500/25 transition-colors"
+                className="inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-rose-200 dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:hover:bg-rose-500/25 transition-colors"
               >
                 <X className="h-4 w-4" />
                 Rechazar
@@ -526,10 +522,10 @@ export function ApplicationDetailsDrawer({
         )}
 
         {application.status === "rechazada" && onReopen && (
-          <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 sm:p-5">
+          <div className="sticky bottom-0 bg-[var(--surface-raised)] border-t border-[var(--rule-soft)] p-4 sm:p-5">
             <button
               onClick={() => onReopen(application.id)}
-              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-extrabold text-white bg-amber-600 hover:bg-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500/40"
             >
               <RotateCcw className="h-5 w-5" />
               Reabrir aplicación
@@ -556,7 +552,7 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-center justify-between px-3 py-2.5 gap-3">
-      <span className="text-xs text-gray-500 flex items-center gap-1.5 shrink-0">
+      <span className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] flex items-center gap-1.5 shrink-0">
         {icon}
         {label}
       </span>
@@ -564,12 +560,12 @@ function InfoRow({
         {href ? (
           <a
             href={href}
-            className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-right break-words min-w-0 hover:text-[var(--accent)] hover:underline"
+            className="text-sm font-semibold text-[var(--text-primary)] text-right break-words min-w-0 hover:text-[var(--accent)] hover:underline"
           >
             {value}
           </a>
         ) : (
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-right break-words min-w-0">
+          <span className="text-sm font-semibold text-[var(--text-primary)] text-right break-words min-w-0">
             {value}
           </span>
         )}
@@ -578,7 +574,7 @@ function InfoRow({
             onClick={onCopy}
             aria-label={`Copiar ${label}`}
             title={`Copiar ${label}`}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-[var(--accent)] hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--rule-soft)] dark:hover:bg-[var(--surface-sunken)] shrink-0"
           >
             <Copy className="h-3.5 w-3.5" />
           </button>

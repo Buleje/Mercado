@@ -1,9 +1,10 @@
 "use client";
 
-import { LoadingState, PageTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
-  Receipt, Loader2, RefreshCw, AlertTriangle,
+  Receipt, RefreshCw, AlertTriangle,
   CheckCircle, BookOpen,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -45,35 +46,10 @@ function fmtDate(iso: string) {
   catch { return iso; }
 }
 
-// Build mock tax lines
-function buildMockLines(year: number, month: number): TaxLine[] {
-  const prefix = `${year}-${String(month + 1).padStart(2, "0")}`;
-  const days = [2, 5, 7, 10, 12, 14, 17, 19, 22, 25, 28];
-  const entities = ["Restaurante El Sol SAC", "Bodega Don Pepe", "María García", "Carlos López", "Proveedo Alimentos SA", "Distribuidora Lima"];
-  const result: TaxLine[] = [];
-
-  for (let i = 0; i < days.length; i++) {
-    const date = `${prefix}-${String(days[i]).padStart(2, "0")}`;
-    const isVenta = i % 3 !== 0;
-    const base = parseFloat((200 + Math.random() * 1500).toFixed(2));
-    const igv = parseFloat((base * 0.18).toFixed(2));
-    result.push({
-      id: `tx-${i}`,
-      date,
-      type: isVenta ? "venta" : "compra",
-      docType: isVenta ? (i % 2 === 0 ? "Boleta" : "Factura") : "Factura",
-      serie: isVenta ? (i % 2 === 0 ? "B001" : "F001") : "FC01",
-      number: String(i + 1).padStart(8, "0"),
-      entity: entities[i % entities.length],
-      entityDoc: isVenta ? `${10000000 + i * 1234567}` : `20${513000000 + i * 123456}`,
-      base,
-      igv,
-      total: parseFloat((base + igv).toFixed(2)),
-      status: i < 6 ? "declarado" : "pendiente",
-    });
-  }
-  return result.sort((a, b) => a.date.localeCompare(b.date));
-}
+// IGV de Perú = 18%. Asumimos que `total`/`amount` lo incluyen (lo estándar en
+// boletas/facturas peruanas) → la base se obtiene revirtiendo el IGV.
+const IGV_RATE = 0.18;
+const round2 = (n: number) => parseFloat(n.toFixed(2));
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -93,34 +69,59 @@ export default function TaxTab() {
     const lastDay = new Date(year, month + 1, 0).getDate();
     const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
+    // Datos REALES del período (sin relleno: si no hay nada, el período va vacío).
+    //   - Ventas  ← órdenes entregadas/confirmadas (/api/orders)
+    //   - Compras ← cuentas por pagar registradas en el período (/api/payables),
+    //               proxy de las facturas de proveedor para el crédito fiscal.
+    const inPeriod = (iso: string) => {
+      const day = iso.slice(0, 10);
+      return day >= from && day <= to;
+    };
+
     Promise.all([
       fetch(`/api/orders?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([orders]) => {
+      fetch(`/api/payables`).then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([orders, payables]) => {
       if (!active) return;
-      // If real orders exist, generate tax lines from them; else use mock
-      if (Array.isArray(orders) && orders.length > 0) {
-        const realLines: TaxLine[] = orders
-          .filter((o: { status: string }) => o.status === "entregado" || o.status === "confirmado")
-          .map((o: { id: string; createdAt: string; total: number; customer: { name: string; phone: string } }, i: number) => {
-            const base = parseFloat((o.total / 1.18).toFixed(2));
-            const igv = parseFloat((o.total - base).toFixed(2));
-            return {
-              id: `ord-${o.id}`,
-              date: o.createdAt.slice(0, 10),
-              type: "venta" as const,
-              docType: "Boleta",
-              serie: "B001",
-              number: String(i + 1).padStart(8, "0"),
-              entity: o.customer?.name ?? "Cliente",
-              entityDoc: o.customer?.phone ?? "—",
-              base, igv, total: o.total,
-              status: "pendiente" as const,
-            };
-          });
-        setLines(realLines.length > 0 ? realLines : buildMockLines(year, month));
-      } else {
-        setLines(buildMockLines(year, month));
-      }
+
+      const ventas: TaxLine[] = (Array.isArray(orders) ? orders : [])
+        .filter((o: { status: string }) => o.status === "entregado" || o.status === "confirmado")
+        .map((o: { id: string; createdAt: string; total: number; customer?: { name?: string; phone?: string } }, i: number) => {
+          const base = round2(o.total / (1 + IGV_RATE));
+          return {
+            id: `ord-${o.id}`,
+            date: o.createdAt.slice(0, 10),
+            type: "venta" as const,
+            docType: "Boleta",
+            serie: "B001",
+            number: String(i + 1).padStart(8, "0"),
+            entity: o.customer?.name ?? "Cliente",
+            entityDoc: o.customer?.phone ?? "—",
+            base, igv: round2(o.total - base), total: o.total,
+            status: "pendiente" as const,
+          };
+        });
+
+      const compras: TaxLine[] = (Array.isArray(payables) ? payables : [])
+        .filter((p: { createdAt?: string }) => !!p.createdAt && inPeriod(p.createdAt))
+        .map((p: { id: string; createdAt: string; amount: number; supplierName?: string }, i: number) => {
+          const total = Number(p.amount) || 0;
+          const base = round2(total / (1 + IGV_RATE));
+          return {
+            id: `pay-${p.id}`,
+            date: p.createdAt.slice(0, 10),
+            type: "compra" as const,
+            docType: "Factura",
+            serie: "FC",
+            number: String(i + 1).padStart(8, "0"),
+            entity: p.supplierName ?? "Proveedor",
+            entityDoc: "—",
+            base, igv: round2(total - base), total,
+            status: "pendiente" as const,
+          };
+        });
+
+      setLines([...ventas, ...compras].sort((a, b) => a.date.localeCompare(b.date)));
       setLoading(false);
     });
 
@@ -149,35 +150,33 @@ export default function TaxTab() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header — kicker uppercase + H1 + subtitle */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">SUNAT / Tributario</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Receipt className="h-5 w-5 currentColor" />
-            Impuestos &amp; IGV
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Registro de ventas y compras, libro tributario, IGV a pagar</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+    <div className="space-y-4">
+      {/* Header estándar: el kicker + título + subtítulo estaban armados a
+          mano, replicando lo que AdminModuleHeader ya hace (y sin su
+          font-display). */}
+      <AdminModuleHeader
+        as="h2"
+        eyebrow="SUNAT · Tributario"
+        title="Impuestos e IGV"
+        description="Registro de ventas y compras, libro tributario, IGV a pagar"
+        icon={Receipt}
+      >
+          <select aria-label="Mes" value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
-          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+          <select aria-label="Año" value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {[now.getFullYear() - 1, now.getFullYear()].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button aria-label="Actualizar" onClick={() => setTick(t => t + 1)} className="p-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
           </button>
-          <button onClick={() => handleExportBook("ventas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => handleExportBook("ventas")} className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
             <BookOpen className="h-4 w-4" /> Libro ventas
           </button>
-          <button onClick={() => handleExportBook("compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => handleExportBook("compras")} className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
             <BookOpen className="h-4 w-4" /> Libro compras
           </button>
-        </div>
-      </div>
+      </AdminModuleHeader>
 
       {loading ? (
         <LoadingState />
@@ -217,56 +216,56 @@ export default function TaxTab() {
           {/* Tabs */}
           <div className="flex flex-wrap items-center gap-2">
             {(["resumen", "ventas", "compras"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] ")}>
                 {v === "resumen" ? "Todos" : v === "ventas" ? "Libro de ventas" : "Libro de compras"}
               </button>
             ))}
           </div>
 
           {/* Table */}
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-y-hidden overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+          <div className="bg-[var(--surface-raised)]">
+            <DataTable className="min-w-[600px]">
+              <thead>
                 <tr>
-                  <th className="text-left px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Fecha</th>
-                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Tipo</th>
-                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Doc</th>
-                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Entidad</th>
-                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Base</th>
-                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">IGV</th>
-                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Total</th>
-                  <th className="text-center px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Estado</th>
-                  <th className="text-center px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Acc.</th>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th className="hidden sm:table-cell">Doc</th>
+                  <th>Entidad</th>
+                  <th className="text-right hidden sm:table-cell">Base</th>
+                  <th className="text-right">IGV</th>
+                  <th className="text-right">Total</th>
+                  <th className="text-center hidden sm:table-cell">Estado</th>
+                  <th className="text-center hidden sm:table-cell">Acc.</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+              <tbody>
                 {visibleLines.map(line => (
-                  <tr key={line.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
-                    <td className="px-5 py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>
-                    <td className="px-3 py-3">
+                  <tr key={line.id}>
+                    <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>
+                    <td>
                       <StatusBadge variant={line.type === "venta" ? "success" : "neutral"} label={line.type === "venta" ? "V" : "C"} size="sm" />
                     </td>
-                    <td className="px-3 py-3 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell font-mono">{line.serie}-{line.number}</td>
-                    <td className="px-3 py-3">
+                    <td className="text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell font-mono">{line.serie}-{line.number}</td>
+                    <td>
                       <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[140px]">{line.entity}</p>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{line.entityDoc}</p>
                     </td>
-                    <td className="px-3 py-3 text-right text-sm text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>
-                    <td className="px-3 py-3 text-right font-semibold text-[var(--data-warning-500)]">{fmt(line.igv)}</td>
-                    <td className="px-3 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(line.total)}</td>
-                    <td className="px-3 py-3 text-center hidden sm:table-cell">
+                    <td className="text-right text-sm text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>
+                    <td className="text-right font-semibold text-[var(--data-warning-500)]">{fmt(line.igv)}</td>
+                    <td className="text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(line.total)}</td>
+                    <td className="text-center hidden sm:table-cell">
                       <StatusBadge variant={line.status === "declarado" ? "success" : "pending"} label={line.status === "declarado" ? "Declarado" : "Pendiente"} size="sm" />
                     </td>
-                    <td className="px-3 py-3 text-center hidden sm:table-cell">
+                    <td className="text-center hidden sm:table-cell">
                       {line.status === "pendiente" && (
-                        <button onClick={() => handleDeclare(line.id)} className="text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-semibold transition-colors">Declarar</button>
+                        <button onClick={() => handleDeclare(line.id)} className="text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 font-semibold transition-colors">Declarar</button>
                       )}
                       {line.status === "declarado" && <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] mx-auto" />}
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
             {visibleLines.length === 0 && <p className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted text-sm">Sin registros para el período.</p>}
           </div>
 

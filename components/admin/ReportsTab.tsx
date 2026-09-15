@@ -542,7 +542,7 @@ export default function ReportsTab() {
         }).length;
 
         html += `
-        <style>.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}.green{background:#dcfce7;color:#166534;}.red{background:#fee2e2;color:#991b1b;}.blue{background:#dbeafe;color:#1e40af;}.amber{background:#fef3c7;color:#92400e;}</style>
+        <style>.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}.green{background:#dcfce7;color:#166534;}.red{background:#fee2e2;color:#991b1b;}.blue{background:#dbeafe;color:#1e40af;}.amber{background:#fff1ef;color:#842e25;}</style>
         <h2 style="color:#2563eb;font-size:22px;margin-bottom:5px;">📊 Informe Mensual de Gestión</h2>
         <p style="color:#64748b;font-size:14px;margin-top:0;">${monthLabel} — Buleje</p>
         <hr style="border:none;border-top:2px solid #2563eb;margin:15px 0;" />
@@ -612,7 +612,7 @@ export default function ReportsTab() {
           return (
             <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6 flex flex-col" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 flex flex-col"}>
               <div className="flex flex-wrap items-center gap-3 mb-2">
-                <div className={r.type === "informe-mensual" ? "p-2 rounded-xl bg-[var(--accent-soft)]" : "p-2 rounded-xl bg-primary/10"}>
+                <div className={r.type === "informe-mensual" ? "p-2 rounded-xl bg-primary/10" : "p-2 rounded-xl bg-primary/10"}>
                   <Icon className={r.type === "informe-mensual" ? "h-6 w-6 text-[var(--data-success-500)]" : "h-6 w-6 text-primary"} />
                 </div>
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.label}</CardTitle>
@@ -620,13 +620,13 @@ export default function ReportsTab() {
               <p className="text-sm text-[var(--text-secondary)] dark:text-muted flex-1">{r.desc}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {!isPdfOnly && (
-                  <button onClick={() => generateCSV(r.type)} disabled={!!generating} className="flex-1 flex flex-wrap items-center justify-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
+                  <button onClick={() => generateCSV(r.type)} disabled={!!generating} className="flex-1 flex flex-wrap items-center justify-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
                     {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                     {isGenerating ? "Generando..." : "CSV"}
                   </button>
                 )}
                 {!isFullMetrics && (
-                  <button onClick={() => generatePDF(r.type)} disabled={!!generating} className={isPdfOnly ? "flex-1 flex items-center justify-center gap-2 bg-[var(--accent-soft)] text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--accent-soft)] transition disabled:opacity-50" : "flex-1 flex items-center justify-center gap-2 bg-[var(--accent-soft)] text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--accent-soft)] transition disabled:opacity-50"}>
+                  <button onClick={() => generatePDF(r.type)} disabled={!!generating} className={isPdfOnly ? "flex-1 flex items-center justify-center gap-2 bg-primary/10 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/10 transition disabled:opacity-50" : "flex-1 flex items-center justify-center gap-2 bg-primary/10 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/10 transition disabled:opacity-50"}>
                     {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                     {isGenerating ? "Generando..." : isPdfOnly ? "Generar Informe PDF" : "PDF"}
                   </button>

@@ -33,7 +33,7 @@ const LiveMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full w-full items-center justify-center rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]">
         <div className="flex flex-col items-center gap-2 text-[var(--text-tertiary)]">
           <MapPin className="h-8 w-8 animate-pulse" />
           <p className="text-sm font-bold">Cargando mapa…</p>
@@ -156,7 +156,7 @@ export default function DeliveryTab() {
           </p>
         </div>
         {kpis.activeRoutes > 0 && (
-          <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/30">
+          <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-bold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30">
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
             {kpis.activeRoutes}
           </span>
@@ -189,7 +189,7 @@ export default function DeliveryTab() {
         <p className="text-base font-extrabold text-[var(--text-primary)] mt-1">
           {selectedRoute
             ? `${selectedRoute.completedStops}/${selectedRoute.totalStops} entregadas`
-            : "Seleccioná una ruta"}
+            : "Selecciona una ruta"}
         </p>
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -208,7 +208,7 @@ export default function DeliveryTab() {
               Sin ruta seleccionada
             </p>
             <p className="text-sm text-[var(--text-tertiary)] mt-1">
-              Hacé clic en una ruta para ver sus paradas con timeline.
+              Haz clic en una ruta para ver sus paradas con timeline.
             </p>
           </div>
         )}
@@ -224,7 +224,7 @@ export default function DeliveryTab() {
     >
       <div className="px-4 py-4 sm:px-5 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <MapPin className="h-5 w-5" />
           </span>
           <div>
@@ -241,13 +241,13 @@ export default function DeliveryTab() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {driversWithLocation > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold bg-primary/10 text-primary border border-primary/30">
+            <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30">
               <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
               {driversWithLocation} en vivo
             </span>
           )}
           {stopsState.stops.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">
+            <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">
               <Package className="h-3.5 w-3.5" />
               {stopsState.stops.length} paradas
             </span>
@@ -306,7 +306,7 @@ export default function DeliveryTab() {
               <span>Repartidor en vivo</span>
             </div>
             <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-[var(--color-card)] border-2 border-[var(--data-warning-500)]">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-raised)] border-2 border-[var(--data-warning-500)]">
                 <Home className="h-3 w-3 text-[var(--data-warning-500)]" />
               </span>
               <span>Domicilio cliente</span>
@@ -328,7 +328,7 @@ export default function DeliveryTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 sm:p-6 lg:p-8 shadow-[var(--shadow-sm)]">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Truck className="h-5 w-5" />
             </span>
             <div>
@@ -356,7 +356,7 @@ export default function DeliveryTab() {
             <span className={cn(
               "inline-flex items-center gap-1.5 px-3 h-10 rounded-xl text-sm font-bold border",
               trackingState.events.length > 0
-                ? "bg-primary/10 text-primary border-primary/30"
+                ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary/30"
                 : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] border-[var(--rule-soft)]",
             )}>
               <Activity className={cn("h-4 w-4", trackingState.events.length > 0 && "animate-pulse")} />
@@ -372,7 +372,7 @@ export default function DeliveryTab() {
               type="button"
               onClick={refreshAll}
               disabled={routesState.loading}
-              className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               <RefreshCw className={cn("h-4 w-4", routesState.loading && "animate-spin")} />
               Actualizar
@@ -446,7 +446,7 @@ export default function DeliveryTab() {
           </div>
           <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 lg:p-5">
             <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
                 <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" />
               </span>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
@@ -484,7 +484,7 @@ export default function DeliveryTab() {
               type="button"
               onClick={() => setMobileTab(t)}
               className={cn(
-                "flex-1 inline-flex items-center justify-center gap-2 px-4 h-11 rounded-xl text-sm font-bold transition-colors capitalize",
+                "flex-1 inline-flex items-center justify-center gap-2 px-4 h-11 rounded-xl text-sm font-semibold transition-colors capitalize",
                 mobileTab === t
                   ? "bg-primary text-white"
                   : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:brightness-95",
@@ -534,7 +534,7 @@ export default function DeliveryTab() {
         <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden">
           <div className="px-4 py-4 sm:px-6 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Truck className="h-5 w-5" />
               </span>
               <div>
@@ -563,7 +563,7 @@ export default function DeliveryTab() {
       >
         <div className="px-4 py-4 sm:px-6 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Activity className="h-5 w-5" />
             </span>
             <div>
@@ -592,7 +592,7 @@ export default function DeliveryTab() {
                   type="button"
                   onClick={() => setFeedFilter(f)}
                   className={cn(
-                    "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                    "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                     feedFilter === f
                       ? "bg-primary text-white border-primary"
                       : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
@@ -622,7 +622,7 @@ export default function DeliveryTab() {
               <p className="text-sm text-[var(--text-tertiary)] mt-1">
                 {feedFilter === "all"
                   ? "Cuando inicien entregas verás los eventos en tiempo real."
-                  : "Cambiá el filtro para ver otros eventos."}
+                  : "Cambia el filtro para ver otros eventos."}
               </p>
             </div>
           ) : (
@@ -646,9 +646,9 @@ export default function DeliveryTab() {
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <span className={cn(
                         "inline-flex h-10 w-10 items-center justify-center rounded-xl shrink-0",
-                        isActive ? "bg-primary/10 text-primary"
+                        isActive ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                         : isFailed ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
-                        : "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+                        : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
                       )}>
                         <StatusIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
                       </span>
@@ -682,7 +682,7 @@ export default function DeliveryTab() {
           )}
           {filteredEvents.length > 12 && (
             <p className="text-sm text-[var(--text-tertiary)] font-bold text-center mt-4">
-              Mostrando 12 de {filteredEvents.length} eventos · refrescá para ver más
+              Mostrando 12 de {filteredEvents.length} eventos · refresca para ver más
             </p>
           )}
         </div>

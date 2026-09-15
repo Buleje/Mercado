@@ -20,7 +20,7 @@ interface HoldedKPIProps {
 }
 
 const DOT_COLORS: Record<string, string> = {
-  emerald: "bg-[var(--accent-soft)]",
+  emerald: "bg-primary/10",
   red: "bg-[var(--data-error-500)]",
   amber: "bg-[var(--data-warning-500)]",
   blue: "bg-[var(--text-secondary)]",
@@ -46,7 +46,7 @@ function HoldedKPI({
   return (
     <div
       className={cn(
-        "bg-white dark:bg-zinc-900 border border-[var(--rule-base)] dark:border-zinc-800 rounded-xl p-6",
+        "bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6",
         size === "large" && "col-span-2",
         className
       )}

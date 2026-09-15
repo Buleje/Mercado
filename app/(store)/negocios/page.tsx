@@ -311,7 +311,7 @@ function B2BHero() {
               {/* Chip Yape — cuelga del borde IZQUIERDO, casi todo afuera (solo
                   besa el borde), arriba. No tapa el monto. Solo lg: hay gutter. */}
               <div className="absolute left-0 top-16 -translate-x-[94%] z-20 hidden lg:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Wallet className="h-4 w-4" strokeWidth={2} />
                 </span>
                 <div className="leading-tight">
@@ -432,7 +432,7 @@ function B2BHero() {
                       { n: "Lucía P.", d: "Abarrotes", v: "42.30", t: "7 min" },
                     ].map((o) => (
                       <li key={o.n} className="flex items-center gap-2 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-2.5 py-2">
-                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
+                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
                           {o.n.charAt(0)}
                         </span>
                         <div className="min-w-0 flex-1 leading-tight">
@@ -531,7 +531,7 @@ function BentoCard({
       <div className="relative flex items-start gap-3">
         <span
           aria-hidden
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
         >
           <Icon className="h-5 w-5" strokeWidth={1.75} />
         </span>
@@ -690,7 +690,7 @@ function FeaturesGrid() {
                       className={cn(
                         "absolute inset-y-0 left-0 rounded-full",
                         p.tone === "ok" && "bg-[var(--data-success-500)]",
-                        p.tone === "warn" && "bg-[var(--data-warning-500,#f59e0b)]",
+                        p.tone === "warn" && "bg-[var(--data-warning-500,#ff6b5b)]",
                         p.tone === "low" && "bg-[var(--data-error-500,#ef4444)]",
                       )}
                       style={{ width: `${p.pct}%` }}
@@ -717,7 +717,7 @@ function FeaturesGrid() {
           <BentoCard icon={Wallet} title="Fiado digital" blurb="Semáforo de riesgo" category="Cobrar">
             <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3.5">
               <div className="flex items-center gap-2">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
                   M
                 </span>
                 <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)]">Doña Marta</span>
@@ -727,9 +727,9 @@ function FeaturesGrid() {
               </div>
               <div className="mt-3 flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500,#f59e0b)] ring-2 ring-[var(--data-warning-500,#f59e0b)]/30" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500,#ff6b5b)] ring-2 ring-[var(--data-warning-500,#ff6b5b)]/30" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[var(--surface-sunken)]" />
-                <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700,#b45309)]">
+                <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700,#c93b2c)]">
                   Recordar pago
                 </span>
               </div>
@@ -840,7 +840,7 @@ function FeaturesGrid() {
             {MODULE_CATEGORIES.map((cat) => (
               <div key={cat.label}>
                 <p className="mb-3.5 flex items-center gap-2 text-sm font-extrabold text-[var(--text-primary)]">
-                  <span aria-hidden className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <span aria-hidden className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                     <cat.icon className="h-4 w-4" strokeWidth={2} />
                   </span>
                   {cat.label}

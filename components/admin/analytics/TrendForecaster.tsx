@@ -155,7 +155,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
       {/* Legend */}
       <div className="flex items-center gap-4 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-[var(--data-warning-500)]" style={{ backgroundColor: "#f97316" }} />
+          <span className="w-3 h-3 rounded-sm bg-[var(--data-warning-500)]" style={{ backgroundColor: "#ff6b5b" }} />
           Ventas reales
         </div>
         <div className="flex items-center gap-1">
@@ -196,7 +196,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
                     style={{
                       height: `${heightPct}%`,
                       minHeight: pt.actual > 0 ? "2px" : "0px",
-                      backgroundColor: pt.isForecast ? "var(--accent)" : "#f97316",
+                      backgroundColor: pt.isForecast ? "var(--accent)" : "#ff6b5b",
                     }}
                   />
                 </div>
@@ -237,7 +237,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
                 </span>
               )}
               {i === 13 && (
-                <div className="w-px h-3 bg-[var(--rule-base)] dark:bg-gray-600 mx-auto -mt-3" />
+                <div className="w-px h-3 bg-[var(--rule-base)] mx-auto -mt-3" />
               )}
             </div>
           ))}

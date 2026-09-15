@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle, BlockTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, Database, Cpu, Zap } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ import type { HealthPayload, HealthService } from "@/app/api/admin/health/route"
 // ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  operativo: { icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", label: "Operativo" },
+  operativo: { icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", label: "Operativo" },
   degradado:  { icon: AlertTriangle, color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",   label: "Degradado" },
   caido:      { icon: XCircle,       color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",       label: "Caído" },
 };
@@ -29,11 +29,11 @@ function fmtDate(iso: string) {
 function HealthSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
-      <div className="h-20 bg-gray-100 dark:bg-surface rounded-xl" />
+      <div className="h-20 bg-[var(--rule-soft)] rounded-xl" />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-100 dark:bg-surface rounded-xl" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-32 bg-[var(--rule-soft)] rounded-xl" />)}
       </div>
-      <div className="h-28 bg-gray-100 dark:bg-surface rounded-xl" />
+      <div className="h-28 bg-[var(--rule-soft)] rounded-xl" />
     </div>
   );
 }
@@ -106,7 +106,7 @@ export default function SystemHealthTab() {
         <button
           onClick={() => load(true)}
           disabled={refreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
           {refreshing ? "Verificando…" : "Actualizar"}
@@ -117,13 +117,13 @@ export default function SystemHealthTab() {
       <div className={cn("rounded-xl p-3 sm:p-5 flex items-center gap-2 sm:gap-4", STATUS_CONFIG[overallStatus].bg)}>
         <OverallIcon className={cn("h-10 w-10 shrink-0", STATUS_CONFIG[overallStatus].color)} />
         <div>
-          <h3 className={cn("text-lg font-extrabold", STATUS_CONFIG[overallStatus].color)}>
+          <CardTitle className={cn("", STATUS_CONFIG[overallStatus].color)}>
             {overallStatus === "operativo"
               ? "Todos los sistemas operativos"
               : overallStatus === "degradado"
               ? "Algunos servicios degradados"
               : "Servicios caídos detectados"}
-          </h3>
+          </CardTitle>
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
             {operativeCount}/{services.length} servicios operativos
             {incidents.filter(i => i.status === "open").length > 0 && (
@@ -146,7 +146,7 @@ export default function SystemHealthTab() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <ServiceIcon className="h-4 w-4 text-[var(--text-tertiary)]" />
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.name}</h4>
+                  <BlockTitle>{s.name}</BlockTitle>
                 </div>
                 <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", SC.bg, SC.color)}>
                   <SIcon className="h-3 w-3" />{SC.label}
@@ -187,14 +187,14 @@ export default function SystemHealthTab() {
               const barColor =
                 m.status === "critical" ? "bg-[var(--data-error-500)]" :
                 m.status === "warning"  ? "bg-[var(--data-warning-500)]" :
-                "bg-[var(--accent-soft)]";
+                "bg-primary/10";
               return (
                 <div key={m.label}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.label}</span>
                     <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.value} {m.unit}</span>
                   </div>
-                  <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                  <div className="h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
                     <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${pct}%` }} />
                   </div>
                 </div>
@@ -220,7 +220,7 @@ export default function SystemHealthTab() {
               <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0">
                 <div className={cn(
                   "h-2.5 w-2.5 rounded-full shrink-0",
-                  inc.severity === "critical" ? "bg-[var(--data-error-500)]" : inc.severity === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]"
+                  inc.severity === "critical" ? "bg-[var(--data-error-500)]" : inc.severity === "warning" ? "bg-[var(--data-warning-500)]" : "bg-primary/10"
                 )} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{inc.title}</p>
@@ -229,7 +229,7 @@ export default function SystemHealthTab() {
                 <span className={cn(
                   "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                   inc.status === "resolved"
-                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                    ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                     : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                 )}>
                   {inc.status === "resolved" ? "Resuelto" : "Activo"}

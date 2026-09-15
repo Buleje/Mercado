@@ -21,7 +21,9 @@
 
 import type { ComponentType, ReactNode } from "react";
 import { ADMIN_TOKENS } from "./admin-tokens";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
+import { PageTitle } from "@buleje/design-system";
 type LucideIcon = ComponentType<{
   className?: string;
   strokeWidth?: number;
@@ -45,6 +47,8 @@ interface AdminTabShellProps {
   actions?: ReactNode;
   /** Slot derecho con stat pills (ej. KPIs del módulo). Si presente, reemplaza actions. */
   stats?: ReactNode;
+  /** Ícono de info junto al título con popover (qué hace / a dónde afecta / ejemplo). */
+  info?: { title?: string; what: string; affects?: string; example?: string };
   children: ReactNode;
 }
 
@@ -56,6 +60,7 @@ export default function AdminTabShell({
   chip,
   actions,
   stats,
+  info,
   children,
 }: AdminTabShellProps) {
   const ChipIcon = chip?.icon;
@@ -74,7 +79,8 @@ export default function AdminTabShell({
               <p className={`${ADMIN_TOKENS.kicker} mb-1`}>{kicker}</p>
             )}
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className={ADMIN_TOKENS.headingHero}>{title}</h1>
+              <PageTitle className={ADMIN_TOKENS.headingHero}>{title}</PageTitle>
+              {info && <InfoTip side="bottom" {...info} />}
               {chip && (
                 <span
                   className={

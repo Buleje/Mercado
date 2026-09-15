@@ -73,8 +73,17 @@ export function MicrosoftClarity() {
   );
 }
 
-export function MetaPixel() {
-  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+/** Sanea un Pixel ID antes de inyectarlo en un <Script> inline (anti stored-XSS). */
+function safePixelId(raw: string | undefined | null): string {
+  return (raw ?? "").replace(/[^A-Za-z0-9]/g, "").slice(0, 32);
+}
+
+/**
+ * Meta Pixel. `pixelId` opcional = el del tenant (Canales de venta); si no,
+ * cae al pixel global de la plataforma (env). El ID se sanea antes de inyectarlo.
+ */
+export function MetaPixel({ pixelId: propId }: { pixelId?: string } = {}) {
+  const pixelId = safePixelId(propId || process.env.NEXT_PUBLIC_META_PIXEL_ID);
   if (!pixelId) return null;
 
   return (
@@ -106,5 +115,32 @@ export function MetaPixel() {
         />
       </noscript>
     </>
+  );
+}
+
+/**
+ * TikTok Pixel del tenant (Canales de venta). Dispara PageView automáticamente.
+ * Los eventos de conversión (AddToCart, CompletePayment) se cablean aparte en el
+ * flujo de carrito/checkout. El ID se sanea antes de inyectarlo.
+ */
+export function TikTokPixel({ pixelId: propId }: { pixelId?: string } = {}) {
+  const pixelId = safePixelId(propId);
+  if (!pixelId) return null;
+
+  return (
+    <Script id="tiktok-pixel" strategy="lazyOnload">
+      {`
+        !function (w, d, t) {
+          w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
+          ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"];
+          ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
+          for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
+          ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};
+          ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var s=d.createElement("script");s.type="text/javascript",s.async=!0,s.src=r+"?sdkid="+e+"&lib="+t;var a=d.getElementsByTagName("script")[0];a.parentNode.insertBefore(s,a)};
+          ttq.load('${pixelId}');
+          ttq.page();
+        }(window, document, 'ttq');
+      `}
+    </Script>
   );
 }

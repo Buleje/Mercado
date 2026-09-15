@@ -12,6 +12,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
+import { normalizeProducts } from "./normalize";
 
 interface SaleItem {
   productId?: string | number;
@@ -138,7 +139,7 @@ export default function TabHoy({ onTabChange }: Props) {
 
       if (prodRes.ok) {
         const data = await prodRes.json();
-        const prods = (data.products ?? []) as Array<{ name: string; stock?: number; stockMin?: number; imageUrl?: string; image?: string }>;
+        const prods = normalizeProducts(data);
         const urgent = prods
           .filter((p) => (p.stock ?? 0) < (p.stockMin ?? 0))
           .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0))[0];
@@ -307,7 +308,7 @@ export default function TabHoy({ onTabChange }: Props) {
               onClick={() => onTabChange(c.tab)}
               disabled={loading}
               className={cn(
-                "group rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5 text-left transition-shadow hover:shadow-md disabled:opacity-50",
+                "group rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-left transition-shadow hover:shadow-md disabled:opacity-50",
                 "flex flex-col gap-4",
               )}
               style={{ ["--card-accent" as string]: c.accent }}

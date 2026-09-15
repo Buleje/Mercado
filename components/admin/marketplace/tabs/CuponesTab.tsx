@@ -1,6 +1,8 @@
 "use client";
-import { CardTitle } from "@buleje/design-system";
-import { useState, useEffect } from "react";
+import { CardTitle, StatCard } from "@buleje/design-system";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { Field } from "@/components/admin/shared/Field";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCoupons } from "@/components/admin/marketplace/hooks/use-marketplace-coupons";
 import { TableSkeleton } from "@/components/admin/marketplace/shared";
@@ -35,33 +37,18 @@ export function MarketplaceCuponesTab() {
   return (
     <div className="space-y-6">
       {/* ── Header con stats + CTA ── */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-5">
-          <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Cupones marketplace</p>
-            <p className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-tight">{coupons.length}</p>
-          </div>
-          <div className="h-10 w-px bg-[var(--rule-base)]" />
-          <div className="flex items-center gap-5">
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Activos</p>
-              <p className="text-base font-bold text-[var(--data-success)] tabular-nums">{activeCount}</p>
-            </div>
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Usos</p>
-              <p className="text-base font-bold text-[var(--text-primary)] tabular-nums">{totalUses}</p>
-            </div>
-            {expiringSoon > 0 && (
-              <div>
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-warning)]">Vencen pronto</p>
-                <p className="text-base font-bold text-[var(--data-warning)] tabular-nums">{expiringSoon}</p>
-              </div>
-            )}
-          </div>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 sm:max-w-xl">
+          <StatCard label="Cupones marketplace" value={coupons.length} density="compact" />
+          <StatCard label="Activos" value={activeCount} emphasis="success" density="compact" />
+          <StatCard label="Usos" value={totalUses} density="compact" />
+          {expiringSoon > 0 && (
+            <StatCard label="Vencen pronto" value={expiringSoon} emphasis="warning" density="compact" />
+          )}
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shadow-sm shrink-0"
         >
           <Ticket className="h-4 w-4" />
           Nuevo cupón
@@ -80,8 +67,8 @@ export function MarketplaceCuponesTab() {
       )}
 
       {coupons.length === 0 ? (
-        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
+        <div className="text-center py-20 px-6 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <Ticket className="h-6 w-6" />
           </div>
           <p className="text-base font-extrabold text-[var(--text-primary)]">Sin cupones todavía</p>
@@ -90,7 +77,7 @@ export function MarketplaceCuponesTab() {
           </p>
           <button
             onClick={() => setShowForm(true)}
-            className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+            className="mt-5 inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
           >
             <Ticket className="h-4 w-4" />
             Crear primer cupón
@@ -107,7 +94,7 @@ export function MarketplaceCuponesTab() {
                 className={cn(
                   "group relative overflow-hidden rounded-2xl border-2 p-4 transition-all",
                   c.active && !expired
-                    ? "bg-white border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md"
+                    ? "bg-[var(--surface-raised)] border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md"
                     : "bg-[var(--surface-sunken)] border-[var(--rule-base)] opacity-75"
                 )}
               >
@@ -189,21 +176,21 @@ export function MarketplaceCuponesTab() {
                     <button
                       onClick={() => navigator.clipboard?.writeText(c.code).catch(() => { /* clipboard best-effort */ })}
                       title="Copiar código"
-                      className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-[var(--text-tertiary)]"
+                      className="p-2 rounded-xl hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors text-[var(--text-tertiary)]"
                     >
                       <Star className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => toggleActive(c.id, c.active)}
                       title={c.active ? "Desactivar" : "Activar"}
-                      className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors text-[var(--text-tertiary)]"
+                      className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors text-[var(--text-tertiary)]"
                     >
                       {c.active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4 text-[var(--data-success)]" />}
                     </button>
                     <button
                       onClick={() => deleteCoupon(c.id)}
                       title="Eliminar"
-                      className="p-2 rounded-lg hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] transition-colors text-[var(--text-tertiary)]"
+                      className="p-2 rounded-xl hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] transition-colors text-[var(--text-tertiary)]"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -234,6 +221,11 @@ function NewCouponModal({
   onClose: () => void;
   onCreate: () => void;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const isPercent = form.discountType === "percent";
   const previewValue = form.discountValue
     ? isPercent
@@ -252,9 +244,9 @@ function NewCouponModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
         role="dialog"
         aria-modal="true"
         aria-label="Crear nuevo cupón"
@@ -263,7 +255,7 @@ function NewCouponModal({
         <div className="relative overflow-hidden rounded-t-3xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent p-6 border-b border-[var(--rule-base)]">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 h-8 w-8 inline-flex items-center justify-center rounded-full bg-white border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
+            className="absolute top-4 right-4 h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
             aria-label="Cerrar"
           >
             <X className="h-4 w-4" />
@@ -273,12 +265,12 @@ function NewCouponModal({
             <Ticket className="h-3.5 w-3.5" />
             Nuevo cupón marketplace
           </div>
-          <CardTitle className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">Configurá tu descuento</CardTitle>
+          <CardTitle className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">Configura tu descuento</CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-1">Aparecerá en el carrito de los clientes que entren al marketplace.</p>
 
           {/* Preview ticket */}
           <div className="mt-5 relative">
-            <div className="relative inline-flex items-stretch rounded-xl bg-white border-2 border-dashed border-primary/40 overflow-hidden shadow-sm">
+            <div className="relative inline-flex items-stretch rounded-xl bg-[var(--surface-raised)] border-2 border-dashed border-primary/40 overflow-hidden shadow-sm">
               <div className="flex items-center justify-center px-4 py-3 bg-primary text-white">
                 <Ticket className="h-5 w-5" />
               </div>
@@ -301,33 +293,35 @@ function NewCouponModal({
           {/* Sección 1: Identificación */}
           <section className="space-y-4">
             <header className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-extrabold">1</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">1</span>
               <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Identificación</h4>
             </header>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Código del cupón</label>
-                <input
-                  type="text"
-                  placeholder="BIENVENIDO10"
-                  value={form.code}
-                  onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s+/g, "") })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
-                  maxLength={20}
-                />
+                <Field label="Código del cupón" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  <input
+                    type="text"
+                    placeholder="BIENVENIDO10"
+                    value={form.code}
+                    onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s+/g, "") })}
+                    className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
+                    maxLength={20}
+                  />
+                </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Mayúsculas, sin espacios. Ej: BIENVENIDO10</p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Descripción interna</label>
-                <input
-                  type="text"
-                  placeholder="Descuento de bienvenida"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
+                <Field label="Descripción interna" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  <input
+                    type="text"
+                    placeholder="Descuento de bienvenida"
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </Field>
               </div>
             </div>
           </section>
@@ -335,7 +329,7 @@ function NewCouponModal({
           {/* Sección 2: Tipo y valor */}
           <section className="space-y-4">
             <header className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-extrabold">2</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">2</span>
               <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Tipo de descuento</h4>
             </header>
 
@@ -351,10 +345,10 @@ function NewCouponModal({
                     key={opt.value}
                     onClick={() => setForm({ ...form, discountType: opt.value as "percent" | "fixed" })}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all",
+                      "flex items-center gap-3 px-4 min-h-11 rounded-xl border-2 text-left transition-all",
                       active
                         ? "border-primary bg-primary/5"
-                        : "border-[var(--rule-base)] bg-white hover:border-[var(--text-tertiary)]"
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-tertiary)]"
                     )}
                   >
                     <span className={cn(
@@ -375,37 +369,43 @@ function NewCouponModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
-                  Valor {isPercent ? "(%)" : "(S/)"}
-                </label>
-                <div className="flex items-stretch rounded-xl border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
-                  <input
-                    type="number"
-                    placeholder={isPercent ? "10" : "5.00"}
-                    value={form.discountValue}
-                    onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
-                    min={0}
-                    max={isPercent ? 100 : undefined}
-                    step={isPercent ? 1 : 0.5}
-                    className="flex-1 min-w-0 px-4 py-3 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
-                  />
-                  <span className="inline-flex items-center px-4 text-sm font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l-2 border-[var(--rule-base)]">
-                    {isPercent ? "%" : "S/"}
-                  </span>
-                </div>
+                <Field
+                  label={`Valor ${isPercent ? "(%)" : "(S/)"}`}
+                  labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]"
+                >
+                  {(id) => (
+                    <div className="flex items-stretch rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+                      <input
+                        id={id}
+                        type="number"
+                        placeholder={isPercent ? "10" : "5.00"}
+                        value={form.discountValue}
+                        onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+                        min={0}
+                        max={isPercent ? 100 : undefined}
+                        step={isPercent ? 1 : 0.5}
+                        className="flex-1 min-w-0 px-4 h-11 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
+                      />
+                      <span className="inline-flex items-center px-4 text-sm font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l-2 border-[var(--rule-base)]">
+                        {isPercent ? "%" : "S/"}
+                      </span>
+                    </div>
+                  )}
+                </Field>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Compra mínima (S/)</label>
-                <input
-                  type="number"
-                  placeholder="Sin mínimo"
-                  value={form.minPurchase}
-                  onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
-                  min={0}
-                  step={0.5}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
-                />
+                <Field label="Compra mínima (S/)" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  <input
+                    type="number"
+                    placeholder="Sin mínimo"
+                    value={form.minPurchase}
+                    onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
+                    min={0}
+                    step={0.5}
+                    className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                  />
+                </Field>
               </div>
             </div>
           </section>
@@ -413,32 +413,34 @@ function NewCouponModal({
           {/* Sección 3: Límites */}
           <section className="space-y-4">
             <header className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-extrabold">3</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">3</span>
               <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Límites</h4>
             </header>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Usos máximos</label>
-                <input
-                  type="number"
-                  placeholder="Ilimitado"
-                  value={form.maxUses}
-                  onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
-                  min={1}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
-                />
+                <Field label="Usos máximos" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  <input
+                    type="number"
+                    placeholder="Ilimitado"
+                    value={form.maxUses}
+                    onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
+                    min={1}
+                    className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                  />
+                </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin tope de canjes</p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Vence el</label>
-                <input
-                  type="datetime-local"
-                  value={form.expiresAt ? form.expiresAt.slice(0, 16) : ""}
-                  onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
+                <Field label="Vence el" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  <input
+                    type="datetime-local"
+                    value={form.expiresAt ? form.expiresAt.slice(0, 16) : ""}
+                    onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
+                    className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin vencimiento</p>
               </div>
             </div>
@@ -448,19 +450,19 @@ function NewCouponModal({
         {/* Footer sticky */}
         <div className="sticky bottom-0 flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--rule-base)] bg-white/95 backdrop-blur rounded-b-3xl">
           <p className="text-xs text-[var(--text-tertiary)] hidden sm:block">
-            Podés activar/desactivar el cupón después.
+            Puedes activar/desactivar el cupón después.
           </p>
           <div className="flex items-center gap-3 ml-auto">
             <button
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] border-2 border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+              className="px-4 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={onCreate}
               disabled={saving || !form.code || !form.discountValue}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
+              className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
             >
               {saving ? (
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

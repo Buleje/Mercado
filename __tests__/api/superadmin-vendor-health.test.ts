@@ -23,6 +23,7 @@ const { mockCacheGet } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   cacheStore: {
     get: mockCacheGet,
     set: vi.fn(),

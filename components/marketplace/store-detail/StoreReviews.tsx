@@ -118,7 +118,7 @@ export default function StoreReviews({ summary, reviews, storeSlug, storeName }:
       </>) : (
         /* Empty state limpio — sin "0.0" roto */
         <div className="flex flex-col items-center rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-8 text-center">
-          <span className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><MessageSquare className="h-6 w-6" /></span>
+          <span className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><MessageSquare className="h-6 w-6" /></span>
           <p className="text-base font-extrabold text-[var(--text-primary)]">Todavía no hay opiniones</p>
           <p className="mt-1 max-w-sm text-sm text-[var(--text-secondary)]">Sé el primero en contar tu experiencia con esta tienda. Tu reseña ayuda a otros vecinos a decidir.</p>
         </div>

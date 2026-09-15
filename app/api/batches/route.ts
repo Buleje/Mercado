@@ -4,6 +4,7 @@ import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { BatchesDB } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     const rl = applyRateLimit(req, "MODERATE", "batches");
     if (rl) return rl;
 
-    const body = await req.json().catch(() => null);
+    const body = await leerJson(req);
     if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
 
     const parsed = CreateSchema.safeParse(body);
@@ -93,7 +94,7 @@ export async function PATCH(req: NextRequest) {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Parámetro id requerido" }, { status: 400 });
 
-    const body = await req.json().catch(() => null);
+    const body = await leerJson(req);
     if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
 
     const parsed = UpdateSchema.safeParse(body);

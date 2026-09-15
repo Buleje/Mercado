@@ -35,7 +35,7 @@ export default function TiendaSemanaWidget({
   // quedaba truncado ("Tiend…") en la mini-card del strip.
   const stores = (initialStores ?? []).filter((s) => s?.slug && s?.name).slice(0, 3);
   const [votes, setVotes] = useState<Record<string, number>>({});
-  const [week, setWeek] = useState<string>("");
+  const [_week, setWeek] = useState<string>("");
   const [voted, setVoted] = useState<string | null>(null);
   const [voting, setVoting] = useState<string | null>(null);
 

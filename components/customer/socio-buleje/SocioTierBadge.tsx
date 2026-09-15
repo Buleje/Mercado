@@ -15,10 +15,13 @@
  *   - card: card grande con tier + % al próximo + beneficios
  */
 
-import { Medal, Sparkles, Crown, Award } from "@buleje/design-system/icons";
+import { Medal, Sparkles, Crown, Award, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export type SocioTier = "bronce" | "plata" | "oro" | "diamante";
+
+/** Orden de progresión de tiers (para la escalera visual). */
+const TIER_ORDER: readonly SocioTier[] = ["bronce", "plata", "oro", "diamante"];
 
 interface TierConfig {
   label: string;
@@ -159,6 +162,8 @@ export function SocioTierCard({ totalSpent, className }: CardProps) {
       )
     : 100;
   const remainingToNext = nextCfg ? Math.max(0, nextCfg.minSpent - totalSpent) : 0;
+  const currentIdx = TIER_ORDER.indexOf(tier);
+  const ladderPct = TIER_ORDER.length > 1 ? currentIdx / (TIER_ORDER.length - 1) : 0;
 
   return (
     <section
@@ -190,6 +195,53 @@ export function SocioTierCard({ totalSpent, className }: CardProps) {
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
               Gastado: {fmt(totalSpent)}
             </p>
+          </div>
+        </div>
+
+        {/* Escalera de tiers — progresión visual Bronce → Diamante */}
+        <div className="mb-5">
+          <div className="relative flex items-start justify-between">
+            {/* Riel base + progreso */}
+            <div aria-hidden className="absolute inset-x-5 top-5 h-0.5 rounded-full bg-[var(--rule-base)]" />
+            <div
+              aria-hidden
+              className="absolute left-5 top-5 h-0.5 rounded-full bg-[var(--accent)] transition-all duration-700"
+              style={{ width: `calc((100% - 2.5rem) * ${ladderPct})` }}
+            />
+            {TIER_ORDER.map((t, i) => {
+              const tc = TIER_CONFIG[t];
+              const TIcon = tc.icon;
+              const done = i < currentIdx;
+              const active = i === currentIdx;
+              return (
+                <div key={t} className="relative z-10 flex flex-1 flex-col items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "grid h-10 w-10 place-items-center rounded-full border-2 transition-all",
+                      active
+                        ? cn(tc.borderClass, tc.bgClass, "scale-110 shadow-sm")
+                        : done
+                          ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
+                    )}
+                  >
+                    {done ? (
+                      <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
+                    ) : (
+                      <TIcon className={cn("h-5 w-5", active && tc.textClass)} strokeWidth={1.75} aria-hidden />
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[9px] font-black uppercase tracking-[0.12em]",
+                      active ? tc.textClass : done ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]",
+                    )}
+                  >
+                    {tc.label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 

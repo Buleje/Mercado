@@ -23,6 +23,7 @@ import { notifyOwnerNewOrder } from "@/lib/whatsapp-order-notify";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { checkAndIssueCoupons } from "@/lib/coupons/auto-coupon-triggers";
 import { logger } from "@/lib/logger";
+import { DropshipDB } from "./dropship.db";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -163,6 +164,23 @@ export const OrdersDB = {
       orderBy: { createdAt: "desc" },
       take: 5,
     }));
+  },
+
+  /**
+   * Pedidos recientes ANONIMIZADOS para la prueba social del storefront (Brandon
+   * 2026-06-26, Modo Creativo). Solo nombre del 1er producto + fecha — SIN datos
+   * del cliente (privacidad Ley 29733). Excluye cancelados. Máx 8.
+   */
+  async recentForSocialProof(tenantId: string, since: Date): Promise<Array<{ product: string; at: string }>> {
+    const rows = await withRlsTx(tenantId, (tx) => tx.order.findMany({
+      where: { tenantId, createdAt: { gt: since }, status: { not: "cancelado" as never } },
+      select: { createdAt: true, items: { select: { name: true }, take: 1 } },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }));
+    return rows
+      .filter((r) => r.items.length > 0 && !!r.items[0].name)
+      .map((r) => ({ product: r.items[0].name, at: toISO(r.createdAt) }));
   },
 
   async getAll(tenantId: string): Promise<DbOrder[]> {
@@ -310,21 +328,46 @@ export const OrdersDB = {
     // Ensure the customer exists in the DB before linking via FK
     const phone = order.customer.phone ? normalizePhone(order.customer.phone) : null;
     if (phone) {
-      await prisma.customer.upsert({
+      /**
+       * `Customer.phone` es `@unique` GLOBAL (TD-040 fase 1), o sea que hay UNA
+       * ficha por teléfono en toda la plataforma. El `upsert` de antes hacía
+       * `update` sin mirar de quién era: si el 987654321 ya era cliente de la
+       * bodega A y pedía en la bodega B, el pedido de B le reescribía a la
+       * ficha de A el nombre, la dirección y la referencia. La bodega A abría
+       * su lista de clientes y encontraba otro nombre y otra dirección — y su
+       * próximo delivery salía hacia allá.
+       *
+       * El pedido no pierde nada: `Order` guarda su propia copia
+       * (`customerName`, `customerLocation`), que es la que usa el reparto.
+       * Cuando la FK compuesta `(tenantId, phone)` exista (fase 3), esto se
+       * puede volver a simplificar a un upsert.
+       */
+      const existente = await prisma.customer.findUnique({
         where: { phone },
-        create: {
-          phone,
-          name: order.customer.name,
-          location: order.customer.location ?? "",
-          reference: order.customer.reference ?? "",
-          tenantId,
-        },
-        update: {
-          name: order.customer.name,
-          location: order.customer.location ?? "",
-          reference: order.customer.reference ?? "",
-        },
+        select: { tenantId: true },
       });
+      if (!existente) {
+        await prisma.customer.create({
+          data: {
+            phone,
+            name: order.customer.name,
+            location: order.customer.location ?? "",
+            reference: order.customer.reference ?? "",
+            tenantId,
+          },
+        });
+      } else if (existente.tenantId === tenantId) {
+        await prisma.customer.update({
+          where: { phone },
+          data: {
+            name: order.customer.name,
+            location: order.customer.location ?? "",
+            reference: order.customer.reference ?? "",
+          },
+        });
+      }
+      // Si la ficha es de otro negocio no se toca: el pedido se vincula igual
+      // por el teléfono, que es la PK global.
     }
     // Ensure all catalog products exist in the Product table so the FK constraint is
     // always satisfied. Store-catalog IDs come from data/products.ts and may differ
@@ -515,7 +558,24 @@ export const OrdersDB = {
       if (!existing) return null;
       return tx.order.update({ where: { id, tenantId }, data, include: { items: true } });
     });
-    return row ? mapOrder(row) : null;
+    const mapped = row ? mapOrder(row) : null;
+
+    // ── Dropshipping (ADR-298) ──────────────────────────────────────────
+    // Al confirmar un pedido en una tienda con dropship activado, crear el
+    // fulfillment al proveedor. FIRE-AND-FORGET: nunca rompe el flujo de la
+    // orden (si falla, se loguea y queda para reenvío manual).
+    if (mapped && patch.status === "confirmado") {
+      void (async () => {
+        if (await DropshipDB.isEnabled(tenantId)) {
+          const n = await DropshipDB.createFulfillmentsFromOrder(tenantId, id);
+          if (n > 0) logger.info("[dropship] fulfillments creados", { tenantId, orderId: id, n });
+        }
+      })().catch((err) =>
+        logger.error("[dropship] fallo al crear fulfillment", { tenantId, orderId: id, error: String(err) }),
+      );
+    }
+
+    return mapped;
   },
   /**
    * Delete an order scoped to the given tenant.

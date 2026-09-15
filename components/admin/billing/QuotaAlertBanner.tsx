@@ -172,7 +172,7 @@ export function QuotaAlertBanner({ snapshot, upgradeHref = "/admin/billing/upgra
           {/* Ver detalles */}
           <button
             onClick={handleOpenModal}
-            className={`min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${DETAIL_BUTTON_STYLES[severity]}`}
+            className={`min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${DETAIL_BUTTON_STYLES[severity]}`}
             aria-label="Ver detalles del uso de cuota"
           >
             Ver detalles
@@ -181,7 +181,7 @@ export function QuotaAlertBanner({ snapshot, upgradeHref = "/admin/billing/upgra
           {/* Upgrade plan */}
           <a
             href={upgradeHref}
-            className="min-h-[44px] min-w-[44px] inline-flex items-center px-3 py-1.5 rounded-lg bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+            className="min-h-[44px] min-w-[44px] inline-flex items-center px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             aria-label="Mejorar plan de facturación"
           >
             Mejorar plan
@@ -190,7 +190,7 @@ export function QuotaAlertBanner({ snapshot, upgradeHref = "/admin/billing/upgra
           {/* Cerrar */}
           <button
             onClick={handleDismiss}
-            className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${ICON_STYLES[severity]} hover:opacity-70`}
+            className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${ICON_STYLES[severity]} hover:opacity-70`}
             aria-label="Cerrar alerta de cuota"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4" aria-hidden="true">

@@ -72,7 +72,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
           channels.telegram ? "Telegram" : null,
         ].filter(Boolean);
         toast.success("Alerta disparada", {
-          description: `${json.affected} SKUs · canales: ${active.length > 0 ? active.join(", ") : "solo log interno (configurá webhooks)"}`,
+          description: `${json.affected} SKUs · canales: ${active.length > 0 ? active.join(", ") : "solo log interno (configura webhooks)"}`,
           duration: 4000,
         });
       }

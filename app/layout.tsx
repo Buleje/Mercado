@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import Script from "next/script";
 import { Geist, Instrument_Serif } from "next/font/google";
 
 // Body — Geist: tipografía moderna, neutral, optimizada para pantalla.
@@ -223,20 +222,41 @@ async function CachedSchemaMarkup() {
   return <SchemaMarkup ratingValue={ratingValue} ratingCount={ratingCount} />;
 }
 
+/**
+ * La marca de la plataforma, cacheada para Next 16.
+ *
+ * `PlatformSettingsDB.getAll()` ya tenía su caché en memoria de 5 min, pero eso
+ * el framework no lo ve: para Cache Components sigue siendo IO sin cachear, y
+ * un IO sin cachear en el layout marca la ruta como bloqueante — de ahí el
+ * "Uncached data accessed outside of <Suspense>" que salía en el storefront
+ * aunque el componente YA estuviera dentro de un Suspense. Estar adentro no
+ * alcanza; hay que decirle que el dato se puede cachear.
+ *
+ * `cacheTag` y no sólo `cacheLife`: la marca cambia cuando el superadmin la
+ * edita, y eso tiene que verse ya. Los endpoints que la escriben revalidan
+ * este tag (`platform-config`).
+ */
+async function getCachedBrandOverrides() {
+  "use cache";
+  cacheTag("platform-config");
+  cacheLife("hours");
+  const { getPlatformConfigSSR, brandColorOverridesCss } = await import("@/lib/platform-config.server");
+  const cfg = await getPlatformConfigSSR();
+  return { css: brandColorOverridesCss(cfg), faviconUrl: cfg.brand.faviconUrl };
+}
+
 async function BrandRuntimeOverrides() {
   // Brandon mayo 2026: inyecta colores y favicon configurados en
   // /superadmin/configuracion. Si el cliente no cambió nada, este
   // fragmento queda vacío (no overrides).
-  const { getPlatformConfigSSR, brandColorOverridesCss } = await import("@/lib/platform-config.server");
-  const cfg = await getPlatformConfigSSR();
-  const css = brandColorOverridesCss(cfg);
+  const { css, faviconUrl } = await getCachedBrandOverrides();
   return (
     <>
       {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
-      {cfg.brand.faviconUrl && (
+      {faviconUrl && (
         <>
-          <link rel="icon" type="image/png" href={cfg.brand.faviconUrl} />
-          <link rel="shortcut icon" href={cfg.brand.faviconUrl} />
+          <link rel="icon" type="image/png" href={faviconUrl} />
+          <link rel="shortcut icon" href={faviconUrl} />
         </>
       )}
     </>

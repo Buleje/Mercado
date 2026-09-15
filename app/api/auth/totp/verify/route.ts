@@ -18,6 +18,7 @@ import {
   PENDING_TOTP_COOKIE,
 } from "@/lib/session";
 import type { AdminRole } from "@/lib/session";
+import { TrustedDevicesDB, TRUSTED_DEVICE_COOKIE, TRUSTED_DEVICE_MAX_AGE, deviceLabelFromUA } from "@/lib/db/trusted-devices.db";
 
 /**
  * POST /api/auth/totp/verify
@@ -38,6 +39,8 @@ const verifyLimiter = createRateLimiter({ maxRequests: 3, windowMs: 5 * 60 * 100
 
 const VerifyBodySchema = z.object({
   token: z.string().regex(/^\d{6}$/, "El token debe ser exactamente 6 dígitos"),
+  // ADR-304: "confiar en este dispositivo" → salta el 2FA los próximos 30 días.
+  trustDevice: z.boolean().optional(),
 });
 
 function makeAccessCookie() {
@@ -211,6 +214,26 @@ export async function POST(req: NextRequest) {
       response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
       // Eliminar cookie temporal
       response.cookies.set(PENDING_TOTP_COOKIE, "", { maxAge: 0, path: "/" });
+
+      // ADR-304: si pidió confiar en este dispositivo, emitir cookie trusted
+      // (salta el 2FA los próximos 30 días en ESTE navegador). El password se
+      // sigue pidiendo siempre — esto sólo evita el segundo factor. Best-effort:
+      // si falla, el login igual se completa (sin confianza).
+      if (parsed.data.trustDevice) {
+        try {
+          const label = deviceLabelFromUA(req.headers.get("user-agent"));
+          const trustedToken = await TrustedDevicesDB.issue(auth.tenantId, auth.username, label, new Date());
+          response.cookies.set(TRUSTED_DEVICE_COOKIE, trustedToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: TRUSTED_DEVICE_MAX_AGE,
+            path: "/",
+          });
+        } catch (err) {
+          logger.error("[totp/verify] trusted-device issue failed", { error: String(err) });
+        }
+      }
 
       // ADR-133: aviso de dispositivo nuevo también en el flujo 2FA (el login
       // con 2FA completa acá, no en /api/auth/login). Fire-and-forget.

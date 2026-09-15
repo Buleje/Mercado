@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { ShoppingCart, ArrowRight, Download, Link2, Package, RefreshCw, Lightbulb } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -67,15 +67,15 @@ export default function BasketAnalysisTab() {
           {(["7d", "30d", "90d"] as const).map(p => (
             <button key={p} onClick={() => setPeriod(p)}
               className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                period === p ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+                period === p ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted")}>
               {p === "7d" ? "7 días" : p === "30d" ? "30 días" : "90 días"}
             </button>
           ))}
-          <button onClick={load} disabled={loading} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface text-[var(--text-tertiary)]">
+          <button aria-label="Actualizar" onClick={load} disabled={loading} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(sorted.map(a => ({ producto_a: a.productA, producto_b: a.productB, categoria: a.category, soporte: (a.support * 100).toFixed(1) + "%", confianza: (a.confidence * 100).toFixed(1) + "%", lift: Number(a.lift).toFixed(1), transacciones: a.count })), "analisis-cesta")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
         </div>
@@ -92,7 +92,7 @@ export default function BasketAnalysisTab() {
           <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             {loading
-              ? <div className="h-7 w-16 bg-[var(--surface-sunken)] dark:bg-surface rounded animate-pulse mt-1" />
+              ? <div className="h-7 w-16 bg-[var(--surface-sunken)] rounded animate-pulse mt-1" />
               : <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>}
           </div>
         ))}
@@ -134,7 +134,7 @@ export default function BasketAnalysisTab() {
           </CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {topCombos.map((a, i) => (
-              <div key={i} className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4">
+              <div key={i} className="bg-[var(--surface-alt)] rounded-xl p-4">
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className="text-xs font-extrabold text-primary">#{i + 1}</span>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{a.count}x · {a.category}</span>
@@ -146,7 +146,7 @@ export default function BasketAnalysisTab() {
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex-1 h-1.5 bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] rounded-full overflow-hidden">
-                    <div className="h-full bg-[var(--accent-soft)] rounded-full" style={{ width: `${a.confidence * 100}%` }} />
+                    <div className="h-full bg-primary/10 rounded-full" style={{ width: `${a.confidence * 100}%` }} />
                   </div>
                   <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{(a.confidence * 100).toFixed(0)}%</span>
                 </div>
@@ -157,14 +157,15 @@ export default function BasketAnalysisTab() {
       )}
 
       {/* Tabla reglas de asociación */}
-      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-5 py-3 bg-[var(--surface-alt)] dark:bg-surface gap-2 flex-wrap">
+      <div className="bg-[var(--surface-raised)]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-5 py-3 bg-[var(--surface-alt)] gap-2 flex-wrap">
           <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <Link2 className="h-4 w-4 text-primary" /> Reglas de asociación
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             {/* Filtro categoría */}
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
+              aria-label="Filtrar por categoría"
               className="px-2 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted border-0">
               {categories.map(c => <option key={c} value={c}>{c === "all" ? "Todas las categorías" : c}</option>)}
             </select>
@@ -185,7 +186,7 @@ export default function BasketAnalysisTab() {
         {loading ? (
           <div className="p-6 space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-10 bg-[var(--surface-sunken)] dark:bg-surface rounded animate-pulse" />
+              <div key={i} className="h-10 bg-[var(--surface-sunken)] rounded animate-pulse" />
             ))}
           </div>
         ) : sorted.length === 0 ? (
@@ -194,47 +195,45 @@ export default function BasketAnalysisTab() {
             <p className="text-sm">Sin asociaciones para el periodo seleccionado</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
+          <DataTable className="min-w-[600px]">
               <thead>
-                <tr className="text-left text-xs text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-alt)] dark:bg-surface">
-                  <th className="px-4 py-2 font-bold">Producto A</th>
-                  <th className="px-2 py-2 font-bold" />
-                  <th className="px-4 py-2 font-bold">Producto B</th>
-                  <th className="px-4 py-2 font-bold">Categoría</th>
-                  <th className="px-4 py-2 font-bold text-right">Soporte</th>
-                  <th className="px-4 py-2 font-bold text-right">Confianza</th>
-                  <th className="px-4 py-2 font-bold text-right">Lift</th>
-                  <th className="px-4 py-2 font-bold text-right">Transacciones</th>
+                <tr>
+                  <th>Producto A</th>
+                  <th />
+                  <th>Producto B</th>
+                  <th>Categoría</th>
+                  <th className="text-right">Soporte</th>
+                  <th className="text-right">Confianza</th>
+                  <th className="text-right">Lift</th>
+                  <th className="text-right">Transacciones</th>
                 </tr>
               </thead>
               <tbody>
                 {sorted.map((a, i) => (
-                  <tr key={i} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50">
-                    <td className="px-4 py-2.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.productA}</td>
-                    <td className="px-2 py-2.5"><ArrowRight className="h-3 w-3 text-[var(--text-tertiary)]" /></td>
-                    <td className="px-4 py-2.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.productB}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted">{a.category}</span>
+                  <tr key={i}>
+                    <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.productA}</td>
+                    <td><ArrowRight className="h-3 w-3 text-[var(--text-tertiary)]" /></td>
+                    <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.productB}</td>
+                    <td>
+                      <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted">{a.category}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-right"><span className="text-xs font-bold text-[var(--data-success-500)]">{(a.support * 100).toFixed(0)}%</span></td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="text-right"><span className="text-xs font-bold text-[var(--data-success-500)]">{(a.support * 100).toFixed(0)}%</span></td>
+                    <td className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <div className="w-12 h-1.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
-                          <div className="h-full bg-[var(--accent-soft)] rounded-full" style={{ width: `${a.confidence * 100}%` }} />
+                        <div className="w-12 h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+                          <div className="h-full bg-primary/10 rounded-full" style={{ width: `${a.confidence * 100}%` }} />
                         </div>
                         <span className="text-xs font-bold text-[var(--data-success-500)]">{(a.confidence * 100).toFixed(0)}%</span>
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="text-right">
                       <span className={cn("text-xs font-bold", a.lift >= 2 ? "text-[var(--text-secondary)]" : a.lift >= 1.5 ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]")}>{Number(a.lift).toFixed(1)}x</span>
                     </td>
-                    <td className="px-4 py-2.5 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.count}</td>
+                    <td className="text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.count}</td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+          </DataTable>
         )}
       </div>
     </div>

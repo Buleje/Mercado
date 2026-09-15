@@ -134,11 +134,11 @@ export default function CategoryImagesClient() {
       <div className="flex flex-wrap items-center gap-3 justify-between">
         <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" />
+            <span className="h-2 w-2 rounded-full bg-teal-500" />
             {Object.keys(images).filter((k) => images[k]).length} imágenes globales activas
           </span>
           {dirty && (
-            <span className="px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-600)] dark:text-amber-400 text-xs font-bold">
+            <span className="px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-600 dark:text-teal-400 text-xs font-bold">
               Cambios sin guardar
             </span>
           )}
@@ -147,7 +147,7 @@ export default function CategoryImagesClient() {
           type="button"
           onClick={handleSave}
           disabled={!dirty || saving}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--data-success-600)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-semibold text-white transition-colors hover:bg-[var(--data-success-600)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Save className="h-4 w-4" />
           {saving ? "Guardando…" : "Guardar"}
@@ -181,13 +181,13 @@ export default function CategoryImagesClient() {
             }
           }}
           placeholder="Agregar categoría custom (ej: Combos, Helados, Pan)"
-          className="min-w-[260px] flex-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+          className="min-w-[260px] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 h-10 text-sm font-medium text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
         />
         <button
           type="button"
           onClick={handleAddCategory}
           disabled={!newCategoryInput.trim()}
-          className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 min-h-10 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
         >
           <Plus className="h-4 w-4" />
           Agregar

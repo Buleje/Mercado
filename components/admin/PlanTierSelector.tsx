@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { usePlanTier } from "@/hooks/use-plan-tier";
 import { PLANS, PLAN_ORDER, type PlanTier } from "@/lib/billing/plan-tiers";
 
+import { CardTitle } from "@buleje/design-system";
 const ACCENT_CLASSES: Record<
   PlanTier,
   { ring: string; badge: string; icon: string; iconBg: string; button: string }
@@ -38,9 +39,9 @@ const ACCENT_CLASSES: Record<
   },
   pro: {
     ring: "border-[var(--accent)] ring-2 ring-[var(--accent)]/20",
-    badge: "bg-[var(--accent-soft)] text-[var(--accent)]",
+    badge: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
     icon: "text-[var(--accent)]",
-    iconBg: "bg-[var(--accent-soft)]",
+    iconBg: "bg-primary/10",
     button: "bg-[var(--accent-600,var(--accent))] text-white hover:scale-[1.02] hover:shadow-[var(--shadow-lg)]",
   },
   enterprise: {
@@ -141,7 +142,7 @@ export default function PlanTierSelector({
   return (
     <div className="space-y-5">
       {/* ── Header ───────────────────────────────────────────────── */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-canvas)] to-[var(--surface-sunken)] p-5 sm:p-6">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-canvas)] to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="flex items-start gap-4">
           <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-[var(--shadow-md)]">
             <Crown className="h-5 w-5" strokeWidth={2.25} />
@@ -150,13 +151,13 @@ export default function PlanTierSelector({
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Plan actual
             </p>
-            <h3 className="mt-1 text-xl sm:text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+            <CardTitle className="mt-1 sm:text-2xl text-[var(--text-primary)]">
               {PLANS[currentPlan].label}
               <span className="ml-2 text-sm font-bold text-[var(--text-tertiary)]">
                 {PLANS[currentPlan].price}
                 {PLANS[currentPlan].period}
               </span>
-            </h3>
+            </CardTitle>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               {PLANS[currentPlan].tagline}. {PLANS[currentPlan].unlockedTabs.size}{" "}
               módulos desbloqueados.
@@ -299,14 +300,14 @@ export default function PlanTierSelector({
       </div>
 
       {/* ── Disclaimer ───────────────────────────────────────────── */}
-      <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+      <div className="flex items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
         <Lock className="h-5 w-5 shrink-0 mt-0.5 text-[var(--text-tertiary)]" strokeWidth={2.25} />
         <div className="text-sm text-[var(--text-secondary)] leading-relaxed">
           <strong className="text-[var(--text-primary)]">
             Cambio inmediato.
           </strong>{" "}
           Al elegir un plan nuevo, los módulos del sidebar se actualizan al
-          instante. Subís y bajás cuando quieras, sin permanencia ni penalidades.
+          instante. Subes y bajas cuando quieras, sin permanencia ni penalidades.
           La facturación real se gestiona desde Stripe en producción.
         </div>
       </div>

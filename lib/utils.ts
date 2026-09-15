@@ -236,6 +236,26 @@ export function formatLimaDate(
 }
 
 /**
+ * Devuelve la fecha de `value` en zona Lima como clave "YYYY-MM-DD".
+ * Bucketiza por día sin el off-by-one de UTC: una entrega a las 20:00 Lima
+ * (01:00 UTC del día siguiente) cae en el día Lima correcto, no en el de UTC.
+ *
+ * Uso:
+ *   limaDateKey(assignment.deliveredAt) → "2026-06-18"
+ */
+export function limaDateKey(value: Date | string | number = new Date()): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  // en-CA formatea como "YYYY-MM-DD".
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: STORE_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/**
  * Retorna el inicio del día (00:00:00) en zona Lima como timestamp UTC ms.
  *
  * Uso:
@@ -244,15 +264,8 @@ export function formatLimaDate(
  */
 export function startOfLimaDay(reference?: Date | string): number {
   const ref = reference ? (typeof reference === "string" ? new Date(reference) : reference) : new Date();
-  // Convertir a string en zona Lima, luego parsear como local
-  const limaDate = new Intl.DateTimeFormat("en-CA", {
-    timeZone: STORE_TIMEZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(ref);
   // Lima es UTC-5 → 00:00 Lima = 05:00 UTC del mismo día
-  return new Date(`${limaDate}T05:00:00.000Z`).getTime();
+  return new Date(`${limaDateKey(ref)}T05:00:00.000Z`).getTime();
 }
 
 /**

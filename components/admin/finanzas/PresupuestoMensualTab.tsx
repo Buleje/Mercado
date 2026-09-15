@@ -7,6 +7,7 @@ import { Loader2, Plus, X, AlertTriangle, Pencil, Wallet } from "@buleje/design-
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -46,14 +47,14 @@ function getBarColor(porcentaje: number): string {
   if (porcentaje > 100) return "bg-[var(--data-error-500)] animate-pulse";
   if (porcentaje > 80) return "bg-[var(--data-error-500)]";
   if (porcentaje > 60) return "bg-[var(--data-warning-500)]";
-  return "bg-[var(--accent-soft)]";
+  return "bg-primary/10";
 }
 
 function getBarTrack(porcentaje: number): string {
   if (porcentaje > 100) return "bg-red-100 dark:bg-red-900/20";
   if (porcentaje > 80) return "bg-red-100 dark:bg-red-900/20";
   if (porcentaje > 60) return "bg-amber-100 dark:bg-amber-900/20";
-  return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]";
+  return "bg-primary/10 dark:bg-primary/15";
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -184,7 +185,7 @@ export default function PresupuestoMensualTab() {
         </div>
         <button
           onClick={openEdit}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+          className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark  transition-colors"
         >
           <Plus className="h-4 w-4" />
           Crear presupuesto
@@ -204,7 +205,7 @@ export default function PresupuestoMensualTab() {
         </div>
         <button
           onClick={openEdit}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
         >
           <Pencil className="h-3.5 w-3.5" />
           Editar presupuesto
@@ -219,7 +220,7 @@ export default function PresupuestoMensualTab() {
           return (
             <div
               key={cat.nombre}
-              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  space-y-3"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3"
             >
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-[var(--text-primary)]">{cat.nombre}</p>
@@ -231,7 +232,7 @@ export default function PresupuestoMensualTab() {
                       ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                       : cat.porcentaje > 60
                         ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-                        : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                        : "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 )}>
                   {cat.porcentaje}%
                 </span>
@@ -274,7 +275,7 @@ export default function PresupuestoMensualTab() {
       </div>
 
       {/* Resumen inferior */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
         <div className="grid grid-cols-3 gap-4">
           <div>
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total presupuestado</p>
@@ -313,22 +314,20 @@ export default function PresupuestoMensualTab() {
         title="Editar Presupuesto"
         variant="default"
       >
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <div className="space-y-2">
             {draft.map((d, i) => (
-              <div key={i} className="flex gap-2 items-end bg-gray-50 dark:bg-white/5 rounded-xl p-3">
-                <div className="flex-1">
-                  <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Categoria</label>
+              <div key={i} className="flex gap-2 items-end bg-[var(--surface-sunken)] rounded-xl p-3">
+                <Field className="flex-1" label="Categoria" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
                   <input
                     type="text"
                     value={d.nombre}
                     onChange={e => updateDraft(i, "nombre", e.target.value)}
                     placeholder="Ej: Mercaderia"
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
-                </div>
-                <div className="w-28">
-                  <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Limite (S/)</label>
+                </Field>
+                <Field className="w-28" label="Limite (S/)" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
                   <input
                     type="number"
                     step="0.01"
@@ -336,12 +335,12 @@ export default function PresupuestoMensualTab() {
                     value={d.limite}
                     onChange={e => updateDraft(i, "limite", e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
-                </div>
-                <button
+                </Field>
+                <button aria-label="Quitar"
                   onClick={() => removeDraftCat(i)}
-                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
+                  className="p-1.5 rounded-xl hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -361,14 +360,14 @@ export default function PresupuestoMensualTab() {
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => setShowEdit(false)}
-              className="flex-1 h-10 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+              className="flex-1 h-10 rounded-xl text-sm font-semibold text-[var(--text-secondary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               Guardar

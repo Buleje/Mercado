@@ -101,7 +101,7 @@ export async function POST(
       return NextResponse.json(
         {
           error: "too_many_requests",
-          message: "Demasiados mensajes. Esperá un momento.",
+          message: "Demasiados mensajes. Espera un momento.",
           retryAfter: Math.ceil(chatLimiter.windowMs / 1000),
         },
         {

@@ -21,7 +21,7 @@ import {
   Sparkles,
   ArrowRight,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import type { BusinessData } from "../ai-center.types";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -40,22 +40,34 @@ function getGreeting(): string {
   return "Buenas noches";
 }
 
+/*
+ * El día es el de LIMA, no el de UTC: con `toISOString()` el corte caía a las
+ * 19:00 hora peruana y lo de la noche se contaba como del día siguiente.
+ *
+ * Ojo con el otro extremo del mismo problema: un string date-only
+ * («2026-09-06», sin hora) YA viene en el día del negocio. Pasarlo por una
+ * conversión de zona lo lee como medianoche UTC = 19:00 del día anterior en
+ * Lima y lo corre un día para atrás. Por eso `claveDelDia` sólo convierte
+ * cuando el valor trae hora.
+ */
+function claveDelDia(dateStr: string): string {
+  return dateStr.length <= 10 ? dateStr.slice(0, 10) : limaDateKey(dateStr);
+}
+
 function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  return limaDateKey();
 }
 
 function yesterdayStr(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  return limaDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
 }
 
 function isToday(dateStr?: string): boolean {
-  return !!dateStr && dateStr.slice(0, 10) === todayStr();
+  return !!dateStr && claveDelDia(dateStr) === todayStr();
 }
 
 function isYesterday(dateStr?: string): boolean {
-  return !!dateStr && dateStr.slice(0, 10) === yesterdayStr();
+  return !!dateStr && claveDelDia(dateStr) === yesterdayStr();
 }
 
 function trendPct(today: number, yesterday: number): number | null {
@@ -72,14 +84,14 @@ function healthScoreColor(score: number): {
     return {
       text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       badge:
-        "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+        "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       label: "Saludable",
     };
   if (score >= 60)
     return {
       text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       badge:
-        "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+        "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
       label: "Bueno",
     };
   if (score >= 40)
@@ -674,7 +686,7 @@ export default function ResumenSection({ data }: Props) {
               Oportunidades detectadas
             </CardTitle>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 [&>*:nth-child(1)]:[--opp-accent:#15803d] [&>*:nth-child(1)]:[--opp-bg:rgb(220_252_231)] [&>*:nth-child(1)]:[--opp-accent-dark:#4ade80] [&>*:nth-child(1)]:[--opp-bg-dark:rgb(20_83_45/0.35)] [&>*:nth-child(2)]:[--opp-accent:#0891b2] [&>*:nth-child(2)]:[--opp-bg:rgb(207_250_254)] [&>*:nth-child(2)]:[--opp-accent-dark:#22d3ee] [&>*:nth-child(2)]:[--opp-bg-dark:rgb(22_78_99/0.35)] [&>*:nth-child(3)]:[--opp-accent:#c2410c] [&>*:nth-child(3)]:[--opp-bg:rgb(255_237_213)] [&>*:nth-child(3)]:[--opp-accent-dark:#fb923c] [&>*:nth-child(3)]:[--opp-bg-dark:rgb(124_45_18/0.35)]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 [&>*:nth-child(1)]:[--opp-accent:#15803d] [&>*:nth-child(1)]:[--opp-bg:rgb(220_252_231)] [&>*:nth-child(1)]:[--opp-accent-dark:#4ade80] [&>*:nth-child(1)]:[--opp-bg-dark:rgb(20_83_45/0.35)] [&>*:nth-child(2)]:[--opp-accent:#0891b2] [&>*:nth-child(2)]:[--opp-bg:rgb(207_250_254)] [&>*:nth-child(2)]:[--opp-accent-dark:#22d3ee] [&>*:nth-child(2)]:[--opp-bg-dark:rgb(22_78_99/0.35)] [&>*:nth-child(3)]:[--opp-accent:#c2410c] [&>*:nth-child(3)]:[--opp-bg:rgb(255_237_213)] [&>*:nth-child(3)]:[--opp-accent-dark:#ff8676] [&>*:nth-child(3)]:[--opp-bg-dark:rgb(124_45_18/0.35)]">
             {opportunities.map((opp, i) => (
               <div
                 key={i}

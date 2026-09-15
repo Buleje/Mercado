@@ -14,6 +14,10 @@ const CreateSchema = z.object({
   moneda: z.string().max(3).optional(),
   frecuencia: z.enum(["semanal", "quincenal", "mensual"]),
   diaMes: z.number().int().min(1).max(28).nullable().optional(),
+  /** 0-6, domingo a sábado. Faltaba: el campo existía en la tabla y no había
+   *  forma de mandarlo, así que un recurrente semanal caía el día en que se
+   *  creó y no en el que se quería. */
+  diaSemana: z.number().int().min(0).max(6).nullable().optional(),
   notas: z.string().max(500).optional(),
 });
 
@@ -40,7 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
     }
     const rec = await AdelantosDB.createRecurrente(auth.tenantId, parsed.data);
-    logActivity("Crear", "adelanto", `Adelanto recurrente ${rec.frecuencia} S/${parsed.data.monto.toFixed(2)}`, rec.id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Crear", "adelanto", `Adelanto recurrente ${rec.frecuencia} S/${parsed.data.monto.toFixed(2)}`, rec.id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json(rec, { status: 201 });
   } catch (e) {
     logger.error("[adelantos/recurrentes] POST error", { err: e instanceof Error ? e.message : String(e) });

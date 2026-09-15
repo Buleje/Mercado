@@ -17,7 +17,8 @@ import { SectionTitle } from "@buleje/design-system";
  *  - Contraste garantizado por clases Tailwind verificadas
  */
 
-import { useEffect, useRef, useId } from "react";
+import { useRef, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { MeteringSnapshot } from "@/components/admin/unified/MeteringCard/types";
 import {
   computeTrafficLight,
@@ -39,15 +40,15 @@ export interface QuotaAlertModalProps {
 // ─── Colores por semáforo ─────────────────────────────────────────────────────
 
 const BAR_COLORS = {
-  green:  "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
-  yellow: "bg-amber-400   dark:bg-amber-300",
-  red:    "bg-[var(--data-error-500)]     dark:bg-red-400",
+  green:  "bg-primary/10 dark:bg-primary/10",
+  yellow: "bg-[var(--data-warning-500)]   dark:bg-[var(--data-warning-500)]",
+  red:    "bg-[var(--data-error-500)]     dark:bg-[var(--data-error-500)]",
 } as const;
 
 const TEXT_COLORS = {
   green:  "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-  yellow: "text-[var(--data-warning-700)]   dark:text-amber-300",
-  red:    "text-[var(--data-error-700)]     dark:text-red-400",
+  yellow: "text-[var(--data-warning-700)]   dark:text-[var(--data-warning-500)]",
+  red:    "text-[var(--data-error-700)]     dark:text-[var(--data-error-500)]",
 } as const;
 
 const STATUS_LABELS = {
@@ -76,7 +77,7 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
         <span className="text-sm font-medium text-[var(--text-primary)]">{label}</span>
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
           light === "green"
-            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
             : light === "yellow"
               ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
               : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
@@ -86,7 +87,7 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
       </div>
 
       <div
-        className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
+        className="h-2 w-full rounded-full bg-[var(--rule-base)] overflow-hidden"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -140,27 +141,10 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
   const titleId = useId();
   const descId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
-
-  // Focus al montar
-  useEffect(() => {
-    closeRef.current?.focus();
-  }, []);
-
-  // Cerrar con Escape
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
-  // Bloquear scroll del body mientras está abierto
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Foco al abrir + trampa de Tab + Escape + scroll bloqueado, todo en uno
+  // (reemplaza los tres useEffect manuales que hacían lo mismo por separado).
+  useModalAccesible(dialogRef, { onCerrar: onClose });
 
   const showUpgrade = snapshot.plan === "free" || snapshot.plan === "starter";
 
@@ -175,10 +159,12 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
 
       {/* Dialog */}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
+        tabIndex={-1}
         className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
       >
         <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]">
@@ -206,7 +192,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <button
               ref={closeRef}
               onClick={onClose}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               aria-label="Cerrar modal de detalles de cuota"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5" aria-hidden="true">
@@ -217,7 +203,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
 
           {/* Body scrollable */}
           <div className="flex-1 overflow-y-auto px-6 py-2">
-            <ul className="divide-y divide-gray-100 dark:divide-gray-800" aria-label="Lista de métricas de uso">
+            <ul className="divide-y divide-[var(--rule-soft)] " aria-label="Lista de métricas de uso">
               {METERED_EVENTS.map((event) => (
                 <MetricRow key={event} event={event} snapshot={snapshot} />
               ))}
@@ -236,7 +222,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+                className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 Cerrar
               </button>
@@ -244,7 +230,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
               {showUpgrade && (
                 <a
                   href={upgradeHref}
-                  className="min-h-[44px] inline-flex items-center px-4 py-2 rounded-lg bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+                  className="min-h-[44px] inline-flex items-center px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   aria-label="Mejorar plan de facturación"
                 >
                   Mejorar plan

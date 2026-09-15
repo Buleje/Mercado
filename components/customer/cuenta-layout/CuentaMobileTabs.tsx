@@ -10,6 +10,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useTenantPath } from "@/hooks/use-tenant-path";
 import {
   CUENTA_NAV_ITEMS,
   findActiveNavItem,
@@ -22,6 +23,7 @@ export interface CuentaMobileTabsProps {
 export function CuentaMobileTabs({ className }: CuentaMobileTabsProps) {
   const pathname = usePathname() ?? "/cuenta";
   const active = findActiveNavItem(pathname);
+  const tenantPath = useTenantPath();
 
   return (
     <div
@@ -41,7 +43,7 @@ export function CuentaMobileTabs({ className }: CuentaMobileTabsProps) {
           return (
             <Link
               key={item.id}
-              href={item.href}
+              href={tenantPath(item.href)}
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 whitespace-nowrap",

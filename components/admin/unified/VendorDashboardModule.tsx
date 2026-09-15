@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import type { VendorDashboardData } from "@/components/admin/vendor-dashboard/vendor-dashboard.types";
 import { usePlanTier } from "@/hooks/use-plan-tier";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import { DashboardDataProvider } from "@/contexts/dashboard-data-context";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import {
@@ -77,6 +77,7 @@ const MorningBriefingCard = dynamic(
 const MODULE_ID = "vendor-dashboard";
 
 type InicioTab = "general" | "ventas" | "caja" | "inventario" | "compras" | "clientes" | "marketplace";
+const INICIO_TABS: readonly InicioTab[] = ["general", "ventas", "caja", "inventario", "compras", "clientes", "marketplace"];
 
 // ── Prefetch map: preload tab chunks on hover ──────────────────────────────
 const TAB_PREFETCH: Record<InicioTab, () => void> = {
@@ -119,7 +120,10 @@ export default function VendorDashboardModule() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [tab, setTab] = useState<InicioTab>("general");
+  // La sub-vista vive en `?vista=` (useVistaModulo): link compartible, «atrás» del
+  // navegador y destino de avisos y del buscador. Antes era estado local y `?vista=`
+  // se ignoraba (medido 2026-09-14: `?vista=` se ignoraba en 16 módulos).
+  const { vista: tab, irA: setTab } = useVistaModulo<InicioTab>(MODULE_ID, INICIO_TABS, "general");
   const [storeSlug, setStoreSlug] = useState("main");
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange);
 
@@ -139,7 +143,7 @@ export default function VendorDashboardModule() {
   // Si el sub-tab activo dejó de estar disponible, volver a Resumen.
   useEffect(() => {
     if (!availableTabs.some((t) => t.id === tab)) setTab("general");
-  }, [availableTabs, tab]);
+  }, [availableTabs, tab, setTab]);
 
   useEffect(() => {
     let active = true;
@@ -218,35 +222,45 @@ export default function VendorDashboardModule() {
         persiste prefs por tab. */}
     <ChartsVisibilityProvider moduleId={`vendor-dashboard:${tab}`} key={tab}>
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Inicio"
-        description={TAB_DESCRIPTIONS[tab]}
-        icon={LayoutDashboard}
-        bgTint="bg-[var(--accent-soft)]"
-        iconColorClass="text-[var(--data-success-500)]"
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla; las acciones del módulo, en
+          la misma banda. Recupera ~90px verticales por pantalla. */}
+      <AdminTabBar
+        heading={{
+          title: "Inicio",
+          description: TAB_DESCRIPTIONS[tab],
+          icon: LayoutDashboard,
+          actions: (
+            <>
+              {tab !== "marketplace" && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <ChartsVisibilityButton />
+                  <DashboardDateRange value={dateRange} onChange={setDateRange} />
+                </div>
+              )}
+              {tab === "marketplace" && (
+                <button
+                  onClick={() => void fetchDashboard(false)}
+                  disabled={loading}
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] disabled:opacity-50"
+                  title="Actualizar marketplace"
+                  aria-label="Actualizar datos del marketplace"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                </button>
+              )}
+            </>
+          ),
+        }}
+        tabs={availableTabs}
+        activeTab={tab}
+        onTabChange={(t) => setTab(t as InicioTab)}
+        onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()}
+        moduleId={MODULE_ID}
       >
-        {tab !== "marketplace" && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <ChartsVisibilityButton />
-            <DashboardDateRange value={dateRange} onChange={setDateRange} />
-          </div>
-        )}
-        {tab === "marketplace" && (
-          <button
-            onClick={() => void fetchDashboard(false)}
-            disabled={loading}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
-            title="Actualizar marketplace"
-            aria-label="Actualizar datos del marketplace"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-        )}
-      </AdminModuleHeader>
-
-      <AdminTabBar tabs={availableTabs} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Brandon 2026-06-07 (idea #2): puente admin ↔ tienda pública —
                 ver / compartir / editar la portada del storefront. */}
             <StorePublicCard storeSlug={storeSlug} />
@@ -281,7 +295,7 @@ export default function VendorDashboardModule() {
                 <p className="text-sm font-medium text-[var(--text-primary)] text-center">{error}</p>
                 <button
                   onClick={() => void fetchDashboard(false)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors"
+                  className="inline-flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/10 transition-colors"
                 >
                   <RefreshCw className="h-4 w-4" /> Reintentar
                 </button>

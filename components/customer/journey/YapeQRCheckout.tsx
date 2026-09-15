@@ -4,7 +4,6 @@ import { useState, useCallback } from "react";
 import Image from "next/image";
 import { Upload, Check, Copy, Smartphone, Loader2, X, Zap } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { BTN } from "@/lib/copy";
 import { PrimaryButton, IconBadge } from "@buleje/design-system";
 

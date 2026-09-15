@@ -20,9 +20,9 @@ import {
   useState,
   useCallback,
   useMemo,
-  type ReactNode,
-} from "react";
+  type ReactNode, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Loader2,
   Search,
@@ -49,6 +49,7 @@ import {
   TrendIcon,
   StarBadge,
 } from "@/components/delivery/icons";
+import RepartidoresOverview from "./RepartidoresOverview";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -347,7 +348,7 @@ export default function RepartidoresModule() {
               <button
                 type="button"
                 onClick={load}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
               >
                 <RefreshCw
                   className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
@@ -370,6 +371,9 @@ export default function RepartidoresModule() {
       </header>
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5">
+
+      {/* ── Panorama ejecutivo de la flota (funciones de alto nivel) ── */}
+      <RepartidoresOverview />
 
       {/* ── KPIs ──────────────────────────────────── */}
       <section className="grid grid-cols-2 lg:grid-cols-5 gap-3">
@@ -445,7 +449,7 @@ export default function RepartidoresModule() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar nombre, DNI, teléfono, placa…"
-            className="w-full h-9 pl-9 pr-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] outline-none"
+            className="w-full h-9 pl-9 pr-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] outline-none"
           />
         </div>
       </section>
@@ -614,7 +618,7 @@ function PartnerRow({
         <button
           type="button"
           onClick={onView}
-          className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
+          className="h-10 w-10 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
           aria-label="Ver detalle"
         >
           <MotoIcon className="h-5 w-5" />
@@ -674,7 +678,7 @@ function PartnerRow({
               <button
                 type="button"
                 onClick={onReject}
-                className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-lg border border-[var(--brand-danger)]/30 bg-transparent text-xs font-bold text-[var(--brand-danger)] hover:bg-[var(--brand-danger)]/10 transition-colors"
+                className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-xl border border-[var(--brand-danger)]/30 bg-transparent text-xs font-bold text-[var(--brand-danger)] hover:bg-[var(--brand-danger)]/10 transition-colors"
               >
                 Rechazar
               </button>
@@ -683,7 +687,7 @@ function PartnerRow({
                 onClick={onApprove}
                 disabled={!kycCheck.ok}
                 title={kycCheck.ok ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
-                className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-lg bg-[var(--data-success-500)] text-xs font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+                className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-xl bg-[var(--data-success-500)] text-xs font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
               >
                 Aprobar
               </button>
@@ -694,7 +698,7 @@ function PartnerRow({
               type="button"
               onClick={onImpersonate}
               title="Acceder a su cuenta"
-              className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors inline-flex items-center justify-center gap-1.5"
+              className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-xl border border-[var(--accent)]/30 bg-primary/10 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors inline-flex items-center justify-center gap-1.5"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Acceder
@@ -709,7 +713,7 @@ function PartnerRow({
             type="button"
             onClick={onView}
             aria-label="Ver detalle"
-            className="h-10 w-10 sm:h-9 sm:w-9 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center shrink-0"
+            className="h-10 w-10 sm:h-9 sm:w-9 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center shrink-0"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -751,7 +755,7 @@ function StatusPill({ partner }: { partner: PartnerRow }) {
 function KycPill({ kycOk, missing }: { kycOk: boolean; missing: string[] }) {
   if (kycOk) {
     return (
-      <span className="inline-flex items-center gap-1 h-6 px-2 rounded-md bg-[var(--accent-soft)] text-[var(--accent)] text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider">
+      <span className="inline-flex items-center gap-1 h-6 px-2 rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider">
         <ShieldBadge className="h-3 w-3" />
         KYC OK
       </span>
@@ -811,7 +815,7 @@ function DetailDrawer({
         <header className="sticky top-0 z-10 px-6 py-5 bg-[var(--surface-canvas)]/95 backdrop-blur border-b border-[var(--rule-base)]">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
                 <MotoIcon className="h-6 w-6" />
               </div>
               <div className="min-w-0">
@@ -900,7 +904,7 @@ function DetailDrawer({
                 type="button"
                 onClick={onReject}
                 disabled={actioning}
-                className="flex-1 h-11 rounded-xl border border-[var(--brand-danger)]/30 bg-transparent text-sm font-bold text-[var(--brand-danger)] hover:bg-[var(--brand-danger)]/10 disabled:opacity-50 transition-colors"
+                className="flex-1 h-11 rounded-xl border border-[var(--brand-danger)]/30 bg-transparent text-sm font-semibold text-[var(--brand-danger)] hover:bg-[var(--brand-danger)]/10 disabled:opacity-50 transition-colors"
               >
                 Rechazar
               </button>
@@ -909,7 +913,7 @@ function DetailDrawer({
                 onClick={onApprove}
                 disabled={actioning || !kycCheck.ok}
                 title={kycCheck.ok ? "Aprobar" : `Falta: ${kycCheck.missing.join(", ")}`}
-                className="flex-[2] h-11 rounded-xl bg-[var(--data-success-500)] text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                className="flex-[2] h-11 rounded-xl bg-[var(--data-success-500)] text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
               >
                 {actioning ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Aprobar repartidor"}
               </button>
@@ -920,7 +924,7 @@ function DetailDrawer({
                 type="button"
                 onClick={onDeactivate}
                 disabled={actioning}
-                className="flex-1 h-11 rounded-xl border border-[var(--brand-danger)]/30 bg-transparent text-sm font-bold text-[var(--brand-danger)] hover:bg-[var(--brand-danger)]/10 disabled:opacity-50"
+                className="flex-1 h-11 rounded-xl border border-[var(--brand-danger)]/30 bg-transparent text-sm font-semibold text-[var(--brand-danger)] hover:bg-[var(--brand-danger)]/10 disabled:opacity-50"
               >
                 Desactivar
               </button>
@@ -928,7 +932,7 @@ function DetailDrawer({
                 type="button"
                 onClick={onImpersonate}
                 disabled={actioning}
-                className="flex-[2] h-11 rounded-xl bg-[var(--accent)] text-sm font-bold text-white inline-flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+                className="flex-[2] h-11 rounded-xl bg-[var(--accent)] text-sm font-semibold text-white inline-flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
               >
                 <ExternalLink className="h-4 w-4" />
                 Acceder a su cuenta
@@ -939,7 +943,7 @@ function DetailDrawer({
               type="button"
               onClick={onReactivate}
               disabled={actioning}
-              className="flex-1 h-11 rounded-xl bg-[var(--accent)] text-sm font-bold text-white disabled:opacity-50"
+              className="flex-1 h-11 rounded-xl bg-[var(--accent)] text-sm font-semibold text-white disabled:opacity-50"
             >
               Reactivar repartidor
             </button>
@@ -1033,7 +1037,7 @@ function DocumentosTab({ partner }: { partner: PartnerRow }) {
         />
       )}
       {!isMotor && (
-        <div className="rounded-xl bg-[var(--accent-soft)] border border-[var(--accent)]/30 px-4 py-3 text-sm text-[var(--text-primary)]">
+        <div className="rounded-xl bg-primary/10 border border-[var(--accent)]/30 px-4 py-3 text-sm text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
           <p className="font-bold">No requiere documentos vehiculares</p>
           <p className="mt-0.5 text-[var(--text-secondary)]">
             Para {partner.vehicleType === "bicicleta" ? "bicicleta" : "reparto a pie"} no se exige licencia ni SOAT.
@@ -1183,10 +1187,13 @@ function Modal({
   children: ReactNode;
   onClose: () => void;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"
         className="relative w-full max-w-md rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
@@ -1258,7 +1265,7 @@ function ApproveModal({
             onChange={(e) => setNotes(e.target.value.slice(0, 500))}
             rows={3}
             placeholder="Ej: documentos verificados con foto del DNI físico el 30/04/2026"
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] outline-none resize-none"
+            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] outline-none resize-none"
           />
           <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
             Quedan registradas en el histórico de la solicitud.
@@ -1270,7 +1277,7 @@ function ApproveModal({
           type="button"
           onClick={onCancel}
           disabled={actioning}
-          className="flex-1 h-11 rounded-xl border border-[var(--rule-base)] bg-transparent text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+          className="flex-1 h-11 rounded-xl border border-[var(--rule-base)] bg-transparent text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
         >
           Cancelar
         </button>
@@ -1278,7 +1285,7 @@ function ApproveModal({
           type="button"
           onClick={() => onConfirm(notes.trim() || undefined)}
           disabled={actioning}
-          className="flex-[2] h-11 rounded-xl bg-[var(--data-success-500)] text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+          className="flex-[2] h-11 rounded-xl bg-[var(--data-success-500)] text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
         >
           {actioning ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Aprobar y notificar"}
         </button>
@@ -1329,9 +1336,9 @@ function RejectModal({
                 key={p}
                 type="button"
                 onClick={() => setPreset(p === preset ? null : p)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg border text-sm transition-colors ${
+                className={`w-full text-left px-3 min-h-11 rounded-xl border text-sm transition-colors ${
                   preset === p
-                    ? "border-[var(--brand-danger)] bg-[var(--brand-danger)]/5 text-[var(--text-primary)] font-bold"
+                    ? "border-[var(--brand-danger)] bg-[var(--brand-danger)]/5 text-[var(--text-primary)] font-semibold"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 }`}
               >
@@ -1353,7 +1360,7 @@ function RejectModal({
             }}
             rows={3}
             placeholder="Mínimo 5 caracteres. El repartidor verá este texto."
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand-danger)] outline-none resize-none"
+            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand-danger)] outline-none resize-none"
           />
         </label>
       </div>
@@ -1362,7 +1369,7 @@ function RejectModal({
           type="button"
           onClick={onCancel}
           disabled={actioning}
-          className="flex-1 h-11 rounded-xl border border-[var(--rule-base)] bg-transparent text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+          className="flex-1 h-11 rounded-xl border border-[var(--rule-base)] bg-transparent text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
         >
           Cancelar
         </button>
@@ -1370,7 +1377,7 @@ function RejectModal({
           type="button"
           onClick={() => valid && onConfirm(finalReason)}
           disabled={actioning || !valid}
-          className="flex-[2] h-11 rounded-xl bg-[var(--brand-danger)] text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+          className="flex-[2] h-11 rounded-xl bg-[var(--brand-danger)] text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
         >
           {actioning ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Rechazar y notificar"}
         </button>
@@ -1401,7 +1408,7 @@ function ImpersonateModal({
     >
       <div className="px-5 py-4 space-y-3">
         <div className="rounded-lg bg-[var(--surface-sunken)] p-3 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
             <MotoIcon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
@@ -1428,7 +1435,7 @@ function ImpersonateModal({
           type="button"
           onClick={onCancel}
           disabled={actioning}
-          className="flex-1 h-11 rounded-xl border border-[var(--rule-base)] bg-transparent text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+          className="flex-1 h-11 rounded-xl border border-[var(--rule-base)] bg-transparent text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
         >
           Cancelar
         </button>
@@ -1436,7 +1443,7 @@ function ImpersonateModal({
           type="button"
           onClick={onConfirm}
           disabled={actioning}
-          className="flex-[2] h-11 rounded-xl bg-[var(--accent)] text-sm font-bold text-white inline-flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+          className="flex-[2] h-11 rounded-xl bg-[var(--accent)] text-sm font-semibold text-white inline-flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
         >
           {actioning ? (
             <Loader2 className="h-4 w-4 animate-spin" />

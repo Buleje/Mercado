@@ -11,6 +11,12 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
+import {
+  normalizeProducts,
+  aggregateSalesByProduct,
+  aggregatePurchasesByProduct,
+  isoDaysAgo,
+} from "./normalize";
 
 interface Product {
   id: string | number;
@@ -63,15 +69,15 @@ const URGENCY = {
     text: "text-[var(--data-warning-500)]",
     bar: "bg-[var(--data-warning-500)]",
     border: "border-[var(--data-warning-500)]",
-    barTrack: "bg-[var(--data-warning-100,#fef3c7)]",
+    barTrack: "bg-[var(--data-warning-100,#fff1ef)]",
   },
   medium: {
     label: "Esta semana",
-    bg: "bg-[var(--accent-soft)]",
+    bg: "bg-primary/10",
     text: "text-[var(--data-success-500)]",
     bar: "bg-[var(--data-success-500)]",
     border: "border-[var(--data-success-500)]",
-    barTrack: "bg-[var(--accent-soft)]",
+    barTrack: "bg-primary/10",
   },
 } as const;
 
@@ -115,13 +121,13 @@ export default function TabCompras() {
     try {
       const [pr, sr, hr] = await Promise.all([
         fetch("/api/products?active=true&limit=200", { cache: "no-store" }),
-        fetch("/api/sales?days=7&groupBy=product", { cache: "no-store" }),
+        fetch(`/api/sales?from=${isoDaysAgo(7)}`, { cache: "no-store" }),
         fetch("/api/purchases?limit=200", { cache: "no-store" }),
       ]);
       let failed = false;
-      if (pr.ok) setProducts((await pr.json()).products ?? []); else failed = true;
-      if (sr.ok) setSales((await sr.json()).items ?? []); else failed = true;
-      if (hr.ok) setPurchases((await hr.json()).purchases ?? []); else failed = true;
+      if (pr.ok) setProducts(normalizeProducts(await pr.json())); else failed = true;
+      if (sr.ok) setSales(aggregateSalesByProduct(await sr.json())); else failed = true;
+      if (hr.ok) setPurchases(aggregatePurchasesByProduct(await hr.json())); else failed = true;
       if (failed) throw new Error("partial");
     } catch {
       setProducts(getMockProducts());
@@ -207,7 +213,7 @@ export default function TabCompras() {
   return (
     <div className="space-y-5">
       {/* Header con KPIs */}
-      <div className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <p className="text-base font-extrabold text-[var(--text-primary)]">
@@ -221,7 +227,7 @@ export default function TabCompras() {
           <div className="flex items-center gap-2">
             <button
               onClick={exportCSV}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               <Download className="h-3.5 w-3.5" />
               CSV
@@ -229,7 +235,7 @@ export default function TabCompras() {
             <button
               onClick={fetchAll}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               Refrescar
@@ -297,7 +303,7 @@ export default function TabCompras() {
               <div
                 key={String(item.product.id)}
                 className={cn(
-                  "rounded-2xl border bg-white dark:bg-[var(--color-card)] p-4 sm:p-5 flex items-stretch gap-4",
+                  "rounded-2xl border bg-[var(--surface-raised)] p-4 sm:p-5 flex items-stretch gap-4",
                   u.border,
                 )}
               >
@@ -388,7 +394,7 @@ export default function TabCompras() {
             </div>
             <button
               onClick={() => (window.location.href = "/admin/compras")}
-              className="inline-flex items-center gap-2 rounded-lg bg-[var(--text-primary)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--text-secondary)]"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--text-primary)] px-4 min-h-10 text-sm font-semibold text-white hover:bg-[var(--text-secondary)]"
             >
               <ShoppingCart className="h-4 w-4" />
               Crear orden de compra

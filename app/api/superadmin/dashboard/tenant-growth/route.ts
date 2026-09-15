@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Asignar colores rotando una paleta accesible.
-    const PALETTE = ["#00A0A0", "#10B981", "#0EA5E9", "#8B5CF6", "#F59E0B", "#F43F5E", "#84CC16", "#EC4899"];
+    const PALETTE = ["#00A0A0", "#10B981", "#0EA5E9", "#8B5CF6", "#ff6b5b", "#F43F5E", "#84CC16", "#EC4899"];
 
     const series = topTenants.map((t, i) => {
       const info = byId.get(t.tenantId);

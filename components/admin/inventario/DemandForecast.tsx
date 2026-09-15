@@ -57,10 +57,10 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   if (loading) {
     return (
       <div className="space-y-4 p-4">
-        <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+        <div className="h-48 bg-[var(--rule-base)] rounded-lg animate-pulse" />
         <div className="grid grid-cols-2 gap-3">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+            <div key={i} className="h-20 bg-[var(--rule-base)] rounded-lg animate-pulse" />
           ))}
         </div>
       </div>
@@ -89,13 +89,16 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   const trendColor = data.trend === 'SUBIENDO' ? 'text-[var(--data-success-500)]' : data.trend === 'BAJANDO' ? "text-[var(--data-error-500)]" : 'text-[var(--text-secondary)]';
 
   const stockColor = data.daysOfStock < 3 ? "text-[var(--data-error-500)]" : data.daysOfStock < 7 ? "text-[var(--data-warning-500)]" : 'text-[var(--data-success-500)]';
-  const stockBg = data.daysOfStock < 3 ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20" : data.daysOfStock < 7 ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" : 'bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]';
+  const stockBg = data.daysOfStock < 3 ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20" : data.daysOfStock < 7 ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" : 'bg-primary/10 dark:bg-primary/15';
 
   // Format chart data
   const chartData = data.historicalSales.map(s => ({
     date: new Date(s.date).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' }),
     qty: s.qty,
   }));
+
+  // Guard: sin historial de ventas no hay nada que graficar
+  const hasChartData = chartData.some(d => d.qty > 0);
 
   return (
     <div className="space-y-6">
@@ -107,6 +110,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
         {onClose && (
           <button
             onClick={onClose}
+            aria-label="Cerrar"
             className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -116,11 +120,11 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
         )}
       </div>
 
-      {/* Chart */}
-      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
+      {/* Chart — se oculta si no hay ventas registradas en los últimos 30 días */}
+      {hasChartData && (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
         <h4 className="text-sm font-medium text-[var(--text-primary)] dark:text-muted mb-3">Ventas diarias (últimos 30 días)</h4>
         <div className="h-48">
-          <ResponsiveContainer minWidth={0} width="100%" height="100%">
+          <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis
@@ -139,20 +143,20 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
               />
               <ReferenceLine
                 y={data.dailyAvg}
-                stroke="#f97316"
+                stroke="#ff6b5b"
                 strokeDasharray="4 4"
                 label={{
                   value: `Prom: ${data.dailyAvg}`,
                   position: 'right',
                   fontSize: 10,
-                  fill: '#f97316',
+                  fill: '#ff6b5b',
                 }}
               />
               <Bar dataKey="qty" fill="var(--accent)" radius={[2, 2, 0, 0]} name="Vendidos" />
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </div>)}
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 gap-3">

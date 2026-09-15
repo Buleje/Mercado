@@ -16,7 +16,8 @@
  * Tokens DS, sin emojis, jerarquía clara.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Loader2, X, AlertTriangle, ShoppingBag, Clock, MapPin,
   Phone, Wallet, Truck, ChevronRight,
@@ -74,7 +75,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
-  pendiente: { bg: "bg-amber-100 dark:bg-amber-950/40", fg: "text-[var(--data-warning-700)] dark:text-amber-300" },
+  pendiente: { bg: "bg-teal-100 dark:bg-teal-950/40", fg: "text-teal-700 dark:text-teal-300" },
   preparando: { bg: "bg-blue-100 dark:bg-blue-950/40", fg: "text-blue-700 dark:text-blue-300" },
   asignado: { bg: "bg-teal-100 dark:bg-teal-950/40", fg: "text-[var(--accent-dark)] dark:text-teal-300" },
   en_camino: { bg: "bg-indigo-100 dark:bg-indigo-950/40", fg: "text-[color:var(--brand-info)]" },
@@ -96,6 +97,11 @@ export function PendingOrdersModal({
   tenantName: string;
   onClose: () => void;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -146,7 +152,7 @@ export function PendingOrdersModal({
   }, []);
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="pending-orders-title"
@@ -229,7 +235,7 @@ export function PendingOrdersModal({
           )}
 
           {data && data.orders.length === 0 && (
-            <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
+            <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                 <ShoppingBag className="h-5 w-5" />
               </div>
@@ -245,13 +251,13 @@ export function PendingOrdersModal({
           {data && data.orders.length > 0 && (
             <ul className="space-y-3">
               {data.orders.map((o) => {
-                const tone = STATUS_TONE[o.status] ?? { bg: "bg-gray-100", fg: "text-gray-700" };
+                const tone = STATUS_TONE[o.status] ?? { bg: "bg-[var(--rule-soft)]", fg: "text-[var(--text-primary)]" };
                 const isExpanded = expandedOrder === o.id;
                 const isOld = o.minutesWaiting > 30;
                 return (
                   <li
                     key={o.id}
-                    className={`rounded-2xl border-2 ${
+                    className={`rounded-2xl border ${
                       isOld
                         ? "border-[var(--brand-danger,#ef4444)]/40 bg-[var(--brand-danger,#ef4444)]/5"
                         : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
@@ -340,7 +346,7 @@ export function PendingOrdersModal({
 
                         {/* Notas + referencia */}
                         {(o.notes || o.customerReference) && (
-                          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs">
+                          <div className="rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 px-3 py-2 text-xs">
                             {o.customerReference && (
                               <p className="text-[var(--text-secondary)]">
                                 <span className="font-bold text-[var(--text-primary)]">Referencia:</span>{" "}

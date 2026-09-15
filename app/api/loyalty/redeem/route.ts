@@ -5,26 +5,34 @@ import { LoyaltyDB, normalizePhone } from "@/lib/jsondb";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { PTS_PER_SOL } from "@/lib/loyalty-constants";
 
 // ── Recompensas predefinidas ───────────────────────────────────────────────────
+// ADR-380 Fase 1.5: el `value` de cada premio SIEMPRE deriva de PTS_PER_SOL
+// (la fuente única de verdad de lib/loyalty-constants.ts) — antes esta tabla
+// tenía su propia tarifa fija (100 pts = S/2 acá, S/1 en el checkout): el
+// mismo punto valía el doble si lo canjeaba el cajero en el mostrador que si
+// lo canjeaba el cliente en el checkout.
+
+const soles = (pts: number) => Math.round((pts / PTS_PER_SOL) * 100) / 100;
 
 export const REWARDS = [
   {
     id: "desc-2",
-    name: "S/ 2 de descuento",
+    name: `S/ ${soles(100)} de descuento`,
     description: "Descuento directo en tu próximo pedido",
     pointsCost: 100,
     type: "discount",
-    value: 2,
+    value: soles(100),
     icon: "💰",
   },
   {
     id: "desc-5",
-    name: "S/ 5 de descuento",
+    name: `S/ ${soles(250)} de descuento`,
     description: "Descuento directo en tu próximo pedido",
     pointsCost: 250,
     type: "discount",
-    value: 5,
+    value: soles(250),
     icon: "💸",
   },
   {
@@ -38,20 +46,20 @@ export const REWARDS = [
   },
   {
     id: "desc-15",
-    name: "S/ 15 de descuento",
+    name: `S/ ${soles(1000)} de descuento`,
     description: "Descuento especial en tu próximo pedido",
     pointsCost: 1000,
     type: "discount",
-    value: 15,
+    value: soles(1000),
     icon: "🎁",
   },
   {
     id: "producto-gratis",
-    name: "Producto gratis",
-    description: "Elige un producto hasta S/ 20 de regalo",
+    name: `Producto gratis`,
+    description: `Elige un producto hasta S/ ${soles(2000)} de regalo`,
     pointsCost: 2000,
     type: "free_product",
-    value: 20,
+    value: soles(2000),
     icon: "🏆",
   },
 ] as const;

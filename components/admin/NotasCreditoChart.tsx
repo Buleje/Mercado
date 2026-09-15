@@ -48,10 +48,16 @@ export default function NotasCreditoChart({
   donutData,
   weekdayData,
 }: NotasCreditoChartProps) {
+  // Gráficos sin datos NO se muestran. Si los 3 están vacíos, todo se oculta.
+  const hasTrend = trendData.some((d) => d.count > 0);
+  const hasDonut = donutData.length > 1;
+  const hasWeekday = weekdayData.some((d) => d.count > 0);
+  if (!hasTrend && !hasDonut && !hasWeekday) return null;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-      {/* Trend line */}
-      <div className="lg:col-span-2 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
+      {/* Trend line — se oculta si no hay datos */}
+      {hasTrend && (
+      <div className="lg:col-span-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
         <p className="text-xs font-bold text-[var(--text-primary)] mb-2">
           NC por semana (últimos 3 meses)
         </p>
@@ -71,11 +77,13 @@ export default function NotasCreditoChart({
           </LineChart>
         </ResponsiveContainer>
       </div>
+      )}
 
-      {/* Donut + weekday */}
+      {/* Donut + weekday — la columna se oculta si ambos están vacíos */}
+      {(hasDonut || hasWeekday) && (
       <div className="flex flex-col gap-3">
-        {donutData.length > 1 && (
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex-1">
+        {hasDonut && (
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex-1">
             <p className="text-xs font-bold text-[var(--text-primary)] mb-1">Motivos del mes</p>
             <ResponsiveContainer minWidth={0} width="100%" height={80}>
               <PieChart>
@@ -114,8 +122,9 @@ export default function NotasCreditoChart({
           </div>
         )}
 
-        {/* Días con más devoluciones */}
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex-1">
+        {/* Días con más devoluciones — se oculta si no hay datos */}
+        {hasWeekday && (
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex-1">
           <p className="text-xs font-bold text-[var(--text-primary)] mb-1">
             Días con más devoluciones
           </p>
@@ -131,7 +140,9 @@ export default function NotasCreditoChart({
             </BarChart>
           </ResponsiveContainer>
         </div>
+        )}
       </div>
+      )}
     </div>
   );
 }

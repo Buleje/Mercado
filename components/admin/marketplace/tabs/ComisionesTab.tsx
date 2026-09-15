@@ -1,5 +1,5 @@
 "use client";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCommissions } from "@/components/admin/marketplace/hooks/use-marketplace-commissions";
 import { TableSkeleton, COMMISSION_STATUS_CONFIG } from "@/components/admin/marketplace/shared";
@@ -18,17 +18,6 @@ export function MarketplaceComisionesTab() {
   // Total absoluto y % en cada estado para barras de proporción visual.
   const total = (summary.pendiente || 0) + (summary.liquidado || 0) + (summary.pagado || 0);
   const pct = (n: number) => (total > 0 ? Math.max(2, (n / total) * 100) : 0);
-
-  // Counts por estado para los chips (para mostrar cuántos hay en cada filtro).
-  const counts = {
-    all: filtered.length || 0,
-    pendiente: 0,
-    liquidado: 0,
-    pagado: 0,
-  };
-  // Dado que `filtered` ya respeta el filtro activo, contamos sobre ello cuando es "all"
-  // y sobre `summary` (montos totales) como heurística; el dato exacto requeriría el hook
-  // exponer `entries`. Los chips muestran montos (S/) más útiles que counts en este flow.
 
   return (
     <div className="space-y-6">
@@ -55,7 +44,7 @@ export function MarketplaceComisionesTab() {
             <button
               onClick={handleBulkPay}
               disabled={markingPaid === "bulk"}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
+              className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
             >
               <DollarSign className="h-4 w-4" />
               {markingPaid === "bulk" ? "Procesando..." : `Pagar liquidado · S/${summary.liquidado.toFixed(2)}`}
@@ -109,10 +98,10 @@ export function MarketplaceComisionesTab() {
               key={f.value}
               onClick={() => setFilterStatus(f.value)}
               className={cn(
-                "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-bold transition-all tabular-nums",
+                "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-semibold transition-all tabular-nums",
                 active
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
+                  ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
               )}
             >
               {f.label}
@@ -125,8 +114,8 @@ export function MarketplaceComisionesTab() {
       </div>
 
       {filtered.length === 0 && !error ? (
-        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
+        <div className="text-center py-20 px-6 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <DollarSign className="h-6 w-6" />
           </div>
           <p className="text-base font-extrabold text-[var(--text-primary)]">
@@ -134,14 +123,14 @@ export function MarketplaceComisionesTab() {
           </p>
           <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-sm mx-auto">
             {filterStatus !== "all"
-              ? "Probá con otro filtro o vé al estado anterior del flujo."
+              ? "Prueba con otro filtro o ve al estado anterior del flujo."
               : "Cuando recibas pedidos por marketplace, las comisiones aparecerán acá."}
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Orden</th>
@@ -179,7 +168,7 @@ export function MarketplaceComisionesTab() {
                           <button
                             onClick={() => handleMarkPaid(e.id)}
                             disabled={markingPaid === e.id}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
                           >
                             {markingPaid === e.id ? (
                               <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -198,7 +187,7 @@ export function MarketplaceComisionesTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}

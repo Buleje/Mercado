@@ -18,7 +18,6 @@ export type {
 // Import types locally for internal use
 import type {
   DbStoreBanner,
-  DbStoreBannerCreateInput,
   DbStoreBannerUpdateInput,
 } from "@/lib/db/store-banners.db";
 

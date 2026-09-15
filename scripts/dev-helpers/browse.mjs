@@ -76,7 +76,9 @@ async function withSession(fn) {
 async function authIfNeeded(page) {
   const res = await page.request.post(`${BASE}/api/auth/login`, {
     headers: { "content-type": "application/json", "x-tenant-id": TENANT },
-    data: { username: USER, password: PASS },
+    // qaadmin existe en 2 tenants → SIN tenantSlug el lookup global es ambiguo
+    // y el guard de /admin (tenant "main") rechaza la sesión. Scope explícito.
+    data: { username: USER, password: PASS, tenantSlug: TENANT },
   });
   if (res.status() !== 200) throw new Error(`auth failed: ${res.status()}`);
   return true;

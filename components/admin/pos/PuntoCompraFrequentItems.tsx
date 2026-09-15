@@ -96,12 +96,12 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
           onClick={() => onAddToCart(item.productId, item.avgQuantity)}
           className={cn(
             "w-full flex items-center gap-2 p-2 rounded-xl text-left transition-colors",
-            "bg-gray-50 dark:bg-white/5 hover:bg-primary/10 dark:hover:bg-primary/20",
+            "bg-[var(--surface-sunken)] hover:bg-primary/10 dark:hover:bg-primary/20",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
           )}
         >
           {/* Frequency badge */}
-          <span className="shrink-0 h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-[length:var(--ts-2xs)] font-bold">
+          <span className="shrink-0 h-7 w-7 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold">
             {item.frequency}x
           </span>
 

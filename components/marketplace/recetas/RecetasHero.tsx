@@ -96,7 +96,7 @@ export default function RecetasHero() {
         {/* Trust strip — 3 stats con datos reales */}
         <div className="mt-10 sm:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-3xl">
           <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]/60 backdrop-blur-sm px-4 py-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <ChefHat className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             </span>
             <div className="min-w-0">
@@ -110,7 +110,7 @@ export default function RecetasHero() {
           </div>
 
           <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]/60 backdrop-blur-sm px-4 py-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Clock className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             </span>
             <div className="min-w-0">
@@ -124,7 +124,7 @@ export default function RecetasHero() {
           </div>
 
           <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]/60 backdrop-blur-sm px-4 py-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Users className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             </span>
             <div className="min-w-0">

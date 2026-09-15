@@ -1,11 +1,12 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
-import { useState, useEffect, useCallback } from "react";
+import { CardTitle, DataTable, LoadingState, BlockTitle } from "@buleje/design-system";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
 import {
-  X, Loader2, CreditCard, Banknote, Star, ShoppingBag,
+  X, CreditCard, Banknote, Star, ShoppingBag,
   MessageCircle, Printer, AlertCircle,
 } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -162,13 +163,17 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
   const handlePrint = () => window.print();
 
+  const modalRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useModalAccesible(modalRef, { onCerrar: onClose });
+
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+            <CardTitle id={titleId} className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
               Estado de Cuenta
             </CardTitle>
@@ -176,7 +181,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
               {customerName ?? customerPhone}
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
+          <button aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         </div>
@@ -223,7 +228,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                   <p className="text-base font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{data.resumen.puntosLealtad}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]/70 capitalize">{data.resumen.tierLealtad}</p>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
+                <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <ShoppingBag className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                     <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]/70 uppercase">Últ. compra</p>
@@ -236,51 +241,49 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Fiados table */}
               {data.fiados.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+                  <BlockTitle className="mb-3 flex items-center gap-2">
                     <Banknote className="h-4 w-4 text-[var(--data-error-500)]" /> Fiados pendientes
-                  </h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                          <th className="text-left py-2 font-bold text-[var(--text-tertiary)] uppercase">Descripción</th>
-                          <th className="text-right py-2 font-bold text-[var(--text-tertiary)] uppercase">Total</th>
-                          <th className="text-right py-2 font-bold text-[var(--text-tertiary)] uppercase">Saldo</th>
-                          <th className="text-left py-2 font-bold text-[var(--text-tertiary)] uppercase">Fecha</th>
-                          <th className="text-left py-2 font-bold text-[var(--text-tertiary)] uppercase">Vence</th>
+                  </BlockTitle>
+                  <DataTable className="text-xs">
+                    <thead>
+                      <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                        <th>Descripción</th>
+                        <th className="text-right">Total</th>
+                        <th className="text-right">Saldo</th>
+                        <th>Fecha</th>
+                        <th>Vence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.fiados.map((f) => (
+                        <tr key={f.id}>
+                          <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{f.descripcion || "Sin descripción"}</td>
+                          <td className="text-right text-[var(--text-secondary)] dark:text-muted">{fmt(f.total)}</td>
+                          <td className="text-right font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(f.saldo)}</td>
+                          <td className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(f.fechaCreacion)}</td>
+                          <td className="text-[var(--text-secondary)] dark:text-muted">{f.fechaVence ? fmtDate(f.fechaVence) : "—"}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {data.fiados.map((f) => (
-                          <tr key={f.id} className="border-t border-[var(--rule-base)]">
-                            <td className="py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{f.descripcion || "Sin descripción"}</td>
-                            <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(f.total)}</td>
-                            <td className="py-2 text-right font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(f.saldo)}</td>
-                            <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{fmtDate(f.fechaCreacion)}</td>
-                            <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{f.fechaVence ? fmtDate(f.fechaVence) : "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] font-bold">
-                          <td className="py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total</td>
-                          <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(data.fiados.reduce((s, f) => s + f.total, 0))}</td>
-                          <td className="py-2 text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(data.resumen.totalFiados)}</td>
-                          <td colSpan={2} />
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] font-bold">
+                        <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total</td>
+                        <td className="text-right text-[var(--text-secondary)] dark:text-muted">{fmt(data.fiados.reduce((s, f) => s + f.total, 0))}</td>
+                        <td className="text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(data.resumen.totalFiados)}</td>
+                        <td colSpan={2} />
+                      </tr>
+                    </tfoot>
+                  </DataTable>
                 </div>
               )}
 
               {/* Prestamos table */}
               {data.prestamos.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+                  <BlockTitle className="mb-3 flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" /> Préstamos activos
-                  </h4>
+                  </BlockTitle>
                   {data.prestamos.map((p) => (
                     <div key={p.id} className="mb-3 last:mb-0">
                       <div className="flex justify-between items-center mb-2">
@@ -309,17 +312,17 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Últimas compras */}
               {data.ultimasCompras.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+                  <BlockTitle className="mb-3 flex items-center gap-2">
                     <ShoppingBag className="h-4 w-4 text-primary" /> Últimas compras
-                  </h4>
+                  </BlockTitle>
                   <div className="space-y-1.5">
                     {data.ultimasCompras.map((c) => (
                       <div key={c.id} className="flex items-center justify-between text-xs py-1.5 border-b border-[var(--rule-base)] last:border-0">
                         <span className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(c.fecha)}</span>
                         <span className="text-[var(--text-secondary)] dark:text-muted capitalize">{c.metodoPago ?? "efectivo"}</span>
                         <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
-                          c.status === "entregado" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" :
+                          c.status === "entregado" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" :
                           c.status === "cancelado" ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]" :
                           "bg-[var(--data-warning-50)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]"
                         )}>
@@ -340,14 +343,14 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
           <button
             onClick={handlePrint}
             disabled={!data}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             <Printer className="h-4 w-4" /> Imprimir
           </button>
           <button
             onClick={handleWhatsApp}
             disabled={!data}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366] text-white text-sm font-bold hover:bg-[#1ebe5d] transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#1ebe5d] transition-colors disabled:opacity-50"
           >
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </button>

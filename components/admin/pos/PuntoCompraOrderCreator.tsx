@@ -1,14 +1,30 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import { X, Search, Loader2, CheckCircle2, User, ShoppingCart } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 interface CartItemInput {
-  product: { id: number; name: string; costPrice?: number | null };
+  /** `price` = precio de VENTA; `costPrice` = lo que te cuesta a vos. */
+  product: { id: number; name: string; costPrice?: number | null; price?: number | null };
   quantity: number;
+}
+
+/**
+ * Precio al que se le cobra al cliente.
+ *
+ * Reporte QA Compras 2026-08-12: un producto con costo S/50 aparecía en S/0.00.
+ * La causa era peor que el cero — este modal cobraba `costPrice`, o sea el
+ * precio al que VOS comprás: vender así deja margen cero, y si el costo no está
+ * cargado, cobra nada. El pedido es una VENTA, así que manda el precio de venta;
+ * el costo queda sólo como último recurso visible, nunca silencioso.
+ */
+function precioDeVenta(p: CartItemInput["product"]): number {
+  if (p.price != null && p.price > 0) return p.price;
+  return p.costPrice ?? 0;
 }
 
 interface CustomerResult {
@@ -70,9 +86,13 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
     });
   }, []);
 
-  const selectedTotal = cartItems
-    .filter((i) => selectedItems.has(i.product.id))
-    .reduce((sum, i) => sum + (i.product.costPrice ?? 0) * i.quantity, 0);
+  const seleccionados = cartItems.filter((i) => selectedItems.has(i.product.id));
+
+  const selectedTotal = seleccionados
+    .reduce((sum, i) => sum + precioDeVenta(i.product) * i.quantity, 0);
+
+  /** Seleccionados sin ningún precio cargado: se cobrarían en cero. */
+  const sinPrecio = seleccionados.filter((i) => precioDeVenta(i.product) <= 0);
 
   const handleCreateOrder = async () => {
     if (!selectedCustomer || selectedItems.size === 0) return;
@@ -80,14 +100,12 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
     setError(null);
 
     try {
-      const items = cartItems
-        .filter((i) => selectedItems.has(i.product.id))
-        .map((i) => ({
-          productId: i.product.id,
-          name: i.product.name,
-          quantity: i.quantity,
-          unitPrice: i.product.costPrice ?? 0,
-        }));
+      const items = seleccionados.map((i) => ({
+        productId: i.product.id,
+        name: i.product.name,
+        quantity: i.quantity,
+        unitPrice: precioDeVenta(i.product),
+      }));
 
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -115,20 +133,24 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
     }
   };
 
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose, activo: open });
+
   if (!open) return null;
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4 text-primary" />
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
+            <CardTitle id={titleId} className="text-sm font-bold text-[var(--text-primary)]">
               Crear pedido de cliente
             </CardTitle>
           </div>
-          <button
+          <button aria-label="Cerrar"
             type="button"
             onClick={onClose}
             className="h-7 w-7 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
@@ -152,7 +174,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-4 px-6 py-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark transition-colors"
+                className="mt-4 px-6 py-2 bg-primary text-white rounded-xl text-xs font-medium hover:bg-primary-dark transition-colors"
               >
                 Cerrar
               </button>
@@ -161,9 +183,9 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
             <>
               {/* Customer search */}
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                <span className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                   Cliente
-                </label>
+                </span>
                 {selectedCustomer ? (
                   <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-xl">
                     <User className="h-4 w-4 text-primary shrink-0" />
@@ -194,7 +216,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       placeholder="Buscar por nombre o teléfono..."
-                      className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                      className="w-full pl-9 pr-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                     />
                     {searchLoading && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)] animate-spin" />
@@ -214,7 +236,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                           setCustomers([]);
                           setCustomerSearch("");
                         }}
-                        className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0"
+                        className="w-full flex items-center gap-2 p-2 text-left hover:bg-[var(--surface-sunken)] transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0"
                       >
                         <User className="h-3 w-3 text-[var(--text-tertiary)] shrink-0" />
                         <div className="min-w-0">
@@ -231,9 +253,9 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
 
               {/* Items selection */}
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                <span className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                   Productos ({selectedItems.size} de {cartItems.length} seleccionados)
-                </label>
+                </span>
                 <div className="space-y-1 max-h-48 overflow-y-auto">
                   {cartItems.map((item) => {
                     const checked = selectedItems.has(item.product.id);
@@ -243,10 +265,10 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                         type="button"
                         onClick={() => toggleItem(item.product.id)}
                         className={cn(
-                          "w-full flex items-center gap-2 p-2 rounded-lg text-left transition-colors",
+                          "w-full flex items-center gap-2 p-2 rounded-xl text-left transition-colors",
                           checked
                             ? "bg-primary/10 border border-primary/30"
-                            : "bg-gray-50 dark:bg-white/5 border border-transparent",
+                            : "bg-[var(--surface-sunken)] border border-transparent",
                         )}
                       >
                         <div
@@ -254,7 +276,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                             "h-4 w-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors",
                             checked
                               ? "bg-primary border-primary text-white"
-                              : "border-[var(--rule-base)] dark:border-gray-600",
+                              : "border-[var(--rule-base)] ",
                           )}
                         >
                           {checked && <span className="text-[length:var(--ts-2xs)] font-bold">&#10003;</span>}
@@ -267,8 +289,15 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">
                           x{item.quantity}
                         </span>
-                        <span className="text-xs font-mono font-medium text-[var(--text-secondary)] shrink-0">
-                          S/{((item.product.costPrice ?? 0) * item.quantity).toFixed(2)}
+                        <span className={cn(
+                          "text-xs font-mono font-medium shrink-0",
+                          precioDeVenta(item.product) > 0
+                            ? "text-[var(--text-secondary)]"
+                            : "text-[var(--data-error-500)]",
+                        )}>
+                          {precioDeVenta(item.product) > 0
+                            ? `S/${(precioDeVenta(item.product) * item.quantity).toFixed(2)}`
+                            : "sin precio"}
                         </span>
                       </button>
                     );
@@ -277,7 +306,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
               </div>
 
               {/* Total */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+              <div className="flex items-center justify-between p-3 bg-[var(--surface-sunken)] rounded-xl">
                 <span className="text-xs font-medium text-[var(--text-secondary)]">
                   Total seleccionado
                 </span>
@@ -285,6 +314,21 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                   S/{selectedTotal.toFixed(2)}
                 </span>
               </div>
+
+              {/* Un pedido en cero no se reclama después: mejor frenarlo acá. */}
+              {sinPrecio.length > 0 && (
+                <div role="alert" className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-2.5">
+                  <p className="text-xs font-bold text-[var(--data-warning-500)]">
+                    {sinPrecio.length === 1
+                      ? "Un producto no tiene precio de venta cargado"
+                      : `${sinPrecio.length} productos no tienen precio de venta cargado`}
+                  </p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">
+                    {sinPrecio.map((i) => i.product.name).join(", ")} — se cobrarían S/0.00.
+                    Carga el precio en Inventario o destíldalos para seguir.
+                  </p>
+                </div>
+              )}
 
               {/* Error message */}
               {error && (
@@ -297,7 +341,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
               <button
                 type="button"
                 onClick={handleCreateOrder}
-                disabled={submitting || !selectedCustomer || selectedItems.size === 0}
+                disabled={submitting || !selectedCustomer || selectedItems.size === 0 || sinPrecio.length > 0}
                 className={cn(
                   "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors",
                   "bg-primary hover:bg-primary-dark text-white",

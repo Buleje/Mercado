@@ -1,0 +1,1042 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowUp, ArrowDown, Palette, Image as ImageIcon, Bold, Italic, Underline, AlignLeft, AlignCenter, PaintBucket, RotateCcw } from "lucide-react";
+
+/**
+ * StorefrontEditOverlay — capa de edición tipo page builder (Brandon 2026-06-25,
+ * Fases 1-3 de docs/PAGE_BUILDER_PLAN.md). Solo en `/t/<slug>?preview=true`.
+ *
+ * Fase 1: click en [data-pb] → postMessage pb-select → editor abre panel.
+ * Fase 2: recibe pb-reorder del editor → reordena DOM de [data-pb] en vivo.
+ * Fase 3: dblclick en [data-live] → contentEditable; blur → pb-inline-edit →
+ *         editor hace patch(). Escape = cancelar. Enter (no-shift) = confirmar.
+ *         Panel hover → pb-highlight del editor → outline ámbar en esa sección.
+ *
+ * outline (no border) para evitar design-lint. Overlay fixedposition pointer-events:none.
+ */
+
+const LABELS: Record<string, string> = {
+  announcement: "Banner de anuncio",
+  hero: "Hero",
+  trust: "Confianza",
+  promos: "Promociones",
+  featured: "Productos",
+  testimonials: "Testimonios",
+  info: "Información",
+  countdown: "Contador de oferta",
+};
+
+const SKY = "#0ea5e9";
+const AMBER = "#f59e0b";
+
+// Secciones del cuerpo que se pueden mover ↑↓ (las fijas hero/announcement no).
+const BODY_REORDERABLE = new Set(["trust", "promos", "featured", "testimonials", "info"]);
+// Secciones con imagen propia (click 🖼 abre su subidor en el editor).
+const IMAGE_CAPABLE = new Set(["hero", "announcement"]);
+// Paleta rápida de "pintar" (color inline) → setea el color primario de la marca.
+const PRESET_COLORS = [
+  "#00A0A0", "#FF6B5B", "#16a34a", "#2563eb",
+  "#7c3aed", "#db2777", "#ea580c", "#0f172a",
+];
+
+function postToEditor(msg: Record<string, unknown>) {
+  try {
+    window.parent?.postMessage({ source: "buleje-preview", ...msg }, window.location.origin);
+  } catch {
+    /* cross-origin guard */
+  }
+}
+
+type Box = { top: number; left: number; width: number; height: number };
+
+function rectOf(el: Element): Box {
+  const r = el.getBoundingClientRect();
+  return { top: r.top, left: r.left, width: r.width, height: r.height };
+}
+
+type SectionStyle = {
+  bg?: string;
+  text?: string;
+  pad?: "sm" | "md" | "lg";
+  radius?: number;
+  border?: string;
+  borderW?: number;
+  shadow?: "none" | "soft" | "deep";
+  font?: string;
+  width?: "narrow" | "normal" | "full";
+  padY?: number;
+  divider?: "none" | "line" | "space";
+  anim?: "none" | "fade" | "up" | "zoom";
+};
+
+const SECTION_ANIM_CSS: Record<string, string> = {
+  fade: "buleje-fade .6s ease both",
+  up: "buleje-up .6s ease both",
+  zoom: "buleje-zoom .6s ease both",
+};
+
+const SECTION_SHADOW: Record<string, string> = {
+  none: "none",
+  soft: "0 4px 16px rgba(0,0,0,0.10)",
+  deep: "0 12px 32px rgba(0,0,0,0.18)",
+};
+
+type TextStyle = {
+  size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right";
+  italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean;
+};
+
+/**
+ * Aplica estilo de TEXTO a un nodo [data-live] EN VIVO (tamaño/peso/color/
+ * alineación/itálica/etc.). Misma lógica que TenantTextStyles; compartido con
+ * el panel lateral del editor (pb-apply-text-style).
+ */
+function applyTextStyleToEl(el: HTMLElement, s: TextStyle) {
+  el.style.fontWeight = s.bold ? "800" : "";
+  el.style.color = s.color || "";
+  el.style.textAlign = s.align || "";
+  el.style.fontStyle = s.italic ? "italic" : "";
+  el.style.textDecoration = s.underline ? "underline" : "";
+  el.style.textTransform = s.upper ? "uppercase" : "";
+  el.style.letterSpacing = typeof s.track === "number" ? `${s.track}em` : "";
+  el.style.textShadow = s.tshadow ? "0 2px 8px rgba(0,0,0,0.45)" : "";
+  el.style.fontSize = "";
+  if (typeof s.size === "number" && s.size > 0) {
+    const base = parseFloat(getComputedStyle(el).fontSize) || 16;
+    el.style.fontSize = `${(base * s.size).toFixed(1)}px`;
+    el.dataset.bulejeSize = String(s.size);
+  }
+}
+
+type CardDesign = { bg?: string; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; nameColor?: string; priceColor?: string };
+
+/**
+ * Aplica el diseño a TODAS las tarjetas de producto [data-pb-card] EN VIVO
+ * (fondo/forma/borde/sombra + color de nombre y precio). Brandon 2026-06-27.
+ */
+function applyAllCardStyles(cd: CardDesign) {
+  const SHADOW: Record<string, string> = { none: "none", soft: "0 4px 16px rgba(0,0,0,0.10)", deep: "0 12px 32px rgba(0,0,0,0.18)" };
+  document.querySelectorAll<HTMLElement>("[data-pb-card]").forEach((el) => {
+    el.style.background = cd.bg || "";
+    el.style.borderRadius = typeof cd.radius === "number" ? `${cd.radius}px` : "";
+    el.style.border = cd.border ? `${cd.borderW ?? 2}px solid ${cd.border}` : "";
+    el.style.boxShadow = cd.shadow ? SHADOW[cd.shadow] ?? "" : "";
+  });
+  document.querySelectorAll<HTMLElement>("[data-pb-card-name]").forEach((el) => { el.style.color = cd.nameColor || ""; });
+  document.querySelectorAll<HTMLElement>("[data-pb-card-price]").forEach((el) => { el.style.color = cd.priceColor || ""; });
+}
+
+/**
+ * Aplica un estilo POR SECCIÓN a un elemento [data-pb] EN VIVO (fondo, texto,
+ * espaciado, forma, borde, sombra). Compartido entre la barra flotante del
+ * preview y los cambios que llegan del panel lateral del editor
+ * (pb-apply-section-style). Guarda los valores no-CSS en data-attrs para poder
+ * releerlos al reabrir la barra.
+ */
+function applySectionStyleToEl(el: HTMLElement, next: SectionStyle) {
+  el.style.background = next.bg || "";
+  el.style.color = next.text || "";
+  if (next.pad === "sm") {
+    el.style.paddingTop = "1.25rem";
+    el.style.paddingBottom = "1.25rem";
+    el.dataset.bulejePad = "sm";
+  } else if (next.pad === "lg") {
+    el.style.paddingTop = "4rem";
+    el.style.paddingBottom = "4rem";
+    el.dataset.bulejePad = "lg";
+  } else {
+    el.style.removeProperty("padding-top");
+    el.style.removeProperty("padding-bottom");
+    delete el.dataset.bulejePad;
+  }
+  if (typeof next.radius === "number") {
+    el.style.borderRadius = `${next.radius}px`;
+    el.dataset.bulejeRadius = String(next.radius);
+  } else {
+    el.style.removeProperty("border-radius");
+    delete el.dataset.bulejeRadius;
+  }
+  if (next.border) {
+    el.style.border = `${next.borderW ?? 2}px solid ${next.border}`;
+    el.dataset.bulejeBorder = next.border;
+    if (next.borderW != null) el.dataset.bulejeBorderW = String(next.borderW);
+  } else {
+    el.style.removeProperty("border");
+    delete el.dataset.bulejeBorder;
+    delete el.dataset.bulejeBorderW;
+  }
+  if (next.shadow) {
+    el.style.boxShadow = SECTION_SHADOW[next.shadow] ?? "";
+    el.dataset.bulejeShadow = next.shadow;
+  } else {
+    el.style.removeProperty("box-shadow");
+    delete el.dataset.bulejeShadow;
+  }
+  el.style.fontFamily = next.font || "";
+  // Cargar la fuente Google en vivo si el stack trae una familia entre comillas
+  // (#3 fuentes reales) — así el preview la muestra sin esperar un reload.
+  if (next.font) ensureFontLoaded(next.font);
+  // #4 Layout y animación (Brandon 2026-06-27)
+  el.style.maxWidth = next.width === "narrow" ? "768px" : next.width === "full" ? "none" : "";
+  if (typeof next.padY === "number") { el.style.paddingTop = `${next.padY}px`; el.style.paddingBottom = `${next.padY}px`; }
+  if (next.divider === "line") el.style.borderBottom = "1px solid color-mix(in oklab, currentColor 14%, transparent)";
+  else if (!next.border) el.style.borderBottom = "";
+  el.style.marginBottom = next.divider === "space" ? "2.5rem" : "";
+  el.style.animation = next.anim && next.anim !== "none" ? (SECTION_ANIM_CSS[next.anim] ?? "") : "";
+}
+
+/** Inyecta un <link> de Google Fonts para la familia entre comillas del stack. */
+function ensureFontLoaded(stack: string) {
+  const fam = stack.match(/"([^"]+)"/)?.[1];
+  if (!fam) return; // web-safe (sin comillas) → ya disponible
+  const id = `buleje-font-${fam.replace(/\s+/g, "-")}`;
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fam).replace(/%20/g, "+")}:wght@400;600;700;800;900&display=swap`;
+  document.head.appendChild(link);
+}
+
+/**
+ * Reordena directamente en el DOM los [data-pb] hijos de <main> según `order`.
+ * Los elementos que no estén en `order` permanecen donde están.
+ * Los no-[data-pb] (nav, footer, etc.) no se tocan.
+ */
+function reorderPbElements(order: string[]) {
+  const main = document.querySelector("main");
+  if (!main) return;
+  const allPb = [...main.querySelectorAll(":scope > [data-pb]")] as HTMLElement[];
+  if (allPb.length < 2) return;
+
+  // Marker justo antes del primer [data-pb]
+  const marker = document.createComment("pb-anchor");
+  main.insertBefore(marker, allPb[0]);
+
+  // Desadjuntar todos (preserva su estado React, solo mueve nodos)
+  allPb.forEach((el) => main.removeChild(el));
+
+  // Reinsertar en orden deseado (saltando keys sin elemento)
+  const frag = document.createDocumentFragment();
+  order.forEach((key) => {
+    const el = allPb.find((n) => n.getAttribute("data-pb") === key);
+    if (el) frag.appendChild(el);
+  });
+  // Agregar los que no estaban en order al final
+  allPb.forEach((el) => {
+    if (!frag.contains(el)) frag.appendChild(el);
+  });
+
+  main.insertBefore(frag, marker.nextSibling);
+  main.removeChild(marker);
+}
+
+export default function StorefrontEditOverlay() {
+  const [enabled, setEnabled] = useState(false);
+  const [hover, setHover] = useState<{ box: Box; key: string } | null>(null);
+  const [selected, setSelected] = useState<{ box: Box; key: string } | null>(null);
+  const [panelHighlight, setPanelHighlight] = useState<{ box: Box; key: string } | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingBox, setEditingBox] = useState<Box | null>(null);
+  // Barra flotante (Brandon 2026-06-26, Fase 4 "editar potencia"): popover de color abierto.
+  const [colorOpen, setColorOpen] = useState(false);
+  const [textColorOpen, setTextColorOpen] = useState(false);
+  // Panel de estilo POR SECCIÓN (Brandon 2026-06-26): editar el componente individual.
+  const [stylePanelOpen, setStylePanelOpen] = useState(false);
+  // Drag de secciones en el canvas (Brandon 2026-06-26): indicador de drop.
+  const [dropTarget, setDropTarget] = useState<{ box: Box; key: string } | null>(null);
+  const canvasDragKey = useRef<string | null>(null);
+
+  const selectedEl = useRef<Element | null>(null);
+  const editingEl = useRef<HTMLElement | null>(null);
+  const editingOriginal = useRef<string>("");
+  // Lote H #6: modo navegación — el overlay deja de interceptar clicks/hover
+  // para que el dueño pruebe la tienda como un cliente (scroll/click reales).
+  const navModeRef = useRef(false);
+
+  // recalcula la caja del bloque seleccionado (scroll/resize lo desalinean)
+  const reposition = useCallback(() => {
+    if (selectedEl.current && document.contains(selectedEl.current)) {
+      setSelected((s) => (s ? { ...s, box: rectOf(selectedEl.current as Element) } : s));
+    }
+    if (editingEl.current && document.contains(editingEl.current)) {
+      setEditingBox(rectOf(editingEl.current));
+    }
+  }, []);
+
+  // Confirma la edición inline: quita contentEditable y avisa al editor.
+  const commitEdit = useCallback(() => {
+    const el = editingEl.current;
+    if (!el) return;
+    const field = el.getAttribute("data-live") || "";
+    const value = el.textContent || "";
+    el.contentEditable = "inherit";
+    el.style.removeProperty("outline");
+    el.style.removeProperty("cursor");
+    editingEl.current = null;
+    setEditingField(null);
+    setEditingBox(null);
+    setTextColorOpen(false);
+    if (field && value !== editingOriginal.current) {
+      try {
+        window.parent?.postMessage(
+          { source: "buleje-preview", type: "pb-inline-edit", field, value },
+          window.location.origin,
+        );
+      } catch {
+        /* cross-origin guard */
+      }
+    }
+  }, []);
+
+  // Cancela la edición: restaura el texto original.
+  const cancelEdit = useCallback(() => {
+    const el = editingEl.current;
+    if (!el) return;
+    el.textContent = editingOriginal.current;
+    el.contentEditable = "inherit";
+    el.style.removeProperty("outline");
+    el.style.removeProperty("cursor");
+    editingEl.current = null;
+    setEditingField(null);
+    setEditingBox(null);
+    setTextColorOpen(false);
+  }, []);
+
+  // Barra de texto flotante (Brandon 2026-06-26): aplica tamaño/negrita/color/
+  // alineación al texto en edición EN VIVO y lo persiste (pb-text-style).
+  const textAction = useCallback(
+    (action: "size+" | "size-" | "bold" | "italic" | "underline" | "upper" | "track+" | "track-" | "tshadow" | "left" | "center" | "right" | { color: string }) => {
+      const el = editingEl.current;
+      if (!el) return;
+      const field = el.getAttribute("data-live") || "";
+      let size = parseFloat(el.dataset.bulejeSize ?? "1") || 1;
+      let bold = el.style.fontWeight === "800";
+      let italic = el.style.fontStyle === "italic";
+      let underline = el.style.textDecoration.includes("underline");
+      let upper = el.style.textTransform === "uppercase";
+      let track = parseFloat(el.style.letterSpacing) || 0;
+      let tshadow = !!el.style.textShadow && el.style.textShadow !== "none";
+      let color: string | undefined = el.style.color || undefined;
+      let align = (el.style.textAlign || undefined) as "left" | "center" | "right" | undefined;
+
+      if (action === "size+") size = Math.min(2, +(size + 0.1).toFixed(2));
+      else if (action === "size-") size = Math.max(0.6, +(size - 0.1).toFixed(2));
+      else if (action === "bold") bold = !bold;
+      else if (action === "italic") italic = !italic;
+      else if (action === "underline") underline = !underline;
+      else if (action === "upper") upper = !upper;
+      else if (action === "track+") track = Math.min(0.3, +(track + 0.02).toFixed(3));
+      else if (action === "track-") track = Math.max(-0.05, +(track - 0.02).toFixed(3));
+      else if (action === "tshadow") tshadow = !tshadow;
+      else if (action === "left" || action === "center" || action === "right") align = action;
+      else color = action.color;
+
+      // Aplicar en vivo manteniendo el tamaño base (px actual ÷ mult actual).
+      const curMult = parseFloat(el.dataset.bulejeSize ?? "1") || 1;
+      const curPx = parseFloat(el.style.fontSize || getComputedStyle(el).fontSize) || 16;
+      const basePx = curPx / curMult;
+      el.style.fontSize = `${(basePx * size).toFixed(1)}px`;
+      el.dataset.bulejeSize = String(size);
+      el.style.fontWeight = bold ? "800" : "";
+      el.style.fontStyle = italic ? "italic" : "";
+      el.style.textDecoration = underline ? "underline" : "";
+      el.style.textTransform = upper ? "uppercase" : "";
+      el.style.letterSpacing = `${track}em`;
+      el.style.textShadow = tshadow ? "0 2px 8px rgba(0,0,0,0.45)" : "";
+      if (color) el.style.color = color;
+      if (align) el.style.textAlign = align;
+
+      postToEditor({ type: "pb-text-style", field, style: { size, bold, italic, underline, upper, track, tshadow, color, align } });
+    },
+    [],
+  );
+
+  // Estilo POR SECCIÓN (Brandon 2026-06-26): aplica fondo/texto/espaciado SOLO a
+  // la sección seleccionada EN VIVO y lo persiste (pb-section-style). El cambio
+  // afecta únicamente a ESE componente.
+  const sectionStyleAction = useCallback(
+    (change: { bg?: string | null; text?: string | null; pad?: "sm" | "md" | "lg" | null; radius?: number | null; border?: string | null; borderW?: number | null; shadow?: "none" | "soft" | "deep" | null } | "reset") => {
+      const key = selectedEl.current?.getAttribute("data-pb");
+      const el = selectedEl.current as HTMLElement | null;
+      if (!key || !el) return;
+
+      type SS = { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" };
+      let next: SS;
+      if (change === "reset") {
+        next = {};
+      } else {
+        const cur: SS = {
+          bg: el.style.background || undefined,
+          text: el.style.color || undefined,
+          pad: (el.dataset.bulejePad as "sm" | "md" | "lg") || undefined,
+          radius: el.dataset.bulejeRadius != null ? Number(el.dataset.bulejeRadius) : undefined,
+          border: el.dataset.bulejeBorder || undefined,
+          borderW: el.dataset.bulejeBorderW != null ? Number(el.dataset.bulejeBorderW) : undefined,
+          shadow: (el.dataset.bulejeShadow as "none" | "soft" | "deep") || undefined,
+        };
+        next = { ...cur };
+        if ("bg" in change) next.bg = change.bg || undefined;
+        if ("text" in change) next.text = change.text || undefined;
+        if ("pad" in change) next.pad = change.pad || undefined;
+        if ("radius" in change) next.radius = change.radius == null ? undefined : change.radius;
+        if ("border" in change) next.border = change.border || undefined;
+        if ("borderW" in change) next.borderW = change.borderW == null ? undefined : change.borderW;
+        if ("shadow" in change) next.shadow = change.shadow || undefined;
+      }
+
+      // Aplicar en vivo solo a esta sección (lógica compartida con el panel lateral).
+      applySectionStyleToEl(el, next);
+
+      postToEditor({ type: "pb-section-style", key, style: next });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const isPreview =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("preview") === "true";
+    if (!isPreview) return;
+    setEnabled(true);
+
+    const pbBlock = (t: EventTarget | null): Element | null =>
+      t instanceof Element ? t.closest("[data-pb]") : null;
+
+    const liveEl = (t: EventTarget | null): HTMLElement | null =>
+      t instanceof Element ? (t.closest("[data-live]") as HTMLElement | null) : null;
+
+    /* ── Hover: outline dashed sobre el bloque ── */
+    const onOver = (e: MouseEvent) => {
+      if (navModeRef.current || editingEl.current) return;
+      const el = pbBlock(e.target);
+      if (!el) { setHover(null); return; }
+      setHover({ box: rectOf(el), key: el.getAttribute("data-pb") || "" });
+    };
+
+    /* ── Click único: selecciona sección → avisa al editor ── */
+    const onClick = (e: MouseEvent) => {
+      if (navModeRef.current) return; // Modo navegación: dejar pasar el click real
+      if (editingEl.current) return; // En edición inline: dejar pasar
+      // Prioridad: una TARJETA de producto [data-pb-card] → editor de tarjetas.
+      const card = e.target instanceof Element ? (e.target.closest("[data-pb-card]") as HTMLElement | null) : null;
+      if (card) {
+        e.preventDefault();
+        e.stopPropagation();
+        selectedEl.current = card;
+        setSelected({ box: rectOf(card), key: "cards" });
+        setColorOpen(false);
+        setStylePanelOpen(false);
+        postToEditor({ type: "pb-select", key: "cards" });
+        return;
+      }
+      const el = pbBlock(e.target);
+      if (!el) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const key = el.getAttribute("data-pb") || "";
+      selectedEl.current = el;
+      setSelected({ box: rectOf(el), key });
+      setColorOpen(false);
+      setStylePanelOpen(false);
+      postToEditor({ type: "pb-select", key });
+    };
+
+    /* ── Doble click: edición inline en [data-live] ── */
+    const onDblClick = (e: MouseEvent) => {
+      if (navModeRef.current) return; // Modo navegación: sin edición inline
+      const live = liveEl(e.target);
+      if (!live) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // Si ya estaba editando otro → confirmar primero
+      if (editingEl.current && editingEl.current !== live) commitEdit();
+      editingEl.current = live;
+      editingOriginal.current = live.textContent || "";
+      live.contentEditable = "true";
+      live.style.outline = `2px solid ${SKY}`;
+      live.style.cursor = "text";
+      setEditingField(live.getAttribute("data-live") || "");
+      setEditingBox(rectOf(live));
+      // Foco al final del texto
+      live.focus();
+      const range = document.createRange();
+      range.selectNodeContents(live);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    };
+
+    /* ── Teclas durante la edición inline ── */
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!editingEl.current) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        cancelEdit();
+        return;
+      }
+      // Enter sin Shift confirma en elementos de una sola línea
+      if (e.key === "Enter" && !e.shiftKey) {
+        const tag = editingEl.current.tagName;
+        if (["H1", "H2", "H3", "P", "SPAN", "DIV"].includes(tag)) {
+          e.preventDefault();
+          commitEdit();
+        }
+      }
+    };
+
+    /* ── Blur confirma la edición ── */
+    const onBlur = (e: FocusEvent) => {
+      if (editingEl.current && e.target === editingEl.current) {
+        commitEdit();
+      }
+    };
+
+    /* ── Mensajes DESDE el editor padre ── */
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      const d = e.data as {
+        source?: string;
+        type?: string;
+        key?: string | null;
+        order?: string[];
+        style?: SectionStyle;
+        textStyle?: TextStyle;
+        cardStyle?: CardDesign;
+        field?: string;
+        value?: string;
+        hidden?: boolean;
+        mode?: string;
+      } | null;
+      if (!d || d.source !== "buleje-editor") return;
+
+      // Lote H #6: pb-set-mode — alternar edición / navegación (interactiva).
+      if (d.type === "pb-set-mode") {
+        navModeRef.current = d.mode === "nav";
+        if (navModeRef.current) { setHover(null); setSelected(null); setPanelHighlight(null); }
+        document.body.style.cursor = navModeRef.current ? "" : "";
+        return;
+      }
+
+      // pb-highlight: panel hoverea una sección → ámbar en el iframe
+      if (d.type === "pb-highlight") {
+        if (!d.key) {
+          setPanelHighlight(null);
+          return;
+        }
+        const el = document.querySelector(`[data-pb="${d.key}"]`);
+        setPanelHighlight(el ? { box: rectOf(el), key: d.key } : null);
+      }
+
+      // pb-reorder: drag en panel → reordena DOM en vivo
+      if (d.type === "pb-reorder" && Array.isArray(d.order)) {
+        reorderPbElements(d.order);
+        // Recalcula posiciones de overlays
+        if (selectedEl.current && document.contains(selectedEl.current)) {
+          setSelected((s) => (s ? { ...s, box: rectOf(selectedEl.current as Element) } : s));
+        }
+        setPanelHighlight((ph) => {
+          if (!ph) return null;
+          const el = document.querySelector(`[data-pb="${ph.key}"]`);
+          return el ? { box: rectOf(el), key: ph.key } : null;
+        });
+      }
+
+      // pb-apply-section-style: el panel lateral del editor cambió el estilo de
+      // una sección → aplicarlo EN VIVO a su [data-pb] (Brandon 2026-06-27).
+      if (d.type === "pb-apply-section-style" && d.key) {
+        const el = document.querySelector(`[data-pb="${d.key}"]`) as HTMLElement | null;
+        if (el) {
+          applySectionStyleToEl(el, d.style ?? {});
+          if (selectedEl.current === el) {
+            setSelected((s) => (s ? { ...s, box: rectOf(el) } : s));
+          }
+        }
+      }
+
+      // pb-apply-section-text: el panel lateral cambió la etiqueta/título/alineación
+      // de una sección → reflejarlo EN VIVO (Brandon 2026-06-27).
+      if (d.type === "pb-apply-section-text" && d.key && d.field) {
+        if (d.field === "align") {
+          // Alineación: aplicar a etiqueta + título de la sección.
+          const align = (d.value || "") as string;
+          ["eyebrow", "title"].forEach((f) => {
+            const n = document.querySelector(`[data-pb-text="${d.key}:${f}"]`) as HTMLElement | null;
+            if (n) n.style.textAlign = align;
+          });
+        } else {
+          const node = document.querySelector(`[data-pb-text="${d.key}:${d.field}"]`) as HTMLElement | null;
+          if (node) node.textContent = d.value ?? "";
+        }
+        if (selectedEl.current) {
+          setSelected((s) => (s ? { ...s, box: rectOf(selectedEl.current as Element) } : s));
+        }
+      }
+
+      // pb-apply-text-style: el panel lateral cambió el estilo de un texto
+      // [data-live] → aplicarlo EN VIVO (Brandon 2026-06-27).
+      if (d.type === "pb-apply-text-style" && d.field) {
+        document.querySelectorAll<HTMLElement>(`[data-live="${d.field}"]`).forEach((el) => applyTextStyleToEl(el, d.textStyle ?? {}));
+      }
+
+      // pb-apply-card-style: el panel cambió el diseño de las tarjetas de producto.
+      if (d.type === "pb-apply-card-style") {
+        applyAllCardStyles(d.cardStyle ?? {});
+      }
+
+      // pb-toggle-section: mostrar/ocultar una sección. En preview la atenúa (no la
+      // borra) para poder reactivarla; en /t real la sección no se renderiza.
+      if (d.type === "pb-toggle-section" && d.key) {
+        const el = document.querySelector(`[data-pb="${d.key}"]`) as HTMLElement | null;
+        if (el) {
+          el.style.opacity = d.hidden ? "0.4" : "";
+          el.style.outline = d.hidden ? "2px dashed rgba(148,163,184,0.6)" : "";
+          el.style.outlineOffset = d.hidden ? "-4px" : "";
+        }
+      }
+    };
+
+    document.addEventListener("mouseover", onOver, true);
+    document.addEventListener("click", onClick, true);
+    document.addEventListener("dblclick", onDblClick, true);
+    /* ── Drag de secciones EN EL CANVAS (Brandon 2026-06-26) ──
+       Las secciones del cuerpo (trust/promos/featured/info) se arrastran directo
+       en el preview. Drop sobre otra → pb-drop {fromKey,toKey} → editor reordena. */
+    const bodyBlock = (t: EventTarget | null): HTMLElement | null => {
+      const el = t instanceof Element ? (t.closest("[data-pb]") as HTMLElement | null) : null;
+      return el && BODY_REORDERABLE.has(el.getAttribute("data-pb") || "") ? el : null;
+    };
+    const setDraggable = () => {
+      document.querySelectorAll<HTMLElement>("main > [data-pb]").forEach((el) => {
+        el.draggable = BODY_REORDERABLE.has(el.getAttribute("data-pb") || "");
+      });
+    };
+    setDraggable();
+
+    const onDragStart = (e: DragEvent) => {
+      // Ignorar drag de imágenes/links internos (son drag nativo, no de sección).
+      if (e.target instanceof Element && e.target.closest("img, a")) return;
+      const el = bodyBlock(e.target);
+      if (!el) return;
+      canvasDragKey.current = el.getAttribute("data-pb");
+      e.dataTransfer?.setData("text/plain", canvasDragKey.current || "");
+      if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+    };
+    const onDragOver = (e: DragEvent) => {
+      if (!canvasDragKey.current) return;
+      const el = bodyBlock(e.target);
+      if (!el) return;
+      const key = el.getAttribute("data-pb") || "";
+      if (key === canvasDragKey.current) { setDropTarget(null); return; }
+      e.preventDefault(); // permite drop
+      setDropTarget({ box: rectOf(el), key });
+    };
+    const onDrop = (e: DragEvent) => {
+      const el = bodyBlock(e.target);
+      const from = canvasDragKey.current;
+      canvasDragKey.current = null;
+      setDropTarget(null);
+      if (!el || !from) return;
+      e.preventDefault();
+      const to = el.getAttribute("data-pb") || "";
+      if (to && to !== from) postToEditor({ type: "pb-drop", fromKey: from, toKey: to });
+    };
+    const onDragEnd = () => { canvasDragKey.current = null; setDropTarget(null); };
+
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("blur", onBlur, true);
+    document.addEventListener("dragstart", onDragStart, true);
+    document.addEventListener("dragover", onDragOver, true);
+    document.addEventListener("drop", onDrop, true);
+    document.addEventListener("dragend", onDragEnd, true);
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    window.addEventListener("message", onMessage);
+    return () => {
+      document.removeEventListener("mouseover", onOver, true);
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("dblclick", onDblClick, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("blur", onBlur, true);
+      document.removeEventListener("dragstart", onDragStart, true);
+      document.removeEventListener("dragover", onDragOver, true);
+      document.removeEventListener("drop", onDrop, true);
+      document.removeEventListener("dragend", onDragEnd, true);
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+      window.removeEventListener("message", onMessage);
+    };
+  }, [reposition, commitEdit, cancelEdit]);
+
+  if (!enabled) return null;
+
+  return (
+    <>
+      {/* Indicador de drop al arrastrar una sección en el canvas (verde sólido) */}
+      {dropTarget && (
+        <div
+          className="pointer-events-none fixed z-[92] rounded-sm"
+          style={{
+            top: dropTarget.box.top,
+            left: dropTarget.box.left,
+            width: dropTarget.box.width,
+            height: dropTarget.box.height,
+            outline: "3px solid #16a34a",
+            outlineOffset: "-3px",
+            background: "rgba(22,163,74,0.08)",
+          }}
+        >
+          <span className="absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-[#16a34a] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-white shadow-lg">
+            Soltar aquí
+          </span>
+        </div>
+      )}
+
+      {/* Highlight desde el panel (hover sección en el editor → outline ámbar) */}
+      {panelHighlight && panelHighlight.key !== selected?.key && (
+        <div
+          className="pointer-events-none fixed z-[89] rounded-sm"
+          style={{
+            top: panelHighlight.box.top,
+            left: panelHighlight.box.left,
+            width: panelHighlight.box.width,
+            height: panelHighlight.box.height,
+            outline: `2px dashed ${AMBER}`,
+            outlineOffset: "-2px",
+          }}
+        />
+      )}
+
+      {/* Hover (outline dashed azul; no muestra si ya está seleccionado) */}
+      {hover && hover.key !== selected?.key && (
+        <div
+          className="pointer-events-none fixed z-[90] rounded-sm"
+          style={{
+            top: hover.box.top,
+            left: hover.box.left,
+            width: hover.box.width,
+            height: hover.box.height,
+            outline: `2px dashed ${SKY}`,
+            outlineOffset: "-2px",
+          }}
+        >
+          <span className="absolute left-0 top-0 -translate-y-full rounded-t-md bg-black/85 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white">
+            {LABELS[hover.key] ?? hover.key}
+          </span>
+        </div>
+      )}
+
+      {/* Seleccionado (outline sólido + chip) */}
+      {selected && (
+        <div
+          className="pointer-events-none fixed z-[91] rounded-sm"
+          style={{
+            top: selected.box.top,
+            left: selected.box.left,
+            width: selected.box.width,
+            height: selected.box.height,
+            outline: `2.5px solid ${SKY}`,
+            outlineOffset: "-2px",
+          }}
+        >
+          <span className="absolute left-0 top-0 -translate-y-full rounded-t-md bg-black/85 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-white">
+            ✎ {LABELS[selected.key] ?? selected.key} · editando en el panel
+          </span>
+        </div>
+      )}
+
+      {/* Barra flotante de acciones rápidas (Fase 4 "editar potencia"): mover,
+          pintar (color), imagen. pointer-events-auto para ser clickeable. */}
+      {selected && !editingField && (
+        <div
+          className="pointer-events-auto fixed z-[95] flex items-center gap-0.5 rounded-lg bg-black/90 p-1 shadow-xl ring-1 ring-white/15"
+          style={{
+            top: Math.max(8, selected.box.top - 44),
+            left: Math.max(8, selected.box.left + selected.box.width - 196),
+          }}
+        >
+          {BODY_REORDERABLE.has(selected.key) && (
+            <>
+              <button
+                type="button"
+                title="Subir sección"
+                aria-label="Subir sección"
+                onClick={(e) => { e.stopPropagation(); postToEditor({ type: "pb-move", key: selected.key, dir: "up" }); }}
+                className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+              >
+                <ArrowUp className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              </button>
+              <button
+                type="button"
+                title="Bajar sección"
+                aria-label="Bajar sección"
+                onClick={(e) => { e.stopPropagation(); postToEditor({ type: "pb-move", key: selected.key, dir: "down" }); }}
+                className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+              >
+                <ArrowDown className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              </button>
+              <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+            </>
+          )}
+
+          {IMAGE_CAPABLE.has(selected.key) && (
+            <button
+              type="button"
+              title="Cambiar imagen"
+              aria-label="Cambiar imagen"
+              onClick={(e) => { e.stopPropagation(); postToEditor({ type: "pb-image", key: selected.key }); }}
+              className="flex h-7 items-center gap-1 rounded px-2 text-[length:var(--ts-2xs)] font-bold text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+            >
+              <ImageIcon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Imagen
+            </button>
+          )}
+
+          <button
+            type="button"
+            title="Cambiar color de la marca"
+            aria-label="Cambiar color de la marca"
+            onClick={(e) => { e.stopPropagation(); setColorOpen((o) => !o); }}
+            className={`flex h-7 items-center gap-1 rounded px-2 text-[length:var(--ts-2xs)] font-bold transition-colors hover:bg-white/15 hover:text-white ${colorOpen ? "bg-white/15 text-white" : "text-white/85"}`}
+          >
+            <Palette className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Color
+          </button>
+
+          {colorOpen && (
+            <div className="absolute right-0 top-full mt-1 grid grid-cols-4 gap-1 rounded-lg bg-black/95 p-1.5 shadow-xl ring-1 ring-white/15">
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  title={`Usar ${c}`}
+                  aria-label={`Usar color ${c}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    postToEditor({ type: "pb-color", color: c });
+                    setColorOpen(false);
+                  }}
+                  className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
+                  style={{ background: c }}
+                />
+              ))}
+            </div>
+          )}
+
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+          {/* Estilo SOLO de esta sección (edición libre del componente individual) */}
+          <button
+            type="button"
+            title="Estilo de esta sección"
+            aria-label="Estilo de esta sección"
+            onClick={(e) => { e.stopPropagation(); setStylePanelOpen((o) => !o); }}
+            className={`flex h-7 items-center gap-1 rounded px-2 text-[length:var(--ts-2xs)] font-bold transition-colors hover:bg-white/15 hover:text-white ${stylePanelOpen ? "bg-white/15 text-white" : "text-white/85"}`}
+          >
+            <PaintBucket className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Estilo
+          </button>
+
+          {stylePanelOpen && (
+            <div className="absolute right-0 top-full mt-1 w-56 space-y-2 rounded-lg bg-black/95 p-2.5 shadow-xl ring-1 ring-white/15">
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Fondo de esta sección</p>
+                <div className="flex flex-wrap gap-1">
+                  <button type="button" title="Sin fondo" aria-label="Sin fondo"
+                    onClick={(e) => { e.stopPropagation(); sectionStyleAction({ bg: null }); }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full ring-1 ring-white/30 text-white/70 hover:scale-110 transition-transform">
+                    <RotateCcw className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  </button>
+                  {[...new Set(["#ffffff", "#f8fafc", ...PRESET_COLORS])].slice(0, 11).map((c) => (
+                    <button key={c} type="button" title={`Fondo ${c}`} aria-label={`Fondo ${c}`}
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ bg: c }); }}
+                      className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
+                      style={{ background: c }} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Color del texto</p>
+                <div className="flex flex-wrap gap-1">
+                  <button type="button" title="Texto automático" aria-label="Texto automático"
+                    onClick={(e) => { e.stopPropagation(); sectionStyleAction({ text: null }); }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full ring-1 ring-white/30 text-white/70 hover:scale-110 transition-transform">
+                    <RotateCcw className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  </button>
+                  {["#ffffff", "#0f172a", "#FF6B5B", "#00A0A0"].map((c) => (
+                    <button key={c} type="button" title={`Texto ${c}`} aria-label={`Texto ${c}`}
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ text: c }); }}
+                      className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
+                      style={{ background: c }} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Espaciado</p>
+                <div className="grid grid-cols-3 gap-1">
+                  {([["sm", "Compacto"], ["md", "Normal"], ["lg", "Amplio"]] as const).map(([p, label]) => (
+                    <button key={p} type="button"
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ pad: p === "md" ? null : p }); }}
+                      className="rounded bg-white/[0.06] px-1 py-1 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Forma (Brandon 2026-06-26): bordes redondeados, borde, sombra. */}
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Bordes redondeados</p>
+                <div className="grid grid-cols-4 gap-1">
+                  {([["Recto", 0], ["Suave", 12], ["Redondo", 24], ["Píldora", 40]] as const).map(([label, r]) => (
+                    <button key={label} type="button" title={label}
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ radius: r }); }}
+                      className="rounded bg-white/[0.06] px-1 py-1 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Borde</p>
+                <div className="flex flex-wrap gap-1">
+                  <button type="button" title="Sin borde" aria-label="Sin borde"
+                    onClick={(e) => { e.stopPropagation(); sectionStyleAction({ border: null }); }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full ring-1 ring-white/30 text-white/70 hover:scale-110 transition-transform">
+                    <RotateCcw className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  </button>
+                  {["#0f172a", "#FF6B5B", "#00A0A0", "#e5e7eb"].map((c) => (
+                    <button key={c} type="button" title={`Borde ${c}`} aria-label={`Borde ${c}`}
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ border: c }); }}
+                      className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
+                      style={{ background: c }} />
+                  ))}
+                </div>
+                <div className="mt-1.5 grid grid-cols-3 gap-1">
+                  {([["Fino", 1], ["Medio", 2], ["Grueso", 4]] as const).map(([label, w]) => (
+                    <button key={label} type="button" title={`Borde ${label.toLowerCase()}`}
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ borderW: w }); }}
+                      className="rounded bg-white/[0.06] px-1 py-1 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Sombra</p>
+                <div className="grid grid-cols-3 gap-1">
+                  {([["none", "Ninguna"], ["soft", "Suave"], ["deep", "Profunda"]] as const).map(([s, label]) => (
+                    <button key={s} type="button"
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ shadow: s === "none" ? null : s }); }}
+                      className="rounded bg-white/[0.06] px-1 py-1 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button type="button"
+                onClick={(e) => { e.stopPropagation(); sectionStyleAction("reset"); setStylePanelOpen(false); }}
+                className="flex w-full items-center justify-center gap-1 rounded bg-white/[0.06] px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
+                <RotateCcw className="h-3 w-3" strokeWidth={2.5} aria-hidden /> Restablecer sección
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Barra de texto flotante (Brandon 2026-06-26): tamaño, negrita, color,
+          alineación del texto en edición. onMouseDown preventDefault mantiene el
+          foco en el contentEditable (no dispara blur/commit). */}
+      {editingField && editingBox && (
+        <div
+          className="pointer-events-auto fixed z-[97] flex items-center gap-0.5 rounded-lg bg-black/90 p-1 shadow-xl ring-1 ring-white/15"
+          style={{
+            top: Math.max(8, editingBox.top - 46),
+            left: Math.max(8, editingBox.left),
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <button type="button" title="Letra más chica" aria-label="Letra más chica"
+            onClick={() => textAction("size-")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-2xs)] font-bold">A−</span>
+          </button>
+          <button type="button" title="Letra más grande" aria-label="Letra más grande"
+            onClick={() => textAction("size+")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-sm)] font-bold">A+</span>
+          </button>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+          <button type="button" title="Negrita" aria-label="Negrita"
+            onClick={() => textAction("bold")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <Bold className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
+          </button>
+          <button type="button" title="Itálica" aria-label="Itálica"
+            onClick={() => textAction("italic")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <Italic className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          </button>
+          <button type="button" title="Subrayado" aria-label="Subrayado"
+            onClick={() => textAction("underline")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <Underline className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          </button>
+          <button type="button" title="MAYÚSCULAS" aria-label="Mayúsculas"
+            onClick={() => textAction("upper")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-2xs)] font-extrabold leading-none">TT</span>
+          </button>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+          <button type="button" title="Menos espacio entre letras" aria-label="Menos interletra"
+            onClick={() => textAction("track-")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-2xs)] font-bold leading-none tracking-tighter">A‹A</span>
+          </button>
+          <button type="button" title="Más espacio entre letras" aria-label="Más interletra"
+            onClick={() => textAction("track+")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-2xs)] font-bold leading-none tracking-widest">A›A</span>
+          </button>
+          <button type="button" title="Sombra de texto" aria-label="Sombra de texto"
+            onClick={() => textAction("tshadow")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-sm)] font-extrabold leading-none" style={{ textShadow: "0 1.5px 2px rgba(255,255,255,0.6)" }}>S</span>
+          </button>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+          <button type="button" title="Alinear izquierda" aria-label="Alinear izquierda"
+            onClick={() => textAction("left")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <AlignLeft className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          </button>
+          <button type="button" title="Centrar" aria-label="Centrar"
+            onClick={() => textAction("center")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <AlignCenter className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          </button>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+          <button type="button" title="Color del texto" aria-label="Color del texto"
+            onClick={() => setTextColorOpen((o) => !o)}
+            className={`flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/15 hover:text-white ${textColorOpen ? "bg-white/15 text-white" : "text-white/85"}`}>
+            <Palette className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          </button>
+          {textColorOpen && (
+            <div className="absolute right-0 top-full mt-1 grid grid-cols-4 gap-1 rounded-lg bg-black/95 p-1.5 shadow-xl ring-1 ring-white/15">
+              {["#ffffff", "#0f172a", ...PRESET_COLORS].slice(0, 8).map((c) => (
+                <button key={c} type="button" title={`Texto ${c}`} aria-label={`Color de texto ${c}`}
+                  onClick={() => { textAction({ color: c }); setTextColorOpen(false); }}
+                  className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
+                  style={{ background: c }} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Banner de edición inline (aparece cuando hay texto activo) */}
+      {editingField && (
+        <div className="pointer-events-none fixed bottom-4 left-1/2 z-[99] -translate-x-1/2 flex items-center gap-2 rounded-full bg-black/90 px-4 py-2 text-sm font-semibold text-white shadow-xl">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
+          Editando · Enter para guardar · Esc para cancelar
+        </div>
+      )}
+    </>
+  );
+}

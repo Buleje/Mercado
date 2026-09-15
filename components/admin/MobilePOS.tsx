@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useId } from "react";
 import Image from "next/image";
 import { Search, X, Plus, Minus, Trash2, Package, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -53,6 +54,10 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [flash, setFlash] = useState(false);
   const [longPressQty, setLongPressQty] = useState<number | null>(null);
+  const qtyModalRef = useRef<HTMLDivElement>(null);
+  const qtyTitleId = useId();
+  const cerrarQtyModal = useCallback(() => setLongPressQty(null), []);
+  useModalAccesible(qtyModalRef, { onCerrar: cerrarQtyModal, activo: longPressQty !== null });
 
   const handleAdd = useCallback(() => {
     setFlash(true);
@@ -92,7 +97,7 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
         className={cn(
           "relative flex flex-col items-center justify-center rounded-xl border border-gray-700 p-2 gap-1 transition-transform active:scale-95 select-none",
           "bg-gray-800 hover:bg-gray-700",
-          flash && "bg-[var(--accent-muted)] border-[var(--data-success-500)]/30",
+          flash && "bg-primary/15 border-[var(--data-success-500)]/30",
         )}
         style={{ height: 80, touchAction: "manipulation" }}
       >
@@ -112,18 +117,25 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
       {/* Long press modal — cantidad */}
       {longPressQty !== null && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6">
-          <div className="bg-gray-900 rounded-3xl p-6 w-full max-w-xs border border-gray-700 space-y-4">
-            <p className="text-white font-bold text-center text-base">{product.name}</p>
+          <div
+            ref={qtyModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={qtyTitleId}
+            tabIndex={-1}
+            className="bg-gray-900 rounded-3xl p-6 w-full max-w-xs border border-gray-700 space-y-4"
+          >
+            <p id={qtyTitleId} className="text-white font-bold text-center text-base">{product.name}</p>
             <p className="text-[var(--text-tertiary)] text-sm text-center">Elige la cantidad</p>
             <div className="flex items-center justify-center gap-6">
-              <button
+              <button aria-label="Disminuir cantidad"
                 onClick={() => setLongPressQty(q => Math.max(1, (q ?? 1) - 1))}
                 className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center active:scale-95"
               >
                 <Minus className="h-5 w-5 text-white" />
               </button>
               <span className="text-4xl font-extrabold text-white w-12 text-center">{longPressQty}</span>
-              <button
+              <button aria-label="Aumentar cantidad"
                 onClick={() => setLongPressQty(q => (q ?? 1) + 1)}
                 className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center active:scale-95"
               >
@@ -139,7 +151,7 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
               </button>
               <button
                 onClick={confirmLongPress}
-                className="flex-1 h-12 rounded-xl bg-[var(--accent-soft)] text-white font-bold active:scale-95"
+                className="flex-1 h-12 rounded-xl bg-primary/10 text-white font-semibold active:scale-95"
               >
                 Agregar {longPressQty}
               </button>
@@ -190,22 +202,22 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
         <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] font-bold">S/{Number(item.product.price).toFixed(2)} c/u</p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
-        <button
+        <button aria-label="Disminuir cantidad"
           onClick={onDec}
-          className="w-11 h-11 rounded-lg bg-gray-700 flex items-center justify-center active:scale-90"
+          className="w-11 h-11 rounded-xl bg-gray-700 flex items-center justify-center active:scale-90"
         >
           <Minus className="h-3 w-3 text-white" />
         </button>
         <span className="w-6 text-center text-sm font-extrabold text-white">{item.quantity}</span>
-        <button
+        <button aria-label="Aumentar cantidad"
           onClick={onInc}
-          className="w-11 h-11 rounded-lg bg-gray-700 flex items-center justify-center active:scale-90"
+          className="w-11 h-11 rounded-xl bg-gray-700 flex items-center justify-center active:scale-90"
         >
           <Plus className="h-3 w-3 text-white" />
         </button>
-        <button
+        <button aria-label="Eliminar"
           onClick={onRemove}
-          className="w-11 h-11 rounded-lg bg-[var(--data-error-500)]/50 flex items-center justify-center active:scale-90 ml-1"
+          className="w-11 h-11 rounded-xl bg-[var(--data-error-500)]/50 flex items-center justify-center active:scale-90 ml-1"
         >
           <Trash2 className="h-3 w-3 text-[var(--data-error-500)]" />
         </button>
@@ -319,7 +331,7 @@ export default function MobilePOS() {
         setPayError(errMsg);
         // Si el server rechaza por fiado sin customerPhone, mostrar pista
         if (res.status === 400 && method === "fiado") {
-          setPayError("Fiado necesita seleccionar cliente. Usá la app desktop.");
+          setPayError("Fiado necesita seleccionar cliente. Usa la app desktop.");
         }
       }
     } catch (err) {
@@ -365,11 +377,11 @@ export default function MobilePOS() {
               placeholder="Buscar producto..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-lg pl-9 pr-9 py-3 text-base focus:outline-none focus:border-[var(--data-success-500)]/30"
+              className="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-xl pl-9 pr-9 h-11 text-base focus:outline-none focus:border-[var(--data-success-500)]/30"
               style={{ fontSize: 16 }}
             />
             {query && (
-              <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <button aria-label="Quitar" onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
                 <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             )}
@@ -385,7 +397,7 @@ export default function MobilePOS() {
               className={cn(
                 "shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-colors",
                 activeCategory === cat
-                  ? "bg-[var(--accent-soft)] text-white"
+                  ? "bg-primary/10 text-white"
                   : "bg-gray-800 text-[var(--text-tertiary)]",
               )}
               style={{ minHeight: 32 }}
@@ -456,7 +468,7 @@ export default function MobilePOS() {
                 onClick={() => handlePay(method)}
                 disabled={!cart.length}
                 className={cn(
-                  "rounded-xl font-bold text-white text-sm transition-colors active:scale-95 disabled:opacity-30",
+                  "rounded-xl font-semibold text-white text-sm transition-colors active:scale-95 disabled:opacity-30",
                   color,
                 )}
                 style={{ height: 60, touchAction: "manipulation" }}
@@ -470,7 +482,7 @@ export default function MobilePOS() {
           <button
             onClick={() => handlePay("efectivo")}
             disabled={!cart.length || paying}
-            className="w-full rounded-xl bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] active:scale-95 text-white font-extrabold text-lg transition-all disabled:opacity-30"
+            className="w-full rounded-xl bg-primary/10 hover:bg-primary/10 active:scale-95 text-white font-semibold text-lg transition-all disabled:opacity-30"
             style={{ height: 80, touchAction: "manipulation" }}
           >
             {paying ? "Procesando..." : paySuccess ? "Cobrado!" : `Cobrar S/${total.toFixed(2)}`}
@@ -485,7 +497,7 @@ export default function MobilePOS() {
 
       {/* Overlay de éxito */}
       {paySuccess && (
-        <div className="fixed inset-0 z-50 bg-[var(--accent-muted)] flex items-center justify-center pointer-events-none">
+        <div className="fixed inset-0 z-50 bg-primary/15 flex items-center justify-center pointer-events-none">
           <div className="text-center">
             <Check className="h-16 w-16 text-white mx-auto mb-2" strokeWidth={3} />
             <p className="text-white text-2xl font-semibold">Cobrado!</p>

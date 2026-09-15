@@ -17,7 +17,8 @@
  * Auto-load del snapshot actual al abrir. Save batch al cerrar.
  */
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
@@ -123,8 +124,16 @@ export default function HealthFillAllModal({
   tenantName,
   onSaved,
 }: HealthFillAllModalProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: saving ? undefined : onClose, cerrarConEscape: false, activo: open });
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [openSections, setOpenSections] = useState<Set<string>>(
     new Set(["identidad", "pagos", "comercial"]),
@@ -332,7 +341,7 @@ export default function HealthFillAllModal({
   if (!open) return null;
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label={`Rellenar datos de ${tenantName}`}
@@ -375,7 +384,7 @@ export default function HealthFillAllModal({
           )}
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-[var(--data-error-500)]">
+            <div className="flex items-start gap-2 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] p-3 text-sm text-[var(--data-error-500)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -535,7 +544,7 @@ export default function HealthFillAllModal({
                     value={form.ruc}
                     onChange={(e) => update("ruc", e.target.value.replace(/[^0-9]/g, ""))}
                     placeholder="20XXXXXXXXX (RUC) o 0XXXXXXX (DNI)"
-                    className={`${inputCls} ${validationErrors.ruc ? "border-rose-400" : ""}`}
+                    className={`${inputCls} ${validationErrors.ruc ? "border-[var(--data-error-500)]" : ""}`}
                   />
                 </Field>
               </Section>
@@ -601,7 +610,7 @@ export default function HealthFillAllModal({
                   className={`rounded-lg border p-3 text-sm ${
                     saveResult.failed.length === 0
                       ? "bg-emerald-50 border-emerald-200 text-[var(--data-success-700)]"
-                      : "bg-amber-50 border-amber-200 text-amber-800"
+                      : "bg-teal-50 border-teal-200 text-teal-800"
                   }`}
                 >
                   {saveResult.failed.length === 0 ? (
@@ -625,7 +634,7 @@ export default function HealthFillAllModal({
 
         {/* Progress bar mientras saving — feedback live */}
         {saving && (
-          <div className="px-5 py-2 border-t border-[var(--rule-base)] bg-[var(--accent-soft)]/30">
+          <div className="px-5 py-2 border-t border-[var(--rule-base)] bg-primary/10">
             <div className="flex items-center justify-between text-[length:var(--ts-xs)] font-bold text-[var(--accent)] mb-1">
               <span>Guardando...</span>
               <span className="tabular-nums">{saveProgress}/13</span>
@@ -644,7 +653,7 @@ export default function HealthFillAllModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-bold rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-raised)]"
+            className="px-4 min-h-10 text-sm font-semibold rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-raised)]"
           >
             Cancelar
           </button>
@@ -652,7 +661,7 @@ export default function HealthFillAllModal({
             type="button"
             onClick={saveAll}
             disabled={saving || loading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 min-h-10 text-sm font-semibold rounded-xl bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -713,8 +722,8 @@ function Section({
                   isComplete
                     ? "bg-emerald-100 text-[var(--data-success-700)]"
                     : scorePct >= 50
-                      ? "bg-amber-100 text-[var(--data-warning-700)]"
-                      : "bg-rose-100 text-[var(--data-error-500)]"
+                      ? "bg-teal-100 text-teal-700"
+                      : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
                 }`}
               >
                 {score.ok}/{score.total}

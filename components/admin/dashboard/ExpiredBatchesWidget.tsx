@@ -2,7 +2,9 @@
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useState, useEffect, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
+import { useState, useEffect, useCallback, useRef, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   AlertOctagon,
   Calendar,
@@ -80,14 +82,14 @@ function fmtCurrency(amount: number) {
 function SkeletonRow() {
   return (
     <div className="flex items-center gap-3 py-2.5 animate-pulse">
-      <div className="h-8 w-8 rounded-lg bg-gray-200 dark:bg-surface shrink-0" />
+      <div className="h-8 w-8 rounded-lg bg-[var(--rule-base)] shrink-0" />
       <div className="flex-1 space-y-1.5">
-        <div className="h-3 w-36 bg-gray-200 dark:bg-surface rounded" />
-        <div className="h-2.5 w-24 bg-gray-200 dark:bg-surface rounded" />
+        <div className="h-3 w-36 bg-[var(--rule-base)] rounded" />
+        <div className="h-2.5 w-24 bg-[var(--rule-base)] rounded" />
       </div>
       <div className="flex flex-col items-end gap-1">
-        <div className="h-4 w-14 bg-gray-200 dark:bg-surface rounded-full" />
-        <div className="h-3 w-10 bg-gray-200 dark:bg-surface rounded" />
+        <div className="h-4 w-14 bg-[var(--rule-base)] rounded-full" />
+        <div className="h-3 w-10 bg-[var(--rule-base)] rounded" />
       </div>
     </div>
   );
@@ -117,10 +119,14 @@ export default function ExpiredBatchesWidget() {
     });
   };
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     if (modal.submitting) return;
     setModal((prev) => ({ ...prev, open: false }));
-  };
+  }, [modal.submitting]);
+
+  const mermaModalRef = useRef<HTMLDivElement>(null);
+  const mermaModalTitleId = useId();
+  useModalAccesible(mermaModalRef, { onCerrar: closeModal, activo: modal.open });
 
   const toggleBatch = (id: string) => {
     setModal((prev) => {
@@ -229,7 +235,7 @@ export default function ExpiredBatchesWidget() {
         </div>
 
         {/* Sin vencidos */}
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 px-4 py-3">
           <Package className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] shrink-0" />
           <span className="text-xs font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             No hay lotes vencidos con stock
@@ -255,7 +261,7 @@ export default function ExpiredBatchesWidget() {
           onClick={fetchExpired}
           disabled={loading}
           title="Actualizar"
-          className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
+          className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-40"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
         </button>
@@ -305,7 +311,7 @@ export default function ExpiredBatchesWidget() {
         <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
           {/* Cabecera de tabla */}
           {!loading && batches.length > 0 && (
-            <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2 bg-gray-50 dark:bg-surface/40 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2 bg-[var(--surface-sunken)] dark:bg-surface/40 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted">
                 Producto
               </span>
@@ -429,7 +435,7 @@ export default function ExpiredBatchesWidget() {
               <button
                 type="button"
                 onClick={openModal}
-                className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 rounded-lg text-xs font-semibold
+                className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 rounded-xl text-xs font-semibold
                   bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]
                   border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50
                   hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/40 transition-colors"
@@ -457,7 +463,7 @@ export default function ExpiredBatchesWidget() {
             className={cn(
               "mt-2 rounded-xl border px-4 py-2.5 text-xs font-medium",
               modal.toast.type === "success"
-                ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 : "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}
           >
@@ -480,6 +486,11 @@ export default function ExpiredBatchesWidget() {
           >
             <m.div
               key="merma-modal"
+              ref={mermaModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={mermaModalTitleId}
+              tabIndex={-1}
               initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -490,15 +501,16 @@ export default function ExpiredBatchesWidget() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <div className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
-                  <SectionTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                  <SectionTitle id={mermaModalTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     Registrar merma
                   </SectionTitle>
                 </div>
                 <button
                   type="button"
+                  aria-label="Cerrar"
                   onClick={closeModal}
                   disabled={modal.submitting}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
+                  className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-40"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -518,10 +530,10 @@ export default function ExpiredBatchesWidget() {
                       onClick={() => toggleBatch(b.id)}
                       disabled={modal.submitting}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-xl border text-left transition-colors",
+                        "w-full flex items-center gap-3 px-3 min-h-10 rounded-xl border text-left transition-colors",
                         checked
                           ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20"
-                          : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-gray-50 dark:hover:bg-surface/40"
+                          : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/40"
                       )}
                     >
                       {checked
@@ -542,21 +554,22 @@ export default function ExpiredBatchesWidget() {
               </div>
 
               {/* Motivo */}
-              <div className="px-5 py-3">
-                <label className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted block mb-1.5">
-                  Motivo
-                </label>
+              <Field
+                label="Motivo"
+                labelClassName="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted block mb-1.5"
+                className="px-5 py-3"
+              >
                 <select
                   value={modal.reason}
                   onChange={(e) => setModal((prev) => ({ ...prev, reason: e.target.value as MermaReason }))}
                   disabled={modal.submitting}
-                  className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                  className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] px-3 h-10 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
                 >
                   <option value="vencimiento">Vencimiento</option>
                   <option value="deterioro">Deterioro / Daño</option>
                   <option value="rotura">Rotura</option>
                 </select>
-              </div>
+              </Field>
 
               {/* Toast inline (errores mientras el modal está abierto) */}
               <AnimatePresence>
@@ -580,7 +593,7 @@ export default function ExpiredBatchesWidget() {
                   type="button"
                   onClick={closeModal}
                   disabled={modal.submitting}
-                  className="min-h-[44px] px-4 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface/40 transition-colors disabled:opacity-40"
+                  className="min-h-[44px] px-4 rounded-xl text-xs font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/40 transition-colors disabled:opacity-40"
                 >
                   Cancelar
                 </button>
@@ -588,7 +601,7 @@ export default function ExpiredBatchesWidget() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={modal.submitting || modal.selected.size === 0}
-                  className="min-h-[44px] px-4 rounded-lg text-xs font-semibold text-white bg-[var(--data-error-500)] dark:bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  className="min-h-[44px] px-4 rounded-xl text-xs font-semibold text-white bg-[var(--data-error-500)] dark:bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   {modal.submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Confirmar registro ({modal.selected.size})

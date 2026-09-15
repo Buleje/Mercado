@@ -23,7 +23,7 @@ export { useHiddenTabs } from "./useHiddenTabs";
 export { useCategoryOrder } from "./useCategoryOrder";
 export { useOnboardingTrigger } from "./useOnboardingTrigger";
 export { useAdminAlerts } from "./useAdminAlerts";
-export { useNewOrderNotification } from "./useNewOrderNotification";
+export { useNewOrderNotification, useNewWaMessageNotification } from "./useNewOrderNotification";
 export { useNotificationPermissionPrompt } from "./useNotificationPermissionPrompt";
 export { useMobileTableCards } from "./useMobileTableCards";
 export { useOnboardingTourTrigger } from "./useOnboardingTourTrigger";

@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const bodySchema = z.object({
   supplierId: z.string().optional(),
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     const admin = await requireAdmin(req, ["owner", "admin", "manager"]);
     if (admin instanceof NextResponse) return admin;
 
-    const raw = await req.json().catch(() => null);
+    const raw = await leerJson(req);
     const parsed = bodySchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(

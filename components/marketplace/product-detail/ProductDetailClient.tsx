@@ -18,8 +18,6 @@ import {
   ChevronRight,
   Home,
   Store,
-  Smartphone,
-  Banknote,
   ArrowLeft,
   Share2,
   Star,
@@ -32,10 +30,15 @@ import { ProductInfo } from "./ProductInfo";
 import { ProductActions } from "./ProductActions";
 import { ProductDescription } from "./ProductDescription";
 import { ProductSpecs } from "./ProductSpecs";
+import { ProductRichContent } from "./ProductRichContent";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 import { ProductSellerInfo } from "./ProductSellerInfo";
 import ProductReviews from "./ProductReviews";
 import { ProductRelated, type RelatedProduct } from "./ProductRelated";
 import FrequentlyBoughtTogether from "./FrequentlyBoughtTogether";
+import { ProductCatalogExplorer, CATALOG_ALL } from "./ProductCatalogExplorer";
+// Brandon 2026-06-25: ProductSideNav (barra lateral con "Categorías de la tienda")
+// REMOVIDA del PDP — contenido a ancho completo, más limpio y menos JS.
 import type { ProductBadgeIntent } from "@buleje/design-system";
 // Trust signals (ronda 4): señales sociales + escasez para aumentar conversion
 import LowStockBadge from "@/components/marketplace/trust/LowStockBadge";
@@ -55,6 +58,13 @@ export interface PDPProduct {
   stock: number | null;
   imageUrl: string | null;
   badge?: string | null;
+  brand?: string | null;
+  weightKg?: number | null;
+  dimensions?: string | null;
+  /** Ficha técnica editable (specs libres) cargada en admin. */
+  customSpecs?: Array<{ label: string; value: string }>;
+  /** Contenido rico A+ (infografías): bloques imagen+texto. */
+  richContent?: Array<{ heading?: string; body?: string; imageUrl?: string }>;
 }
 
 export interface PDPStore {
@@ -305,6 +315,13 @@ export function ProductDetailClient({
   // que el orquestador no lo pasaba. Real: total del endpoint + promedio de las
   // reseñas devueltas. Sin reseñas → row oculto (correcto).
   const [reviewSummary, setReviewSummary] = useState<{ avg: number; count: number } | null>(null);
+  // UGC: fotos reales de clientes (de las reseñas) para sumar a la galería.
+  const [ugcPhotos, setUgcPhotos] = useState<string[]>([]);
+  // Navegación de categorías compartida entre la sidebar y el catálogo de abajo.
+  const [exploreCategory, setExploreCategory] = useState<string>(CATALOG_ALL);
+  // exploreCategories: solo se reporta al explorer (onCategoriesLoaded); ya no se
+  // lee acá tras quitar la sidebar — se mantiene el setter para no romper su API.
+  const [, setExploreCategories] = useState<string[]>([]);
   useEffect(() => {
     let cancelled = false;
     // Mismos params que ProductReviews (el endpoint exige filter+sort+limit+offset;
@@ -314,6 +331,12 @@ export function ProductDetailClient({
       .then((j) => {
         if (cancelled || !j) return;
         const list = Array.isArray(j.data) ? j.data : Array.isArray(j.reviews) ? j.reviews : [];
+        // Fotos de clientes (UGC) — hasta 6 para la galería.
+        const photos = list
+          .flatMap((x: { photos?: unknown }) => (Array.isArray(x?.photos) ? x.photos : []))
+          .filter((u: unknown): u is string => typeof u === "string" && u.length > 0)
+          .slice(0, 6);
+        if (photos.length) setUgcPhotos(photos);
         const count = typeof j.total === "number" ? j.total : list.length;
         if (!count) return;
         // Promedio: usa breakdown.average si viene; si no, promedia los ratings.
@@ -376,10 +399,15 @@ export function ProductDetailClient({
           <div className="p-4 sm:p-5 lg:p-6">
             {/* Layout 3-col: galería | info | buy-box sticky → 2-col lg → stack mobile */}
             <div className="relative grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)_360px] gap-6 lg:gap-8 xl:gap-10 items-start">
-              {/* LEFT — Gallery */}
+              {/* LEFT — Gallery (catálogo + fotos reales de clientes) */}
               <div className="lg:self-start lg:sticky lg:top-6">
                 <ProductGalleryDS
-                  images={images}
+                  images={[
+                    ...images,
+                    ...ugcPhotos
+                      .filter((u) => !images.some((img) => img.url === u))
+                      .map((u) => ({ url: u, alt: `Foto de cliente de ${product.name}`, ugc: true })),
+                  ]}
                   productName={product.name}
                   category={product.category}
                   badge={galleryBadge}
@@ -435,6 +463,7 @@ export function ProductDetailClient({
                 <ProductSellerInfo
                   storeName={store.name}
                   storeSlug={store.slug}
+                  storeLogo={store.logo}
                   storeDescription={store.description}
                   storeZone={store.zone}
                   storeKm={store.km}
@@ -447,25 +476,25 @@ export function ProductDetailClient({
                   <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mb-3">
                     Pagás al recibir — sin tarjetas.
                   </p>
-                  <ul className="space-y-2 text-sm text-[var(--text-primary)]">
-                    <li className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden /> Yape
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden /> Plin
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Banknote className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden /> Efectivo
-                    </li>
+                  <ul className="space-y-2 text-sm font-medium text-[var(--text-primary)]">
+                    {["Yape", "Plin", "Efectivo"].map((m) => (
+                      <li key={m} className="flex items-center gap-2.5">
+                        <PaymentMethodIcon method={m} size="sm" /> {m}
+                      </li>
+                    ))}
                   </ul>
                 </section>
               </aside>
             </div>
 
-            {/* Barra de TABS — ancla a cada sección de abajo */}
+            {/* Brandon 2026-06-25: barra lateral (ProductSideNav) REMOVIDA — el
+                contenido del PDP va a ancho completo, más limpio y rápido. */}
+            <div className="mt-7 min-w-0">
+
+            {/* Barra de TABS (mobile) — ancla a cada sección de abajo */}
             <nav
               aria-label="Secciones del producto"
-              className="mt-7 border-b border-[var(--rule-base)] px-1 sm:px-2"
+              className="border-b border-[var(--rule-base)] px-1 sm:px-2 lg:hidden"
             >
               <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto h-11 text-sm font-medium [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {[
@@ -500,19 +529,43 @@ export function ProductDetailClient({
                   category={product.category}
                   unit={product.unit}
                   price={product.price}
+                  brand={product.brand}
+                  weightKg={product.weightKg}
+                  dimensions={product.dimensions}
+                  customSpecs={product.customSpecs}
                 />
+                {product.richContent && product.richContent.length > 0 && (
+                  <div className="mt-4">
+                    <ProductRichContent blocks={product.richContent} />
+                  </div>
+                )}
               </div>
 
-              <FrequentlyBoughtTogether
-                productId={product.id}
-                storeId={store.id}
-                storeName={store.name}
-                storeSlug={store.slug}
-              />
+              <div id="combo" className="scroll-mt-28">
+                <FrequentlyBoughtTogether
+                  productId={product.id}
+                  storeId={store.id}
+                  storeName={store.name}
+                  storeSlug={store.slug}
+                  anchor={{
+                    productId: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.imageUrl,
+                    storeId: store.id,
+                    storeName: store.name,
+                    storeSlug: store.slug,
+                    storeProductId,
+                    unit: product.unit,
+                    category: product.category,
+                  }}
+                />
+              </div>
 
               <div id="valoraciones" className="scroll-mt-28">
                 <ProductReviews productId={product.id} productName={product.name} />
               </div>
+            </div>
             </div>
           </div>
         </div>
@@ -523,6 +576,18 @@ export function ProductDetailClient({
             <ProductRelated products={relatedProducts} storeSlug={store.slug} />
           </div>
         )}
+
+        {/* Catálogo navegable por categoría — explorar más de la tienda */}
+        <div id="explorar" className="mt-8 sm:mt-10 scroll-mt-28">
+          <ProductCatalogExplorer
+            storeSlug={store.slug}
+            storeName={store.name}
+            currentProductId={product.id}
+            activeCategory={exploreCategory}
+            onCategoryChange={setExploreCategory}
+            onCategoriesLoaded={setExploreCategories}
+          />
+        </div>
       </div>
 
       {/* Sticky mobile bar */}
@@ -534,6 +599,7 @@ export function ProductDetailClient({
         storeProductId={storeProductId}
         name={product.name}
         price={product.price}
+        previousPrice={product.previousPrice}
         image={product.imageUrl}
         unit={product.unit}
         stock={product.stock}
@@ -558,6 +624,7 @@ function MobileStickyBar({
   storeProductId,
   name,
   price,
+  previousPrice,
   image,
   unit,
   stock,
@@ -569,6 +636,7 @@ function MobileStickyBar({
   storeProductId: string;
   name: string;
   price: number;
+  previousPrice?: number | null;
   image: string | null;
   unit: string | null;
   stock: number | null;
@@ -592,9 +660,16 @@ function MobileStickyBar({
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <Caption className="text-[var(--text-tertiary)] truncate">{name}</Caption>
-          <p className="text-[length:var(--ts-lg)] font-semibold text-[var(--text-primary)] tabular-nums leading-tight">
-            S/ {price.toFixed(2)}
-          </p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-[length:var(--ts-lg)] font-semibold text-[var(--text-primary)] tabular-nums leading-tight">
+              S/ {price.toFixed(2)}
+            </p>
+            {previousPrice != null && previousPrice > price && (
+              <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-700,#047857)] tabular-nums">
+                Ahorras S/ {(previousPrice - price).toFixed(2)}
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={handleAdd}

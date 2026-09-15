@@ -24,6 +24,8 @@ import {
   GripVertical,
 } from "@buleje/design-system/icons";
 import Image from "next/image";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   DndContext,
@@ -43,6 +45,7 @@ import { CSS } from "@dnd-kit/utilities";
 import AdminTabShell from "../../_components/_shared/AdminTabShell";
 import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
 
+import { CardTitle } from "@buleje/design-system";
 interface ProductSummary {
   id: number;
   name: string;
@@ -204,7 +207,7 @@ export default function VariationsTab() {
                 placeholder="Buscar producto…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                className="w-full pl-9 pr-3 h-10 text-sm rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
               />
             </div>
           </div>
@@ -229,7 +232,7 @@ export default function VariationsTab() {
                         onClick={() => setSelectedProductId(p.id)}
                         className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-colors ${
                           isSel
-                            ? "bg-[var(--accent-soft)]"
+                            ? "bg-primary/10"
                             : "hover:bg-[var(--surface-sunken)]"
                         }`}
                       >
@@ -293,6 +296,7 @@ function ProductModifierEditor({
   product: ProductSummary;
   onChange: () => void;
 }) {
+  const { confirm, prompt } = useConfirm();
   const [groups, setGroups] = useState<ModifierGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -326,103 +330,181 @@ function ProductModifierEditor({
     maxSelect: number;
     options: Array<{ name: string; priceDelta?: number }>;
   }) {
-    const res = await fetch(
-      `/api/admin/products/${product.id}/modifier-groups`,
-      {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          name: input.name,
-          required: input.required,
-          minSelect: input.minSelect,
-          maxSelect: input.maxSelect,
-          position: groups.length,
-        }),
-      },
-    );
-    if (!res.ok) throw new Error("No se pudo crear el grupo");
-    const group = (await res.json()) as ModifierGroup;
-    // Crear opciones en cascada
-    for (const [idx, opt] of input.options.entries()) {
-      await fetch(`/api/admin/modifier-groups/${group.id}/options`, {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          name: opt.name,
-          priceDelta: opt.priceDelta ?? 0,
-          position: idx,
-        }),
-      });
+    try {
+      const res = await fetch(
+        `/api/admin/products/${product.id}/modifier-groups`,
+        {
+          method: "POST",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            name: input.name,
+            required: input.required,
+            minSelect: input.minSelect,
+            maxSelect: input.maxSelect,
+            position: groups.length,
+          }),
+        },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo crear el grupo (error ${res.status})`);
+        return;
+      }
+      const group = (await res.json()) as ModifierGroup;
+      // Crear opciones en cascada
+      let optionFailures = 0;
+      for (const [idx, opt] of input.options.entries()) {
+        const optRes = await fetch(`/api/admin/modifier-groups/${group.id}/options`, {
+          method: "POST",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            name: opt.name,
+            priceDelta: opt.priceDelta ?? 0,
+            position: idx,
+          }),
+        });
+        if (!optRes.ok) optionFailures += 1;
+      }
+      if (optionFailures > 0) {
+        toast.error(`El grupo se creó, pero ${optionFailures} opción${optionFailures === 1 ? "" : "es"} no se pudo${optionFailures === 1 ? "" : "ieron"} agregar.`);
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] crear grupo falló", err);
+      toast.error("No se pudo crear el grupo — revisa tu conexión.");
     }
-    await reload();
-    onChange();
   }
 
   async function deleteGroup(groupId: string) {
-    if (!confirm("¿Eliminar este grupo y todas sus opciones?")) return;
-    const res = await fetch(
-      `/api/admin/products/${product.id}/modifier-groups/${groupId}`,
-      { method: "DELETE", headers: csrfHeaders() },
-    );
-    if (!res.ok) {
-      alert("No se pudo eliminar");
-      return;
+    if (!(await confirm({
+      title: "¿Eliminar este grupo y todas sus opciones?",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
+    try {
+      const res = await fetch(
+        `/api/admin/products/${product.id}/modifier-groups/${groupId}`,
+        { method: "DELETE", headers: csrfHeaders() },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo eliminar el grupo (error ${res.status})`);
+        return;
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] eliminar grupo falló", err);
+      toast.error("No se pudo eliminar el grupo — revisa tu conexión.");
     }
-    await reload();
-    onChange();
   }
 
   async function updateGroup(
     groupId: string,
     patch: Partial<Pick<ModifierGroup, "name" | "required" | "minSelect" | "maxSelect" | "isActive">>,
   ) {
-    await fetch(
-      `/api/admin/products/${product.id}/modifier-groups/${groupId}`,
-      {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(patch),
-      },
-    );
-    await reload();
-    onChange();
+    try {
+      const res = await fetch(
+        `/api/admin/products/${product.id}/modifier-groups/${groupId}`,
+        {
+          method: "PATCH",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify(patch),
+        },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo guardar el grupo (error ${res.status})`);
+        return;
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] guardar grupo falló", err);
+      toast.error("No se pudo guardar el grupo — revisa tu conexión.");
+    }
   }
 
   async function addOption(groupId: string) {
-    const name = prompt("Nombre de la opcion (ej: Mayonesa, Talla M, Pierna)");
-    if (!name?.trim()) return;
-    const priceDeltaStr = prompt("Costo adicional en S/ (0 si no cobra extra)", "0");
-    const priceDelta = parseFloat(priceDeltaStr ?? "0") || 0;
-    await fetch(`/api/admin/modifier-groups/${groupId}/options`, {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ name: name.trim(), priceDelta }),
+    const name = await prompt({
+      title: "Nombre de la opción",
+      label: "Nombre",
+      placeholder: "Ej. Mayonesa, Talla M, Pierna",
+      required: true,
     });
-    await reload();
-    onChange();
+    if (!name?.trim()) return;
+    const priceDeltaStr = await prompt({
+      title: "Costo adicional",
+      label: "Costo adicional en S/ (0 si no cobra extra)",
+      defaultValue: "0",
+      inputType: "number",
+    });
+    const priceDelta = parseFloat(priceDeltaStr ?? "0") || 0;
+    try {
+      const res = await fetch(`/api/admin/modifier-groups/${groupId}/options`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ name: name.trim(), priceDelta }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo agregar la opción (error ${res.status})`);
+        return;
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] agregar opción falló", err);
+      toast.error("No se pudo agregar la opción — revisa tu conexión.");
+    }
   }
 
   async function updateOption(
     optionId: string,
     patch: Partial<Pick<ModifierOption, "name" | "priceDelta" | "isDefault" | "isActive" | "imageUrl">>,
   ) {
-    await fetch(`/api/admin/modifier-options/${optionId}`, {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(patch),
-    });
-    await reload();
-    onChange();
+    try {
+      const res = await fetch(`/api/admin/modifier-options/${optionId}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo guardar la opción (error ${res.status})`);
+        return;
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] guardar opción falló", err);
+      toast.error("No se pudo guardar la opción — revisa tu conexión.");
+    }
   }
 
   async function deleteOption(optionId: string) {
-    if (!confirm("¿Eliminar esta opcion?")) return;
-    await fetch(`/api/admin/modifier-options/${optionId}`, {
-      method: "DELETE",
-      headers: csrfHeaders(),
-    });
-    await reload();
-    onChange();
+    if (!(await confirm({
+      title: "¿Eliminar esta opción?",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
+    try {
+      const res = await fetch(`/api/admin/modifier-options/${optionId}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(typeof body?.error === "string" ? body.error : `No se pudo eliminar la opción (error ${res.status})`);
+        return;
+      }
+      await reload();
+      onChange();
+    } catch (err) {
+      console.warn("[VariationsTab] eliminar opción falló", err);
+      toast.error("No se pudo eliminar la opción — revisa tu conexión.");
+    }
   }
 
   return (
@@ -441,9 +523,9 @@ function ProductModifierEditor({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-bold text-[var(--text-primary)] truncate">
+          <CardTitle className="text-[var(--text-primary)] truncate">
             {product.name}
-          </h3>
+          </CardTitle>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
             {product.category} · base {fmt(product.price)}
           </p>
@@ -470,7 +552,7 @@ function ProductModifierEditor({
                   Aún no tienes variaciones para este producto.
                 </p>
                 <p className="text-xs text-[var(--text-tertiary)]">
-                  Empezá con un preset rápido (abajo) o creá uno custom.
+                  Empieza con un preset rápido (abajo) o crea uno custom.
                 </p>
               </div>
             )}
@@ -479,21 +561,29 @@ function ProductModifierEditor({
               groups={groups}
               onReorder={async (ids) => {
                 // Optimistic — actualizamos el orden en local primero
+                const previous = groups;
                 const reordered = ids
                   .map((id) => groups.find((g) => g.id === id))
                   .filter((g): g is ModifierGroup => Boolean(g));
                 setGroups(reordered);
-                await fetch(
-                  `/api/admin/products/${product.id}/modifier-groups/reorder`,
-                  {
-                    method: "POST",
-                    headers: csrfHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({ ids }),
-                  },
-                ).catch((err) => {
-                   
-                  console.warn("[reorder-groups] silent fail", err);
-                });
+                try {
+                  const res = await fetch(
+                    `/api/admin/products/${product.id}/modifier-groups/reorder`,
+                    {
+                      method: "POST",
+                      headers: csrfHeaders({ "Content-Type": "application/json" }),
+                      body: JSON.stringify({ ids }),
+                    },
+                  );
+                  if (!res.ok) {
+                    setGroups(previous);
+                    toast.error(`No se pudo guardar el orden de los grupos (error ${res.status})`);
+                  }
+                } catch (err) {
+                  setGroups(previous);
+                  console.warn("[VariationsTab] reordenar grupos falló", err);
+                  toast.error("No se pudo guardar el orden de los grupos — revisa tu conexión.");
+                }
               }}
               renderGroup={(g) => (
                 <GroupCard
@@ -504,17 +594,24 @@ function ProductModifierEditor({
                   onUpdateOption={updateOption}
                   onDeleteOption={deleteOption}
                   onReorderOptions={async (optionIds) => {
-                    await fetch(
-                      `/api/admin/modifier-groups/${g.id}/options/reorder`,
-                      {
-                        method: "POST",
-                        headers: csrfHeaders({ "Content-Type": "application/json" }),
-                        body: JSON.stringify({ ids: optionIds }),
-                      },
-                    ).catch((err) => {
-                       
-                      console.warn("[reorder-options] silent fail", err);
-                    });
+                    try {
+                      const res = await fetch(
+                        `/api/admin/modifier-groups/${g.id}/options/reorder`,
+                        {
+                          method: "POST",
+                          headers: csrfHeaders({ "Content-Type": "application/json" }),
+                          body: JSON.stringify({ ids: optionIds }),
+                        },
+                      );
+                      if (!res.ok) {
+                        toast.error(`No se pudo guardar el orden de las opciones (error ${res.status})`);
+                      }
+                      await reload();
+                    } catch (err) {
+                      console.warn("[VariationsTab] reordenar opciones falló", err);
+                      toast.error("No se pudo guardar el orden de las opciones — revisa tu conexión.");
+                      await reload();
+                    }
                   }}
                 />
               )}
@@ -539,7 +636,7 @@ function ProductModifierEditor({
                         options: p.options,
                       })
                     }
-                    className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-left hover:border-[var(--accent)]/40 hover:bg-[var(--accent-soft)]/30 transition-colors"
+                    className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-left hover:border-[var(--accent)]/40 hover:bg-primary/10 transition-colors"
                   >
                     <p className="text-sm font-bold text-[var(--text-primary)] inline-flex items-center gap-1">
                       <Plus className="h-3.5 w-3.5 text-[var(--accent)]" aria-hidden />
@@ -552,8 +649,13 @@ function ProductModifierEditor({
                 ))}
                 <button
                   type="button"
-                  onClick={() => {
-                    const name = prompt("Nombre del grupo (ej: Toppings)");
+                  onClick={async () => {
+                    const name = await prompt({
+                      title: "Nombre del grupo",
+                      label: "Nombre",
+                      placeholder: "Ej. Toppings",
+                      required: true,
+                    });
                     if (!name?.trim()) return;
                     void addGroup({
                       name: name.trim(),
@@ -563,7 +665,7 @@ function ProductModifierEditor({
                       options: [],
                     });
                   }}
-                  className="rounded-lg border border-dashed border-[var(--accent)]/40 bg-[var(--accent-soft)]/20 p-3 text-left hover:bg-[var(--accent-soft)] transition-colors"
+                  className="rounded-xl border border-dashed border-[var(--accent)]/40 bg-primary/10 p-3 text-left hover:bg-primary/10 transition-colors"
                 >
                   <p className="text-sm font-bold text-[var(--accent)] inline-flex items-center gap-1">
                     <Plus className="h-3.5 w-3.5" aria-hidden />
@@ -637,6 +739,7 @@ function GroupCard({
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
+          aria-label="Nombre del grupo"
           className="flex-1 bg-transparent text-base font-bold text-[var(--text-primary)] focus:outline-none"
         />
         <button
@@ -692,7 +795,7 @@ function GroupCard({
       <div className="px-4 py-3 space-y-2">
         {group.options.length === 0 && (
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-            Sin opciones — agregá la primera con el botón de abajo.
+            Sin opciones — agrega la primera con el botón de abajo.
           </p>
         )}
         {group.options.length > 0 && onReorderOptions ? (
@@ -798,11 +901,11 @@ function OptionRow({
   const MAX_BYTES = 800 * 1024;
   async function handleFile(file: File) {
     if (!file.type.startsWith("image/")) {
-      alert("Solo imagenes (JPG, PNG, WebP)");
+      toast.error("Solo imagenes (JPG, PNG, WebP)");
       return;
     }
     if (file.size > MAX_BYTES) {
-      alert(`Imagen muy grande. Maximo 800KB; subiste ${(file.size / 1024).toFixed(0)}KB`);
+      toast.error(`Imagen muy grande. Maximo 800KB; subiste ${(file.size / 1024).toFixed(0)}KB`);
       return;
     }
     setBusy(true);
@@ -862,6 +965,7 @@ function OptionRow({
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={commit}
+          aria-label="Nombre de la opción"
           className="text-sm font-semibold text-[var(--text-primary)] bg-transparent focus:outline-none"
         />
         <input
@@ -869,7 +973,7 @@ function OptionRow({
           onChange={(e) => setImageUrl(e.target.value)}
           onBlur={commit}
           readOnly={imageUrl.startsWith("data:")}
-          placeholder="URL imagen o arrastrá un archivo"
+          placeholder="URL imagen o arrastra un archivo"
           className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-transparent focus:outline-none truncate"
         />
       </div>
@@ -881,6 +985,7 @@ function OptionRow({
           value={priceDelta}
           onChange={(e) => setPriceDelta(e.target.value)}
           onBlur={commit}
+          aria-label="Costo adicional en soles"
           className="w-14 rounded border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1 py-0.5 text-sm text-right tabular-nums"
         />
       </div>
@@ -908,7 +1013,7 @@ function OptionRow({
           type="button"
           onClick={onDelete}
           aria-label={`Eliminar ${option.name}`}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-rose-50 dark:hover:bg-rose-950/30"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-rose-50 dark:hover:bg-rose-950/30"
         >
           {busy ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
@@ -986,7 +1091,7 @@ function SortableGroupItem({
         {...attributes}
         {...listeners}
         aria-label="Arrastrar para reordenar"
-        className="shrink-0 self-stretch flex items-center px-1 rounded-lg cursor-grab active:cursor-grabbing text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+        className="shrink-0 self-stretch flex items-center px-1 rounded-xl cursor-grab active:cursor-grabbing text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
       >
         <GripVertical className="h-4 w-4" aria-hidden />
       </button>

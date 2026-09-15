@@ -1,15 +1,20 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { toast } from "sonner";
+import { CardTitle, LoadingState, BlockTitle } from "@buleje/design-system";
+import { useState, useEffect, useCallback, useId, useRef, useMemo } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
-  Plus, X, DollarSign, Calendar, User, FileText,
-  ChevronLeft, ChevronRight, Loader2, AlertTriangle, CreditCard,
+  Plus, X, DollarSign, Calendar, User,
+  ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   Clock, CheckCircle2, XCircle, Ban, MessageCircle, Printer, PenTool, Download,
   ArrowUp, ArrowDown, Maximize2, Minimize2,
-  LayoutList, Columns3, MapPin, Search, RefreshCw, HandCoins } from "@buleje/design-system/icons";
+  MapPin, Search, RefreshCw, HandCoins, Share2 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
@@ -17,6 +22,9 @@ import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
+import { waLink } from "@/lib/whatsapp-link";
+import { tenantCacheKey } from "@/lib/tenant-cache";
+import { computeReliabilityScore, type ReliabilityScore } from "@/lib/fiados/reliability";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 
 import dynamic from "next/dynamic";
@@ -28,6 +36,9 @@ const FiadoTendenciaCobroChart = dynamic(() => import("./FiadoTendenciaCobroChar
 });
 const FiadoModals = dynamic(() => import("./fiados/FiadoModals"), { ssr: false });
 const FiadoStats = dynamic(() => import("./fiados/FiadoStats"), { ssr: false });
+const FiadoMarketplaceToggle = dynamic(() => import("./fiados/FiadoMarketplaceToggle"), { ssr: false });
+const CreditRequestsPanel = dynamic(() => import("./fiados/CreditRequestsPanel"), { ssr: false });
+const FiadoCobranzaView = dynamic(() => import("./fiados/cobranza/CobranzaView"), { ssr: false });
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -43,7 +54,7 @@ type FiadoCuota = {
   createdAt: string;
 };
 
-type Fiado = {
+export type Fiado = {
   id: string;
   tenantId: string;
   customerId: string;
@@ -62,7 +73,7 @@ type Fiado = {
 
 const STATUS_META: Record<FiadoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2; variant: BadgeVariant }> = {
   ACTIVO:    { label: "Activo",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)]",   icon: Clock,       variant: "warning" },
-  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: CheckCircle2, variant: "success" },
+  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-primary/10", icon: CheckCircle2, variant: "success" },
   VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle,     variant: "error" },
   CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-[var(--surface-sunken)]",     icon: Ban,         variant: "neutral" },
 };
@@ -76,6 +87,10 @@ function formatDate(iso: string) {
 }
 
 const PER_PAGE = 10;
+
+// AdminTabBar: coherencia con el resto del admin (reorden por drag,
+// registro en sidebar). Persistencia en `tab-order-${FIADOS_MODULE_ID}`.
+const FIADOS_MODULE_ID = "fiados";
 
 // ── Mejora 15: Semáforo visual por fiado ────────────────────────────────────
 
@@ -117,55 +132,7 @@ function FiadoSemaphore({ fiado }: { fiado: { status: string; fechaVence?: strin
   return <StatusBadge variant="success" label="Al dia" dot size="sm" />;
 }
 
-// ── Mejora 11: Score de confiabilidad para fiados ────────────────────────────
-
-type ReliabilityScore = {
-  score: number; // 1-5
-  label: string;
-  pagosATiempo: number;
-  pagosTotal: number;
-  diasPromedioPago: number;
-  sufficientHistory: boolean;
-};
-
-function computeReliabilityScore(fiados: Fiado[]): ReliabilityScore {
-  // Solo considerar fiados completados (PAGADO)
-  const completados = fiados.filter(f => f.status === "PAGADO");
-  if (completados.length < 3) {
-    return { score: 0, label: "Sin historial", pagosATiempo: 0, pagosTotal: 0, diasPromedioPago: 0, sufficientHistory: false };
-  }
-
-  let pagosATiempo = 0;
-  let totalDiasPago = 0;
-
-  for (const f of completados) {
-    const createdAt = new Date(f.createdAt).getTime();
-    const updatedAt = new Date(f.updatedAt).getTime(); // pagadoEn ~ updatedAt
-    const diasPago = Math.max(0, Math.floor((updatedAt - createdAt) / (1000 * 60 * 60 * 24)));
-    totalDiasPago += diasPago;
-
-    if (f.fechaVence) {
-      const vence = new Date(f.fechaVence).getTime();
-      if (updatedAt <= vence) pagosATiempo++;
-    } else {
-      // Sin fecha de vencimiento, considerar "a tiempo" si pagó en <30 días
-      if (diasPago < 30) pagosATiempo++;
-    }
-  }
-
-  const pagosTotal = completados.length;
-  const pctATiempo = pagosTotal > 0 ? (pagosATiempo / pagosTotal) * 100 : 0;
-  const diasPromedioPago = pagosTotal > 0 ? totalDiasPago / pagosTotal : 0;
-
-  let score: number;
-  if (pctATiempo > 90 && diasPromedioPago < 7) score = 5;
-  else if (pctATiempo > 75 && diasPromedioPago < 15) score = 4;
-  else if (pctATiempo > 50 && diasPromedioPago < 30) score = 3;
-  else if (pctATiempo > 25) score = 2;
-  else score = 1;
-
-  return { score, label: `${score}/5`, pagosATiempo, pagosTotal, diasPromedioPago, sufficientHistory: true };
-}
+// ── Mejora 11: Score de confiabilidad para fiados (lib/fiados/reliability.ts) ──
 
 // ── Mejora QW-10h: Streak de pagos consecutivos a tiempo ────────────────────
 
@@ -240,6 +207,8 @@ function FiadoReliabilityBadge({ customerId, fiados }: { customerId: string; fia
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+const FIADO_VISTAS = ["resumen", "deudores", "cobranza", "analisis"] as const;
+
 export default function FiadosModule() {
   // List state
   const [fiados, setFiados] = useState<Fiado[]>([]);
@@ -253,6 +222,11 @@ export default function FiadosModule() {
 
   // Detail sheet
   const [selected, setSelected] = useState<Fiado | null>(null);
+  const sheetPanelRef = useRef<HTMLDivElement>(null);
+  const sheetTitleId = useId();
+  // El Escape central de más arriba ya cierra el panel — el hook sólo aporta
+  // foco inicial + trampa de Tab (por eso cerrarConEscape: false).
+  useModalAccesible(sheetPanelRef, { cerrarConEscape: false, activo: !!selected });
   const [detailLoading, setDetailLoading] = useState(false);
 
   // New fiado modal
@@ -281,7 +255,7 @@ export default function FiadosModule() {
 
   // UX: Panel width toggle (Mejora 16)
   const [isPanelWide, setIsPanelWide] = useState(() => {
-    try { return localStorage.getItem("panel-width-preference") === "wide"; } catch { return false; }
+    try { return localStorage.getItem(tenantCacheKey("panel-width-preference")) === "wide"; } catch { return false; }
   });
 
   // UX: Sortable columns (Mejora 19)
@@ -290,31 +264,29 @@ export default function FiadosModule() {
 
   // UX: Table density (Mejora 20)
   const [tableDensity, setTableDensity] = useState<"compact" | "normal" | "wide">(() => {
-    try { return (localStorage.getItem("table-density") as "compact" | "normal" | "wide") || "normal"; } catch { return "normal"; }
+    try { return (localStorage.getItem(tenantCacheKey("table-density")) as "compact" | "normal" | "wide") || "normal"; } catch { return "normal"; }
   });
 
   // Audit 2026-05-17: sub-tabs dentro del módulo Fiados.
   // Antes había 10+ widgets en una sola vista scrollable. Ahora se reparten
   // en 3 vistas con persistencia para que el dueño abra siempre donde estaba.
-  type FiadoTab = "resumen" | "deudores" | "analisis";
-  const [activeTab, setActiveTab] = useState<FiadoTab>(() => {
-    try {
-      const stored = localStorage.getItem("fiados-tab") as FiadoTab | null;
-      if (stored === "resumen" || stored === "deudores" || stored === "analisis") return stored;
-    } catch { /* localStorage bloqueado */ }
-    return "resumen";
-  });
-  const setTab = (t: FiadoTab) => {
-    setActiveTab(t);
-    try { localStorage.setItem("fiados-tab", t); } catch { /* ignore */ }
-  };
+  // Audit 2026-08-26: las 3 keys de acá abajo (panel-width-preference,
+  // table-density, fiados-tab) no tenían tenant-scope — un superadmin que
+  // pasa de un negocio a otro en la misma pestaña heredaba el tab/densidad/
+  // ancho del negocio anterior.
+  type FiadoTab = "resumen" | "deudores" | "cobranza" | "analisis";
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  // El id lleva el tenant (tenantCacheKey): la memoria de la pestaña sigue siendo por negocio.
+  const { vista: activeTab, irA: setTab } = useSubvistaModulo<FiadoTab>(tenantCacheKey("fiados"), FIADO_VISTAS, "resumen");
 
   // Conteos para badges de tabs (se actualizan en vivo con los filtros).
   const vencidosTotales = fiados.filter(f => f.status === "VENCIDO" || (f.fechaVence && new Date(f.fechaVence) < new Date() && f.status === "ACTIVO")).length;
-  const TABS: Array<{ key: FiadoTab; label: string; badge?: number }> = [
-    { key: "resumen", label: "Resumen" },
-    { key: "deudores", label: "Deudores", badge: fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length },
-    { key: "analisis", label: "Análisis", badge: vencidosTotales > 0 ? vencidosTotales : undefined },
+  const FIADOS_TAB_ITEMS: Array<{ id: FiadoTab; label: string; badge?: number }> = [
+    { id: "resumen", label: "Resumen" },
+    { id: "deudores", label: "Deudores", badge: fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length },
+    { id: "cobranza", label: "Cobranza", badge: vencidosTotales > 0 ? vencidosTotales : undefined },
+    { id: "analisis", label: "Análisis", badge: vencidosTotales > 0 ? vencidosTotales : undefined },
   ];
 
   // IDEA 1: Libreta Digital — Vista que replica la libreta de fiados de papel.
@@ -325,31 +297,6 @@ export default function FiadosModule() {
   // enviaba `customerId: nombre.trim()` y el backend resolvía por contains →
   // si había 2 clientes con el mismo nombre, la deuda se cargaba al primer
   // match. Eliminado para evitar reactivación accidental.
-
-  // Agrupar fiados por cliente para la vista libreta
-  const libretaClientes = useMemo(() => {
-    const activos = fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO");
-    const map = new Map<string, { nombre: string; customerId: string; fiados: Fiado[]; totalDeuda: number; totalPagado: number }>();
-    for (const f of activos) {
-      const key = f.customerId;
-      const existing = map.get(key);
-      const pagado = f.cuotas.reduce((s, c) => s + c.monto, 0);
-      if (existing) {
-        existing.fiados.push(f);
-        existing.totalDeuda += f.saldo;
-        existing.totalPagado += pagado;
-      } else {
-        map.set(key, {
-          nombre: f.customerName || f.customerId,
-          customerId: f.customerId,
-          fiados: [f],
-          totalDeuda: f.saldo,
-          totalPagado: pagado,
-        });
-      }
-    }
-    return Array.from(map.values()).sort((a, b) => b.totalDeuda - a.totalDeuda);
-  }, [fiados]);
 
   // Mejora 20 (ronda 3): Debtors map modal
   const [showDebtorsMap, setShowDebtorsMap] = useState(false);
@@ -401,15 +348,12 @@ export default function FiadosModule() {
         // Buscar fiados del cliente en los datos ya cargados
         const clientFiados = fiados.filter(f => f.customerId === cid);
         if (clientFiados.length === 0) {
-          // Intentar fetch para verificar si el cliente existe
-          const res = await fetch(`/api/customers/${encodeURIComponent(cid)}`).catch(() => null);
-          if (res && res.ok) {
-            setClienteEsNuevo(true);
-            setClienteResumen(null);
-          } else {
-            setClienteEsNuevo(true);
-            setClienteResumen(null);
-          }
+          // Audit 2026-08-26: acá había un fetch a /api/customers/[cid] cuyo
+          // resultado (res.ok) nunca se usaba — las dos ramas del if/else
+          // hacían exactamente lo mismo. Sólo agregaba un round-trip de red
+          // que retrasaba el aviso "Cliente nuevo" sin aportar nada.
+          setClienteEsNuevo(true);
+          setClienteResumen(null);
         } else {
           setClienteEsNuevo(false);
           const score = computeReliabilityScore(clientFiados);
@@ -417,7 +361,18 @@ export default function FiadosModule() {
           const deudaActual = activos.reduce((s, f) => s + f.saldo, 0);
           const pagados = clientFiados.filter(f => f.status === "PAGADO").length;
           const nombre = clientFiados[0]?.customerName || cid;
-          const limite = 500; // Limite default
+          // Brandon 2026-06-17: límite REAL del Customer (antes hardcoded 500).
+          // creditLimit 0 = sin tope configurado → la UI lo muestra como "Sin tope".
+          let limite = 0;
+          try {
+            const cRes = await fetch(`/api/customers/${encodeURIComponent(cid)}`).catch(sinDato("fiados límite del cliente"));
+            if (cRes && cRes.ok) {
+              const cData = await cRes.json();
+              limite = Number(cData?.creditLimit ?? 0) || 0;
+            }
+          } catch {
+            /* fallback limite=0 = sin tope; el lookup es best-effort */
+          }
           // Detectar bloqueo: algun fiado vencido > 60 dias
           const now = new Date();
           now.setHours(0, 0, 0, 0);
@@ -483,6 +438,10 @@ export default function FiadosModule() {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      // Audit 2026-08-26: showDebtorsMap faltaba acá — Escape no cerraba el
+      // Mapa de deudores, y si además había un "selected" de fondo, Escape
+      // cerraba ESE panel en vez del mapa visible al frente.
+      if (showDebtorsMap) { setShowDebtorsMap(false); return; }
       if (showCompromiso) { setShowCompromiso(false); return; }
       if (showRecibo) { setShowRecibo(false); return; }
       if (showCobroMasivo) { setShowCobroMasivo(false); return; }
@@ -492,7 +451,7 @@ export default function FiadosModule() {
     };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [showCompromiso, showRecibo, showCobroMasivo, showPago, showNew, selected]);
+  }, [showDebtorsMap, showCompromiso, showRecibo, showCobroMasivo, showPago, showNew, selected]);
 
   // UX Mejora 19: Toggle sort
   const toggleSort = (col: "name" | "total" | "saldo" | "fecha") => {
@@ -535,9 +494,28 @@ export default function FiadosModule() {
         customerId: newForm.customerId.trim(),
         total,
       };
-      // Mejora 17: Include DNI photo in description if present
+      // Mejora 17 / Brandon 2026-06-17: subir la foto DNI server-side. Antes se
+      // inyectaba el base64 en descripcion → lo rechazaba el Zod max(500) del API
+      // (la foto nunca se guardaba). Ahora sube a /api/upload (Supabase+Sharp) y
+      // guarda solo la URL (corta) como [FOTO:url]. Best-effort: si falla, el
+      // fiado se crea igual sin la foto (no bloquear la operación).
       let desc = newForm.descripcion.trim();
-      if (dniPhoto) desc = `[IMG:${dniPhoto}] ${desc}`.trim();
+      if (dniPhoto) {
+        try {
+          const blob = await (await fetch(dniPhoto)).blob();
+          const file = new File([blob], "fiado-dni.jpg", { type: blob.type || "image/jpeg" });
+          const fd = new FormData();
+          fd.append("file", file);
+          fd.append("folder", "general");
+          const upRes = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
+          if (upRes.ok) {
+            const up = (await upRes.json()) as { url?: string };
+            if (up.url) desc = `[FOTO:${up.url}] ${desc}`.trim();
+          }
+        } catch {
+          /* upload best-effort: se crea el fiado sin la foto si falla */
+        }
+      }
       if (desc) body.descripcion = desc;
       if (newForm.fechaVence) body.fechaVence = new Date(newForm.fechaVence).toISOString();
 
@@ -877,8 +855,8 @@ export default function FiadosModule() {
       return {
         Nombre: f.customerName || f.customerId,
         "Teléfono": f.customerId,
-        "Monto original (S/)": Number(f.total.toFixed(2)),
-        "Saldo pendiente (S/)": Number(f.saldo.toFixed(2)),
+        "Monto original (S/)": Number(Number(f.total ?? 0).toFixed(2)),
+        "Saldo pendiente (S/)": Number(Number(f.saldo ?? 0).toFixed(2)),
         "Fecha inicio": new Date(f.createdAt).toLocaleDateString("es-PE"),
         "Días": diasPasados,
         Estado: f.status === "VENCIDO" ? "Vencido" : "Activo",
@@ -898,51 +876,29 @@ export default function FiadosModule() {
   return (
     <div className="space-y-6">
       <AdminModuleHeader
+        as="h2"
         eyebrow="Cobros · Crédito"
         title="Fiados"
         description="Gestiona los créditos a clientes, cobranza por ruta, riesgo de morosidad y proyección de cobros."
         icon={HandCoins}
       />
 
-      {/* Sub-tabs · Audit 2026-05-17 */}
-      <nav
-        role="tablist"
-        aria-label="Vistas del módulo Fiados"
-        className="flex flex-wrap gap-1 border-b border-[var(--rule-base)]"
-      >
-        {TABS.map((t) => {
-          const isActive = activeTab === t.key;
-          return (
-            <button
-              key={t.key}
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={`fiados-panel-${t.key}`}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                "relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors -mb-px border-b-2",
-                isActive
-                  ? "text-[var(--text-primary)] border-primary"
-                  : "text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)] hover:border-[var(--rule-base)]",
-              )}
-            >
-              <span>{t.label}</span>
-              {t.badge != null && t.badge > 0 && (
-                <span
-                  className={cn(
-                    "inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold tabular-nums",
-                    isActive
-                      ? "bg-primary/15 text-primary"
-                      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-                  )}
-                >
-                  {t.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+      {/* Fiado Digital — toggle self-serve para exhibir "Acepta fiado" en el
+          marketplace (badge + filtro en /tiendas). Brandon 2026-07-03. */}
+      <FiadoMarketplaceToggle />
+
+      {/* Solicitudes de línea de fiado del vecino (Frente 3) — solo aparece si
+          hay pendientes. Aprobar fija la línea → desbloquea checkout. */}
+      <CreditRequestsPanel />
+
+      {/* Sub-tabs · Audit 2026-05-17. AdminTabBar = coherencia con el resto
+          del admin (reorden por drag, registro en sidebar). */}
+      <AdminTabBar
+        moduleId={FIADOS_MODULE_ID}
+        tabs={FIADOS_TAB_ITEMS}
+        activeTab={activeTab}
+        onTabChange={(id) => setTab(id as FiadoTab)}
+      />
 
       {/* Fila única — Buscador + filtros + contador + acciones (compacto, 1 row).
           Solo visible en tab Deudores (los filtros afectan la tabla).
@@ -956,7 +912,7 @@ export default function FiadosModule() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar fiado o cliente..."
-            className="w-full h-12 sm:h-10 pl-10 pr-4 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] focus:border-primary/40 focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+            className="w-full h-12 sm:h-10 pl-10 pr-4 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus:border-primary/40 focus:ring-1 focus:ring-primary/30 outline-none transition-all"
           />
         </div>
 
@@ -966,10 +922,10 @@ export default function FiadosModule() {
               key={f.key}
               onClick={() => setStatusFilter(f.key)}
               className={cn(
-                "inline-flex items-center rounded-md px-2.5 py-1.5 text-xs font-semibold border transition-colors",
+                "inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold border transition-colors",
                 statusFilter === f.key
                   ? "bg-primary text-white border-primary"
-                  : "border-[var(--rule-base)] text-[var(--text-secondary)] bg-white dark:bg-[var(--color-card)] hover:border-primary/40 hover:text-primary"
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] bg-[var(--surface-raised)] hover:border-primary/40 hover:text-primary"
               )}
             >
               {f.label}
@@ -999,7 +955,7 @@ export default function FiadosModule() {
         </span>
 
         <AdminTooltip content="Recargar la lista de fiados">
-          <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-sunken)] transition-colors">
+          <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
           </button>
         </AdminTooltip>
@@ -1014,7 +970,7 @@ export default function FiadosModule() {
         />
         <button
           onClick={() => setShowNew(true)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-3 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
           Nuevo fiado
@@ -1025,7 +981,7 @@ export default function FiadosModule() {
       {activeTab !== "deudores" && (
         <div className="flex flex-wrap items-center gap-2 justify-end">
           <AdminTooltip content="Recargar la lista de fiados">
-            <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-sunken)] transition-colors">
+            <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
               <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
             </button>
           </AdminTooltip>
@@ -1039,7 +995,7 @@ export default function FiadosModule() {
           />
           <button
             onClick={() => setShowNew(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+            className="inline-flex items-center gap-2 px-3 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
           >
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
             Nuevo fiado
@@ -1057,13 +1013,16 @@ export default function FiadosModule() {
       {/* Stats — pasa `view` para que FiadoStats renderice solo los widgets de cada tab. */}
       <FiadoStats view={activeTab} fiados={fiados} loading={loading} totalSaldo={totalSaldo} tendenciaMorosidad={tendenciaMorosidad} proyeccionCobro={proyeccionCobro} fiadoMasAntiguo={fiadoMasAntiguo} pagosEstaSemana={pagosEstaSemana} mejorPagadorMes={mejorPagadorMes} openDetail={openDetail} search={search} setSearch={setSearch} setSelected={setSelected} statusFilter={statusFilter} setStatusFilter={setStatusFilter} FiadoTendenciaCobro={FiadoTendenciaCobroChart} />
 
+      {/* Cobranza — port del sistema de Adelantos (tramos, gestión, modo llamada). */}
+      {activeTab === "cobranza" && <FiadoCobranzaView fiados={fiados} loading={loading} onRecordado={fetchFiados} />}
+
       {/* UX Mejora 20: Density toggle — solo en tab Deudores */}
       {activeTab === "deudores" && <div className="flex items-center gap-1 mb-2">
         <span className="text-xs font-bold text-[var(--text-tertiary)] mr-1">Densidad:</span>
         {(["compact", "normal", "wide"] as const).map(d => (
           <button
             key={d}
-            onClick={() => { setTableDensity(d); try { localStorage.setItem("table-density", d); } catch {} }}
+            onClick={() => { setTableDensity(d); try { localStorage.setItem(tenantCacheKey("table-density"), d); } catch {} }}
             className={cn("px-2 py-0.5 rounded-full text-xs font-bold transition-colors", tableDensity === d ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]")}
           >
             {d === "compact" ? "Compacta" : d === "normal" ? "Normal" : "Amplia"}
@@ -1072,7 +1031,7 @@ export default function FiadosModule() {
       </div>}
 
       {/* Table — UX Mejora 18: Sticky header + Mejora 19: Sortable columns — solo tab Deudores */}
-      {activeTab === "deudores" && <div className={cn("bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
+      {activeTab === "deudores" && <div className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
         {loading ? (
           <LoadingState />
         ) : error ? (
@@ -1096,7 +1055,7 @@ export default function FiadosModule() {
                   sticky positioning, sr-only labels. DataTable del DS
                   no soporta esta combinación de features (ADR-075). */}
               <table className="w-full min-w-[700px] sm:min-w-0 text-sm">
-                <thead className="sticky top-0 bg-white dark:bg-[var(--color-card)] z-10 shadow-[var(--shadow-sm)]">
+                <thead className="sticky top-0 bg-[var(--surface-raised)] z-10 shadow-[var(--shadow-sm)]">
                   <tr className="border-b border-[var(--rule-soft)] text-left">
                     <th className="px-2 py-3 w-8">
                       <span className="sr-only">Seleccionar</span>
@@ -1123,12 +1082,23 @@ export default function FiadosModule() {
                       <tr
                         key={f.id}
                         onClick={() => openDetail(f)}
-                        className="border-b border-gray-50 hover:bg-[var(--surface-alt)] cursor-pointer transition-colors"
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Ver fiado de ${f.customerName || f.customerId}`}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter" && e.key !== " ") return;
+                          const target = e.target as HTMLElement;
+                          if (target.closest("button, input, a, [data-no-row-click]")) return;
+                          e.preventDefault();
+                          openDetail(f);
+                        }}
+                        className="border-b border-gray-50 hover:bg-[var(--surface-alt)] cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                       >
                         <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
                           {(f.status === "ACTIVO" || f.status === "VENCIDO") && (
                             <input
                               type="checkbox"
+                              aria-label={`Seleccionar fiado de ${f.customerName || f.customerId}`}
                               checked={selectedIds.has(f.id)}
                               onChange={() => toggleSelect(f.id)}
                               className="h-4 w-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
@@ -1139,7 +1109,7 @@ export default function FiadosModule() {
                           <div className="flex items-center gap-2">
                             {(() => {
                               const name = f.customerName || f.customerId;
-                              const avatarColors = ['var(--accent)','#f97316','#e63946','#457b9d','#6b705c','#9b5de5'];
+                              const avatarColors = ['var(--accent)','#ff6b5b','#e63946','#457b9d','#6b705c','#9b5de5'];
                               let h = 0; for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
                               const color = avatarColors[Math.abs(h) % avatarColors.length];
                               const initials = name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase();
@@ -1183,8 +1153,8 @@ export default function FiadosModule() {
                                 const msg = f.status === "VENCIDO"
                                   ? `Hola ${nombre}, tienes un pendiente de S/${saldo}${fecha ? ` vencido desde el ${fecha}` : ""} en Buleje. Cuando puedas pasa a regularizarlo?`
                                   : `Hola ${nombre}, te recordamos que tienes un pendiente de S/${saldo} en Buleje${fecha ? ` que vence el ${fecha}` : ""}. Pasa cuando puedas!`;
-                                const cleanPhone = f.customerId.replace(/\D/g, "");
-                                window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                                const wa = waLink(f.customerId, msg);
+                                if (wa) window.open(wa, "_blank");
                               }}
                               title="Enviar recordatorio por WhatsApp"
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-xs font-bold transition-colors"
@@ -1206,17 +1176,17 @@ export default function FiadosModule() {
                   {fiados.length} fíado{fiados.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}
                 </p>
                 <div className="flex gap-1">
-                  <button
+                  <button aria-label="Anterior"
                     disabled={page <= 1}
                     onClick={() => setPage(p => p - 1)}
-                    className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
+                    className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button
+                  <button aria-label="Siguiente"
                     disabled={page >= totalPages}
                     onClick={() => setPage(p => p + 1)}
-                    className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
+                    className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -1244,25 +1214,30 @@ export default function FiadosModule() {
             />
             <m.div
               key="sheet-panel"
+              ref={sheetPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={sheetTitleId}
+              tabIndex={-1}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className={cn("fixed inset-y-0 right-0 z-50 w-full bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto transition-all duration-[var(--dur-base)]", isPanelWide ? "max-w-[500px]" : "max-w-md")}
+              className={cn("fixed inset-y-0 right-0 z-50 w-full bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto transition-all duration-[var(--dur-base)]", isPanelWide ? "max-w-[500px]" : "max-w-md")}
             >
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Sheet header — UX Mejora 16: Width toggle */}
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Detalle del fiado</CardTitle>
+                  <CardTitle id={sheetTitleId} className="text-lg font-bold text-[var(--text-primary)]">Detalle del fiado</CardTitle>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => { const next = !isPanelWide; setIsPanelWide(next); try { localStorage.setItem("panel-width-preference", next ? "wide" : "normal"); } catch {} }}
-                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors hidden sm:flex"
+                      onClick={() => { const next = !isPanelWide; setIsPanelWide(next); try { localStorage.setItem(tenantCacheKey("panel-width-preference"), next ? "wide" : "normal"); } catch {} }}
+                      className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors hidden sm:flex"
                       title={isPanelWide ? "Panel normal" : "Panel ancho"}
                     >
                       {isPanelWide ? <Minimize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /> : <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
                     </button>
-                    <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+                    <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                       <X className="h-5 w-5 text-[var(--text-secondary)]" />
                     </button>
                   </div>
@@ -1328,7 +1303,7 @@ export default function FiadosModule() {
                   <>
                 {/* Mejora 15: Historial de pagos mejorado con timeline */}
                 <div>
-                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Historial de pagos</h4>
+                  <BlockTitle className="mb-3">Historial de pagos</BlockTitle>
                   {detailLoading ? (
                     <div className="flex justify-center py-6">
                       <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -1338,11 +1313,11 @@ export default function FiadosModule() {
                   ) : (
                     <div className="relative">
                       {/* Timeline line */}
-                      <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-[var(--accent-soft)]" />
+                      <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-primary/10" />
                       <div className="space-y-3">
                         {[...selected.cuotas].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(c => (
                           <div key={c.id} className="flex items-start gap-3 relative">
-                            <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0 z-10 border-2 border-white">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 z-10 border-2 border-white">
                               <DollarSign className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                             </div>
                             <div className="flex-1 min-w-0 bg-[var(--surface-alt)] rounded-xl p-3">
@@ -1375,7 +1350,7 @@ export default function FiadosModule() {
                       <>
                         <button
                           onClick={() => { setShowPago(true); setPagoError(null); }}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+                          className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark  transition-colors"
                         >
                           <DollarSign className="h-4 w-4" />
                           Registrar Pago
@@ -1387,13 +1362,13 @@ export default function FiadosModule() {
                             const d = new Date(); d.setDate(d.getDate() + 7);
                             setCompromisoFecha(d.toISOString().slice(0, 10));
                           }}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 min-h-11 rounded-xl text-sm font-semibold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
                         >
                           <PenTool className="h-4 w-4" />
                           Compromiso de Pago
                         </button>
                         <a
-                          href={`https://wa.me/${selected.customerId.replace(/\D/g, "").startsWith("51") ? selected.customerId.replace(/\D/g, "") : "51" + selected.customerId.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${selected.customerName || selected.customerId}, te recordamos que tienes un pendiente de S/${Number(selected.saldo).toFixed(2)} en Buleje.`)}`}
+                          href={waLink(selected.customerId, `Hola ${selected.customerName || selected.customerId}, te recordamos que tienes un pendiente de S/${Number(selected.saldo).toFixed(2)} en Buleje.`) ?? "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
@@ -1401,11 +1376,35 @@ export default function FiadosModule() {
                           <MessageCircle className="h-4 w-4" />
                           Recordar por WhatsApp
                         </a>
+                        <button
+                          onClick={async () => {
+                            // Genera el link público firmado del estado de cuenta
+                            // consolidado y lo comparte por WhatsApp (Brandon 2026-06-17).
+                            try {
+                              const res = await fetch("/api/fiados/statement-link", {
+                                method: "POST",
+                                headers: csrfHeaders({ "Content-Type": "application/json" }),
+                                body: JSON.stringify({ customerId: selected.customerId }),
+                              });
+                              if (!res.ok) { toast.error("No se pudo generar el link"); return; }
+                              const { url } = (await res.json()) as { url: string };
+                              const msg = `Hola ${selected.customerName || ""}, aquí puedes ver tu estado de cuenta completo: ${url}`;
+                              const wa = waLink(selected.customerId, msg);
+                              if (wa) window.open(wa, "_blank", "noopener");
+                            } catch {
+                              toast.error("Error al generar el link");
+                            }
+                          }}
+                          className="w-full flex items-center justify-center gap-1.5 px-3 min-h-11 rounded-xl text-sm font-semibold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
+                        >
+                          <Share2 className="h-4 w-4" />
+                          Compartir estado de cuenta
+                        </button>
                       </>
                     )}
                     <button
                       onClick={() => window.print()}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                     >
                       <Printer className="h-4 w-4" />
                       Imprimir
@@ -1419,7 +1418,7 @@ export default function FiadosModule() {
       </AnimatePresence>
 
       {/* New Fiado Modal */}
-      <FiadoFormModal showNew={showNew} setShowNew={setShowNew} newForm={newForm} setNewForm={setNewForm} creating={creating} createError={createError} handleCreate={handleCreate} setCreateError={setCreateError} dniPhoto={dniPhoto} setDniPhoto={setDniPhoto} clienteResumen={clienteResumen} clienteResumenLoading={clienteResumenLoading} clienteEsNuevo={clienteEsNuevo} />
+      <FiadoFormModal showNew={showNew} setShowNew={setShowNew} newForm={newForm} setNewForm={setNewForm} creating={creating} createError={createError} handleCreate={handleCreate} setCreateError={setCreateError} dniPhoto={dniPhoto} setDniPhoto={setDniPhoto} clienteResumen={clienteResumen} clienteResumenLoading={clienteResumenLoading} clienteEsNuevo={clienteEsNuevo} onCrearCliente={() => setShowQuickClient(true)} />
 
       {/* Payment, Cobro Masivo, Recibo, Compromiso, Debtors Map Modals */}
       <FiadoModals
@@ -1440,12 +1439,15 @@ export default function FiadosModule() {
         fiados={fiados}
       />
 
-      {/* Quick client creation modal */}
+      {/* Quick client creation modal — precarga el teléfono que ya se tipeó
+          en "Nuevo fiado" (audit-verificado: antes no había forma de abrir
+          este modal desde ahí, era un <ClienteFormModal> montado y muerto). */}
       <ClienteFormModal
         isOpen={showQuickClient}
         onClose={() => setShowQuickClient(false)}
         onSaved={() => setShowQuickClient(false)}
         initialFormat="simple"
+        initialPhone={newForm.customerId.trim()}
       />
     </div>
   );

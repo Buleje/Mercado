@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTenantTag } from "@/lib/cache";
 import { z } from "zod";
-import { PurchasesDB } from "@/lib/jsondb";
+import { PurchasesDB, type DbPurchaseOrder } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -8,6 +9,9 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getRecibidoAcumulado, saldoPendiente } from "@/lib/compras/recibido-acumulado";
+import { costoUnitarioReal, totalDeOrden } from "@/lib/compras/totales-oc";
+import { TRANSICIONES_OC, transicionValida, type EstadoOC } from "@/lib/compras/estados-oc";
 
 const DiferenciaSchema = z.object({
   productoId: z.number().int().positive(),
@@ -16,22 +20,28 @@ const DiferenciaSchema = z.object({
   motivo: z.string().max(500).optional(),
 });
 
-// F5: Tabla de transiciones válidas para state machine
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  pendiente: ["emitida", "cancelado"],
-  emitida:   ["parcial", "recibido", "cancelado"],
-  parcial:   ["recibido", "cancelado"],
-  recibido:  ["pagada"],
-  cancelado: [],
-  pagada:    [],
-};
+// Las transiciones viven en lib/compras/estados-oc.ts — la misma tabla que
+// alimenta el <select> de la pantalla. 2026-08-11: la copia que había acá
+// enrutaba `pendiente` hacia "emitida" y `recibido` hacia "pagada", dos
+// estados que no existen en el enum PurchaseStatus ni los aceptaba el Zod de
+// abajo; medido, todo cambio de estado desde `pendiente` devolvía 422 salvo
+// cancelar.
 
 const PatchSchema = z.object({
-  // F5: alineado con DbPurchaseOrder.status enum (lib/db/misc.db.ts).
-  // 'emitida' y 'pagada' no existen en DB todavia — pendiente migration.
+  // Alineado con el enum PurchaseStatus de Prisma (lib/db/misc.db.ts).
+  // `auto_generated` es estado de origen, no destino: el admin la aprueba
+  // pasándola a pendiente, no vuelve a marcarla como auto-generada.
   status: z.enum(["pendiente", "parcial", "recibido", "cancelado"]).optional(),
   notes: z.string().max(1000).optional(),
   diferencias: z.array(DiferenciaSchema).optional(),
+  // ADR-377 — datos que se completan después de emitir: la factura llega con
+  // la mercadería, el flete se sabe cuando el mototaxi cobra.
+  invoiceNumber: z.string().max(60).optional(),
+  invoiceType: z.enum(["factura", "boleta", "guia", "ninguno"]).optional(),
+  igvIncluded: z.boolean().optional(),
+  flete: z.number().min(0).optional(),
+  otrosCostos: z.number().min(0).optional(),
+  cancelReason: z.string().max(300).optional(),
 });
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -47,6 +57,66 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     logger.error("[purchases/id] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
+}
+
+/**
+ * Reparte un flete cargado DESPUÉS de recibir la mercadería (ADR-377).
+ *
+ * El costo de esos productos se calculó sin ese gasto. No se puede rehacer la
+ * historia —el promedio ponderado ya se mezcló con otras compras y parte del
+ * lote quizá ya se vendió—, así que el sobrecosto se reparte entre las
+ * unidades que TODAVÍA están en stock: es la revaluación de inventario que
+ * haría un contador cuando la factura del flete llega tarde.
+ *
+ * Si no queda stock de un producto, no hay nada que revaluar: esa mercadería
+ * ya salió y su costo histórico quedó como quedó. Se dice, no se disimula.
+ */
+async function revaluarPorSobrecosto(
+  tenantId: string,
+  oc: DbPurchaseOrder,
+  deltaSobrecosto: number,
+  username: string,
+): Promise<number> {
+  const subtotal = oc.items.reduce((s, i) => s + i.quantity * toNumOrZero(i.unitCost), 0);
+  if (subtotal <= 0) return 0;
+
+  let revaluados = 0;
+  await prisma.$transaction(async (tx) => {
+    for (const item of oc.items) {
+      const product = await tx.product.findFirst({ where: { id: item.productId, tenantId } });
+      if (!product) continue;
+
+      const stockActual = product.stock ?? 0;
+      if (stockActual <= 0) continue; // ya se vendió: nada que revaluar
+
+      const valorLinea = item.quantity * toNumOrZero(item.unitCost);
+      const parteDeLaLinea = deltaSobrecosto * (valorLinea / subtotal);
+      const ajustePorUnidad = parteDeLaLinea / stockActual;
+
+      const costoAnterior = toNumOrZero(product.costPrice);
+      const costoNuevo = Math.max(0, costoAnterior + ajustePorUnidad);
+
+      await tx.product.update({ where: { id: product.id }, data: { costPrice: costoNuevo } });
+      await tx.inventoryMovement.create({
+        data: {
+          tenantId,
+          productId: product.id,
+          type: "ajuste",
+          quantity: 0, // no cambia el stock: cambia lo que vale
+          previousStock: stockActual,
+          newStock: stockActual,
+          reference: oc.id,
+          notes:
+            `Costo de traer la mercadería en la OC ${oc.id}: ` +
+            `S/${parteDeLaLinea.toFixed(2)} repartidos entre ${stockActual} en stock ` +
+            `(S/${costoAnterior.toFixed(2)} → S/${costoNuevo.toFixed(2)} por unidad)`,
+          createdBy: username,
+        },
+      });
+      revaluados++;
+    }
+  });
+  return revaluados;
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -66,8 +136,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // F5: Validar transición de estado
     const statusChanged = parsed.data.status && parsed.data.status !== existing.status;
     if (statusChanged && parsed.data.status) {
-      const allowed = VALID_TRANSITIONS[existing.status as string] ?? [];
-      if (!allowed.includes(parsed.data.status)) {
+      if (!transicionValida(existing.status, parsed.data.status)) {
+        const allowed = TRANSICIONES_OC[existing.status as EstadoOC] ?? [];
         return NextResponse.json(
           { error: `Transición inválida: ${existing.status} → ${parsed.data.status}. Permitidas: [${allowed.join(", ")}]` },
           { status: 422 }
@@ -76,10 +146,90 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // diferencias no es campo de DbPurchaseOrder — se procesa más abajo.
-    const { diferencias: _diferencias, ...patch } = parsed.data;
+    const { diferencias: _diferencias, ...campos } = parsed.data;
+
+    // ADR-377: quién y cuándo. `deliveryDate` es lo que el proveedor prometió;
+    // esto es lo que pasó de verdad, y la diferencia entre ambas es la que
+    // mide si el proveedor cumple.
+    // Corregir «¿los costos ya incluían IGV?» después de emitida la orden tiene
+    // que mover el total: el flag se podía cambiar acá y el número quedaba
+    // igual, así que la orden decía una cosa y su casilla, otra.
+    const cambiaIgv =
+      parsed.data.igvIncluded !== undefined && parsed.data.igvIncluded !== existing.igvIncluded;
+    const totalRecalculado = cambiaIgv
+      ? totalDeOrden({
+          subtotal: existing.items.reduce((s, i) => s + i.quantity * toNumOrZero(i.unitCost), 0),
+          discountPct: existing.discount ?? 0,
+          igvIncluded: parsed.data.igvIncluded,
+        })
+      : null;
+
+    const patch: Partial<DbPurchaseOrder> = {
+      ...campos,
+      ...(totalRecalculado != null ? { total: totalRecalculado } : {}),
+      ...(statusChanged && parsed.data.status === "recibido"
+        ? { receivedDate: new Date().toISOString(), receivedBy: auth.username }
+        : {}),
+    };
+
+    // ADR-377 · backfill: cargarle el flete a una orden YA recibida. El costo
+    // de esos productos se calculó sin ese gasto, así que hay que revaluar el
+    // inventario que queda. Se mide el delta ANTES de escribir.
+    const sobrecostoAntes = (existing.flete ?? 0) + (existing.otrosCostos ?? 0);
+    const sobrecostoDespues =
+      (parsed.data.flete ?? existing.flete ?? 0) + (parsed.data.otrosCostos ?? existing.otrosCostos ?? 0);
+    const deltaSobrecosto = sobrecostoDespues - sobrecostoAntes;
+    const revaluarInventario =
+      !statusChanged && existing.status === "recibido" && Math.abs(deltaSobrecosto) > 0.005;
+
     const updated = await PurchasesDB.update(auth.tenantId, id, patch);
 
     if (!updated) return NextResponse.json({ error: "Error updating" }, { status: 500 });
+
+    /**
+     * Cancelar una orden a crédito tiene que cerrar la deuda que abrió.
+     *
+     * El POST crea un `Payable` automático cuando la forma de pago es
+     * `credito_*`. Al cancelar la orden ese Payable quedaba vivo: Cuentas por
+     * Pagar seguía mostrando —y sumando— una deuda con un proveedor al que
+     * nunca se le compró.
+     *
+     * Si ya se le pagó algo, NO se toca: esa plata salió de verdad y borrar el
+     * registro la haría desaparecer del historial. En ese caso se avisa.
+     */
+    let cuentaPorPagar: "anulada" | "conservada_con_pagos" | null = null;
+    if (statusChanged && parsed.data.status === "cancelado") {
+      const payable = await prisma.payable.findFirst({
+        where: { purchaseOrderId: id, tenantId: auth.tenantId },
+        select: { id: true, paidAmount: true },
+      });
+      if (payable) {
+        if (toNumOrZero(payable.paidAmount) > 0) {
+          cuentaPorPagar = "conservada_con_pagos";
+        } else {
+          await prisma.payable.deleteMany({ where: { id: payable.id, tenantId: auth.tenantId } });
+          cuentaPorPagar = "anulada";
+        }
+        revalidateTenantTag(auth.tenantId, "payables");
+        logActivity(
+          "Actualizar", "compra",
+          cuentaPorPagar === "anulada"
+            ? `Orden ${id.slice(-6)} cancelada: se anuló su cuenta por pagar`
+            : `Orden ${id.slice(-6)} cancelada: la cuenta por pagar se conservó porque ya tenía pagos`,
+          id, auth.username,
+        ).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
+      }
+    }
+
+    let productosRevaluados = 0;
+    if (revaluarInventario) {
+      productosRevaluados = await revaluarPorSobrecosto(
+        auth.tenantId, updated, deltaSobrecosto, auth.username,
+      ).catch((err) => {
+        logger.error("[purchases/id] revaluación por flete falló", { err: String(err), id });
+        return 0;
+      });
+    }
 
     if (statusChanged && updated.status === "recibido") {
       // Build a map of diferencias by productoId for quick lookup
@@ -91,23 +241,45 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
 
       try {
-         
+
         await prisma.$transaction(async (tx) => {
+          // 2026-08-11: descontar lo que las recepciones ya metieron al stock.
+          // Sin esto, cerrar por el <select> una OC con recepción parcial
+          // sumaba la cantidad ENTERA otra vez (medido: OC de 10 con 4
+          // recibidos terminaba en stock 14).
+          const yaRecibido = await getRecibidoAcumulado(tx, auth.tenantId, updated.id, updated.items);
+          // ADR-377: flete + otros costos se reparten por valor entre los items.
+          const subtotalOrden = updated.items.reduce((s, i) => s + i.quantity * toNumOrZero(i.unitCost), 0);
+          const sobrecostos = (updated.flete ?? 0) + (updated.otrosCostos ?? 0);
+
           for (const item of updated.items) {
-            const product = await tx.product.findUnique({ where: { id: item.productId } });
+            // `findFirst` con tenantId, igual que el camino de revaluación de
+            // arriba (línea ~86). Con `findUnique({ where: { id } })` este
+            // camino —cerrar la OC desde el `<select>` de estado— buscaba el
+            // producto por id a secas y después le escribía stock y costo: un
+            // `productId` de otro negocio en los items de la orden alcanzaba
+            // para moverle el inventario a un tercero.
+            const product = await tx.product.findFirst({
+              where: { id: item.productId, tenantId: auth.tenantId },
+            });
             if (!product) continue;
 
-            // Use cantidadRecibida from diferencias if available, otherwise use item.quantity
+            // Con diferencias declaradas manda lo declarado; si no, lo que
+            // falte por recibir según las recepciones ya registradas.
             const dif = difMap.get(item.productId);
-            const quantityReceived = dif ? dif.cantidadRecibida : item.quantity;
+            const quantityReceived = dif
+              ? dif.cantidadRecibida
+              : saldoPendiente(item.quantity, yaRecibido.get(item.productId) ?? 0);
 
             if (quantityReceived <= 0) continue; // Nothing received for this item
 
             const prevStock = product.stock ?? 0;
             const newStock = prevStock + quantityReceived;
 
-            // TD-018: item.unitCost y product.costPrice son Decimal
-            const unitCostNum = toNumOrZero(item.unitCost);
+            // TD-018: item.unitCost y product.costPrice son Decimal.
+            // ADR-377: el costo lleva la parte de flete que le toca — si no,
+            // el margen que muestra el sistema es optimista por unidad.
+            const unitCostNum = costoUnitarioReal(item, subtotalOrden, sobrecostos);
             let avgCost = unitCostNum;
             if (prevStock > 0) {
               const oldVal = prevStock * toNumOrZero(product.costPrice);
@@ -162,7 +334,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
        logActivity("Actualizar", "compra", `Estado de orden ${id.slice(-6)} cambiado a ${updated.status}`, id, auth.username).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
     }
 
-    return NextResponse.json(updated);
+    // Este camino también mueve stock y costo con `tx.product.update` fuera de
+    // ProductsDB, así que la invalidación corre por cuenta del endpoint: si no,
+    // el Inventario muestra lo de antes de recibir.
+    revalidateTenantTag(auth.tenantId, "products");
+
+    // `productosRevaluados` deja que la pantalla diga qué pasó con el costo,
+    // en vez de cambiarlo en silencio.
+    return NextResponse.json({
+      ...updated,
+      ...(revaluarInventario ? { productosRevaluados } : {}),
+      // Que la pantalla pueda decir qué pasó con la deuda al cancelar.
+      ...(cuentaPorPagar ? { cuentaPorPagar } : {}),
+    });
   } catch (e) {
     logger.error("[purchases/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });

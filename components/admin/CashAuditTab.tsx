@@ -1,17 +1,20 @@
 "use client";
 
-import { CardTitle, DataTable } from "@buleje/design-system";
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { CardTitle, DataTable, BlockTitle } from "@buleje/design-system";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, startTransition } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Calculator, Download, X, Eye,
   CheckCircle2, AlertTriangle, TrendingDown, TrendingUp,
   Banknote, Coins, Info, RefreshCw, ExternalLink, PlusCircle,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { resumirArqueos, veredictoArqueo, type ArqueoEstado } from "@/lib/caja/arqueo-veredicto";
+import { leerNotasArqueo } from "@/lib/caja/leer-notas-arqueo";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type AuditStatus = "pendiente" | "conforme" | "sobrante" | "faltante";
+type AuditStatus = ArqueoEstado;
 
 type CashDenomination = {
   type: "billete" | "moneda";
@@ -40,9 +43,14 @@ const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDi
 
 const STATUS_MAP: Record<AuditStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
   pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", icon: AlertTriangle },
-  conforme:  { label: "Conforme",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: CheckCircle2 },
-  sobrante:  { label: "Sobrante",  color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: TrendingUp },
+  conforme:  { label: "Conforme",  color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: CheckCircle2 },
+  sobrante:  { label: "Sobrante",  color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15", icon: TrendingUp },
   faltante:  { label: "Faltante",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30", icon: TrendingDown },
+  // Lo cerró el cron: el monto es el calculado, nadie contó el efectivo. No es
+  // conforme ni es falla — es un arqueo que no se hizo, y se ve distinto.
+  sin_conteo: { label: "Cerrada sin conteo", color: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]", icon: AlertTriangle },
+  // Un esperado negativo no existe en una caja física: hay que revisar los movimientos.
+  imposible: { label: "Revisar movimientos", color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30", icon: AlertTriangle },
 };
 
 type CashRegisterRaw = {
@@ -65,16 +73,17 @@ function fmtDate(iso: string) {
 function shiftLabel(iso: string): string {
   try { const h = new Date(iso).getHours(); if (h >= 6 && h < 14) return "mañana"; if (h >= 14 && h < 20) return "tarde"; return "noche"; } catch { return "—"; }
 }
-function computeStatus(diff: number | null | undefined, counted: number | null | undefined): AuditStatus {
-  if (counted == null) return "pendiente";
-  if (diff == null) return "pendiente";
-  if (Math.abs(diff) < 0.01) return "conforme";
-  return diff > 0 ? "sobrante" : "faltante";
-}
+
 function mapRegisterToAudit(r: CashRegisterRaw): CashAudit {
   const [cashierName] = (r.notes ?? "").split(" (");
   const diff = r.difference ?? (r.closingAmount != null && r.expectedAmount != null ? r.closingAmount - r.expectedAmount : null);
-  const status = computeStatus(diff, r.closingAmount);
+  const status = veredictoArqueo({
+    expectedAmount: r.expectedAmount ?? r.openingAmount,
+    countedAmount: r.closingAmount,
+    difference: diff,
+    notes: r.notes,
+    closedAt: r.closedAt,
+  });
   return {
     id: r.id, date: fmtDate(r.openedAt), shift: shiftLabel(r.openedAt),
     cashier: cashierName?.trim() || "Cajero",
@@ -172,7 +181,7 @@ function CashCounter({
       return;
     }
     if (!hasCount) {
-      setFeedback({ kind: "err", msg: "Contá al menos una denominación antes de guardar." });
+      setFeedback({ kind: "err", msg: "Cuenta al menos una denominación antes de guardar." });
       return;
     }
     setSaving(true);
@@ -210,7 +219,7 @@ function CashCounter({
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50 transition-colors"
       >
         <span className="flex items-center gap-2.5 text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <Coins className="h-4 w-4 text-primary" strokeWidth={1.75} aria-hidden />
           </div>
           <div className="text-left">
@@ -262,7 +271,7 @@ function CashCounter({
                             value={qty || ""}
                             onChange={e => setCount(key, e.target.value)}
                             placeholder="0"
-                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                           />
                         </td>
                         <td className="py-1.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
@@ -302,7 +311,7 @@ function CashCounter({
                             value={qty || ""}
                             onChange={e => setCount(key, e.target.value)}
                             placeholder="0"
-                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                           />
                         </td>
                         <td className="py-1.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
@@ -318,11 +327,11 @@ function CashCounter({
 
           {/* Resumen */}
           <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-center">
+            <div className="bg-[var(--surface-alt)] rounded-xl p-3 text-center">
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Esperado</p>
               <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{fmt(expectedAmount)}</p>
             </div>
-            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-center">
+            <div className="bg-[var(--surface-alt)] rounded-xl p-3 text-center">
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Contado</p>
               <p className={cn("font-extrabold text-sm", hasCount ? "text-[var(--text-primary)] dark:text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>
                 {hasCount ? fmt(counted) : "—"}
@@ -330,9 +339,9 @@ function CashCounter({
             </div>
             <div className={cn(
               "rounded-xl p-3 text-center",
-              !hasCount ? "bg-[var(--surface-alt)] dark:bg-surface" :
-              difference === 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
-              difference > 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
+              !hasCount ? "bg-[var(--surface-alt)] " :
+              difference === 0 ? "bg-primary/10 dark:bg-primary/15" :
+              difference > 0 ? "bg-primary/10 dark:bg-primary/15" :
               "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20"
             )}>
               <p className="text-xs font-semibold uppercase text-[var(--text-tertiary)] dark:text-muted">Diferencia</p>
@@ -359,7 +368,7 @@ function CashCounter({
               className={cn(
                 "text-sm font-semibold rounded-lg px-3 py-2",
                 feedback.kind === "ok"
-                  ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                  ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                   : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
               )}
             >
@@ -373,8 +382,8 @@ function CashCounter({
               onClick={handleSaveArqueo}
               disabled={saving || !hasCount || !registerId}
               aria-disabled={saving || !hasCount || !registerId}
-              title={!registerId ? "No hay caja registradora abierta" : !hasCount ? "Contá al menos una denominación" : undefined}
-              className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!registerId ? "No hay caja registradora abierta" : !hasCount ? "Cuenta al menos una denominación" : undefined}
+              className="px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Guardando…" : "Guardar arqueo"}
             </button>
@@ -404,6 +413,9 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
   // sobre la caja abierta, no sobre la más reciente (que puede estar cerrada).
   const [rawRegisters, setRawRegisters] = useState<CashRegisterRaw[]>([]);
   const [loading, setLoading] = useState(true);
+  const detailTitleId = useId();
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(detailPanelRef, { onCerrar: () => setDetail(null), activo: !!detail });
 
   const inflightRef = useRef<AbortController | null>(null);
   const loadAudits = useCallback(() => {
@@ -433,16 +445,31 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
     return () => { inflightRef.current?.abort(); };
   }, [loadAudits]);
 
-  const stats = useMemo(() => {
-    const totalAudits = audits.length;
-    const conformes = audits.filter(a => a.status === "conforme").length;
-    const totalShortage = audits.filter(a => a.difference < 0).reduce((s, a) => s + Math.abs(a.difference), 0);
-    const totalSurplus = audits.filter(a => a.difference > 0).reduce((s, a) => s + a.difference, 0);
-    return { totalAudits, conformes, totalShortage, totalSurplus };
-  }, [audits]);
+  const resumen = useMemo(
+    () => resumirArqueos(audits.map((a) => ({ estado: a.status as ArqueoEstado, difference: a.difference }))),
+    [audits],
+  );
+  /**
+   * Los totales salen de `resumirArqueos`, no de una cuenta propia.
+   *
+   * Acá se sumaba `audits.filter(a => a.difference < 0)` sin mirar el estado,
+   * así que entraban los arqueos que el propio módulo marca como
+   * NO VERIFICABLES —los cierres automáticos («sin_conteo») y los imposibles—,
+   * cuya `difference` no significa nada porque nadie contó la caja. El
+   * resultado era un «Total faltantes» inflado con plata que nunca faltó,
+   * mientras el % de conformes, dos líneas más abajo, sí los excluía.
+   */
+  const stats = useMemo(() => ({
+    totalAudits: audits.length,
+    conformes: resumen.conformes,
+    totalShortage: resumen.totalFaltanteS,
+    totalSurplus: resumen.totalSobranteS,
+    noVerificables: resumen.sinConteo + resumen.imposibles,
+  }), [audits.length, resumen]);
 
-  // Conteo de integridad de cuadres — % conformes vs total
-  const pctConformes = stats.totalAudits > 0 ? Math.round((stats.conformes / stats.totalAudits) * 100) : 0;
+  // El % va sobre los arqueos VERIFICABLES: meter los cierres automáticos en el
+  // denominador convertía «nadie contó» en «todo perfecto».
+  const pctConformes = resumen.conformesPct;
 
   // Caja ABIERTA para el conteo manual. El "Esperado" sale de su expectedAmount
   // (fallback a openingAmount si aún no se computó). Si no hay caja abierta, el
@@ -461,14 +488,14 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         <div className="flex flex-wrap items-center gap-2">
           <ModuleTooltip />
           {onNavigateToTurnos && (
-            <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
+            <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-primary/30 bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/10 transition-colors">
               <ExternalLink className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Ir a Turnos
             </button>
           )}
-          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} aria-label="Refrescar" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
+          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} aria-label="Refrescar" className="p-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} strokeWidth={1.75} aria-hidden />
           </button>
-          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors">
             <Download className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Descargar
           </button>
         </div>
@@ -481,13 +508,26 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Cuadres totales", value: String(stats.totalAudits), tone: "neutral" as const, icon: Calculator },
-          { label: "Conformes", value: `${stats.conformes}${stats.totalAudits > 0 ? ` · ${pctConformes}%` : ""}`, tone: "success" as const, icon: CheckCircle2 },
+          {
+            label: "Conformes",
+            value: `${resumen.conformes}${pctConformes != null ? ` · ${pctConformes}%` : ""}`,
+            tone: "success" as const,
+            icon: CheckCircle2,
+          },
+          {
+            label: resumen.imposibles > 0 ? "Revisar movimientos" : "Sin conteo",
+            value: resumen.imposibles > 0 ? String(resumen.imposibles) : String(resumen.sinConteo),
+            tone: (resumen.imposibles > 0 || resumen.sinConteo > 0 ? "error" : "neutral") as "error" | "neutral",
+            icon: AlertTriangle,
+          },
+          // Sólo lo de los arqueos donde alguien contó de verdad: sumar los
+          // cierres sin conteo daba un faltante que nadie podía explicar.
           { label: "Total faltantes", value: fmt(stats.totalShortage), tone: "error" as const, icon: TrendingDown },
           { label: "Total sobrantes", value: fmt(stats.totalSurplus), tone: "success" as const, icon: TrendingUp },
         ].map(({ label, value, tone, icon: Icon }) => {
           const tones = {
             neutral: { bg: "bg-[var(--surface-raised)] border border-[var(--rule-base)]", color: "text-[var(--text-primary)]", iconColor: "text-[var(--text-secondary)]" },
-            success: { bg: "bg-[var(--accent-soft)] border border-[var(--data-success-500)]/20 dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success-500)]", iconColor: "text-[var(--data-success-500)]" },
+            success: { bg: "bg-primary/10 border border-[var(--data-success-500)]/20 dark:bg-primary/15", color: "text-[var(--data-success-500)]", iconColor: "text-[var(--data-success-500)]" },
             error: { bg: "bg-[var(--data-error-50)] border border-[var(--data-error-500)]/20 dark:bg-red-950/30", color: "text-[var(--data-error-500)]", iconColor: "text-[var(--data-error-500)]" },
           }[tone];
           return (
@@ -541,7 +581,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
                     <td className="font-bold text-[var(--text-primary)]">{a.status !== "pendiente" ? fmt(a.countedAmount) : "—"}</td>
                     <td className={cn("font-extrabold", a.difference === 0 ? "text-[var(--text-tertiary)]" : a.difference > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{a.status !== "pendiente" ? (a.difference > 0 ? "+" : "") + fmt(a.difference) : "—"}</td>
                     <td><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[a.status].color)}><SIcon className="h-4 w-4" />{STATUS_MAP[a.status].label}</span></td>
-                    <td><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-4 w-4" /></button></td>
+                    <td><button aria-label="Ver" onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-4 w-4" /></button></td>
                   </tr>
                 );
               })}
@@ -553,39 +593,66 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       {/* Detail Modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cuadre — {detail.date} {detail.shift}</CardTitle>
+                <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cuadre — {detail.date} {detail.shift}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">{detail.cashier}{detail.closedBy ? ` · Cerrado por: ${detail.closedBy}` : " · Turno abierto"}</p>
               </div>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              <button aria-label="Cerrar" onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-center">
-              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Esperado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(detail.expectedAmount)}</p></div>
-              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Contado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.status !== "pendiente" ? fmt(detail.countedAmount) : "-"}</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Esperado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(detail.expectedAmount)}</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Contado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.status !== "pendiente" ? fmt(detail.countedAmount) : "-"}</p></div>
               <div className={cn("rounded-xl p-3", STATUS_MAP[detail.status].bg)}><p className="text-xs text-[var(--text-tertiary)]">Diferencia</p><p className={cn("font-extrabold", STATUS_MAP[detail.status].color)}>{detail.status !== "pendiente" ? (detail.difference > 0 ? "+" : "") + fmt(detail.difference) : "-"}</p></div>
             </div>
 
-            {detail.denominations.length > 0 && (
-              <div>
-                <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2 flex items-center gap-1"><Coins className="h-4 w-4" /> Desglose de denominaciones</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                  {detail.denominations.filter(d => d.count > 0).map(d => (
-                    <div key={`${d.type}-${d.value}`} className="flex items-center justify-between bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-3 py-1.5 text-xs">
-                      <span className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted">
-                        {d.type === "billete" ? <Banknote className="h-3 w-3" /> : <Coins className="h-3 w-3" />}
-                        S/ {d.value < 1 ? Number(d.value).toFixed(2) : d.value}
-                      </span>
-                      <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">×{d.count} = {fmt(d.value * d.count)}</span>
-                    </div>
-                  ))}
+            {/* Lo que el arqueo contó, sacado de sus propias notas.
+                Antes acá había un «Desglose de denominaciones» que no se
+                mostraba nunca: `mapRegisterToAudit` arma el detalle con
+                `denominations: []` fijo porque el desglose billete por billete
+                no se guarda en ninguna columna. Lo que sí quedó escrito —los
+                subtotales de billetes, monedas y medios digitales— vivía dentro
+                de un párrafo que nadie lee. */}
+            {(() => {
+              const arqueo = leerNotasArqueo(detail.notes);
+              if (!arqueo.hayDatos) return null;
+              const chips: Array<{ label: string; valor: number; Icono: typeof Coins }> = [];
+              if (arqueo.billetes != null) chips.push({ label: "Billetes", valor: arqueo.billetes, Icono: Banknote });
+              if (arqueo.monedas != null) chips.push({ label: "Monedas", valor: arqueo.monedas, Icono: Coins });
+              for (const d of arqueo.digitales) chips.push({ label: d.medio, valor: d.monto, Icono: Coins });
+              if (chips.length === 0) return null;
+              return (
+                <div>
+                  <BlockTitle className="mb-2 flex items-center gap-1">
+                    <Coins className="h-4 w-4" /> Cómo se contó
+                  </BlockTitle>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                    {chips.map(({ label, valor, Icono }) => (
+                      <div key={label} className="flex items-center justify-between bg-[var(--surface-alt)] rounded-lg px-3 py-1.5 text-sm">
+                        <span className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted">
+                          <Icono className="h-4 w-4" /> {label}
+                        </span>
+                        <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(valor)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {arqueo.fotoUrl && (
+                    <a
+                      href={arqueo.fotoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
+                    >
+                      Ver la foto del cajón
+                    </a>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
-            {detail.notes && <p className="text-xs text-[var(--text-tertiary)] italic">&quot;{detail.notes}&quot;</p>}
+            {detail.notes && <p className="text-sm text-[var(--text-tertiary)] italic">&quot;{detail.notes}&quot;</p>}
           </div>
         </div>
       )}

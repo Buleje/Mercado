@@ -29,7 +29,7 @@ const chip = tv({
         "border-transparent",
       ],
       accent: [
-        "bg-primary/10 text-primary",
+        "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
         "border-primary/20",
       ],
       success: [

@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
-import type { DbProduct } from "@/lib/jsondb";
 import type { FormEvent } from "react";
 
 type AddFormShape = {
@@ -131,7 +130,7 @@ export function useStockMovements(onDone: () => void) {
       onDone();
     } catch (err) {
       console.error("[useStockMovements] addProduct error", err);
-      toast.error("Error de conexión. Reintentá.");
+      toast.error("Error de conexión. Reintenta.");
     }
     setSaving(false);
   }, [saving, addForm, onDone]);

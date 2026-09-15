@@ -4,6 +4,9 @@ import {
   censusVolume,
   computeBalance,
   computeAprovechamiento,
+  claveEspecie,
+  cruzarEspecies,
+  mismaEspecie,
   detectAnomalias,
   projectSaldo,
   computeCosteo,
@@ -200,5 +203,99 @@ describe("computeCosteo — margen por m³ (Batch 3)", () => {
     const r = computeCosteo([{ species: "X", movilizadoM3: 2, precioVentaM3: 300, venM3: 30 }], { extraccionM3: 0, transformacionM3: 0, fleteM3: 0 });
     expect(r.rows[0].margenM3).toBe(270);
     expect(r.ingresoTotal).toBe(600);
+  });
+});
+
+describe("computeBalance — la madera que el POA no autoriza", () => {
+  /**
+   * El balance recorre las especies AUTORIZADAS. Sin `fueraDePlan`, mover una
+   * especie que no está en el plan no aparecía en ninguna fila: el saldo se
+   * leía impecable justo cuando la infracción era más grave.
+   */
+  const soloTornilloAutorizado: BalanceSpeciesInput[] = [
+    { speciesCommon: "Tornillo", cites: false, volumenAutorizadoM3: 80, precioVentaSoles: null, valorEstadoNaturalSoles: null },
+  ];
+
+  it("lista la especie movilizada que el plan no declara", () => {
+    const movs: BalanceMovement[] = [
+      { section: "trozado", speciesCommon: "Cumala", trozaCode: "C-1", volumeM3: 3.5, quantity: null, unit: null },
+      { section: "despacho_troza", speciesCommon: null, trozaCode: "C-1", volumeM3: null, quantity: null, unit: null },
+    ];
+    const r = computeBalance(soloTornilloAutorizado, movs);
+    expect(r.rows).toHaveLength(1); // sólo Tornillo, como siempre
+    expect(r.fueraDePlan).toEqual([{ species: "Cumala", movilizadoM3: 3.5 }]);
+  });
+
+  it("suma también el producto terminado despachado en m³", () => {
+    const movs: BalanceMovement[] = [
+      { section: "despacho_producto", speciesCommon: "Cumala", trozaCode: null, volumeM3: null, quantity: 2, unit: "m3" },
+      { section: "despacho_producto", speciesCommon: "Lupuna", trozaCode: null, volumeM3: null, quantity: 5, unit: "m3" },
+    ];
+    const r = computeBalance(soloTornilloAutorizado, movs);
+    // Ordenado por volumen: la que más pesa, primero.
+    expect(r.fueraDePlan).toEqual([
+      { species: "Lupuna", movilizadoM3: 5 },
+      { species: "Cumala", movilizadoM3: 2 },
+    ]);
+  });
+
+  it("la especie autorizada nunca cae en la lista, ni con exceso", () => {
+    const movs: BalanceMovement[] = [
+      { section: "trozado", speciesCommon: "Tornillo", trozaCode: "T-1", volumeM3: 200, quantity: null, unit: null },
+      { section: "despacho_troza", speciesCommon: null, trozaCode: "T-1", volumeM3: null, quantity: null, unit: null },
+    ];
+    const r = computeBalance(soloTornilloAutorizado, movs);
+    expect(r.fueraDePlan).toEqual([]);
+    expect(r.rows[0].exceso).toBe(true); // el exceso lo sigue reportando `rows`
+  });
+
+  it("talar sin despachar todavía no cuenta: la lista mide lo MOVILIZADO", () => {
+    const movs: BalanceMovement[] = [
+      { section: "tala", speciesCommon: "Cumala", trozaCode: null, volumeM3: 9, quantity: null, unit: null },
+    ];
+    expect(computeBalance(soloTornilloAutorizado, movs).fueraDePlan).toEqual([]);
+  });
+});
+
+describe("claveEspecie / cruzarEspecies — el paréntesis que fabricaba infracciones", () => {
+  it("el nombre de la resolución y el del libro son la misma especie", () => {
+    // Caso REAL del tenant: el plan copia «Tornillo (Cedrelinga catenaeformis)»
+    // y el libro asienta «Tornillo». Comparados como strings nunca coincidían.
+    expect(claveEspecie("Tornillo (Cedrelinga catenaeformis)")).toBe("tornillo");
+    expect(claveEspecie("  TORNILLO  ")).toBe("tornillo");
+    expect(claveEspecie("Shihuahuaco Ámbar")).toBe("shihuahuaco ambar");
+    expect(mismaEspecie("Tornillo (Cedrelinga catenaeformis)", "tornillo")).toBe(true);
+    expect(mismaEspecie("Cedro", "Tornillo")).toBe(false);
+    expect(mismaEspecie(null, "Tornillo")).toBe(false);
+  });
+
+  it("el balance cruza por clave: el saldo deja de verse intacto", () => {
+    const species: BalanceSpeciesInput[] = [
+      { speciesCommon: "Tornillo (Cedrelinga catenaeformis)", cites: false, volumenAutorizadoM3: 320 },
+    ];
+    const movs: BalanceMovement[] = [
+      { section: "tala", speciesCommon: "Tornillo", trozaCode: null, volumeM3: 9.54, quantity: null, unit: null },
+      { section: "trozado", speciesCommon: "Tornillo", trozaCode: "T-A", volumeM3: 2.85, quantity: null, unit: null },
+      { section: "despacho_troza", speciesCommon: null, trozaCode: "T-A", volumeM3: null, quantity: null, unit: null },
+    ];
+    const r = computeBalance(species, movs);
+    expect(r.rows[0].talado).toBe(9.54);
+    expect(r.rows[0].movilizado).toBe(2.85);
+    expect(r.rows[0].saldo).toBe(317.15);
+    // Y deja de acusar: la especie SÍ está autorizada, sólo estaba escrita distinto.
+    expect(r.fueraDePlan).toEqual([]);
+  });
+
+  it("separa «no autorizada» de «escrita distinto»", () => {
+    const c = cruzarEspecies(["Tornillo", "Cedro rojo", "Caoba"], ["Tornillo (Cedrelinga catenaeformis)", "Cedro"]);
+    // Tornillo cruza exacto por clave; Cedro rojo se parece a Cedro; Caoba no está.
+    expect(c.sinAutorizar).toEqual(["Caoba"]);
+    expect(c.ambiguas).toEqual([{ libro: "Cedro rojo", plan: "Cedro" }]);
+  });
+
+  it("sin especies en el plan no se acusa a nadie", () => {
+    const c = cruzarEspecies(["Tornillo"], []);
+    expect(c.sinAutorizar).toEqual(["Tornillo"]);
+    expect(c.autorizadas.size).toBe(0);
   });
 });

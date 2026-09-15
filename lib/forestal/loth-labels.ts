@@ -38,7 +38,7 @@ export async function printTrozaLabels(
         <div class="meta">${esc(dims)}${e.volumeM3 ? ` · ${n(e.volumeM3, 4)} m³` : ""}</div>
         <div class="foot">
           <span>${esc(opts.planNumber ?? opts.titular ?? "")}</span>
-          <span class="org">Origen SERFOR · escaneá para verificar</span>
+          <span class="org">Origen SERFOR · escanea para verificar</span>
         </div>
       </div>`;
     }),
@@ -66,7 +66,7 @@ export async function printTrozaLabels(
   </body></html>`;
 
   const w = window.open("", "_blank", "width=900,height=700");
-  if (!w) throw new Error("El navegador bloqueó la ventana. Permití pop-ups para imprimir etiquetas.");
+  if (!w) throw new Error("El navegador bloqueó la ventana. Permite pop-ups para imprimir etiquetas.");
   w.document.write(html);
   w.document.close();
   w.focus();

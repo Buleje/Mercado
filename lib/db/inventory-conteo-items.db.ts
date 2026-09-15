@@ -43,7 +43,11 @@ export const InventoryConteoItemsDB = {
     });
   },
 
-  async updateItem(itemId: string, data: { stockContado: number; diferencia: number; ajustado: boolean }) {
+  /**
+   * `stockContado` y `diferencia` son opcionales: se puede tildar o destildar
+   * «ajustar» sin volver a contar el producto.
+   */
+  async updateItem(itemId: string, data: { stockContado?: number; diferencia?: number; ajustado: boolean }) {
     return prisma.conteoFisicoItem.update({
       where: { id: itemId },
       data,

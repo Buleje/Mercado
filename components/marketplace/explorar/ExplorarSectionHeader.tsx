@@ -46,7 +46,7 @@ export default function ExplorarSectionHeader({
             {kicker}
           </p>
         )}
-        <h2 className="text-[clamp(1.625rem,3.2vw,2.5rem)] font-black tracking-[-0.025em] text-[var(--text-primary)] leading-[1.05]">
+        <h2 className="text-[clamp(1.375rem,2.4vw,1.875rem)] font-semibold tracking-[-0.02em] text-[var(--text-primary)] leading-[1.1]">
           {title}
         </h2>
         {subtitle && (

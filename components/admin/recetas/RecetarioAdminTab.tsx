@@ -1,7 +1,8 @@
 'use client';
 
-import { LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { toast } from "sonner";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -9,6 +10,7 @@ import {
   Eye, EyeOff, Save, BookOpen, Clock, Users, BarChart3,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -95,7 +97,7 @@ export default function RecetarioAdminTab() {
     fetch("/api/products?limit=500")
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setProducts(d); })
-      .catch(() => {});
+      .catch((err) => console.warn("[RecetarioAdminTab] products fetch failed:", String(err)));
   }, []);
 
   // ── Form helpers ──
@@ -170,23 +172,31 @@ export default function RecetarioAdminTab() {
         activa: true,
       };
 
-      if (editing?._noteId) {
-        await fetch(`/api/admin/recetario/${editing._noteId}`, {
-          method: "PATCH",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(body),
-        });
-      } else {
-        await fetch("/api/admin/recetario", {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(body),
-        });
+      const res = editing?._noteId
+        ? await fetch(`/api/admin/recetario/${editing._noteId}`, {
+            method: "PATCH",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(body),
+          })
+        : await fetch("/api/admin/recetario", {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(body),
+          });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo guardar la receta (error ${res.status})`);
+        setSaving(false);
+        return;
       }
+      toast.success(editing ? "Receta actualizada" : "Receta creada");
       setShowModal(false);
       resetForm();
       fetchRecetas();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[RecetarioAdminTab] guardar receta falló", err);
+      toast.error("No se pudo guardar la receta — revisa tu conexión.");
+    }
     setSaving(false);
   };
 
@@ -194,22 +204,39 @@ export default function RecetarioAdminTab() {
   const toggleActiva = async (r: RecetaPublica) => {
     if (!r._noteId) return;
     try {
-      await fetch(`/api/admin/recetario/${r._noteId}`, {
+      const res = await fetch(`/api/admin/recetario/${r._noteId}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ activa: !r.activa }),
       });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo cambiar el estado (error ${res.status})`);
+        return;
+      }
       fetchRecetas();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[RecetarioAdminTab] cambiar estado falló", err);
+      toast.error("No se pudo cambiar el estado — revisa tu conexión.");
+    }
   };
 
   // ── Delete ──
   const handleDelete = async (noteId: string) => {
     try {
-      await fetch(`/api/admin/recetario/${noteId}`, { method: "DELETE", headers: csrfHeaders() });
+      const res = await fetch(`/api/admin/recetario/${noteId}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo eliminar la receta (error ${res.status})`);
+        return;
+      }
+      toast.success("Receta eliminada");
       setDeleteConfirm(null);
       fetchRecetas();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[RecetarioAdminTab] eliminar receta falló", err);
+      toast.error("No se pudo eliminar la receta — revisa tu conexión.");
+    }
   };
 
   // ── Filter ──
@@ -235,11 +262,11 @@ export default function RecetarioAdminTab() {
     <div className="space-y-6">
       {/* Stats bar */}
       <div className="flex flex-wrap gap-3 text-xs">
-        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
           <BookOpen className="h-3.5 w-3.5" />
           Recetas publicadas: {activas}
         </div>
-        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
           <BarChart3 className="h-3.5 w-3.5" />
           Ingredientes promedio: {avgIng}
         </div>
@@ -257,20 +284,21 @@ export default function RecetarioAdminTab() {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="Buscar receta..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-10 pr-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         <select
           value={filterCat}
           onChange={e => setFilterCat(e.target.value)}
-          className="px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          aria-label="Filtrar por categoría"
+          className="px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         >
           <option value="">Todas las categorias</option>
           {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <button
           onClick={openNew}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark  transition-colors shrink-0"
         >
           <Plus className="h-4 w-4" />
           Nueva Receta
@@ -291,9 +319,9 @@ export default function RecetarioAdminTab() {
           )}
         </div>
       ) : (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-soft)] text-left">
                   <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Receta</th>
@@ -306,7 +334,7 @@ export default function RecetarioAdminTab() {
               </thead>
               <tbody>
                 {filtered.map(r => (
-                  <tr key={r._noteId || r.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <tr key={r._noteId || r.id} className="border-b border-gray-50 hover:bg-[var(--surface-sunken)] transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{r.emoji}</span>
@@ -320,7 +348,7 @@ export default function RecetarioAdminTab() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">
-                      <span className="text-xs bg-gray-100 px-2 py-1 rounded-lg">{r.categoria}</span>
+                      <span className="text-xs bg-[var(--rule-soft)] px-2 py-1 rounded-lg">{r.categoria}</span>
                     </td>
                     <td className="px-4 py-3 text-center text-[var(--text-secondary)] hidden md:table-cell">{r.ingredientes?.length || 0}</td>
                     <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(r.totalIngredientes || 0)}</td>
@@ -330,8 +358,8 @@ export default function RecetarioAdminTab() {
                         className={cn(
                           "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
                           r.activa !== false
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
-                            : "bg-gray-100 text-[var(--text-secondary)]"
+                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                            : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
                         )}
                       >
                         {r.activa !== false ? <><Eye className="h-3 w-3" /> Activa</> : <><EyeOff className="h-3 w-3" /> Inactiva</>}
@@ -341,14 +369,14 @@ export default function RecetarioAdminTab() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => openEdit(r)}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 text-[var(--text-tertiary)] hover:text-primary transition-colors"
+                          className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-primary transition-colors"
                           title="Editar"
                         >
                           <Save className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setDeleteConfirm(r._noteId || null)}
-                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
+                          className="p-1.5 rounded-xl hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -358,18 +386,18 @@ export default function RecetarioAdminTab() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}
 
       {/* Delete Confirm */}
       <AdminModal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Eliminar receta" variant="centered-sm">
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <p className="text-sm text-[var(--text-secondary)]">Esta accion no se puede deshacer. La receta se eliminara del recetario público.</p>
           <div className="flex gap-2">
-            <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 transition-colors">Cancelar</button>
-            <button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] transition-colors">Eliminar</button>
+            <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-[var(--rule-soft)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
+            <button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="flex-1 px-4 min-h-11 rounded-xl text-sm font-semibold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] transition-colors">Eliminar</button>
           </div>
         </div>
       </AdminModal>
@@ -382,7 +410,7 @@ export default function RecetarioAdminTab() {
         variant="wide"
       >
           {/* Modal Tabs */}
-          <div className="flex gap-1 px-5 pt-3 border-b border-[var(--rule-soft)]">
+          <div className="flex gap-1 pt-3 border-b border-[var(--rule-soft)] px-5 py-5 sm:px-6">
             {(["info", "ingredientes", "pasos", "preview"] as const).map(t => (
               <button
                 key={t}
@@ -404,45 +432,37 @@ export default function RecetarioAdminTab() {
                   {/* A) Info Básica */}
                   {modalTab === "info" && (
                     <div className="space-y-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre *</label>
-                        <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Ceviche Clasico" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripcion</label>
-                        <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Descripcion de la receta..." rows={3} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                      </div>
+                      <Field label="Nombre *" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                        <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Ceviche Clasico" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </Field>
+                      <Field label="Descripcion" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                        <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Descripcion de la receta..." rows={3} className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </Field>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Emoji</label>
-                          <input type="text" value={emoji} onChange={e => setEmoji(e.target.value)} placeholder="🍲" maxLength={2} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tiempo (min)</label>
-                          <input type="number" value={tiempoMinutos} onChange={e => setTiempoMinutos(Number(e.target.value))} min={1} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Porciones</label>
-                          <input type="number" value={porciones} onChange={e => setPorciones(Number(e.target.value))} min={1} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Dificultad</label>
-                          <select value={dificultad} onChange={e => setDificultad(e.target.value as typeof dificultad)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <Field label="Emoji" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                          <input type="text" value={emoji} onChange={e => setEmoji(e.target.value)} placeholder="🍲" maxLength={2} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        </Field>
+                        <Field label="Tiempo (min)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                          <input type="number" value={tiempoMinutos} onChange={e => setTiempoMinutos(Number(e.target.value))} min={1} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        </Field>
+                        <Field label="Porciones" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                          <input type="number" value={porciones} onChange={e => setPorciones(Number(e.target.value))} min={1} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        </Field>
+                        <Field label="Dificultad" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                          <select value={dificultad} onChange={e => setDificultad(e.target.value as typeof dificultad)} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                             {DIFICULTADES.map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
-                        </div>
+                        </Field>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Categoria</label>
-                          <select value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <Field label="Categoria" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                          <select value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                             {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">URL Video YouTube (opcional)</label>
-                          <input type="text" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
+                        </Field>
+                        <Field label="URL Video YouTube (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                          <input type="text" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        </Field>
                       </div>
                     </div>
                   )}
@@ -460,65 +480,70 @@ export default function RecetarioAdminTab() {
                         <p className="text-xs text-[var(--text-tertiary)] text-center py-6">Agrega ingredientes para la receta</p>
                       )}
                       {ingredientes.map((ing, idx) => (
-                        <div key={idx} className="bg-gray-50 rounded-xl p-3 space-y-2">
+                        <div key={idx} className="bg-[var(--surface-sunken)] rounded-xl p-3 space-y-2">
                           <div className="flex gap-2 items-start">
-                            <div className="flex-1">
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Nombre del ingrediente</label>
-                              <div className="relative">
-                                <input
-                                  type="text"
-                                  value={ing.nombre}
-                                  onChange={e => updateIngrediente(idx, "nombre", e.target.value)}
-                                  placeholder="Buscar producto o escribir..."
-                                  className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
-                                  list={`prod-list-${idx}`}
-                                />
-                                <datalist id={`prod-list-${idx}`}>
-                                  {products
-                                    .filter(p => p.name.toLowerCase().includes((ing.nombre || "").toLowerCase()))
-                                    .slice(0, 8)
-                                    .map(p => (
-                                      <option key={p.id} value={p.name} onClick={() => selectProduct(idx, p)} />
-                                    ))}
-                                </datalist>
-                              </div>
-                              {/* Quick product select buttons */}
-                              {ing.nombre && ing.nombre.length >= 2 && (
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {products
-                                    .filter(p => p.name.toLowerCase().includes(ing.nombre.toLowerCase()))
-                                    .slice(0, 3)
-                                    .map(p => (
-                                      <button
-                                        key={p.id}
-                                        onClick={() => selectProduct(idx, p)}
-                                        className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--data-success-500)] px-2 py-0.5 rounded-md hover:bg-[var(--accent-soft)] transition-colors"
-                                      >
-                                        {p.name} — S/{Number(p.price).toFixed(2)}
-                                      </button>
-                                    ))}
-                                </div>
+                            <Field
+                              label="Nombre del ingrediente"
+                              labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5"
+                              className="flex-1"
+                            >
+                              {(id) => (
+                                <>
+                                  <div className="relative">
+                                    <input
+                                      id={id}
+                                      type="text"
+                                      value={ing.nombre}
+                                      onChange={e => updateIngrediente(idx, "nombre", e.target.value)}
+                                      placeholder="Buscar producto o escribir..."
+                                      className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                      list={`prod-list-${idx}`}
+                                    />
+                                    <datalist id={`prod-list-${idx}`}>
+                                      {products
+                                        .filter(p => p.name.toLowerCase().includes((ing.nombre || "").toLowerCase()))
+                                        .slice(0, 8)
+                                        .map(p => (
+                                          <option key={p.id} value={p.name} onClick={() => selectProduct(idx, p)} />
+                                        ))}
+                                    </datalist>
+                                  </div>
+                                  {/* Quick product select buttons */}
+                                  {ing.nombre && ing.nombre.length >= 2 && (
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {products
+                                        .filter(p => p.name.toLowerCase().includes(ing.nombre.toLowerCase()))
+                                        .slice(0, 3)
+                                        .map(p => (
+                                          <button
+                                            key={p.id}
+                                            onClick={() => selectProduct(idx, p)}
+                                            className="text-[length:var(--ts-2xs)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-lg hover:bg-primary/10 transition-colors"
+                                          >
+                                            {p.name} — S/{Number(p.price).toFixed(2)}
+                                          </button>
+                                        ))}
+                                    </div>
+                                  )}
+                                </>
                               )}
-                            </div>
-                            <button onClick={() => removeIngrediente(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors mt-4 shrink-0">
+                            </Field>
+                            <button aria-label="Quitar" onClick={() => removeIngrediente(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors mt-4 shrink-0">
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </div>
                           <div className="grid grid-cols-3 gap-2">
-                            <div>
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Cantidad</label>
-                              <input type="number" step="0.01" min="0" value={ing.cantidad} onChange={e => updateIngrediente(idx, "cantidad", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                            </div>
-                            <div>
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Unidad</label>
-                              <select value={ing.unidad} onChange={e => updateIngrediente(idx, "unidad", e.target.value)} className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30">
+                            <Field label="Cantidad" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
+                              <input type="number" step="0.01" min="0" value={ing.cantidad} onChange={e => updateIngrediente(idx, "cantidad", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                            </Field>
+                            <Field label="Unidad" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
+                              <select value={ing.unidad} onChange={e => updateIngrediente(idx, "unidad", e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30">
                                 {UNIDADES.map(u => <option key={u} value={u}>{u}</option>)}
                               </select>
-                            </div>
-                            <div>
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Precio (S/)</label>
-                              <input type="number" step="0.01" min="0" value={ing.precio} onChange={e => updateIngrediente(idx, "precio", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                            </div>
+                            </Field>
+                            <Field label="Precio (S/)" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
+                              <input type="number" step="0.01" min="0" value={ing.precio} onChange={e => updateIngrediente(idx, "precio", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                            </Field>
                           </div>
                         </div>
                       ))}
@@ -542,22 +567,22 @@ export default function RecetarioAdminTab() {
                       </div>
                       {pasos.map((paso, idx) => (
                         <div key={idx} className="flex gap-2 items-start">
-                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0 mt-1">{idx + 1}</span>
+                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold shrink-0 mt-1">{idx + 1}</span>
                           <textarea
                             value={paso}
                             onChange={e => updatePaso(idx, e.target.value)}
                             placeholder={`Paso ${idx + 1}...`}
                             rows={2}
-                            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            className="flex-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
                           />
                           <div className="flex flex-col gap-0.5 shrink-0">
-                            <button onClick={() => movePaso(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 transition-colors">
+                            <button aria-label="Subir" onClick={() => movePaso(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-[var(--rule-soft)] disabled:opacity-30 transition-colors">
                               <ChevronUp className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                             </button>
-                            <button onClick={() => movePaso(idx, 1)} disabled={idx === pasos.length - 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 transition-colors">
+                            <button aria-label="Bajar" onClick={() => movePaso(idx, 1)} disabled={idx === pasos.length - 1} className="p-1 rounded hover:bg-[var(--rule-soft)] disabled:opacity-30 transition-colors">
                               <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                             </button>
-                            <button onClick={() => removePaso(idx)} className="p-1 rounded hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
+                            <button aria-label="Quitar" onClick={() => removePaso(idx)} className="p-1 rounded hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -570,7 +595,7 @@ export default function RecetarioAdminTab() {
                   {modalTab === "preview" && (
                     <div className="space-y-6">
                       <p className="text-xs font-bold text-[var(--text-tertiary)]">Vista previa de la receta</p>
-                      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+                      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
                         <div className="bg-[var(--brand-ink)] p-4 text-[var(--surface-canvas)]">
                           <div className="flex items-center gap-3">
                             <span className="text-3xl">{emoji || "🍽️"}</span>
@@ -581,7 +606,7 @@ export default function RecetarioAdminTab() {
                                 <span className="flex items-center gap-1"><Users className="h-3 w-3" />{porciones} porciones</span>
                                 <span className={cn(
                                   "px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold",
-                                  dificultad === "Fácil" ? "bg-[var(--accent-soft)]" : dificultad === "Media" ? "bg-[var(--data-warning-500)]/30" : "bg-[var(--data-error-500)]/30"
+                                  dificultad === "Fácil" ? "bg-primary/10" : dificultad === "Media" ? "bg-[var(--data-warning-500)]/30" : "bg-[var(--data-error-500)]/30"
                                 )}>{dificultad}</span>
                               </div>
                             </div>
@@ -612,7 +637,7 @@ export default function RecetarioAdminTab() {
                               <ol className="space-y-1.5">
                                 {pasos.filter(p => p.trim()).map((p, idx) => (
                                   <li key={idx} className="flex gap-2 text-xs text-[var(--text-secondary)]">
-                                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold shrink-0">{idx + 1}</span>
+                                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-bold shrink-0">{idx + 1}</span>
                                     {p}
                                   </li>
                                 ))}
@@ -627,13 +652,13 @@ export default function RecetarioAdminTab() {
 
           {/* Modal Footer */}
           <div className="flex gap-2 px-5 py-4 border-t border-[var(--rule-soft)]">
-            <button onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+            <button onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors">
               Cancelar
             </button>
             <button
               onClick={handleSave}
               disabled={saving || !nombre.trim() || ingredientes.length === 0}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {editing ? "Actualizar" : "Guardar"}

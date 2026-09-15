@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { withCronHealth } from "@/lib/cron/with-cron-health";
 import { withCronRetry } from "@/lib/cron-retry";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
@@ -17,7 +17,7 @@ import { logActivity } from "@/lib/activity-logger";
  * Sugerencia vercel.json: "0 8,14,20 * * *" (3 veces al día)
  * Autorización: Bearer <CRON_SECRET>
  */
-export const GET = withCronHealth("stock-alerts-notify", async (req) => {
+export const GET = withCronHealth("stock-alerts-notify", async (_req) => {
   try {
     const result = await withCronRetry("stock-alerts-notify", async () => {
       // Multi-tenant: process all active tenants

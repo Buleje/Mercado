@@ -267,7 +267,7 @@ export default function StoreAnalyticsModule() {
               type="button"
               onClick={() => setDays(d)}
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-bold transition-colors",
+                "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 days === d
                   ? "bg-[var(--accent-600,var(--accent))] text-white"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
@@ -279,7 +279,7 @@ export default function StoreAnalyticsModule() {
           <button
             type="button"
             onClick={() => fetchData(days)}
-            className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-[var(--surface-raised)] text-[var(--text-secondary)]"
+            className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-lg hover:bg-[var(--surface-raised)] text-[var(--text-secondary)]"
             title="Refrescar"
             aria-label="Refrescar analíticas"
           >
@@ -292,7 +292,7 @@ export default function StoreAnalyticsModule() {
         <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-6 text-center">
           <p className="text-sm font-bold text-[var(--text-primary)]">Sin datos en el período seleccionado</p>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">
-            Cuando haya tráfico y ventas en tus productos, los verás acá. Probá con un período más amplio o esperá a que registremos eventos.
+            Cuando haya tráfico y ventas en tus productos, los verás acá. Prueba con un período más amplio o espera a que registremos eventos.
           </p>
         </div>
       )}
@@ -342,7 +342,7 @@ export default function StoreAnalyticsModule() {
       ) : (
         <LockedAdvanced
           title="Funnel de conversión y tendencia diaria"
-          desc="Mirá dónde se caen tus ventas (vistas → carrito → compra) y la curva de ingresos día a día."
+          desc="Mira dónde se caen tus ventas (vistas → carrito → compra) y la curva de ingresos día a día."
         />
       )}
 
@@ -385,7 +385,7 @@ export default function StoreAnalyticsModule() {
 function LockedAdvanced({ title, desc }: { title: string; desc: string }) {
   return (
     <div className="rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 flex items-start gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
         <Lock className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
       </div>
       <div className="flex-1">

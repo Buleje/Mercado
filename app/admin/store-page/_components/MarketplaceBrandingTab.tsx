@@ -12,7 +12,7 @@
  * /api/marketplace/stores/[slug]/branding.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Image from "next/image";
 import {
   Save,
@@ -44,6 +44,7 @@ export default function MarketplaceBrandingTab() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const whatsappInputId = useId();
 
   useEffect(() => {
     void load();
@@ -203,27 +204,28 @@ export default function MarketplaceBrandingTab() {
         {/* WhatsApp público — muestra un botón flotante en el storefront mobile
             para que los clientes te escriban directo. Audit #6 (Brandon). */}
         <div>
-          <label className="text-sm font-semibold text-[var(--text-primary)]">
+          <label htmlFor={whatsappInputId} className="text-sm font-semibold text-[var(--text-primary)]">
             WhatsApp de contacto (opcional)
           </label>
           <p className="text-xs text-[var(--text-tertiary)] mt-0.5 mb-1.5">
-            Si lo cargás, los clientes ven un botón de WhatsApp en tu tienda (mobile). Ej: 999 888 777.
+            Si lo cargas, los clientes ven un botón de WhatsApp en tu tienda (mobile). Ej: 999 888 777.
           </p>
           <div className="flex items-center gap-2">
             <input
+              id={whatsappInputId}
               type="tel"
               inputMode="tel"
               value={whatsappInput}
               onChange={(e) => setWhatsappInput(e.target.value)}
               placeholder="999 888 777"
-              className="flex-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 h-12 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+              className="flex-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 h-12 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
             />
             {whatsappInput && (
               <button
                 type="button"
                 onClick={() => setWhatsappInput("")}
                 aria-label="Limpiar"
-                className="inline-flex h-12 w-12 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
               </button>
@@ -307,27 +309,29 @@ function UrlField({
   onChange: (v: string) => void;
   onClear: () => void;
 }) {
+  const inputId = useId();
   return (
     <div>
-      <label className="text-sm font-semibold text-[var(--text-primary)]">
+      <label htmlFor={inputId} className="text-sm font-semibold text-[var(--text-primary)]">
         {label}
       </label>
       <p className="text-xs text-[var(--text-tertiary)] mt-0.5 mb-1.5">{hint}</p>
       <div className="flex items-center gap-2">
         <input
+          id={inputId}
           type="url"
           inputMode="url"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://ejemplo.com/banner.jpg"
-          className="flex-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 h-12 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+          className="flex-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 h-12 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
         />
         {value && (
           <button
             type="button"
             onClick={onClear}
             aria-label="Limpiar"
-            className="inline-flex h-12 w-12 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </button>

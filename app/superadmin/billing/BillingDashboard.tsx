@@ -14,6 +14,7 @@
  * Atajos: `/` busca · `R` recarga · `Esc` limpia filtros
  */
 
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import {
   useCallback,
   useEffect,
@@ -33,10 +34,15 @@ import {
   Clock,
   XCircle,
   ExternalLink,
-  Loader2,
   CheckCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import {
+  DunningPanel,
+  type MrrMovement,
+  type Dunning,
+} from "./DunningPanel";
+import { BillingExecutiveSummary } from "./BillingExecutiveSummary";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -62,6 +68,8 @@ interface BillingSummary {
   generatedAt: string;
   mrrPEN: number;
   arrPEN: number;
+  mrrMovement: MrrMovement;
+  dunning: Dunning;
   counts: {
     total: number;
     paid: number;
@@ -170,149 +178,171 @@ function exportCSV(rows: TenantBillingRow[]) {
   const a = document.createElement("a");
   a.href = url;
   a.download = `billing_${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+ a.click();
+ URL.revokeObjectURL(url);
 }
 
 // ── Status / source styles ─────────────────────────────────────────────────
 
 const STATUS_META: Record<
-  TenantBillingRow["status"],
-  { label: string; pill: string; dot: string }
+ TenantBillingRow["status"],
+ { label: string; pill: string; dot: string }
 > = {
-  paid: {
-    label: "Pago",
-    pill: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
-    dot: "bg-emerald-500",
-  },
-  trial: {
-    label: "Trial",
-    pill: "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
-    dot: "bg-sky-500",
-  },
-  canceled: {
-    label: "Cancelado",
-    pill: "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
-    dot: "bg-rose-500",
-  },
-  free: {
-    label: "Free",
-    pill: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300",
-    dot: "bg-slate-400",
-  },
+ paid: {
+ label: "Pago",
+ pill: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
+ dot: "bg-emerald-500",
+ },
+ trial: {
+ label: "Trial",
+ pill: "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
+ dot: "bg-sky-500",
+ },
+ canceled: {
+ label: "Cancelado",
+ pill: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
+ dot: "bg-rose-500",
+ },
+ free: {
+ label: "Free",
+ pill: "bg-[var(--rule-soft)] text-[var(--text-primary)] ",
+ dot: "bg-slate-400",
+ },
 };
 
 const SOURCE_LABEL: Record<TenantBillingRow["source"], string> = {
-  stripe: "Stripe",
-  mp: "Mercado Pago",
-  none: "—",
+ stripe: "Stripe",
+ mp: "Mercado Pago",
+ none: "—",
 };
 
 // ── Stat Card ──────────────────────────────────────────────────────────────
 
 function Kpi({
-  label,
-  value,
-  sub,
-  tone = "default",
-  icon: Icon,
+ label,
+ value,
+ sub,
+ tone = "default",
+ icon: Icon,
 }: {
-  label: string;
-  value: string;
-  sub?: string;
-  tone?: "default" | "success" | "warning" | "danger" | "info";
-  icon?: React.ComponentType<{ className?: string; strokeWidth?: number; "aria-hidden"?: boolean }>;
+ label: string;
+ value: string;
+ sub?: string;
+ tone?: "default" | "success" | "warning" | "danger" | "info";
+ icon?: React.ComponentType<{ className?: string; strokeWidth?: number; "aria-hidden"?: boolean }>;
 }) {
-  const ring = {
-    default: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-    success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-    info: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
-  }[tone];
+ const ring = {
+ default: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+ success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+ warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
+ danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
+ info: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+ }[tone];
 
-  return (
-    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        {Icon && (
-          <span
-            className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-xl",
-              ring,
-            )}
-          >
-            <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-          </span>
-        )}
-      </div>
-      <p className="mt-3 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-        {label}
-      </p>
-      <p className="mt-1 font-display text-2xl sm:text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
-        {value}
-      </p>
-      {sub && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{sub}</p>}
-    </div>
-  );
+ return (
+ <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5">
+ <div className="flex items-start justify-between gap-3">
+ {Icon && (
+ <span
+ className={cn(
+ "inline-flex h-10 w-10 items-center justify-center rounded-xl",
+ ring,
+ )}
+ >
+ <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+ </span>
+ )}
+ </div>
+ <p className="mt-3 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+ {label}
+ </p>
+ <p className="mt-1 font-display text-2xl sm:text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
+ {value}
+ </p>
+ {sub && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{sub}</p>}
+ </div>
+ );
 }
 
 // ── Skeleton ───────────────────────────────────────────────────────────────
 
 function Skeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-2xl bg-[var(--surface-sunken)] h-28" />
-        ))}
-      </div>
-      <div className="rounded-2xl bg-[var(--surface-sunken)] h-40" />
-      <div className="rounded-2xl bg-[var(--surface-sunken)] h-64" />
-    </div>
-  );
+ return (
+ <div className="space-y-5 animate-pulse">
+ <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+ {Array.from({ length: 4 }).map((_, i) => (
+ <div key={i} className="rounded-2xl bg-[var(--surface-sunken)] h-28" />
+ ))}
+ </div>
+ <div className="rounded-2xl bg-[var(--surface-sunken)] h-40" />
+ <div className="rounded-2xl bg-[var(--surface-sunken)] h-64" />
+ </div>
+ );
 }
 
 // ── Plan bar (canónico) ────────────────────────────────────────────────────
 
 function PlanBar({
-  label,
-  value,
-  max,
-  amount,
-  pricePEN,
+ label,
+ value,
+ max,
+ amount,
+ pricePEN,
+ onClick,
+ active,
 }: {
-  label: string;
-  value: number;
-  max: number;
-  amount: number;
-  pricePEN: number;
+ label: string;
+ value: number;
+ max: number;
+ amount: number;
+ pricePEN: number;
+ /** Click → filtra la tabla por este plan (función nueva). */
+ onClick?: () => void;
+ active?: boolean;
 }) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  return (
-    <div>
-      <div className="flex items-baseline justify-between gap-2 mb-1">
-        <span className="font-extrabold text-sm text-[var(--text-primary)]">
-          {label}
-          <span className="ml-1.5 text-xs font-bold text-[var(--text-tertiary)]">
-            {fmtPEN(pricePEN)}/mes
-          </span>
-        </span>
-        <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
-          {value}{" "}
-          <span className="text-xs font-bold text-[var(--text-tertiary)]">
-            · {fmtPEN(amount)}
-          </span>
-        </span>
-      </div>
-      <div className="h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-        <div
-          className="h-full bg-[var(--accent)] transition-all duration-500"
-          style={{ width: `${pct}%` }}
+ const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+ const inner = (
+ <>
+ <div className="flex items-baseline justify-between gap-2 mb-1">
+ <span className="font-extrabold text-sm text-[var(--text-primary)]">
+ {label}
+ <span className="ml-1.5 text-xs font-bold text-[var(--text-tertiary)]">
+ {fmtPEN(pricePEN)}/mes
+ </span>
+ </span>
+ <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
+ {value}{" "}
+ <span className="text-xs font-bold text-[var(--text-tertiary)]">
+ · {fmtPEN(amount)}
+ </span>
+ </span>
+ </div>
+ <div className="h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
+ <div
+ className="h-full bg-[var(--accent)] transition-all duration-500"
+ style={{ width: `${pct}%` }}
           aria-hidden
         />
       </div>
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        title={active ? "Quitar filtro" : `Filtrar tabla por ${label}`}
+        className={cn(
+          "w-full text-left rounded-lg -mx-1.5 px-1.5 py-1 transition-colors",
+          active ? "bg-primary/10 ring-1 ring-[var(--accent)]/30" : "hover:bg-[var(--surface-sunken)]/60",
+        )}
+      >
+        {inner}
+      </button>
+    );
+  }
+  return <div>{inner}</div>;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
@@ -330,22 +360,14 @@ export default function BillingDashboard() {
     "all" | TenantBillingRow["status"]
   >("all");
   const [planFilter, setPlanFilter] = useState<string>("all");
+  // Funciones nuevas (Brandon 2026-06-19): filtro por fuente de pago, toggle
+  // "en riesgo" (cancela al fin del período) y ordenamiento por columna.
+  const [sourceFilter, setSourceFilter] = useState<"all" | "stripe" | "mp" | "none">("all");
+  const [atRiskOnly, setAtRiskOnly] = useState(false);
+  const [sort, setSort] = useState<{ key: "name" | "mrr" | "next"; dir: "asc" | "desc" }>({ key: "mrr", dir: "desc" });
 
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const toastIdRef = useRef(1);
+  const [toasts] = useState<Toast[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
-
-  const pushToast = useCallback(
-    (text: string, tone: ToastTone = "info") => {
-      const id = toastIdRef.current++;
-      setToasts((prev) => [...prev, { id, text, tone }]);
-      setTimeout(
-        () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-        3000,
-      );
-    },
-    [],
-  );
 
   // ── Debounce ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -385,11 +407,7 @@ export default function BillingDashboard() {
   }, [load]);
 
   // ── Auto refresh ────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => void load(true), 60_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, load]);
+  useVisiblePolling(() => void load(true), 60_000, autoRefresh);
 
   // ── Keyboard ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -402,6 +420,8 @@ export default function BillingDashboard() {
         setSearchRaw("");
         setStatusFilter("all");
         setPlanFilter("all");
+        setSourceFilter("all");
+        setAtRiskOnly(false);
       }
       if (inField) return;
       if (e.key === "/") {
@@ -436,6 +456,8 @@ export default function BillingDashboard() {
     return data.tenants.filter((t) => {
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
       if (planFilter !== "all" && t.plan !== planFilter) return false;
+      if (sourceFilter !== "all" && t.source !== sourceFilter) return false;
+      if (atRiskOnly && !t.cancelAtPeriodEnd) return false;
       if (!q) return true;
       return (
         t.slug.toLowerCase().includes(q) ||
@@ -444,25 +466,45 @@ export default function BillingDashboard() {
         t.planLabel.toLowerCase().includes(q)
       );
     });
-  }, [data, search, statusFilter, planFilter]);
+  }, [data, search, statusFilter, planFilter, sourceFilter, atRiskOnly]);
+
+  // Ordenamiento (función nueva): por nombre / MRR / próximo cobro. Los nulos
+  // de "próximo" van al final siempre.
+  const sorted = useMemo(() => {
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      if (sort.key === "name") return a.name.localeCompare(b.name) * dir;
+      if (sort.key === "mrr") return (a.monthlyPEN - b.monthlyPEN) * dir;
+      const av = a.nextBillAt ? new Date(a.nextBillAt).getTime() : Number.POSITIVE_INFINITY;
+      const bv = b.nextBillAt ? new Date(b.nextBillAt).getTime() : Number.POSITIVE_INFINITY;
+      if (av === bv) return 0;
+      return av < bv ? -dir : dir;
+    });
+  }, [filtered, sort]);
+
+  const toggleSort = useCallback((key: "name" | "mrr" | "next") => {
+    setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: key === "name" ? "asc" : "desc" }));
+  }, []);
+
+  const atRiskCount = useMemo(() => (data ? data.tenants.filter((t) => t.cancelAtPeriodEnd).length : 0), [data]);
 
   // ── Render error ────────────────────────────────────────────────────────
   if (error && !data) {
     return (
       <div
         role="alert"
-        className="rounded-2xl border-2 border-rose-300 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 p-5"
+        className="rounded-2xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-rose-500/10 dark:border-[var(--data-error-500)] p-5"
       >
-        <p className="flex items-center gap-2 text-base font-bold text-rose-700 dark:text-rose-300">
+        <p className="flex items-center gap-2 text-base font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-5 w-5" aria-hidden />
           No se pudo cargar el resumen de billing
         </p>
-        <p className="mt-1 text-sm text-rose-600 dark:text-rose-300/80">
+        <p className="mt-1 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           {error}
         </p>
         <button
           onClick={() => load()}
-          className="mt-3 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold text-white bg-rose-600 hover:bg-rose-700"
+          className="mt-3 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700"
         >
           <RefreshCw className="h-4 w-4" />
           Reintentar
@@ -480,13 +522,21 @@ export default function BillingDashboard() {
     <div className="space-y-5">
       <Toasts toasts={toasts} />
 
+      {/* ── Resumen ejecutivo (veredicto + MRR en riesgo) ─── */}
+      <BillingExecutiveSummary
+        mrrPEN={data.mrrPEN}
+        counts={data.counts}
+        dunning={data.dunning}
+        movement={data.mrrMovement}
+      />
+
       {/* ── Action bar ────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={() => void load()}
           disabled={refreshing}
           title="Recargar (R)"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <RefreshCw
             className={cn("h-4 w-4", refreshing && "animate-spin")}
@@ -494,7 +544,7 @@ export default function BillingDashboard() {
           />
           Recargar
         </button>
-        <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+        <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
           <input
             type="checkbox"
             checked={autoRefresh}
@@ -506,7 +556,7 @@ export default function BillingDashboard() {
         <button
           onClick={() => exportCSV(filtered)}
           disabled={filtered.length === 0}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50 transition"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50 transition"
         >
           <Download className="h-4 w-4" aria-hidden />
           CSV ({filtered.length})
@@ -552,6 +602,9 @@ export default function BillingDashboard() {
         />
       </div>
 
+      {/* ── Movimiento de MRR + Cobranza/riesgo (dunning) ─ */}
+      <DunningPanel movement={data.mrrMovement} dunning={data.dunning} />
+
       {/* ── 2-col: Plan breakdown + Próximos cobros ─────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5">
@@ -577,6 +630,8 @@ export default function BillingDashboard() {
                   max={maxPlanCount}
                   amount={p.mrrPEN}
                   pricePEN={p.pricePEN}
+                  active={planFilter === p.plan}
+                  onClick={() => setPlanFilter(planFilter === p.plan ? "all" : p.plan)}
                 />
               ))}
             </div>
@@ -590,18 +645,22 @@ export default function BillingDashboard() {
           {data.byIndustry.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">Sin datos</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {data.byIndustry.slice(0, 6).map((it) => (
-                <li
-                  key={it.industry}
-                  className="flex items-center justify-between gap-2"
-                >
-                  <span className="text-sm font-semibold text-[var(--text-primary)] truncate capitalize">
-                    {it.industry.replace(/_/g, " ")}
-                  </span>
-                  <span className="text-sm font-extrabold tabular-nums text-[var(--text-tertiary)]">
-                    {it.count}
-                  </span>
+                <li key={it.industry}>
+                  <button
+                    type="button"
+                    onClick={() => setSearchRaw(it.industry)}
+                    title={`Filtrar tabla por ${it.industry.replace(/_/g, " ")}`}
+                    className="flex w-full items-center justify-between gap-2 rounded-lg -mx-1.5 px-1.5 py-1 hover:bg-[var(--surface-sunken)]/60 transition-colors"
+                  >
+                    <span className="text-sm font-semibold text-[var(--text-primary)] truncate capitalize text-left">
+                      {it.industry.replace(/_/g, " ")}
+                    </span>
+                    <span className="text-sm font-extrabold tabular-nums text-[var(--text-tertiary)]">
+                      {it.count}
+                    </span>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -621,9 +680,9 @@ export default function BillingDashboard() {
               className={cn(
                 "text-xs font-extrabold",
                 (r.trialDaysLeft ?? 99) <= 3
-                  ? "text-rose-700 dark:text-rose-300"
+                  ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
                   : (r.trialDaysLeft ?? 99) <= 7
-                    ? "text-amber-700 dark:text-amber-300"
+                    ? "text-teal-700 dark:text-teal-300"
                     : "text-emerald-700 dark:text-emerald-300",
               )}
             >
@@ -662,10 +721,10 @@ export default function BillingDashboard() {
             onChange={(e) => setSearchRaw(e.target.value)}
             placeholder="Buscar tenant, slug, industria, plan…"
             aria-label="Buscar tenants"
-            className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="w-full h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <select
             value={statusFilter}
             onChange={(e) =>
@@ -674,7 +733,7 @@ export default function BillingDashboard() {
               )
             }
             aria-label="Filtrar por estado"
-            className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+            className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
           >
             <option value="all">Todos los estados</option>
             <option value="paid">Pagados</option>
@@ -686,7 +745,7 @@ export default function BillingDashboard() {
             value={planFilter}
             onChange={(e) => setPlanFilter(e.target.value)}
             aria-label="Filtrar por plan"
-            className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+            className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
           >
             <option value="all">Todos los planes</option>
             {planOptions.map(([plan, label]) => (
@@ -695,12 +754,39 @@ export default function BillingDashboard() {
               </option>
             ))}
           </select>
+          <select
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value as "all" | "stripe" | "mp" | "none")}
+            aria-label="Filtrar por fuente de pago"
+            className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+          >
+            <option value="all">Toda fuente</option>
+            <option value="stripe">Stripe</option>
+            <option value="mp">Mercado Pago</option>
+            <option value="none">Sin fuente</option>
+          </select>
         </div>
+        {atRiskCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setAtRiskOnly((v) => !v)}
+            aria-pressed={atRiskOnly}
+            className={cn(
+              "inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition-colors",
+              atRiskOnly
+                ? "bg-rose-600 text-white"
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+            )}
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            En riesgo (cancela) <span className="tabular-nums opacity-80">{atRiskCount}</span>
+          </button>
+        )}
       </div>
 
       {/* ── Tabla / cards ──────────────────────────────── */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
           <p className="text-sm font-bold text-[var(--text-primary)]">
             Ningún tenant coincide con los filtros
           </p>
@@ -709,8 +795,10 @@ export default function BillingDashboard() {
               setSearchRaw("");
               setStatusFilter("all");
               setPlanFilter("all");
+              setSourceFilter("all");
+              setAtRiskOnly(false);
             }}
-            className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+            className="mt-3 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
           >
             Limpiar filtros
           </button>
@@ -719,7 +807,7 @@ export default function BillingDashboard() {
         <>
           {/* Mobile cards */}
           <ul className="md:hidden space-y-2.5">
-            {filtered.map((t) => (
+            {sorted.map((t) => (
               <TenantCard key={t.id} t={t} />
             ))}
           </ul>
@@ -729,16 +817,24 @@ export default function BillingDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-left text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
-                  <th className="px-4 py-3 font-extrabold">Tienda</th>
+                  <th className="px-4 py-3">
+                    <button type="button" onClick={() => toggleSort("name")} className="inline-flex items-center gap-1 font-extrabold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
+                      Tienda <span className="text-[length:var(--ts-2xs)]" aria-hidden>{sort.key === "name" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                    </button>
+                  </th>
                   <th className="px-3 py-3 font-extrabold">Plan</th>
                   <th className="px-3 py-3 font-extrabold text-center">
                     Status
                   </th>
-                  <th className="px-3 py-3 font-extrabold text-right">
-                    MRR (PEN)
+                  <th className="px-3 py-3 text-right">
+                    <button type="button" onClick={() => toggleSort("mrr")} className="inline-flex items-center gap-1 font-extrabold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
+                      MRR (PEN) <span className="text-[length:var(--ts-2xs)]" aria-hidden>{sort.key === "mrr" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                    </button>
                   </th>
-                  <th className="px-3 py-3 font-extrabold hidden lg:table-cell">
-                    Próximo
+                  <th className="px-3 py-3 hidden lg:table-cell">
+                    <button type="button" onClick={() => toggleSort("next")} className="inline-flex items-center gap-1 font-extrabold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
+                      Próximo <span className="text-[length:var(--ts-2xs)]" aria-hidden>{sort.key === "next" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                    </button>
                   </th>
                   <th className="px-3 py-3 font-extrabold hidden xl:table-cell">
                     Source
@@ -749,7 +845,7 @@ export default function BillingDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
-                {filtered.map((t) => {
+                {sorted.map((t) => {
                   const s = STATUS_META[t.status];
                   return (
                     <tr
@@ -780,7 +876,7 @@ export default function BillingDashboard() {
                           {s.label}
                         </span>
                         {t.cancelAtPeriodEnd && (
-                          <p className="text-[length:var(--ts-2xs)] text-rose-700 dark:text-rose-300 mt-0.5">
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] mt-0.5">
                             cancela
                           </p>
                         )}
@@ -895,7 +991,7 @@ function Panel({
 function TenantCard({ t }: { t: TenantBillingRow }) {
   const s = STATUS_META[t.status];
   return (
-    <li className="rounded-2xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3.5">
+    <li className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3.5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="font-extrabold text-base text-[var(--text-primary)] truncate">

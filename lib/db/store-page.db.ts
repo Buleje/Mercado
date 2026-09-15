@@ -151,27 +151,47 @@ export type DbPageAnalytics = {
 
 // ── Mappers ───────────────────────────────────────────────────────────────────
 
+/**
+ * Un campo en blanco es un campo SIN LLENAR, así que se lee como `null`.
+ *
+ * El editor del storefront guarda `""` cuando el dueño borra el contenido de
+ * un input, y toda la landing usa `campo ?? fallback` — que sólo atrapa
+ * `null`/`undefined`. Resultado: `"" ?? "Sobre nosotros"` devolvía `""` y la
+ * sección salía con el título en blanco. Lo mismo dejaba `<title></title>` en
+ * cada landing white-label.
+ *
+ * Se normaliza acá y no en los ~10 lugares que lo consumen: es un solo punto,
+ * y arregla también las filas que YA tienen `""` guardado, sin migración.
+ */
+const sinVacios = (v: string | null): string | null => {
+  if (v === null) return null;
+  const limpio = v.trim();
+  return limpio === "" ? null : limpio;
+};
+
 function mapPage(row: PStorePage): DbStorePage {
   return {
     id: row.id,
     tenantId: row.tenantId,
     published: row.published,
-    heroTitle: row.heroTitle,
-    heroSubtitle: row.heroSubtitle,
-    heroImageUrl: row.heroImageUrl,
-    heroCtaLabel: row.heroCtaLabel,
-    heroCtaUrl: row.heroCtaUrl,
+    heroTitle: sinVacios(row.heroTitle),
+    heroSubtitle: sinVacios(row.heroSubtitle),
+    heroImageUrl: sinVacios(row.heroImageUrl),
+    heroCtaLabel: sinVacios(row.heroCtaLabel),
+    heroCtaUrl: sinVacios(row.heroCtaUrl),
+    // Los colores NO se normalizan: el tipo los declara no-nulos porque
+    // siempre hay una paleta por default. Un "" acá sería otro problema.
     primaryColor: row.primaryColor,
     accentColor: row.accentColor,
-    aboutTitle: row.aboutTitle,
-    aboutBody: row.aboutBody,
-    whatsappPhone: row.whatsappPhone,
-    contactEmail: row.contactEmail,
-    address: row.address,
-    metaTitle: row.metaTitle,
-    metaDescription: row.metaDescription,
-    ogImageUrl: row.ogImageUrl,
-    footerHtml: row.footerHtml,
+    aboutTitle: sinVacios(row.aboutTitle),
+    aboutBody: sinVacios(row.aboutBody),
+    whatsappPhone: sinVacios(row.whatsappPhone),
+    contactEmail: sinVacios(row.contactEmail),
+    address: sinVacios(row.address),
+    metaTitle: sinVacios(row.metaTitle),
+    metaDescription: sinVacios(row.metaDescription),
+    ogImageUrl: sinVacios(row.ogImageUrl),
+    footerHtml: sinVacios(row.footerHtml),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

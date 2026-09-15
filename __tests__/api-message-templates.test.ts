@@ -62,6 +62,7 @@ vi.mock("@/lib/rate-limit", () => ({
 // Sin mock, el primer test puebla el cache con [] y los siguientes ven cache
 // stale. Bypass directo al factory para que cada test vea su mockResolvedValue.
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: vi.fn(async (_k: string, _t: number, fn: () => Promise<unknown>) => fn()),
   invalidate: vi.fn(),
   invalidateByPrefix: vi.fn(),

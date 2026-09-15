@@ -12,7 +12,7 @@
  * Budget total: <8s. Si algún paso tarda más, lo dispara fire-and-forget.
  * Exit 0 always (non-blocking).
  */
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync, readdirSync, openSync, readFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -39,7 +39,23 @@ function checkSuspiciousStashes() {
 const BASE = "http://localhost:3000";
 const TENANT = "main";
 const HOME = process.env.HOME ?? "";
-const CHROMIUM = join(HOME, ".cache/ms-playwright/chromium-1208/chrome-linux64/chrome");
+// Resuelve dinámicamente el chromium más nuevo instalado por Playwright
+// (el path versionado chromium-NNNN cambia con cada upgrade de Playwright).
+const CHROMIUM = (() => {
+  const base = join(HOME, ".cache/ms-playwright");
+  try {
+    const dirs = readdirSync(base)
+      .filter((d) => /^chromium-\d+$/.test(d))
+      .sort((a, b) => Number(b.split("-")[1]) - Number(a.split("-")[1]));
+    for (const d of dirs) {
+      for (const sub of ["chrome-linux64/chrome", "chrome-linux/chrome"]) {
+        const p = join(base, d, sub);
+        if (existsSync(p)) return p;
+      }
+    }
+  } catch { /* cae al path inexistente → reporta not_installed */ }
+  return join(base, "chromium-none/chrome-linux64/chrome");
+})();
 const DEV_LOG = "/tmp/dev-server.log";
 
 const lines = [];
@@ -168,14 +184,25 @@ async function main() {
   // Si dev no arranca, lo lanzamos en BG fire-and-forget
   if (devStatus === "down") {
     try {
+      // stdout/stderr a archivo, NO a /dev/null: si el server arranca roto
+      // (DB caida, Prisma desincronizado, puerto tomado) el error tiene que
+      // quedar en algun lado. Con /dev/null el fallo es indiagnosticable —
+      // fricción real 2026-09-07: login imposible, health 503, cero rastro.
+      let stdio = ["ignore", "ignore", "ignore"];
+      try {
+        const fd = openSync(DEV_LOG, "a");
+        stdio = ["ignore", fd, fd];
+      } catch {
+        // sin permiso de escritura: seguimos como antes
+      }
       const child = spawn("npm", ["run", "dev"], {
         cwd: projectRoot,
         detached: true,
-        stdio: ["ignore", "ignore", "ignore"],
+        stdio,
         env: process.env,
       });
       child.unref();
-      log(`   → npm run dev disparado en BG (pid ${child.pid})`);
+      log(`   → npm run dev disparado en BG (pid ${child.pid}) · log: ${DEV_LOG}`);
     } catch (err) {
       log(`   → no pude arrancar dev: ${err.message?.slice(0, 60)}`);
     }
@@ -196,6 +223,22 @@ async function main() {
   }
 
   log(`Chromium: ${chromiumStatus()}`);
+
+  // Tope de RAM del kernel para Bash/Monitor (CLAUDE_CODE_TOOL_MEMORY_LIMIT en settings.json).
+  // Solo aplica si claude corre en un scope de usuario delegado (función `claude` de ~/.bashrc):
+  // en /init.scope el CLI no puede crear el cgroup (EACCES) y corre sin tope. Medido 2026-09-14.
+  const topeRam = process.env.CLAUDE_CODE_TOOL_MEMORY_LIMIT;
+  if (topeRam) {
+    let enInit = false;
+    try {
+      enInit = readFileSync("/proc/self/cgroup", "utf8").trim().endsWith("/init.scope");
+    } catch { /* sin /proc: no se sabe, no se avisa */ }
+    log(
+      enInit
+        ? `Tope RAM Bash: ⚠️ inactivo — claude corre en /init.scope; abrilo desde una terminal nueva (función en ~/.bashrc)`
+        : `Tope RAM Bash: 🧱 ${topeRam} compartido (kernel; un comando que lo pase muere con exit 137 sin mensaje)`,
+    );
+  }
 
   // Watchdog: mata Chromiums/tsc huerfanos cada 60s. Previene bloqueo total de WSL.
   try {

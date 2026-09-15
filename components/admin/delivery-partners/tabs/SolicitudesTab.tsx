@@ -71,10 +71,10 @@ export function SolicitudesTab() {
         <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span className="font-bold">{error}</span>
-          <button
+          <button aria-label="Quitar"
             type="button"
             onClick={() => setError(null)}
-            className="ml-auto p-1 rounded-lg hover:bg-[var(--data-error-100)] transition-colors"
+            className="ml-auto p-1 rounded-xl hover:bg-[var(--data-error-100)] transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -85,7 +85,7 @@ export function SolicitudesTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <FileText className="h-5 w-5" />
             </span>
             <div>
@@ -95,7 +95,7 @@ export function SolicitudesTab() {
               <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
                 {apps.length === 0
                   ? "Aún no llegaron solicitudes. Los nuevos repartidores aparecerán acá para que las revises."
-                  : `${apps.length} ${apps.length === 1 ? "solicitud recibida" : "solicitudes recibidas"} · revisá KYC, aprobá o rechazá.`}
+                  : `${apps.length} ${apps.length === 1 ? "solicitud recibida" : "solicitudes recibidas"} · revisa KYC, aprueba o rechaza.`}
               </p>
             </div>
           </div>
@@ -103,7 +103,7 @@ export function SolicitudesTab() {
             type="button"
             onClick={fetchApps}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
             Actualizar
@@ -155,7 +155,7 @@ export function SolicitudesTab() {
             </button>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -199,7 +199,7 @@ export function SolicitudesTab() {
               type="button"
               onClick={() => setFilter("pending")}
               className={cn(
-                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                 filter === "pending"
                   ? "bg-primary text-white border-primary"
                   : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
@@ -217,7 +217,7 @@ export function SolicitudesTab() {
               type="button"
               onClick={() => setFilter("all")}
               className={cn(
-                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                 filter === "all"
                   ? "bg-primary text-white border-primary"
                   : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
@@ -279,7 +279,7 @@ export function SolicitudesTab() {
               >
                 <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-xl font-extrabold shrink-0">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)] text-xl font-extrabold shrink-0">
                       {(data.name || "?").trim().charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -303,7 +303,7 @@ export function SolicitudesTab() {
                             className={cn(
                               "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
                               kycCheck.ok
-                                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                 : "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
                             )}
                           >
@@ -370,7 +370,7 @@ export function SolicitudesTab() {
                         onClick={() => handleAction(app.id, "approve")}
                         disabled={isProcessing || !canApprove}
                         title={canApprove ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
-                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <ThumbsUp className="h-4 w-4" />
                         {isProcessing ? "..." : "Aprobar"}
@@ -379,7 +379,7 @@ export function SolicitudesTab() {
                         type="button"
                         onClick={() => handleAction(app.id, "reject")}
                         disabled={isProcessing}
-                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-bold bg-[var(--data-error-50)] text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-semibold bg-[var(--data-error-50)] text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
                       >
                         <ThumbsDown className="h-4 w-4" />
                         Rechazar
@@ -471,11 +471,6 @@ function KycSection({ title, rows }: { title: string; rows: [string, string][] }
 // ─────────────────────────────────────────────
 // Componente principal
 // ─────────────────────────────────────────────
-interface DeliveryKPIs {
-  activePartners: number;
-  deliveriesToday: number;
-  pendingDeliveries: number;
-}
 
 
 // ── Tipos/helpers movidos de DeliveryPartnersModule (refactor 2026-06-15) ──

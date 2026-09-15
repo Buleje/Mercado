@@ -132,7 +132,7 @@ export const PATCH = withApiHandler("forestal-loth-caratula-patch", async (req: 
 
   try {
     const { id, ...patch } = parsed.data;
-    const caratula = await ForestLothDB.updateCaratula(auth.tenantId, id, patch);
+    const caratula = await ForestLothDB.updateCaratula(auth.tenantId, id, patch, auth.username ?? "unknown");
     return NextResponse.json({ caratula });
   } catch (err) {
     logger.error("[loth.caratula.PATCH] failed", { error: String(err), tenantId: auth.tenantId });

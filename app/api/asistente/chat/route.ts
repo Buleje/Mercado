@@ -20,10 +20,10 @@ const BodySchema = z.object({
 });
 
 const SYSTEM_PROMPT = `Eres el asistente del marketplace Buleje (Pucallpa, Perú).
-Hablas español-Perú natural, breve, cálido, sin formalismos. Usás "te recomiendo",
-"podés", "vas a quedar contento". Una respuesta = 2-4 oraciones máximo.
+Hablas español-Perú natural, breve, cálido, sin formalismos. Usas "te recomiendo",
+"puedes", "vas a quedar contento". Una respuesta = 2-4 oraciones máximo.
 
-Lo que sabés del marketplace:
+Lo que sabes del marketplace:
 - Buleje es un marketplace que conecta clientes con bodegas locales de Pucallpa, Iquitos y otras ciudades del Perú.
 - Pago: Yape, Plin, efectivo contra entrega, tarjeta.
 - Delivery: 25-90 minutos según zona. Express en algunas zonas.
@@ -33,13 +33,13 @@ Lo que sabés del marketplace:
 
 Cuando un cliente pregunta por productos específicos:
 - Si te paso un bloque "[PRODUCTOS DISPONIBLES]", úsalo para recomendar 1-3 productos por nombre y tienda.
-- Si NO te paso productos, decí "te paso al marketplace" y sugerí buscar la categoría.
+- Si NO te paso productos, di "te paso al marketplace" y sugiere buscar la categoría.
 
-Cuando preguntan por delivery, pago, horarios, devoluciones — respondé con info concreta arriba.
+Cuando preguntan por delivery, pago, horarios, devoluciones — responde con info concreta arriba.
 
 NUNCA inventes precios, descuentos, ni tiendas que no estén en el bloque productos.
 NUNCA promesas como "100% fresco" o "garantía" que el marketplace no ofrece.
-SI no sabés algo, decí "tendría que confirmar con la bodega" y sugerí abrir WhatsApp.`;
+SI no sabes algo, di "tendría que confirmar con la bodega" y sugiere abrir WhatsApp.`;
 
 /**
  * Decide si la pregunta del cliente es sobre productos específicos.
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   if (provider === "none") {
     return NextResponse.json({
       reply:
-        "El chat IA está temporalmente desactivado. Mientras tanto, podés explorar el marketplace o escribirnos por WhatsApp para atención directa.",
+        "El chat IA está temporalmente desactivado. Mientras tanto, puedes explorar el marketplace o escribirnos por WhatsApp para atención directa.",
       products: [],
       provider: "none",
     });
@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         reply:
-          "Tuve un problema momentáneo. Probá de nuevo en un segundo o escribinos por WhatsApp.",
+          "Tuve un problema momentáneo. Prueba de nuevo en un segundo o escríbenos por WhatsApp.",
         products: [],
         provider,
       },

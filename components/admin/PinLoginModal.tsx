@@ -1,10 +1,11 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useId } from "react";
 import { Lock, X, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -79,6 +80,9 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
   const [attemptsLeft, setAttemptsLeft] = useState(MAX_ATTEMPTS);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   // ── Init: check existing lock ────────────────────────────────────────────────
   useEffect(() => {
@@ -246,6 +250,11 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
   return (
     <div className="modal-backdrop flex items-center justify-center">
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className={cn(
           "relative w-full max-w-sm rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] p-8",
           shake && "animate-shake"
@@ -268,23 +277,12 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
           }
         `}</style>
 
-        {/* Close button */}
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors"
-            aria-label="Cerrar"
-          >
-            <X size={18} />
-          </button>
-        )}
-
         {/* Header */}
         <div className="flex flex-col items-center gap-3 mb-6">
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
             <Lock size={26} className="text-primary" />
           </div>
-          <SectionTitle className="text-xl font-semibold text-[var(--text-primary)] text-center">{title}</SectionTitle>
+          <SectionTitle id={titleId} className="text-xl font-semibold text-[var(--text-primary)] text-center">{title}</SectionTitle>
         </div>
 
         {/* Locked state */}
@@ -314,12 +312,13 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                   onChange={(e) => handleDigitInput(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
                   disabled={loading}
+                  aria-label={`Dígito ${i + 1} del PIN`}
                   className={cn(
                     "w-14 h-14 rounded-xl border-2 text-center text-2xl font-bold outline-none transition-all duration-[var(--dur-fast)]",
                     "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
                     digit
                       ? "border-primary bg-primary/5 dark:bg-primary/10"
-                      : "border-[var(--rule-base)] dark:border-gray-600",
+                      : "border-[var(--rule-base)] ",
                     "focus:border-primary focus:ring-2 focus:ring-primary/20",
                     "disabled:opacity-60"
                   )}
@@ -335,7 +334,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                     key={i}
                     className={cn(
                       "w-2 h-2 rounded-full",
-                      i < attemptsLeft ? "bg-[var(--data-warning-500)]" : "bg-gray-200 dark:bg-gray-700"
+                      i < attemptsLeft ? "bg-[var(--data-warning-500)]" : "bg-[var(--rule-base)] "
                     )}
                   />
                 ))}
@@ -359,8 +358,8 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                     key === ""
                       ? "invisible"
                       : key === "⌫"
-                      ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"
-                      : "bg-[var(--surface-sunken)] text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 active:scale-95",
+                      ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)] active:scale-95"
+                      : "bg-[var(--surface-sunken)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] dark:hover:bg-primary/20 active:scale-95",
                     "disabled:opacity-40 disabled:cursor-not-allowed"
                   )}
                 >
@@ -374,14 +373,27 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
               onClick={submitPin}
               disabled={digits.some((d) => !d) || loading}
               className={cn(
-                "mt-4 w-full h-12 rounded-lg font-semibold text-white transition-all duration-[var(--dur-fast)]",
-                "bg-primary hover:bg-[#235c42] active:scale-[0.98]",
+                "mt-4 w-full h-12 rounded-xl font-semibold text-white transition-all duration-[var(--dur-fast)]",
+                "bg-primary hover:bg-primary/90 active:scale-[0.98]",
                 "disabled:opacity-40 disabled:cursor-not-allowed"
               )}
             >
               {loading ? "Verificando..." : "Confirmar"}
             </button>
           </>
+        )}
+
+        {/* Close button — al final del DOM (visualmente sigue arriba a la
+            derecha, `absolute`) para que el foco al abrir caiga en el primer
+            dígito del PIN y no acá. */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors"
+            aria-label="Cerrar"
+          >
+            <X size={18} />
+          </button>
         )}
       </div>
     </div>

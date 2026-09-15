@@ -43,7 +43,7 @@ export default function DesktopOnlyGate({ children }: DesktopOnlyGateProps) {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-[var(--surface-canvas)]">
       <div className="max-w-md w-full text-center">
         {/* Ilustración */}
-        <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] mb-6">
+        <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-6">
           <Monitor className="h-10 w-10" strokeWidth={1.5} aria-hidden />
         </div>
 

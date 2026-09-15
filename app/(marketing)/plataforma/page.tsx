@@ -359,7 +359,7 @@ function HeroSection() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary dark:border-primary/30 dark:bg-primary/10"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-[var(--accent-ink)] dark:text-[var(--accent)] dark:border-primary/30 dark:bg-primary/10"
         >
           <span className="size-2 animate-pulse rounded-full bg-primary" />
           Hecho para bodegas de Ciudad Constitución
@@ -461,10 +461,10 @@ function HeroSection() {
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { name: "Gaseosa 1.5L", price: "S/4.50", color: "bg-primary/10 text-primary" },
+                  { name: "Gaseosa 1.5L", price: "S/4.50", color: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
                   { name: "Pan Frances", price: "S/0.20", color: "bg-secondary/10 text-secondary" },
                   { name: "Aceite 1L", price: "S/8.90", color: "bg-success/10 text-success" },
-                  { name: "Arroz 1kg", price: "S/3.80", color: "bg-primary/10 text-primary" },
+                  { name: "Arroz 1kg", price: "S/3.80", color: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
                   { name: "Azucar 1kg", price: "S/3.50", color: "bg-secondary/10 text-secondary" },
                   { name: "Leche 1L", price: "S/5.20", color: "bg-success/10 text-success" },
                 ].map((item) => (
@@ -556,7 +556,7 @@ function FeaturesSection() {
               transition={{ duration: 0.4, delay: i * 0.07 }}
               className="group rounded-2xl border border-border/60 bg-[var(--surface-raised)] p-6 transition-shadow hover:shadow-md dark:hover:shadow-black/20"
             >
-              <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/15">
+              <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/15">
                 {feature.icon}
               </div>
               <div className="mb-2 flex items-center gap-2">

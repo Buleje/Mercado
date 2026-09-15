@@ -9,6 +9,8 @@
 //
 // Usado por components/admin/ImageUpload.tsx y components/admin/ProductsAdminTab.tsx.
 
+import { descartarEsperado } from "@/lib/errores/sin-dato";
+
 // ─── Global drag guard ────────────────────────────────────────────────────────
 
 let dragGuardRefCount = 0;
@@ -78,7 +80,8 @@ export async function compressIfLarge(file: File): Promise<File> {
   if (typeof window === "undefined" || typeof document === "undefined") return file;
 
   try {
-    const bitmap = await createImageBitmap(file).catch(() => null);
+    // El navegador no decodifica ese formato (p. ej. HEIC): se sube el original sin comprimir.
+    const bitmap = await createImageBitmap(file).catch(descartarEsperado);
     if (!bitmap) return file;
     const ratio = Math.min(1, COMPRESS_MAX_DIM / Math.max(bitmap.width, bitmap.height));
     const w = Math.round(bitmap.width * ratio);

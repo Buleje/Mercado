@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -118,7 +118,7 @@ function TrendBadge({ change, higherIsBetter }: { change: number; higherIsBetter
     <span className={cn(
       "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
       isGood
-        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+        ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
         : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
     )}>
       {change > 0
@@ -177,6 +177,11 @@ export default function ComparativeReportsTab() {
     });
   }, [dataA, dataB, periods]);
 
+  // Gráfico sin datos NO se muestra (se oculta) — la tabla de métricas queda visible.
+  const hasChartData = chartData.some(
+    (row) => (Number(row[periods.labelA]) || 0) > 0 || (Number(row[periods.labelB]) || 0) > 0,
+  );
+
   // ── Loading ──
   if (loading) {
     return (
@@ -212,7 +217,7 @@ export default function ComparativeReportsTab() {
         </div>
         <div className="flex items-center gap-2">
           {/* Selector */}
-          <div className="flex bg-[var(--surface-sunken)] dark:bg-white/5 rounded-xl p-0.5 gap-0.5">
+          <div className="flex bg-[var(--surface-sunken)] rounded-xl p-0.5 gap-0.5">
             {(["mes_pasado", "mismo_mes_anyo"] as Comparison[]).map(opt => (
               <button
                 key={opt}
@@ -230,7 +235,7 @@ export default function ComparativeReportsTab() {
           </div>
           <button
             onClick={fetchData}
-            className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+            className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Actualizar"
           >
             <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -241,35 +246,33 @@ export default function ComparativeReportsTab() {
       {dataA && dataB && (
         <>
           {/* Table */}
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+          <DataTable>
                 <thead>
-                  <tr className="bg-[var(--surface-alt)] dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                    <th className="px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Métrica</th>
-                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-primary">{periods.labelA}</th>
-                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">{periods.labelB}</th>
-                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Cambio</th>
-                    <th className="px-4 py-3 text-center text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Tendencia</th>
+                  <tr>
+                    <th>Métrica</th>
+                    <th className="text-right text-primary">{periods.labelA}</th>
+                    <th className="text-right">{periods.labelB}</th>
+                    <th className="text-right">Cambio</th>
+                    <th className="text-center">Tendencia</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+                <tbody>
                   {METRICAS.map(m => {
                     const valA = dataA[m.key];
                     const valB = dataB[m.key];
                     const change = calcChange(valA, valB);
                     return (
-                      <tr key={m.key} className="hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-3">
+                      <tr key={m.key}>
+                        <td>
                           <span className="text-xs font-medium text-[var(--text-secondary)]">{m.label}</span>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="text-right">
                           <span className="text-xs font-bold font-mono text-[var(--text-primary)]">{fmtValue(m.key, valA)}</span>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="text-right">
                           <span className="text-xs font-mono text-[var(--text-secondary)] dark:text-muted">{fmtValue(m.key, valB)}</span>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="text-right">
                           <span className={cn(
                             "text-xs font-bold font-mono",
                             change >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
@@ -277,22 +280,21 @@ export default function ComparativeReportsTab() {
                             {change >= 0 ? "+" : ""}{change.toFixed(1)}%
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="text-center">
                           <TrendBadge change={change} higherIsBetter={m.higherIsBetter} />
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
-              </table>
-            </div>
-          </div>
+          </DataTable>
 
-          {/* Chart */}
+          {/* Chart — se oculta si no hay datos */}
+          {hasChartData && (
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
             <p className="text-sm font-bold text-[var(--text-secondary)] mb-4">Top 5 métricas — comparación</p>
             <div className="h-64">
-              <ResponsiveContainer minWidth={0} width="100%" height="100%">
+              <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
                 <BarChart data={chartData} barCategoryGap="30%">
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--card-border, #e5e7eb)" />
                   <XAxis
@@ -322,6 +324,7 @@ export default function ComparativeReportsTab() {
               </ResponsiveContainer>
             </div>
           </div>
+          )}
         </>
       )}
     </div>

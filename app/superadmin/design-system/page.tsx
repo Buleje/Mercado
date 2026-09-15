@@ -34,9 +34,11 @@ import {
   Square,
   X,
   AlertTriangle,
+  Search,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/superadmin/_shared/useConfirm";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   DESIGN_PRESETS,
   type DesignTokens,
@@ -46,6 +48,7 @@ import {
   slugify,
   validateTokens,
 } from "@/lib/design-presets";
+import { SuperAdminModuleTabs, DISENO_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 interface ApiResponse {
   presets: DesignTokens[];
@@ -241,6 +244,7 @@ export default function DesignSystemPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-[var(--surface-canvas)]">
+        <SuperAdminModuleTabs tabs={DISENO_TABS} />
         <div className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex items-center gap-3.5 animate-pulse">
             <div className="h-12 w-12 rounded-2xl bg-[var(--surface-sunken)]" />
@@ -254,7 +258,7 @@ export default function DesignSystemPage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-40 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] animate-pulse"
+              className="h-40 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] animate-pulse"
             />
           ))}
         </div>
@@ -264,6 +268,7 @@ export default function DesignSystemPage() {
 
   return (
     <main className="min-h-screen bg-[var(--surface-canvas)]">
+      <SuperAdminModuleTabs tabs={DISENO_TABS} />
       {/* ── Hero canónico ───────────────────────────────────────── */}
       <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="w-full">
@@ -276,13 +281,23 @@ export default function DesignSystemPage() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Plataforma · Centro de diseño
                 </p>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2">
                   Diseño heredable
+                  <InfoTip
+                    side="bottom"
+                    title="Centro de Diseño Heredable"
+                    what="Definís la identidad visual (colores, tipografía, bordes, sombras, botones, animaciones) con un editor en vivo y la guardás como preset."
+                    affects="Se hereda en VIVO al panel admin de TODOS los negocios (vía DesignTokensProvider). No toca el superadmin ni el storefront público."
+                    example="Cambiás el color primario a coral y el radio de bordes a 'redondo' → todos los botones y tarjetas del admin de los negocios se ven coral y redondeados al instante."
+                  />
                 </h1>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
                   Personalizá colores, tipografía, bordes, sombras, botones y animaciones. Todo lo
                   que cambies se hereda en vivo al{" "}
-                  <strong className="text-[var(--text-primary)]">panel admin de los negocios</strong>.
+                  <strong className="text-[var(--text-primary)]">
+                    panel admin de los negocios
+                  </strong>
+                  .
                 </p>
                 {activePreset && (
                   <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1">
@@ -337,7 +352,7 @@ export default function DesignSystemPage() {
               <button
                 type="button"
                 onClick={startNew}
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110 active:scale-[0.99]"
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110 active:scale-[0.99]"
               >
                 <Plus className="h-4 w-4" strokeWidth={2.5} />
                 Crear preset
@@ -355,7 +370,12 @@ export default function DesignSystemPage() {
               { key: "gallery", label: "Galería", icon: Palette, count: oficialPresets.length },
               { key: "editor", label: "Editor", icon: Pencil },
               { key: "library", label: "Mis presets", icon: Sparkles, count: savedPresets.length },
-            ] as Array<{ key: View; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; count?: number }>
+            ] as Array<{
+              key: View;
+              label: string;
+              icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+              count?: number;
+            }>
           ).map(({ key, label, icon: Icon, count }) => (
             <button
               key={key}
@@ -479,11 +499,11 @@ function PresetCard({
 
   return (
     <article
-      className={`relative rounded-2xl overflow-hidden bg-white dark:bg-[var(--surface-raised)] transition-all ${
-        isActive
-          ? "border-2 border-[var(--accent)] shadow-lg shadow-[var(--accent)]/15"
-          : "border-2 border-[var(--rule-base)] hover:border-[var(--rule-strong)] hover:shadow-md"
-      }`}
+      className={`relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] transition-all ${
+ isActive
+ ? "border-2 border-[var(--accent)] shadow-lg shadow-[var(--accent)]/15"
+ : "border border-[var(--rule-base)] hover:border-[var(--rule-strong)] hover:shadow-md"
+ }`}
     >
       {isActive && (
         <span className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md">
@@ -532,25 +552,33 @@ function PresetCard({
         </div>
 
         <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-          <dt className="text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider">Headings</dt>
+          <dt className="text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider">
+            Headings
+          </dt>
           <dd
             className="text-[var(--text-primary)] truncate font-bold"
             style={{ fontFamily: preset.typography.fontHeading }}
           >
             {preset.typography.fontHeading.split(",")[0].replace(/"/g, "")}
           </dd>
-          <dt className="text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider">Body</dt>
+          <dt className="text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider">
+            Body
+          </dt>
           <dd
             className="text-[var(--text-primary)] truncate font-bold"
             style={{ fontFamily: preset.typography.fontBody }}
           >
             {preset.typography.fontBody.split(",")[0].replace(/"/g, "")}
           </dd>
-          <dt className="text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider">Densidad</dt>
+          <dt className="text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider">
+            Densidad
+          </dt>
           <dd className="text-[var(--text-primary)] capitalize font-bold">
             {preset.spacing.density}
           </dd>
-          <dt className="text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider">Botones</dt>
+          <dt className="text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider">
+            Botones
+          </dt>
           <dd className="text-[var(--text-primary)] font-bold">
             {preset.buttons.height} · {preset.buttons.radius}
           </dd>
@@ -575,7 +603,7 @@ function PresetCard({
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex items-center justify-center gap-1.5 h-11 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 h-11 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             title="Abrir en editor"
           >
             <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} /> Editar
@@ -606,40 +634,87 @@ function GalleryView({
   onActivate: (slug: string) => void;
   onEdit: (preset: DesignTokens) => void;
 }) {
+  // Buscador de presets (nueva función): filtra oficiales y propios por nombre.
+  const [q, setQ] = useState("");
+  const ql = q.trim().toLowerCase();
+  const match = (p: DesignTokens) =>
+    !ql || `${p.meta.name} ${p.meta.slug}`.toLowerCase().includes(ql);
+  const oficial = oficialPresets.filter(match);
+  const saved = savedPresets.filter(match);
   return (
     <div className="space-y-8">
-      <section className="space-y-4">
-        <GallerySectionHeading
-          icon={Palette}
-          title="Presets oficiales"
-          subtitle="Diseños curados por el equipo Buleje. Click para activar, lápiz para editar."
-          count={oficialPresets.length}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Buscar preset por nombre…"
+          aria-label="Buscar preset"
+          className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {oficialPresets.map((preset) => (
-            <PresetCard
-              key={preset.meta.slug}
-              preset={preset}
-              isActive={activeSlug === preset.meta.slug}
-              isSaving={savingSlug === preset.meta.slug}
-              onActivate={() => onActivate(preset.meta.slug)}
-              onEdit={() => onEdit(preset)}
-            />
-          ))}
-        </div>
-      </section>
+        {q && (
+          <button
+            type="button"
+            onClick={() => setQ("")}
+            aria-label="Limpiar"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-xl p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      {ql && oficial.length === 0 && saved.length === 0 && (
+        <p className="text-sm text-[var(--text-tertiary)] text-center py-8">
+          Ningún preset coincide con &ldquo;{q}&rdquo;.
+        </p>
+      )}
+      {oficial.length > 0 && (
+        <section className="space-y-4">
+          <GallerySectionHeading
+            icon={Palette}
+            title="Presets oficiales"
+            subtitle="Diseños curados por el equipo Buleje. Click para activar, lápiz para editar."
+            count={oficial.length}
+            info={{
+              what: "Temas completos ya armados por Buleje (paleta + tipografía + bordes + sombras). Click en la tarjeta activa el tema; el lápiz lo abre en el editor para retocarlo.",
+              affects:
+                "Activar uno cambia al instante el look del panel admin de todos los negocios.",
+              example:
+                "Elegís 'Coral Editorial' → el admin de los negocios pasa a la paleta coral/teal con esa tipografía, sin tocar nada más.",
+            }}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {oficial.map((preset) => (
+              <PresetCard
+                key={preset.meta.slug}
+                preset={preset}
+                isActive={activeSlug === preset.meta.slug}
+                isSaving={savingSlug === preset.meta.slug}
+                onActivate={() => onActivate(preset.meta.slug)}
+                onEdit={() => onEdit(preset)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
-      {savedPresets.length > 0 && (
+      {saved.length > 0 && (
         <section className="space-y-4">
           <GallerySectionHeading
             icon={Sparkles}
             title="Mis presets"
             subtitle="Tus diseños guardados. Reactivables en cualquier momento."
-            count={savedPresets.length}
+            count={saved.length}
             muted
+            info={{
+              what: "Tu biblioteca de temas guardados desde el editor. Los podés reactivar, duplicar o borrar cuando quieras.",
+              affects: "Reactivar uno reemplaza el tema vigente del panel admin de los negocios.",
+              example:
+                "Guardaste 'Navidad 2026' en diciembre → en enero reactivás 'Default' con un click y volvés al tema normal.",
+            }}
           />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {savedPresets.map((preset) => (
+            {saved.map((preset) => (
               <PresetCard
                 key={preset.meta.slug}
                 preset={preset}
@@ -681,7 +756,7 @@ function LibraryView({
 }) {
   if (savedPresets.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-12 text-center">
+      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-12 text-center">
         <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)] mb-4">
           <Sparkles className="h-6 w-6" strokeWidth={1.75} aria-hidden />
         </div>
@@ -689,8 +764,8 @@ function LibraryView({
           Sin presets propios todavía
         </h3>
         <p className="mt-2 text-sm text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
-          Creá tu propio preset desde cero o duplicá uno oficial y modifícalo.
-          Quedan guardados acá y los podés activar cuando quieras.
+          Creá tu propio preset desde cero o duplicá uno oficial y modifícalo. Quedan guardados acá
+          y los podés activar cuando quieras.
         </p>
         <button
           type="button"
@@ -719,7 +794,7 @@ function LibraryView({
               <button
                 type="button"
                 onClick={() => onDuplicate(preset)}
-                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
                 title="Duplicar"
                 aria-label="Duplicar"
               >
@@ -776,7 +851,11 @@ function EditorView({
     });
   };
 
-  const tabs: Array<{ key: EditorTab; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = [
+  const tabs: Array<{
+    key: EditorTab;
+    label: string;
+    icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  }> = [
     { key: "meta", label: "Identidad", icon: Sparkles },
     { key: "colors", label: "Colores", icon: Palette },
     { key: "typography", label: "Tipografía", icon: Type },
@@ -786,11 +865,51 @@ function EditorView({
     { key: "motion", label: "Motion", icon: Zap },
   ];
 
+  const EDITOR_INFO: Record<EditorTab, { what: string; affects: string; example: string }> = {
+    meta: {
+      what: "Nombre y datos de identidad del preset que estás armando.",
+      affects: "Cómo se identifica/guarda el tema (no cambia el look).",
+      example: "Lo llamás 'Verano Pucallpa' para reconocerlo en Mis presets.",
+    },
+    colors: {
+      what: "La paleta: primario, acento, fondos, texto y estados (éxito/error).",
+      affects: "Botones, links, headers, tarjetas y badges del panel admin de los negocios.",
+      example: "Primario = coral → todos los botones de acción del admin se ven coral.",
+    },
+    typography: {
+      what: "Fuente, tamaños de títulos y cuerpo, y peso del texto.",
+      affects: "Todo el texto del panel admin de los negocios.",
+      example: "Subís el tamaño del cuerpo → el admin se lee más grande en toda pantalla.",
+    },
+    spacing: {
+      what: "Radio de las esquinas (cuadrado ↔ redondeado) y grosor de bordes.",
+      affects: "Tarjetas, inputs, botones y modales del admin.",
+      example: "Radio 'redondo' → todo el admin pasa a esquinas suaves.",
+    },
+    shadows: {
+      what: "Profundidad/elevación de tarjetas y popovers.",
+      affects: "Sombras de cards, menús y modales del admin.",
+      example: "Sombra 'plana' → look editorial sin relieve.",
+    },
+    buttons: {
+      what: "Estilo de los botones: relleno, radio, mayúsculas y peso.",
+      affects: "Todos los botones del panel admin de los negocios.",
+      example: "Botones 'pill' en mayúscula → CTAs más marcados.",
+    },
+    motion: {
+      what: "Velocidad y tipo de las animaciones y transiciones.",
+      affects: "Hover, aperturas de menús/modales y transiciones del admin.",
+      example: "Motion 'rápido' → la UI del admin se siente más ágil.",
+    },
+  };
+  const activeTab = tabs.find((t) => t.key === tab) ?? tabs[0];
+  const activeInfo = EDITOR_INFO[tab];
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)] gap-6">
       {/* Controles */}
       <div className="space-y-4">
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] p-2 sticky top-4 z-10">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 sticky top-4 z-10">
           <nav className="flex flex-wrap gap-1">
             {tabs.map(({ key, label, icon: Icon }) => (
               <button
@@ -810,7 +929,20 @@ function EditorView({
           </nav>
         </div>
 
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] p-5 space-y-5">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-5">
+          {/* Header de la sección activa con InfoTip (qué hace · a dónde afecta · ejemplo) */}
+          <div className="flex items-center gap-2 pb-3 -mt-0.5 border-b border-[var(--rule-soft)]">
+            <activeTab.icon className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
+              {activeTab.label}
+            </h3>
+            <InfoTip
+              title={activeTab.label}
+              what={activeInfo.what}
+              affects={activeInfo.affects}
+              example={activeInfo.example}
+            />
+          </div>
           {tab === "meta" && <MetaPanel tokens={tokens} setField={setField} onChange={onChange} />}
           {tab === "colors" && <ColorsPanel tokens={tokens} setField={setField} />}
           {tab === "typography" && <TypographyPanel tokens={tokens} setField={setField} />}
@@ -821,14 +953,18 @@ function EditorView({
         </div>
 
         {/* Acciones — sticky bottom */}
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] p-4 space-y-3 sticky bottom-4 shadow-lg">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-3 sticky bottom-4 shadow-lg">
           <button
             type="button"
             onClick={onApply}
             disabled={saving}
             className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-2xl bg-[var(--accent)] text-white text-sm font-extrabold uppercase tracking-wider shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl active:scale-[0.99] disabled:opacity-50 transition-all"
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" strokeWidth={2.5} />}
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Zap className="h-4 w-4" strokeWidth={2.5} />
+            )}
             Aplicar al admin
           </button>
           <div className="grid grid-cols-2 gap-2">
@@ -843,7 +979,7 @@ function EditorView({
             <button
               type="button"
               onClick={onReset}
-              className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] text-xs font-extrabold uppercase tracking-wider hover:bg-[var(--surface-sunken)] transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] text-xs font-extrabold uppercase tracking-wider hover:bg-[var(--surface-sunken)] transition-colors"
             >
               <RotateCcw className="h-3.5 w-3.5" strokeWidth={2.5} /> Reset
             </button>
@@ -899,6 +1035,7 @@ function MetaPanel({
         disabled={tokens.meta.author === "buleje"}
       />
       <div>
+        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
         <label className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
           Descripción
         </label>
@@ -906,7 +1043,7 @@ function MetaPanel({
           value={tokens.meta.description}
           onChange={(e) => setField("meta", "description", e.target.value)}
           rows={3}
-          className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors"
+          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors"
           placeholder="Para qué tipo de negocio funciona mejor…"
         />
       </div>
@@ -915,7 +1052,10 @@ function MetaPanel({
 }
 
 function ColorsPanel({ tokens, setField }: { tokens: DesignTokens; setField: SetField }) {
-  const groups: Array<{ title: string; fields: Array<{ key: keyof DesignTokens["colors"]; label: string }> }> = [
+  const groups: Array<{
+    title: string;
+    fields: Array<{ key: keyof DesignTokens["colors"]; label: string }>;
+  }> = [
     {
       title: "Acento",
       fields: [
@@ -1115,7 +1255,7 @@ function ShadowsPanel({ tokens, setField }: { tokens: DesignTokens; setField: Se
             mono
           />
           <div
-            className="mt-2 h-12 rounded-xl bg-white dark:bg-[var(--surface-raised)] border-2 border-[var(--rule-base)]"
+            className="mt-2 h-12 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]"
             style={{ boxShadow: tokens.shadows[k] }}
           />
         </div>
@@ -1155,9 +1295,7 @@ function ButtonsPanel({ tokens, setField }: { tokens: DesignTokens; setField: Se
           { label: "XL (muy redondo)", value: "xl" },
           { label: "FULL (pill)", value: "full" },
         ]}
-        onChange={(v) =>
-          setField("buttons", "radius", v as keyof DesignTokens["radius"])
-        }
+        onChange={(v) => setField("buttons", "radius", v as keyof DesignTokens["radius"])}
       />
       <FieldNumber
         label="Peso de fuente"
@@ -1250,9 +1388,9 @@ function FieldText({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors disabled:opacity-50 ${
-          mono ? "font-mono text-xs" : ""
-        }`}
+        className={`w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors disabled:opacity-50 ${
+ mono ? "font-mono text-xs" : ""
+ }`}
       />
       {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
     </div>
@@ -1271,7 +1409,7 @@ function FieldColor({
   return (
     <div className="flex items-center gap-3">
       <span
-        className="h-10 w-10 rounded-xl border-2 border-[var(--rule-base)] shrink-0"
+        className="h-10 w-10 rounded-xl border border-[var(--rule-base)] shrink-0"
         style={{ background: value }}
         aria-hidden
       />
@@ -1283,7 +1421,7 @@ function FieldColor({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full h-8 rounded-md border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-2 text-xs font-mono text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+          className="w-full h-8 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-mono text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
           placeholder="oklch(...) / #hex / rgb(...)"
         />
       </div>
@@ -1375,7 +1513,7 @@ function FieldNumber({
           const n = parseInt(e.target.value, 10);
           if (Number.isFinite(n)) onChange(n);
         }}
-        className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+        className="w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
       />
     </div>
   );
@@ -1404,7 +1542,7 @@ function FieldSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors"
+        className="w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors"
       >
         {allOptions.map((o) => (
           <option key={o.value} value={o.value}>
@@ -1432,17 +1570,15 @@ function FieldToggle({
       <button
         type="button"
         onClick={() => onChange(!value)}
-        className="w-full inline-flex items-center justify-between gap-3 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+        className="w-full inline-flex items-center justify-between gap-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
       >
         <span>{label}</span>
         <span
           className={`inline-flex items-center h-6 w-11 rounded-full px-0.5 transition-colors ${
-            value
-              ? "bg-[var(--accent)] justify-end"
-              : "bg-[var(--rule-strong)] justify-start"
+            value ? "bg-[var(--accent)] justify-end" : "bg-[var(--rule-strong)] justify-start"
           }`}
         >
-          <span className="h-5 w-5 rounded-full bg-white shadow-sm" />
+          <span className="h-5 w-5 rounded-full bg-[var(--surface-raised)] shadow-sm" />
         </span>
       </button>
       {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
@@ -1455,10 +1591,7 @@ function FieldToggle({
 // ════════════════════════════════════════════════════════════════════════════
 
 function PreviewPane({ tokens }: { tokens: DesignTokens }) {
-  const styleObj = useMemo(
-    () => tokensToCssVars(tokens) as React.CSSProperties,
-    [tokens],
-  );
+  const styleObj = useMemo(() => tokensToCssVars(tokens) as React.CSSProperties, [tokens]);
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
 
   return (
@@ -1472,16 +1605,14 @@ function PreviewPane({ tokens }: { tokens: DesignTokens }) {
             Así se va a ver el admin del negocio con este preset.
           </p>
         </div>
-        <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] p-0.5">
+        <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
           {(["desktop", "mobile"] as const).map((d) => (
             <button
               key={d}
               type="button"
               onClick={() => setDevice(d)}
               className={`h-8 px-3 rounded-lg text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider transition-colors ${
-                device === d
-                  ? "bg-[var(--accent)] text-white"
-                  : "text-[var(--text-secondary)]"
+                device === d ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"
               }`}
             >
               {d}
@@ -1491,7 +1622,7 @@ function PreviewPane({ tokens }: { tokens: DesignTokens }) {
       </div>
 
       <div
-        className={`mx-auto rounded-2xl border-2 border-[var(--rule-base)] overflow-hidden shadow-xl transition-all ${
+        className={`mx-auto rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-xl transition-all ${
           device === "mobile" ? "max-w-[380px]" : "w-full"
         }`}
         style={{
@@ -1794,19 +1925,20 @@ function PreviewShell({ tokens, mobile }: { tokens: DesignTokens; mobile: boolea
   );
 }
 
-
 function GallerySectionHeading({
   icon: Icon,
   title,
   subtitle,
   count,
   muted,
+  info,
 }: {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
   subtitle: string;
   count: number;
   muted?: boolean;
+  info?: { title?: string; what: string; affects?: string; example?: string };
 }) {
   return (
     <div className="flex items-end justify-between gap-4 border-b border-[var(--rule-soft)] pb-3">
@@ -1821,8 +1953,17 @@ function GallerySectionHeading({
           <Icon className="h-4 w-4" strokeWidth={1.75} />
         </span>
         <div>
-          <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+          <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2">
             {title}
+            {info && (
+              <InfoTip
+                side="bottom"
+                title={info.title ?? title}
+                what={info.what}
+                affects={info.affects}
+                example={info.example}
+              />
+            )}
           </h2>
           <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
         </div>

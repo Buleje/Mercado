@@ -160,10 +160,10 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
               key={p}
               onClick={() => setProvider(p)}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all",
+                "flex-1 flex items-center justify-center gap-2 min-h-11 text-sm font-semibold transition-all",
                 active
                   ? "text-white"
-                  : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] bg-gray-50 dark:bg-surface"
+                  : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] bg-[var(--surface-sunken)] "
               )}
               style={active ? { backgroundColor: cfg.color } : undefined}
             >
@@ -237,7 +237,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
                 {minutes}:{seconds.toString().padStart(2, "0")}
               </span>
             </div>
-            <div className="w-full h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-[var(--rule-soft)] rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-[var(--dur-slower)] ease-linear"
                 style={{
@@ -253,7 +253,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
         <div className="flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 py-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted font-bold text-sm hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
+            className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted font-semibold text-sm hover:bg-[var(--surface-sunken)] transition-colors flex items-center justify-center gap-1.5"
           >
             <X className="h-4 w-4" />
             Cancelar
@@ -261,7 +261,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
           <button
             onClick={onConfirm}
             disabled={expired}
-            className="flex-1 py-3 rounded-lg text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:bg-gray-400"
+            className="flex-1 min-h-11 rounded-xl text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 bg-primary/10 hover:bg-primary/10 disabled:bg-gray-400"
           >
             <Check className="h-4 w-4" />
             Pago recibido

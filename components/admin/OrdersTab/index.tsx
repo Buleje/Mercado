@@ -1,9 +1,9 @@
 "use client";
 
-import { PageTitle } from "@buleje/design-system";
+import { DataTable, PageTitle } from "@buleje/design-system";
 import { useState } from "react";
 import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign, Search } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
@@ -143,8 +143,9 @@ export default function OrdersTab() {
   const inDeliveryOrders = activeOrders.filter(o => o.status === "en_camino" || o.status === "confirmado" || o.status === "preparando").length;
   const todayDelivered = orders.filter(o => {
     if (o.status !== "entregado") return false;
-    const today = new Date().toISOString().slice(0, 10);
-    return o.createdAt.slice(0, 10) === today;
+    // El día del negocio es el de Lima. Con `toISOString()` el corte caía a las
+    // 19:00 hora peruana: lo vendido de noche contaba como "mañana".
+    return limaDateKey(o.createdAt) === limaDateKey();
   }).length;
 
   return (
@@ -167,7 +168,7 @@ export default function OrdersTab() {
         <button
           type="button"
           onClick={() => setShowAdvancedFilters(true)}
-          className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="relative flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <SlidersHorizontal className="h-4 w-4" /> Filtros
           {activeFiltersCount > 0 && (
@@ -207,13 +208,14 @@ export default function OrdersTab() {
 
       {/* Delivery driver filter */}
       {filterByDelivery && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
+        <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
           <div className="flex items-center gap-3 flex-wrap">
             <p className="text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Filtrar por delivery:</p>
             <select
               value={selectedDriverFilter}
               onChange={e => setSelectedDriverFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--surface-raised)] outline-none focus:border-primary"
+              aria-label="Filtrar por delivery"
+              className="px-3 py-1.5 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--surface-raised)] outline-none focus:border-primary"
             >
               <option value="">Todos los deliverys</option>
               {Array.from(new Set(
@@ -297,8 +299,8 @@ export default function OrdersTab() {
               className={cn(
                 "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
                 active
-                  ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]",
+                  ? "bg-primary text-white border-primary"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10",
               )}
             >
               {chip.label}
@@ -362,11 +364,13 @@ export default function OrdersTab() {
 
       {/* Print-only summary */}
       <div className="hidden print:block print-orders-summary">
-        <PageTitle className="text-lg font-bold mb-1">Resumen de pedidos activos</PageTitle>
+        {/* `as="h2"`: este título sólo existe para la impresión; como h1
+            duplicaba el encabezado de la página para los lectores de pantalla. */}
+        <PageTitle as="h2" className="text-lg font-bold mb-1">Resumen de pedidos activos</PageTitle>
         <p className="text-xs text-[var(--text-secondary)] mb-4">
           {new Date().toLocaleString("es-PE", { timeZone: "America/Lima" })} · {activeOrders.length} pedidos · S/{total.toFixed(2)} total
         </p>
-        <table className="w-full text-xs border-collapse">
+        <DataTable className="w-full text-xs border-collapse">
           <thead>
             <tr className="border-b-2 border-gray-900">
               <th className="text-left py-1 pr-2">ID</th>
@@ -389,7 +393,7 @@ export default function OrdersTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       {/* Modals */}

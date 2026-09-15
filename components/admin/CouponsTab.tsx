@@ -2,11 +2,13 @@
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Ticket, Plus, Trash2, Check, X, Loader2, Copy, Gift, Sparkles, Zap, UserPlus, PartyPopper, Settings, Calendar, MessageCircle } from "@buleje/design-system/icons";
+import { Ticket, Plus, Trash2, Check, X, Copy, Gift, Sparkles, Zap, UserPlus, PartyPopper, Settings, Calendar, MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 type Coupon = {
   id: string; code: string; description: string;
@@ -134,7 +136,7 @@ export default function CouponsTab() {
       }
     } catch (e) {
       console.error("[CouponsTab] handleCreate error", e);
-      showUndo({ message: "Error de conexión", detail: "No se pudo crear el cupón. Reintentá." });
+      showUndo({ message: "Error de conexión", detail: "No se pudo crear el cupón. Reintenta." });
     }
   };
 
@@ -153,7 +155,7 @@ export default function CouponsTab() {
       confirmLabel: "Eliminar",
     });
     if (!ok) return;
-    await fetch(`/api/coupons/${id}`, { method: "DELETE" });
+    await fetch(`/api/coupons/${id}`, { method: "DELETE", headers: csrfHeaders() });
     showUndo({ message: `Cupón "${code}" eliminado`, duration: 5000 });
     load();
   };
@@ -179,7 +181,7 @@ export default function CouponsTab() {
     const rnd = Math.random().toString(36).substring(2, 5).toUpperCase();
     const mmdd = new Date().toISOString().slice(5, 10).replace("-", "");
     const code = templatePattern.replace("{MMDD}", mmdd).replace("{RND3}", rnd);
-    alert(`Código generado: ${code}`);
+    toast.success(`Código generado: ${code}`);
     return code;
   };
 
@@ -225,7 +227,7 @@ export default function CouponsTab() {
           </div>
           <button
             onClick={() => setShowTemplateBuilder(true)}
-            className="flex flex-wrap items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--accent)]/20 transition"
+            className="flex flex-wrap items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--accent)]/20 transition"
           >
             <Calendar className="h-4 w-4" /> Plantilla
           </button>
@@ -245,7 +247,7 @@ export default function CouponsTab() {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{config.label}</span>
                       {rule.enabled && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                           <Check className="h-3 w-3" /> Activa
                         </span>
                       )}
@@ -262,14 +264,14 @@ export default function CouponsTab() {
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <button
                       onClick={() => openRuleConfig(rule)}
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                      className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
                       title="Configurar"
                     >
                       <Settings className="h-4 w-4" />
                     </button>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label aria-label={`${config.label}: ${rule.enabled ? "activa" : "inactiva"}`} className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" checked={rule.enabled} onChange={() => toggleRule(rule.id)} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-[var(--rule-soft)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-[var(--color-card)] after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      <div className="w-11 h-6 bg-[var(--rule-soft)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                   </div>
                 </div>
@@ -288,7 +290,7 @@ export default function CouponsTab() {
           </CardTitle>
           <div className="space-y-2 max-h-60 overflow-y-auto">
             {generatedLogs.map(log => (
-              <div key={log.id} className="flex items-center justify-between p-3 bg-[var(--surface-alt)] dark:bg-surface rounded-xl text-sm">
+              <div key={log.id} className="flex items-center justify-between p-3 bg-[var(--surface-alt)] rounded-xl text-sm">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{log.customer}</p>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
@@ -296,8 +298,8 @@ export default function CouponsTab() {
                   </p>
                 </div>
                 <span className={cn("inline-flex px-2 py-1 rounded-full text-xs font-bold",
-                  log.status === "sent" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                  log.status === "used" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                  log.status === "sent" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
+                  log.status === "used" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                 )}>
                   {log.status === "sent" ? "Enviado" : log.status === "used" ? "Usado" : "Pendiente"}
                 </span>
@@ -310,7 +312,7 @@ export default function CouponsTab() {
       {/* ── Cupones Manuales ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Ticket className="h-6 w-6 text-primary" />Cupones</SectionTitle>
-        <button onClick={() => setShowForm(v => !v)} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition">
+        <button onClick={() => setShowForm(v => !v)} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition">
           <Plus className="h-4 w-4" />Nuevo Cupón
         </button>
       </div>
@@ -319,16 +321,16 @@ export default function CouponsTab() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 space-y-4">
           {/* Scope toggle: Tienda vs Plataforma */}
           <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 block">Alcance del cupon</label>
+            <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 block">Alcance del cupon</span>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setCouponScope("tienda")}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[44px]",
                   couponScope === "tienda"
-                    ? "bg-[var(--accent-soft)] text-white "
-                    : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent"
+                    ? "bg-primary/10 text-white "
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
                 )}
               >
                 <Ticket className="h-4 w-4" />
@@ -338,10 +340,10 @@ export default function CouponsTab() {
                 type="button"
                 onClick={() => setCouponScope("plataforma")}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[44px]",
                   couponScope === "plataforma"
                     ? "bg-[var(--accent-600,var(--accent))] text-white "
-                    : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent"
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
                 )}
               >
                 <Sparkles className="h-4 w-4" />
@@ -355,42 +357,40 @@ export default function CouponsTab() {
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Código *</label>
-              <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="DESCUENTO10" className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
-              <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="10% de descuento" className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tipo</label>
-              <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as "percent" | "fixed" | "giftcard" }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm">
+            <Field label="Código *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="DESCUENTO10" className="w-full mt-1 px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
+            </Field>
+            <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="10% de descuento" className="w-full mt-1 px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
+            </Field>
+            <Field label="Tipo" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as "percent" | "fixed" | "giftcard" }))} className="w-full mt-1 px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm">
                 <option value="percent">Porcentaje (%)</option>
                 <option value="fixed">Monto fijo (S/)</option>
-                <option value="giftcard">Gift Card (saldo)</option>
+                {/* "Gift Card (saldo)" salió de acá: el Zod de POST /api/coupons
+                    sólo acepta percent|fixed, así que elegirla devolvía 400 y el
+                    cupón nunca se creaba. Las gift cards tienen su propio modelo
+                    (GiftCard + GiftCardRedemption) y su módulo en Crecimiento →
+                    Gift Cards. Los cupones giftcard que ya existan se siguen
+                    leyendo y canjeando; sólo no se crean nuevos desde acá. */}
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{form.discountType === "giftcard" ? "Saldo inicial (S/) *" : "Valor *"}</label>
-              <input type="number" value={form.discountValue} onChange={e => setForm(f => ({ ...f, discountValue: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Compra mínima (S/)</label>
-              <input type="number" value={form.minPurchase} onChange={e => setForm(f => ({ ...f, minPurchase: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Usos máximos (0 = ilimitado)</label>
-              <input type="number" value={form.maxUses} onChange={e => setForm(f => ({ ...f, maxUses: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha expiración</label>
-              <input type="date" value={form.expiresAt ? form.expiresAt.slice(0, 10) : ""} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
+            </Field>
+            <Field label={form.discountType === "giftcard" ? "Saldo inicial (S/) *" : "Valor *"} labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <input type="number" value={form.discountValue} onChange={e => setForm(f => ({ ...f, discountValue: Number(e.target.value) }))} className="w-full mt-1 px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
+            </Field>
+            <Field label="Compra mínima (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <input type="number" value={form.minPurchase} onChange={e => setForm(f => ({ ...f, minPurchase: Number(e.target.value) }))} className="w-full mt-1 px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
+            </Field>
+            <Field label="Usos máximos (0 = ilimitado)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <input type="number" value={form.maxUses} onChange={e => setForm(f => ({ ...f, maxUses: Number(e.target.value) }))} className="w-full mt-1 px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
+            </Field>
+            <Field label="Fecha expiración" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <input type="date" value={form.expiresAt ? form.expiresAt.slice(0, 10) : ""} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" }))} className="w-full mt-1 px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
+            </Field>
           </div>
           <div className="flex flex-wrap gap-2 pt-2">
-            <button onClick={handleCreate} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition"><Check className="h-4 w-4" />Crear</button>
-            <button onClick={() => setShowForm(false)} className="flex flex-wrap items-center gap-2 bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--rule-soft)] transition"><X className="h-4 w-4" />Cancelar</button>
+            <button onClick={handleCreate} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition"><Check className="h-4 w-4" />Crear</button>
+            <button onClick={() => setShowForm(false)} className="flex flex-wrap items-center gap-2 bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-[var(--rule-soft)] transition"><X className="h-4 w-4" />Cancelar</button>
           </div>
         </div>
       )}
@@ -402,9 +402,9 @@ export default function CouponsTab() {
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono font-extrabold text-primary text-lg">{c.code}</span>
-                <button onClick={() => navigator.clipboard.writeText(c.code)} className="text-[var(--text-tertiary)] hover:text-primary"><Copy className="h-3.5 w-3.5" /></button>
+                <button aria-label="Copiar" onClick={() => navigator.clipboard.writeText(c.code)} className="text-[var(--text-tertiary)] hover:text-primary"><Copy className="h-3.5 w-3.5" /></button>
                 {c.storeId ? (
-                  <span className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-bold">Tienda</span>
+                  <span className="text-[length:var(--ts-2xs)] bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-bold">Tienda</span>
                 ) : (
                   <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] px-2 py-0.5 rounded-full font-bold">Plataforma</span>
                 )}
@@ -421,22 +421,22 @@ export default function CouponsTab() {
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
                 onClick={() => { setWhatsappCoupon(c); setWhatsappPhone(""); }}
-                className="p-1.5 rounded-lg text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition"
+                className="p-1.5 rounded-xl text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 transition"
                 title="Enviar por WhatsApp"
               >
                 <MessageCircle className="h-4 w-4" />
               </button>
               <button
                 onClick={() => copyWhatsappMsg(c)}
-                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]/20 transition"
+                className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]/20 transition"
                 title="Copiar mensaje"
               >
                 <Copy className="h-4 w-4" />
               </button>
-              <button onClick={() => toggleActive(c)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", c.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]")}>
+              <button onClick={() => toggleActive(c)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", c.active ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]" : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10")}>
                 {c.active ? "Desactivar" : "Activar"}
               </button>
-              <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition"><Trash2 className="h-4 w-4" /></button>
+              <button aria-label="Eliminar" onClick={() => handleDelete(c.id)} className="p-1.5 rounded-xl text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition"><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
         ))}
@@ -451,46 +451,41 @@ export default function CouponsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Configurar Regla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ruleConfigs[editingRule.type].label}</p>
               </div>
-              <button onClick={() => setShowRuleConfig(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
+              <button aria-label="Cerrar" onClick={() => setShowRuleConfig(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="px-5 py-4 space-y-4">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tipo de descuento</label>
+              <Field label="Tipo de descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select value={editingRule.config.discountType} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, discountType: e.target.value as "percent" | "fixed" } })}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-white dark:bg-surface">
+                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-[var(--surface-raised)] ">
                   <option value="percent">Porcentaje (%)</option>
                   <option value="fixed">Monto fijo (S/)</option>
                 </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Valor del descuento</label>
+              </Field>
+              <Field label="Valor del descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="number" value={editingRule.config.discountValue} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, discountValue: Number(e.target.value) } })}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
-              </div>
+                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+              </Field>
               {editingRule.type !== "min-spend" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Días de validez</label>
+                <Field label="Días de validez" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" value={editingRule.config.validityDays} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, validityDays: Number(e.target.value) } })}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
-                </div>
+                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                </Field>
               )}
               {editingRule.type === "inactive" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Días de inactividad antes de activar</label>
+                <Field label="Días de inactividad antes de activar" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" value={editingRule.config.inactiveDays} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, inactiveDays: Number(e.target.value) } })}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
-                </div>
+                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                </Field>
               )}
               {editingRule.type === "min-spend" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Gasto mínimo acumulado (S/)</label>
+                <Field label="Gasto mínimo acumulado (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" value={editingRule.config.minSpend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, minSpend: Number(e.target.value) } })}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
-                </div>
+                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                </Field>
               )}
-              <div className="flex flex-wrap items-center gap-3 p-3 bg-[var(--surface-alt)] dark:bg-surface rounded-xl">
+              <div className="flex flex-wrap items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl">
                 <input type="checkbox" id="ruleAutoSend" checked={editingRule.config.autoSend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, autoSend: e.target.checked } })}
                   className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                 <label htmlFor="ruleAutoSend" className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] cursor-pointer flex-1">
@@ -499,8 +494,8 @@ export default function CouponsTab() {
               </div>
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3">
-              <button onClick={() => setShowRuleConfig(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors">Cancelar</button>
-              <button onClick={saveRuleConfig} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Guardar</button>
+              <button onClick={() => setShowRuleConfig(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors">Cancelar</button>
+              <button onClick={saveRuleConfig} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Guardar</button>
             </div>
           </div>
         </div>
@@ -515,45 +510,47 @@ export default function CouponsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Enviar cupon por WhatsApp</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Codigo: <span className="font-mono font-bold text-primary">{whatsappCoupon.code}</span></p>
               </div>
-              <button onClick={() => setWhatsappCoupon(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
+              <button aria-label="Quitar" onClick={() => setWhatsappCoupon(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="px-5 py-4 space-y-4">
               {/* Preview del mensaje */}
-              <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
+              <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
                 <p className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-line">{buildWhatsappMsg(whatsappCoupon)}</p>
               </div>
               {/* Enviar a un cliente */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Enviar a un cliente</label>
-                <div className="flex gap-2 mt-1">
-                  <input
-                    type="tel"
-                    value={whatsappPhone}
-                    onChange={e => setWhatsappPhone(e.target.value)}
-                    placeholder="Ej: 929340532"
-                    className="flex-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-white dark:bg-surface"
-                  />
-                  <button
-                    onClick={() => { if (whatsappPhone.trim()) { sendWhatsapp(whatsappPhone, buildWhatsappMsg(whatsappCoupon)); } }}
-                    disabled={!whatsappPhone.trim()}
-                    className="px-4 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-bold hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors inline-flex items-center gap-1"
-                  >
-                    <MessageCircle className="h-4 w-4" /> Enviar
-                  </button>
-                </div>
-              </div>
+              <Field label="Enviar a un cliente" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(id) => (
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      id={id}
+                      type="tel"
+                      value={whatsappPhone}
+                      onChange={e => setWhatsappPhone(e.target.value)}
+                      placeholder="Ej: 929340532"
+                      className="flex-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-[var(--surface-raised)] "
+                    />
+                    <button
+                      onClick={() => { if (whatsappPhone.trim()) { sendWhatsapp(whatsappPhone, buildWhatsappMsg(whatsappCoupon)); } }}
+                      disabled={!whatsappPhone.trim()}
+                      className="px-4 min-h-10 rounded-xl bg-primary/10 text-white text-sm font-semibold hover:bg-primary/10 disabled:opacity-50 transition-colors inline-flex items-center gap-1"
+                    >
+                      <MessageCircle className="h-4 w-4" /> Enviar
+                    </button>
+                  </div>
+                )}
+              </Field>
               {/* Copiar mensaje */}
               <button
                 onClick={() => { copyWhatsappMsg(whatsappCoupon); }}
-                className="w-full py-2.5 rounded-lg text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors inline-flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors inline-flex items-center justify-center gap-2"
               >
                 <Copy className="h-4 w-4" /> Copiar mensaje al portapapeles
               </button>
             </div>
             <div className="px-5 py-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <button onClick={() => setWhatsappCoupon(null)} className="w-full py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors">Cerrar</button>
+              <button onClick={() => setWhatsappCoupon(null)} className="w-full py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors">Cerrar</button>
             </div>
           </div>
         </div>
@@ -568,37 +565,40 @@ export default function CouponsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Constructor de Plantilla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Define el patrón de códigos automáticos</p>
               </div>
-              <button onClick={() => setShowTemplateBuilder(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
+              <button aria-label="Cerrar" onClick={() => setShowTemplateBuilder(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="px-5 py-4 space-y-4">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Patrón</label>
-                <input type="text" value={templatePattern} onChange={e => setTemplatePattern(e.target.value.toUpperCase())}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="BDAY{MMDD}{RND3}" />
-                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">
-                  Variables: <span className="font-mono">{"{MMDD}"}</span> (mes/día), <span className="font-mono">{"{RND3}"}</span> (3 dígitos random)
-                </p>
-              </div>
-              <div className="bg-[var(--surface-alt)] dark:bg-surface p-4 rounded-xl">
+              <Field label="Patrón" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(id) => (
+                  <>
+                    <input id={id} type="text" value={templatePattern} onChange={e => setTemplatePattern(e.target.value.toUpperCase())}
+                      className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="BDAY{MMDD}{RND3}" />
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">
+                      Variables: <span className="font-mono">{"{MMDD}"}</span> (mes/día), <span className="font-mono">{"{RND3}"}</span> (3 dígitos random)
+                    </p>
+                  </>
+                )}
+              </Field>
+              <div className="bg-[var(--surface-alt)] p-4 rounded-xl">
                 <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2">Plantillas sugeridas:</p>
                 <div className="space-y-1">
                   {["BDAY{MMDD}{RND3}", "NEW{RND3}", "REACT{MMDD}", "GIFT{RND3}", "VIP{MMDD}{RND3}"].map(p => (
                     <button key={p} onClick={() => setTemplatePattern(p)}
-                      className="w-full text-left px-3 py-2 rounded-lg text-sm font-mono bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary transition-colors">
+                      className="w-full text-left px-3 min-h-10 rounded-xl text-sm font-mono bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary transition-colors">
                       {p}
                     </button>
                   ))}
                 </div>
               </div>
               <button onClick={generateTestCoupon}
-                className="w-full py-2.5 rounded-lg text-sm font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors">
+                className="w-full py-2.5 rounded-xl text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors">
                 Generar código de prueba
               </button>
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <button onClick={() => setShowTemplateBuilder(false)} className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Cerrar</button>
+              <button onClick={() => setShowTemplateBuilder(false)} className="w-full min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Cerrar</button>
             </div>
           </div>
         </div>

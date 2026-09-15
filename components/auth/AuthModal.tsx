@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { X, User, Phone, Shield, Loader2, Search } from "lucide-react";
+import { X, User, Phone, Shield, Loader2 } from "lucide-react";
 import {
   getSupabaseBrowser,
   isSupabaseAuthConfigured,
@@ -143,8 +143,8 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialName]);
   const [dni, setDni] = useState("");
-  const [dniLoading, setDniLoading] = useState(false);
-  const [dniError, setDniError] = useState<string | null>(null);
+  const [, setDniLoading] = useState(false);
+  const [, setDniError] = useState<string | null>(null);
   const [dniVerified, setDniVerified] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -517,14 +517,14 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
               a un toque.
             </p>
             <p className="mt-3 max-w-[16rem] text-sm font-medium text-white/85">
-              Pedí a las bodegas y restaurantes de Ciudad Constitución con delivery rápido.
-              Pagás al recibir — Yape, Plin o efectivo.
+              Pide a las bodegas y restaurantes de Ciudad Constitución con delivery rápido.
+              Pagas al recibir — Yape, Plin o efectivo.
             </p>
           </div>
           <ul className="space-y-1.5 text-sm font-medium text-white/90">
             <li>Envío gratis desde S/50</li>
             <li>10% OFF en tu primera compra</li>
-            <li>Seguí tu pedido en vivo</li>
+            <li>Sigue tu pedido en vivo</li>
           </ul>
         </aside>
 

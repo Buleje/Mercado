@@ -23,7 +23,8 @@ import Link from "next/link";
 import { m as motion, AnimatePresence } from "framer-motion";
 import {
   X, Check, Minus, Plus, ShoppingCart, Sparkles, Star, AlertCircle,
-  Store as StoreIcon, ArrowRight,
+  Store as StoreIcon, ArrowRight, ShieldCheck, MessageSquare, Package,
+  Award, CalendarDays,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbStoreProductModifierGroup } from "@/lib/db/marketplace.db";
@@ -45,6 +46,16 @@ interface ProductModifierModalProps {
     storeProductId: string;
     storeLogo?: string | null;
     description?: string | null;
+    // ── Prueba social de la tienda (opcional) — para el bloque de confianza
+    //    bajo "Vendido por". Solo se renderiza lo que llegue con valor real;
+    //    sin estos campos el banner degrada al formato simple. ──────────────
+    storeRating?: number | null;
+    storeReviewCount?: number | null;
+    storeCategory?: string | null;
+    /** Tamaño real del catálogo de la tienda (no unidades vendidas). */
+    storeProductCount?: number | null;
+    /** ISO de creación de la tienda — para la antigüedad ("X años en Buleje"). */
+    storeSince?: string | null;
   };
   groups: DbStoreProductModifierGroup[];
   initialSelection?: Record<string, string[]>;
@@ -200,6 +211,26 @@ export default function ProductModifierModal({
     onConfirm({ quantity, modifiers: withNote, finalUnitPrice: unitPrice });
   };
 
+  // ── Prueba social de la tienda — derivada SOLO de señales reales (rating,
+  //    reseñas, antigüedad, tamaño del catálogo). No se inventan "vendidos". ──
+  const storeRating = Number(product.storeRating ?? 0);
+  const storeReviews = Number(product.storeReviewCount ?? 0);
+  const storeProducts = Number(product.storeProductCount ?? 0);
+  const storeYears = (() => {
+    if (!product.storeSince) return null;
+    const t = new Date(product.storeSince).getTime();
+    if (Number.isNaN(t)) return null;
+    const y = Math.floor((Date.now() - t) / 31_557_600_000); // ms por año
+    return y >= 1 ? `${y} año${y === 1 ? "" : "s"} en Buleje` : "Nueva en Buleje";
+  })();
+  const meritTags: Array<{ icon: typeof ShieldCheck; label: string }> = [
+    { icon: ShieldCheck, label: "Verificada por Buleje" },
+  ];
+  if (storeRating >= 4.5 && storeReviews >= 3) meritTags.push({ icon: Award, label: "Bien valorada" });
+  if (storeYears) meritTags.push({ icon: CalendarDays, label: storeYears });
+  const hasTrustStats =
+    storeRating > 0 || storeReviews > 0 || !!product.storeCategory || storeProducts > 0;
+
   if (typeof document === "undefined") return null;
 
   return createPortal(
@@ -228,8 +259,8 @@ export default function ProductModifierModal({
             exit={{ y: 100, opacity: 0, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
             className={cn(
-              "relative z-10 w-full bg-[var(--surface-canvas)] rounded-t-3xl shadow-2xl overflow-hidden border border-[var(--rule-soft)]",
-              "sm:max-w-lg sm:rounded-3xl max-h-[94vh] flex flex-col",
+              "relative z-10 w-full bg-[var(--surface-canvas)] rounded-none shadow-2xl overflow-hidden border border-[var(--rule-soft)]",
+              "sm:max-w-lg sm:rounded-none max-h-[94vh] flex flex-col",
               // Desktop: split-view 2-col, modal más ancho.
               "lg:max-w-5xl lg:max-h-[88vh] lg:flex-row lg:items-stretch",
             )}
@@ -241,7 +272,7 @@ export default function ProductModifierModal({
               type="button"
               onClick={onClose}
               aria-label="Cerrar"
-              className="absolute top-3 right-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-canvas)]/95 backdrop-blur border border-[var(--rule-base)] text-[var(--text-secondary)] shadow-lg transition-all hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] hover:scale-105 active:scale-95"
+              className="absolute top-3 right-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-none bg-[var(--surface-canvas)]/95 backdrop-blur border border-[var(--rule-base)] text-[var(--text-secondary)] shadow-lg transition-all hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] hover:scale-105 active:scale-95"
             >
               <X className="h-4 w-4" strokeWidth={2.75} aria-hidden />
             </button>
@@ -321,7 +352,7 @@ export default function ProductModifierModal({
                   <span className="text-[length:var(--ts-xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
                     Cantidad
                   </span>
-                  <div className="flex items-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shadow-sm">
+                  <div className="flex items-center rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shadow-sm">
                     <button
                       type="button"
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -380,7 +411,7 @@ export default function ProductModifierModal({
                   disabled={!isValid}
                   whileTap={isValid ? { scale: 0.98 } : {}}
                   className={cn(
-                    "w-full inline-flex items-center justify-center gap-2 rounded-2xl h-14 px-4 text-base font-black transition-all",
+                    "w-full inline-flex items-center justify-center gap-2 rounded-none h-14 px-4 text-base font-black transition-all",
                     isValid
                       ? "bg-[var(--accent)] text-white transition-opacity hover:opacity-90"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
@@ -405,36 +436,91 @@ export default function ProductModifierModal({
                 <Link
                   href={product.storeSlug ? `/marketplace/${product.storeSlug}` : "/marketplace"}
                   onClick={onClose}
-                  className="group/store flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2.5 pr-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                  className="group/store block rounded-none border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 transition-colors hover:border-[var(--accent)]"
                   aria-label={`Ir a la tienda ${product.storeName}`}
                 >
-                  <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-                    {product.storeLogo ? (
-                      <Image
-                        src={product.storeLogo}
-                        alt={product.storeName}
-                        fill
-                        sizes="44px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <span className="absolute inset-0 flex items-center justify-center text-[var(--accent)]">
-                        <StoreIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                  {/* Fila superior: logo + "Vendido por" + nombre + ir a la tienda */}
+                  <div className="flex items-center gap-3">
+                    <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-none border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+                      {product.storeLogo ? (
+                        <Image
+                          src={product.storeLogo}
+                          alt={product.storeName}
+                          fill
+                          sizes="44px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <span className="absolute inset-0 flex items-center justify-center text-[var(--accent)]">
+                          <StoreIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                        </span>
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1 leading-tight">
+                      <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                        Vendido por
                       </span>
-                    )}
-                  </span>
-                  <span className="min-w-0 flex-1 leading-tight">
-                    <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                      Vendido por
+                      <span className="flex items-center gap-1 min-w-0">
+                        <span className="truncate text-sm font-extrabold text-[var(--text-primary)] group-hover/store:text-[var(--accent)]">
+                          {product.storeName}
+                        </span>
+                        <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
+                      </span>
                     </span>
-                    <span className="block truncate text-sm font-extrabold text-[var(--text-primary)] group-hover/store:text-[var(--accent)]">
-                      {product.storeName}
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-none bg-primary/10 px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] transition-colors group-hover/store:bg-[var(--accent)] group-hover/store:text-white">
+                      Ir a la tienda
+                      <ArrowRight className="h-3 w-3" strokeWidth={2.75} aria-hidden />
                     </span>
-                  </span>
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] transition-colors group-hover/store:bg-[var(--accent)] group-hover/store:text-white">
-                    Ir a la tienda
-                    <ArrowRight className="h-3 w-3" strokeWidth={2.75} aria-hidden />
-                  </span>
+                  </div>
+
+                  {/* Stats de confianza — valoración · comentarios · tipo · catálogo */}
+                  {hasTrustStats && (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 border-t border-[var(--rule-soft)] pt-2.5">
+                      {storeRating > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)]">
+                          <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={0} aria-hidden />
+                          <span className="tabular-nums">{storeRating.toFixed(1)}</span>
+                          <span className="font-medium text-[var(--text-tertiary)]">valoración</span>
+                        </span>
+                      )}
+                      {storeReviews > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
+                          <MessageSquare className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={2.25} aria-hidden />
+                          <span className="tabular-nums">{storeReviews}</span>
+                          <span className="font-medium text-[var(--text-tertiary)]">{storeReviews === 1 ? "comentario" : "comentarios"}</span>
+                        </span>
+                      )}
+                      {product.storeCategory && (
+                        <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
+                          <StoreIcon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={2.25} aria-hidden />
+                          <span className="capitalize">{product.storeCategory}</span>
+                        </span>
+                      )}
+                      {storeProducts > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
+                          <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={2.25} aria-hidden />
+                          <span className="tabular-nums">{storeProducts}</span>
+                          <span className="font-medium text-[var(--text-tertiary)]">productos</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Etiquetas de mérito — estilo Alibaba, derivadas de datos reales */}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {meritTags.map((tg) => {
+                      const TagIcon = tg.icon;
+                      return (
+                        <span
+                          key={tg.label}
+                          className="inline-flex items-center gap-1 rounded-none border border-[var(--accent)]/25 bg-primary/10 px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"
+                        >
+                          <TagIcon className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                          {tg.label}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </Link>
               )}
 
@@ -495,11 +581,11 @@ export default function ProductModifierModal({
                           </div>
                           {counterLabel && (
                             <span className={cn(
-                              "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black transition-colors whitespace-nowrap",
+                              "inline-flex items-center gap-1 rounded-none px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black transition-colors whitespace-nowrap",
                               isFull
                                 ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]"
                                 : count > 0
-                                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                                  ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                                   : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                             )}>
                               {count > 0 && !isFull && <Check className="h-2.5 w-2.5" strokeWidth={3.5} />}
@@ -546,7 +632,7 @@ export default function ProductModifierModal({
               {effectiveGroups.length > 0 && (
                 <div className="pt-2">
                   {showNoteField ? (
-                    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+                    <div className="rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
                       <div className="flex items-center justify-between mb-2">
                         <label
                           htmlFor="modifier-note"
@@ -569,7 +655,7 @@ export default function ProductModifierModal({
                         placeholder="Ej: bien doradito, sin cebolla, papas extra crocantes…"
                         rows={2}
                         autoFocus
-                        className="block w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                        className="block w-full resize-none rounded-none border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
                       />
                       <div className="mt-1 text-right text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
                         {note.length} / 100
@@ -579,7 +665,7 @@ export default function ProductModifierModal({
                     <button
                       type="button"
                       onClick={() => setShowNoteField(true)}
-                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-all"
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-none border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10 transition-all"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       Dejale un mensaje al cocinero
@@ -625,7 +711,7 @@ export default function ProductModifierModal({
                     <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                       Cant.
                     </span>
-                    <div className="inline-flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shadow-sm">
+                    <div className="inline-flex items-center rounded-none border border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shadow-sm">
                       <button
                         type="button"
                         onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -666,7 +752,7 @@ export default function ProductModifierModal({
                   disabled={!isValid}
                   whileTap={isValid ? { scale: 0.98 } : {}}
                   className={cn(
-                    "w-full inline-flex items-center justify-center gap-2 rounded-2xl h-13 px-4 text-sm font-extrabold uppercase tracking-wide transition-all",
+                    "w-full inline-flex items-center justify-center gap-2 rounded-none h-13 px-4 text-sm font-extrabold uppercase tracking-wide transition-all",
                     isValid
                       ? "bg-[var(--accent)] text-white transition-opacity hover:opacity-90"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
@@ -725,18 +811,18 @@ function OptionRow({
       role="option"
       aria-selected={isSelected}
       className={cn(
-        "w-full flex items-center gap-3 rounded-2xl border-2 p-2.5 text-left transition-all",
+        "w-full flex items-center gap-3 rounded-none border-2 p-2.5 text-left transition-all",
         isSelected
-          ? "border-[var(--accent)] bg-[var(--accent-soft)] ring-4 ring-[var(--accent)]/15 shadow-md"
+          ? "border-[var(--accent)] bg-primary/10 ring-4 ring-[var(--accent)]/15 shadow-md"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-sunken)]",
         isDisabled && "opacity-40 cursor-not-allowed",
       )}
     >
       {/* Thumbnail — siempre presente para uniformidad */}
       <span className={cn(
-        "shrink-0 h-14 w-14 rounded-xl overflow-hidden border transition-colors",
+        "shrink-0 h-14 w-14 rounded-none overflow-hidden border transition-colors",
         isSelected ? "border-[var(--accent)]/30" : "border-[var(--rule-soft)]",
-        option.imageUrl ? "bg-[var(--surface-sunken)]" : "bg-[var(--accent-soft)]/40 flex items-center justify-center"
+        option.imageUrl ? "bg-[var(--surface-sunken)]" : "bg-primary/10 flex items-center justify-center"
       )}>
         {option.imageUrl ? (
           <Image

@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
       o.items?.some((i: { name?: string }) => i.name?.toLowerCase().includes(q))
     ) {
       const statusColors: Record<string, string> = {
-        pendiente: "#f59e0b",
+        pendiente: "#ff6b5b",
         confirmado: "#3b82f6",
         en_camino: "#8b5cf6",
         entregado: "#10b981",

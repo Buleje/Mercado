@@ -1,6 +1,7 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
@@ -125,7 +126,7 @@ function getInitials(name: string) {
 
 // ── Mejora 9: Avatar color auto-generado ─────────────────────────────────────
 function getAvatarColor(name: string): string {
-  const colors = ["var(--accent)", "#f97316", "#e63946", "#457b9d", "#6b705c", "#9b5de5"];
+  const colors = ["var(--accent)", "#ff6b5b", "#e63946", "#457b9d", "#6b705c", "#9b5de5"];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
@@ -133,9 +134,9 @@ function getAvatarColor(name: string): string {
 
 // ── Mejora 9: Customer segment badge ─────────────────────────────────────────
 function CustomerSegmentBadge({ totalSpent, orderCount }: { totalSpent: number; orderCount: number }) {
-  if (orderCount === 0) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Nuevo</span>;
+  if (orderCount === 0) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Nuevo</span>;
   if (totalSpent > 1000) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] text-[var(--data-warning-500)] border border-[var(--data-warning-500)]">VIP</span>;
-  if (totalSpent > 500) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Premium</span>;
+  if (totalSpent > 500) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Premium</span>;
   return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]">Regular</span>;
 }
 
@@ -219,7 +220,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
                   className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{
                     width: `${Math.max(8, (p.totalQty / maxQty) * 100)}%`,
-                    backgroundColor: i === 0 ? "var(--accent)" : i === 1 ? "#f97316" : "#457b9d",
+                    backgroundColor: i === 0 ? "var(--accent)" : i === 1 ? "#ff6b5b" : "#457b9d",
                   }}
                 />
               </div>
@@ -234,24 +235,24 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
 // ── Config ─────────────────────────────────────────────────────────────────
 
 const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string }> = {
-  frecuente: { label: "Frecuente",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
-  ocasional: { label: "Ocasional",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  frecuente: { label: "Frecuente",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
+  ocasional: { label: "Ocasional",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
   nuevo:     { label: "Nuevo",      color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
   perdido:   { label: "Perdido",    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" },
 };
 
 const HEALTH_CONFIG: Record<HealthScore | "desconocido", { label: string; color: string; bg: string; border: string; tooltip: string }> = {
-  activo:      { label: "Activo",     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", tooltip: "Compra en últimos 30 días" },
+  activo:      { label: "Activo",     color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", tooltip: "Compra en últimos 30 días" },
   en_riesgo:   { label: "En riesgo",  color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",     border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",   tooltip: "Sin compras hace 31-90 días" },
   perdido:     { label: "Perdido",    color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",         border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",       tooltip: "Sin compras hace +90 días" },
-  desconocido: { label: "Desconocido", color: "text-[var(--text-tertiary)]",      bg: "bg-[var(--surface-sunken)]/30",      border: "border-[var(--rule-base)] dark:border-gray-600",     tooltip: "Activo: compra en últimos 30 días | En riesgo: 31-90 días | Perdido: +90 días" },
+  desconocido: { label: "Desconocido", color: "text-[var(--text-tertiary)]",      bg: "bg-[var(--surface-sunken)]/30",      border: "border-[var(--rule-base)] ",     tooltip: "Activo: compra en últimos 30 días | En riesgo: 31-90 días | Perdido: +90 días" },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; Icon: React.ElementType }> = {
   pendiente:  { label: "Pendiente",  color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",   Icon: Clock },
-  confirmado: { label: "Confirmado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     Icon: CheckCircle },
+  confirmado: { label: "Confirmado", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15",     Icon: CheckCircle },
   en_camino:  { label: "En camino",  color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", Icon: Truck },
-  entregado:  { label: "Entregado",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", Icon: CheckCircle },
+  entregado:  { label: "Entregado",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", Icon: CheckCircle },
   cancelado:  { label: "Cancelado",  color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       Icon: XCircle },
 };
 
@@ -441,7 +442,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
       </div>
       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-3">Las compras de toda la familia suman al mismo historial. El fiado y puntos son compartidos.</p>
 
-      <div className="flex items-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg px-3 py-2 mb-2">
+      <div className="flex items-center gap-2 bg-primary/10 dark:bg-primary/15 rounded-lg px-3 py-2 mb-2">
         <div className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: getAvatarColor(customer.name) }}>
           {getInitials(customer.name)}
         </div>
@@ -453,7 +454,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
       </div>
 
       {familyMembers.map((m, i) => (
-        <div key={i} className="flex items-center gap-2 bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-3 py-2 mb-1.5">
+        <div key={i} className="flex items-center gap-2 bg-[var(--surface-alt)] rounded-lg px-3 py-2 mb-1.5">
           <div className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: getAvatarColor(m.nombre) }}>
             {getInitials(m.nombre)}
           </div>
@@ -461,20 +462,20 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
             <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{m.nombre} <span className="text-[var(--text-tertiary)] font-normal">({m.relacion})</span></p>
             <p className="text-xs text-[var(--text-tertiary)]">{m.teléfono}</p>
           </div>
-          <button onClick={() => saveFamily(familyMembers.filter((_, idx) => idx !== i))} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0">
+          <button aria-label="Quitar" onClick={() => saveFamily(familyMembers.filter((_, idx) => idx !== i))} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
       ))}
 
       {addingMember ? (
-        <div className="mt-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 space-y-2">
+        <div className="mt-2 bg-primary/10 dark:bg-primary/15 rounded-lg p-3 space-y-2">
           <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Nuevo miembro familiar</p>
           <div className="grid grid-cols-2 gap-2">
-            <input type="text" placeholder="Nombre" value={newMember.nombre} onChange={e => setNewMember({...newMember, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            <input type="tel" placeholder="Teléfono" value={newMember.teléfono} onChange={e => setNewMember({...newMember, teléfono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <input type="text" placeholder="Nombre" value={newMember.nombre} onChange={e => setNewMember({...newMember, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <input type="tel" placeholder="Teléfono" value={newMember.teléfono} onChange={e => setNewMember({...newMember, teléfono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
           </div>
-          <select value={newMember.relacion} onChange={e => setNewMember({...newMember, relacion: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] w-full">
+          <select value={newMember.relacion} onChange={e => setNewMember({...newMember, relacion: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] w-full">
             <option value="esposa">Esposa/o</option>
             <option value="hijo">Hijo/a</option>
             <option value="padre">Padre/Madre</option>
@@ -487,7 +488,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
           </div>
         </div>
       ) : (
-        <button onClick={() => setAddingMember(true)} className="mt-2 w-full py-2 rounded-lg border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-tertiary)] hover:text-primary hover:border-primary/40 transition-colors">
+        <button onClick={() => setAddingMember(true)} className="mt-2 w-full py-2 rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-tertiary)] hover:text-primary hover:border-primary/40 transition-colors">
           + Agregar miembro familiar
         </button>
       )}
@@ -501,6 +502,43 @@ type Props = {
   phone: string;
   onClose?: () => void;
 };
+
+/**
+ * Guarda un campo de la ficha del cliente y avisa si NO entró.
+ *
+ * Los cinco guardados de esta pantalla —etiquetas, límite de crédito,
+ * observaciones y notas— hacían `await fetch(...)` sin mirar la respuesta, con
+ * optimistic update y un «Guardado ✓» que salía siempre. Un 400, un 402 por
+ * plan vencido o un 503 se veían exactamente igual que un guardado exitoso.
+ *
+ * Devuelve `true` sólo si el servidor lo aceptó, para que quien llame decida
+ * si deja el cambio en pantalla o lo revierte.
+ */
+async function guardarCliente(
+  phone: string,
+  patch: Record<string, unknown>,
+  queHacia: string,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
+      method: "PATCH",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      toast.error(
+        typeof body?.error === "string" ? body.error : `No se pudo ${queHacia} (error ${res.status})`,
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn("[Customer360Tab] PATCH cliente falló", err);
+    toast.error(`Sin conexión — no se pudo ${queHacia}.`);
+    return false;
+  }
+}
 
 // ── Component ──────────────────────────────────────────────────────────────
 
@@ -584,16 +622,17 @@ export default function Customer360Tab({ phone, onClose }: Props) {
   const handleAddTag = async (tag: string) => {
     const trimmed = tag.trim();
     if (!trimmed || tags.includes(trimmed) || !phone) return;
+    const previos = tags;
     const updated = [...tags, trimmed];
     setTags(updated);
     setNewTag("");
     setSavingTags(true);
     try {
-      await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ tags: JSON.stringify(updated) }),
-      });
+      // Si el servidor rechaza, la etiqueta vuelve: dejarla en pantalla sería
+      // decirle al usuario que quedó guardada.
+      if (!await guardarCliente(phone, { tags: JSON.stringify(updated) }, "guardar la etiqueta")) {
+        setTags(previos);
+      }
     } finally {
       setSavingTags(false);
     }
@@ -601,15 +640,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
 
   const handleRemoveTag = async (tag: string) => {
     if (!phone) return;
+    const previos = tags;
     const updated = tags.filter(t => t !== tag);
     setTags(updated);
     setSavingTags(true);
     try {
-      await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ tags: JSON.stringify(updated) }),
-      });
+      if (!await guardarCliente(phone, { tags: JSON.stringify(updated) }, "quitar la etiqueta")) {
+        setTags(previos);
+      }
     } finally {
       setSavingTags(false);
     }
@@ -621,11 +659,12 @@ export default function Customer360Tab({ phone, onClose }: Props) {
     if (isNaN(limit) || limit < 0) return;
     setSavingCreditLimit(true);
     try {
-      await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ creditLimit: limit }),
-      });
+      /**
+       * El tope de fiado es lo más caro de esta pantalla: `setCustomer` pintaba
+       * el límite nuevo sin saber si el servidor lo había aceptado, y el cajero
+       * fiaba contra un número que sólo existía en su navegador.
+       */
+      if (!await guardarCliente(phone, { creditLimit: limit }, "guardar el límite de crédito")) return;
       setCustomer(prev => prev ? { ...prev, creditLimit: limit } : prev);
       setEditingCreditLimit(false);
     } finally {
@@ -642,15 +681,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       if (!phone) return;
       setSavingObs(true);
       try {
-        await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
-          method: "PATCH",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ observaciones: value }),
-        });
-        setObsSaved(true);
-        setTimeout(() => setObsSaved(false), 2500);
-      } catch { /* ignore */ }
-      finally { setSavingObs(false); }
+        // El «Guardado ✓» del autosave salía siempre, incluso con el PATCH
+        // rechazado: el usuario cerraba la ficha convencido de que su
+        // observación quedó escrita.
+        if (await guardarCliente(phone, { observaciones: value }, "guardar las observaciones")) {
+          setObsSaved(true);
+          setTimeout(() => setObsSaved(false), 2500);
+        }
+      } finally { setSavingObs(false); }
     }, 1000);
   };
 
@@ -658,13 +696,10 @@ export default function Customer360Tab({ phone, onClose }: Props) {
     if (!phone) return;
     setSavingNotes(true);
     try {
-      await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ privateNotes: notes }),
-      });
-      setNotesSaved(true);
-      setTimeout(() => setNotesSaved(false), 2500);
+      if (await guardarCliente(phone, { privateNotes: notes }, "guardar las notas")) {
+        setNotesSaved(true);
+        setTimeout(() => setNotesSaved(false), 2500);
+      }
     } finally {
       setSavingNotes(false);
     }
@@ -714,7 +749,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente 360°</SectionTitle>
         </div>
         {onClose && (
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
+          <button aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         )}
@@ -767,14 +802,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           <div className="flex gap-2 shrink-0 flex-wrap">
             <button
               onClick={() => setShowEditModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-primary text-primary hover:bg-primary hover:text-white text-sm font-bold transition-colors"
+              className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white text-sm font-semibold transition-colors"
             >
               <FileText className="h-4 w-4" />
               Editar ficha
             </button>
             <button
               onClick={() => setShowEstadoCuenta(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-colors"
+              className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors"
             >
               <FileText className="h-4 w-4" />
               Estado de Cuenta
@@ -796,7 +831,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <button
           onClick={() => setObsExpanded(!obsExpanded)}
-          className="w-full px-4 sm:px-5 py-3 flex items-center justify-between hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors"
+          className="w-full px-4 sm:px-5 py-3 flex items-center justify-between hover:bg-[var(--surface-alt)] transition-colors"
         >
           <span className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <FileText className="h-4 w-4 text-[var(--data-warning-500)]" />
@@ -812,7 +847,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               onChange={e => handleObservacionesChange(e.target.value)}
               placeholder="Prefiere delivery lunes, Alergico al mani, etc."
               rows={3}
-              className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-[var(--surface-alt)] text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <div className="flex items-center gap-2 text-xs">
               {savingObs && <span className="text-[var(--text-tertiary)] flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Guardando...</span>}
@@ -909,7 +944,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           {/* Badges */}
           <div className="flex flex-wrap gap-1.5 mt-3">
             {customer.categoria && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 capitalize">{customer.categoria}</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 capitalize">{customer.categoria}</span>
             )}
             {customer.canal && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] capitalize">{customer.canal}</span>
@@ -919,7 +954,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             )}
             {customer.estado && customer.estado !== 'activo' && (
               <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full border",
-                customer.estado === 'bloqueado' ? "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "bg-[var(--surface-sunken)]/30 text-[var(--text-secondary)] border-[var(--rule-base)] dark:border-gray-600"
+                customer.estado === 'bloqueado' ? "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "bg-[var(--surface-sunken)]/30 text-[var(--text-secondary)] border-[var(--rule-base)] "
               )}>
                 {customer.estado === 'bloqueado' ? 'BLOQUEADO' : 'INACTIVO'}
               </span>
@@ -947,7 +982,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 step={0.01}
                 value={creditLimitInput}
                 onChange={e => setCreditLimitInput(e.target.value)}
-                className="w-32 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-32 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="0.00"
               />
               <button
@@ -977,7 +1012,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                         ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                         : pct < 0.2
                           ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]"
-                          : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                          : "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                     )}>
                       {pct <= 0
                         ? "Sin crédito disponible"
@@ -1017,8 +1052,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               // Auto-color by hash
               const hash = tag.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
               const colors = [
-                "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-                "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+                "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
+                "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
                 "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
                 "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400",
                 "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
@@ -1028,7 +1063,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               return (
                 <span key={tag} className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", colorClass)}>
                   {tag}
-                  <button
+                  <button aria-label="Quitar"
                     onClick={() => handleRemoveTag(tag)}
                     className="hover:opacity-60 transition-opacity"
                   >
@@ -1045,7 +1080,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               onChange={e => setNewTag(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(newTag); } }}
               placeholder="Nueva etiqueta (Enter para agregar)"
-              className="flex-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-1.5 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="flex-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-1.5 bg-[var(--surface-alt)] text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
@@ -1110,7 +1145,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               {topProducts.map((p, i) => (
                 <div key={p.name} className="flex items-center gap-2">
                   <span className="text-xs font-extrabold text-[var(--text-tertiary)] w-4 text-right">{i + 1}</span>
-                  <div className="flex-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-full h-5 overflow-hidden">
+                  <div className="flex-1 bg-[var(--surface-sunken)] rounded-full h-5 overflow-hidden">
                     <div
                       className="h-full bg-primary/20 dark:bg-primary/30 rounded-full transition-all"
                       style={{ width: `${Math.min((p.count / (topProducts[0]?.count ?? 1)) * 100, 100)}%` }}
@@ -1162,15 +1197,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         {orders.length === 0 ? (
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted py-4 text-center">Sin pedidos registrados</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[500px] text-sm">
+          <DataTable className="min-w-[500px]">
               <thead>
-                <tr className="text-left border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Pedido</th>
-                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Fecha</th>
-                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Items</th>
-                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)] text-right">Total</th>
-                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Estado</th>
+                <tr>
+                  <th>Pedido</th>
+                  <th>Fecha</th>
+                  <th>Items</th>
+                  <th className="text-right">Total</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -1181,12 +1215,12 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     const st = STATUS_CONFIG[o.status] ?? STATUS_CONFIG.pendiente;
                     const Icon = st.Icon;
                     return (
-                      <tr key={o.id} className="border-t border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
-                        <td className="py-2 font-mono text-xs text-[var(--text-secondary)] dark:text-muted pr-2">#{o.id.slice(-6).toUpperCase()}</td>
-                        <td className="py-2 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(o.createdAt)}</td>
-                        <td className="py-2 text-xs text-[var(--text-secondary)] dark:text-muted">{o.items.length} prod.</td>
-                        <td className="py-2 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{fmt(o.total)}</td>
-                        <td className="py-2">
+                      <tr key={o.id}>
+                        <td className="font-mono text-xs text-[var(--text-secondary)] dark:text-muted">#{o.id.slice(-6).toUpperCase()}</td>
+                        <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(o.createdAt)}</td>
+                        <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{o.items.length} prod.</td>
+                        <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{fmt(o.total)}</td>
+                        <td>
                           <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>
                             <Icon className="h-2.5 w-2.5" />{st.label}
                           </span>
@@ -1195,8 +1229,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     );
                   })}
               </tbody>
-            </table>
-          </div>
+          </DataTable>
         )}
       </div>
 
@@ -1235,7 +1268,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted">= S/{(totalPoints * 0.05).toFixed(2)} en descuento</p>
                 </div>
                 {totalPoints >= 100 && (
-                  <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                  <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                     Canjeable
                   </span>
                 )}
@@ -1274,7 +1307,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           onChange={e => setNotes(e.target.value)}
           placeholder="Ej: Cliente prefiere pago con Yape. Pide factura."
           rows={3}
-          className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-[var(--surface-alt)] text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <div className="flex items-center justify-between mt-2">
           <AnimatePresence>

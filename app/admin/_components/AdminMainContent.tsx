@@ -46,22 +46,41 @@ function AdminMainContentInner({
   swipeHandlers,
   tabRouter,
 }: AdminMainContentProps) {
+  /*
+   * El <main> va SIN `role="tabpanel"`.
+   *
+   * Estaba puesto como si el sidebar fuera una barra de pestañas, y no lo es:
+   * es navegación. Eso daba dos problemas a la vez — un tabpanel huérfano
+   * (ningún `role="tab"` lo apunta) y, peor, el rol pisaba el landmark
+   * implícito de `<main>`, así que la página se quedaba SIN landmark principal
+   * justo donde apunta el skip-link «Ir al contenido». Las pestañas de verdad
+   * (AdminTabBar) arman su par tab/tabpanel adentro.
+   */
   return (
     <main
       id="main-content"
-      role="tabpanel"
-      aria-label="Contenido del modulo activo"
+      aria-label="Contenido del módulo activo"
       className={cn(
         "flex-1 mx-auto w-full pb-[calc(88px+env(safe-area-inset-bottom))] sm:pb-8",
         presentationMode
           ? "max-w-full px-4 py-4"
           : compactMode
-            ? "max-w-[1920px]" /* en compact modo, usar casi todo el viewport */
-            : "max-w-[1600px]",
+            /* Compact ya pedía "casi todo el viewport": +25% sobre el ancho
+               normal en cada escalón, en vez del 1920px fijo que en un 1440p
+               era MENOS que lo que hoy da el modo normal. */
+            ? "max-w-[calc(var(--panel-max,1600px)*1.25)]"
+            /* El tope duro de 1600px dejaba 660px muertos en 2560px (26% de
+               la pantalla). El token sube por escalones: 1600 → 1800 (≥1600px)
+               → 2160 (≥2100px) → 2400 (≥2560px). Ver globals.css §PANEL SHELL. */
+            : "max-w-[var(--panel-max,1600px)]",
         compactMode && !presentationMode
-          ? "px-3 sm:px-4 py-3 sm:py-4"
+          ? "px-[calc(var(--panel-gutter)*0.75)] py-3 sm:py-4"
           : !presentationMode
-            ? "px-4 sm:px-6 py-5 sm:py-8"
+            /* El gutter también es un token: 20px en laptop (cada píxel es
+               contenido), 24 estándar, 32/40/48 en monitores grandes. El aire
+               vertical va por su cuenta: se achica en pantallas BAJAS, donde
+               32px arriba son 32px menos de tabla. */
+            ? "px-4 sm:px-[var(--panel-gutter)] py-4 sm:py-[var(--panel-pad-y,32px)]"
             : "",
       )}
       {...swipeHandlers}

@@ -12,6 +12,7 @@ import {
 } from "./handlers";
 import { extractState } from "./conversation-store";
 import { formatError } from "../message-templates";
+import { logger } from "@/lib/logger";
 
 // ─── Transition Table ─────────────────────────────────────────────────────────
 //
@@ -94,15 +95,18 @@ export async function dispatch(
   try {
     return await entry.handler(ctx, classification);
   } catch (err) {
-    // Handlers must NOT throw — but belt-and-suspenders safety here
-    const errorMsg =
-      err instanceof Error ? err.message : String(err);
+    // Handlers must NOT throw — belt-and-suspenders: loguear SIEMPRE (antes el
+    // error se tragaba silencioso y el crash del handler era indiagnosticable).
+    logger.error("[concierge] handler crash", {
+      state: currentState,
+      intent: classification.intent,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return {
       reply: formatError(
         "Ocurrió un error interno. Escribe *hola* para volver al menú."
       ),
       newState: currentState,
     };
-    void errorMsg; // suppress unused warning
   }
 }

@@ -59,8 +59,8 @@ const SIDEBAR_STYLE_OPTIONS: SidebarStyleOption[] = [
     id: "ejecutivo",
     label: "Ejecutivo",
     description: "Oscuro elegante con ámbar. Compacto y profesional.",
-    swatch: "linear-gradient(135deg, #18181b 0%, #F59E0B 100%)",
-    accentHex: "#F59E0B",
+    swatch: "linear-gradient(135deg, #18181b 0%, #0d9488 100%)",
+    accentHex: "#0d9488",
   },
   {
     id: "sereno",
@@ -97,8 +97,8 @@ const PLAN_LABEL: Record<AdminPlan, string> = {
 
 const PLAN_BADGE: Record<AdminPlan, string> = {
   basico: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
-  pro: "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/30",
-  enterprise: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] border border-[var(--data-warning-500)]/30",
+  pro: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-[var(--accent)]/30",
+  enterprise: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30",
   max: "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)] border border-[var(--data-success-500)]/30",
 };
 
@@ -440,7 +440,7 @@ export function PlantillaPanelTab() {
           style={{
             borderColor:
               toast.tone === "success" ? "var(--data-success)" :
-              toast.tone === "warning" ? "var(--data-warning)" :
+              toast.tone === "warning" ? "#0d9488" :
               "var(--accent)",
           }}
           role="status"
@@ -452,11 +452,11 @@ export function PlantillaPanelTab() {
               style={{
                 backgroundColor:
                   toast.tone === "success" ? "rgb(from var(--data-success) r g b / 0.12)" :
-                  toast.tone === "warning" ? "rgb(from var(--data-warning) r g b / 0.12)" :
+                  toast.tone === "warning" ? "rgb(from #0d9488 r g b / 0.12)" :
                   "rgb(from var(--accent) r g b / 0.12)",
                 color:
                   toast.tone === "success" ? "var(--data-success)" :
-                  toast.tone === "warning" ? "var(--data-warning)" :
+                  toast.tone === "warning" ? "#0d9488" :
                   "var(--accent)",
               }}
             >
@@ -483,7 +483,7 @@ export function PlantillaPanelTab() {
                 <button
                   type="button"
                   onClick={openAdminPanelInNewTab}
-                  className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold hover:bg-[var(--accent)]/90 transition-colors"
+                  className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold hover:bg-[var(--accent)]/90 transition-colors"
                 >
                   Ver en panel
                   <ExternalLink className="h-3 w-3" strokeWidth={2.5} />
@@ -493,7 +493,7 @@ export function PlantillaPanelTab() {
             <button
               type="button"
               onClick={() => setToast(null)}
-              className="inline-flex items-center justify-center h-7 w-7 rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
+              className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
               aria-label="Cerrar notificación"
             >
               <X className="h-3.5 w-3.5" />
@@ -508,7 +508,7 @@ export function PlantillaPanelTab() {
           stack `flex-col sm:flex-row` para evitar squeeze del título
           "Plantilla del Panel Admin" en mobile (antes columnas LEFT 150px
           + RIGHT 200px → título vertical roto, botón superpuesto). */}
-      <header className="relative overflow-hidden rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-6 lg:p-8">
+      <header className="relative overflow-hidden rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-6 lg:p-8">
         <div
           aria-hidden
           className="pointer-events-none absolute -top-28 -right-20 h-72 w-72 rounded-full bg-[var(--accent)]/[0.12] blur-3xl"
@@ -540,12 +540,12 @@ export function PlantillaPanelTab() {
               Desktop: column right-aligned como antes. */}
           <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 shrink-0">
             {dirty ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700,var(--data-warning-500))] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider border border-[var(--data-warning-500)]/30">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider border border-primary/30">
                 <AlertCircle className="h-3 w-3" strokeWidth={2.5} />
                 Borrador sin guardar
               </span>
             ) : saving ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider border border-[var(--accent)]/30">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider border border-[var(--accent)]/30">
                 <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2.5} />
                 Guardando…
               </span>
@@ -586,7 +586,7 @@ export function PlantillaPanelTab() {
                 <span
                   className={
                     s.accent ? "text-[var(--accent)]" :
-                    s.warning ? "text-[var(--data-warning-700)]" :
+                    s.warning ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" :
                     (s as { success?: boolean }).success ? "text-[var(--data-success-600,#059669)]" :
                     "text-[var(--text-primary)]"
                   }
@@ -602,9 +602,9 @@ export function PlantillaPanelTab() {
 
       {/* Estilo por defecto del sidebar v2 — cards con preview realista del
           sidebar (header tinted + 4 items con dots) en vez de 3 barritas. */}
-      <section className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8">
+      <section className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8">
         <div className="flex items-start gap-3 mb-6">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <Palette className="h-5 w-5" strokeWidth={2} />
           </span>
           <div className="min-w-0">
@@ -633,7 +633,7 @@ export function PlantillaPanelTab() {
                 className={[
                   "group relative text-left rounded-2xl border-2 p-3 transition-all overflow-hidden",
                   isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-md shadow-[var(--accent)]/15"
+                    ? "border-[var(--accent)] bg-primary/10 shadow-md shadow-[var(--accent)]/15"
                     : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/60 hover:-translate-y-1 hover:shadow-lg",
                 ].join(" ")}
               >
@@ -773,8 +773,8 @@ export function PlantillaPanelTab() {
                 className={
                   "group relative text-left rounded-2xl border-2 p-5 transition-colors " +
                   (isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/40")
+                    ? "border-[var(--accent)] bg-primary/10"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10")
                 }
               >
                 {isActive && (
@@ -862,7 +862,7 @@ export function PlantillaPanelTab() {
             const visiblePct = (visibleInCat / items.length) * 100;
 
             return (
-              <div key={cat} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+              <div key={cat} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
                 <button
                   type="button"
                   onClick={() => toggleCategory(cat)}
@@ -924,9 +924,9 @@ export function PlantillaPanelTab() {
                             }`}
                           >
                             <span
-                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-md transition-transform ${
-                                isVisible ? "translate-x-5" : "translate-x-0.5"
-                              }`}
+                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--surface-raised)] shadow-md transition-transform ${
+ isVisible ? "translate-x-5" : "translate-x-0.5"
+ }`}
                             >
                               {isVisible ? (
                                 <Eye className="h-2.5 w-2.5 text-[var(--accent)]" strokeWidth={3} />
@@ -950,7 +950,7 @@ export function PlantillaPanelTab() {
                                       if (e.key === "Escape") { setEditingLabel(null); setLabelDraft(""); }
                                     }}
                                     autoFocus
-                                    className="flex-1 min-w-0 h-9 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                                    className="flex-1 min-w-0 h-9 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                                   />
                                   <button
                                     type="button"
@@ -1003,7 +1003,7 @@ export function PlantillaPanelTab() {
                                 key={p}
                                 type="button"
                                 onClick={() => updateOverride(m.id, { plan: p })}
-                                className={`inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-bold uppercase tracking-wider transition-colors ${
+                                className={`inline-flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${
                                   plan === p
                                     ? PLAN_BADGE[p]
                                     : "bg-transparent text-[var(--text-tertiary)] border border-transparent hover:border-[var(--rule-base)]"
@@ -1059,13 +1059,13 @@ export function PlantillaPanelTab() {
                 <span className="truncate">Error: {saveError}</span>
               </span>
             ) : dirty ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700,var(--data-warning-500))] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--data-warning-500)]/30">
+              <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-primary/30">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                 <span className="sm:hidden">Sin guardar</span>
                 <span className="hidden sm:inline">Tenés cambios sin guardar</span>
               </span>
             ) : saving ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--accent)]/30">
+              <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--accent)]/30">
                 <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" strokeWidth={2.5} />
                 Guardando…
               </span>

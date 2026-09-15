@@ -6,7 +6,6 @@ import {
   Clock,
   Lightbulb,
   CheckSquare,
-  Square,
   Check,
   Package,
   ShoppingCart,
@@ -254,11 +253,11 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
   const pct = Math.round((completedCount / total) * 100);
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900 overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:border-[var(--rule-base)] overflow-hidden">
       <div className="border-b border-[var(--rule-soft)] px-5 py-4 dark:border-[var(--rule-base)]">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2.5">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 dark:bg-primary/15">
               <CheckSquare className="h-5 w-5 text-[var(--data-success-500)]" />
             </span>
             <div>
@@ -309,7 +308,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
                   <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                 </span>
               ) : (
-                <span className="inline-flex h-5 w-5 shrink-0 rounded-md border-2 border-[var(--rule-base)] hover:border-[var(--text-primary)]/40 transition-colors" />
+                <span className="inline-flex h-5 w-5 shrink-0 rounded-md border border-[var(--rule-base)] hover:border-[var(--text-primary)]/40 transition-colors" />
               )}
               <span
                 className={cn(
@@ -327,7 +326,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
       </div>
 
       {completedCount === total && (
-        <div className="flex items-center justify-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-5 py-3">
+        <div className="flex items-center justify-center gap-2 bg-primary/10 dark:bg-primary/15 px-5 py-3">
           <Check className="h-4 w-4 text-[var(--data-success-500)]" />
           <span className="text-sm font-extrabold text-[var(--data-success-500)]">
             ¡Día completo! Buen trabajo.
@@ -361,7 +360,7 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-white px-5 py-4",
+        "flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-4",
         "dark:border-[var(--rule-base)] dark:bg-gray-900",
         "border-l-4 transition-all hover:shadow-sm",
       )}
@@ -389,7 +388,7 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
       <button
         onClick={() => onMarkDone(task.id)}
         className={cn(
-          "shrink-0 inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]",
+          "shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]",
           "transition-colors hover:border-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white",
         )}
       >
@@ -506,7 +505,7 @@ export default function AccionesSection({ data }: AccionesSectionProps) {
         {(noTasks || allDone) ? (
           <div
             className={cn(
-              "rounded-lg border border-[var(--rule-base)] bg-white px-4 py-6 text-center",
+              "rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-6 text-center",
               "dark:border-[var(--rule-base)] dark:bg-gray-900",
             )}
           >

@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, AlertTriangle, AlertCircle, Info, Sparkles, Package } from "@buleje/design-system/icons";
+import { ArrowRight, AlertTriangle, AlertCircle, Info, Sparkles } from "@buleje/design-system/icons";
 import { AdminInsightCard, type ContextualMetric, type InsightAction } from "@/components/admin/ux";
-import { BulejeHeatmap, type HeatmapCell } from "@/components/ui-system/charts";
+import { type HeatmapCell } from "@/components/ui-system/charts";
 import { SkeletonEditorial } from "@/components/ui-system";
 import { usePersonalizedGreeting } from "@/hooks/use-personalized-greeting";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
@@ -172,7 +172,7 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, hide
           No pudimos cargar tu resumen
         </p>
         <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
-          Nos pasó algo. Recargá la página o revisa tu conexión.
+          Nos pasó algo. Recarga la página o revisa tu conexión.
         </p>
       </div>
     );

@@ -2,10 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { ForestCtpDB, CTP_SECTIONS } from "@/lib/db/forest-ctp.db";
+import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
+import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import { ForestEspeciesDB } from "@/lib/db/forest-especies.db";
+import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
+import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
+import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-errors";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { TIPOS_DOCUMENTO_LOCTP } from "@/lib/forestal/loctp-campos";
+import { LINEAS_PRODUCCION } from "@/lib/forestal/loctp-resumenes";
+import { sincronizarPartesDeGuia } from "@/lib/forestal/ctp-sincronizar-partes";
+import { agregarRolliza } from "@/lib/forestal/saldo-por-permiso";
+import { NotificationLogsDB } from "@/lib/db/notifications.db";
+import { ForestAserrioDB } from "@/lib/db/forest-aserrio.db";
+import type { ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
 
 /**
  * /api/admin/forestal/ctp — Libro CTP: producción + despacho + saldos (ADR-127)
@@ -17,8 +31,37 @@ const sectionEnum = z.enum(CTP_SECTIONS);
 const createSchema = z.object({
   section: sectionEnum,
   entryDate: z.coerce.date().optional(),
-  gtfIngreso: z.string().trim().max(60).nullable().optional(),
+  // ADR-134: dejó de ser "la guía" para ser el RESUMEN de las N guías que
+  // alimentaron la corrida ("001-0000120, 001-0000131, …"). Con el max(60)
+  // original —dimensionado para un solo código— 5 guías ya daban 400, y mezclar
+  // guías es justamente la razón de ser del modelo N:M. La columna es TEXT, así
+  // que el único límite era éste. 1000 cubre el tope de 50 consumos por línea.
+  // La VERDAD de la trazabilidad vive en ForestCtpConsumo; esto es el acta legible.
+  gtfIngreso: z.string().trim().max(1000).nullable().optional(),
   materiaPrimaRef: z.string().trim().max(120).nullable().optional(),
+  /**
+   * El permiso DECLARADO del asiento (ADR-402). Lo manda «Producir sin lote»
+   * (ADR-408/409): esa corrida no consume ninguna guía, así que no hay
+   * `originCode` que heredar y sin esto su título habilitante no tenía dónde
+   * escribirse. Donde hay consumos, la guía sigue mandando.
+   */
+  originCode: z.string().trim().max(120).nullable().optional(),
+  /**
+   * De quién es la madera de esta corrida (ADR-412): un centro que asierra por
+   * encargo produce madera que no es suya, y el certificado tiene que decirlo.
+   * Mismo hueco que `originCode`: una corrida sin lote no lo hereda de ningún
+   * lado. `null` es «no se declaró», no «es propia».
+   */
+  duenoMadera: z.enum(["propia", "tercero"]).nullable().optional(),
+  titularNombre: z.string().trim().max(160).nullable().optional(),
+  /**
+   * El LOTE DE ASERRÍO que produjo esta corrida (ADR-334).
+   *
+   * Con él la corrida no se declara suelta: se consumen las piezas del lote y el
+   * lote queda apuntando a la corrida. Es el hilo Consumos → Producción que el
+   * LO-CTP pide y que hasta ahora era texto libre en la columna «Lote».
+   */
+  loteAserrioId: z.string().trim().max(60).nullable().optional(),
   speciesCommon: z.string().trim().max(120).nullable().optional(),
   speciesScientific: z.string().trim().max(150).nullable().optional(),
   cites: z.boolean().optional(),
@@ -29,14 +72,363 @@ const createSchema = z.object({
   unit: z.enum(["m3", "kg", "unidad", "pt"]).nullable().optional(),
   pieces: z.coerce.number().int().nonnegative().max(999999).nullable().optional(),
   gtfNumber: z.string().trim().max(60).nullable().optional(),
+  // Campos oficiales del LO-CTP en la salida (ADR-311).
+  docType: z
+    .enum(TIPOS_DOCUMENTO_LOCTP.map((t) => t.valor) as [string, ...string[]])
+    .nullable()
+    .optional(),
+  codigoProducto: z.string().trim().max(60).nullable().optional(),
+  /** "Forma de presentación" del formato (ADR-314). Texto: el catálogo sugiere
+   *  pero no encierra — rechazar una presentación que la autoridad admite sería
+   *  peor que aceptar una de más. */
+  presentacion: z.string().trim().max(40).nullable().optional(),
+  lineaProduccion: z
+    .enum(LINEAS_PRODUCCION.map((l) => l.valor) as [string, ...string[]])
+    .nullable()
+    .optional(),
   destino: z.string().trim().max(200).nullable().optional(),
+  /** Sello de la verificación de la GTF de salida contra SERFOR (ADR-312). */
+  serforNumeroRegistro: z.string().trim().max(30).nullable().optional(),
+  serforVerificadoEn: z.coerce.date().nullable().optional(),
   observations: z.string().trim().max(1000).nullable().optional(),
+  // ADR-134: una corrida real mezcla varias guías. La atribución viaja con el
+  // alta; `ForestCtpConsumoDB` valida I1/I2 y tenant antes de escribir.
+  consumos: z
+    .array(
+      z.object({
+        woodEntryId: z.string().trim().min(1),
+        volumeM3: z.coerce.number().positive().max(99999),
+      }),
+    )
+    .max(50)
+    .optional(),
+  costoProceso: z.coerce.number().nonnegative().max(9999999).nullable().optional(),
+  /* En cuánto se vendió (sólo despacho). Mismo tope que `set_venta`, para que
+     un monto que entra por el alta no sea rechazado después al corregirlo. */
+  valorVenta: z.coerce.number().min(0).max(9_999_999_999.99).nullable().optional(),
+  moneda: z.string().trim().max(8).nullable().optional(),
+  // ADR-135: de qué corridas salió el producto de este despacho. Cierra la
+  // cadena de custodia; `ForestCtpDespachoDB` valida I4/I5 antes de escribir.
+  origenes: z
+    .array(
+      z.object({
+        produccionEntryId: z.string().trim().min(1),
+        quantity: z.coerce.number().positive().max(9999999),
+      }),
+    )
+    .max(50)
+    .optional(),
+  /**
+   * El cuerpo de la GTF de salida, en el MISMO acto que la línea.
+   *
+   * Una guía ampara varias líneas de producto (una por especie/paquete): con el
+   * `PATCH gtf_datos` como única vía, registrar una guía de cinco productos eran
+   * cinco altas + cinco parches, y el almacenero —que puede registrar el
+   * despacho pero no editar guías ya emitidas— se comía un 403 en el segundo
+   * paso. Escribirlo al crear es parte de registrar la salida; EDITAR la guía de
+   * una línea que ya existe sigue siendo del PATCH (admin/owner).
+   */
+  gtfDatos: gtfDatosSchema.optional(),
+  /**
+   * Las PIEZAS que salen SIN ASERRAR en esta línea (ADR-363). Sólo despacho.
+   *
+   * Con esto la línea NO se mide contra el stock de producto (I3): lo que sale
+   * es materia prima, y su stock son las trozas — cada una validada por T2.
+   */
+  trozas: z.array(z.string().trim().min(1).max(60)).max(500).optional(),
 });
-const patchSchema = z.object({ id: z.string().trim().min(1), action: z.literal("annul"), reason: z.string().trim().min(3).max(500) });
+/**
+ * A quién se le cobra el aserrío de la corrida y, si se pactó, a qué precio
+ * único (ADR-412 §4). Viaja con la declaración porque se elige en el mismo
+ * formulario. `duenoParteId: null` = madera del centro, no se le cobra a nadie.
+ * El importe NO viaja: lo calcula el servidor (regla 6).
+ *
+ * `precioManualPt` tiene TRES estados y no dos: ausente = mantener el trato que
+ * la corrida ya tiene · `null` = con la tarifa · número = a mano. Por eso es
+ * `.optional()` sin `.default()`: Zod deja la clave ausente y el servidor la
+ * distingue del `null` (`precioManualAUsar`).
+ */
+/* `duenoParteId` también tiene tres estados: ausente = mantener el dueño de la
+   corrida · `null` = dejar de cobrar · id = ese dueño. Hay pantallas que no
+   conocen el dueño y sólo tocan el precio: no pueden borrarlo por omisión. */
+const aserrioPedidoSchema = z.object({
+  duenoParteId: z.string().trim().min(1).max(40).nullable().optional(),
+  precioManualPt: z.number().positive().max(1000).nullable().optional(),
+});
+type AserrioPedido = z.infer<typeof aserrioPedidoSchema>;
+
+const patchSchema = z.discriminatedUnion("action", [
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("annul"),
+    reason: z.string().trim().min(3).max(500),
+  }),
+  // Emitir la GTF de salida formal (serie autorizada ARFFS + correlativo auto).
+  z.object({ id: z.string().trim().min(1), action: z.literal("emitir_gtf") }),
+  // Registrar el valor de venta del despacho para el P&L (ADR-141).
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("set_venta"),
+    valorVenta: z.number().min(0).max(9_999_999_999.99).nullable(),
+  }),
+  // Cuerpo de la guía de transporte: propietario, destinatario, transportista,
+  // vehículo, traslado y títulos. La forma la valida `gtfDatosSchema`.
+  z.object({ id: z.string().trim().min(1), action: z.literal("gtf_datos"), datos: gtfDatosSchema }),
+  /**
+   * AMPLIAR una corrida que ya declaró (ADR-361): el lote no sale de la sierra
+   * en un solo acto. Suma paquetes a los que ya están —no los reemplaza— y el
+   * tope del 56 % se mide sobre el TOTAL acumulado.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("ampliar_produccion"),
+    /* Sin esto, si la corrida ya se le cobraba a alguien, se recotiza igual:
+       los paquetes nuevos también se asierran. */
+    aserrio: aserrioPedidoSchema.optional(),
+    observations: z.string().trim().max(1000).nullable().optional(),
+    paquetes: z
+      .array(
+        z.object({
+          codigo: z.string().trim().min(1).max(60),
+          productType: z.string().trim().max(80).nullable().optional(),
+          presentacion: z.string().trim().max(80).nullable().optional(),
+          cantidad: z.coerce.number().int().nonnegative().max(99999),
+          volumenM3: z.coerce.number().positive().max(999999),
+          espesorCm: z.coerce.number().positive().max(9999).nullable().optional(),
+          anchoCm: z.coerce.number().positive().max(9999).nullable().optional(),
+          largoM: z.coerce.number().positive().max(999).nullable().optional(),
+          observations: z.string().trim().max(300).nullable().optional(),
+        }),
+      )
+      .min(1)
+      .max(200),
+  }),
+  /**
+   * Cerrar una corrida que se abrió al consumir en el patio (ADR-340): qué
+   * producto salió y cuánto. Es la Sección 3 del LO-CTP declarada aparte del
+   * consumo, que es como pasa en la planta.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("declarar_produccion"),
+    aserrio: aserrioPedidoSchema.optional(),
+    productType: z.string().trim().max(80).nullable().optional(),
+    presentacion: z.string().trim().max(80).nullable().optional(),
+    quantity: z.coerce.number().positive().max(9999999),
+    unit: z.enum(["m3", "kg", "unidad", "pt"]),
+    pieces: z.coerce.number().int().nonnegative().max(999999).nullable().optional(),
+    codigoProducto: z.string().trim().max(80).nullable().optional(),
+    lineaProduccion: z.string().trim().max(10).nullable().optional(),
+    observations: z.string().trim().max(1000).nullable().optional(),
+    /**
+     * Los paquetes que salieron (ADR-349). El detalle de `quantity`: la DB
+     * rechaza la declaración si no suman lo mismo. Tope de 200 por corrida —
+     * más que eso es un pegado accidental, no una jornada.
+     */
+    paquetes: z
+      .array(
+        z.object({
+          codigo: z.string().trim().min(1).max(60),
+          productType: z.string().trim().max(80).nullable().optional(),
+          presentacion: z.string().trim().max(80).nullable().optional(),
+          cantidad: z.coerce.number().int().nonnegative().max(99999),
+          volumenM3: z.coerce.number().positive().max(999999),
+          espesorCm: z.coerce.number().positive().max(9999).nullable().optional(),
+          anchoCm: z.coerce.number().positive().max(9999).nullable().optional(),
+          largoM: z.coerce.number().positive().max(999).nullable().optional(),
+          observations: z.string().trim().max(300).nullable().optional(),
+        }),
+      )
+      .max(200)
+      .optional(),
+  }),
+  /**
+   * Cobrar (o dejar de cobrar) el aserrío de una corrida ya declarada
+   * (ADR-412 §4): el cobro que falló al declarar, el dueño que se supo
+   * después, o el precio que se renegoció. Actualiza el mismo cargo.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("cobrar_aserrio"),
+    duenoParteId: aserrioPedidoSchema.shape.duenoParteId,
+    precioManualPt: aserrioPedidoSchema.shape.precioManualPt,
+  }),
+  /**
+   * Cobrar el aserrío de VARIAS corridas de una vez (ADR-412): estrenar el
+   * cobro con la producción ya declarada sin abrirlas de a una. Mismo contrato
+   * que `cobrar_aserrio` («ausente = mantener»); cada corrida en su propia
+   * transacción, y la respuesta dice corrida por corrida qué pasó.
+   */
+  z.object({
+    action: z.literal("cobrar_aserrio_tanda"),
+    ids: z
+      .array(z.string().trim().min(1).max(40))
+      .min(1, "Elige al menos una corrida.")
+      .max(200, "Una tanda llega hasta 200 corridas.")
+      .refine((ids) => new Set(ids).size === ids.length, "Hay corridas repetidas en la tanda."),
+    duenoParteId: aserrioPedidoSchema.shape.duenoParteId,
+    precioManualPt: aserrioPedidoSchema.shape.precioManualPt,
+  }),
+  /**
+   * Marcar (o desmarcar) una corrida como "ya se usó" (Brandon, 2026-09-01):
+   * sale de Productos disponibles sin despacharse ni reprocesarse. Reversible.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("marcar_usado"),
+    usado: z.boolean(),
+    motivo: z.string().trim().max(500).optional(),
+  }),
+  /**
+   * Rellenar los campos VACÍOS de una corrida (ADR-401 §1.2). No sobrescribe:
+   * un campo que ya dice algo se ignora y la respuesta lo informa. Los límites
+   * de largo son los del schema; lo que decide si el campo se puede tocar es
+   * `completarLinea`, no esto.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("completar_linea"),
+    campos: z
+      .object({
+        observations: z.string().trim().max(2000).optional(),
+        presentacion: z.string().trim().max(120).optional(),
+        materiaPrimaRef: z.string().trim().max(200).optional(),
+        speciesCommon: z.string().trim().max(120).optional(),
+        speciesScientific: z.string().trim().max(160).optional(),
+        productType: z.string().trim().max(120).optional(),
+        /* El dueño de la madera (ADR-412): una corrida vieja no declaró
+           ninguno, así que llenar ese hueco es COMPLETAR, no corregir. */
+        duenoMadera: z.enum(["propia", "tercero"]).optional(),
+        titularNombre: z.string().trim().max(160).optional(),
+      })
+      .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
+        message: "Manda al menos un campo con contenido.",
+      }),
+  }),
+  /**
+   * Corregir campos YA CARGADOS de una corrida (ADR-401 §1). Es la hermana
+   * peligrosa de `completar_linea`: acá se SOBRESCRIBE lo que el libro decía.
+   * Quién puede tocar qué lo decide `corregirLinea` —los descriptivos siempre
+   * con el período abierto; los del registro sólo si nada depende del asiento—,
+   * acá sólo se valida la FORMA del dato. Los números viajan como texto para
+   * que el trim y el redondeo los haga un solo lugar (Decimal 14,4 / 12,4).
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("corregir_linea"),
+    campos: z
+      .object({
+        observations: z.string().trim().max(2000).optional(),
+        presentacion: z.string().trim().max(120).optional(),
+        materiaPrimaRef: z.string().trim().max(200).optional(),
+        speciesCommon: z.string().trim().max(120).optional(),
+        speciesScientific: z.string().trim().max(160).optional(),
+        productType: z.string().trim().max(120).optional(),
+        /* El N° de permiso declarado del asiento (ADR-402). Sólo tiene efecto
+           donde no hay guía de la que heredarlo; la pantalla lo sabe y manda
+           uno u otro camino. */
+        originCode: z.string().trim().max(120).optional(),
+        /* El dueño de la madera (ADR-412). Se corrige como cualquier otro campo
+           del asiento; la DB class mantiene coherente el par dueño/titular. */
+        duenoMadera: z.enum(["propia", "tercero"]).optional(),
+        titularNombre: z.string().trim().max(160).optional(),
+        unit: z.string().trim().max(20).optional(),
+        quantity: z
+          .string()
+          .trim()
+          .regex(/^\d{1,10}(\.\d{1,4})?$/, "La cantidad va en números, con hasta 4 decimales.")
+          .optional(),
+        volumeInputM3: z
+          .string()
+          .trim()
+          .regex(/^\d{1,8}(\.\d{1,4})?$/, "El volumen va en m³, con hasta 4 decimales.")
+          .optional(),
+      })
+      .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
+        message: "Manda al menos un campo con contenido.",
+      }),
+  }),
+  /**
+   * Asigna el mismo permiso declarado a VARIAS corridas sin materia prima
+   * (ADR-409). El relleno masivo que ADR-401 dejó pendiente, acotado a un solo
+   * campo: es lo que vuelve usable el saldo por permiso sobre lo ya cargado.
+   */
+  z.object({
+    action: z.literal("asignar_permiso_masivo"),
+    ids: z.array(z.string().trim().min(1)).min(1).max(200),
+    originCode: z.string().trim().min(1).max(120),
+  }),
+  /**
+   * Declara una corrida como EXISTENCIA DE APERTURA (ADR-394): madera anterior
+   * al libro, sin nada que atar. No toca números; el certificado sigue
+   * bloqueado. Reversible.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("declarar_apertura"),
+    apertura: z.boolean(),
+    motivo: z.string().trim().max(500).optional(),
+  }),
+]);
+
+/** `?from`/`?to` = instantes ISO del período (lib/forestal/ctp-period.ts). Inválido → sin límite. */
+function periodFromUrl(url: URL): { fromDate?: Date; toDate?: Date } {
+  const dateParam = z.coerce.date();
+  const read = (key: string) => {
+    const raw = url.searchParams.get(key);
+    if (!raw) return undefined;
+    const parsed = dateParam.safeParse(raw);
+    return parsed.success ? parsed.data : undefined;
+  };
+  return { fromDate: read("from"), toDate: read("to") };
+}
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro");
-  return ok ? null : NextResponse.json({ error: "specialization_disabled", message: "El módulo CTP no está habilitado para este tenant." }, { status: 403 });
+  return ok
+    ? null
+    : NextResponse.json(
+        {
+          error: "specialization_disabled",
+          message: "El módulo CTP no está habilitado para este tenant.",
+        },
+        { status: 403 },
+      );
+}
+
+/**
+ * Cobra el aserrío DESPUÉS de que el asiento se guardó, sin poder tumbarlo
+ * (ADR-412 §4): el libro es lo que se fiscaliza, y un cargo que falló se
+ * vuelve a pedir desde la corrida con `cobrar_aserrio`.
+ *
+ * Con `pedido` cobra lo elegido. Sin él y con `recotizar`, recalcula sólo si
+ * la corrida ya se le cobraba a alguien. `null` = no había nada que cobrar.
+ * El error real va al log; al cliente, un texto que no filtra la base.
+ */
+async function cobrarSinRomper(
+  tenantId: string,
+  id: string,
+  pedido: AserrioPedido | undefined,
+  opts: { recotizar: boolean; user: string; ctx: string },
+): Promise<ResultadoCobro | null> {
+  try {
+    if (pedido) return await ForestAserrioDB.cobrarCorrida(tenantId, id, pedido, opts.user);
+    return opts.recotizar ? await ForestAserrioDB.recotizarSiCobrada(tenantId, id, opts.user) : null;
+  } catch (err) {
+    logger.error(`[${opts.ctx}] la corrida se guardó pero el aserrío no se cargó en la cuenta`, {
+      error: String(err),
+      tenantId,
+      entryId: id,
+    });
+    return {
+      cobrado: false,
+      motivo: "No se pudo cargar en la cuenta: la corrida quedó guardada, cóbrala de nuevo desde la corrida.",
+      importe: null,
+      parteNombre: null,
+      movimientoId: null,
+      cotizacion: null,
+    };
+  }
 }
 
 export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) => {
@@ -47,22 +439,265 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
   const url = new URL(req.url);
+  const period = periodFromUrl(url);
   try {
     if (url.searchParams.get("saldos") === "1") {
-      return NextResponse.json({ saldos: await ForestCtpDB.saldos(auth.tenantId) });
+      /* `?especie=` recorta el agregado ENTERO (ADR-400): totales, productos y
+         piezas hablan de esa especie. Vacío = todas, como siempre. */
+      const especie = url.searchParams.get("especie")?.trim() || undefined;
+      return NextResponse.json({
+        saldos: await ForestCtpDB.saldos(auth.tenantId, { ...period, especie }),
+      });
+    }
+    /**
+     * UNA corrida con su detalle (paquetes incluidos).
+     *
+     * Hace falta desde que «Productos disponibles» dejó de listar la producción
+     * sin origen (2026-09-10): esa corrida existe, se mira y se vincula, pero ya
+     * no aparece en la foto del depósito — y sus medidas hay que poder verlas
+     * igual, que es contra lo que se decide de qué lote salió.
+     */
+    const idDeLaCorrida = url.searchParams.get("entryId")?.trim();
+    if (idDeLaCorrida) {
+      const entry = await ForestCtpDB.getById(auth.tenantId, idDeLaCorrida);
+      if (!entry) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ entry });
+    }
+    /* Productos disponibles (ADR-349): lo aserrado que sigue en la planta, con
+       sus paquetes. El saldo sale de la única fuente (ADR-316). */
+    if (url.searchParams.get("disponibles") === "1") {
+      return NextResponse.json(
+        await ForestCtpDB.productosDisponibles(auth.tenantId, {
+          ...period,
+          especie: url.searchParams.get("especie") ?? undefined,
+          producto: url.searchParams.get("producto") ?? undefined,
+          /* El período NO acota lo disponible salvo que se pida: lo que hay en
+             el depósito no depende del mes que esté mirando el libro. */
+          soloDelPeriodo: url.searchParams.get("soloDelPeriodo") === "1",
+          incluirUsados: url.searchParams.get("incluirUsados") === "1",
+        }),
+      );
+    }
+    // P&L del período: venta − COGS agregado (ADR-141).
+    if (url.searchParams.get("pnl") === "1") {
+      return NextResponse.json({
+        pnl: await ForestCtpDespachoDB.pnlDelPeriodo(auth.tenantId, period),
+      });
+    }
+    // Conciliación: apertura + movimientos = existencia final (ADR-139 rollforward).
+    if (url.searchParams.get("conciliacion") === "1") {
+      /* Mismo `?especie=` que los saldos: la conciliación los usa por dentro. */
+      const especie = url.searchParams.get("especie")?.trim() || undefined;
+      return NextResponse.json({
+        conciliacion: await ForestCtpDB.conciliacionPeriodo(auth.tenantId, { ...period, especie }),
+      });
+    }
+    // Curva del saldo de materia prima en el tiempo (¿el patio sube o baja?).
+    if (url.searchParams.get("curva") === "1") {
+      /* Mismo `?especie=` que los saldos: la curva es la TRAYECTORIA de ese
+         saldo y no puede dibujar un conjunto distinto al del número. */
+      const especie = url.searchParams.get("especie")?.trim() || undefined;
+      return NextResponse.json({
+        curva: await ForestCtpDB.curvaSaldo(auth.tenantId, { ...period, especie }),
+      });
+    }
+    // ADR-135 D3: despachos del período que no podrían emitir certificado.
+    if (url.searchParams.get("traza") === "1") {
+      const especie = url.searchParams.get("especie")?.trim() || undefined;
+      return NextResponse.json({
+        traza: await ForestCtpDespachoDB.trazabilidadDelPeriodo(auth.tenantId, { ...period, especie }),
+      });
+    }
+    /* Las medidas que este aserradero más declara: alimentan las plantillas del
+       formulario de producción. Sin período — «el de siempre» es histórico, no
+       de este mes. */
+    if (url.searchParams.get("medidas") === "1") {
+      return NextResponse.json({
+        medidas: await ForestCtpDB.medidasFrecuentes(auth.tenantId, {
+          /* `?producto=` acota «las de siempre» al producto que se está
+             declarando: las de la paquetería no sirven para listones. */
+          producto: url.searchParams.get("producto") ?? undefined,
+        }),
+      });
+    }
+    /* La tira de jornadas de una semana: qué día ya tiene producción anotada y
+       cuánto. La usa el selector de día al declarar una corrida —el parte de la
+       sierra llega tarde y hay que poder decir «esto fue el martes 15» viendo
+       cuál día ya está cargado, para no anotar la misma jornada dos veces.
+
+       Rango propio (`semanaDesde`/`semanaHasta`) y no el `from`/`to` del libro:
+       la semana que se mira acá es independiente del período activo de la
+       pantalla, y mezclarlos haría que cambiar de semana moviera el libro. */
+    /* ¿El último aviso del Libro llegó a alguien?
+       El cron manda por WhatsApp y por correo, y hasta ahora un rechazo —el
+       dominio sin verificar, un token vencido— sólo se veía en el log del
+       servidor: desde el panel el aviso parecía haber salido. */
+    /* El primer día de un CTP: en qué tramo del arranque está el libro.
+       La Ficha y el catálogo viven en KV; los movimientos, en tablas. */
+    if (url.searchParams.get("arranque") === "1") {
+      const [ficha, catalogo, conteos] = await Promise.all([
+        ForestCtpFichaDB.get(auth.tenantId),
+        ForestEspeciesDB.get(auth.tenantId),
+        ForestCtpDB.contarParaArranque(auth.tenantId),
+      ]);
+      return NextResponse.json({
+        estado: {
+          ficha: ficha ?? null,
+          /* Las de fábrica no cuentan como «cargó sus especies»: el paso es
+             que el centro diga cuáles trabaja, no que el sistema traiga una
+             lista genérica. */
+          especies: catalogo.agregadas.length,
+          ...conteos,
+        },
+      });
+    }
+    if (url.searchParams.get("avisosEstado") === "1") {
+      return NextResponse.json({
+        envios: await NotificationLogsDB.ultimosPorTipo(auth.tenantId, "ctp_plazos_"),
+      });
+    }
+    if (url.searchParams.get("jornadas") === "1") {
+      const desde = url.searchParams.get("semanaDesde") ?? "";
+      const hasta = url.searchParams.get("semanaHasta") ?? "";
+      const s = url.searchParams.get("seccion");
+      const seccion = s === "consumo" || s === "despacho" ? s : "produccion";
+      return NextResponse.json({
+        jornadas: await ForestCtpDB.jornadasDeProduccion(auth.tenantId, { desde, hasta }, seccion),
+      });
+    }
+    /* El detalle de las jornadas marcadas: qué salió cada día, por especie y
+       producto. Alimenta el resumen que se abre desde la tira de días — con un
+       día o con varios marcados, que es como se compara una semana. */
+    if (url.searchParams.get("resumenJornadas") === "1") {
+      const dias = (url.searchParams.get("dias") ?? "")
+        .split(",")
+        .map((d) => d.trim())
+        .filter(Boolean);
+      return NextResponse.json(await ForestCtpDB.resumenDeJornadas(auth.tenantId, dias));
+    }
+    /* Los códigos de paquete ya usados en la planta: con ellos la pantalla
+       propone el siguiente LIBRE (el índice es único por tenant, no por
+       corrida — proponer el de al lado es un 422 asegurado). */
+    if (url.searchParams.get("codigosPaquete") === "1") {
+      return NextResponse.json({ codigos: await ForestCtpDB.codigosDePaquete(auth.tenantId) });
+    }
+    /* Saldo por permiso (ADR-409): la rolliza de cada título habilitante, su
+       techo al 56 % y lo ya declarado SIN LOTE contra él. Es una simulación y
+       vive en su propio apartado: no mueve ningún saldo del libro.
+
+       Se devuelven los INSUMOS agregados —no las filas finales— porque la
+       pantalla elige la base (rolliza en patio o todo lo ingresado) y con esto
+       cambia de base sin volver a pedir nada; la aritmética del 56 % vive en
+       `lib/forestal/saldo-por-permiso.ts`, una sola vez.
+
+       `patio.truncado` viaja a propósito: la lectura del patio tiene tope y
+       mostrar de menos en silencio hace creer que se perdió madera. */
+    if (url.searchParams.get("saldoPermisos") === "1") {
+      const [trozas, totalPatio, corridas] = await Promise.all([
+        WoodEntriesDB.trozasComoConsumibles(auth.tenantId),
+        WoodEntriesDB.contarTrozasDelPatio(auth.tenantId),
+        ForestCtpDB.produccionSinMateriaPrima(auth.tenantId),
+      ]);
+      return NextResponse.json({
+        rolliza: agregarRolliza(trozas),
+        corridas,
+        patio: { total: totalPatio, leidas: trozas.length, truncado: trozas.length < totalPatio },
+      });
+    }
+    /* «Tengo este atado delante: ¿de dónde salió?» (ADR-366). Sin período: el
+       que lee un cartel en la pila no sabe de qué mes es la corrida. */
+    const paquete = url.searchParams.get("paquete");
+    if (paquete != null) {
+      return NextResponse.json(await ForestCtpDB.buscarPaquetes(auth.tenantId, paquete));
+    }
+    // Grafo de cadena de custodia del período (Radar de trazabilidad).
+    if (url.searchParams.get("grafo") === "1") {
+      return NextResponse.json({
+        grafo: await ForestCtpDB.grafoTrazabilidad(auth.tenantId, period),
+      });
+    }
+    // Kardex (cuenta corriente) de la materia prima de una especie.
+    const kardexEspecie = url.searchParams.get("kardex");
+    if (kardexEspecie) {
+      return NextResponse.json({
+        kardex: await ForestCtpDB.kardexEspecie(auth.tenantId, kardexEspecie, period),
+      });
+    }
+    // Trazabilidad hacia adelante de UN ingreso: ¿a dónde fue esta madera?
+    const trazaForward = url.searchParams.get("trazaForward");
+    if (trazaForward) {
+      return NextResponse.json({
+        trazaForward: await ForestCtpDB.trazaForwardIngreso(auth.tenantId, trazaForward),
+      });
+    }
+    // Historial de cambios de UNA línea del libro (rec #10 QA): todo lo que el
+    // audit trail registró sobre ese registro — defensa ante fiscalización.
+    const historialId = url.searchParams.get("historial");
+    if (historialId) {
+      const { ActivityLogDB } = await import("@/lib/db/activity-log.db");
+      const rows = await ActivityLogDB.list(auth.tenantId, { entityId: historialId, limit: 50 });
+      return NextResponse.json({
+        historial: rows
+          .filter((r) => r.action.startsWith("ctp_"))
+          .map((r) => ({
+            id: r.id,
+            action: r.action,
+            detail: r.detail,
+            user: r.user,
+            createdAt: r.createdAt,
+          })),
+      });
+    }
+    // UNA línea por id. La usa el ANEXO N° 04 emitido desde el cubicador: la
+    // cubicación sabe de qué corrida salió, y el anexo no puede detallar más de
+    // lo que esa corrida produjo.
+    const entryId = url.searchParams.get("entryId");
+    if (entryId) {
+      const entry = await ForestCtpDB.getById(auth.tenantId, entryId);
+      return entry
+        ? NextResponse.json({ entry })
+        : NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    // Reorden predictivo (all-time, ritmo últimos 90 días).
+    if (url.searchParams.get("reorden") === "1") {
+      return NextResponse.json({ reorden: await ForestCtpDB.proyeccionReorden(auth.tenantId) });
+    }
+    // Tendencias mensuales (últimos N meses; ignora el período).
+    if (url.searchParams.get("tendencias") === "1") {
+      const meses = Number(url.searchParams.get("meses") ?? "6");
+      return NextResponse.json({
+        tendencias: await ForestCtpDB.tendenciasMensuales(
+          auth.tenantId,
+          Number.isFinite(meses) ? meses : 6,
+        ),
+      });
     }
     const availableFor = url.searchParams.get("available");
     if (availableFor && (CTP_SECTIONS as readonly string[]).includes(availableFor)) {
-      return NextResponse.json({ items: await ForestCtpDB.availableSource(auth.tenantId, availableFor as (typeof CTP_SECTIONS)[number]) });
+      // `?excludeCtpEntryId=` al EDITAR una línea: lo que ella misma consume no
+      // cuenta contra el disponible (si no, sus guías se verían agotadas).
+      return NextResponse.json({
+        items: await ForestCtpDB.availableSource(
+          auth.tenantId,
+          availableFor as (typeof CTP_SECTIONS)[number],
+          {
+            excludeCtpEntryId: url.searchParams.get("excludeCtpEntryId") ?? undefined,
+          },
+        ),
+      });
     }
     const s = url.searchParams.get("section");
-    const section = s && (CTP_SECTIONS as readonly string[]).includes(s) ? (s as (typeof CTP_SECTIONS)[number]) : undefined;
-    const { entries, total } = await ForestCtpDB.list(auth.tenantId, {
+    const section =
+      s && (CTP_SECTIONS as readonly string[]).includes(s)
+        ? (s as (typeof CTP_SECTIONS)[number])
+        : undefined;
+    const { entries, total, totalSinFiltro } = await ForestCtpDB.list(auth.tenantId, {
       section,
       search: url.searchParams.get("search") ?? undefined,
       includeAnnulled: url.searchParams.get("includeAnnulled") === "1",
+      ...period,
     });
-    return NextResponse.json({ entries, total });
+    return NextResponse.json({ entries, total, totalSinFiltro });
   } catch (err) {
     logger.error("[ctp.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -77,15 +712,104 @@ export const POST = withApiHandler("forestal-ctp-post", async (req: NextRequest)
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
   let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
-  const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
   try {
-    const entry = await ForestCtpDB.create(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" });
-    return NextResponse.json({ entry }, { status: 201 });
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+  const parsed = createSchema.safeParse(body);
+  if (!parsed.success) return ctpValidationResponse(parsed.error);
+  try {
+    const { loteAserrioId, gtfDatos, trozas, ...linea } = parsed.data;
+    const conTrozas = Boolean(trozas?.length) && parsed.data.section === "despacho";
+
+    /* T2 ANTES de crear (ADR-363): si una pieza ya se aserró o ya salió, el
+       error llega sin haber dejado un despacho fantasma en el libro. El marcado
+       vuelve a validar con LOCK — esto no reemplaza al lock, lo adelanta. */
+    if (conTrozas) await WoodEntriesDB.assertTrozasDespachables(auth.tenantId, trozas!);
+
+    const entry = await ForestCtpDB.create(auth.tenantId, {
+      ...linea,
+      desdeTrozas: conTrozas,
+      createdBy: auth.username ?? "unknown",
+    });
+
+    /* Las piezas se marcan DESPUÉS: hace falta el id de la línea. Si esto falla
+       —una carrera con otro camión— la línea se deshace: una salida declarada
+       sin madera atrás es peor que no haberla registrado. */
+    if (conTrozas && entry?.id) {
+      try {
+        await WoodEntriesDB.marcarDespachoTrozas(auth.tenantId, entry.id, trozas!, {
+          fecha: parsed.data.entryDate,
+          usuario: auth.username ?? "unknown",
+        });
+      } catch (e) {
+        await ForestCtpDB.softDelete(auth.tenantId, entry.id, auth.username ?? "unknown").catch(
+          (err) =>
+            logger.error("[ctp.POST] no se pudo deshacer la línea sin trozas", {
+              entryId: entry.id,
+              error: String(err),
+            }),
+        );
+        throw e;
+      }
+    }
+
+    /* La guía se escribe DESPUÉS de que la línea existe (hace falta su id) y
+       sobre la misma vía que el PATCH: así valida período cerrado y audita
+       igual. Si falla, la línea ya está —no se pierde el despacho— y se avisa
+       para completarla desde la ficha. */
+    let gtfDatosError: string | null = null;
+    if (gtfDatos && entry?.id && parsed.data.section === "despacho") {
+      try {
+        const r = await ForestCtpDespachoDB.guardarGtfDatos(
+          auth.tenantId,
+          entry.id,
+          gtfDatos,
+          auth.username ?? "unknown",
+        );
+        if (!r.ok) gtfDatosError = r.reason;
+        else {
+          void sincronizarPartesDeGuia(auth.tenantId, gtfDatos, auth.username ?? "unknown").catch(
+            (err) =>
+              logger.warn("[ctp.POST] sincronización de partes falló", { error: String(err) }),
+          );
+        }
+      } catch (e) {
+        gtfDatosError = e instanceof Error ? e.message : String(e);
+        logger.error("[ctp.POST] la línea se creó pero la guía no se guardó", {
+          entryId: entry.id,
+          error: gtfDatosError,
+        });
+      }
+    }
+
+    /* El lote entra a la sierra DESPUÉS de que la corrida existe: hasta que no
+       hay corrida no hay a qué apuntar las piezas. Si esto falla, la corrida ya
+       está —no se pierde el trabajo— y se avisa para completarlo a mano. */
+    let lote: { piezas: number; volumenM3: number } | null = null;
+    let loteError: string | null = null;
+    if (loteAserrioId && entry?.id && parsed.data.section === "produccion") {
+      try {
+        lote = await ForestLoteAserrioDB.consumir(
+          auth.tenantId,
+          loteAserrioId,
+          entry.id,
+          parsed.data.entryDate,
+          auth.username ?? "unknown",
+        );
+      } catch (e) {
+        loteError = e instanceof Error ? e.message : String(e);
+        logger.error("[ctp.POST] la corrida se creó pero el lote no se consumió", {
+          loteAserrioId,
+          error: loteError,
+        });
+      }
+    }
+    return NextResponse.json({ entry, lote, loteError, gtfDatosError }, { status: 201 });
   } catch (err) {
-    logger.error("[ctp.POST] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // Puede traer `consumos` ⇒ puede violar I1/I2 ⇒ 422 con el motivo, no 500.
+    return ctpErrorResponse(err, "ctp.POST", auth.tenantId);
   }
 });
 
@@ -97,14 +821,226 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
   let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
-  const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
   try {
-    return NextResponse.json({ entry: await ForestCtpDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason) });
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+  const parsed = patchSchema.safeParse(body);
+  if (!parsed.success) return ctpValidationResponse(parsed.error);
+  try {
+    if (parsed.data.action === "ampliar_produccion") {
+      /* `aserrio` sale antes: los campos del libro no lo conocen. */
+      const { id, action: _amp, aserrio: pedido, ...campos } = parsed.data;
+      const entry = await ForestCtpDB.ampliarProduccion(
+        auth.tenantId,
+        id,
+        campos,
+        auth.username ?? "unknown",
+      );
+      const aserrio = await cobrarSinRomper(auth.tenantId, id, pedido, {
+        recotizar: true,
+        user: auth.username ?? "unknown",
+        ctx: "ctp.PATCH.ampliar_produccion",
+      });
+      return NextResponse.json({ entry, aserrio });
+    }
+    if (parsed.data.action === "declarar_produccion") {
+      const { id, action: _a, aserrio: pedido, ...campos } = parsed.data;
+      const entry = await ForestCtpDB.declararProduccion(
+        auth.tenantId,
+        id,
+        campos,
+        auth.username ?? "unknown",
+      );
+      if (!entry) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      /* Sin `aserrio` también se recotiza: a una corrida abierta se le puede
+         haber puesto dueño antes de declarar (`cobrar_aserrio`), y recién
+         ahora tiene volumen que cobrarle. Sin dueño es una lectura y `null`. */
+      const aserrio = await cobrarSinRomper(auth.tenantId, id, pedido, {
+        recotizar: true,
+        user: auth.username ?? "unknown",
+        ctx: "ctp.PATCH.declarar_produccion",
+      });
+      return NextResponse.json({ entry, aserrio });
+    }
+    if (parsed.data.action === "cobrar_aserrio_tanda") {
+      const { ids, duenoParteId, precioManualPt } = parsed.data;
+      return NextResponse.json(
+        await ForestAserrioDB.cobrarTanda(
+          auth.tenantId,
+          ids,
+          { duenoParteId, precioManualPt },
+          auth.username ?? "unknown",
+        ),
+      );
+    }
+    if (parsed.data.action === "cobrar_aserrio") {
+      const { id, duenoParteId, precioManualPt } = parsed.data;
+      if (!(await ForestCtpDB.getById(auth.tenantId, id))) {
+        return NextResponse.json({ error: "not_found", message: "Esa corrida no existe." }, { status: 404 });
+      }
+      const aserrio = await ForestAserrioDB.cobrarCorrida(
+        auth.tenantId,
+        id,
+        { duenoParteId, precioManualPt },
+        auth.username ?? "unknown",
+      );
+      return NextResponse.json({ aserrio });
+    }
+    if (parsed.data.action === "gtf_datos") {
+      const r = await ForestCtpDespachoDB.guardarGtfDatos(
+        auth.tenantId,
+        parsed.data.id,
+        parsed.data.datos,
+        auth.username ?? "unknown",
+      );
+      // Lo tipeado en la guía entra a la libreta: el destinatario de siempre no
+      // se vuelve a tipear la próxima. Fire-and-forget — la guía ya se guardó y
+      // el directorio es una comodidad, no puede hacer fallar el guardado.
+      if (r.ok) {
+        void sincronizarPartesDeGuia(
+          auth.tenantId,
+          parsed.data.datos,
+          auth.username ?? "unknown",
+        ).catch((err) =>
+          logger.warn("[ctp.gtf_datos] sincronización de partes falló", { error: String(err) }),
+        );
+      }
+      if (!r.ok) {
+        return NextResponse.json(
+          {
+            error: r.reason,
+            message:
+              r.reason === "anulado"
+                ? "El despacho está anulado: su guía no se puede editar."
+                : r.reason === "emitida"
+                  ? `La guía ${r.gtf} ya está emitida: identifica un traslado ante la autoridad y no se puede modificar.`
+                  : "No se encontró ese despacho.",
+          },
+          { status: r.reason === "no_despacho" ? 404 : 422 },
+        );
+      }
+      // Se devuelve lo NORMALIZADO por Zod: la UI se queda con lo que quedó
+      // guardado y no con lo que creía estar mandando.
+      return NextResponse.json({ ok: true, datos: parsed.data.datos });
+    }
+
+    if (parsed.data.action === "emitir_gtf") {
+      const result = await ForestCtpDespachoDB.emitirGtf(
+        auth.tenantId,
+        parsed.data.id,
+        auth.username ?? "unknown",
+      );
+      if (!result.ok) {
+        const message =
+          result.reason === "serie_no_configurada"
+            ? "No hay serie de GTF configurada. Carga la «Serie GTF autorizada» en la pestaña Ficha CTP."
+            : result.reason === "anulado"
+              ? "El despacho está anulado: no se puede emitir su GTF."
+              : "No se encontró la línea de despacho.";
+        return NextResponse.json({ error: result.reason, message }, { status: 422 });
+      }
+      return NextResponse.json({
+        gtf: result.gtf,
+        correlativo: result.correlativo,
+        yaEmitida: result.yaEmitida,
+      });
+    }
+    if (parsed.data.action === "set_venta") {
+      await ForestCtpDespachoDB.setValorVenta(
+        auth.tenantId,
+        parsed.data.id,
+        parsed.data.valorVenta,
+        auth.username ?? "unknown",
+      );
+      return NextResponse.json({
+        ok: true,
+        margen: await ForestCtpDespachoDB.margenDeDespacho(auth.tenantId, parsed.data.id),
+      });
+    }
+    if (parsed.data.action === "declarar_apertura") {
+      const entry = await ForestCtpDB.declararApertura(auth.tenantId, parsed.data.id, {
+        apertura: parsed.data.apertura,
+        motivo: parsed.data.motivo,
+        user: auth.username ?? "unknown",
+      });
+      return NextResponse.json({ entry });
+    }
+    if (parsed.data.action === "completar_linea") {
+      const r = await ForestCtpDB.completarLinea(
+        auth.tenantId,
+        parsed.data.id,
+        parsed.data.campos,
+        auth.username ?? "unknown",
+      );
+      /* Completar la especie o el producto cambia el precio del aserrío igual
+         que corregirlos (la cantidad no es completable). Se decide con lo que
+         de verdad se APLICÓ: un campo omitido no cambió nada. */
+      const tocaElPrecio =
+        r.ok && r.camposAplicados.some((c) => c === "speciesCommon" || c === "productType");
+      const aserrio = tocaElPrecio
+        ? await cobrarSinRomper(auth.tenantId, parsed.data.id, undefined, {
+            recotizar: true,
+            user: auth.username ?? "unknown",
+            ctx: "ctp.PATCH.completar_linea",
+          })
+        : null;
+      return NextResponse.json(aserrio ? { ...r, aserrio } : r);
+    }
+    if (parsed.data.action === "corregir_linea") {
+      const r = await ForestCtpDB.corregirLinea(
+        auth.tenantId,
+        parsed.data.id,
+        parsed.data.campos,
+        auth.username ?? "unknown",
+      );
+      /* Corregir cuánto salió, la especie o el producto cambia el precio del
+         aserrío: si la corrida ya se le cobraba a alguien, el cargo tiene que
+         seguir al libro (ADR-412 §4). */
+      const tocaElPrecio =
+        r.ok &&
+        r.camposCambiados.some((c) => c === "quantity" || c === "speciesCommon" || c === "productType");
+      const aserrio = tocaElPrecio
+        ? await cobrarSinRomper(auth.tenantId, parsed.data.id, undefined, {
+            recotizar: true,
+            user: auth.username ?? "unknown",
+            ctx: "ctp.PATCH.corregir_linea",
+          })
+        : null;
+      return NextResponse.json(aserrio ? { ...r, aserrio } : r);
+    }
+    if (parsed.data.action === "asignar_permiso_masivo") {
+      return NextResponse.json(
+        await ForestCtpDB.asignarPermisoMasivo(
+          auth.tenantId,
+          parsed.data.ids,
+          parsed.data.originCode,
+          auth.username ?? "unknown",
+        ),
+      );
+    }
+    if (parsed.data.action === "marcar_usado") {
+      const entry = await ForestCtpDB.marcarUsado(auth.tenantId, parsed.data.id, {
+        usado: parsed.data.usado,
+        motivo: parsed.data.motivo,
+        user: auth.username ?? "unknown",
+      });
+      return NextResponse.json({ entry });
+    }
+    return NextResponse.json({
+      entry: await ForestCtpDB.annul(
+        auth.tenantId,
+        parsed.data.id,
+        parsed.data.reason,
+        auth.username ?? "unknown",
+      ),
+    });
   } catch (err) {
-    logger.error("[ctp.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // Los invariantes del libro (período cerrado, stock, atribución) tienen que
+    // llegar al operario con su motivo: con un 500 genérico veía "error interno"
+    // al anular una línea de un mes cerrado y no entendía por qué.
+    return ctpErrorResponse(err, "ctp.PATCH", auth.tenantId);
   }
 });
 
@@ -118,10 +1054,9 @@ export const DELETE = withApiHandler("forestal-ctp-delete", async (req: NextRequ
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
   try {
-    await ForestCtpDB.softDelete(auth.tenantId, id);
+    await ForestCtpDB.softDelete(auth.tenantId, id, auth.username ?? "unknown");
     return NextResponse.json({ ok: true });
   } catch (err) {
-    logger.error("[ctp.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    return ctpErrorResponse(err, "ctp.DELETE", auth.tenantId);
   }
 });

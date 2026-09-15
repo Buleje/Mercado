@@ -11,6 +11,8 @@ import { getOrSet } from "@/lib/cache";
  *   - partnersOnline: count actual de partners activos en línea
  *   - recentExpiredOffers: ofertas que vencieron sin asignación (cascada agotada)
  *   - trialDaysLeft: días al fin del trial (si plan=free)
+ *   - cajaAbiertaDesde: apertura de la caja abierta más vieja (ISO) — el banner
+ *     avisa si sigue abierta desde un día anterior (lib/caja/caja-abierta.ts)
  *
  * Convenciones del proyecto respetadas:
  *   - tenantId 1er parámetro (CLAUDE.md regla #3)
@@ -27,12 +29,13 @@ export interface AlertsSummary {
   partnersOnline: number;
   recentExpiredOffers: number;
   trialDaysLeft: number | null;
+  cajaAbiertaDesde: string | null;
 }
 
 export const AlertsDB = {
   async getSummary(tenantId: string): Promise<AlertsSummary> {
     return getOrSet(`admin:alerts-summary:${tenantId}`, 60, async () => {
-      const [tenant, solicitudesPendientes, partnersOnline, recentExpired, pedidosSinPartner] = await Promise.all([
+      const [tenant, solicitudesPendientes, partnersOnline, recentExpired, pedidosSinPartner, cajaAbierta] = await Promise.all([
         prisma.tenant.findFirst({
           where: { OR: [{ id: tenantId }, { slug: tenantId }] },
           select: { plan: true, trialEndsAt: true },
@@ -61,6 +64,12 @@ export const AlertsDB = {
             createdAt: { gt: new Date(Date.now() - 60 * 60_000) },
           },
         }),
+        // La caja abierta más vieja del tenant (lo que el cierre del día no cerró).
+        prisma.cashRegister.findFirst({
+          where: { tenantId, status: "abierta", closedAt: null },
+          orderBy: { openedAt: "asc" },
+          select: { openedAt: true },
+        }),
       ]);
 
       const trialDaysLeft = (() => {
@@ -75,6 +84,7 @@ export const AlertsDB = {
         partnersOnline,
         recentExpiredOffers: recentExpired,
         trialDaysLeft,
+        cajaAbiertaDesde: cajaAbierta?.openedAt.toISOString() ?? null,
       };
     });
   },

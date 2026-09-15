@@ -11,7 +11,8 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import {
-  censusVolume, computeBalance, computeAprovechamiento, detectAnomalias, projectSaldo, computeCosteo,
+  censusVolume, computeBalance, computeAprovechamiento, cruzarEspecies, detectAnomalias, projectSaldo, computeCosteo,
+  estaFueraDePlazo,
   type BalanceMovement, type BalanceSpeciesInput, type CosteoSpeciesInput,
 } from "@/lib/forestal/loth-constants";
 
@@ -225,6 +226,20 @@ export class ForestPlanDB {
   }
 
   // ─── Censo (árboles) ───────────────────────────────────────────────────
+  /**
+   * El censo del plan.
+   *
+   * ⚠️ Viene ACOTADO y eso importa más acá que en otras listas: el Plan
+   * Operativo (aprovechables, semilleros, volumen sobre DMC, intensidad por
+   * hectárea) se calcula sobre estas filas. Con un censo de 3.000 árboles y un
+   * tope de 500, la pantalla no mostraba «faltan 2.500»: mostraba un POA
+   * completo y equivocado, que es peor. Por eso `total` es el conteo REAL y
+   * quien llame tiene que poder decir «hay N y estás calculando sobre M».
+   *
+   * El techo por defecto es alto a propósito —un POA de mil hectáreas censa
+   * miles de árboles y son filas angostas— y el tope duro existe sólo para que
+   * un tenant con un censo absurdo no tumbe el navegador.
+   */
   static async listTrees(
     tenantId: string,
     planId: string,
@@ -242,11 +257,11 @@ export class ForestPlanDB {
       prisma.forestCensusTree.findMany({
         where,
         orderBy: { treeCode: "asc" },
-        take: Math.min(Math.max(filters.limit ?? 500, 1), 2000),
+        take: Math.min(Math.max(filters.limit ?? 10_000, 1), 20_000),
       }),
       prisma.forestCensusTree.count({ where }),
     ]);
-    return { trees, total };
+    return { trees, total, truncado: trees.length < total };
   }
 
   /** Lookup por código — alimenta el autocompletado de Tala (data-driven). */
@@ -295,25 +310,91 @@ export class ForestPlanDB {
   }
 
   /** Import masivo del censo (cientos de árboles). Devuelve {creados, errores}. */
+  /**
+   * Importa el censo entero de un plan.
+   *
+   * ⚠️ Va en LOTES y no fila por fila. Antes hacía un `INSERT` por árbol: 600
+   * árboles tardaban 75 segundos medidos —600 viajes al pooler— y un censo real
+   * de tres mil habría pasado el timeout del endpoint y dejado el censo a
+   * medias, que es la peor forma de fallar en un libro legal.
+   *
+   * Lo que se valida por fila (código, especie, volumen) es puro y se hace en
+   * memoria, así que no cuesta viajes: al servidor sólo van los que ya pasaron.
+   * Los códigos repetidos DENTRO del archivo se descartan acá —el índice de
+   * `treeCode` no es único en la base, así que nadie más lo haría— y se informan
+   * uno por uno: importar dos veces el mismo árbol infla el POA con madera que
+   * no existe.
+   */
   static async bulkImportTrees(
     tenantId: string,
     planId: string,
     rows: Array<Omit<TreeInput, "planId" | "createdBy">>,
     createdBy: string,
   ) {
-    let creados = 0;
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
     const errores: string[] = [];
+
+    /* Los códigos que YA están en el censo: reimportar el mismo archivo no
+       puede duplicar árboles. Una sola consulta, no una por fila. */
+    const existentes = new Set(
+      (
+        await prisma.forestCensusTree.findMany({
+          where: { tenantId, planId, deletedAt: null },
+          select: { treeCode: true },
+        })
+      ).map((t) => t.treeCode.trim().toLowerCase()),
+    );
+
+    const vistos = new Set<string>();
+    const data: Prisma.ForestCensusTreeCreateManyInput[] = [];
     for (const r of rows) {
-      try {
-        if (!r.treeCode?.toString().trim() || !r.speciesCommon?.toString().trim()) {
-          errores.push(`Fila sin código o especie`);
-          continue;
-        }
-        await ForestPlanDB.addTree(tenantId, { ...r, planId, createdBy });
-        creados++;
-      } catch (e) {
-        errores.push(`${r.treeCode}: ${e instanceof Error ? e.message : String(e)}`);
-      }
+      const code = r.treeCode?.toString().trim();
+      const especie = r.speciesCommon?.toString().trim();
+      if (!code || !especie) { errores.push("Fila sin código o especie"); continue; }
+      const key = code.toLowerCase();
+      if (existentes.has(key)) { errores.push(`${code}: ya está en el censo`); continue; }
+      if (vistos.has(key)) { errores.push(`${code}: repetido en el archivo`); continue; }
+      vistos.add(key);
+
+      const dap = r.dapM != null ? Number(r.dapM) : 0;
+      const hc = r.alturaComercialM != null ? Number(r.alturaComercialM) : 0;
+      const ff = r.factorForma != null ? Number(r.factorForma) : 0.65;
+      const vol =
+        r.volumenEstimadoM3 != null && r.volumenEstimadoM3 !== ""
+          ? Number(r.volumenEstimadoM3)
+          : censusVolume(dap, hc, ff);
+
+      data.push({
+        tenantId, planId, createdBy,
+        treeCode: code,
+        speciesCommon: especie,
+        speciesScientific: r.speciesScientific?.trim() || null,
+        cites: r.cites ?? false,
+        dapM: dec(r.dapM),
+        alturaComercialM: dec(r.alturaComercialM),
+        factorForma: dec(r.factorForma ?? 0.65),
+        volumenEstimadoM3: vol > 0 ? new Prisma.Decimal(vol) : null,
+        utmZona: r.utmZona?.trim() || null,
+        utmX: dec(r.utmX),
+        utmY: dec(r.utmY),
+        parcelaCorta: r.parcelaCorta?.trim() || null,
+        calidad: r.calidad?.trim() || null,
+        estado: r.estado ?? "en_pie",
+        notes: r.notes?.trim() || null,
+      });
+    }
+
+    /* En tandas: un `createMany` de diez mil filas arma una sentencia que el
+       pooler rechaza por tamaño. 500 es holgado y son 6 viajes para un censo
+       de tres mil, no tres mil. */
+    let creados = 0;
+    for (let i = 0; i < data.length; i += 500) {
+      const r = await prisma.forestCensusTree.createMany({ data: data.slice(i, i + 500) });
+      creados += r.count;
+    }
+    if (creados > 0) {
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* la caché se repuebla sola en la próxima lectura */ }
     }
     return { creados, errores };
   }
@@ -419,7 +500,7 @@ export class ForestPlanDB {
     const [entries, speciesRows] = await Promise.all([
       prisma.forestLothEntry.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
-        select: { section: true, speciesCommon: true, trozaCode: true, volumeM3: true, quantity: true, unit: true, entryDate: true, createdAt: true },
+        select: { section: true, speciesCommon: true, trozaCode: true, volumeM3: true, quantity: true, unit: true, entryDate: true, createdAt: true, cites: true },
       }),
       plan
         ? prisma.forestPlanSpecies.findMany({ where: { tenantId, planId: plan.id, deletedAt: null } })
@@ -443,11 +524,8 @@ export class ForestPlanDB {
       balance = computeBalance(species, movements, { uitRef: Number(plan.uitRef ?? 0), areaHa: Number(plan.areaHa ?? 0) });
     }
 
-    // Fuera de plazo: createdAt − entryDate > 15 días
-    const lateCount = entries.filter((e) => {
-      if (!e.entryDate || !e.createdAt) return false;
-      return (e.createdAt.getTime() - e.entryDate.getTime()) / 86_400_000 > 15;
-    }).length;
+    // Fuera de plazo — predicado ÚNICO (loth-constants), no re-implementado acá.
+    const lateCount = entries.filter((e) => estaFueraDePlazo(e.entryDate, e.createdAt)).length;
 
     const anomalias = detectAnomalias(movements, balance?.rows ?? [], lateCount);
 
@@ -478,10 +556,37 @@ export class ForestPlanDB {
       costeo = computeCosteo(costeoInputs, costos);
     }
 
+    // Especies CITES presentes en el libro (para el cruce con el catálogo de
+    // permisos en el panel Cumplimiento — informativo, no resta score).
+    const citesEspecies = [
+      ...new Set(entries.filter((e) => e.cites && e.speciesCommon).map((e) => e.speciesCommon as string)),
+    ];
+
+    // Especies con operaciones en el libro que NO figuran entre las autorizadas
+    // del plan (tala/movilización fuera del POA — infracción que cruza OSINFOR).
+    // Sólo si el plan declara especies; match case-insensitive. Sin query extra:
+    // reusa `entries` + `speciesRows` ya cargados. T7 ya frena el despacho; esto
+    // surfacea además la tala/trozado de una especie fuera del plan en el informe.
+    // El cruce va por CLAVE canónica, no por string: el plan copia el nombre de
+    // la resolución («Tornillo (Cedrelinga catenaeformis)») y el libro asienta
+    // el común («Tornillo»). Compararlos literalmente acusaba de infracción a
+    // un titular que estaba en regla, le dejaba el saldo POA intacto habiendo
+    // talado y le mostraba la rentabilidad en cero.
+    const cruce =
+      speciesRows.length > 0
+        ? cruzarEspecies(
+            entries.map((e) => e.speciesCommon?.trim()).filter((s): s is string => !!s),
+            speciesRows.map((s) => s.speciesCommon),
+          )
+        : { autorizadas: new Map<string, string>(), sinAutorizar: [], ambiguas: [] };
+    const especiesNoAutorizadas = cruce.sinAutorizar;
+    /** Parecidas pero escritas distinto: es nomenclatura, no infracción. */
+    const especiesAmbiguas = cruce.ambiguas;
+
     return {
       hasPlan: !!plan,
       plan: plan ? { id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta, costos } : null,
-      aprovechamiento, balance, anomalias, projection, lateCount, costeo,
+      aprovechamiento, balance, anomalias, projection, lateCount, costeo, citesEspecies, especiesNoAutorizadas, especiesAmbiguas,
     };
   }
 

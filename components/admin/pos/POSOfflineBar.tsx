@@ -76,7 +76,7 @@ export default function POSOfflineBar({
 
       {/* Syncing state */}
       {isSyncing && (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           <Loader2 className="h-4 w-4 text-[var(--data-success-500)] animate-spin shrink-0" />
           <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             Sincronizando {pendingCount} {pendingCount === 1 ? "venta" : "ventas"}...
@@ -86,7 +86,7 @@ export default function POSOfflineBar({
 
       {/* Just synced success */}
       {showSyncSuccess && !isSyncing && (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
           <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             {lastSyncCount} {lastSyncCount === 1 ? "venta sincronizada" : "ventas sincronizadas"}
@@ -111,7 +111,7 @@ export default function POSOfflineBar({
 
       {/* Online but still has pending */}
       {isOnline && pendingCount > 0 && !isSyncing && !showSyncSuccess && (
-        <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+        <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           <Loader2 className="h-4 w-4 text-[var(--data-success-500)] animate-spin shrink-0" />
           <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex-1">
             {pendingCount} {pendingCount === 1 ? "venta" : "ventas"} pendientes de sincronizar
@@ -119,7 +119,7 @@ export default function POSOfflineBar({
           {onSyncRun && (
             <button
               onClick={onSyncRun}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white rounded-lg text-xs font-bold transition-colors shrink-0 "
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/10 text-white rounded-lg text-xs font-bold transition-colors shrink-0 "
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Sincronizar ahora

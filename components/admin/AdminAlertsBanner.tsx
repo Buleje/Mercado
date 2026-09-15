@@ -16,6 +16,12 @@
  *   - Dismiss individual por alerta (key-per-alert en localStorage).
  *
  * Polling cada 30s al endpoint /api/admin/alerts-summary.
+ *
+ * Gate de rol (2026-09-14): /api/admin/alerts-summary sólo deja pasar
+ * admin/manager/cajero (requireAdmin) — almacenero recibía 403 en cada
+ * carga. `userRole`/`authReady` los pasa app/admin/page.tsx (ya los tenía
+ * de useAdminAuth, sin fetch extra); si no se pasan (otro caller futuro),
+ * el banner no pollea — falla cerrado, no manda el 403.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -31,8 +37,14 @@ import {
   X,
   Bell,
   type LucideIcon,
+  Wallet,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { puedePedir, type RutaPanel } from "@/lib/auth/roles-rutas-panel";
+import { avisoCajaAbierta } from "@/lib/caja/caja-abierta";
+import type { AdminRole } from "@/lib/session";
+
+const RUTA: RutaPanel = "/api/admin/alerts-summary";
 
 interface Summary {
   solicitudesPendientes: number;
@@ -40,6 +52,7 @@ interface Summary {
   partnersOnline: number;
   recentExpiredOffers: number;
   trialDaysLeft: number | null;
+  cajaAbiertaDesde?: string | null;
 }
 
 type Severity = "urgent" | "warning" | "info";
@@ -50,6 +63,8 @@ interface Alert {
   icon: LucideIcon;
   count?: number;
   label: string;
+  /** Dato corto que acompaña al título en la fila compacta (p. ej. la fecha). */
+  resumen?: string;
   description: string;
   cta: string;
   href: string;
@@ -83,8 +98,14 @@ function writeDismissed(id: string) {
   }
 }
 
-export default function AdminAlertsBanner() {
+interface AdminAlertsBannerProps {
+  userRole?: AdminRole | null;
+  authReady?: boolean;
+}
+
+export default function AdminAlertsBanner({ userRole = null, authReady = false }: AdminAlertsBannerProps) {
   const router = useRouter();
+  const puede = authReady && puedePedir(RUTA, userRole);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState(false);
@@ -99,6 +120,9 @@ export default function AdminAlertsBanner() {
   }, []);
 
   useEffect(() => {
+    // Rol sin permiso (p.ej. almacenero) o auth sin resolver todavía → ni
+    // intentarlo, requireAdmin lo rechaza siempre con 403.
+    if (!puede) return;
     let cancelled = false;
     const load = async () => {
       try {
@@ -130,7 +154,7 @@ export default function AdminAlertsBanner() {
       if (id) clearInterval(id);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [puede]);
 
   const alerts = useMemo<Alert[]>(() => {
     if (!summary) return [];
@@ -160,6 +184,22 @@ export default function AdminAlertsBanner() {
       });
     }
 
+    // Caja abierta desde un día anterior: un arqueo que no se hizo (2026-09-14).
+    const caja = avisoCajaAbierta(summary.cajaAbiertaDesde);
+    if (caja) {
+      list.push({
+        id: caja.id,
+        severity: caja.severidad,
+        icon: Wallet,
+        count: caja.dias,
+        label: caja.titulo,
+        resumen: caja.desde,
+        description: caja.detalle,
+        cta: "Cuadrar caja",
+        href: "/admin?tab=ventas-caja&vista=arqueo",
+      });
+    }
+
     if (summary.pedidosSinPartner > 0) {
       list.push({
         id: "no-partner",
@@ -180,7 +220,7 @@ export default function AdminAlertsBanner() {
         icon: Users,
         count: summary.solicitudesPendientes,
         label: `${summary.solicitudesPendientes} solicitud${summary.solicitudesPendientes === 1 ? "" : "es"} de repartidor pendiente${summary.solicitudesPendientes === 1 ? "" : "s"}`,
-        description: "Revisá los repartidores que quieren trabajar contigo.",
+        description: "Revisa los repartidores que quieren trabajar contigo.",
         cta: "Revisar",
         href: "/admin?tab=delivery-partners",
       });
@@ -208,11 +248,14 @@ export default function AdminAlertsBanner() {
   const toneBg =
     headerTone === "urgent"
       ? "bg-[var(--data-error-50,#fef2f2)] border-[var(--data-error-200,#fecaca)]"
-      : "bg-[var(--data-warning-50)] border-[var(--data-warning-200,#fde68a)]";
+      : "bg-[var(--data-warning-50)] border-[var(--data-warning-200,#ffe1dd)]";
   const ctaCls =
     headerTone === "urgent"
       ? "bg-[var(--data-error-600,#dc2626)] hover:bg-[var(--data-error-700,#b91c1c)] text-white"
-      : "bg-[var(--data-warning-600,var(--data-warning-500))] hover:bg-[var(--data-warning-700)] text-white";
+      /* Ámbar con texto OSCURO: blanco sobre el ámbar del preset daba 2.85:1
+         (axe 2026-09-12, en todas las pantallas). Oscurecer el fondo lo volvía
+         marrón y dejaba de leerse como aviso; el texto oscuro da ~9:1. */
+      : "bg-[var(--data-warning-500)] hover:brightness-95 text-[var(--text-primary)] dark:text-[var(--surface-canvas)]";
 
   return (
     <div
@@ -266,9 +309,10 @@ export default function AdminAlertsBanner() {
             "hidden sm:block text-sm font-semibold truncate min-w-0 flex-1",
             toneFg,
           )}
-          title={first.label}
+          title={first.resumen ? `${first.label} · ${first.resumen}` : first.label}
         >
           {first.label}
+          {first.resumen && <span className="font-normal opacity-80"> · {first.resumen}</span>}
         </p>
 
         {/* CTA primera alerta */}
@@ -294,7 +338,7 @@ export default function AdminAlertsBanner() {
               "shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider border transition-colors",
               headerTone === "urgent"
                 ? "border-[var(--data-error-300,#fca5a5)] text-[var(--data-error-700,#b91c1c)] hover:bg-[var(--data-error-100,#fee2e2)]"
-                : "border-[var(--data-warning-300,#fcd34d)] text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)]",
+                : "border-[var(--data-warning-300,#ff8676)] text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)]",
             )}
           >
             +{alerts.length - 1}
@@ -312,7 +356,7 @@ export default function AdminAlertsBanner() {
           onClick={() => handleDismiss(first.id)}
           aria-label={`Descartar: ${first.label}`}
           className={cn(
-            "shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+            "shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg transition-colors",
             headerTone === "urgent"
               ? "text-[var(--data-error-700,#b91c1c)] hover:bg-[var(--data-error-100,#fee2e2)]"
               : "text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)]",
@@ -376,7 +420,7 @@ function AlertCard({
       ? "bg-[var(--data-error-100,#fee2e2)] text-[var(--data-error-700,#b91c1c)]"
       : sev === "warning"
         ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
-        : "bg-[var(--accent-soft)] text-[var(--accent)]";
+        : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
 
   return (
     <li
@@ -445,7 +489,7 @@ function AlertCard({
         type="button"
         onClick={onDismiss}
         aria-label={`Descartar: ${alert.label}`}
-        className="self-start inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors mr-1 mt-1.5"
+        className="self-start inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors mr-1 mt-1.5"
       >
         <X className="h-3.5 w-3.5" strokeWidth={2.5} />
       </button>

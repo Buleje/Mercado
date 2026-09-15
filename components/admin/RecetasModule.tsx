@@ -1,23 +1,26 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { CardTitle, DataTable, LoadingState, StatCard, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import React, { useState, useEffect, useCallback, useMemo, useRef, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, Loader2, AlertTriangle, ChevronLeft, ChevronRight,
   Package, FlaskConical, Layers,
-  BookOpen, BarChart3, ChefHat,
+  BookOpen, BarChart3, ChefHat, Coins,
 } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
+import { Field } from "@/components/admin/shared/Field";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import type { RecetaCostBreakdown } from "@/lib/types/recetas";
 
 // ── Recetas Dashboard ─────────────────────────────────────────────────────────
 
-const RECETAS_DASH_COLORS = ["#2563EB", "#f97316", "#457b9d", "#9b5de5", "#e63946", "#14C2C2"];
+const RECETAS_DASH_COLORS = ["#2563EB", "#ff6b5b", "#457b9d", "#9b5de5", "#e63946", "#14C2C2"];
 
 function RecetasDashboard() {
   const [data, setData] = useState<{ recetas: Array<Record<string, unknown>>; lotes: Array<Record<string, unknown>> } | null>(null);
@@ -40,9 +43,9 @@ function RecetasDashboard() {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded-xl" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-[var(--rule-base)] rounded-xl" />)}
         </div>
-        <div className="h-64 bg-gray-200 rounded-xl" />
+        <div className="h-64 bg-[var(--rule-base)] rounded-xl" />
       </div>
     );
   }
@@ -103,25 +106,18 @@ function RecetasDashboard() {
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[#2563EB]" },
-          { label: "Lotes del mes", value: String(lotesMes), border: "border-b-4 border-secondary" },
-          { label: "Costo promedio", value: `S/${costoPromedio.toFixed(2)}`, border: "border-b-4 border-[var(--rule-base)]0" },
-          { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-[var(--data-success-500)]/30" },
-        ].map(k => (
-          <div key={k.label} className={cn("bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 ", k.border)}>
-            <p className="text-xs text-[var(--text-secondary)] font-medium">{k.label}</p>
-            <p className="text-2xl font-mono font-bold mt-1 text-[var(--text-primary)]">{k.value}</p>
-          </div>
-        ))}
+        <StatCard label="Recetas activas" value={recetasActivas} icon={BookOpen} density="compact" />
+        <StatCard label="Lotes del mes" value={lotesMes} icon={Layers} density="compact" />
+        <StatCard label="Costo promedio" value={`S/${costoPromedio.toFixed(2)}`} icon={Coins} density="compact" />
+        <StatCard label="Ingredientes totales" value={ingredientesTotales} icon={FlaskConical} density="compact" />
       </div>
       </m.div>
 
       {/* Lotes producidos por semana */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Lotes producidos por semana</CardTitle>
         {weeklyData.some(d => d.lotes > 0) ? (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -142,7 +138,7 @@ function RecetasDashboard() {
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* PieChart: recetas por categoria */}
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Recetas por tipo</CardTitle>
           {categoryData.length > 0 ? (
             <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -159,13 +155,13 @@ function RecetasDashboard() {
         </div>
 
         {/* Top 5 recetas más producidas */}
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 5 recetas más producidas</CardTitle>
           {top5Recetas.length > 0 ? (
             <div className="space-y-3">
               {top5Recetas.map((r, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full bg-[#2563EB] text-white text-xs flex items-center justify-center font-bold shrink-0">{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full bg-[var(--accent-ink)] text-white text-xs flex items-center justify-center font-bold shrink-0">{i + 1}</span>
                   <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{r.nombre}</span>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">{r.count}</span>
                 </div>
@@ -187,7 +183,7 @@ const RecetarioAdminTab = React.lazy(() => import("@/components/admin/recetas/Re
 function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ChefHat className="h-6 w-6 text-primary" /></div>
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ChefHat className="h-6 w-6 text-[var(--accent-ink)] dark:text-[var(--accent)]" /></div>
       <p className="text-sm font-medium text-[var(--text-secondary)]">{message}</p>
       <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos aparecerán cuando registres actividad</p>
     </div>
@@ -246,16 +242,25 @@ const PER_PAGE = 10;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+/** Las vistas del módulo, estables: el hook las usa como dependencia. */
+const RECETAS_VISTAS = ["dashboard", "recetas", "produccion", "recetario"] as const;
+
 const RECETAS_MODULE_ID = "recetas";
+const RECETAS_TAB_ITEMS = [
+  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+  { id: "recetas", label: "Recetas" },
+  { id: "produccion", label: "Producción" },
+  { id: "recetario", label: "Recetario Web", icon: BookOpen },
+];
 
 export default function RecetasModule() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "recetas" | "produccion" | "recetario">(() => {
-    if (typeof window === "undefined") return "dashboard";
-    const stored = localStorage.getItem(`admin-last-tab-${RECETAS_MODULE_ID}`);
-    if (stored === "dashboard" || stored === "recetas" || stored === "produccion" || stored === "recetario") return stored;
-    return "dashboard";
-  });
-  useEffect(() => { localStorage.setItem(`admin-last-tab-${RECETAS_MODULE_ID}`, activeTab); }, [activeTab]);
+  // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
+  // destino del buscador global.
+  const { vista: activeTab, irA: setActiveTab } = useVistaModulo(
+    RECETAS_MODULE_ID,
+    RECETAS_VISTAS,
+    RECETAS_VISTAS[0],
+  );
 
   // Recetas list
   const [recetas, setRecetas] = useState<Receta[]>([]);
@@ -348,6 +353,18 @@ export default function RecetasModule() {
     return () => document.removeEventListener("keydown", handleEsc);
   }, [showProducir, showNew, selected]);
 
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const cerrarSelected = useCallback(() => setSelected(null), []);
+  const newPanelRef = useRef<HTMLDivElement>(null);
+  const newTitleId = useId();
+  const producirPanelRef = useRef<HTMLDivElement>(null);
+  const producirTitleId = useId();
+  const cerrarProducir = useCallback(() => setShowProducir(false), []);
+
+  useModalAccesible(detailPanelRef, { onCerrar: cerrarSelected, activo: !!selected, cerrarConEscape: false });
+  useModalAccesible(producirPanelRef, { onCerrar: cerrarProducir, activo: showProducir && !!selected, cerrarConEscape: false });
+
   // ── Open detail ────────────────────────────────────────────────────────────
 
   const openDetail = async (receta: Receta) => {
@@ -376,10 +393,15 @@ export default function RecetasModule() {
 
   // ── Create receta ──────────────────────────────────────────────────────────
 
-  const resetNew = () => {
+  const resetNew = useCallback(() => {
     setShowNew(false); setStep(1); setNewName(""); setNewDesc("");
     setNewProductoId(""); setNewIngredientes([]); setCreateError(null);
-  };
+  }, []);
+
+  // El Escape de estos modales ya lo maneja el listener global de arriba
+  // (coordina cuál cierra según cuál está abierto) — acá sólo se pide el foco
+  // atrapado y la semántica de diálogo.
+  useModalAccesible(newPanelRef, { onCerrar: resetNew, activo: showNew, cerrarConEscape: false });
 
   const addIngrediente = () => {
     setNewIngredientes(prev => [...prev, { productoId: "", cantidad: "", unidad: "unidad" }]);
@@ -484,43 +506,37 @@ export default function RecetasModule() {
 
   return (
     <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Producción · Costos"
-        title="Recetas"
-        description="Producción interna con control de costos e ingredientes."
-        icon={FlaskConical}
-      >
-        {!loading && recetas.length > 0 && (
-          <span className="text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] px-2.5 py-1 rounded-full">{recetas.filter(r => r.activa).length} recetas</span>
-        )}
-        {activeTab === "recetas" && (
-          <button
-            onClick={() => { setShowNew(true); addIngrediente(); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva Receta
-          </button>
-        )}
-      </AdminModuleHeader>
-
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto scrollbar-none">
-        {(["dashboard", "recetas", "produccion", "recetario"] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setActiveTab(t)}
-            className={cn(
-              "shrink-0 px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5",
-              activeTab === t
-                ? "border-[#2563EB] text-[#2563EB]"
-                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            {t === "dashboard" ? <><BarChart3 className="h-3.5 w-3.5" /> Dashboard</> : t === "recetas" ? "Recetas" : t === "produccion" ? "Producción" : <><BookOpen className="h-3.5 w-3.5" /> Recetario Web</>}
-          </button>
-        ))}
-      </div>
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla; las acciones del módulo, en
+          la misma banda. Recupera ~90px verticales por pantalla. */}
+      <AdminTabBar
+        heading={{
+          title: "Recetas",
+          description: "Producción interna con control de costos e ingredientes.",
+          icon: FlaskConical,
+          actions: (
+            <>
+              {!loading && recetas.length > 0 && (
+                <span className="text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] px-2.5 py-1 rounded-full">{recetas.filter(r => r.activa).length} recetas</span>
+              )}
+              {activeTab === "recetas" && (
+                <button
+                  onClick={() => { setShowNew(true); addIngrediente(); }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nueva Receta
+                </button>
+              )}
+            </>
+          ),
+        }}
+        moduleId={RECETAS_MODULE_ID}
+        tabs={RECETAS_TAB_ITEMS}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as typeof activeTab)}
+      />
 
       {/* ── Tab: Dashboard ─────────────────────────────────────────────────────── */}
       {activeTab === "dashboard" && <RecetasDashboard />}
@@ -534,7 +550,7 @@ export default function RecetasModule() {
             <div className="flex flex-col items-center justify-center py-12 gap-2">
               <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
               <p className="text-sm text-[var(--data-error-500)]">{error}</p>
-              <button onClick={fetchRecetas} className="text-xs text-[#2563EB] hover:underline font-semibold">Reintentar</button>
+              <button onClick={fetchRecetas} className="text-xs text-[var(--accent-ink)] hover:underline font-semibold">Reintentar</button>
             </div>
           ) : recetas.length === 0 ? (
             <EmptyState
@@ -574,23 +590,24 @@ export default function RecetasModule() {
                       placeholder="Buscar receta..."
                       value={recetaSearch}
                       onChange={e => setRecetaSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 h-12 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full pl-9 pr-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                     />
                   </div>
                   <div className="flex gap-1 flex-wrap">
                     {(["todas", "activas", "inactivas"] as const).map(f => (
                       <button key={f} onClick={() => setRecetaFilter(f)} className={cn(
                         "shrink-0 px-3 min-h-[44px] rounded-xl text-xs font-bold transition-colors",
-                        recetaFilter === f ? "bg-[#2563EB] text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+                        recetaFilter === f ? "bg-[var(--accent-ink)] text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)]"
                       )}>
                         {f.charAt(0).toUpperCase() + f.slice(1)}
                       </button>
                     ))}
                   </div>
                   <select
+                    aria-label="Ordenar recetas"
                     value={recetaSort}
                     onChange={e => setRecetaSort(e.target.value as typeof recetaSort)}
-                    className="px-3 h-12 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                    className="px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                   >
                     <option value="nombre">Nombre A-Z</option>
                     <option value="costo-asc">Costo menor</option>
@@ -617,12 +634,12 @@ export default function RecetasModule() {
                         <div
                           key={r.id}
                           className={cn(
-                            "relative text-left bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4  hover:shadow-[var(--shadow-lg)] hover:scale-[1.01] transition-all group",
+                            "relative text-left bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 hover:shadow-[var(--shadow-lg)] hover:scale-[1.01] transition-all group",
                             !r.activa && "opacity-60"
                           )}
                         >
                           {!r.activa && (
-                            <span className="absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-200 text-[var(--text-secondary)]">Inactiva</span>
+                            <span className="absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--rule-base)] text-[var(--text-secondary)]">Inactiva</span>
                           )}
                           <div className="text-center mb-3">
                             <span className="text-4xl">
@@ -634,9 +651,9 @@ export default function RecetasModule() {
                                "\uD83C\uDF73"}
                             </span>
                           </div>
-                          <p className="font-bold text-[var(--text-primary)] text-center truncate group-hover:text-[#2563EB] transition-colors">{r.nombre}</p>
+                          <p className="font-bold text-[var(--text-primary)] text-center truncate group-hover:text-[var(--accent-ink)] transition-colors">{r.nombre}</p>
                           <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                            <span className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] bg-gray-100 rounded-full px-2 py-0.5">
+                            <span className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] bg-[var(--rule-soft)] rounded-full px-2 py-0.5">
                               <Package className="h-3 w-3" /> {r.ingredientes.length} ing.
                             </span>
                           </div>
@@ -669,7 +686,7 @@ export default function RecetasModule() {
                               <div className="mt-2 text-center">
                                 <span className={cn(
                                   "inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full",
-                                  faltan === 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                  faltan === 0 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                     : faltan < total ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                                     : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                                 )}>
@@ -681,13 +698,13 @@ export default function RecetasModule() {
                           <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] flex gap-2">
                             <button
                               onClick={(e) => { e.stopPropagation(); setSelected(r); setShowProducir(true); setProducirCantidad(""); setProducirNotas(""); }}
-                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors"
+                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] transition-colors"
                             >
                               Producir
                             </button>
                             <button
                               onClick={() => openDetail(r)}
-                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-[#2563EB] bg-[#2563EB]/10 hover:bg-[#2563EB]/20 transition-colors"
+                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] bg-[var(--accent-ink)]/10 hover:bg-[var(--accent-ink)]/20 transition-colors"
                             >
                               Ver detalle
                             </button>
@@ -729,16 +746,21 @@ export default function RecetasModule() {
             />
             <m.div
               key="receta-panel"
+              ref={detailPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={detailTitleId}
+              tabIndex={-1}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">{selected.nombre}</CardTitle>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <CardTitle id={detailTitleId} className="text-lg font-bold text-[var(--text-primary)]">{selected.nombre}</CardTitle>
+                  <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -749,19 +771,19 @@ export default function RecetasModule() {
 
                 {/* ── Análisis de costo (contract RecetaCostBreakdown) ─────── */}
                 {costLoading && (
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#2563EB]" />
+                  <div className="flex items-center gap-2 p-3 bg-[var(--surface-sunken)] rounded-xl">
+                    <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-ink)]" />
                     <span className="text-xs text-[var(--text-secondary)]">Cargando análisis de costo...</span>
                   </div>
                 )}
                 {costData && (
-                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
+                  <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-xs uppercase font-bold text-[var(--data-success-500)]">Análisis de costo</p>
                       <span className={cn(
                         "text-xs font-bold px-2 py-0.5 rounded-lg",
                         costData.margenPorcentaje >= 30
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                          ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                           : costData.margenPorcentaje >= 10
                             ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                             : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
@@ -784,7 +806,7 @@ export default function RecetasModule() {
                         <p className="text-xs uppercase text-[var(--text-secondary)]">Indirectos</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoIndirectos)}</p>
                       </div>
-                      <div className="bg-white dark:bg-[var(--color-card)] rounded-lg p-2 border border-[var(--data-success-500)]/30">
+                      <div className="bg-[var(--surface-raised)] rounded-lg p-2 border border-[var(--data-success-500)]/30">
                         <p className="text-xs uppercase text-[var(--data-success-500)]">Total unitario</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoTotalUnitario)}</p>
                       </div>
@@ -831,7 +853,7 @@ export default function RecetasModule() {
                   return (
                     <>
                       {/* Cost summary */}
-                      <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                      <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Costo total estimado</p>
                           <p className="text-xl font-bold text-[var(--text-primary)]">{formatCurrency(selected.costoTotal)}</p>
@@ -855,7 +877,7 @@ export default function RecetasModule() {
                                   <span className={cn(
                                     "text-xs font-bold px-2 py-0.5 rounded-lg",
                                     margen >= 30
-                                      ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                      ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                       : margen >= 10
                                         ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                                         : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
@@ -876,7 +898,7 @@ export default function RecetasModule() {
 
                       {/* Ingredientes with cost column */}
                       <div>
-                        <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Ingredientes</h4>
+                        <BlockTitle className="mb-3">Ingredientes</BlockTitle>
                         {selected.ingredientes.length === 0 ? (
                           <p className="text-sm text-[var(--text-tertiary)]">Sin ingredientes</p>
                         ) : (
@@ -886,8 +908,8 @@ export default function RecetasModule() {
                               const costoUnit = prod?.costPrice ?? prod?.price ?? 0;
                               const costoLinea = costoUnit * ing.cantidad;
                               return (
-                                <div key={ing.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                  <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                                <div key={ing.id} className="flex items-center gap-3 p-3 bg-[var(--surface-sunken)] rounded-xl">
+                                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                                     <Package className="h-4 w-4 text-[var(--data-success-500)]" />
                                   </div>
                                   <div className="flex-1 min-w-0">
@@ -905,7 +927,7 @@ export default function RecetasModule() {
                               );
                             })}
                             {/* Total row */}
-                            <div className="flex items-center justify-between p-3 bg-gray-100 rounded-xl">
+                            <div className="flex items-center justify-between p-3 bg-[var(--rule-soft)] rounded-xl">
                               <p className="text-xs font-bold text-[var(--text-secondary)]">Total ingredientes</p>
                               <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.costoTotal)}</p>
                             </div>
@@ -916,7 +938,7 @@ export default function RecetasModule() {
                       {/* Producir button */}
                       <button
                         onClick={() => { setShowProducir(true); setProducirError(null); }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
+                        className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] transition-colors"
                       >
                         <Layers className="h-4 w-4" />
                         Producir Lote
@@ -951,13 +973,14 @@ export default function RecetasModule() {
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && resetNew()}
             >
-              <div className="w-full max-w-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
+              <div ref={newPanelRef} role="dialog" aria-modal="true" aria-labelledby={newTitleId} tabIndex={-1}
+                className="w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-[var(--color-card)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">
+                <div className="sticky top-0 z-10 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                  <CardTitle id={newTitleId} className="text-lg font-semibold text-[var(--text-primary)]">
                     Nueva Receta — Paso {step}/3
                   </CardTitle>
-                  <button onClick={resetNew} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                  <button aria-label="Cerrar" onClick={resetNew} className="p-1 hover:bg-[var(--rule-soft)] rounded-xl transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -966,43 +989,40 @@ export default function RecetasModule() {
                 {/* Steps indicator */}
                 <div className="flex gap-2">
                   {[1, 2, 3].map(s => (
-                    <div key={s} className={cn("flex-1 h-1.5 rounded-full", step >= s ? "bg-[#2563EB]" : "bg-gray-200")} />
+                    <div key={s} className={cn("flex-1 h-1.5 rounded-full", step >= s ? "bg-[var(--accent-ink)]" : "bg-[var(--rule-base)]")} />
                   ))}
                 </div>
 
                 {/* Step 1: Nombre */}
                 {step === 1 && (
                   <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre de la receta</label>
+                    <Field label="Nombre de la receta" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input
                         type="text"
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Ej: Pan de yuca"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripción (opcional)</label>
+                    </Field>
+                    <Field label="Descripción (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <textarea
                         value={newDesc}
                         onChange={e => setNewDesc(e.target.value)}
                         placeholder="Proceso de preparación..."
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30 resize-none"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">ID Producto final (opcional)</label>
+                    </Field>
+                    <Field label="ID Producto final (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input
                         type="number"
                         value={newProductoId}
                         onChange={e => setNewProductoId(e.target.value)}
                         placeholder="ID del producto resultante"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                       />
-                    </div>
+                    </Field>
                   </div>
                 )}
 
@@ -1013,7 +1033,7 @@ export default function RecetasModule() {
                       <p className="text-sm font-bold text-[var(--text-primary)]">Ingredientes</p>
                       <button
                         onClick={addIngrediente}
-                        className="text-xs font-bold text-[#2563EB] hover:underline"
+                        className="text-xs font-bold text-[var(--accent-ink)] hover:underline"
                       >
                         + Agregar
                       </button>
@@ -1022,41 +1042,38 @@ export default function RecetasModule() {
                       <p className="text-xs text-[var(--text-tertiary)] text-center py-4">Agrega ingredientes con el botón de arriba</p>
                     )}
                     {newIngredientes.map((ing, i) => (
-                      <div key={i} className="flex gap-2 items-end bg-gray-50 rounded-xl p-3">
-                        <div className="flex-1">
-                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">ID Producto</label>
+                      <div key={i} className="flex gap-2 items-end bg-[var(--surface-sunken)] rounded-xl p-3">
+                        <Field className="flex-1" label="ID Producto" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
                           <input
                             type="number"
                             value={ing.productoId}
                             onChange={e => updateIngrediente(i, "productoId", e.target.value)}
                             placeholder="ID"
-                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
+                            className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-ink)]/30"
                           />
-                        </div>
-                        <div className="w-20">
-                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">Cantidad</label>
+                        </Field>
+                        <Field className="w-20" label="Cantidad" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
                           <input
                             type="number"
                             step="0.01"
                             value={ing.cantidad}
                             onChange={e => updateIngrediente(i, "cantidad", e.target.value)}
                             placeholder="0"
-                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
+                            className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-ink)]/30"
                           />
-                        </div>
-                        <div className="w-20">
-                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">Unidad</label>
+                        </Field>
+                        <Field className="w-20" label="Unidad" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
                           <input
                             type="text"
                             value={ing.unidad}
                             onChange={e => updateIngrediente(i, "unidad", e.target.value)}
                             placeholder="kg"
-                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
+                            className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-ink)]/30"
                           />
-                        </div>
-                        <button
+                        </Field>
+                        <button aria-label="Quitar"
                           onClick={() => removeIngrediente(i)}
-                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
+                          className="p-1.5 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -1068,7 +1085,7 @@ export default function RecetasModule() {
                 {/* Step 3: Resumen */}
                 {step === 3 && (
                   <div className="space-y-3">
-                    <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                    <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-2">
                       <p className="text-sm font-bold text-[var(--text-primary)]">{newName || "Sin nombre"}</p>
                       {newDesc && <p className="text-xs text-[var(--text-secondary)]">{newDesc}</p>}
                       <p className="text-xs text-[var(--text-tertiary)]">{newIngredientes.length} ingredientes</p>
@@ -1081,18 +1098,18 @@ export default function RecetasModule() {
                 )}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-[var(--surface-raised)] border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   {step > 1 ? (
                     <button
                       onClick={() => setStep(s => s - 1)}
-                      className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors"
+                      className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] rounded-xl transition-colors"
                     >
                       Anterior
                     </button>
                   ) : (
                     <button
                       onClick={resetNew}
-                      className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors"
+                      className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] rounded-xl transition-colors"
                     >
                       Cancelar
                     </button>
@@ -1100,7 +1117,7 @@ export default function RecetasModule() {
                   {step < 3 ? (
                     <button
                       onClick={() => setStep(s => s + 1)}
-                      className="px-4 py-2 text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-lg  transition-colors"
+                      className="px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] rounded-xl transition-colors"
                     >
                       Siguiente
                     </button>
@@ -1108,7 +1125,7 @@ export default function RecetasModule() {
                     <button
                       onClick={handleCreate}
                       disabled={creating}
-                      className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 rounded-lg  transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] disabled:opacity-50 rounded-xl transition-colors"
                     >
                       {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                       Crear Receta
@@ -1141,24 +1158,24 @@ export default function RecetasModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowProducir(false)}
             >
-              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
-                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Producir Lote</CardTitle>
+              <div ref={producirPanelRef} role="dialog" aria-modal="true" aria-labelledby={producirTitleId} tabIndex={-1}
+                className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+                <CardTitle id={producirTitleId} className="text-lg font-bold text-[var(--text-primary)]">Producir Lote</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)]">
                   Receta: <span className="font-bold text-[var(--text-primary)]">{selected.nombre}</span>
                 </p>
 
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Cantidad a producir</label>
+                  <Field label="Cantidad a producir" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="number"
                       min="1"
                       value={producirCantidad}
                       onChange={e => setProducirCantidad(e.target.value)}
                       placeholder="Ej: 10"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                     />
-                  </div>
+                  </Field>
 
                   {/* Cost estimate card */}
                   {(() => {
@@ -1171,8 +1188,8 @@ export default function RecetasModule() {
                     const margen = precioVenta > 0 ? Math.round(((precioVenta - costoUnitario) / precioVenta) * 100) : null;
 
                     return (
-                      <div className="bg-[#2563EB]/5 border border-[#2563EB]/20 rounded-xl p-3 space-y-1.5">
-                        <p className="text-xs uppercase font-bold text-[#2563EB]">Estimacion de costos</p>
+                      <div className="bg-[var(--accent-ink)]/5 border border-[var(--accent-ink)]/20 rounded-xl p-3 space-y-1.5">
+                        <p className="text-xs uppercase font-bold text-[var(--accent-ink)]">Estimacion de costos</p>
                         <div className="flex justify-between text-xs text-[var(--text-primary)]">
                           <span>Costo por lote ({qty} uds):</span>
                           <span className="font-bold">{formatCurrency(costoLote)}</span>
@@ -1182,7 +1199,7 @@ export default function RecetasModule() {
                           <span className="font-bold">{formatCurrency(costoUnitario)}</span>
                         </div>
                         {margen !== null && (
-                          <div className="flex justify-between text-xs text-[var(--text-primary)] pt-1 border-t border-[#2563EB]/10">
+                          <div className="flex justify-between text-xs text-[var(--text-primary)] pt-1 border-t border-[var(--accent-ink)]/10">
                             <span>Si vendes a {formatCurrency(precioVenta)}:</span>
                             <span className={cn(
                               "font-bold",
@@ -1222,7 +1239,7 @@ export default function RecetasModule() {
 
                     if (todosDisponibles) {
                       return (
-                        <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
+                        <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
                           <p className="text-xs font-bold text-[var(--data-success-500)]">Todos los ingredientes disponibles</p>
                         </div>
                       );
@@ -1242,16 +1259,15 @@ export default function RecetasModule() {
                     );
                   })()}
 
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
+                  <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="text"
                       value={producirNotas}
                       onChange={e => setProducirNotas(e.target.value)}
                       placeholder="Observaciones..."
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                     />
-                  </div>
+                  </Field>
                 </div>
 
                 {producirError && (
@@ -1261,14 +1277,14 @@ export default function RecetasModule() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowProducir(false)}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleProducir}
                     disabled={producing}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50  transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] disabled:opacity-50 transition-colors"
                   >
                     {producing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
                     Producir
@@ -1363,23 +1379,23 @@ function ProducciónTab() {
       {lotes.length > 0 && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 overflow-x-auto">
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Lotes este mes</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)]">{lotesEsteMes.length}</p>
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Costo promedio</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)]">{formatCurrency(costoPromedio)}</p>
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Unidades producidas</p>
-              <p className="text-lg font-extrabold text-[#2563EB]">{unidadesProducidas}</p>
+              <p className="text-lg font-extrabold text-[var(--accent-ink)]">{unidadesProducidas}</p>
             </div>
           </div>
 
           {/* Grafica semanal */}
           {chartData.some(d => d.lotes > 0) && (
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 ">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 ">
               <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 flex items-center gap-1.5">
                 <BarChart3 className="h-3.5 w-3.5" /> Producción semanal (ultimas 4 semanas)
               </h4>
@@ -1401,45 +1417,43 @@ function ProducciónTab() {
         </>
       )}
 
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-x-auto ">
+      <div>
         {lotes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-2">
+          <div className="flex flex-col items-center justify-center py-12 gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl">
             <Layers className="h-8 w-8 text-[var(--text-tertiary)]" />
             <p className="text-sm text-[var(--text-secondary)]">Aun no has registrado lotes de produccion</p>
             <p className="text-xs text-[var(--text-tertiary)]">Selecciona una receta y usa &quot;Producir Lote&quot; para crear uno</p>
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <DataTable>
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)] text-left">
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Receta</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Cantidad</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Costo Real</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Fecha</th>
+                  <tr>
+                    <th>Receta</th>
+                    <th className="text-right">Cantidad</th>
+                    <th className="text-right">Costo Real</th>
+                    <th>Fecha</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginated.map(l => (
-                    <tr key={l.id} className="border-b border-gray-50">
-                      <td className="px-4 py-3 font-medium text-[var(--text-primary)]">{l.receta?.nombre ?? l.recetaId}</td>
-                      <td className="px-4 py-3 text-right text-[var(--text-primary)]">{l.cantidad}</td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(l.costoReal)}</td>
-                      <td className="px-4 py-3 text-[var(--text-secondary)] text-xs">{formatDate(l.producidoEn)}</td>
+                    <tr key={l.id}>
+                      <td className="font-medium text-[var(--text-primary)]">{l.receta?.nombre ?? l.recetaId}</td>
+                      <td className="text-right text-[var(--text-primary)]">{l.cantidad}</td>
+                      <td className="text-right font-bold text-[var(--text-primary)]">{formatCurrency(l.costoReal)}</td>
+                      <td className="text-[var(--text-secondary)] text-xs">{formatDate(l.producidoEn)}</td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </DataTable>
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-[var(--text-secondary)]">{lotes.length} lotes — Pag. {page}/{totalPages}</p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                  <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] disabled:opacity-30">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                  <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] disabled:opacity-30">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>

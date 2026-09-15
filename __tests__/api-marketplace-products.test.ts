@@ -29,6 +29,7 @@ vi.mock("@/lib/api-error", async (importOriginal) => {
 
 // ── Mock: cache — passthrough ─────────────────────────────────────────────────
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
   invalidate: vi.fn(),
   invalidateByPrefix: vi.fn(),

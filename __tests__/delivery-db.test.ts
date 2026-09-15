@@ -29,6 +29,7 @@ const { mockInvalidateByPrefix } = vi.hoisted(() => ({
   mockInvalidateByPrefix: vi.fn(),
 }));
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: async <T>(_key: string, _ttl: number, fn: () => Promise<T>) => fn(),
   invalidateByPrefix: mockInvalidateByPrefix,
 }));

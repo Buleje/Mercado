@@ -25,11 +25,27 @@
  *     __tests__/security/multi-tenant-isolation.test.ts
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 
 // IMPORTANT: este test usa Prisma real — desactivamos las extensiones que
 // agregan latencia (audit chain) si están on por default en este entorno.
 process.env.AUDIT_CHAIN_ENABLED ??= "false";
+
+/**
+ * `revalidateTag`/`revalidatePath` sólo funcionan dentro del contexto de request
+ * de Next; llamadas desde un test tiran "Invariant: static generation store
+ * missing" y voltean el test ANTES de que llegue a comprobar el aislamiento
+ * (le pasaba a `ProductsDB.hardDelete`, que revalida al final).
+ *
+ * Invalidar caché no es lo que este suite verifica — verifica que un tenant no
+ * pueda tocar los datos de otro. Se mockean a no-op, acotado a este archivo
+ * (en `vitest.setup.ts` afectaría a toda la suite sin necesidad).
+ */
+vi.mock("next/cache", () => ({
+  revalidateTag: () => {},
+  revalidatePath: () => {},
+  unstable_cache: (fn: unknown) => fn,
+}));
 
 import { prisma } from "@/lib/prisma";
 import { CustomersDB } from "@/lib/db/customers.db";
@@ -48,13 +64,54 @@ import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 // Resolvemos pizza-pucallpa.id dinámicamente en beforeAll para no hardcodear
 // el cuid (cambia entre entornos).
 const TENANT_A = "main";
-// NOTA: el beforeAll de este test asume que TENANT_B se resuelve dinámicamente,
-// pero nunca se reasigna (deuda del test — bug pre-existente registrado en
-// audit CI 2026-05-19). Mantener const + dejarlo vacío bloquea el beforeAll
-// con "missing tenants", lo cual es el comportamiento correcto si pizza-pucallpa
-// no existe. TODO: resolver pizza-pucallpa.id dentro del beforeAll y refactorizar.
-const TENANT_B = "";
+/** Preferido por legibilidad; si no está, sirve cualquier otro tenant (ver abajo). */
 const TENANT_B_SLUG = "pizza-pucallpa";
+
+/**
+ * ⚠️ 2026-07-15 — ESTE SUITE NUNCA CORRIÓ. Dos bugs que se tapaban entre sí:
+ *
+ *  1. `TENANT_B` era `const TENANT_B = ""`, nunca reasignado (el TODO viejo lo
+ *     admitía). El `beforeAll` comparaba contra "" ⇒ "missing tenants" ⇒ throw.
+ *  2. `describe.skipIf(!HAS_DB)` evalúa su condición en tiempo de COLECCIÓN,
+ *     antes de cualquier hook. Con `HAS_DB` seteado dentro del `beforeAll`,
+ *     al momento del `skipIf` valía `false` ⇒ TODO el suite se salteaba
+ *     SIEMPRE, incluso con la DB arriba… y de paso el throw del punto 1 nunca
+ *     se veía.
+ *
+ * Resultado: 15 tests que verifican que una tienda no pueda leer datos de otra
+ * reportaban "skipped" en verde. Un suite que siempre se saltea es peor que uno
+ * que falla: da confianza sin probar nada.
+ *
+ * Por eso el setup se resuelve acá con TOP-LEVEL AWAIT (tiempo de colección),
+ * que es cuando `skipIf` lo necesita.
+ */
+const setup = await (async () => {
+  const vacio = { hasDb: false, tenantB: "" };
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch {
+    return vacio; // Sin DB (pre-commit, `vitest --changed`): skip legítimo.
+  }
+  const a = await prisma.tenant.findUnique({ where: { id: TENANT_A }, select: { id: true } });
+  if (!a) return vacio;
+  // El test sólo necesita DOS tenants distintos. Atarlo a `pizza-pucallpa` —que
+  // NO está en el seed— lo dejaría skipeando en cualquier entorno limpio: el
+  // mismo agujero con otra cara. Se prefiere ese slug y si no, cualquier otro.
+  const b =
+    (await prisma.tenant.findUnique({ where: { slug: TENANT_B_SLUG }, select: { id: true } })) ??
+    (await prisma.tenant.findFirst({ where: { id: { not: TENANT_A } }, select: { id: true } }));
+  if (!b) {
+    console.warn(
+      `[multi-tenant-isolation] hay DB pero un solo tenant ('${TENANT_A}'): ` +
+        `el aislamiento no se puede probar con uno solo. Sembrá un segundo tenant.`,
+    );
+    return vacio;
+  }
+  return { hasDb: true, tenantB: b.id };
+})();
+
+const HAS_DB = setup.hasDb;
+const TENANT_B = setup.tenantB;
 
 /** Sufijo único de este run, para aislar artefactos entre ejecuciones. */
 const RUN_ID = `mti-${Math.random().toString(36).slice(2, 8)}-${Date.now().toString(36)}`;
@@ -167,33 +224,17 @@ async function createTestRecetaFor(
 
 // ── Setup ──────────────────────────────────────────────────────────────────
 
-// Estos tests son INTEGRATION — requieren DB local accesible. En CI/dev sin DB
-// (pre-commit hook, vitest --changed con sandbox aislada) los saltamos en vez
-// de explotar con "Can't reach database server at 127.0.0.1:5432".
-// Ping real a la DB en lugar de confiar en DATABASE_URL existente (puede
-// estar definida pero el server caído / red sin conectividad).
-let HAS_DB = false;
-
-beforeAll(async () => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    HAS_DB = true;
-  } catch {
-    HAS_DB = false;
+// El gate de DB + la resolución de tenants ya se hicieron arriba, en tiempo de
+// colección (top-level await), porque es cuando `describe.skipIf` los necesita.
+// Acá sólo queda dejar constancia de contra qué se está corriendo: si el suite
+// vuelve a saltearse, que se vea en la salida y no en silencio.
+beforeAll(() => {
+  if (!HAS_DB) {
+    console.warn("[multi-tenant-isolation] SALTEADO — sin DB accesible o sin un segundo tenant.");
     return;
   }
-  // Verifica que ambos tenants existan antes de arrancar.
-  const tenants = await prisma.tenant.findMany({
-    where: { id: { in: [TENANT_A, TENANT_B] } },
-    select: { id: true },
-  });
-  const ids = new Set(tenants.map((t) => t.id));
-  if (!ids.has(TENANT_A) || !ids.has(TENANT_B)) {
-    throw new Error(
-      `[multi-tenant-isolation] missing tenants — expected '${TENANT_A}' y '${TENANT_B}', got ${[...ids].join(",")}`,
-    );
-  }
-}, 30_000);
+  console.info(`[multi-tenant-isolation] corriendo contra '${TENANT_A}' vs '${TENANT_B}'.`);
+});
 
 // ── Cleanup ─────────────────────────────────────────────────────────────────
 
@@ -474,28 +515,52 @@ describe.skipIf(!HAS_DB)("multi-tenant — Recetas (mass-assignment)", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe.skipIf(!HAS_DB)("multi-tenant — PaymentApproval (post P0-2: tenantId requerido)", () => {
-  it("findByPhonePending requiere tenantId — API contractual", async () => {
-    // Setup: creamos un PaymentApproval pending para un phone arbitrario.
-    // El scope multi-tenant viene del conversationId → WhatsAppConversation.tenantId.
+  /**
+   * 2026-07-15 — este test estaba OBSOLETO y por eso fallaba al correrlo por
+   * primera vez: insertaba un PaymentApproval SIN `tenantId` (se escribió cuando
+   * la columna era nullable) y hoy Postgres lo rechaza con 23502 NOT NULL.
+   *
+   * O sea: la propiedad de seguridad se volvió MÁS fuerte que el test — el
+   * estado inválido que el test fabricaba ya no se puede ni crear.
+   *
+   * Reescrito para probar el aislamiento de verdad (crear en B, leer desde A),
+   * que es más fuerte que lo que verificaba antes ("sin conversación → null").
+   */
+  it("un pago pendiente del tenant B no se ve desde el tenant A", async () => {
     const id = `${TAG}-pap-${Math.random().toString(36).slice(2, 8)}`;
     const phone = `994${String(Date.now()).slice(-7)}`;
 
+    // El pago vive en B.
     await prisma.$executeRawUnsafe(
       `INSERT INTO "PaymentApproval" (
-        id, "customerPhone", "expectedAmount", "imageUrl", status
-      ) VALUES ($1, $2, $3, $4, 'pending')`,
+        id, "tenantId", "customerPhone", "expectedAmount", "imageUrl", status, "updatedAt"
+      ) VALUES ($1, $2, $3, $4, $5, 'pending', now())`,
       id,
+      TENANT_B,
       phone,
       "50.00",
       "https://example.test/img.jpg",
     );
     created.paymentApprovalIds.push(id);
 
-    // El lookup ahora requiere tenantId. Si la phone no tiene conversación
-    // asociada con TENANT_A, devuelve null — invariante esperado.
-    const found = await PaymentApprovalDb.findByPhonePending(phone, TENANT_A);
-    // Sin conversación previa, expected es null (no fuga cross-tenant).
-    expect(found).toBeNull();
+    // Desde A no se ve, aunque el teléfono coincida exactamente.
+    expect(await PaymentApprovalDb.findByPhonePending(phone, TENANT_A)).toBeNull();
+  }, 30_000);
+
+  it("la DB rechaza un PaymentApproval sin tenantId (NOT NULL)", async () => {
+    // Regresión estructural: si alguien vuelve a hacer `tenantId` nullable, un
+    // pago quedaría huérfano de tenant y el scope de arriba dejaría de valer.
+    await expect(
+      prisma.$executeRawUnsafe(
+        `INSERT INTO "PaymentApproval" (
+          id, "customerPhone", "expectedAmount", "imageUrl", status, "updatedAt"
+        ) VALUES ($1, $2, $3, $4, 'pending', now())`,
+        `${TAG}-pap-null`,
+        `994${String(Date.now()).slice(-6)}`,
+        "1.00",
+        "https://example.test/x.jpg",
+      ),
+    ).rejects.toThrow(/not-null|23502/i);
   }, 30_000);
 });
 

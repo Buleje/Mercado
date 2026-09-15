@@ -248,7 +248,9 @@ const eslintConfig = defineConfig([
       "app/api/billing/webhook/**",
       "app/api/marketplace/payment/**",
       "app/api/superadmin/**",
+      "app/superadmin/**", // superadmin = plataforma cross-tenant por diseño (gestiona todos los tenants)
       "app/api/cron/**",
+      "app/api/prestamos/cron/**", // crons que iteran TODOS los tenants activos (recordatorios/mora) — cross-tenant por diseño
       "app/api/compliance/**",
       "app/api/debug-tenant-leak/**",
       "scripts/**",
@@ -260,14 +262,18 @@ const eslintConfig = defineConfig([
       ...PRISMA_DIRECT_LEGACY_ESCAPED,
     ],
     rules: {
-      // STATUS 2026-05-19: bajado de "error" a "warn". Razón: el allowlist
-      // tenía 53/328 entries broken por glob escape (fix en commit 14943294)
-      // y aún quedan ~10-15 archivos no allowlisted con prisma directo
-      // pre-existente. Subir de vuelta a "error" cuando se complete la
-      // migración a lib/db/*.db.ts. Hasta entonces, los warnings siguen
-      // visibles en CI logs para code review.
+      // STATUS 2026-06-26: SUBIDO de vuelta a "error" (lock-and-progress completo).
+      // Auditoría de aislamiento multi-tenant (23 agentes, verificación adversarial)
+      // confirmó 0 violaciones ACTIVAS: todo prisma.* directo del repo está cubierto
+      // por la allowlist legacy, los `ignores` permanentes, o un `eslint-disable`
+      // inline documentado. Verificado corriendo eslint sobre los 38 candidatos no
+      // allowlisted → 0 flagged. Con la rule en "error", cualquier prisma.<modelo>
+      // directo NUEVO (sin tenantId+cache+audit de lib/db) bloquea CI. La allowlist
+      // se sigue recortando al migrar archivos legacy a lib/db/*.db.ts.
+      // Histórico: bajada a "warn" 2026-05-19 por allowlist con glob-escape roto
+      // (fix 14943294) + ~10-15 archivos sin allowlistar, ya resueltos.
       "no-restricted-properties": [
-        "warn",
+        "error",
         {
           object: "prisma",
           message:

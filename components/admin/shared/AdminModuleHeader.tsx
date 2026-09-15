@@ -35,9 +35,17 @@
 
 import { PageTitle, Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { useModuleDepth } from "@/components/admin/shared/module-depth";
 import type { LucideIcon } from "@buleje/design-system/icons";
 
 interface AdminModuleHeaderProps {
+  /**
+   * Nivel semántico del título. Un módulo montado DENTRO de un hub que ya
+   * puso su propio h1 (ej. Mi Plata → Activos) debe pasar `as="h2"`: dos h1
+   * en la misma página rompen la jerarquía para lectores de pantalla y SEO.
+   * El aspecto visual no cambia — PageTitle se ve igual en ambos niveles.
+   */
+  as?: "h1" | "h2" | "h3";
   /** Línea pequeña arriba del título (ej: "Inventario · Catálogo"). */
   eyebrow?: string;
   /** Título principal — se renderiza con font-display italic. */
@@ -56,6 +64,14 @@ interface AdminModuleHeaderProps {
   children?: React.ReactNode;
   /** Si true, omite el border-bottom (útil cuando el módulo empieza con filtros pegados). */
   noBorder?: boolean;
+  /**
+   * `"auto"` (default) — anidado bajo otro módulo que ya puso su título (lo
+   * detecta `useModuleDepth`), el header NO se dibuja: la pestaña marcada
+   * arriba ya dice dónde estás. Sobreviven sólo sus `children` (acciones).
+   * `"full"` — fuerza el editorial completo. Escape hatch para una superficie
+   * que arranca pantalla nueva pero cuelga del panel de un tab en el árbol.
+   */
+  variant?: "auto" | "full";
   className?: string;
 }
 
@@ -65,47 +81,103 @@ export default function AdminModuleHeader({
   description,
   icon: Icon,
   children,
+  as,
   noBorder = false,
+  variant = "auto",
   className,
 }: AdminModuleHeaderProps) {
+  // Cuántos títulos de módulo hay arriba. >0 ⇒ este es un sub-módulo dentro
+  // de un hub: la pestaña marcada ya lo nombra.
+  const profundidad = useModuleDepth();
+  const anidado = variant === "auto" && profundidad > 0;
+  const nivel: "h1" | "h2" | "h3" = as ?? "h1";
+
+  if (anidado) {
+    // Brandon 2026-09-07: «segundo nivel sin línea compacta, exactamente como
+    // Analytics Pro». Antes acá iba una línea `▎Título · descripción`; decía
+    // en prosa lo que la pestaña de arriba dice en un botón. Quedan sólo las
+    // acciones, a la derecha, para que cada botón siga donde el usuario lo
+    // conoce. Sin acciones no se dibuja nada — ni un contenedor vacío que
+    // gaste su margen.
+    if (!children) return null;
+    return (
+      <div
+        data-admin-module-header=""
+        data-admin-module-actions=""
+        className={cn("mb-3 flex flex-wrap items-center justify-end gap-2", className)}
+      >
+        {children}
+      </div>
+    );
+  }
+
   return (
+    // `@container`: el header se mide contra SU ancho real, no contra el
+    // viewport. Con el sidebar abierto, una ventana de 991px deja ~700px de
+    // contenido — un `sm:flex-row` (viewport ≥640) ponía título y acciones en
+    // fila igual, y como las acciones no cedían ancho el título quedaba con
+    // 15px: la descripción se partía en 12 líneas de una palabra.
+    //
+    // Los breakpoints van en REM EXPLÍCITOS (`@min-[48rem]`) y no en `@sm/@md`:
+    // este proyecto redefine `--container-*` en @theme (sm=720px, md=960px) y
+    // ni siquiera existen `--container-2xl/3xl`, así que las variantes con
+    // nombre valdrían otra cosa —o nada— sin avisar.
     <header
+      /* `data-admin-module-header`: lo lee globals.css para comprimir el aire
+         del encabezado en pantallas de poca altura. Ver «Densidad por ALTURA». */
+      data-admin-module-header=""
       className={cn(
-        "flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6 pb-4",
+        "@container mb-4 pb-3",
         !noBorder && "border-b border-[var(--rule-soft)]",
+        // Cuando el hermano de abajo es la barra de pestañas, su propia regla
+        // y su aire ya separan: el borde del header quedaba 40px arriba del
+        // borde del tab bar — dos líneas horizontales para el mismo corte.
+        // `:has(+ …)` mira al hermano SIGUIENTE; si entre medio hay otra cosa
+        // (una fila de KPIs, un aviso) no aplica y el borde se queda.
+        "has-[+_[data-admin-tabbar]]:mb-3 has-[+_[data-admin-tabbar]]:pb-0 has-[+_[data-admin-tabbar]]:border-b-0",
         className,
       )}
     >
-      <div className="flex gap-3 min-w-0">
-        {Icon && (
-          <Icon
-            // Antes hidden sm:block — en mobile el header perdia ancla
-            // visual. Ahora se muestra desde mobile, un poco mas chico.
-            className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-tertiary)] dark:text-zinc-500 shrink-0 mt-1 sm:mt-1.5"
-            strokeWidth={1.5}
-            aria-hidden
-          />
-        )}
-        <div className="min-w-0">
-          {eyebrow && <Kicker className="mb-1">{eyebrow}</Kicker>}
-          <PageTitle
-            as="h1"
-            className="font-display tracking-tight leading-[1.05]"
-          >
-            {title}
-          </PageTitle>
-          {description && (
-            <p className="mt-1.5 text-sm text-[var(--text-secondary)] dark:text-zinc-400 max-w-2xl leading-relaxed">
-              {description}
-            </p>
+      <div className="flex flex-col gap-4 @min-[48rem]:flex-row @min-[48rem]:items-end @min-[48rem]:justify-between">
+        <div className="flex gap-3 min-w-0">
+          {Icon && (
+            <Icon
+              // Antes hidden sm:block — en mobile el header perdia ancla
+              // visual. Ahora se muestra desde mobile, un poco mas chico.
+              className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-tertiary)] shrink-0 mt-1 sm:mt-1.5"
+              strokeWidth={1.5}
+              aria-hidden
+            />
           )}
+          <div className="min-w-0">
+            {eyebrow && <Kicker className="mb-1">{eyebrow}</Kicker>}
+            <PageTitle
+              as={nivel}
+              className="font-display tracking-tight leading-[1.05]"
+            >
+              {title}
+            </PageTitle>
+            {/* En angosto la descripción se oculta (Brandon 2026-07-22): en una
+                pantalla chica lo que importa es el título y las acciones, no el
+                subtítulo explicativo.
+                Con `hidden`, no con `sr-only` + `not-sr-only`: la utilidad
+                `sr-only` gana por orden en el CSS generado y el texto quedaba
+                oculto SIEMPRE, también en escritorio (verificado en navegador). */}
+            {description && (
+              <div className="hidden @min-[32rem]:block mt-1.5 text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
+                {description}
+              </div>
+            )}
+          </div>
         </div>
+        {children && (
+          // Sin `shrink-0`: cuando entran en la misma fila no deben aplastar al
+          // título; cuando no entran, bajan y se envuelven entre ellas.
+          <div className="flex flex-wrap items-center gap-2 @min-[48rem]:justify-end">
+            {children}
+          </div>
+        )}
       </div>
-      {children && (
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          {children}
-        </div>
-      )}
     </header>
   );
 }

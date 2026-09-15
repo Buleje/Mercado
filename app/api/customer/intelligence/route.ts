@@ -13,12 +13,16 @@ import { logger } from "@/lib/logger";
  */
 export async function GET(req: NextRequest) {
   try {
-    const { getCustomerPayload } = await import("@/lib/auth/customer-session");
-    const sessionToken = req.cookies.get("buleje_customer")?.value;
+    const { getCustomerPayload, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
+    // FIX aislamiento 2026-06-23: antes leía la cookie inexistente "buleje_customer"
+    // (la real es CUSTOMER_SESSION.COOKIE_NAME = "buleje-customer-sess") → siempre
+    // caía en anónimo, enmascarando una fuga: las queries de abajo no llevaban
+    // tenantId. Ahora lee la cookie correcta y exige tenantId del payload.
+    const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
     const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
 
-    // Anónimo / first visit
-    if (!session?.customerId) {
+    // Anónimo / first visit (o sesión sin tenant → no podemos aislar, anónimo).
+    if (!session?.customerId || !session.tenantId) {
       return NextResponse.json({
         name: null,
         isFirstVisit: true,
@@ -34,12 +38,14 @@ export async function GET(req: NextRequest) {
     }
 
     const { prisma } = await import("@/lib/prisma");
+    // Tenant de la sesión del cliente — TODA query lleva este scope (aislamiento).
+    const tenantId = session.tenantId;
 
     // Paralelizar
     const [customer, recentOrders, topItem] = await Promise.all([
       prisma.customer
         .findFirst({
-          where: { phone: session.customerId },
+          where: { phone: session.customerId, tenantId },
           select: {
             name: true,
             location: true,
@@ -58,6 +64,7 @@ export async function GET(req: NextRequest) {
       prisma.order
         .findMany({
           where: {
+            tenantId,
             customerPhone: session.customerId,
             status: { not: "cancelado" },
             createdAt: { gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
@@ -74,6 +81,7 @@ export async function GET(req: NextRequest) {
           by: ["productId", "name"],
           where: {
             order: {
+              tenantId,
               customerPhone: session.customerId,
               createdAt: { gte: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) },
             },

@@ -49,7 +49,7 @@ const STATUS_CFG: Record<string, { label: string; tone: "amber" | "blue" | "acce
 const TONE_BG: Record<NonNullable<typeof STATUS_CFG[string]["tone"]>, string> = {
   amber: "bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]",
   blue: "bg-[var(--brand-info)]/10 text-[var(--brand-info)]",
-  accent: "bg-[var(--accent-soft)] text-[var(--accent)]",
+  accent: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
   muted: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
 };
@@ -353,7 +353,7 @@ function ActiveCard({
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.customerLocation)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--accent-soft)] text-sm font-extrabold text-[var(--accent)]"
+              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-primary/10 text-sm font-extrabold text-[var(--accent)]"
             >
               <RouteIcon className="h-4 w-4" />
               Mapa

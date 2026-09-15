@@ -60,9 +60,9 @@ export default function AdminDateFilter({
             key={p.id}
             onClick={() => handlePreset(p.id)}
             className={cn(
-              "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+              "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
               value === p.id && !showCustom
-                ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] "
+                ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-alt)]",
             )}
           >
@@ -72,9 +72,9 @@ export default function AdminDateFilter({
         <button
           onClick={() => handlePreset("custom")}
           className={cn(
-            "px-2 py-1.5 rounded-md text-xs font-medium transition-all",
+            "px-2 py-1.5 rounded-lg text-xs font-medium transition-all",
             showCustom
-              ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] "
+              ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
               : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-alt)]",
           )}
           title="Rango personalizado"
@@ -93,7 +93,8 @@ export default function AdminDateFilter({
               setCustomFrom(e.target.value);
               onChange("custom");
             }}
-            className="px-2 py-1 rounded-md border border-[var(--rule-base)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-label="Fecha desde"
+            className="px-2 py-1 rounded-xl border border-[var(--rule-base)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <span className="text-xs text-[var(--text-tertiary)]">—</span>
           <input
@@ -103,7 +104,8 @@ export default function AdminDateFilter({
               setCustomTo(e.target.value);
               onChange("custom");
             }}
-            className="px-2 py-1 rounded-md border border-[var(--rule-base)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-label="Fecha hasta"
+            className="px-2 py-1 rounded-xl border border-[var(--rule-base)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
       )}
@@ -117,7 +119,7 @@ export default function AdminDateFilter({
       {showRefresh && onRefresh && (
         <button
           onClick={onRefresh}
-          className="p-1.5 rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           title="Actualizar"
         >
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

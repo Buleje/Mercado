@@ -65,7 +65,7 @@ export function emitChatPublic(
   const bucket = buckets.get(k);
   if (!bucket || bucket.size === 0) return;
   const message = `event: chat_message\ndata: ${JSON.stringify(data)}\n\n`;
-  for (const send of [...bucket]) {
+  for (const send of bucket) {
     try {
       send(message);
     } catch {

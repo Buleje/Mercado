@@ -3,6 +3,7 @@
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useRef, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import {
   Barcode,
   Search,
@@ -182,7 +183,7 @@ export default function QuickStockCounter() {
   return (
     <div className="flex flex-col gap-6">
       {/* Scanner input */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 dark:border-[var(--rule-base)] ">
         <div className="mb-4 flex items-center gap-2">
           <Barcode className="h-5 w-5 text-primary" />
           <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
@@ -199,8 +200,8 @@ export default function QuickStockCounter() {
             placeholder="Código de barras o SKU..."
             autoFocus
             className={cn(
-              "flex-1 rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
-              "text-[var(--text-primary)] placeholder-gray-400 outline-none transition",
+              "flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-10 text-sm",
+              "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition",
               "focus:border-primary focus:ring-2 focus:ring-primary/20",
               "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
             )}
@@ -208,7 +209,7 @@ export default function QuickStockCounter() {
           <button
             onClick={() => lookupBarcode(code)}
             disabled={lookupState === "loading" || !code.trim()}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40] disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 min-h-10 text-sm font-medium text-white transition hover:bg-primary/90 disabled:opacity-50"
           >
             {lookupState === "loading" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -247,42 +248,42 @@ export default function QuickStockCounter() {
             </div>
 
             <div className="flex items-center gap-3">
-              <label className="text-xs font-medium text-[var(--text-secondary)] whitespace-nowrap">
-                Stock físico contado:
-              </label>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() =>
-                    setPhysicalStock((v) => Math.max(0, (Number(v) || 0) - 1))
-                  }
-                  className="rounded-md p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
-                >
-                  <MinusCircle className="h-5 w-5" />
-                </button>
-                <input
-                  ref={physInputRef}
-                  type="number"
-                  min="0"
-                  value={physicalStock}
-                  onChange={(e) =>
-                    setPhysicalStock(e.target.value === "" ? "" : Number(e.target.value))
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") addToCount();
-                  }}
-                  className={cn(
-                    "w-20 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 py-1 text-center text-sm",
-                    "text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
-                    "dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                  )}
-                />
-                <button
-                  onClick={() => setPhysicalStock((v) => (Number(v) || 0) + 1)}
-                  className="rounded-md p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
-                >
-                  <PlusCircle className="h-5 w-5" />
-                </button>
-              </div>
+              <Field label="Stock físico contado:" labelClassName="text-xs font-medium text-[var(--text-secondary)] whitespace-nowrap">{(id) => (
+                <div className="flex items-center gap-1">
+                  <button aria-label="Disminuir cantidad"
+                    onClick={() =>
+                      setPhysicalStock((v) => Math.max(0, (Number(v) || 0) - 1))
+                    }
+                    className="rounded-xl p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
+                  >
+                    <MinusCircle className="h-5 w-5" />
+                  </button>
+                  <input
+                    id={id}
+                    ref={physInputRef}
+                    type="number"
+                    min="0"
+                    value={physicalStock}
+                    onChange={(e) =>
+                      setPhysicalStock(e.target.value === "" ? "" : Number(e.target.value))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") addToCount();
+                    }}
+                    className={cn(
+                      "w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-center text-sm",
+                      "text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
+                      "dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    )}
+                  />
+                  <button aria-label="Aumentar cantidad"
+                    onClick={() => setPhysicalStock((v) => (Number(v) || 0) + 1)}
+                    className="rounded-xl p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
+                  >
+                    <PlusCircle className="h-5 w-5" />
+                  </button>
+                </div>
+              )}</Field>
 
               {physicalStock !== "" && (
                 <span
@@ -306,7 +307,7 @@ export default function QuickStockCounter() {
               <button
                 onClick={addToCount}
                 disabled={physicalStock === ""}
-                className="ml-auto rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#245a40] disabled:opacity-40"
+                className="ml-auto rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition hover:bg-primary/90 disabled:opacity-40"
               >
                 Agregar
               </button>
@@ -317,14 +318,14 @@ export default function QuickStockCounter() {
 
       {/* Counted list */}
       {counted.length > 0 && (
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:border-[var(--rule-base)] ">
           <div className="border-b border-[var(--rule-soft)] px-5 py-3 dark:border-[var(--rule-base)]">
             <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
               Productos contados ({counted.length})
             </CardTitle>
           </div>
 
-          <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+          <div className="divide-y divide-[var(--rule-soft)] ">
             {counted.map((item) => {
               const diff = item.physicalStock - item.systemStock;
               return (
@@ -358,9 +359,9 @@ export default function QuickStockCounter() {
                     )}
                   </div>
 
-                  <button
+                  <button aria-label="Eliminar"
                     onClick={() => removeItem(item.productId)}
-                    className="ml-1 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:text-[var(--text-secondary)]"
+                    className="ml-1 rounded-xl p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:text-[var(--text-secondary)]"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -370,7 +371,7 @@ export default function QuickStockCounter() {
           </div>
 
           {/* Summary bar */}
-          <div className="border-t border-[var(--rule-soft)] bg-gray-50 px-5 py-4 dark:border-[var(--rule-base)] dark:bg-gray-800/50">
+          <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-5 py-4 dark:border-[var(--rule-base)] ">
             <div className="mb-3 flex flex-wrap gap-4 text-sm">
               <div>
                 <span className="text-[var(--text-tertiary)]">Contados: </span>
@@ -410,12 +411,12 @@ export default function QuickStockCounter() {
               onClick={saveCount}
               disabled={saveState === "saving" || saveState === "saved"}
               className={cn(
-                "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition",
+                "flex w-full items-center justify-center gap-2 rounded-xl px-4 min-h-10 text-sm font-medium text-white transition",
                 saveState === "saved"
-                  ? "bg-[var(--accent-soft)]"
+                  ? "bg-primary/10"
                   : saveState === "error"
                   ? "bg-[var(--data-error-500)]"
-                  : "bg-primary hover:bg-[#245a40]",
+                  : "bg-primary hover:bg-primary/90",
                 "disabled:opacity-60"
               )}
             >

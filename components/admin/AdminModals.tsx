@@ -2,8 +2,11 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import React from "react";
+import React, { useRef } from "react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import {
   Trash2, Check, X, AlertTriangle,
   Users, Star, ShoppingCart, Loader2, Truck,
@@ -33,6 +36,9 @@ const SHORTCUT_SECTIONS = [
   {
     title: "Navegación",
     shortcuts: [
+      // Sub-tabs: Alt+1..9 ya salta entre módulos, así que dentro de un módulo
+      // las flechas recorren sus pestañas (AdminTabBar).
+      ["Alt + ← / →", "Pestaña anterior / siguiente del módulo"],
       ["Alt + 1", "Asistente IA"],
       ["Alt + 2", "Ventas & Caja"],
       ["Alt + 3", "Inventario"],
@@ -59,58 +65,42 @@ const SHORTCUT_SECTIONS = [
 ];
 
 export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
-  if (!open) return null;
-
-  // Close on Escape
   return (
-    <div className="modal-backdrop flex items-center justify-center" style={{ zIndex: 60 }} onClick={onClose}>
-      <div
-        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2">
-            <Monitor className="h-5 w-5 text-primary" />
-            Atajos de teclado
-          </CardTitle>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
-            <X className="h-4 w-4 text-[var(--text-secondary)]" />
-          </button>
-        </div>
-
-        {/* Body — sections in 2-column grid */}
-        <div className="px-6 py-4 max-h-[60vh] overflow-y-auto space-y-5">
-          {SHORTCUT_SECTIONS.map((section) => (
-            <div key={section.title}>
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">
-                {section.title}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                {section.shortcuts.map(([key, label]) => (
-                  <div key={key} className="flex items-center justify-between py-1">
-                    <span className="text-sm text-[var(--text-secondary)] dark:text-muted">{label}</span>
-                    <kbd className="ml-2 bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] px-2 py-0.5 rounded-md text-xs font-mono border border-[var(--rule-base)] dark:border-[var(--rule-base)]  shrink-0">
-                      {key}
-                    </kbd>
-                  </div>
-                ))}
-              </div>
+    <AdminModal
+      open={open}
+      onClose={onClose}
+      title="Atajos de teclado"
+      icon={Monitor}
+      variant="default"
+      footer={
+        <button
+          onClick={onClose}
+          className="w-full min-h-11 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors"
+        >
+          Cerrar
+        </button>
+      }
+    >
+      <div className={cn(MODAL_BODY, "space-y-5")}>
+        {SHORTCUT_SECTIONS.map((section) => (
+          <div key={section.title}>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">
+              {section.title}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+              {section.shortcuts.map(([key, label]) => (
+                <div key={key} className="flex items-center justify-between py-1">
+                  <span className="text-sm text-[var(--text-secondary)] dark:text-muted">{label}</span>
+                  <kbd className="ml-2 bg-[var(--surface-sunken)] text-[var(--text-primary)] px-2 py-0.5 rounded-md text-xs font-mono border border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
+                    {key}
+                  </kbd>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface">
-          <button
-            onClick={onClose}
-            className="w-full py-2.5 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors"
-          >
-            Cerrar
-          </button>
-        </div>
+          </div>
+        ))}
       </div>
-    </div>
+    </AdminModal>
   );
 }
 
@@ -159,6 +149,11 @@ export function ClearDataModal({
   onClose,
   demoDataModuleKeys,
 }: ClearDataModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  // `handleCancel` (más abajo) resetea el wizard además de cerrar; la
+  // referencia se resuelve recién cuando Escape dispara, ya con el nombre asignado.
+  useModalAccesible(panelRef, { onCerrar: () => handleCancel(), activo: open });
+
   if (!open) return null;
 
   const allSelected = clearCategories.size === ALL_CLEAR_CATS.length;
@@ -211,16 +206,24 @@ export function ClearDataModal({
           try { localStorage.setItem("admin_demo_cleared", JSON.stringify(demoDataModuleKeys)); } catch {}
           window.location.reload();
         } else {
-          alert(d.error || "Error al borrar datos");
+          toast.error(d.error || "Error al borrar datos");
         }
       })
-      .catch((err) => alert(`Error de conexión: ${err?.message ?? "verifica tu red"}`))
+      .catch((err) => toast.error(`Error de conexión: ${err?.message ?? "verifica tu red"}`))
       .finally(() => setClearingData(false));
   };
 
   return (
     <div className="modal-backdrop flex items-center justify-center" style={{ zIndex: 100 }} onClick={handleCancel}>
-      <div className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full mx-4 p-6 space-y-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Borrar datos del negocio"
+        tabIndex={-1}
+        className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full mx-4 p-6 space-y-4 max-h-[90vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
 
         {/* Step indicator */}
         <div className="flex items-center gap-2">
@@ -230,9 +233,9 @@ export function ClearDataModal({
                 "h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
                 clearConfirmStep >= n
                   ? "bg-[var(--data-error-500)] text-white"
-                  : "bg-[var(--rule-soft)] dark:bg-surface text-[var(--text-tertiary)]"
+                  : "bg-[var(--rule-soft)] text-[var(--text-tertiary)]"
               )}>{n}</div>
-              {n < 3 && <div className={cn("h-0.5 w-6 rounded transition-colors", clearConfirmStep > n ? "bg-[var(--data-error-500)]" : "bg-[var(--rule-soft)] dark:bg-surface")} />}
+              {n < 3 && <div className={cn("h-0.5 w-6 rounded transition-colors", clearConfirmStep > n ? "bg-[var(--data-error-500)]" : "bg-[var(--rule-soft)] ")} />}
             </div>
           ))}
           <span className="ml-2 text-xs text-[var(--text-tertiary)] dark:text-muted">
@@ -273,7 +276,7 @@ export function ClearDataModal({
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-all",
                       selected
                         ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20"
-                        : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+                        : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] "
                     )}
                   >
                     <input
@@ -293,13 +296,13 @@ export function ClearDataModal({
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button onClick={handleCancel} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
+              <button onClick={handleCancel} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
                 Cancelar
               </button>
               <button
                 onClick={() => setClearConfirmStep(2)}
                 disabled={clearCategories.size === 0}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50"
+                className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50"
               >
                 Siguiente →
               </button>
@@ -323,10 +326,10 @@ export function ClearDataModal({
               </ul>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setClearConfirmStep(1)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
+              <button onClick={() => setClearConfirmStep(1)} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
                 ← Volver
               </button>
-              <button onClick={() => setClearConfirmStep(3)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">
+              <button onClick={() => setClearConfirmStep(3)} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">
                 Entiendo, continuar →
               </button>
             </div>
@@ -346,17 +349,17 @@ export function ClearDataModal({
                 onChange={e => setClearConfirmText(e.target.value)}
                 placeholder="Escribe BORRAR_TODO"
                 autoFocus
-                className="w-full px-4 py-3 text-center text-lg font-mono rounded-lg border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] outline-none focus:border-[var(--data-error-500)] focus:ring-2 focus:ring-[var(--data-error-500)] dark:bg-surface text-[var(--data-error-500)] dark:text-[var(--data-error-500)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted"
+                className="w-full px-4 h-11 text-center text-lg font-mono rounded-xl border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] outline-none focus:border-[var(--data-error-500)] focus:ring-2 focus:ring-[var(--data-error-500)] dark:bg-surface text-[var(--data-error-500)] dark:text-[var(--data-error-500)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted"
               />
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setClearConfirmStep(2)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
+              <button onClick={() => setClearConfirmStep(2)} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
                 ← Volver
               </button>
               <button
                 onClick={handleExecute}
                 disabled={clearConfirmText !== "BORRAR_TODO" || clearingData}
-                className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 Borrar datos seleccionados

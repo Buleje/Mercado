@@ -7,6 +7,107 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ---
 
+## Aplicadas en sesión 2026-09-14 (tarde: producto verificado en navegador)
+
+### [applied] 2026-09-14 (`560cb51b`) — Aviso de caja abierta: `lib/caja/caja-abierta.ts` (días de calendario de Lima) + `AlertsDB.cajaAbiertaDesde` + banner «Cuadrar caja» → `?tab=ventas-caja&vista=arqueo` (clic medido: 0,4 s). Abrir/cerrar caja invalida el resumen. El negocio real tiene 1 caja abierta desde el jueves 11/06 (95 días).
+### [applied] 2026-09-14 (`08c18c45`) — Almacenero sin 403: la precarga del panel y la campana/hub de notificaciones gatean con `puedePedir`. Navegador QA: 3 × 403 + 3 errores de consola → 0 y 0; admin sigue con 200.
+### [applied] 2026-09-14 (`85e5a3ef`, `3ba47215`) — 0 avisos de eslint en page.tsx, DailyGoalTracker y MetasLogrosModule (foco explícito en vez de `autoFocus`, fallas registradas en logger). Metas, Inicio del vendedor, Catálogo y Repartidores recuerdan su vista en `?vista=` (link directo, clic y «atrás» verificados).
+### [applied] 2026-09-14 (ADR-415, sin commitear) — **Metas y tareas compartidas entre negocios** → tablas `AdminGoal`/`AdminTask` por tenant, SQL aplicado, e2e 11/11. Era: `lib/file-store.ts` guarda `goals` y `tasks` en `local-data/<key>.json` sin `tenantId`; los admins de todos los tenants leen y escriben la misma lista (auditoría security del barrido de errores, confirmado por código). Arreglo: clave por tenant o modelo Prisma; decidir qué pasa con los datos ya compartidos.
+### [pending] 2026-09-14 — **Avisos en vivo del panel no cruzan instancias en Vercel**: `lib/sse-emitter.ts` es un Map en memoria (`globalThis`), así que `emitAdminSSE` (p. ej. `app/api/orders/route.ts:1006` al entrar un pedido) sólo llega a los `/api/admin/sse` abiertos en la MISMA instancia. `notifications/stream` lo compensa consultando la base cada 5 s por pestaña abierta (24 consultas/min). Medido por código, no en producción. Esa noche se borró `SSEListener` (escuchaba con `onmessage` eventos con nombre: nunca recibió nada) y el stream pasó a reconectar con espera creciente.
+### [applied] 2026-09-14 (ADR-416, sin commitear) — RRHH: hoja semanal con ganado por día + PDF con firma; fotocheck con foto y QR a la ficha. e2e semanal S/ 555 exacto; e2e fotocheck upload/PDF/quitar verde.
+### [pending] 2026-09-14 — Fotocheck: página pública de verificación del QR (hoy lleva a la ficha con login, por Ley 29733 no se expuso nada) y logo del negocio en la banda (hoy sólo el nombre; `main` no tiene `businessName` y la banda dice «FOTOCHECK»).
+### [pending] 2026-09-14 — Commitear ADR-415 (metas y tareas por negocio) y ADR-416 (hoja semanal + fotocheck) + la sonda del dev launcher: todo verificado, sin commit porque Brandon no lo eligió en esa ronda.
+### [pending] 2026-09-14 — **Producción: aplicar `prisma/migrations/adr-415-metas-y-tareas.sql` antes de subir el código de metas y tareas** (sin tablas, las rutas dan P2021). Confirmar que el `DATABASE_URL` de Vercel es la misma base.
+### [pending] 2026-09-14 — `beta-feedback` sigue en `lib/file-store.ts`: ruta pública, sin tenant, y en Vercel no puede escribir (lo detectó `migration-planner`).
+### [pending] 2026-09-14 — Fechas de metas y tareas en zona horaria de Lima (medido por `migration-planner` con TZ=America/Lima): la plantilla «Meta diaria» creada el 14/9 queda con `dueDate` 15/9, y una tarea que vence el 14/9 aparece vencida a las 09:00 de ese día y se muestra como 13/9 (`new Date("YYYY-MM-DD")` es medianoche UTC).
+### [pending] 2026-09-14 — Voseo fuera del panel: ~370 en `components/marketplace` + `app/(store)`, ~166 en superadmin, checkout (zona de peligro), landing y cliente. El panel quedó en tuteo (`93978b2e`); método en memoria `tuteo-panel-barrido-2026-09-14`.
+### [pending] 2026-09-14 — **Pase a producción** (CORREGIDO: producción NO es `master`). Producción = deploy por CLI del **2026-07-16 22:35**, commit `7774f5ca` de la rama `prod`, ya contenido en esta rama (+901 commits; `origin/prod` es ancestro → avance directo). Bloqueos medidos: (1) todos los previews de Vercel fallan desde agosto porque `DATABASE_URL` usa `app_user` y el prerender de `/marketplace/__validate__` consulta la base (ADR-114 dice no usar `app_user` en Vercel); (2) 7 de 9 crons nuevos mandan WhatsApp/Telegram/correo, 3 de madrugada en Lima. Riesgos: la caja real de 95 días se cerraría sin conteo la primera noche; 26 migraciones aplicadas a mano sin registrar (todas presentes, 0 que rompan). Plan publicado: https://claude.ai/code/artifact/32bd1a51-c14e-4676-be0a-c09a0b108470
+### [applied] 2026-09-14 — 9 módulos anidados con `?sub=` (useSubvistaModulo), verificados en navegador. Quedan con diseño aparte: `AnalyticsBIModule` (pestañas calculadas y padre sin `?vista=`), `ForestalTramites` (vista que depende de estado) y `MarketplaceModule` (vive en dos padres).
+### [applied] 2026-09-14 — Errores tragados del panel: `lib/errores/sin-dato.ts` (`sinDato`, `leerJson`, `descartarEsperado`) en los 42 `.catch(() => null)` de `components/admin` + `app/admin`. Quedan ~108 en `app/api` y `lib` (lado servidor, otro criterio de logging).
+
+## Aplicadas en sesión 2026-09-14 (harness contra Claude Code v2.1.270)
+
+### [applied] 2026-09-14 — 8 agent defs reescritos: `model: inherit`, `skills:` precargadas, `frontend`/`tester` con MCP Playwright, sin `maxTurns`/`permissionMode` en constructores, `experimental.cacheTtl: 1h`, rutas absolutas a las memorias de Brandon. Motivo medido: 0 despachos de los defs vs ~110 `general-purpose` con nombre en 11 días.
+### [applied] 2026-09-14 — Hook `SubagentStart` (`subagent-start-context.mjs`): todo subagente recibe perfil/tenant/reglas/gates/reporte. Hook `StopFailure` → aviso toast+Telegram cuando el turno muere por error de API. `SessionStart` `compact` re-inyecta branch/handoff.
+### [applied] 2026-09-14 — `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0` (los nombrados vuelven a ser subagentes en background), `CLAUDE_CODE_RESUME_INTERRUPTED_TURN=1`, `language: spanish`, `bashOutputMaxChars`/`taskOutputMaxChars` 24000, `bashEditDiffEnabled`; user: `autoContinueAtUsageLimit`, `cleanupPeriodDays: 90`.
+### [applied] 2026-09-14 — Skill `verify` → `gates` (libera el `/verify` bundled); `TaskCreate/TaskUpdate` fuera de 6 skills y 4 permisos (Task tools no existen en Fable desde 2.1.268). `team-templates/CONTRACTS/REPORTS/REVIEWS` → `_archive-swarm/`. `AGENTS.md` reescrito al estado real.
+### [applied] 2026-09-14 — Ubuntu: `git maintenance` con timers systemd (hourly/daily/weekly); `fsmonitor` no existe en Linux.
+### [applied] 2026-09-14 — Ubuntu/WSL: tope de RAM del kernel de 13G para los Bash/Monitor de Claude (`CLAUDE_CODE_TOOL_MEMORY_LIMIT` + `function claude` en `~/.bashrc` que lo lanza en un scope de systemd delegado). Antes: `tool cgroup: disabled (EACCES)`. Un tsc/build desbocado muere con exit 137 en vez de congelar WSL; el boot de sesión muestra si está activo. Rige desde la próxima terminal.
+### [applied] 2026-09-14 (commit `50c9fd72`) — **TypeScript 7.0.2 GA está publicado** (`latest`): `npx -p typescript@7.0.2 tsc --noEmit` = 22 s, 2 errores (ambos WIP en `AdminOverlaysLayer.tsx:114-115`). Migrar `typescript@5.9` + `@typescript/native-preview` → `typescript@7` como gate único (`tsc` = nativo Go). Riesgo: divergencias tipo TS2869/TS2783 medidas el 09-09; hacerlo en commit propio con `build-gate` verde.
+### [applied] 2026-09-14 (commits `13ece52b`, `2419f560`) — Deps: `next` y `eslint-config-next` 16.2.10; `@playwright/mcp` 0.0.76 + Chromium 1226 descargado. **Prisma ya estaba en 7.8.0** (el rango `^7.4.2` de package.json engañaba: mirar `node_modules/<pkg>/package.json`, no el rango). `vitest` 5 (major) queda afuera: pendiente propio.
+### [applied] 2026-09-14 — Barra de estado de Claude Code: `~/.claude/statusline.mjs` + `statusLine` en `~/.claude/settings.json` (refresh 15 s). Modelo · esfuerzo · contexto · caché · límites / RAM libre · uso del tope de 13G de los Bash (y ⚠ si el kernel ya cortó algo) · dev :3000 · rama ±sucios. 54 ms, sin red.
+### [applied] 2026-09-14 — WIP de RRHH de la sesión anterior commiteado en 4 partes: `10aa335f` (scripts QA sólo en tenants `-qa`), `e74dfa42` (Tareas en la barra), `832c40fa` (traer desde Adelantos, ADR-414 §6b), `e47a91ba` (almacenero sin 403, `lib/auth/roles-rutas-panel.ts`; `--no-verify` por 2 avisos de eslint previos en HEAD, gates a mano). Subido.
+### [blocked] 2026-09-14 — `vitest` 4 → 5: `@vitest/browser-playwright`/`@vitest/browser` sólo en `5.0.0-beta.6` (latest 4.1.10) y `vitest-browser-react` pide `vitest ^4` → el proyecto `vrt` no puede subir. Destraba cuando `npm view @vitest/browser-playwright dist-tags.latest` empiece con 5 y `vitest-browser-react` acepte `^5`. Otros cambios que rompen: mocks limpios antes de cada test (**medido: 0 de 9.948 tests fallan** con `clearMocks: true` sobre Vitest 4, sonda que confirma que la config aplica), `sequential` fuera (3 archivos lo mencionan), `$` en títulos de `test.each/for` sin comillas (25 usos), Node ≥22.12 y Vite ≥6.4 (ya cumplidos).
+### [pending] 2026-09-14 — Brandon: correr `/skill-doctor` (skills sin uso y su costo de contexto) y `/doctor` (pendiente desde 08-03). Ambos son comandos de la CLI, no invocables por el modelo.
+
+## Aplicadas en sesión 2026-09-11 (reconfiguración: perfil de Brandon + propuestas con lentes)
+
+### [applied] 2026-09-11 — Perfil del usuario (no existía: 291 memorias, 0 de tipo `user`)
+- `perfil-brandon-como-trabaja.md` (cómo escribe, cómo pide, qué elige, cómo reporta bugs) + `propuestas-con-lentes.md` (8 lentes + formato de opción). Referenciadas desde CLAUDE.md (cabecera), `agentic-style.md`, los 8 agent defs y el skill nuevo `ronda-de-mejoras`.
+### [applied] 2026-09-11 — `isolation: worktree` quitado de 4 agent defs (contradecía la lección del 08-03).
+### [applied] 2026-09-11 — `scripts/barrido-modales-anidados.mjs` (detector transitivo; encontró 4 modales detrás) + regla en `ui-components.md`.
+### [applied] 2026-09-11 — IA del producto a la familia Claude 5 con precios verificados en platform.claude.com (Opus 5 $5/$25 · Sonnet 5 $2/$10 · Haiku 4.5 $1/$5 · Fable 5.1 $10/$50).
+### [applied] 2026-09-11 — `agent-memory/` de agentes archivados (data-qa, integrator, observer, optimizer) → `_agents-archive/`.
+### [applied] 2026-09-12 — Tablero «Radar Buleje» como Artifact privado: https://claude.ai/code/artifact/f4e397ae-cc1a-4aa6-9f65-f3aec4193acf (republicar el mismo archivo del scratchpad o pasar la URL como `url` desde otra sesión).
+### [applied] 2026-09-12 — La tira de días en Consumos y Despacho (`seccion`, `maximo`); «hoy» de Lima en 3 pantallas más; consola sin «Failed to fetch» al navegar (`lib/navegacion.ts`). Commit `85e79bf4`.
+### [applied] 2026-09-12 — Cámaras: aviso por WhatsApp por lectura (noche/siempre, 1 cada 10 min), «Subir a mano», guía Hikvision en pantalla. Commit `21b7c002`.
+### [refuted] 2026-09-12 — «Cerrar un mes en una pantalla» como capstone: YA EXISTÍA entero (`CtpCierreAsistido` + `CtpResumenesSerfor` + `CtpCierrePanel`). Se enlazó desde el resumen por especie y la tira. Lente 2 (construido sin estrenar) antes de proponer.
+
+## Aplicadas en sesión 2026-08-19 (auditoría de poder agéntico)
+
+### [applied] 2026-08-19 — Bug real: auto-learn.mjs y post-edit-dispatcher.mjs truncaban stdin
+- `readStdinSync()` leía con un solo `readFileSync(stdin.fd)` dentro de un retry-EAGAIN que devolvía en el PRIMER read exitoso — en un pipe no-bloqueante eso puede ser un chunk parcial. 1080 líneas de `SyntaxError` acumuladas en `auto-learn.errors.log`, siempre con fragmentos de la MITAD de un archivo grande. El dispatcher además fallaba en silencio (sin log) — posible skip silencioso de hex-guard/typography/screenshot/rubric en ediciones grandes.
+- Fix: mismo patrón `data`+`end` que ya usaban los 3 hooks hermanos (hex-code-guard/typography-lint/ui-screenshot). Verificado con payload de 448KB por el camino real. Commit `d7153640`.
+- **Explica** por qué "Skills sugeridos por compound-learning" no generó nada nuevo pese a las 500+ archivos de forestal/adelantos/admin de las últimas semanas — vale la pena revisar en una próxima sesión qué patrones detecta ahora que el pipeline no está roto.
+
+### [applied] 2026-08-19 — Poda skill `review` (redundante con `/code-review` built-in). Commit `c9267a0d`.
+### [applied] 2026-08-19 — Skill `commit` afilado con sección de reorganización masiva (>50 archivos) — lecciones de la sesión de 555 archivos → 13 commits. Commit `b840769d`.
+### [applied] 2026-08-19 — `agentic-style.md`: nota sobre scope de forks (heredan la meta grande del padre, pueden commitear en paralelo si no se les prohíbe explícito). Commit `b840769d`.
+
+### [pending] `/doctor` quincenal — sigue sin correr (pendiente desde 2026-08-03+). Es un comando de la CLI, Brandon tiene que dispararlo él (no invocable vía Skill tool).
+
+## Aplicadas en sesión 2026-07-06 (tune PC + harness)
+
+### [applied] 2026-07-06 — Edge AutoLaunch bloqueado PERMANENTE
+- Se había re-agregado solo tras quitarlo el 07-04 (Edge lo re-crea al actualizar).
+- Fix durable: Run key removido + policy HKCU `StartupBoostEnabled=0` + `BackgroundModeEnabled=0` → Edge ya no puede re-registrarse.
+
+### [applied] 2026-07-06 — Scheduled tasks bloat Windows disabled (sin admin)
+- ASUS Update Checker + AsusSystemAnalysis (telemetría), OneDrive Reporting ×3 (todos los SIDs), GoogleUserPEH ×3 (Platform Experience Helper).
+- `ASUS Optimization` se DEJÓ (puede manejar Fn keys). Updaters de Edge/Google se dejaron (seguridad).
+
+### [applied] 2026-07-06 — WSL slim: servicios inútiles disabled
+- tailscaled (túnel en "stopped", solo quemaba 72MB + red) · cloud-init ×4 (+ `/etc/cloud/cloud-init.disabled`) · landscape-client · apport · motd-news.timer.
+- Revertir: `sudo systemctl enable --now <svc>`.
+
+### [applied] 2026-07-06 — Telemetría de agentes reparada
+- `subagent-cost-log.mjs`: payloads con `agent_type:""` generaban líneas basura (95 en jsonl + bucket `""` en agregados). Fix: fallback que trata `""` como ausente + descarte de payloads fantasma con muestra en errors.log. Datos históricos purgados.
+
+### [applied] 2026-07-06 — RAG re-indexado (estaba stale desde ~mayo)
+- `node ~/.local/qdrant/rag/index.mjs` re-corrido. Nota: client 1.13 vs server 1.18 warnea versión pero funciona.
+
+### [applied] 2026-07-06 — Ronda profunda (segunda pasada "sigue profundizando")
+- **Windows ronda 2 elevada**: DiagTrack + Xbox ×4 + MapsBroker + RetailDemo + SysMain disabled+stopped · Widgets policy OFF · **SearchHost/Bing web content OFF** (msedgewebview2 362MB→0). Scripts+revert en `C:\Users\Usuario\.claude-tune\`. Windows libre: 8.2→11.4 GB.
+- **WSL**: snapd disabled (era lo más lento del boot, 2.9s) · journal cap 100M (-334MB) · playwright browsers viejos purgados (-630MB) · apt autoremove.
+- **qdrant a systemd**: `qdrant.service` enabled (sobrevive reinicios de WSL, ya no depende del nohup del boot hook) + `qdrant-reindex.timer` semanal (dom 05:00).
+- **MCPs a binarios directos** (mata ~190MB de wrapper npm c/u ≈ 700MB/sesión): lsmcp ya parcheado en `.mcp.json`; firecrawl/context7/playwright requieren tocar `~/.claude.json` → **PENDIENTE post-cierre**: correr `python3 ~/.claude/autonomy-setup/mcp-direct-bin-patch.py` SIN sesiones abiertas. El patch también arregla el `--executable-path` de playwright que apuntaba a chromium-1208 INEXISTENTE (browser habría fallado al lanzar).
+
+### [applied] 2026-07-06 — Ronda 3: DISCO (hallazgo mayor)
+- **32.4 GB de swap.vhdx huérfanos de WSL borrados de `%TEMP%`** (C: 45→83 GB libres). Causa raíz: swap sin ruta fija → `.wslconfig swapFile=D:\WSL\swap.vhdx`. Prevención: Storage Sense ON.
+- VHDX 69.7GB físicos vs 37GB internos → RunOnce `WSLSetSparse` al próximo logon (verificar: debería bajar a ~40GB). fstrim corrido + timer armado.
+- Defender: exclusión D:\WSL + vmmemWSL (menos IO en cada write de la VM) · DODownloadMode=0. Reverts en `.claude-tune\revert-ronda3-*.ps1`.
+- Inventario stale detectado: Tor/BlueStacks/PandoraFMS/LastPass/Docker Desktop YA NO están instalados.
+
+### [applied] 2026-07-13 — Verificación post-reboot + fixes derivados
+- swap ✅ 8G activo · qdrant.service ✅ active · **fstrim.timer estaba MUERTO en WSL2** (`ConditionVirtualization=!container`) → override en `/etc/systemd/system/fstrim.{timer,service}.d/wsl.conf`, ahora active, próxima corrida dom 05:04.
+- vhdx sigue en **70GB** (sparse nunca se aplicó; RunOnce original desapareció sin log) → **RunOnce `WSLSetSparse` re-armado** (`wsl.exe --manage Ubuntu --set-sparse true` al próximo logon de Windows). Verificar tamaño en ~1 semana (sparse+fstrim reclaman gradual).
+- **MCP patch ahora auto-ejecutable**: `mcp-patch-oneshot.timer` (systemd user, cada 10min) corre `mcp-direct-bin-patch.py` apenas no haya sesiones claude y se auto-desactiva. Ya no depende de que Brandon lo corra a mano.
+- Playwright: chromium-1208 fantasma (0 bytes) purgado; el real es 1223. Hook `session-start-autonomy.mjs` ahora resuelve el chromium dinámicamente (no más "not_installed" falso).
+
+### [applied] 2026-08-03 — qdrant client ya está en ^1.18.0 (verificado en ~/.local/qdrant/rag/package.json; se aplicó en la ronda Ubuntu del 07-13 y la entrada quedó duplicada).
+
+### [pending→nota] Telegram bot: evaluar si el tool nativo `PushNotification` del harness ya cubre el push al móvil antes de armar bot.
+
 ## Aplicadas en sesión 2026-04-28
 
 ### [applied] 2026-04-28 — OOM cap tsc bajado a 4096 MB
@@ -134,6 +235,37 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ## Tecnologías nuevas a evaluar
 
+### [applied] 2026-07-13 — Modernización agéntica (deep-research verificado)
+- Investigación con workflow deep-research (24 fuentes, 120 claims) + agente claude-code-guide; 11/12 claims clave re-verificados contra changelog oficial.
+- Aplicado: `.claude/rules/agentic-style.md` bullet F (subagentes background default + anidados ×5, additionalContext en Stop hooks, Tool(param:valor), .claude anidados, /doctor, LSP nativo NO existe → lsmcp sigue) + CLAUDE.md regla 15 actualizada a v2.1.205 + memoria `claude-code-novedades-2026-07.md`.
+- Ubuntu: fstrim override WSL2 + RunOnce sparse re-armado + mcp-patch-oneshot.timer + qdrant client 1.13→1.18 (RAG verificado OK) + ast-grep 0.44 + symlink `fd`.
+
+### [applied] 2026-07-13 — Ronda 2 "sigue mejorando" (calidad de código + fricción)
+- **Bugs reales fijados vía lint:fast**: `state-machine.ts` del concierge WhatsApp tragaba errores de handlers SIN log (ahora `logger.error` con state+intent) · `gift-cards.db.ts` condición duplicada `"cancelled"||"cancelled"` · `predictions/route.ts` filtro redundante · `FinancialResults.tsx` `{sign && sign}` · 2× `delay: 0*0.1`.
+- **InicioDashboard.tsx −175 LOC**: 5 cadenas de cálculo muertas que corrían EN CADA RENDER (topCustomers/stockByCategory/sinMov/criticalStock/topProfit) + KPICard/DeltaBadge/COLOR_MAP muertos + imports. 689→514 líneas. Gates: tsgo exit 0 + eslint 0 errores.
+- **VRT ampliado a 4 tests** (+ StoreAvatar iniciales + PaymentMethodChip), 4/4 verdes determinísticos.
+- **Knip auditado**: de 21 deps "muertas" solo 1 real (`@storybook/test` v8 stale, removido −24 packages). `critters` la exige `optimizeCss` (falso positivo) y el resto SÍ se importa → knip necesita config (entry points next/scripts/storybook) antes de confiar. Fix bonus: `preview.ts` importaba tipo de `@storybook/nextjs` NO instalado (resolvía por hoisting) → `@storybook/react`.
+- **Permisos**: +5 patrones (`npx tsc/eslint/oxlint/knip`, `tsgo`) a `permissions.allow` (155→160; backup `.claude/settings.json.bak-perms`). Bash/git/playwright ya estaban cubiertos.
+- Nota: BodegueroSpotlight conserva 4 `no-unreachable` INTENCIONALES (UI guardada post-CMS, documentado en el archivo).
+
+### [pending] Correr `/doctor` quincenal (2.1.203+: checkup con auto-fix + propone podar CLAUDE.md). Primera corrida: próxima sesión.
+### [applied] 2026-08-03 — knip confiable: `knip.jsonc` con TODOS los falsos positivos documentados con su porqué (storybook webpack loaders, scripts/, critters-por-require-runtime, posthog/embla huérfanos). `npx knip --dependencies` = 0 hallazgos. Borradas 5 deps muertas reales (gsap, vaul, hover-card, select, @types/bcryptjs); `critters` se intentó borrar y se RESTAURÓ (next lo requiere en runtime con optimizeCss — el radar del 07-13 ya lo sabía y el grep de imports no lo ve).
+
+### [applied] 2026-08-03 — RUM de PostHog VIVO por primera vez: el provider huérfano de mayo (nunca montado en toda la historia del repo — `git log -S "<PostHogProvider"` vacío) se reemplazó por `instrumentation-client.ts` (patrón oficial Next 15.3+, pageviews por history_change). Key en .env.local, dominios en la CSP de middleware-utils. Verificado end-to-end: evento en el backend de PostHog vía SQL. Gotcha mayor documentado en memoria: posthog-js descarta eventos de webdriver/headless (`_is_bot()`), la verificación con Playwright exige `opt_out_useragent_filter` (activo solo en dev).
+
+### [applied] 2026-08-19 — `lib/security/csp.ts` borrado (0 importers confirmados por grep). Commit `0a97a3a8`.
+### [applied] 2026-08-03 — `no-unused-vars` en CERO absoluto: 518 → 0. Fan-out de 3 subagentes sonnet por scope + remanente a mano; el de admin ejercitó generator≠evaluator anidado (su verifier atrapó 1 hunk ajeno). Bonus: ~1.000 líneas de código muerto real (StoreCard/TopStoresSection/CategoryTreemapView/InventoryAnalyticsDashboard nunca cableados). Lección operativa: los agent-defs con isolation worktree por default hacen que el fan-out anidado branchee de una base de HACE MESES en ramas largas — el barredor lo detectó, descartó 3 worktrees y rehizo directo en el checkout (valida code-quality §5.2).
+
+### [applied] 2026-08-19 — `lib/slo/__tests__/budget-calculator.test.ts` movido a `__tests__/slo-budget-calculator.test.ts` (import cambiado a `@/lib/slo/budget-calculator`). Corrido por primera vez desde que existe: 9/9 verde. Commit `0a97a3a8`.
+### [applied] 2026-07-13 — **oxlint** adoptado como pre-check (`npm run lint:fast`)
+- Medido en este repo: oxlint **7.6s / 204MB / 506 hallazgos** vs ESLint **98.9s / 1.84GB / 1746 warnings** → 13× más rápido, 9× menos RAM. Instalado como devDep (v1.73).
+- Encontró código muerto que el gate no reporta (ej. 6 vars/función sin usar en `InicioDashboard.tsx`). ESLint sigue siendo el gate autoritativo (reglas custom design-tokens + jsx-a11y).
+### [applied] 2026-07-13 — **Vitest 4 `toMatchScreenshot`** piloto funcionando (`npm run test:vrt`)
+- Deps: `@vitest/browser-playwright` + `vitest-browser-react` + `@tailwindcss/vite`. `vitest.config.ts` ahora usa projects `unit`/`vrt` (unit = suite de siempre, sin cambios; `npm run test` apunta a unit explícito).
+- Piloto: 2 single-sources (PaymentMethodIcon custom + ProductPhotoFallback) — baselines ESTILADOS (tokens+Tailwind renderizan vía @tailwindcss/vite) en `__tests__/vrt/__screenshots__/`, 2ª corrida verde en 2.7s, determinístico local.
+- Gotchas: 1ª corrida SIEMPRE falla (crea baselines para revisar); yape/plin flaky por onError de logo → usar métodos con arte custom o esperar el load; baselines local ≠ CI (correr solo local o en Docker).
+### [pending] **TypeScript 7 GA** (native Go): RC salió jun-2026, GA ~jul-2026. Cuando salga: migrar de tsgo preview a `typescript@7` estable como typechecker principal (mismo motor, sin las divergencias de preview tipo TS2869).
+
 - **Next.js 16 PPR** ✅ ya activo (`cacheComponents: true`)
 - **React Compiler** ✅ activo en annotation mode (opt-in) — ojo: `react-hooks/refs` ahora flaggea reads de `ref.current` en `useMemo` (1 caso ya disabled en `SidebarConfigurator.tsx`).
 - **Bun runtime**: 3-4x más rápido que Node. Riesgo: incompat con algunos MCPs.
@@ -224,4 +356,33 @@ Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
 - **Files:** `components/superadmin/banners/BannerImageAdjuster.tsx`, `components/superadmin/banners/BannerPreviewStudio.tsx`
 - **Sugerencia:** Files [components/superadmin/banners/BannerImageAdjuster.tsx, components/superadmin/banners/BannerPreviewStudio.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
 - **Last seen:** 2026-04-27T01:43:48.118Z
+
+
+### [pending] Sweep fire-and-forget → after() en app/api/** (2026-07-17)
+El patrón `.catch(() => {})` de la casa MUERE en Vercel serverless (lambda congelada al responder). Ya mordió: webhook WhatsApp perdía TODOS los mensajes entrantes en prod (fix b58a2f34). Grep `\.catch\(` en routes con side-effects post-respuesta (notificaciones, logs de actividad, envíos) y envolver en `after()` de next/server los críticos.
+
+---
+
+## Skills sugeridos por compound-learning (auto, 2026-09-13)
+
+Detectados 14 patrones con ≥5 co-edits sin skill creado.
+Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
+
+### [pending] pat-coedit-1789273483843-29r4
+- **Tipo:** `co_edit_cluster` (5 occurrences)
+- **Files:** `components/admin/CashAuditTab.tsx`, `components/admin/ContratosModule.tsx`, `components/admin/FiadosModule.tsx`, `components/admin/ReceivingTab.tsx`, `components/admin/adelantos/lista/TablaAdelantos.tsx`, `components/admin/dashboard/ExpiredBatchesWidget.tsx`, `components/admin/documentos/BulkTagModal.tsx`, `components/admin/documentos/ConfirmarBorrarCarpetas.tsx`, `components/admin/forestal/CubicacionesGuardadas.tsx`, `components/admin/forestal/PlantacionVerticesTabla.tsx`, `components/admin/layout/AdminSidebar.tsx`, `components/admin/pos/OCPrintPreviewModal.tsx`, `components/admin/pos/POSCrossSell.tsx`, `components/admin/pos/POSCustomerSearch.tsx`, `components/admin/pos/POSExpressMode.tsx`, `components/admin/recetas/RecetarioAdminTab.tsx`, `components/admin/shared/AdminCommandPalette.tsx`, `components/admin/shared/AdminDateFilter.tsx`
+- **Sugerencia:** Files [components/admin/CashAuditTab.tsx, components/admin/ContratosModule.tsx, components/admin/FiadosModule.tsx, components/admin/ReceivingTab.tsx, components/admin/adelantos/lista/TablaAdelantos.tsx, components/admin/dashboard/ExpiredBatchesWidget.tsx, components/admin/documentos/BulkTagModal.tsx, components/admin/documentos/ConfirmarBorrarCarpetas.tsx, components/admin/forestal/CubicacionesGuardadas.tsx, components/admin/forestal/PlantacionVerticesTabla.tsx, components/admin/layout/AdminSidebar.tsx, components/admin/pos/OCPrintPreviewModal.tsx, components/admin/pos/POSCrossSell.tsx, components/admin/pos/POSCustomerSearch.tsx, components/admin/pos/POSExpressMode.tsx, components/admin/recetas/RecetarioAdminTab.tsx, components/admin/shared/AdminCommandPalette.tsx, components/admin/shared/AdminDateFilter.tsx] are always edited together. Consider creating a skill that pre-loads all 18 files.
+- **Last seen:** 2026-09-13T04:24:36.458Z
+
+### [pending] pat-coedit-1789273483843-j0nd
+- **Tipo:** `co_edit_cluster` (5 occurrences)
+- **Files:** `components/admin/AdminModals.tsx`, `components/admin/CashAuditTab.tsx`, `components/admin/ContratosModule.tsx`, `components/admin/adelantos/lista/AnularAdelantoModal.tsx`, `components/admin/adelantos/lista/TablaAdelantos.tsx`, `components/admin/clientes/ClienteFormModal.tsx`, `components/admin/dashboard/ExpiredBatchesWidget.tsx`, `components/admin/documentos/BulkTagModal.tsx`, `components/admin/documentos/ConfirmarBorrarCarpetas.tsx`, `components/admin/forestal/PlantacionVerticesTabla.tsx`, `components/admin/layout/AdminSidebar.tsx`, `components/admin/pos/InvoiceScannerModal.tsx`, `components/admin/pos/OCPrintPreviewModal.tsx`, `components/admin/pos/POSCrossSell.tsx`, `components/admin/pos/POSCustomerSearch.tsx`, `components/admin/recetas/RecetarioAdminTab.tsx`, `components/admin/shared/AdminCommandPalette.tsx`
+- **Sugerencia:** Files [components/admin/AdminModals.tsx, components/admin/CashAuditTab.tsx, components/admin/ContratosModule.tsx, components/admin/adelantos/lista/AnularAdelantoModal.tsx, components/admin/adelantos/lista/TablaAdelantos.tsx, components/admin/clientes/ClienteFormModal.tsx, components/admin/dashboard/ExpiredBatchesWidget.tsx, components/admin/documentos/BulkTagModal.tsx, components/admin/documentos/ConfirmarBorrarCarpetas.tsx, components/admin/forestal/PlantacionVerticesTabla.tsx, components/admin/layout/AdminSidebar.tsx, components/admin/pos/InvoiceScannerModal.tsx, components/admin/pos/OCPrintPreviewModal.tsx, components/admin/pos/POSCrossSell.tsx, components/admin/pos/POSCustomerSearch.tsx, components/admin/recetas/RecetarioAdminTab.tsx, components/admin/shared/AdminCommandPalette.tsx] are always edited together. Consider creating a skill that pre-loads all 17 files.
+- **Last seen:** 2026-09-13T04:24:21.617Z
+
+### [pending] pat-coedit-1789273483843-51xr
+- **Tipo:** `co_edit_cluster` (5 occurrences)
+- **Files:** `components/admin/AdminModals.tsx`, `components/admin/BudgetVsRealTab.tsx`, `components/admin/CouponsTab.tsx`, `components/admin/StoreCustomizer.tsx`, `components/admin/SupplierComparator.tsx`, `components/admin/TurnosModule.tsx`, `components/admin/documentos/ComentariosDoc.tsx`, `components/admin/documentos/MoveToFolderModal.tsx`, `components/admin/documentos/TemplateGenerator.tsx`, `components/admin/forestal/CtpTrozasDeIngreso.tsx`, `components/admin/forestal/DistribucionesGuardadas.tsx`, `components/admin/forestal/PlantacionPasoBloques.tsx`, `components/admin/forestal/TramiteRelacionGuias.tsx`, `components/admin/marketplace/tabs/ProductosTab.tsx`, `components/admin/store-page/CatalogoTiendaTab.tsx`
+- **Sugerencia:** Files [components/admin/AdminModals.tsx, components/admin/BudgetVsRealTab.tsx, components/admin/CouponsTab.tsx, components/admin/StoreCustomizer.tsx, components/admin/SupplierComparator.tsx, components/admin/TurnosModule.tsx, components/admin/documentos/ComentariosDoc.tsx, components/admin/documentos/MoveToFolderModal.tsx, components/admin/documentos/TemplateGenerator.tsx, components/admin/forestal/CtpTrozasDeIngreso.tsx, components/admin/forestal/DistribucionesGuardadas.tsx, components/admin/forestal/PlantacionPasoBloques.tsx, components/admin/forestal/TramiteRelacionGuias.tsx, components/admin/marketplace/tabs/ProductosTab.tsx, components/admin/store-page/CatalogoTiendaTab.tsx] are always edited together. Consider creating a skill that pre-loads all 15 files.
+- **Last seen:** 2026-09-13T04:22:30.507Z
 

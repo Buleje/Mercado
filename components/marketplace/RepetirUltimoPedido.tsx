@@ -162,7 +162,7 @@ export default function RepetirUltimoPedido({
             </span>
           ))}
           {extraThumbs > 0 && (
-            <span className="relative inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-muted)] text-[10px] font-black text-[var(--accent)] ring-2 ring-[var(--surface-canvas)]">
+            <span className="relative inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-[10px] font-black text-[var(--accent)] ring-2 ring-[var(--surface-canvas)]">
               +{extraThumbs}
             </span>
           )}
@@ -249,7 +249,7 @@ export default function RepetirUltimoPedido({
           del contenido: prominente al entrar, se va al scrollear, sin overlap ni
           robo de z-index. */}
       <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-        <div className="relative flex items-center gap-2 rounded-2xl border border-[var(--accent)]/20 bg-[var(--accent-soft)]/50 p-3 sm:p-3.5 shadow-[var(--shadow-sm)]">
+        <div className="relative flex items-center gap-2 rounded-2xl border border-[var(--accent)]/20 bg-primary/10 p-3 sm:p-3.5 shadow-[var(--shadow-sm)]">
           {hasUsableItems ? (
             <button
               type="button"
@@ -435,7 +435,7 @@ function RepetirPedidoModal({
                       className={cn(
                         "flex items-center gap-2.5 sm:gap-3 rounded-2xl border p-2 sm:p-2.5 transition-all",
                         selected
-                          ? "border-[var(--accent)]/45 bg-[var(--accent-soft)]/40"
+                          ? "border-[var(--accent)]/45 bg-primary/10"
                           : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] opacity-55",
                       )}
                     >

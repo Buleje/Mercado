@@ -300,7 +300,7 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
           <button
             type="button"
             onClick={() => setShowAllMobile((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] active:scale-95 transition-all"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] active:scale-95 transition-all"
             aria-expanded={showAllMobile}
           >
             {showAllMobile ? (
@@ -323,7 +323,7 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
           <button
             type="button"
             onClick={handleReset}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors px-3 py-1.5 rounded-md hover:bg-[var(--surface-sunken)] border border-transparent hover:border-[var(--rule-soft)]"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors px-3 py-1.5 rounded-lg hover:bg-[var(--surface-sunken)] border border-transparent hover:border-[var(--rule-soft)]"
           >
             <RotateCcw className="h-3 w-3" />
             Restaurar orden

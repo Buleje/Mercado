@@ -363,6 +363,10 @@ export default function ChatNavLauncher({
         type="button"
         onClick={handleToggle}
         aria-label={`Chats con tiendas${unreadTotal > 0 ? ` — ${unreadTotal} sin leer` : ""}`}
+        // Brandon 2026-07-05 (audit navegación): tooltip VISIBLE al hover — el
+        // ícono de burbuja no tenía título y se confundía con WhatsApp/soporte.
+        // Sin sesión avisa que pedirá iniciar sesión (el click abre login).
+        title={customer ? "Chats con tiendas" : "Iniciá sesión para chatear con las tiendas"}
         aria-expanded={open}
         className={cn(
           "relative inline-flex shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
@@ -607,7 +611,7 @@ export default function ChatNavLauncher({
                       })()
                     ) : (
                       <div className="px-5 py-8 text-center">
-                        <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                        <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           <ChatGlyph className="h-8 w-8" />
                         </span>
                         <p className="text-sm font-extrabold text-[var(--text-primary)]">

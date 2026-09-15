@@ -28,7 +28,6 @@ export interface FiadoReminderProps {
 }
 
 const PRIMARY = "#00A0A0";
-const SECONDARY = "#f97316";
 const TEXT = "#111827";
 const MUTED = "#6b7280";
 const BG_LIGHT = "#f9fafb";

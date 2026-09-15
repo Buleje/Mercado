@@ -24,9 +24,11 @@ export type KPITone = "teal" | "sky" | "amber" | "purple" | "rose";
 const ICON_BG: Record<KPITone, string> = {
   teal: "bg-[var(--accent)]/10 text-[var(--accent)]",
   sky: "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300",
-  amber: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-  purple: "bg-violet-100 text-[var(--accent)] dark:bg-violet-950/40 dark:text-[var(--accent)]",
-  rose: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+  // Brandon 2026-06-16: "no me gustan los naranjas" — el tone "amber" (legacy,
+  // usado por "Tiendas activas") ahora renderiza VERDE esmeralda, sin naranja.
+  amber: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
+  purple: "bg-primary/10 text-[var(--accent)] bg-primary/10 dark:text-[var(--accent)]",
+  rose: "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
 };
 
 interface Props {
@@ -105,7 +107,7 @@ export function KPIHeroCard({
     trend === "up"
       ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
       : trend === "down"
-        ? "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
+        ? "border-[var(--data-error-500)] bg-rose-50/60 text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]"
         : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)]";
 
   return (
@@ -121,12 +123,12 @@ export function KPIHeroCard({
       </div>
 
       {/* Value */}
-      <p className="mt-3 font-display text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)] leading-none">
+      <div className="mt-3 font-display text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)] leading-none">
         {value}
-      </p>
+      </div>
 
       {subValue !== undefined && (
-        <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{subValue}</p>
+        <div className="mt-1.5 text-xs text-[var(--text-tertiary)]">{subValue}</div>
       )}
 
       {/* Delta pill canónico (semántico, no decorativo) */}

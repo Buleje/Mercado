@@ -149,8 +149,7 @@ export default function MarketplaceContent({
 
   const search = searchParams.get("buscar") ?? "";
   // Visibilidad de secciones del home — controlada desde superadmin/stores → Navegación
-  const sectionVisibility = useNavVisibility("marketplace-sections");
-  const isVisible = (id: string) => sectionVisibility[id] !== false;
+  useNavVisibility("marketplace-sections");
 
   // ── Import shared cart from ?cart= param ──
   useEffect(() => {
@@ -377,7 +376,7 @@ function MarketplaceCenterFeed({
           {/* Barra de filtros aplicados — debajo de la zona de fidelidad */}
           <div className="flex flex-wrap items-center gap-2 bg-[var(--surface-raised)] px-4 py-3">
             <span className="text-sm font-bold text-[var(--text-primary)]">Filtrando por</span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] py-1 pl-3 pr-1.5 text-sm font-bold text-[var(--accent)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1 pl-3 pr-1.5 text-sm font-bold text-[var(--accent)]">
               {prettyCategoryLabel(activeCategory)}
               <button
                 type="button"

@@ -299,7 +299,7 @@ export default function SuppliersQueueClient() {
                 type="button"
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  "px-4 py-2.5 rounded-lg text-sm font-semibold transition min-h-[44px]",
+                  "px-4 py-2.5 rounded-xl text-sm font-semibold transition min-h-[44px]",
                   active
                     ? "bg-[var(--surface-raised)] text-emerald-700 dark:text-emerald-300 shadow-sm"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
@@ -311,7 +311,7 @@ export default function SuppliersQueueClient() {
                     "ml-1 inline-flex items-center justify-center min-w-[1.4rem] h-5 px-1.5 rounded-full text-xs font-bold",
                     active
                       ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                      : "bg-gray-200 dark:bg-gray-700 text-[var(--text-secondary)]",
+                      : "bg-[var(--rule-base)] text-[var(--text-secondary)]",
                   )}
                 >
                   {badgeFor(t.id)}
@@ -330,7 +330,7 @@ export default function SuppliersQueueClient() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar  ( / )"
-              className="h-12 w-full sm:w-64 pl-9 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              className="h-12 w-full sm:w-64 pl-9 pr-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
             />
           </div>
           <button
@@ -338,7 +338,7 @@ export default function SuppliersQueueClient() {
             onClick={() => void load()}
             disabled={refreshing}
             title="Recargar (R)"
-            className="inline-flex items-center justify-center h-12 w-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50"
+            className="inline-flex items-center justify-center h-12 w-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50"
           >
             <RefreshCw className={cn("h-5 w-5", refreshing && "animate-spin")} />
           </button>
@@ -347,7 +347,7 @@ export default function SuppliersQueueClient() {
             onClick={exportCsv}
             disabled={filtered.length === 0}
             title="Exportar CSV"
-            className="inline-flex items-center gap-2 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50"
+            className="inline-flex items-center gap-2 h-12 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">CSV</span>
@@ -359,15 +359,15 @@ export default function SuppliersQueueClient() {
       {loading ? (
         <SkeletonRows />
       ) : error ? (
-        <div className="rounded-2xl border-2 border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 p-10 text-center">
-          <AlertTriangle className="h-8 w-8 mx-auto text-rose-600 dark:text-rose-400 mb-2" />
-          <p className="text-base font-bold text-rose-700 dark:text-rose-300">
+        <div className="rounded-2xl border-2 border-[var(--data-error-500)] dark:border-rose-800 bg-[var(--data-error-50)] dark:bg-rose-950/30 p-10 text-center">
+          <AlertTriangle className="h-8 w-8 mx-auto text-[var(--data-error-700)] dark:text-[var(--data-error-500)] mb-2" />
+          <p className="text-base font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
             {error}
           </p>
           <button
             type="button"
             onClick={() => void load()}
-            className="mt-3 inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700"
+            className="mt-3 inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700"
           >
             <RefreshCw className="h-4 w-4" /> Reintentar
           </button>
@@ -377,7 +377,7 @@ export default function SuppliersQueueClient() {
       ) : (
         <>
           {/* Desktop: tabla */}
-          <div className="hidden sm:block rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+          <div className="hidden sm:block rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full text-base">
                 <thead className="bg-[var(--surface-sunken)]/50 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wide">
@@ -402,7 +402,7 @@ export default function SuppliersQueueClient() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody className="divide-y divide-[var(--rule-soft)] ">
                   {filtered.map((r) => (
                     <tr key={r.id} className="hover:bg-[var(--surface-sunken)]/30">
                       <td className="px-4 py-3 font-mono text-sm text-[var(--text-secondary)]">
@@ -448,7 +448,7 @@ export default function SuppliersQueueClient() {
                                 })
                               }
                               disabled={busyId === r.id}
-                              className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
                             >
                               <CheckCircle2 className="h-4 w-4" />
                               {busyId === r.id ? "…" : "Aprobar"}
@@ -460,7 +460,7 @@ export default function SuppliersQueueClient() {
                                 setRejectReason("");
                               }}
                               disabled={busyId === r.id}
-                              className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-sm font-bold border-2 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-sm font-semibold border-2 border-[var(--data-error-500)] dark:border-rose-800 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] hover:bg-rose-50 dark:hover:bg-rose-950/30 disabled:opacity-50"
                             >
                               <XCircle className="h-4 w-4" /> Rechazar
                             </button>
@@ -487,7 +487,7 @@ export default function SuppliersQueueClient() {
             {filtered.map((r) => (
               <div
                 key={r.id}
-                className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+                className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -516,7 +516,7 @@ export default function SuppliersQueueClient() {
                   )}
                 </div>
                 {tab === "rejected" && r.rejectionReason && (
-                  <p className="mt-2 text-sm text-rose-700 dark:text-rose-300">
+                  <p className="mt-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                     {r.rejectionReason}
                   </p>
                 )}
@@ -531,7 +531,7 @@ export default function SuppliersQueueClient() {
                         })
                       }
                       disabled={busyId === r.id}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
                     >
                       <CheckCircle2 className="h-4 w-4" /> Aprobar
                     </button>
@@ -542,7 +542,7 @@ export default function SuppliersQueueClient() {
                         setRejectReason("");
                       }}
                       disabled={busyId === r.id}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-xl text-sm font-bold border-2 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 disabled:opacity-50"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-xl text-sm font-semibold border-2 border-[var(--data-error-500)] dark:border-rose-800 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] disabled:opacity-50"
                     >
                       <XCircle className="h-4 w-4" /> Rechazar
                     </button>
@@ -568,14 +568,14 @@ export default function SuppliersQueueClient() {
             <button
               type="button"
               onClick={() => setConfirmApprove(null)}
-              className="h-11 px-4 rounded-xl text-sm font-bold bg-gray-200 dark:bg-gray-800 text-[var(--text-secondary)]"
+              className="h-11 px-4 rounded-xl text-sm font-semibold bg-[var(--rule-base)] text-[var(--text-secondary)]"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={() => doApprove(confirmApprove.id, confirmApprove.name)}
-              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               <CheckCircle2 className="h-4 w-4" /> Aprobar y generar key
             </button>
@@ -591,7 +591,7 @@ export default function SuppliersQueueClient() {
               {approvedKey.name}
             </strong>{" "}
             fue aprobado. Por WhatsApp solo recibe el aviso —{" "}
-            <span className="font-bold text-rose-700 dark:text-rose-300">
+            <span className="font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
               la API key NO se envía por ese canal
             </span>
             . Copiala ahora y entregásela por un canal seguro: no se volverá a
@@ -605,14 +605,14 @@ export default function SuppliersQueueClient() {
             <button
               type="button"
               onClick={() => void copyKey(approvedKey.apiKey)}
-              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               <Copy className="h-4 w-4" /> Copiar API key
             </button>
             <button
               type="button"
               onClick={() => setApprovedKey(null)}
-              className="h-11 px-4 rounded-xl text-sm font-bold bg-gray-200 dark:bg-gray-800 text-[var(--text-secondary)]"
+              className="h-11 px-4 rounded-xl text-sm font-semibold bg-[var(--rule-base)] text-[var(--text-secondary)]"
             >
               Cerrar
             </button>
@@ -639,7 +639,7 @@ export default function SuppliersQueueClient() {
             rows={4}
             maxLength={500}
             placeholder="Ej: No podemos verificar la información del RUC. Por favor contáctanos."
-            className="w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
+            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
           />
           <div className="mt-4 flex justify-end gap-2">
             <button
@@ -649,7 +649,7 @@ export default function SuppliersQueueClient() {
                 setRejectReason("");
               }}
               disabled={!!busyId}
-              className="h-11 px-4 rounded-xl text-sm font-bold bg-gray-200 dark:bg-gray-800 text-[var(--text-secondary)] disabled:opacity-50"
+              className="h-11 px-4 rounded-xl text-sm font-semibold bg-[var(--rule-base)] text-[var(--text-secondary)] disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -657,7 +657,7 @@ export default function SuppliersQueueClient() {
               type="button"
               onClick={confirmReject}
               disabled={!!busyId || rejectReason.trim().length < 5}
-              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50"
+              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50"
             >
               <XCircle className="h-4 w-4" />
               {busyId ? "Rechazando…" : "Confirmar rechazo"}
@@ -697,7 +697,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
 
 function SkeletonRows() {
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
@@ -721,7 +721,7 @@ function EmptyState({
   onClear: () => void;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center">
+    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center">
       <Inbox className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-3" />
       <p className="text-base font-bold text-[var(--text-primary)]">
         {isFiltered ? "Sin coincidencias" : "Sin solicitudes en esta bandeja"}
@@ -735,7 +735,7 @@ function EmptyState({
         <button
           type="button"
           onClick={onClear}
-          className="mt-4 h-11 px-4 rounded-xl text-sm font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          className="mt-4 h-11 px-4 rounded-xl text-sm font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
         >
           Limpiar búsqueda
         </button>
@@ -774,7 +774,7 @@ function Modal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] p-6"
+        className="w-full max-w-md rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 mb-3">

@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { invalidateByPrefix } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -240,7 +241,7 @@ export async function PATCH(
     });
     if (!tenant) return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });
 
-    const parsed = PatchProductSchema.safeParse(await req.json().catch(() => null));
+    const parsed = PatchProductSchema.safeParse(await leerJson(req));
     if (!parsed.success) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }

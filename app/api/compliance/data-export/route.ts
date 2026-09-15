@@ -5,6 +5,7 @@ import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/compliance/data-export
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   if (!body) {
     return NextResponse.json(
       { error: "Cuerpo de solicitud inválido" },

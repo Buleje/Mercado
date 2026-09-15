@@ -20,11 +20,7 @@ import { m, AnimatePresence } from "framer-motion";
 import {
   Trash2,
   Store,
-  ShoppingCart,
   ArrowLeft,
-  Truck,
-  Wallet,
-  Clock,
   Bookmark,
   ChevronRight,
 } from "@buleje/design-system/icons";
@@ -85,7 +81,7 @@ function ItemRow({
         ) : (
           // Brandon 2026-05-18: fallback con INICIAL del producto + gradient accent.
           <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-sunken)] to-[var(--accent-soft)]/60">
-            <span className="text-2xl font-black text-[var(--accent)] uppercase">
+            <span className="text-2xl font-bold text-[var(--accent)] uppercase">
               {item.name.trim().charAt(0)}
             </span>
           </div>
@@ -111,7 +107,7 @@ function ItemRow({
               type="button"
               onClick={onSave}
               aria-label="Guardar para después"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-primary/10 transition-colors"
             >
               <Bookmark className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             </button>
@@ -159,22 +155,6 @@ function ItemRow({
         </div>
       </div>
     </m.div>
-  );
-}
-
-/**
- * TrustPill — pequeño chip de confianza para reducir ansiedad de checkout.
- * Brandon mayo 15 v4: aparece en la barra superior del carrito; comunica
- * delivery rápido, pago seguro, pago al recibir, sin compromiso.
- */
-function TrustPill({ icon: Icon, label }: { icon: typeof Truck; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-1.5 pr-3 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] shadow-sm shrink-0">
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
-        <Icon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-      </span>
-      <span className="whitespace-nowrap">{label}</span>
-    </span>
   );
 }
 
@@ -270,7 +250,9 @@ export default function CarritoPage() {
   }, [loggedCustomer]);
 
   const fastFlow = isCustomerProfileComplete(resolvedCustomer);
-  const continueHref = fastFlow ? "/checkout/confirmar" : "/checkout/datos";
+  // Datos + entrega unificados (Brandon 2026-07-06): el flujo no-rápido entra
+  // directo a /checkout/entrega (captura datos + dirección + pago en una página).
+  const continueHref = fastFlow ? "/checkout/confirmar" : "/checkout/entrega";
   const handleContinueWithoutAuth = useCallback(() => openAuthModal(), [openAuthModal]);
 
   // Pre-siembra de checkout-data en localStorage cuando el perfil está completo.
@@ -392,7 +374,7 @@ export default function CarritoPage() {
         <div className="flex items-center justify-between gap-3">
           {/* Título + conteo INLINE (compacto). Antes: h1 text-4xl + count debajo. */}
           <div className="flex items-baseline gap-2 sm:gap-2.5 min-w-0 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none shrink-0">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.02em] text-[var(--text-primary)] leading-tight shrink-0">
               Tu carrito
             </h1>
             {itemCount > 0 ? (
@@ -462,7 +444,7 @@ export default function CarritoPage() {
             <PaicheMascot size={140} animated />
           </div>
           <div className="max-w-md">
-            <p className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+            <p className="text-xl sm:text-2xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
               Tu carrito está <span className="text-[var(--accent)]">vacío</span>
             </p>
             <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-relaxed">
@@ -486,7 +468,7 @@ export default function CarritoPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3 sm:gap-4 lg:gap-5 items-start pb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-8">
           <section aria-label="Productos en tu carrito" className="space-y-3 sm:space-y-4">
             {/* Progreso hacia envío gratis */}
             <FreeShippingProgress />
@@ -508,7 +490,7 @@ export default function CarritoPage() {
                     href={`/marketplace/${group.storeSlug}`}
                     className="flex items-center gap-2.5 px-4 py-3 border-b border-[var(--rule-soft)] group/store hover:bg-[var(--surface-sunken)]/60 transition-colors"
                   >
-                    <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-[length:var(--ts-xs)] font-bold uppercase shrink-0 ring-1 ring-[var(--rule-soft)]">
+                    <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-xs)] font-bold uppercase shrink-0 ring-1 ring-[var(--rule-soft)]">
                       {storeLogos[group.storeSlug] ? (
                         <Image
                           src={storeLogos[group.storeSlug]!}

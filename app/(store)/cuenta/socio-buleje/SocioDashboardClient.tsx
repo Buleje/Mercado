@@ -6,7 +6,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import {
   SectionTitle,
   BodyText,
@@ -20,23 +19,19 @@ import { ChevronDown } from "@buleje/design-system/icons";
 import { SocioCorona } from "@/components/ui-system/illustrations";
 import { SocioDashboardHero } from "@/components/customer/socio-buleje/SocioDashboardHero";
 import { SocioKPIs } from "@/components/customer/socio-buleje/SocioKPIs";
+import { SocioTierCard } from "@/components/customer/socio-buleje/SocioTierBadge";
+import { SocioReferralCard } from "@/components/customer/socio-buleje/SocioReferralCard";
 import { SocioUsoBeneficios } from "@/components/customer/socio-buleje/SocioUsoBeneficios";
 import { SocioOfertasExclusivas } from "@/components/customer/socio-buleje/SocioOfertasExclusivas";
 import { SocioHistorial } from "@/components/customer/socio-buleje/SocioHistorial";
 import { CancelarMembresiaModal } from "@/components/customer/socio-buleje/CancelarMembresiaModal";
 import { useSocioBuleje } from "@/contexts/socio-buleje-context";
 import { useCustomer } from "@/contexts/customer-context";
-import Breadcrumbs from "@/components/ui-system/Breadcrumbs";
 import RelatedFeatures from "@/components/ui-system/RelatedFeatures";
 import { relatedFor } from "@/lib/navigation/feature-registry";
 
-const MarketplaceNavbar = dynamic(
-  () => import("@/components/marketplace/MarketplaceNavbar"),
-  { ssr: true },
-);
-
 export function SocioDashboardClient() {
-  const { isSocio, isLoading, status } = useSocioBuleje();
+  const { isSocio, isLoading, status, totalSaved } = useSocioBuleje();
   const { customer } = useCustomer();
   const [showDangerZone, setShowDangerZone] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -44,21 +39,16 @@ export function SocioDashboardClient() {
 
   if (isLoading) {
     return (
-      <>
-        <MarketplaceNavbar />
-        <LoadingState variant="fullscreen" message="Cargando tu panel de Socio..." />
-      </>
+      <LoadingState variant="fullscreen" message="Cargando tu panel de Socio..." />
     );
   }
 
   if (!isSocio) {
     return (
-      <>
-        <MarketplaceNavbar />
-        <main
-          id="main-content"
-          className="bg-[var(--surface-canvas)] min-h-[70vh] flex items-center justify-center px-4 py-12"
-        >
+      <main
+        id="main-content"
+        className="bg-[var(--surface-canvas)] flex min-h-[70vh] items-center justify-center px-4 py-12"
+      >
           <div className="flex flex-col items-center text-center max-w-md">
             {/* Ilustración custom — corona con identidad shipibo */}
             <div className="text-[var(--text-secondary)] mb-6" aria-hidden="true">
@@ -77,28 +67,16 @@ export function SocioDashboardClient() {
               </PrimaryButton>
             </div>
           </div>
-        </main>
-      </>
+      </main>
     );
   }
 
   return (
     <>
-      <MarketplaceNavbar />
       <main id="main-content" className="bg-[var(--surface-canvas)] min-h-screen">
-        <div className="border-b border-[var(--rule-muted)] bg-[var(--surface-raised)]">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-3">
-            <Breadcrumbs
-              items={[
-                { label: "Mi cuenta", href: "/cuenta" },
-                { label: "Socio Buleje" },
-              ]}
-            />
-          </div>
-        </div>
         <SocioDashboardHero name={customerName} />
 
-        <div className="mx-auto max-w-5xl px-4 py-8 space-y-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-10">
           {status === "canceled" && (
             <InfoAlert
               title="Membresía en cancelación"
@@ -107,7 +85,14 @@ export function SocioDashboardClient() {
           )}
 
           <SocioKPIs />
-          <SocioUsoBeneficios />
+
+          {/* Tier (gamificación) + uso de beneficios — lado a lado en desktop */}
+          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <SocioTierCard totalSpent={Math.round((totalSaved || 0) * 20)} />
+            <SocioUsoBeneficios />
+          </div>
+
+          <SocioReferralCard />
           <SocioHistorial />
           <SocioOfertasExclusivas />
 

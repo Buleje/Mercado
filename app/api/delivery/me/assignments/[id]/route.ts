@@ -127,7 +127,7 @@ export async function PATCH(
       const allowed = ALLOWED_TRANSITIONS[assignment.status] ?? [];
       if (!allowed.includes(parsed.data.status)) {
         return {
-          error: `No podés pasar de ${assignment.status} a ${parsed.data.status}`,
+          error: `No puedes pasar de ${assignment.status} a ${parsed.data.status}`,
           code: 409,
         };
       }
@@ -147,7 +147,7 @@ export async function PATCH(
         }
         if (!hasProof) {
           return {
-            error: "Tomá la foto de entrega antes de marcar como entregado.",
+            error: "Toma la foto de entrega antes de marcar como entregado.",
             code: 400,
           };
         }

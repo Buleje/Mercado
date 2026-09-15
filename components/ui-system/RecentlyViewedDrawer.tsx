@@ -191,7 +191,7 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
                 <section key={slug} aria-label={`Vistos en ${prettySlug(slug)}`}>
                   {/* Header del grupo — tienda + link */}
                   <div className="sticky top-0 z-10 -mx-1 mb-2 flex items-center gap-2 rounded-xl bg-[var(--surface-canvas)]/95 px-1 py-1.5 backdrop-blur">
-                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                       <StoreIcon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
                     </span>
                     {slug !== "otras" ? (

@@ -89,14 +89,14 @@ export default function POSFiadoPanel({
           setTimeout(() => { setShowCobrar(false); setCobroResult(null); }, 1500);
         }
       } else if (res.status === 409) {
-        setCobroError("Otro cajero está cobrando ahora mismo. Reintentá en un segundo.");
+        setCobroError("Otro cajero está cobrando ahora mismo. Reintenta en un segundo.");
       } else if (res.status === 404) {
         setCobroError(typeof body.error === "string" ? body.error : "No hay fiados activos");
       } else {
         setCobroError(typeof body.error === "string" ? body.error : `Error ${res.status}`);
       }
     } catch (err) {
-      setCobroError(err instanceof Error ? err.message : "Error de red — verificá tu conexión");
+      setCobroError(err instanceof Error ? err.message : "Error de red — verifica tu conexión");
     }
     setCobrando(false);
   };
@@ -107,7 +107,7 @@ export default function POSFiadoPanel({
   // Loading
   if (loading) {
     return (
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+      <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
         <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-tertiary)]" />
         <span className="text-xs text-[var(--text-tertiary)]">Consultando fiados...</span>
       </div>
@@ -117,7 +117,7 @@ export default function POSFiadoPanel({
   // No data or no fiados
   if (!data || data.cantidadFiados === 0) {
     return (
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+      <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
         <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
         <span className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           Sin deudas pendientes
@@ -144,7 +144,7 @@ export default function POSFiadoPanel({
         <div className="flex gap-1.5 shrink-0">
           <button
             onClick={() => setShowCobrar(!showCobrar)}
-            className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] px-2 py-1 rounded-lg transition-colors"
+            className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 hover:bg-primary/10 px-2 py-1 rounded-lg transition-colors"
           >
             <HandCoins className="h-3 w-3 inline mr-0.5" />
             Cobrar
@@ -159,7 +159,7 @@ export default function POSFiadoPanel({
             <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Cobrar fiado
             </p>
-            <button
+            <button aria-label="Cerrar"
               onClick={() => setShowCobrar(false)}
               className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
             >
@@ -181,13 +181,13 @@ export default function POSFiadoPanel({
                 value={cobroMonto}
                 onChange={(e) => { setCobroMonto(e.target.value); setCobroError(null); }}
                 placeholder={Number(data.montoPendiente).toFixed(2)}
-                className="w-full pl-7 pr-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                className="w-full pl-7 pr-2 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
             <button
               onClick={handleCobrar}
               disabled={cobrando || !cobroMonto || Number(cobroMonto) <= 0}
-              className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               {cobrando ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -211,7 +211,7 @@ export default function POSFiadoPanel({
             </div>
           )}
           {cobroResult && cobroResult.remaining <= 0.01 && (
-            <div role="status" className="flex items-center gap-1.5 p-2 rounded-md bg-[var(--accent-soft)] border border-[var(--data-success-500)]/40">
+            <div role="status" className="flex items-center gap-1.5 p-2 rounded-md bg-primary/10 border border-[var(--data-success-500)]/40">
               <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)] shrink-0" />
               <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-success-500)]">
                 Cobrado {fmt(cobroResult.cobrado)} ✓

@@ -9,12 +9,12 @@
  */
 
 import {
-  AreaChart, Area, BarChart, Bar, ComposedChart, Line,
+  Area, BarChart, Bar, ComposedChart,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell,
 } from "recharts";
 import {
   TrendingUp, Package, ShoppingCart, CreditCard, Target,
-  AlertTriangle, Users, Truck, Layers, BarChart3,
+  AlertTriangle, Truck, Layers, BarChart3,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DashboardData } from "./InicioDashboard";
@@ -54,7 +54,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
         isEmpty={data.ventasDiarias.length === 0}
         emptyText="Sin ventas en el periodo"
       >
-        <ResponsiveContainer minWidth={0} width="100%" height="100%">
+        <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
           <ComposedChart data={data.ventasDiarias} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradVentasInicio" x1="0" y1="0" x2="0" y2="1">
@@ -87,7 +87,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
           isEmpty={data.topProductos.length === 0}
           emptyText="Sin ventas"
         >
-          <ResponsiveContainer minWidth={0} width="100%" height="100%">
+          <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
             <BarChart data={data.topProductos.slice(0, 8)} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.grid} />
               <XAxis type="number" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v}`} />
@@ -110,7 +110,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
           isEmpty={data.flujoEfectivo.length === 0}
           emptyText="Sin movimientos"
         >
-          <ResponsiveContainer minWidth={0} width="100%" height="100%">
+          <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
             <BarChart data={data.flujoEfectivo} barGap={-2} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
               <XAxis dataKey="dia" tick={{ fontSize: 9, fill: T.tickFill }} axisLine={false} tickLine={false} />
@@ -192,7 +192,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
                       <div
                         className={cn(
                           "h-full rounded-full",
-                          p.diasRestantes < 7 ? "bg-[var(--data-error-500)]" : p.diasRestantes < 14 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]",
+                          p.diasRestantes < 7 ? "bg-[var(--data-error-500)]" : p.diasRestantes < 14 ? "bg-[var(--data-warning-500)]" : "bg-primary/10",
                         )}
                         style={{ width: `${Math.min((p.stock / Math.max(p.mínimo * 3, 1)) * 100, 100)}%` }}
                       />
@@ -252,7 +252,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
           isEmpty={data.comprasPorProveedor.length === 0}
           emptyText="Sin compras"
         >
-          <ResponsiveContainer minWidth={0} width="100%" height="100%">
+          <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
             <BarChart data={data.comprasPorProveedor.slice(0, 6)} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.grid} />
               <XAxis type="number" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v}`} />

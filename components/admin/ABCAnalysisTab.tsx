@@ -2,14 +2,14 @@
 
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Loader2, BarChart2, Search } from "@buleje/design-system/icons";
+import { BarChart2, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import type { ABCProduct } from "@/app/api/analytics/abc/route";
 
 const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label: string; border: string; variant: BadgeVariant }> = {
-  A: { badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", row: "bg-[var(--accent-soft)]/30 dark:bg-[var(--accent-muted)]", label: "A — Critico", border: "border-l-4 border-l-green-500", variant: "success" },
+  A: { badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", row: "bg-primary/10 dark:bg-primary/15", label: "A — Critico", border: "border-l-4 border-l-green-500", variant: "success" },
   B: { badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",   row: "bg-[var(--data-warning-50)]/20 dark:bg-[var(--data-warning-500)]/10",   label: "B — Importante", border: "border-l-4 border-l-amber-500", variant: "warning" },
   C: { badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",      row: "",                 label: "C — Bajo impacto", border: "border-l-4 border-l-red-500", variant: "error" },
 };
@@ -53,7 +53,7 @@ export default function ABCAnalysisTab() {
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm w-56" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm w-56" />
         </div>
       </div>
 
@@ -82,7 +82,7 @@ export default function ABCAnalysisTab() {
 
       {/* Table */}
       {data.length === 0 ? (
-        <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
+        <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
           <BarChart2 className="h-10 w-10 mx-auto mb-3" />
           <p className="font-semibold">Sin datos de ventas para analizar</p>
           <p className="text-xs mt-1">Registra ventas o pedidos para ver el análisis ABC</p>
@@ -104,7 +104,7 @@ export default function ABCAnalysisTab() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((p) => (
-                  <tr key={p.productId} className={cn("hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors", CLASS_STYLES[p.class].row)}>
+                  <tr key={p.productId} className={cn("hover:bg-[var(--surface-alt)] transition-colors", CLASS_STYLES[p.class].row)}>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-[var(--text-tertiary)] dark:text-muted text-xs">{data.indexOf(p) + 1}</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-[var(--text-secondary)] dark:text-muted text-xs hidden sm:table-cell">{p.category}</td>

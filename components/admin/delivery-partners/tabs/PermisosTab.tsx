@@ -36,9 +36,9 @@ const PERMISSION_LABELS: Record<string, { label: string; short: string; descript
   view_analytics:  { label: "Ver analytics",       short: "Analytics", description: "Acceso a reportes" },
 };
 const USER_TYPE_LABELS: Record<string, { label: string; bg: string; text: string }> = {
-  admin:    { label: "Admin",       bg: "bg-primary/10",                  text: "text-primary" },
+  admin:    { label: "Admin",       bg: "bg-primary/10",                  text: "text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   cajero:   { label: "Cajero",      bg: "bg-[var(--data-warning-100)]",   text: "text-[var(--data-warning-500)]" },
-  delivery: { label: "Delivery",    bg: "bg-[var(--accent-soft)]",        text: "text-[var(--data-success-500)]" },
+  delivery: { label: "Delivery",    bg: "bg-primary/10",        text: "text-[var(--data-success-500)]" },
 };
 
 
@@ -124,10 +124,10 @@ export function PermisosTab() {
         <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span className="font-bold">{error}</span>
-          <button
+          <button aria-label="Quitar"
             type="button"
             onClick={() => setError(null)}
-            className="ml-auto p-1 rounded-lg hover:bg-[var(--data-error-100)] transition-colors"
+            className="ml-auto p-1 rounded-xl hover:bg-[var(--data-error-100)] transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -138,7 +138,7 @@ export function PermisosTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Shield className="h-5 w-5" />
             </span>
             <div>
@@ -147,7 +147,7 @@ export function PermisosTab() {
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
                 {permissions.length === 0
-                  ? "No hay permisos configurados todavía. Asigná accesos granulares por usuario."
+                  ? "No hay permisos configurados todavía. Asigna accesos granulares por usuario."
                   : `${permissions.length} ${permissions.length === 1 ? "usuario" : "usuarios"} con accesos · ${totalGrants} ${totalGrants === 1 ? "permiso otorgado" : "permisos otorgados"}.`}
               </p>
             </div>
@@ -156,7 +156,7 @@ export function PermisosTab() {
             type="button"
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-primary)] text-sm font-bold hover:brightness-95 border border-[var(--rule-base)] transition-colors disabled:opacity-50 shrink-0"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-primary)] text-sm font-semibold hover:brightness-95 border border-[var(--rule-base)] transition-colors disabled:opacity-50 shrink-0"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
             Refrescar
@@ -209,7 +209,7 @@ export function PermisosTab() {
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <Truck className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -260,7 +260,7 @@ export function PermisosTab() {
               type="button"
               onClick={() => setFilterUserType("all")}
               className={cn(
-                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                 filterUserType === "all"
                   ? "bg-primary text-white border-primary"
                   : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
@@ -283,7 +283,7 @@ export function PermisosTab() {
                   type="button"
                   onClick={() => setFilterUserType(ut)}
                   className={cn(
-                    "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                    "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                     filterUserType === ut
                       ? "bg-primary text-white border-primary"
                       : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
@@ -317,7 +317,7 @@ export function PermisosTab() {
           <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
             {permissions.length === 0
               ? "Cuando otorgues accesos a usuarios sobre tu tienda, aparecerán acá con detalle por permiso."
-              : "Cambiá el filtro para ver permisos de otro tipo."}
+              : "Cambia el filtro para ver permisos de otro tipo."}
           </p>
         </div>
       ) : (
@@ -389,9 +389,9 @@ export function PermisosTab() {
                         disabled={isSaving}
                         title={meta.description}
                         className={cn(
-                          "inline-flex items-center justify-between gap-2 px-4 h-11 rounded-xl text-sm font-bold transition-colors border-2",
+                          "inline-flex items-center justify-between gap-2 px-4 h-11 rounded-xl text-sm font-semibold transition-colors border-2",
                           has
-                            ? "bg-[var(--accent-soft)] border-[var(--data-success-500)]/40 text-[var(--data-success-500)]"
+                            ? "bg-primary/10 border-[var(--data-success-500)]/40 text-[var(--data-success-500)]"
                             : "bg-[var(--surface-sunken)] border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:border-primary/30 hover:text-[var(--text-secondary)]",
                           isSaving && "cursor-not-allowed",
                         )}

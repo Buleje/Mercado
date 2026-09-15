@@ -10,7 +10,6 @@ import {
   Minus,
   ShoppingCart,
   Store as StoreIcon,
-  Star,
   Package,
   Check,
 } from "@buleje/design-system/icons";

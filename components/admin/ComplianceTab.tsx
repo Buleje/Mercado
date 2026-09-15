@@ -7,8 +7,8 @@ import { cn, exportToCSV } from "@/lib/utils";
 import type { ComplianceItem } from "@/app/api/compliance/route";
 
 const STATUS_CONFIG = {
-  "vigente":     { label: "Vigente",           icon: CheckCircle,    color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
-  "por-vencer":  { label: "Por vencer",         icon: Calendar,       color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",             border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
+  "vigente":     { label: "Vigente",           icon: CheckCircle,    color: "bg-primary/10 text-[var(--data-success)] dark:bg-primary/15 dark:text-[var(--data-success)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
+  "por-vencer":  { label: "Por vencer",         icon: Calendar,       color: "bg-primary/10 text-[var(--data-success)] dark:bg-primary/15 dark:text-[var(--data-success)]",             border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
   "vencido":     { label: "Vencido",            icon: AlertTriangle,  color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",                 border: "border-[var(--data-error)] dark:border-[var(--data-error)]/30" },
   "pendiente":   { label: "Pendiente",          icon: Clock,          color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",          border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]/30" },
 };
@@ -82,11 +82,11 @@ export default function ComplianceTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">SUNAT · Municipalidad · Defensa Civil · Sanidad</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={load} disabled={loading} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface text-[var(--text-tertiary)]">
+          <button aria-label="Actualizar" onClick={load} disabled={loading} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(filtered.map(o => ({ obligacion: o.title, entidad: o.entity, categoria: o.category, frecuencia: o.frequency, proximo_vencimiento: fmtDate(o.nextDue), estado: o.status, ultimo_presentado: fmtDate(o.lastFiled) })), "cumplimiento")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
         </div>
@@ -122,7 +122,7 @@ export default function ComplianceTab() {
           <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             {loading
-              ? <div className="h-7 w-12 bg-[var(--surface-sunken)] dark:bg-surface rounded animate-pulse mt-1" />
+              ? <div className="h-7 w-12 bg-[var(--surface-sunken)] rounded animate-pulse mt-1" />
               : <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}</p>}
           </div>
         ))}
@@ -133,14 +133,14 @@ export default function ComplianceTab() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"
+            className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
             placeholder="Buscar obligación o entidad…" />
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {["all", "vigente", "por-vencer", "pendiente", "vencido"].map(s => (
             <button key={s} onClick={() => setFilterStatus(s)}
               className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors",
-                filterStatus === s ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+                filterStatus === s ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted")}>
               {s === "all" ? "Todos" : STATUS_CONFIG[s as keyof typeof STATUS_CONFIG].label}
             </button>
           ))}
@@ -149,7 +149,7 @@ export default function ComplianceTab() {
           {["all", "sunat", "municipal", "sanitario", "seguridad"].map(c => (
             <button key={c} onClick={() => setFilterCategory(c)}
               className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors",
-                filterCategory === c ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+                filterCategory === c ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted")}>
               {c === "all" ? "Categorías" : CATEGORY_LABELS[c]}
             </button>
           ))}
@@ -183,7 +183,7 @@ export default function ComplianceTab() {
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5", S.color)}>
                         <SIcon className="h-2.5 w-2.5" /> {S.label}
                       </span>
-                      <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted">
+                      <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted">
                         {CATEGORY_LABELS[o.category] ?? o.category}
                       </span>
                     </div>
@@ -199,7 +199,7 @@ export default function ComplianceTab() {
                     {o.documents.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {o.documents.map(d => (
-                          <span key={d} className="text-[length:var(--ts-2xs)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted px-2 py-0.5 rounded flex items-center gap-0.5">
+                          <span key={d} className="text-[length:var(--ts-2xs)] bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:text-muted px-2 py-0.5 rounded flex items-center gap-0.5">
                             <FileText className="h-2.5 w-2.5" />{d}
                           </span>
                         ))}

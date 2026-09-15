@@ -32,15 +32,23 @@ interface RouteRule {
 
 // ── Model IDs ────────────────────────────────────────────────────────────
 
+// Familia Claude 5 (verificado 2026-09-11 en platform.claude.com/docs/en/models/overview):
+//   Opus 5    claude-opus-5              $5 / $25 por MTok   1M contexto
+//   Sonnet 5  claude-sonnet-5            $2 / $10 por MTok   1M contexto
+//   Haiku 4.5 claude-haiku-4-5-20251001  $1 / $5  por MTok   200K contexto
+// Los IDs sin fecha son snapshots fijos desde la generación 4.6. Sonnet 4.6 y
+// Opus 4.6 siguen disponibles (legacy) pero salían MÁS caros que sus sucesores.
 const MODEL_IDS: Record<ModelTier, string> = {
   haiku: 'claude-haiku-4-5-20251001',
-  sonnet: 'claude-sonnet-4-6',
-  opus: 'claude-opus-4-6',
+  sonnet: 'claude-sonnet-5',
+  opus: 'claude-opus-5',
 }
 
+// Relación de precio de ENTRADA contra Opus 5 ($5): son los cocientes reales de
+// la tabla de arriba, no estimaciones. La salida guarda la misma proporción.
 const COST_MULTIPLIERS: Record<ModelTier, number> = {
-  haiku: 0.1,   // ~90% más barato que Opus
-  sonnet: 0.3,  // ~70% más barato que Opus
+  haiku: 0.2,   // $1 / $5
+  sonnet: 0.4,  // $2 / $5
   opus: 1.0,    // precio base
 }
 
@@ -105,7 +113,7 @@ const OPUS_RULES: RouteRule = {
  * // → { model: 'haiku', modelId: 'claude-haiku-4-5-20251001', ... }
  *
  * routeModel("design the fiado digital architecture")
- * // → { model: 'opus', modelId: 'claude-opus-4-6', ... }
+ * // → { model: 'opus', modelId: 'claude-opus-5', ... }
  */
 export function routeModel(task: string): RouteResult {
   const lower = task.toLowerCase()

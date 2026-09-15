@@ -100,7 +100,7 @@ export default function Contact() {
     <section id="contacto" className="py-20 sm:py-28 bg-surface" ref={ref}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--accent-ink)] dark:text-[var(--accent)] mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Contacto
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
@@ -134,7 +134,7 @@ export default function Contact() {
                     className="block bg-[var(--surface-raised)] rounded-xl p-6 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] hover:border-primary/20 transition-all duration-[var(--dur-base)] group"
                   >
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-primary group-hover:text-white transition-colors">
                         <item.icon className="h-5 w-5" />
                       </div>
                       <span className="text-sm font-semibold text-muted">
@@ -148,7 +148,7 @@ export default function Contact() {
                 ) : (
                   <div className="bg-[var(--surface-raised)] rounded-xl p-6 shadow-[var(--shadow-sm)]">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                         <item.icon className="h-5 w-5" />
                       </div>
                       <span className="text-sm font-semibold text-muted">

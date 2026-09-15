@@ -205,7 +205,7 @@ export function MarketplaceCrossStoreCombos({
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-primary">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           {suggestion.targetCategory}
                         </span>
                         <span className="text-xs font-bold text-primary">{fmt(suggestion.price)}</span>

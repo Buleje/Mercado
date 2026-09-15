@@ -6,7 +6,6 @@ import { SocioComparacion } from "@/components/socio-buleje/SocioComparacion";
 import { SocioTestimonios } from "@/components/socio-buleje/SocioTestimonios";
 import { SocioFAQ } from "@/components/socio-buleje/SocioFAQ";
 import { SocioCTAFinal } from "@/components/socio-buleje/SocioCTAFinal";
-import Breadcrumbs from "@/components/ui-system/Breadcrumbs";
 import RelatedFeatures from "@/components/ui-system/RelatedFeatures";
 import { relatedFor } from "@/lib/navigation/feature-registry";
 
@@ -51,11 +50,6 @@ export default function SocioBulejePage() {
   return (
     <>
       <main id="main-content" className="bg-[var(--surface-canvas)]">
-        <div className="border-b border-[var(--rule-muted)] bg-[var(--surface-raised)]">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
-            <Breadcrumbs items={[{ label: "Socio Buleje" }]} />
-          </div>
-        </div>
         <SocioHero />
         <SocioBeneficios />
         <SocioCalculadora />

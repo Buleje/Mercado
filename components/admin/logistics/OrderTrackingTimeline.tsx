@@ -152,7 +152,7 @@ export default function OrderTrackingTimeline({
   return (
     <div className={cn("relative", compact ? "py-2" : "py-1")}>
       {/* Línea vertical */}
-      <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gray-200 dark:bg-gray-700" />
+      <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-[var(--rule-base)] " />
 
       <div className="space-y-0">
         {steps.map((step, i) => (
@@ -187,7 +187,7 @@ export default function OrderTrackingTimeline({
                 )}>
                   {step.label}
                   {step.current && (
-                    <span className="ml-1.5 text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                    <span className="ml-1.5 text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-1.5 py-0.5 rounded-full">
                       Actual
                     </span>
                   )}

@@ -1,7 +1,9 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
+import { useState, useEffect, useId, useMemo, useCallback, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   PackageCheck, Download, Search, Eye, X,
   Camera, AlertTriangle, CheckCircle2, XCircle,
@@ -9,6 +11,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
 
 interface PendingOC {
   id: string;
@@ -17,7 +20,7 @@ interface PendingOC {
   status?: string;
   total?: number;
   createdAt?: string;
-  items?: Array<{ name?: string; quantity?: number; unit?: string }>;
+  items?: Array<{ productId?: number; name?: string; quantity?: number; unit?: string }>;
 }
 
 type ReceptionStatus = "programada" | "en-proceso" | "aceptada" | "parcial" | "rechazada";
@@ -26,6 +29,7 @@ type ItemCondition = "ok" | "dañado" | "vencido" | "faltante";
 
 type ReceptionItem = {
   product: string;
+  productId?: number;
   expectedQty: number;
   receivedQty: number;
   condition: ItemCondition;
@@ -44,18 +48,19 @@ type Reception = {
   items: ReceptionItem[];
   photos: number;
   nonConformities: number;
+  invoiceUrl?: string;
 };
 
 const STATUS_MAP: Record<ReceptionStatus, { label: string; color: string; bg: string }> = {
-  programada:   { label: "Programada",  color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  programada:   { label: "Programada",  color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
   "en-proceso": { label: "En proceso",  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  aceptada:     { label: "Aceptada",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  aceptada:     { label: "Aceptada",    color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   parcial:      { label: "Parcial",     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   rechazada:    { label: "Rechazada",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
 const COND_MAP: Record<ItemCondition, { label: string; color: string; bg: string }> = {
-  ok:       { label: "OK",       color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  ok:       { label: "OK",       color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   "dañado": { label: "Dañado",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20" },
   vencido:  { label: "Vencido",  color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
   faltante: { label: "Faltante", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
@@ -75,6 +80,12 @@ export default function ReceivingTab() {
   const [filterStatus, setFilterStatus] = useState<ReceptionStatus | "todos">("todos");
   const [detail, setDetail]             = useState<Reception | null>(null);
   const [showNew, setShowNew]           = useState(false);
+  const detailTitleId = useId();
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(detailPanelRef, { onCerrar: () => setDetail(null), activo: !!detail });
+  const newTitleId = useId();
+  const newPanelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(newPanelRef, { onCerrar: () => setShowNew(false), activo: showNew });
 
   // Órdenes pendientes de recibir (para el dropdown del modal)
   const [pendingOCs, setPendingOCs] = useState<PendingOC[]>([]);
@@ -86,6 +97,14 @@ export default function ReceivingTab() {
   });
   const [checklist, setChecklist] = useState<ReceptionItem[]>([{ ...EMPTY_CHECKLIST }]);
   const [saving, setSaving] = useState(false);
+  // Factura del proveedor adjunta a la recepción (foto/imagen → /api/upload).
+  const [invoiceUrl, setInvoiceUrl] = useState("");
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
+  const [invoiceError, setInvoiceError] = useState("");
+  // Datos reales para los campos que eran texto libre (reporte QA): productos
+  // del inventario (combobox con id/unidad) + proveedores (datalist).
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [supplierNames, setSupplierNames] = useState<string[]>([]);
 
   // Carga recepciones con cache localStorage stale-while-revalidate
   useEffect(() => {
@@ -137,6 +156,26 @@ export default function ReceivingTab() {
     if (showNew) void loadPendingOCs();
   }, [showNew, loadPendingOCs]);
 
+  // Carga real para los pickers: productos (combobox) + proveedores (datalist).
+  useEffect(() => {
+    let cancelled = false;
+    const toArr = (data: unknown, key: string) =>
+      (Array.isArray(data) ? data : (data as Record<string, unknown[]>)?.[key] ?? []) as unknown[];
+    Promise.all([
+      fetch("/api/products").then(r => (r.ok ? r.json() : [])).catch(() => []),
+      fetch("/api/suppliers").then(r => (r.ok ? r.json() : [])).catch(() => []),
+    ]).then(([prods, sups]) => {
+      if (cancelled) return;
+      const prodList = (toArr(prods, "products") as Array<{ id?: number | string; name?: string; stock?: number | null; unit?: string; barcode?: string }>)
+        .filter(p => !!p.name)
+        .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode }));
+      setProducts(prodList);
+      const supNames = (toArr(sups, "suppliers") as Array<{ name?: string }>).map(s => s.name).filter((n): n is string => !!n);
+      setSupplierNames(Array.from(new Set(supNames)).sort());
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const stats = useMemo(() => {
     const scheduled   = receptions.filter(r => r.status === "programada").length;
     const inProgress  = receptions.filter(r => r.status === "en-proceso").length;
@@ -168,6 +207,25 @@ export default function ReceivingTab() {
   const updateChecklistRow = <K extends keyof ReceptionItem>(idx: number, key: K, value: ReceptionItem[K]) =>
     setChecklist(prev => prev.map((row, i) => i === idx ? { ...row, [key]: value } : row));
 
+  // Sube la foto de la factura del proveedor y guarda su URL (solo imágenes).
+  const uploadInvoice = async (file: File) => {
+    setInvoiceError("");
+    setUploadingInvoice(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "recepciones");
+      const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
+      const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !body.url) throw new Error(body.error ?? "No se pudo subir la factura");
+      setInvoiceUrl(body.url);
+    } catch (err) {
+      setInvoiceError(err instanceof Error ? err.message : "Error al subir la factura");
+    } finally {
+      setUploadingInvoice(false);
+    }
+  };
+
   const saveReception = async () => {
     if (!newForm.supplier || !newForm.orderRef || checklist.some(r => !r.product)) return;
     setSaving(true);
@@ -178,6 +236,7 @@ export default function ReceivingTab() {
       items: checklist,
       photos: 0,
       nonConformities,
+      invoiceUrl: invoiceUrl || undefined,
     };
     const res = await fetch("/api/compras/recepciones", {
       method: "POST",
@@ -196,6 +255,8 @@ export default function ReceivingTab() {
     setShowNew(false);
     setNewForm({ supplier: "", orderRef: "", scheduledDate: new Date().toISOString().slice(0, 10), inspector: "" });
     setChecklist([{ ...EMPTY_CHECKLIST }]);
+    setInvoiceUrl("");
+    setInvoiceError("");
     setSelectedOcId("");
   };
 
@@ -213,6 +274,7 @@ export default function ReceivingTab() {
     if (oc.items && oc.items.length > 0) {
       setChecklist(oc.items.map((it) => ({
         product: it.name ?? "",
+        productId: typeof it.productId === "number" ? it.productId : undefined,
         expectedQty: Number(it.quantity ?? 0),
         receivedQty: Number(it.quantity ?? 0),
         condition: "ok" as ItemCondition,
@@ -238,13 +300,13 @@ export default function ReceivingTab() {
               estado: STATUS_MAP[r.status].label, inspector: r.inspector,
               items: r.items.length, fotos: r.photos, no_conformidades: r.nonConformities,
             })), "recepciones")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition"
+            className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition"
           >
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button
             onClick={() => setShowNew(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition"
+            className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition"
           >
             <Plus className="h-4 w-4" /> Nueva recepción
           </button>
@@ -259,7 +321,7 @@ export default function ReceivingTab() {
           { label: "Aceptadas",        value: stats.accepted,     icon: CheckCircle2,  color: "text-[var(--data-success-500)]"  },
           { label: "No conformidades", value: stats.totalNonConf, icon: AlertTriangle, color: stats.totalNonConf > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]" },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div key={label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
               <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", color)}>{value}</p>
@@ -284,7 +346,7 @@ export default function ReceivingTab() {
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
               filterStatus === p.id
                 ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             )}
           >
             {p.label}
@@ -301,57 +363,56 @@ export default function ReceivingTab() {
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Buscar proveedor, ref, OC..."
-            className="w-full pl-9 pr-3 py-1.5 text-sm border border-[var(--rule-base)] rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full pl-9 pr-3 py-1.5 text-sm border border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <div>
         {loading ? (
           <LoadingState />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+          <DataTable className="min-w-[720px]">
               <thead>
-                <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
-                  <th className="px-4 py-3">Ref</th>
-                  <th className="px-4 py-3">Proveedor</th>
-                  <th className="px-4 py-3">Programada</th>
-                  <th className="px-4 py-3">Recibida</th>
-                  <th className="px-4 py-3">Inspector</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3 text-center">Fotos</th>
-                  <th className="px-4 py-3 text-center">NC</th>
-                  <th className="px-4 py-3"></th>
+                <tr>
+                  <th>Ref</th>
+                  <th>Proveedor</th>
+                  <th>Programada</th>
+                  <th>Recibida</th>
+                  <th>Inspector</th>
+                  <th>Estado</th>
+                  <th className="text-center">Fotos</th>
+                  <th className="text-center">NC</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(r => {
                   const discrepancies = getDiscrepancies(r.items);
                   return (
-                    <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent/20 transition">
-                      <td className="px-4 py-3">
+                    <tr key={r.id}>
+                      <td>
                         <div className="font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.ref}</div>
                         <div className="font-mono text-xs text-[var(--text-tertiary)]">{r.orderRef}</div>
                       </td>
-                      <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.supplier}</td>
-                      <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted text-xs">{fmtDate(r.scheduledDate)}</td>
-                      <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted text-xs">{r.receivedDate ? fmtDate(r.receivedDate) : "—"}</td>
-                      <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{r.inspector || "—"}</td>
-                      <td className="px-4 py-3">
+                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.supplier}</td>
+                      <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{fmtDate(r.scheduledDate)}</td>
+                      <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{r.receivedDate ? fmtDate(r.receivedDate) : "—"}</td>
+                      <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{r.inspector || "—"}</td>
+                      <td>
                         <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>
                           {STATUS_MAP[r.status].label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="text-center">
                         {r.photos > 0 ? (
                           <span className="flex items-center justify-center gap-0.5 text-xs text-[var(--text-secondary)]">
                             <Camera className="h-3 w-3" />{r.photos}
                           </span>
                         ) : <span className="text-[var(--text-tertiary)] text-xs">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="text-center">
                         {r.nonConformities > 0 ? (
                           <span className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] text-xs font-bold px-2 py-0.5 rounded-full">
                             {r.nonConformities}
@@ -360,8 +421,8 @@ export default function ReceivingTab() {
                           <CheckCircle2 className="h-3.5 w-3.5 text-[var(--data-success-500)] mx-auto" />
                         ) : null}
                       </td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => setDetail(r)} className="p-1 rounded-lg hover:bg-primary/10 text-primary transition">
+                      <td>
+                        <button aria-label="Ver" onClick={() => setDetail(r)} className="p-1 rounded-xl hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                       </td>
@@ -369,11 +430,10 @@ export default function ReceivingTab() {
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-[var(--text-tertiary)]">Sin recepciones que mostrar</td></tr>
+                  <tr><td colSpan={9} className="py-10 text-center text-sm text-[var(--text-tertiary)]">Sin recepciones que mostrar</td></tr>
                 )}
               </tbody>
-            </table>
-          </div>
+            </DataTable>
         )}
       </div>
 
@@ -381,16 +441,21 @@ export default function ReceivingTab() {
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
           <div
+            ref={detailPanelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={detailTitleId}
+            tabIndex={-1}
             className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[85vh] overflow-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
+                <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">OC: {detail.orderRef} · {detail.supplier}</p>
                 {detail.inspector && <p className="text-xs text-[var(--text-tertiary)]">Inspector: {detail.inspector}</p>}
               </div>
-              <button onClick={() => setDetail(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface">
+              <button aria-label="Cerrar" onClick={() => setDetail(null)} className="p-1 rounded-xl hover:bg-[var(--rule-soft)] ">
                 <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -406,23 +471,22 @@ export default function ReceivingTab() {
             )}
 
             {/* Checklist table */}
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-sm">
+            <DataTable className="min-w-[520px]">
                 <thead>
-                  <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
-                    <th className="px-3 py-2">Producto</th>
-                    <th className="px-3 py-2 text-center">Esperado</th>
-                    <th className="px-3 py-2 text-center">Recibido</th>
-                    <th className="px-3 py-2">Condición</th>
-                    <th className="px-3 py-2">Notas</th>
+                  <tr>
+                    <th>Producto</th>
+                    <th className="text-center">Esperado</th>
+                    <th className="text-center">Recibido</th>
+                    <th>Condición</th>
+                    <th>Notas</th>
                   </tr>
                 </thead>
                 <tbody>
                   {detail.items.map((it, i) => (
-                    <tr key={i} className={cn("border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]", it.condition !== "ok" && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
-                      <td className="px-3 py-2.5 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{it.product}</td>
-                      <td className="px-3 py-2.5 text-[var(--text-secondary)] text-center">{it.expectedQty}</td>
-                      <td className={cn("px-3 py-2.5 font-bold text-center",
+                    <tr key={i} className={cn(it.condition !== "ok" && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
+                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{it.product}</td>
+                      <td className="text-[var(--text-secondary)] text-center">{it.expectedQty}</td>
+                      <td className={cn("font-bold text-center",
                         it.receivedQty < it.expectedQty ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"
                       )}>
                         {it.receivedQty}
@@ -430,19 +494,23 @@ export default function ReceivingTab() {
                           <span className="ml-1 text-xs">({it.receivedQty > it.expectedQty ? "+" : ""}{it.receivedQty - it.expectedQty})</span>
                         )}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td>
                         <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", COND_MAP[it.condition].bg, COND_MAP[it.condition].color)}>
                           {COND_MAP[it.condition].label}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-[var(--text-tertiary)]">{it.notes || "—"}</td>
+                      <td className="text-xs text-[var(--text-tertiary)]">{it.notes || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </DataTable>
 
             <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-secondary)]">
+              {detail.invoiceUrl && (
+                <a href={detail.invoiceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-semibold text-primary hover:underline">
+                  <PackageCheck className="h-4 w-4" /> Ver factura
+                </a>
+              )}
               {detail.photos > 0 && (
                 <span className="flex items-center gap-1"><Camera className="h-4 w-4" /> {detail.photos} fotos</span>
               )}
@@ -461,12 +529,17 @@ export default function ReceivingTab() {
       {showNew && (
         <div className="modal-backdrop p-4" onClick={() => setShowNew(false)}>
           <div
+            ref={newPanelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={newTitleId}
+            tabIndex={-1}
             className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[90vh] overflow-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva recepción de mercadería</CardTitle>
-              <button onClick={() => setShowNew(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              <CardTitle id={newTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva recepción de mercadería</CardTitle>
+              <button aria-label="Cerrar" onClick={() => setShowNew(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
 
             {/* Dropdown OC pendiente — auto-completa todo */}
@@ -479,7 +552,8 @@ export default function ReceivingTab() {
                 <select
                   value={selectedOcId}
                   onChange={(e) => applyOC(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm"
+                  aria-label="Elegir orden de compra para auto-completar"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
                 >
                   <option value="">— Elegir orden de compra —</option>
                   {pendingOCs.map((oc) => (
@@ -495,58 +569,66 @@ export default function ReceivingTab() {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</label>
+              <Field label="Proveedor" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {/* Al recibir contra una OC, proveedor y Nro. OC quedan
+                    BLOQUEADOS (derivados de la OC) → trazabilidad garantizada,
+                    no se puede escribir un proveedor/OC inexistente (reporte QA). */}
                 <input value={newForm.supplier} onChange={e => setNewForm(f => ({ ...f, supplier: e.target.value }))}
-                  placeholder="Distribuidora ABC"
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nro. Orden de Compra</label>
+                  placeholder="Distribuidora ABC" list={selectedOcId ? undefined : "recep-proveedores"} readOnly={!!selectedOcId}
+                  className={cn("w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-[var(--surface-raised)] ")} />
+                <datalist id="recep-proveedores">
+                  {supplierNames.map(n => <option key={n} value={n} />)}
+                </datalist>
+              </Field>
+              <Field label="Nro. Orden de Compra" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={newForm.orderRef} onChange={e => setNewForm(f => ({ ...f, orderRef: e.target.value }))}
-                  placeholder="OC-001"
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha programada</label>
+                  placeholder="OC-001" readOnly={!!selectedOcId}
+                  className={cn("w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-mono", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-[var(--surface-raised)] ")} />
+                {selectedOcId && <p className="mt-1 text-xs text-primary">De la OC seleccionada</p>}
+              </Field>
+              <Field label="Fecha programada" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="date" value={newForm.scheduledDate} onChange={e => setNewForm(f => ({ ...f, scheduledDate: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Inspector</label>
+                  className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
+              </Field>
+              <Field label="Inspector" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={newForm.inspector} onChange={e => setNewForm(f => ({ ...f, inspector: e.target.value }))}
                   placeholder="Nombre del responsable"
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-              </div>
+                  className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
+              </Field>
             </div>
 
             {/* Checklist */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Checklist de productos</h4>
+                <BlockTitle>Checklist de productos</BlockTitle>
                 <button onClick={addChecklistRow} className="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
                   <Plus className="h-3 w-3" /> Agregar fila
                 </button>
               </div>
               <div className="space-y-2">
                 {checklist.map((row, idx) => (
-                  <div key={idx} className="flex flex-wrap items-center gap-2 bg-gray-50 dark:bg-surface rounded-xl p-2">
-                    <input
-                      value={row.product} onChange={e => updateChecklistRow(idx, "product", e.target.value)}
-                      placeholder="Producto" className="flex-1 min-w-32 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs"
+                  <div key={idx} className="flex flex-wrap items-center gap-2 bg-[var(--surface-sunken)] rounded-xl p-2">
+                    <ProductCombobox
+                      id={`recep-prod-${idx}`}
+                      products={products}
+                      value={row.product}
+                      placeholder="Producto"
+                      onChange={(text) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, product: text, productId: undefined } : r))}
+                      onSelect={(p) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, product: p.name, productId: typeof p.id === "number" ? p.id : undefined, expectedQty: r.expectedQty } : r))}
                     />
                     <input type="number" min="0" value={row.expectedQty} onChange={e => updateChecklistRow(idx, "expectedQty", +e.target.value)}
-                      placeholder="Esperado" className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
+                      placeholder="Esperado" className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     <input type="number" min="0" value={row.receivedQty} onChange={e => updateChecklistRow(idx, "receivedQty", +e.target.value)}
-                      placeholder="Recibido" className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
+                      placeholder="Recibido" className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     <select value={row.condition} onChange={e => updateChecklistRow(idx, "condition", e.target.value as ItemCondition)}
-                      className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs">
+                      aria-label={`Condición de ${row.product || "el producto"}`}
+                      className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs">
                       {Object.entries(COND_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                     </select>
                     <input value={row.notes} onChange={e => updateChecklistRow(idx, "notes", e.target.value)}
-                      placeholder="Notas (opcional)" className="flex-1 min-w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
+                      placeholder="Notas (opcional)" className="flex-1 min-w-24 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     {checklist.length > 1 && (
-                      <button onClick={() => removeChecklistRow(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition">
+                      <button aria-label="Quitar" onClick={() => removeChecklistRow(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}
@@ -555,9 +637,44 @@ export default function ReceivingTab() {
               </div>
             </div>
 
+            {/* Factura del proveedor — se adjunta a la recepción (foto). Antes
+                el módulo de factura estaba separado en Punto de Compra. */}
+            <div>
+              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1.5">
+                Factura del proveedor <span className="font-normal text-[var(--text-tertiary)]">(opcional, foto)</span>
+              </label>
+              {invoiceUrl ? (
+                <div className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2">
+                  <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] shrink-0" aria-hidden />
+                  <a href={invoiceUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline flex-1 truncate">
+                    Ver factura adjunta
+                  </a>
+                  <button type="button" onClick={() => setInvoiceUrl("")} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors" aria-label="Quitar factura">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className={cn(
+                  "flex items-center gap-2 rounded-lg border border-dashed border-[var(--rule-base)] px-3 py-2.5 cursor-pointer hover:border-primary/50 transition-colors text-sm text-[var(--text-secondary)] dark:text-muted",
+                  uploadingInvoice && "opacity-60 cursor-wait",
+                )}>
+                  {uploadingInvoice ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}
+                  {uploadingInvoice ? "Subiendo…" : "Adjuntar foto de la factura"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingInvoice}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) void uploadInvoice(f); e.target.value = ""; }}
+                  />
+                </label>
+              )}
+              {invoiceError && <p className="text-xs text-[var(--data-error-500)] mt-1">{invoiceError}</p>}
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowNew(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-              <button onClick={saveReception} disabled={saving} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
+              <button onClick={() => setShowNew(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] ">Cancelar</button>
+              <button onClick={saveReception} disabled={saving} className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Guardar recepción
               </button>

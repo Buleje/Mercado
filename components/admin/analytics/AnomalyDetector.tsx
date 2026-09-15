@@ -57,7 +57,7 @@ function fmt(n: number) {
 }
 
 const SEVERITY_STYLE: Record<Severity, { bg: string; text: string; border: string; dot: string; label: string }> = {
-  info:     { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",   text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",   border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",   dot: "bg-[var(--accent-soft)]",  label: "Info" },
+  info:     { bg: "bg-primary/10 dark:bg-primary/15",   text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",   border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",   dot: "bg-primary/10",  label: "Info" },
   warning:  { bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20", text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]", dot: "bg-[var(--data-warning-500)]", label: "Aviso" },
   critical: { bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",     text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",     border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",     dot: "bg-[var(--data-error-500)]",   label: "Critico" },
 };
@@ -213,7 +213,7 @@ export default function AnomalyDetector({ sales, orders }: AnomalyDetectorProps)
       <div className="flex flex-col gap-2 overflow-auto max-h-80">
         {anomalies.length === 0 && (
           <div className="text-center py-8">
-            <div className="w-8 h-8 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mx-auto mb-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary/15 flex items-center justify-center mx-auto mb-2">
               <svg className="w-4 h-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>

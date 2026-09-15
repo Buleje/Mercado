@@ -10,12 +10,14 @@
  * banco era lento; aca asignas N en segundos.
  */
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useId, useMemo, useRef } from "react";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { X, Search, Image as ImageIcon, Check, Loader2, Package, Sparkles } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { DbProduct } from "@/lib/jsondb";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 interface BankItem { id: string; name: string; imageUrl: string }
 interface BankCategory { id: string; name: string; description?: string; items: BankItem[] }
@@ -42,6 +44,9 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
   const [recentlyAssigned, setRecentlyAssigned] = useState<Map<number, string>>(new Map());
   const [dragOverProductId, setDragOverProductId] = useState<number | null>(null);
   const [draggingItem, setDraggingItem] = useState<BankItem | null>(null);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: () => onOpenChange(false), activo: open });
 
   const reloadBank = useCallback(async () => {
     setLoadingBank(true);
@@ -218,14 +223,14 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
       className="fixed inset-0 z-[8200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && onOpenChange(false)}
     >
-      <div className="bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-[var(--shadow-xl)]">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-[var(--shadow-xl)]">
         {/* Header */}
         <div className="shrink-0 px-4 sm:px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
           <div className="h-11 w-11 rounded-xl bg-linear-to-br from-primary to-[var(--data-success-500)] text-white flex items-center justify-center shrink-0">
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]">Asignar imágenes en bloque</h2>
+            <SectionTitle id={titleId} as="h2" className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]">Asignar imágenes en bloque</SectionTitle>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
               Arrastra una imagen del banco al producto sin foto. Se guarda automático.
             </p>
@@ -240,7 +245,8 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] shrink-0"
+            className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] shrink-0"
+            aria-label="Cerrar"
             title="Cerrar"
           >
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
@@ -253,11 +259,11 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
           <section className="flex flex-col overflow-hidden border-b sm:border-b-0 sm:border-r border-[var(--rule-soft)] bg-[var(--surface-raised)]">
             <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
                   <ImageIcon className="h-4 w-4 text-primary" />
                   Banco de Imágenes
                   <span className="text-xs font-medium text-[var(--text-tertiary)]">({totalBankItems})</span>
-                </h3>
+                </CardTitle>
               </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
@@ -265,7 +271,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                   value={bankSearch}
                   onChange={(e) => setBankSearch(e.target.value)}
                   placeholder="Buscar en el banco..."
-                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
+                  className="w-full pl-10 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
                 />
               </div>
               {categories.length > 0 && (
@@ -367,11 +373,11 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
           <section className="flex flex-col overflow-hidden bg-[var(--surface-raised)]">
             <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
                   <Package className="h-4 w-4 text-[var(--data-warning-500)]" />
                   Productos sin imagen
                   <span className="text-xs font-medium text-[var(--text-tertiary)]">({totalPending})</span>
-                </h3>
+                </CardTitle>
               </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
@@ -379,7 +385,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                   placeholder="Buscar producto por nombre o código..."
-                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
+                  className="w-full pl-10 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
                 />
               </div>
               {productCategories.length > 1 && (
@@ -425,7 +431,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                     {productSearch || activeProductCat ? "Sin resultados" : "¡Todos tus productos tienen imagen!"}
                   </p>
                   <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                    {productSearch ? "Probá otra búsqueda." : activeProductCat ? "Probá quitar el filtro de categoría." : "Buen trabajo."}
+                    {productSearch ? "Prueba otra búsqueda." : activeProductCat ? "Prueba quitar el filtro de categoría." : "Buen trabajo."}
                   </p>
                 </div>
               )}
@@ -451,7 +457,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                     <div
                       className={cn(
                         "h-14 w-14 sm:h-16 sm:w-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center",
-                        assigned ? "bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30" : "bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)]",
+                        assigned ? "bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30" : "bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)]",
                       )}
                     >
                       {assigned ? (
@@ -478,7 +484,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                           <Check className="h-3.5 w-3.5" /> Asignada
                         </div>
                       ) : isDragOver ? (
-                        <div className="text-xs font-bold text-primary">Soltá acá</div>
+                        <div className="text-xs font-bold text-primary">Suelta acá</div>
                       ) : (
                         <div className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Drop</div>
                       )}
@@ -501,11 +507,11 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
             </span>
           </div>
           <p className="hidden sm:block text-xs text-[var(--text-tertiary)]">
-            Tip: arrastrá la imagen sobre el producto. Cada drop guarda automático.
+            Tip: arrastra la imagen sobre el producto. Cada drop guarda automático.
           </p>
           <button
             onClick={() => onOpenChange(false)}
-            className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors"
+            className="px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
           >
             {totalAssigned > 0 ? `Listo (${totalAssigned} asignadas)` : "Cerrar"}
           </button>

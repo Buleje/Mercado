@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * Notas internas del superadmin sobre un tenant (CRM · bundle C). Solo plataforma.
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
   const { slug } = await params;
-  const json = await req.json().catch(() => null);
+  const json = await leerJson(req);
   const parsed = createSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
