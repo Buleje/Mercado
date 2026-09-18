@@ -210,12 +210,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-evidence-gate.mjs",
-            "timeout": 5,
-            "statusMessage": "Gate de evidencia (determinista)"
-          },
-          {
-            "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-checkpoint.mjs",
             "timeout": 5,
             "async": true
