@@ -3888,10 +3888,12 @@ body.tenant-storefront > nav[aria-label="Breadcrumb"] {
 
 :root:has([data-area="admin"]),
 [data-area="admin"] {
-  /* Fraunces: serif variable con eje óptico y pesos reales. `opsz 32` engorda
-     los remates y abre la letra a tamaño de título. Sigue siendo "editorial de
-     selva" — la propia nota de --font-display-family decía Fraunces. */
-  --font-display-family: var(--font-display-alt), "Instrument Serif", Georgia, serif;
+  /* 2026-09-18, segunda vuelta: Brandon vio Fraunces en pantalla completa y la
+     rechazó ("no me gusta"). El título del panel vuelve a la sans del cuerpo,
+     con el peso que Instrument Serif nunca tuvo. Lo que SÍ se conserva de la
+     ronda anterior es el diagnóstico: 26px, line-height corto y el kicker
+     legible. `?tipo=` de abajo deja comparar las otras sin tocar código. */
+  --font-display-family: var(--font-sans);
   --ts-2xs: 0.75rem;     /* 10 → 12px: piso legible de kickers y badges */
   --ls-wider: 0.08em;    /* 0.2em → 0.08em: el kicker deja de deletrearse */
   --ts-libro-title: 1.625rem;  /* 26px fijo: no lo encoge el max-height */
@@ -3902,9 +3904,28 @@ body.tenant-storefront > nav[aria-label="Breadcrumb"] {
 
 :root:has([data-area="admin"]) .font-display,
 [data-area="admin"] .font-display {
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+/* ── Comparar sin tocar código: `?tipo=serif|fraunces|source` en la URL ──────
+   El shell pone el atributo en <html> (admin-shell). Sin parámetro, manda la
+   sans de arriba. Cuando Brandon elija la definitiva, esto se borra y queda
+   una sola familia. */
+:root[data-typeset="fraunces"] .font-display {
+  font-family: var(--font-display-alt), Georgia, serif;
+  font-weight: 600;
   font-variation-settings: "opsz" 32;
+}
+:root[data-typeset="serif"] .font-display {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+:root[data-typeset="source"] .font-display {
+  font-family: var(--font-display-serif), Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.012em;
 }
 
 /* Título de módulo de los libros (CTP, LO-TH): tamaño propio y line-height

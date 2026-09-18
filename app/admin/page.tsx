@@ -127,6 +127,24 @@ function AdminPage() {
   void _changelogHasNew;
 
   // Cierra panel "module help" inline cuando cambia la tab activa
+  /**
+   * Probador de tipografía del panel (Brandon, 2026-09-18): `?tipo=serif`,
+   * `?tipo=fraunces` o `?tipo=source` en la URL cambian la familia de los
+   * títulos para comparar en pantalla completa; sin parámetro manda la sans.
+   * Las reglas están en globals.css (`[data-typeset=…]`). Va en <html> porque
+   * los modales se montan en portal, colgando de <body>. Cuando quede elegida
+   * la definitiva, esto y su bloque CSS se borran.
+   */
+  useEffect(() => {
+    const tipo = new URLSearchParams(window.location.search).get("tipo");
+    if (!tipo || !["serif", "fraunces", "source"].includes(tipo)) {
+      delete document.documentElement.dataset.typeset;
+      return;
+    }
+    document.documentElement.dataset.typeset = tipo;
+    return () => { delete document.documentElement.dataset.typeset; };
+  }, [tab]);
+
   useEffect(() => { setShowModuleHelp(false); }, [tab, setShowModuleHelp]);
 
   const {
