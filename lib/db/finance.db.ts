@@ -60,6 +60,9 @@ export type DbExpense = {
   createdBy?: string | null;
   notes?: string | null;
   templateId?: string | null;
+  /** El permiso bajo el que se hizo este gasto (ADR-421). `null` es válido: la
+   *  luz de la oficina no pertenece a ningún contrato. */
+  contratoId?: string | null;
   paidAt?: string | null;
 };
 
@@ -374,6 +377,7 @@ export const ExpensesDB = {
         createdBy: data.createdBy ?? null,
         notes: data.notes ?? null,
         templateId: data.templateId ?? null,
+        contratoId: data.contratoId ?? null,
         // Una plantilla no se pagó: se acordó. Sólo el gasto ejecutado lleva
         // fecha de pago, y por defecto es la fecha del gasto.
         paidAt: data.paidAt ? new Date(data.paidAt) : data.recurring ? null : fecha,

@@ -1367,6 +1367,13 @@ model Expense {
   /// Cuándo salió la plata. `null` en un gasto devengado y todavía impago.
   paidAt         DateTime?
 
+  /// El permiso bajo el que se trabajó esto (ADR-421). Nullable a propósito:
+  /// nada de lo ya cargado se rompe, y la luz de la oficina, que no es de ningún permiso sigue siendo válido sin contrato.
+  /// El texto que ya existía (nada: el gasto no tenía dónde) NO se toca: eso es lo que se declara;
+  /// esto es el vínculo interno con el que se arma el balance.
+  contratoId String?
+  contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+
   @@index([category])
   @@index([date])
   @@index([tenantId])
@@ -1375,6 +1382,7 @@ model Expense {
   // por fila.
   @@index([tenantId, recurring, date])
   @@index([templateId])
+  @@index([tenantId, contratoId])
 }
 
 /// (ADR-375) Cuánto se planea gastar por mes en cada categoría.
@@ -5454,12 +5462,20 @@ model Adelanto {
   entregas         AdelantoEntrega[]
   entregasPactadas AdelantoEntregaPactada[]
 
+  /// El permiso bajo el que se trabajó esto (ADR-421). Nullable a propósito:
+  /// nada de lo ya cargado se rompe, y un adelanto al personal de planta sigue siendo válido sin contrato.
+  /// El texto que ya existía (nada: el adelanto no tenía dónde) NO se toca: eso es lo que se declara;
+  /// esto es el vínculo interno con el que se arma el balance.
+  contratoId String?
+  contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+
   @@unique([tenantId, codigoOperacion])
   @@index([tenantId, status])
   @@index([tenantId, fechaAdelanto])
   @@index([tenantId, reciboManual])
   @@index([tenantId, fechaVencimiento])
   @@index([beneficiarioId])
+  @@index([tenantId, contratoId])
 }
 
 model AdelantoEntrega {
@@ -5742,6 +5758,13 @@ model WoodEntry {
   /// lo que OSINFOR cruza contra el POA del título habilitante.
   trozas WoodEntryTroza[]
 
+  /// El permiso bajo el que se trabajó esto (ADR-421). Nullable a propósito:
+  /// nada de lo ya cargado se rompe, y una guía vieja sin código de origen sigue siendo válido sin contrato.
+  /// El texto que ya existía (`originCode`) NO se toca: eso es lo que se declara;
+  /// esto es el vínculo interno con el que se arma el balance.
+  contratoId String?
+  contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+
   @@index([tenantId, entryDate(sort: Desc)])
   @@index([tenantId, status])
   @@index([tenantId, gtfNumber])
@@ -5749,6 +5772,7 @@ model WoodEntry {
   @@index([tenantId, supplierId])
   @@index([tenantId, libroNro])
   @@index([deletedAt])
+  @@index([tenantId, contratoId])
 }
 
 /// Una troza de la lista que ampara la GTF (ADR-312).
@@ -6301,10 +6325,18 @@ model ForestCtpEntry {
   /// se emite la guía. Incluye las ya liberadas — el historial es parte del acta.
   apartados ForestCtpApartado[]
 
+  /// El permiso bajo el que se trabajó esto (ADR-421). Nullable a propósito:
+  /// nada de lo ya cargado se rompe, y una corrida sin origen declarado sigue siendo válido sin contrato.
+  /// El texto que ya existía (`originCode`) NO se toca: eso es lo que se declara;
+  /// esto es el vínculo interno con el que se arma el balance.
+  contratoId String?
+  contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+
   @@index([tenantId, section, entryDate(sort: Desc)])
   @@index([tenantId, gtfNumber])
   @@index([deletedAt])
   @@index([tenantId, duenoParteId])
+  @@index([tenantId, contratoId])
 }
 
 /// ForestCtpDespachoOrigen — puente N:M entre una línea de DESPACHO y las
@@ -6662,10 +6694,18 @@ model ForestLoteAserrio {
   /// expresar índices parciales, así que acá sólo queda el índice común — no
   /// vuelvas a poner `@@unique` creyendo que es drift: un lote borrado tiene
   /// que dejar su código libre para el que se arme después (ADR-396).
+
+  /// El permiso bajo el que se trabajó esto (ADR-421). Nullable a propósito:
+  /// nada de lo ya cargado se rompe, y un lote armado antes de esto sigue siendo válido sin contrato.
+  /// El texto que ya existía (`permiso`) NO se toca: eso es lo que se declara;
+  /// esto es el vínculo interno con el que se arma el balance.
+  contratoId String?
+  contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
   @@index([tenantId, code])
   @@index([tenantId, status])
   @@index([tenantId, speciesCommon])
   @@index([tenantId, ordenProduccion])
+  @@index([tenantId, contratoId])
 }
 
 model ForestProdLote {
@@ -6955,11 +6995,19 @@ model ForestFlete {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  /// El permiso bajo el que se trabajó esto (ADR-421). Nullable a propósito:
+  /// nada de lo ya cargado se rompe, y un viaje propio sin permiso asociado sigue siendo válido sin contrato.
+  /// El texto que ya existía (`gtfNumber`) NO se toca: eso es lo que se declara;
+  /// esto es el vínculo interno con el que se arma el balance.
+  contratoId String?
+  contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+
   @@index([tenantId, fecha(sort: Desc)])
   @@index([tenantId, estadoPago])
   @@index([tenantId, gtfNumber])
   @@index([tenantId, tipoTransporte])
   @@index([deletedAt])
+  @@index([tenantId, contratoId])
 }
 
 /// Movimiento de cuenta corriente con una parte del directorio (ADR-322).
@@ -7015,12 +7063,105 @@ model ForestCuentaMov {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  /// El permiso bajo el que se trabajó esto (ADR-421). Nullable a propósito:
+  /// nada de lo ya cargado se rompe, y un movimiento de cuenta que no nace de un permiso sigue siendo válido sin contrato.
+  /// El texto que ya existía (`referencia`) NO se toca: eso es lo que se declara;
+  /// esto es el vínculo interno con el que se arma el balance.
+  contratoId String?
+  contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+
   @@unique([tenantId, fleteId])
   @@index([tenantId, parteId, fecha(sort: Desc)])
   @@index([tenantId, fecha(sort: Desc)])
   @@index([deletedAt])
   @@index([tenantId, liquidacionId])
+  @@index([tenantId, contratoId])
 }
+
+/// ══════════════════════════════════════════════════════════════════════════
+/// ForestContrato — el permiso bajo el que se trabaja (ADR-421)
+/// ══════════════════════════════════════════════════════════════════════════
+/// Brandon, 2026-09-18: «todo se trabaja según el contrato […] y ahí llevar el
+/// control hipervinculado: gastos, ingreso de madera, flete, adelantos, deudas,
+/// créditos». El contrato YA era el eje del negocio, pero escrito como texto
+/// suelto en cinco tablas (38 filas, 8 códigos distintos) y sin nada donde
+/// colgarle la plata: S/ 20 942 de adelantos no podían imputarse a ningún papel.
+///
+/// NO es `ForestPlan`: ese modela el plan de manejo PROPIO del Libro de Títulos
+/// Habilitantes (cuelga de carátula, censo y árboles). Los permisos con los que
+/// se compra madera son de TERCEROS. Cuando el permiso sí es propio, `planId`
+/// los ata sin duplicar el dato.
+model ForestContrato {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// El código del permiso tal como está en el papel y en el libro
+  /// (`WoodEntry.originCode`). Es la llave natural: ya viene escrito en los datos.
+  codigo String
+  /// El mismo código en mayúsculas y sin espacios repetidos. Es lo único
+  /// realmente único por tenant: «19-SEC/REG-PLT-2018-020» y
+  /// «19-sec/reg-plt-2018-020  » son el mismo permiso, y sin normalizar el
+  /// sembrado desde el libro crearía dos contratos para uno.
+  codigoNorm String
+
+  /// Cómo lo llama Brandon en la conversación («el de Puerto Inca»). El código
+  /// oficial no se toca; esto es para reconocerlo en un selector.
+  alias String?
+
+  /// Quién es el dueño del permiso. Snapshot del nombre además del vínculo
+  /// opcional al directorio: la parte puede darse de baja y el contrato de
+  /// marzo sigue siendo con ese titular.
+  titularNombre String
+  titularId     String?
+  titularDoc    String?
+  titularDocTipo String?
+
+  /// Los otros datos del papel.
+  resolucionNumero String?
+  resolucionFecha  DateTime?
+  /// PER-FMP · REG-PLT · CONTRATO · DEMA · otro — se deduce del código al
+  /// sembrar y se puede corregir a mano.
+  tipo             String?
+  arffs            String?
+  region           String?
+  provincia        String?
+  distrito         String?
+  areaHa           Decimal? @db.Decimal(12, 2)
+
+  vigenciaDesde DateTime?
+  vigenciaHasta DateTime?
+  /// vigente | vencido | cerrado | suspendido
+  estado        String    @default("vigente")
+
+  /// Si el permiso es propio y tiene su plan en el LOTH (ref. app-level, igual
+  /// que `ForestPlan.caratulaId`).
+  planId String?
+
+  notas     String?
+  isActive  Boolean   @default(true)
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  woodEntries  WoodEntry[]
+  ctpEntries   ForestCtpEntry[]
+  lotesAserrio ForestLoteAserrio[]
+  gastos       Expense[]
+  adelantos    Adelanto[]
+  fletes       ForestFlete[]
+  movimientos  ForestCuentaMov[]
+
+  /// El unique va como índice PARCIAL en SQL (`WHERE "deletedAt" IS NULL`), que
+  /// Prisma no sabe expresar — mismo caso que `ForestLoteAserrio` (ADR-396). Un
+  /// `@@unique` total dejaría el código de un contrato dado de baja bloqueado
+  /// para siempre: volver a cargar ese permiso tiraría P2002.
+  @@index([tenantId, codigoNorm])
+  @@index([tenantId, estado])
+  @@index([tenantId, titularNombre])
+  @@index([deletedAt])
+}
+
 
 // ─── Registro Nacional de Plantaciones Forestales — RNPF (ADR-380) ────────────
 // Formato Único para la Inscripción/Actualización de Plantaciones (Lineamientos

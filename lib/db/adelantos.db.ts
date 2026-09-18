@@ -168,6 +168,8 @@ export type DbAdelanto = {
   beneficiario?: DbBeneficiario;
   modalidad: AdelantoModalidad;
   montoAdelantado: number;
+  /** El permiso bajo el que se entrega (ADR-421). */
+  contratoId?: string | null;
   moneda: string;
   fechaAdelanto: string;
   /** (332) Cuándo se acordó devolverlo. */
@@ -409,6 +411,8 @@ export type AdelantoCreateInput = {
    * caja se anota; ver `lib/adelantos/movimiento-caja.ts`.
    */
   metodoCaja?: MetodoPago | null;
+  /** El permiso bajo el que se entrega el adelanto (ADR-421). */
+  contratoId?: string | null;
 };
 
 export type EntregaInput = {
@@ -742,6 +746,7 @@ export const AdelantosDB = {
         saldoPendiente: monto, // arranca con saldo completo a favor del negocio
         codigoOperacion: await siguienteCodigoDeTenant(tenantId),
         reciboManual: data.reciboManual?.trim() || null,
+        contratoId: data.contratoId ?? null,
         notas: [data.notas?.trim(), excedioLimite].filter(Boolean).join(" · ") || null,
         comprobanteUrl: data.comprobanteUrl?.trim() || null,
         // Dato de referencia: uno sin el otro no dice nada, así que se guardan

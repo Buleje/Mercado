@@ -120,6 +120,9 @@ export const fleteInputSchema = z.object({
   estadoPago: z.enum(ESTADOS_PAGO).default("pendiente"),
   fechaPago: texto(10).optional().nullable(),
   notas: texto(500).optional(),
+  /** El permiso bajo el que se hizo el viaje (ADR-421). Opcional: un viaje
+   *  interno de planta no pertenece a ningún contrato. */
+  contratoId: texto(64).optional().nullable(),
 });
 export type FleteInput = z.infer<typeof fleteInputSchema>;
 

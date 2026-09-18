@@ -41,6 +41,10 @@ export type CtpAuditEntity =
   | "ForestProdLote"
   /** Lote de ASERRÍO (ADR-334): la materia prima agrupada antes de la sierra. */
   | "ForestLoteAserrio"
+  /** El permiso bajo el que se trabaja (ADR-421): a él se le imputan la madera,
+   *  los gastos, los fletes y los adelantos. Quién lo creó y quién le ató
+   *  registros es parte de la trazabilidad de la plata, no sólo del papel. */
+  | "ForestContrato"
   | "ForestCtpFicha"
   // KV (como ForestCtpFicha): la foto de referencia de una especie. No es una
   // prueba documental, pero orienta a quien recibe la troza — y quien la pone
@@ -128,6 +132,10 @@ export type CtpAuditAction =
      audita como cualquier cambio de estado: un lote que vuelve a admitir
      madera después de haber producido tiene que poder explicarse. */
   | "ctp_lote_aserrio_reabrir"
+  // Contratos/permisos (ADR-421)
+  | "ctp_contrato_create"
+  | "ctp_contrato_update"
+  | "ctp_contrato_vincular"
   // Ingresos de materia prima
   | "ctp_ingreso_create"
   // Corrección de un ingreso pendiente (typo de GTF, volumen mal tipeado): el

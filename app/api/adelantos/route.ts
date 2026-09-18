@@ -28,6 +28,9 @@ const CreateSchema = z.object({
    * después de que alguien confirmó el aviso con el monto exacto.
    */
   forzarLimite: z.boolean().optional(),
+  /** El permiso bajo el que se entrega el adelanto (ADR-421). Opcional: un
+   *  adelanto al personal de planta no pertenece a ningún contrato. */
+  contratoId: z.string().max(64).nullish(),
   /**
    * Por qué vía salió la plata del cajón. Ausente = no mover la caja (el
    * adelanto salió del banco, o se está cargando en diferido).

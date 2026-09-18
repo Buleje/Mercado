@@ -32,6 +32,9 @@ const BodySchema = z.object({
   notes: z.string().max(2000).optional(),
   templateId: z.string().max(64).optional(),
   paidAt: z.string().optional(),
+  /** El permiso bajo el que se hizo el gasto (ADR-421). Opcional a propósito:
+   *  un gasto de la oficina no pertenece a ningún contrato. */
+  contratoId: z.string().max(64).nullish(),
 });
 
 export async function GET(req: NextRequest) {
@@ -115,6 +118,7 @@ export async function POST(req: NextRequest) {
       notes: body.notes ?? null,
       templateId: body.templateId ?? null,
       paidAt: body.paidAt ?? null,
+      contratoId: body.contratoId ?? null,
     });
     return NextResponse.json(expense, { status: 201 });
   } catch (err) {

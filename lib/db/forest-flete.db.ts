@@ -123,6 +123,7 @@ export const ForestFleteDB = {
       // Marcar pagado sin fecha deja la deuda saldada "algún día": se asume hoy.
       fechaPago: pagado ? (fechaUtc(input.fechaPago) ?? new Date()) : null,
       notas: vacioANull(input.notas),
+      contratoId: vacioANull(input.contratoId),
     };
 
     const existente = input.id
