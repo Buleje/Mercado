@@ -84,6 +84,24 @@ while true; do
     fi
   fi
 
+  # 3b. Dev server inflado — la RAM la come COMPILAR, no el paso del tiempo
+  #     (medido 2026-09-18: 6.6 GB tras 25 min de uso normal, y 8.76 GB a los
+  #     2m35s de arrancar limpio si se le pasa `warm-dev-routes` con sus 14
+  #     rutas). Con 16 GB en la VM, un typecheck (7-8 GB) encima de eso deja al
+  #     sistema sin aire: es el "lento y se congela" que reporta Brandon.
+  #     Por eso conviene warmear sólo las rutas que se van a usar.
+  #     Umbral DOBLE a propósito: sólo recicla cuando ADEMÁS falta RAM real, así
+  #     un dev server gordo pero inofensivo no cuesta un cold-start de 30-90 s.
+  NEXT_PID=$(ps -eo pid,rss,comm --sort=-rss | awk '$3 == "next-server" {print $1; exit}')
+  NEXT_GB=$(ps -eo pid,rss,comm --sort=-rss | awk '$3 == "next-server" {printf "%d", $2/1048576; exit}')
+  if [[ -n "$NEXT_PID" && "${NEXT_GB:-0}" -ge 10 && "$AVAIL" -lt 3000 ]]; then
+    kill "$NEXT_PID" 2>/dev/null || true
+    sleep 3
+    kill -9 "$NEXT_PID" 2>/dev/null || true
+    ( cd "$PROJECT_DIR" && nohup npm run dev > /tmp/dev-server.log 2>&1 & disown ) 2>/dev/null || true
+    log "dev server reciclado: ${NEXT_GB}GB de RSS con ${AVAIL}MB libres (pid=$NEXT_PID)"
+  fi
+
   # 4. Heartbeat cada 5 ciclos (~5 min)
   if [[ $((SECONDS / INTERVAL % 5)) -eq 0 ]]; then
     LOAD=$(awk '{print $1}' /proc/loadavg)
