@@ -227,8 +227,12 @@ export default function LibroChrome({
             <Icon className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <Kicker className="block leading-none">{eyebrow}</Kicker>
-            <PageTitle className="font-display text-[length:var(--ts-xl)] font-normal sm:text-[length:var(--ts-2xl)]">
+            {/* `libro-kicker`/`libro-title` no pintan nada por sí solas: son el
+                gancho de la prueba tipográfica del libro CTP (globals.css,
+                `[data-typeset^="ctp-"]`). Sin el atributo en <html> el header
+                se ve exactamente igual que antes. */}
+            <Kicker className="libro-kicker block leading-none">{eyebrow}</Kicker>
+            <PageTitle className="libro-title font-display text-[length:var(--ts-xl)] font-normal sm:text-[length:var(--ts-2xl)]">
               {title}
             </PageTitle>
           </div>

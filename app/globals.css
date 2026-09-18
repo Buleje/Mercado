@@ -3845,3 +3845,80 @@ body.tenant-storefront > nav[aria-label="Breadcrumb"] {
    Se ocultaba a ≤860px de alto (una línea explicativa contra una fila de
    datos); Brandon 2026-09-07, sobre su laptop de 768: la quiere ver. Cuesta
    ~18px por módulo. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PANEL ADMIN — Tipografía Fraunces  (Brandon, 2026-09-18)
+   ═══════════════════════════════════════════════════════════════════════════
+   Empezó como prueba del header del Libro CTP y Brandon la aprobó para TODO el
+   panel ("si me gusta lo cambio a todo lo demás").
+
+   Medido en el navegador ANTES (1280×720, header del libro):
+   - Título  = Instrument Serif 400 · 21px · lh 31.5px (1.5) · ls -0.015em
+   - Kicker  = Geist 600 · 10px · ls 0.2em (2px de aire entre letras)
+   Tres cosas rompían la jerarquía:
+   1. Instrument Serif SOLO tiene el peso 400 → a 21px el título pesaba menos
+      que su propio kicker en 600. El ojo leía primero el rótulo chiquito.
+      Ningún ajuste de tamaño arregla eso: hay que cambiar de familia.
+   2. El kicker vivía en 10px (`--ts-2xs`) + 0.2em de tracking — el mismo
+      diagnóstico que ya se escribió para superadmin en 2026-05-19 ("10px es
+      subliminal, 0.2em mata la legibilidad") y que nunca había bajado al admin.
+   3. lh 1.5 en un título de UNA línea: 10px de aire muerto adentro de la caja.
+   Y el tamaño no era el del token: `@media (max-height:860px)` baja --ts-2xl a
+   21px, así que en una laptop de 768 de alto el H1 de módulo medía lo mismo que
+   un subtítulo. Por eso los títulos de libro usan `--ts-libro-title`, propio.
+
+   DESPUÉS (medido): Fraunces 600 · 26px · lh 29.12px · kicker 12px ls 0.08em.
+   El título creció 24% y la banda NO creció (41px vs 42px) porque el
+   line-height bajó de 1.5 a 1.12.
+
+   Alcance: SOLO el panel de tenant. El storefront y el marketplace siguen con
+   Instrument Serif (identidad editorial de la tienda) y el superadmin mantiene
+   su refresh a sans de 2026-05-19, más abajo en este archivo.
+   Revertir: es un commit propio, `git revert` y vuelve todo.
+
+   Los dos selectores son necesarios:
+   - `[data-area="admin"]` porque `lib/design-presets.ts` inyecta
+     --ts-2xs/--ls-wider como estilo inline en un div contenedor, y una custom
+     property redeclarada en un descendiente gana para todo su subárbol (misma
+     nota que el bloque de escala tipográfica de más arriba).
+   - `:root:has([data-area="admin"])` porque los modales se montan en portal
+     colgando de <body>, fuera de [data-area="admin"] — sin esto, un modal
+     abierto se vería con la tipografía vieja.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root:has([data-area="admin"]),
+[data-area="admin"] {
+  /* Fraunces: serif variable con eje óptico y pesos reales. `opsz 32` engorda
+     los remates y abre la letra a tamaño de título. Sigue siendo "editorial de
+     selva" — la propia nota de --font-display-family decía Fraunces. */
+  --font-display-family: var(--font-display-alt), "Instrument Serif", Georgia, serif;
+  --ts-2xs: 0.75rem;     /* 10 → 12px: piso legible de kickers y badges */
+  --ls-wider: 0.08em;    /* 0.2em → 0.08em: el kicker deja de deletrearse */
+  --ts-libro-title: 1.625rem;  /* 26px fijo: no lo encoge el max-height */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+:root:has([data-area="admin"]) .font-display,
+[data-area="admin"] .font-display {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variation-settings: "opsz" 32;
+}
+
+/* Título de módulo de los libros (CTP, LO-TH): tamaño propio y line-height
+   corto. `.libro-title`/`.libro-kicker` las pone LibroChrome. */
+:root:has([data-area="admin"]) .libro-title,
+[data-area="admin"] .libro-title {
+  font-size: var(--ts-libro-title);
+  line-height: 1.12;     /* 1.5 → 1.12: la letra crece y la banda no */
+}
+
+/* El rótulo pasa de terciario a secundario: a 12px con poco tracking necesita
+   color para seguir leyéndose como rótulo y no como ruido gris. */
+:root:has([data-area="admin"]) .libro-kicker,
+[data-area="admin"] .libro-kicker {
+  color: var(--text-secondary);
+  font-weight: 700;
+}

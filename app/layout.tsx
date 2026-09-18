@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Geist, Instrument_Serif } from "next/font/google";
+import { Geist, Instrument_Serif, Fraunces } from "next/font/google";
 
 // Body — Geist: tipografía moderna, neutral, optimizada para pantalla.
 // PERF 2026-05-12 (Performance agent P0): preload TRUE para Geist (body
@@ -28,6 +28,23 @@ const InstrumentDisplay = Instrument_Serif({
   // disponible cross-browser/OS.
   fallback: ["Georgia", "Cambria", "Times New Roman", "serif"],
 });
+// Display del PANEL — Fraunces: serif variable con eje óptico (opsz) y pesos
+// reales hasta 700. Instrument Serif solo tiene el peso 400, y a 21-26px el
+// título del módulo se leía más fino que su propio kicker (medido 2026-09-18).
+// Se aplica en [data-area="admin"] (globals.css); el storefront y el
+// marketplace siguen con Instrument Serif.
+// preload TRUE: la usa el título de las 133 pestañas del panel, así que es
+// texto visible en el primer pintado — igual criterio que Geist e Instrument.
+// axes: sólo `opsz` — cada eje extra (SOFT/WONK) engorda el archivo variable.
+const FrauncesDisplay = Fraunces({
+  variable: "--font-display-alt",
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  axes: ["opsz"],
+  fallback: ["Georgia", "Cambria", "Times New Roman", "serif"],
+});
+
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { prisma } from "@/lib/prisma";
@@ -301,7 +318,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es-PE" className={`${GeistSans.variable} ${InstrumentDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="es-PE" className={`${GeistSans.variable} ${InstrumentDisplay.variable} ${FrauncesDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head suppressHydrationWarning>
         <Suspense>
           <DynamicHeadContent />
