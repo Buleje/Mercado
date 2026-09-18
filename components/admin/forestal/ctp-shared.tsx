@@ -982,7 +982,7 @@ export function ColumnasMenu<K extends string>({
   onChange,
   className,
 }: {
-  columnas: readonly { key: K; label: string }[];
+  columnas: readonly { key: K; label: string; porDefecto?: boolean; grupo?: string }[];
   visibles: Record<K, boolean>;
   onChange: (v: Record<K, boolean>) => void;
   /** Alto/redondeo del botón, para que entre en barras que no usan la altura
@@ -996,6 +996,17 @@ export function ColumnasMenu<K extends string>({
     window.addEventListener("click", cerrar);
     return () => window.removeEventListener("click", cerrar);
   }, [abierto]);
+  const prendidas = columnas.reduce((n, c) => n + (visibles[c.key] ? 1 : 0), 0);
+  /* Conserva el orden en que la tabla declaró los grupos (un Map preserva
+     inserción); las columnas sin grupo caen juntas bajo el rótulo de siempre. */
+  const grupos = [
+    ...columnas
+      .reduce((m, c) => {
+        const g = c.grupo ?? "Columnas";
+        return m.set(g, [...(m.get(g) ?? []), c]);
+      }, new Map<string, (typeof columnas)[number][]>())
+      .entries(),
+  ];
   return (
     <div className="relative">
       <button
@@ -1015,28 +1026,41 @@ export function ColumnasMenu<K extends string>({
       >
         <Columns3 className="h-4 w-4" aria-hidden />
         <span className="max-sm:sr-only">Columnas</span>
+        {/* Cuántas hay prendidas de cuántas: con quince opciones, el botón sin
+            número no dice si quedó algo apagado de la sesión pasada (la
+            preferencia persiste por dispositivo). */}
+        <span className="font-mono text-xs tabular-nums opacity-70">
+          {prendidas}/{columnas.length}
+        </span>
       </button>
       {abierto && (
         <div
-          className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
+          className="absolute right-0 top-full z-50 mt-1 max-h-[70vh] min-w-[230px] overflow-y-auto overscroll-contain rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            Columnas
-          </p>
-          {columnas.map((c) => (
-            <label
-              key={c.key}
-              className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-            >
-              <input
-                type="checkbox"
-                checked={visibles[c.key]}
-                onChange={(e) => onChange({ ...visibles, [c.key]: e.target.checked })}
-                className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)]"
-              />
-              {c.label}
-            </label>
+          {/* Agrupadas cuando la tabla declara grupos: quince casillas seguidas
+              se leen como una bolsa. Sin `grupo`, cae en una sola lista y se ve
+              igual que antes. */}
+          {grupos.map(([titulo, delGrupo]) => (
+            <div key={titulo} className="mb-1 last:mb-0">
+              <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                {titulo}
+              </p>
+              {delGrupo.map((c) => (
+                <label
+                  key={c.key}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={visibles[c.key]}
+                    onChange={(e) => onChange({ ...visibles, [c.key]: e.target.checked })}
+                    className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)]"
+                  />
+                  {c.label}
+                </label>
+              ))}
+            </div>
           ))}
           {/* Con una tabla de catorce columnas, volver al estado inicial
               tildando de a una es tedioso — y dejarla vacía sin salida sería
@@ -1055,6 +1079,20 @@ export function ColumnasMenu<K extends string>({
               className="flex-1 rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
             >
               Ninguna
+            </button>
+            {/* «Todas» con quince columnas deja una tabla que sólo se lee
+                scrolleando: el camino de vuelta es el set con el que la pantalla
+                viene de fábrica, no el vacío ni el todo. */}
+            <button
+              type="button"
+              onClick={() =>
+                onChange(
+                  Object.fromEntries(columnas.map((c) => [c.key, c.porDefecto ?? true])) as Record<K, boolean>,
+                )
+              }
+              className="flex-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            >
+              Por defecto
             </button>
           </div>
         </div>

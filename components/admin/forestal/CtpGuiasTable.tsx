@@ -61,6 +61,7 @@ import {
   type WoodEntry,
   type WoodEntryStatus,
 } from "./ctp-shared";
+import { UNIT_LABELS } from "./ctp-section-shared";
 
 /** Un autofiltro en la cabecera de su columna (estilo Excel). Lo arma la vista. */
 /**
@@ -69,19 +70,63 @@ import {
  * Fijas quedan las que IDENTIFICAN la fila —N° de libro, fecha, especies,
  * cantidad y acciones—: esconderlas dejaría filas que no se pueden reconocer.
  */
-export type ColGuiaOpcional = "documento" | "proveedor" | "permiso" | "estado";
+export type ColGuiaOpcional =
+  | "documento" | "proveedor" | "permiso" | "estado"
+  | "tipoDoc" | "fechaGuia" | "sniffs" | "origen" | "recepcion" | "producto"
+  | "piezas" | "trozas" | "unidad" | "costo" | "registro";
 export type ColsGuiasVisibles = Record<ColGuiaOpcional, boolean>;
 
-export const COLUMNAS_GUIAS_OPCIONALES: readonly { key: ColGuiaOpcional; label: string; porDefecto?: boolean }[] = [
-  { key: "documento", label: "Documento (GTF)" },
-  { key: "proveedor", label: "Proveedor" },
-  { key: "permiso", label: "N° Permiso" },
-  { key: "estado", label: "Estado" },
+/**
+ * Las quince columnas elegibles (Brandon, 2026-09-18: «quiero más opciones para
+ * escoger»). Las cuatro de siempre arrancan prendidas y las once nuevas
+ * apagadas: quien ya tenía su tabla armada no se la encuentra cambiada.
+ *
+ * El `grupo` es lo que hace usable un menú de quince: sin él es una lista de
+ * casillas donde no se distingue «Recepción» (operación) de «Valorizado»
+ * (plata). Cada dato sale de la guía o de su primer asiento — ninguna columna
+ * inventa un cálculo que la fila no tenga.
+ */
+export const COLUMNAS_GUIAS_OPCIONALES: readonly {
+  key: ColGuiaOpcional;
+  label: string;
+  porDefecto?: boolean;
+  grupo?: string;
+}[] = [
+  // El papel
+  { key: "documento", label: "Documento (GTF)", grupo: "El papel" },
+  { key: "tipoDoc", label: "Tipo de documento", porDefecto: false, grupo: "El papel" },
+  { key: "fechaGuia", label: "Fecha del documento", porDefecto: false, grupo: "El papel" },
+  { key: "sniffs", label: "N° SNIFFS", porDefecto: false, grupo: "El papel" },
+  // De dónde viene
+  { key: "proveedor", label: "Proveedor", grupo: "De dónde viene" },
+  { key: "permiso", label: "N° Permiso", grupo: "De dónde viene" },
+  { key: "origen", label: "Origen (región/distrito)", porDefecto: false, grupo: "De dónde viene" },
+  // Qué trae
+  { key: "producto", label: "Producto", porDefecto: false, grupo: "Qué trae" },
+  { key: "piezas", label: "Piezas", porDefecto: false, grupo: "Qué trae" },
+  { key: "trozas", label: "Trozas cargadas", porDefecto: false, grupo: "Qué trae" },
+  { key: "unidad", label: "Unidad declarada", porDefecto: false, grupo: "Qué trae" },
+  // Cómo va
+  { key: "recepcion", label: "Recepción en planta", porDefecto: false, grupo: "Cómo va" },
+  { key: "estado", label: "Estado", grupo: "Cómo va" },
+  { key: "costo", label: "Valorizado (S/)", porDefecto: false, grupo: "Cómo va" },
+  { key: "registro", label: "Registró", porDefecto: false, grupo: "Cómo va" },
 ];
 
-const COLS_GUIAS_DEFECTO: ColsGuiasVisibles = {
-  documento: true, proveedor: true, permiso: true, estado: true,
-};
+const COLS_GUIAS_DEFECTO: ColsGuiasVisibles = Object.fromEntries(
+  COLUMNAS_GUIAS_OPCIONALES.map((c) => [c.key, c.porDefecto ?? true]),
+) as ColsGuiasVisibles;
+
+/** Las opcionales que van ANTES de «Especies», en el orden en que se pintan.
+ *  El pie de la tabla las cuenta para su colSpan: con un número fijo, apagar
+ *  una corría el total una celda y el m³ caía bajo otra columna. */
+const COLS_IZQUIERDA: readonly ColGuiaOpcional[] = [
+  "tipoDoc", "documento", "fechaGuia", "sniffs", "proveedor", "permiso", "origen", "recepcion", "producto",
+];
+/** Las opcionales que van DESPUÉS de «Cantidad» (antes de «Acciones»). */
+const COLS_DERECHA: readonly ColGuiaOpcional[] = ["piezas", "trozas", "unidad", "costo", "registro", "estado"];
+const cuantas = (claves: readonly ColGuiaOpcional[], cols: ColsGuiasVisibles) =>
+  claves.reduce((n, k) => n + (cols[k] ? 1 : 0), 0);
 
 /**
  * El autofiltro de una columna de la bandeja de Ingresos.
@@ -245,7 +290,10 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                 </Th>
                 <Th className="w-16">N° libro</Th>
                 <ThSort field="entryDate" sort={sort} onSort={onSort}>Fecha</ThSort>
+                {cols.tipoDoc && <Th>Tipo</Th>}
                 {cols.documento && <Th>Documento</Th>}
+                {cols.fechaGuia && <Th>Fecha del documento</Th>}
+                {cols.sniffs && <Th>N° SNIFFS</Th>}
                 {cols.proveedor && (
                   <ThSort field="providerName" sort={sort} onSort={onSort} filtro={props.filtrosColumna?.provider}>
                     Proveedor
@@ -262,9 +310,17 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                     )}
                   </Th>
                 )}
+                {cols.origen && <Th>Origen</Th>}
+                {cols.recepcion && <Th>Recepción</Th>}
+                {cols.producto && <Th>Producto</Th>}
                 {/* Ya no es «la» especie: es la lista de lo que trae el papel. */}
                 <ThSort field="speciesCommonName" sort={sort} onSort={onSort} filtro={props.filtrosColumna?.species}>Especies de la guía</ThSort>
                 <ThSort field="volumeM3" sort={sort} onSort={onSort} align="right">Cantidad</ThSort>
+                {cols.piezas && <Th className="text-right">Piezas</Th>}
+                {cols.trozas && <Th className="text-right">Trozas</Th>}
+                {cols.unidad && <Th>Unidad</Th>}
+                {cols.costo && <Th className="text-right">Valorizado</Th>}
+                {cols.registro && <Th>Registró</Th>}
                 {cols.estado && <Th>Estado</Th>}
                 <Th className="text-right">Acciones</Th>
               </tr>
@@ -313,7 +369,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                       y especies— más las opcionales que estén prendidas. Con 3
                       el total caía una celda a la izquierda y el m³ terminaba
                       bajo «Estado» (visto en pantalla, no por el tipo). */}
-                  <td colSpan={4 + (cols.documento ? 1 : 0) + (cols.proveedor ? 1 : 0) + (cols.permiso ? 1 : 0)} className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">
+                  <td colSpan={4 + cuantas(COLS_IZQUIERDA, cols)} className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">
                     {guias.length} guía{guias.length === 1 ? "" : "s"} en pantalla · {totalPagina.lineas} asiento
                     {totalPagina.lineas === 1 ? "" : "s"} del libro
                   </td>
@@ -326,7 +382,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                       {totalPagina.pz} piezas
                     </div>
                   </td>
-                  <td colSpan={cols.estado ? 2 : 1} />
+                  <td colSpan={1 + cuantas(COLS_DERECHA, cols)} />
                 </tr>
               </tfoot>
             )}
@@ -596,6 +652,16 @@ function FilaGuia({
             </div>
           )}
         </Td>
+        {cols.tipoDoc && (
+          <Td>
+            <span className="whitespace-nowrap rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+              {guia.docType || "GTF"}
+            </span>
+            {guia.gtfSeries && (
+              <div className="mt-0.5 font-mono text-xs text-[var(--text-tertiary)]">Serie {guia.gtfSeries}</div>
+            )}
+          </Td>
+        )}
         {cols.documento && (
           <Td>
             <button
@@ -611,6 +677,26 @@ function FilaGuia({
               {guia.gtfSeries ? ` · ${guia.gtfSeries}` : ""}
             </div>
             {guia.gtfDate && <div className="text-sm text-[var(--text-tertiary)]">{formatDate(guia.gtfDate)}</div>}
+          </Td>
+        )}
+        {cols.fechaGuia && (
+          <Td>
+            {guia.gtfDate ? (
+              <span className="whitespace-nowrap font-medium text-[var(--text-primary)]">{formatDate(guia.gtfDate)}</span>
+            ) : (
+              <span className="text-sm text-[var(--text-tertiary)]">—</span>
+            )}
+          </Td>
+        )}
+        {/* El N° de constancia del SNIFFS: con él se vuelve a la guía en la base
+            de SERFOR, y es lo que pide una fiscalización que quiere contrastar. */}
+        {cols.sniffs && (
+          <Td>
+            {primera.serforNumeroRegistro ? (
+              <span className="font-mono text-sm text-[var(--text-primary)]">{primera.serforNumeroRegistro}</span>
+            ) : (
+              <span className="text-sm text-[var(--text-tertiary)]">—</span>
+            )}
           </Td>
         )}
         {/* Sólo el proveedor (Brandon, 2026-09-08): el contrato y la resolución
@@ -654,6 +740,49 @@ function FilaGuia({
                 Res. {guia.originSourceNumber}
               </div>
             )}
+          </Td>
+        )}
+        {/* De dónde salió la madera. `originLabel` traduce el tipo (concesión,
+            predio, plantación); región y distrito vienen del asiento. */}
+        {cols.origen && (
+          <Td>
+            <div className="whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
+              {primera.originRegion || primera.originDistrict ? (
+                [primera.originRegion, primera.originDistrict].filter(Boolean).join(" · ")
+              ) : (
+                <span className="text-[var(--text-tertiary)]">—</span>
+              )}
+            </div>
+            <div className="text-xs text-[var(--text-tertiary)]">{originLabel(primera.originType)}</div>
+          </Td>
+        )}
+        {/* Cuándo LLEGÓ la madera a planta (ADR-335) — distinta de la fecha del
+            asiento y de la del papel. Si falta algo por recibir, lo dice acá
+            mismo en vez de esperar a que se abra la guía. */}
+        {cols.recepcion && (
+          <Td>
+            {primera.fechaRecepcion ? (
+              <div className="whitespace-nowrap font-medium text-[var(--text-primary)]">
+                {formatDate(primera.fechaRecepcion)}
+              </div>
+            ) : (
+              <span className="text-sm text-[var(--text-tertiary)]">sin recepcionar</span>
+            )}
+            {faltaRecibirMadera(guia) && (
+              <div
+                title={loQueFaltaRecibir(guia).join(" · ")}
+                className="mt-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+              >
+                falta recibir
+              </div>
+            )}
+          </Td>
+        )}
+        {cols.producto && (
+          <Td>
+            <span className="whitespace-nowrap rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
+              {[...new Set(guia.lineas.map((l) => productLabel(l.productType)))].join(" · ") || "—"}
+            </span>
           </Td>
         )}
         <Td>
@@ -734,6 +863,68 @@ function FilaGuia({
             );
           })()}
         </Td>
+        {cols.piezas && (
+          <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
+            {guia.piezas > 0 ? guia.piezas : <span className="text-[var(--text-tertiary)]">—</span>}
+          </Td>
+        )}
+        {/* Lo CARGADO en el detalle, que puede no coincidir con lo que declara
+            el papel — el descuadre ya se avisa en «Cantidad»; acá se ve el dato
+            crudo de los dos lados. */}
+        {cols.trozas && (
+          <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
+            {guia.trozasCount > 0 ? (
+              <>
+                {guia.trozasCount}
+                {guia.trozasM3 != null && (
+                  <div className="text-xs text-[var(--text-tertiary)]">{fmtM3(guia.trozasM3)} m³</div>
+                )}
+              </>
+            ) : (
+              <span className="text-[var(--text-tertiary)]">—</span>
+            )}
+          </Td>
+        )}
+        {cols.unidad && (
+          <Td className="text-sm text-[var(--text-secondary)]">
+            {primera.unit ? (UNIT_LABELS[primera.unit] ?? primera.unit) : <span className="text-[var(--text-tertiary)]">—</span>}
+          </Td>
+        )}
+        {/* Lo que se pagó por esta madera (ADR-135). Suma los asientos de la
+            guía: valorizar una línea y no la otra dejaba media guía sin precio
+            y no se notaba desde la bandeja. */}
+        {cols.costo && (
+          <Td className="text-right font-mono tabular-nums">
+            {(() => {
+              const conCosto = guia.lineas.filter((l) => tieneCosto(l));
+              if (conCosto.length === 0) return <span className="text-sm text-[var(--text-tertiary)]">sin valorizar</span>;
+              const total = conCosto.reduce((n, l) => n + Number(l.costoTotal ?? 0), 0);
+              const moneda = conCosto[0]?.moneda === "USD" ? "US$" : "S/";
+              return (
+                <>
+                  <div className="whitespace-nowrap font-bold text-[var(--text-primary)]">
+                    {moneda} {total.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  {conCosto.length < guia.lineas.length && (
+                    <div className="text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                      {conCosto.length} de {guia.lineas.length} asientos
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </Td>
+        )}
+        {cols.registro && (
+          <Td className="text-sm text-[var(--text-secondary)]">
+            <div className="max-w-28 truncate" title={primera.createdBy}>{primera.createdBy || "—"}</div>
+            {primera.validatedBy && (
+              <div className="truncate text-xs text-[var(--text-tertiary)]" title={`Validó ${primera.validatedBy}`}>
+                validó {primera.validatedBy}
+              </div>
+            )}
+          </Td>
+        )}
         {cols.estado && (
           <Td>
             {guia.statusMixto ? (
