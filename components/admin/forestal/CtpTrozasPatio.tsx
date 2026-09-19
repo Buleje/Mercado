@@ -13,44 +13,38 @@
  * La madera en troza se mancha y se raja: el tramo de antigüedad es el aviso de
  * que hay que aserrar eso primero (FIFO).
  *
+ * ## Dos cifras, cada una con su desglose colgando
+ *
+ * Antes eran cuatro tarjetas arriba y tres filas de pastillas abajo, todas del
+ * mismo peso: nada decía que «Libre en patio 45» es de qué está hecho el 45 de
+ * la primera tarjeta, ni que los tramos de antigüedad explican «la más vieja».
+ * Ahora cada desglose vive DENTRO de la cifra que explica y el resto —el hueco
+ * de título, el tamaño de lo leído, las especies— baja a una línea de apoyo.
+ *
  * Presentacional: los datos llegan por props desde `use-trozas-patio`, para que
- * el resumen y la lista de abajo nunca cuenten cosas distintas.
+ * el resumen y la lista de abajo nunca cuenten cosas distintas. Los CONTROLES
+ * de especie/guía/título ya no viven acá sino pegados a la tabla que filtran
+ * (siguen recortando estas cifras: el estado es del padre).
  */
 
 import { useMemo } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { Boxes, Clock, RefreshCw, ShieldAlert, Trees } from "@buleje/design-system/icons";
+import { Kicker } from "@buleje/design-system";
+import { Boxes, Clock, ShieldAlert } from "@buleje/design-system/icons";
 import {
   antiguedadDelPatio,
   ESTADO_META,
   filtrarPatio,
-  opcionesDeOrigen,
   resumirPatio,
   SIN_TITULO,
   type EstadoTroza,
 } from "@/lib/forestal/trozas-patio";
-import CtpKpiFiltros from "./CtpKpiFiltros";
+import { CifraPatio, MicroCifra, n2, Pastilla, puntoDeTono, type TonoPatio } from "./ctp-trozas-ui";
 import type { PatioMeta, TrozaPatioAPI } from "./hooks/use-trozas-patio";
-
-const n2 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 2 });
-
-/** Color por tono, con los tokens del DS (siguen el tema). */
-const TONO = {
-  ok: { texto: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", punto: "var(--data-success-500)" },
-  info: { texto: "text-[var(--accent-ink)] dark:text-[var(--accent)]", punto: "var(--data-6)" },
-  warn: { texto: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]", punto: "var(--data-warning-500)" },
-  danger: { texto: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]", punto: "var(--data-error-500)" },
-  muted: { texto: "text-[var(--text-secondary)]", punto: "var(--rule-strong)" },
-} as const;
-
-export type TonoPatio = keyof typeof TONO;
-export const puntoDeTono = (t: TonoPatio) => TONO[t].punto;
 
 export interface CtpTrozasPatioProps {
   trozas: readonly TrozaPatioAPI[];
   meta: PatioMeta;
   cargando: boolean;
-  onRecargar: () => void;
   /** Los estados que la lista de abajo está mostrando, para marcarlos acá. */
   estadoFiltro: readonly EstadoTroza[];
   onEstadoFiltro: (e: EstadoTroza[]) => void;
@@ -60,20 +54,18 @@ export interface CtpTrozasPatioProps {
   /**
    * Los filtros que RECORTAN el panorama (ADR-400): especie, guía y título.
    *
-   * Estado y tramo quedan afuera a propósito: son el desglose que estas mismas
-   * tarjetas ofrecen, y recortarse a sí mismas las dejaría en cero.
+   * Llegan sólo para contar: se eligen en la cabecera de la tabla, que es la
+   * que recortan. Estado y tramo quedan afuera a propósito — son el desglose
+   * que estas mismas cifras ofrecen, y recortarse a sí mismas las dejaría en
+   * cero.
    */
   especie: readonly string[];
-  onEspecie: (v: string[]) => void;
   guia: readonly string[];
-  onGuia: (v: string[]) => void;
   titulo: readonly string[];
-  onTitulo: (v: string[]) => void;
 }
 
 export default function CtpTrozasPatio({
-  trozas, meta, cargando, onRecargar, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro,
-  especie, onEspecie, guia, onGuia, titulo, onTitulo,
+  trozas, meta, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro, especie, guia, titulo,
 }: CtpTrozasPatioProps) {
   /* `hoy` fijo mientras no cambien los datos: recalcularlo en cada pintada hace
      que la antigüedad se mueva sola a mitad de una sesión larga. */
@@ -87,22 +79,19 @@ export default function CtpTrozasPatio({
     () => filtrarPatio(trozas, { especie, guia, titulo }, hoy),
     [trozas, especie, guia, titulo, hoy],
   );
-  /* Las opciones salen de la pila ENTERA: si salieran de lo ya filtrado, quitar
-     un filtro no se podría hacer desde el propio desplegable. */
-  const todo = useMemo(() => resumirPatio(trozas), [trozas]);
-  const opcionesGuia = useMemo(() => opcionesDeOrigen(trozas, "guia"), [trozas]);
-  const opcionesTitulo = useMemo(() => opcionesDeOrigen(trozas, "titulo"), [trozas]);
 
   const resumen = useMemo(() => resumirPatio(delFiltro), [delFiltro]);
   const edad = useMemo(() => antiguedadDelPatio(delFiltro, hoy), [delFiltro, hoy]);
 
-  const libres = resumen.porEstado.find((e) => e.estado === "libre");
   /* Decide si «en patio» y «listas para sierra» tienen algo distinto que decir. */
   const hayApartadas = resumen.apartadas > 0;
   /* Los tramos vacíos no se dibujan: una barra en cero con el botón apagado
      ocupa el mismo alto que un dato y no es uno. */
   const tramosConPiezas = useMemo(() => edad.tramos.filter((t) => t.piezas > 0), [edad.tramos]);
   const maxEspecie = Math.max(1, ...resumen.porEspecie.map((e) => e.m3));
+  /* Con UNA sola especie la barra siempre da 100 % y no dice nada. Se muestran
+     las seis de más volumen; el resto se cuenta, que es lo que se pregunta. */
+  const especiesVisibles = resumen.porEspecie.slice(0, 6);
   const tonoEdad: TonoPatio =
     edad.masVieja == null ? "muted" : edad.masVieja >= 60 ? "danger" : edad.masVieja >= 30 ? "warn" : "ok";
   /* Mientras se lee, las cifras muestran «…» y no 0: un cero se lee como un
@@ -110,338 +99,171 @@ export default function CtpTrozasPatio({
   const leyendo = cargando && trozas.length === 0;
   const cifra = (v: number | string) => (leyendo ? "…" : String(v));
 
-  const activos = [especie, guia, titulo].filter((v) => v.length > 0).length;
+  /* Qué recorte están mirando estas cifras. Los controles viven en la tabla,
+     así que sin esta línea un «45» filtrado se leería como el patio entero —el
+     número más caro de esta pantalla. */
+  const recorte = [
+    especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
+    titulo.length > 0 ? `permiso: ${titulo.map((t) => (t === SIN_TITULO ? "sin título declarado" : t)).join(" o ")}` : "",
+    guia.length > 0 ? `guía: ${guia.join(" o ")}` : "",
+  ].filter(Boolean).join(" · ");
 
   return (
-    <div className="space-y-3">
-      {/* ── Lo que hay parado ─────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
-        {/* Los filtros que gobiernan estas cifras (ADR-400): las mismas tres
-            preguntas que se le hacen a la pila —qué especie, de qué guía, de
-            qué título— y que ya recortaban la lista de abajo. */}
-        <CtpKpiFiltros
-          campos={[
-            {
-              key: "especie",
-              label: "Especie",
-              todos: "Todas las especies",
-              valor: especie as string[],
-              /* «listadas» y no a secas: `porEspecie` cuenta TODA la pila
-                 cargada —incluidas las que ya salieron del patio— mientras la
-                 tarjeta grande cuenta sólo las paradas. El hint predice las
-                 filas de la lista, que es lo que se ve al elegir; sin la
-                 palabra, «6 pza» al lado de una tarjeta que dice 4 se lee como
-                 un error de la pantalla. */
-              opciones: todo.porEspecie.map((e) => ({
-                value: e.especie,
-                label: e.especie,
-                hint: `${e.piezas} listadas · ${n2(e.m3)} m³`,
-              })),
-              onChange: onEspecie,
-            },
-            {
-              key: "titulo",
-              label: "Permiso (título habilitante)",
-              todos: "Todos los permisos",
-              valor: titulo as string[],
-              opciones: opcionesTitulo.map((o) => ({
-                value: o.valor,
-                /* «Sin título» es una opción con nombre propio, no la ausencia
-                   de filtro: buscar las piezas sin origen es una tarea. */
-                label: o.valor === SIN_TITULO ? "Sin título declarado" : o.label,
-                hint: `${o.piezas} listadas`,
-              })),
-              onChange: onTitulo,
-            },
-            {
-              key: "guia",
-              label: "Guía de ingreso",
-              todos: "Todas las guías",
-              valor: guia as string[],
-              opciones: opcionesGuia.map((o) => ({ value: o.valor, label: o.label, hint: `${o.piezas} listadas` })),
-              onChange: onGuia,
-            },
-          ]}
-          onLimpiar={() => { onEspecie([]); onTitulo([]); onGuia([]); }}
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+      {recorte && (
+        <p className="mb-2 flex flex-wrap items-center gap-1.5">
+          <Kicker as="span">Las cifras miran sólo</Kicker>
+          <span className="text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">{recorte}</span>
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            — se quita desde la cabecera de la tabla
+          </span>
+        </p>
+      )}
+      <div className="grid gap-2.5 lg:grid-cols-2">
+        <CifraPatio
+          heroe
+          icono={Boxes}
+          label={hayApartadas ? "Paradas en patio" : "En patio, listas"}
+          valor={cifra(resumen.enPatio.piezas)}
           nota={
-            activos > 0
-              ? `Las cifras y la lista muestran sólo ${[
-                  especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
-                  titulo.length > 0
-                    ? `permiso: ${titulo.map((t) => (t === SIN_TITULO ? "sin título declarado" : t)).join(" o ")}`
-                    : "",
-                  guia.length > 0 ? `guía: ${guia.join(" o ")}` : "",
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}`
-              : null
+            leyendo
+              ? "leyendo el patio…"
+              : hayApartadas
+                ? `${n2(resumen.enPatio.m3)} m³ ocupando cancha`
+                : `${n2(resumen.enPatio.m3)} m³ · ninguna apartada`
           }
+          desglose="En qué anda"
+          explicacion="De qué está hecho ese número: cada estado filtra la lista de abajo."
+        >
+          {resumen.porEstado.map(({ estado, piezas, m3 }) => {
+            const m = ESTADO_META[estado];
+            const activo = estadoFiltro.includes(estado);
+            return (
+              <Pastilla
+                key={estado}
+                activo={activo}
+                punto={puntoDeTono(m.tono)}
+                titulo={m.hint}
+                /* Suma en vez de reemplazar: ver «libre + apartada» a la vez
+                   es la pregunta real de «qué hay parado». */
+                onClick={() =>
+                  onEstadoFiltro(activo ? estadoFiltro.filter((x) => x !== estado) : [...estadoFiltro, estado])
+                }
+                label={m.label}
+                piezas={piezas}
+                m3={m3}
+              />
+            );
+          })}
+          {resumen.porEstado.length === 0 && !cargando && (
+            <span className="text-xs text-[var(--text-secondary)]">
+              Todavía no hay trozas cargadas. Llegan con el alta de la guía desde SERFOR.
+            </span>
+          )}
+        </CifraPatio>
+
+        <CifraPatio
+          icono={Clock}
+          label="La más vieja"
+          valor={cifra(edad.masVieja != null ? `${edad.masVieja} d` : "—")}
+          nota={
+            edad.masVieja != null && edad.masVieja >= 60
+              ? "riesgo de mancha"
+              : edad.masVieja != null
+                ? "días parada"
+                : "sin fecha en ninguna pieza"
+          }
+          tono={tonoEdad}
+          desglose="Paradas hace"
+          explicacion="Cuenta desde que la pieza bajó del camión (o desde el asiento de su guía si no se sabe) y sólo mira lo que sigue parado."
+        >
+          {tramosConPiezas.map((t) => {
+            const activo = tramoFiltro.includes(t.key);
+            return (
+              <Pastilla
+                key={t.key}
+                activo={activo}
+                punto={puntoDeTono(t.tono)}
+                titulo="Toca para ver sólo estas en la lista"
+                onClick={() =>
+                  onTramoFiltro(activo ? tramoFiltro.filter((x) => x !== t.key) : [...tramoFiltro, t.key])
+                }
+                label={t.label}
+                piezas={t.piezas}
+                m3={t.m3}
+              />
+            );
+          })}
+          {tramosConPiezas.length === 0 && <span className="text-xs text-[var(--text-secondary)]">Nada parado.</span>}
+          {edad.sinFecha > 0 && (
+            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{edad.sinFecha} sin fecha</span>
+          )}
+        </CifraPatio>
+      </div>
+
+      {/* ── Lo de apoyo, en una línea ──────────────────────────────────────
+          Tres cosas que hay que poder mirar pero que no compiten con las dos
+          cifras de arriba: el hueco de origen legal, cuánto se leyó y de qué
+          especies está hecha la pila. */}
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--rule-soft)] pt-2.5">
+        {/* El hueco de origen legal sólo aparece cuando existe: una cifra en
+            cero es ruido, y en verde sería una felicitación que nadie pidió. */}
+        {resumen.sinTitulo.piezas > 0 && (
+          <MicroCifra
+            icono={ShieldAlert}
+            label="Sin título declarado"
+            valor={cifra(resumen.sinTitulo.piezas)}
+            nota={`${n2(resumen.sinTitulo.m3)} m³ sin origen legal`}
+            tono="warn"
+          />
+        )}
+        <MicroCifra
+          conteoId="patio"
+          label="Piezas registradas"
+          valor={cifra(resumen.total.piezas)}
+          nota={meta.truncado ? `de ${meta.total} que hay` : "de todas las guías"}
+          tono={meta.truncado ? "warn" : "muted"}
         />
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-            <Trees className="h-4 w-4 text-[var(--accent)]" /> El patio, pieza por pieza
-          </CardTitle>
-          <button
-            type="button" onClick={onRecargar} disabled={cargando}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-60"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${cargando ? "animate-spin" : ""}`} /> Actualizar
-          </button>
-        </div>
-
-        {/*
-          Las tarjetas se adaptan a lo que los datos tienen para decir.
-
-          «Paradas en patio» (libre + apartada) y «Listas para sierra» (sólo
-          libre) son cosas distintas, pero mientras no haya NADA apartado dicen
-          el mismo número: dos tarjetas grandes repitiendo 57 · 27.52 m³ enseñan
-          a no leerlas. Sin apartadas se muestra una sola, y el lugar que queda
-          libre lo ocupa el dato que sí falta: cuántas piezas del patio no
-          declaran título habilitante — el hueco de origen legal que el
-          certificado no perdona.
-        */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Cifra
-            label={hayApartadas ? "Paradas en patio" : "En patio, listas"}
-            valor={cifra(resumen.enPatio.piezas)}
-            nota={
-              leyendo
-                ? "leyendo el patio…"
-                : hayApartadas
-                  ? `${n2(resumen.enPatio.m3)} m³ ocupando cancha`
-                  : `${n2(resumen.enPatio.m3)} m³ · ninguna apartada`
-            }
-            icono={Boxes}
-            tono={hayApartadas ? "muted" : "ok"}
-            heroe
-          />
-          {hayApartadas && (
-            <Cifra label="Listas para sierra" valor={cifra(libres?.piezas ?? 0)} nota={leyendo ? "" : `${n2(libres?.m3 ?? 0)} m³ sin apartar`} tono="ok" />
-          )}
-          <Cifra
-            label="La más vieja"
-            valor={cifra(edad.masVieja != null ? `${edad.masVieja} d` : "—")}
-            nota={edad.masVieja != null && edad.masVieja >= 60 ? "riesgo de mancha" : "días parada"}
-            tono={tonoEdad}
-            icono={Clock}
-          />
-          {/* El hueco de origen legal sólo aparece cuando existe: una tarjeta en
-              cero es ruido, y en verde sería una felicitación que nadie pidió. */}
-          {resumen.sinTitulo.piezas > 0 && (
-            <Cifra
-              label="Sin título declarado"
-              valor={cifra(resumen.sinTitulo.piezas)}
-              nota={`${n2(resumen.sinTitulo.m3)} m³ sin origen legal`}
-              tono="warn"
-              icono={ShieldAlert}
-            />
-          )}
-          <Cifra
-            label="Piezas registradas"
-            valor={cifra(resumen.total.piezas)}
-            nota={meta.truncado ? `de ${meta.total} que hay` : "de todas las guías"}
-            tono={meta.truncado ? "warn" : "muted"}
-          />
-        </div>
-
-        {/*
-          ── Una LÍNEA por dimensión, no un panel por dimensión ─────────────
-          Antes esto eran dos tarjetas más debajo de los KPIs, en un grid de dos
-          columnas: la de la izquierda se estiraba a la altura de la derecha y
-          quedaba con un hueco vertical enorme, y la lista —lo único accionable—
-          arrancaba fuera de pantalla. Son tres cortes del MISMO patio, así que
-          van juntos y en línea: cada pastilla sigue filtrando la lista.
-        */}
-        <div className="mt-3 space-y-2 border-t-2 border-[var(--rule-soft)] pt-3">
-          <Fila titulo="En qué anda">
-            {resumen.porEstado.map(({ estado, piezas, m3 }) => {
-              const m = ESTADO_META[estado];
-              const activo = estadoFiltro.includes(estado);
-              return (
-                <Pastilla
-                  key={estado}
-                  activo={activo}
-                  punto={TONO[m.tono].punto}
-                  titulo={m.hint}
-                  /* Suma en vez de reemplazar: ver «libre + apartada» a la vez
-                     es la pregunta real de «qué hay parado». */
-                  onClick={() =>
-                    onEstadoFiltro(activo ? estadoFiltro.filter((x) => x !== estado) : [...estadoFiltro, estado])
-                  }
-                  label={m.label}
-                  piezas={piezas}
-                  m3={m3}
-                />
-              );
-            })}
-            {resumen.porEstado.length === 0 && !cargando && (
-              <span className="text-xs text-[var(--text-secondary)]">
-                Todavía no hay trozas cargadas. Llegan con el alta de la guía desde SERFOR.
+        {resumen.porEspecie.length > 1 && (
+          <span className="flex flex-wrap items-center gap-1.5">
+            <Kicker as="span">Especies</Kicker>
+            {especiesVisibles.map((e) => (
+              <span
+                key={e.especie}
+                title={`${n2(e.m3Libres)} m³ libres de ${n2(e.m3)} m³`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 py-0.5"
+              >
+                <span className="h-1.5 w-8 shrink-0 overflow-hidden rounded-full bg-[var(--rule-base)]" aria-hidden="true">
+                  <span
+                    className="block h-full rounded-full bg-[var(--accent)]"
+                    style={{ width: `${maxEspecie > 0 ? (e.m3 / maxEspecie) * 100 : 0}%` }}
+                  />
+                </span>
+                <span className="truncate text-xs font-bold text-[var(--text-primary)]">{e.especie}</span>
+                <span className="font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)]">
+                  {e.piezas} pz
+                </span>
+              </span>
+            ))}
+            {resumen.porEspecie.length > especiesVisibles.length && (
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                +{resumen.porEspecie.length - especiesVisibles.length} más
               </span>
             )}
-          </Fila>
-
-          <Fila
-            titulo="Paradas hace"
-            nota={
-              edad.sinFecha > 0
-                ? `desde que bajó del camión · ${edad.sinFecha} sin fecha`
-                : "desde que bajó del camión"
-            }
-            explicacion="Cuenta desde que la pieza bajó del camión (o desde el asiento de su guía si no se sabe) y sólo mira lo que sigue parado."
-          >
-            {tramosConPiezas.map((t) => {
-              const activo = tramoFiltro.includes(t.key);
-              return (
-                <Pastilla
-                  key={t.key}
-                  activo={activo}
-                  punto={TONO[t.tono].punto}
-                  titulo="Toca para ver sólo estas en la lista"
-                  onClick={() =>
-                    onTramoFiltro(activo ? tramoFiltro.filter((x) => x !== t.key) : [...tramoFiltro, t.key])
-                  }
-                  label={t.label}
-                  piezas={t.piezas}
-                  m3={t.m3}
-                />
-              );
-            })}
-            {tramosConPiezas.length === 0 && (
-              <span className="text-xs text-[var(--text-secondary)]">Nada parado.</span>
-            )}
-          </Fila>
-
-          {/* Con UNA sola especie la barra siempre da 100 % y no dice nada: el
-              dato ya está en la fila de estados. Se muestra desde dos. */}
-          {resumen.porEspecie.length > 1 && (
-            <Fila titulo="Especies" nota={resumen.porEspecie.length > 8 ? `${resumen.porEspecie.length} en total` : undefined}>
-              {resumen.porEspecie.slice(0, 8).map((e) => (
-                <span
-                  key={e.especie}
-                  title={`${n2(e.m3Libres)} m³ libres de ${n2(e.m3)} m³`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 py-1"
-                >
-                  <span
-                    className="h-1.5 w-8 shrink-0 overflow-hidden rounded-full bg-[var(--rule-base)]"
-                    aria-hidden="true"
-                  >
-                    <span
-                      className="block h-full rounded-full bg-[var(--accent)]"
-                      style={{ width: `${maxEspecie > 0 ? (e.m3 / maxEspecie) * 100 : 0}%` }}
-                    />
-                  </span>
-                  <span className="truncate text-xs font-bold text-[var(--text-primary)]">{e.especie}</span>
-                  <span className="font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)]">
-                    {e.piezas} pz
-                  </span>
-                </span>
-              ))}
-            </Fila>
-          )}
-        </div>
-
-        {resumen.sinCodificar > 0 && (
-          <p className="mt-2 rounded-lg bg-[var(--data-warning-500)]/12 px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            {resumen.sinCodificar} {resumen.sinCodificar === 1 ? "pieza no tiene" : "piezas no tienen"} codificación: no se pueden pedir por su código en una fiscalización.
-          </p>
-        )}
-        {meta.truncado && (
-          <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-            Se leyeron {meta.devueltas} de {meta.total} piezas — los totales de esta pantalla son sobre lo leído, no sobre el patio entero.
-          </p>
+          </span>
         )}
       </div>
-    </div>
-  );
-}
 
-/** Una dimensión del patio: su nombre a la izquierda, sus pastillas a la derecha. */
-function Fila({ titulo, nota, explicacion, children }: {
-  titulo: string; nota?: string; explicacion?: string; children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-      <span
-        title={explicacion}
-        /* En la tablet del patio el label va ARRIBA y las pastillas ocupan el
-           ancho: con la columna fija de 7.5rem sólo entraba una por renglón. */
-        className="w-full shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] sm:w-[7.5rem]"
-      >
-        {titulo}
-      </span>
-      {children}
-      {nota && (
-        <span title={explicacion} className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          {nota}
-        </span>
+      {resumen.sinCodificar > 0 && (
+        <p className="mt-2 rounded-lg bg-[var(--data-warning-500)]/12 px-2.5 py-1.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          {resumen.sinCodificar} {resumen.sinCodificar === 1 ? "pieza no tiene" : "piezas no tienen"} codificación: no se pueden pedir por su código en una fiscalización.
+        </p>
       )}
-    </div>
-  );
-}
-
-/**
- * Un corte del patio, clickeable: filtra la lista de abajo.
- *
- * El punto de color lleva el tono y el número va en el token de texto — medido:
- * `--data-warning-700` da 3.68:1 en light y el número queda ilegible. El color
- * es una marca, no un dato.
- */
-function Pastilla({ activo, punto, label, piezas, m3, titulo, onClick }: {
-  activo: boolean; punto: string; label: string; piezas: number; m3: number; titulo?: string; onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={activo}
-      title={titulo}
-      className={`inline-flex items-center gap-1.5 rounded-lg border-2 px-2 py-1 transition-colors ${
-        activo
-          ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12"
-          : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)]"
-      }`}
-    >
-      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: punto }} aria-hidden="true" />
-      <span className="text-xs font-bold text-[var(--text-primary)]">{label}</span>
-      <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">{piezas}</span>
-      <span className="font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)]">{n2(m3)} m³</span>
-    </button>
-  );
-}
-
-/**
- * Un número del panorama.
- *
- * `heroe` es el que la pantalla contesta primero —«¿cuánta madera tengo parada
- * hoy?»— y por eso pesa distinto: número más grande, el teal de la marca y el
- * borde acentuado. Los otros son de apoyo. Tres cajas idénticas no tienen
- * jerarquía: obligan a leer las tres para saber cuál importa (DS §7: un
- * elemento héroe por vista, el resto respira).
- */
-function Cifra({ label, valor, nota, tono = "muted", icono: Icono, heroe = false }: {
-  label: string; valor: string; nota: string; tono?: TonoPatio; icono?: typeof Boxes; heroe?: boolean;
-}) {
-  const t = TONO[tono];
-  return (
-    <div
-      className={`rounded-xl border-2 px-3 py-2 ${
-        heroe
-          ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-          : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
-      }`}
-    >
-      <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
-        {Icono && <Icono className="h-3.5 w-3.5" />}{label}
-      </p>
-      <p
-        className={`font-mono font-bold leading-tight tabular-nums ${
-          heroe ? "text-3xl text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-xl"
-        } ${!heroe && tono === "muted" ? "text-[var(--text-primary)]" : ""} ${!heroe && tono !== "muted" ? t.texto : ""}`}
-      >
-        {valor}
-      </p>
-      <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{nota}</p>
-    </div>
+      {meta.truncado && (
+        <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+          Se leyeron {meta.devueltas} de {meta.total} piezas — los totales de esta pantalla son sobre lo leído, no sobre el patio entero.
+        </p>
+      )}
+    </section>
   );
 }

@@ -15,11 +15,18 @@
  *   1. el panorama — cuánto hay, qué se puede aserrar hoy, qué está envejeciendo;
  *   2. la lista filtrable — la pieza concreta, con sus medidas y su guía;
  *   3. el buscador del fiscalizador — pregunta al servidor, sin el tope de 5.000.
+ *
+ * ## Un solo título y una sola jerarquía
+ *
+ * La vista tiene UN título (`SectionTitle`) y cada bloque el suyo (`CardTitle`).
+ * Antes había dos encabezados casi iguales —«El patio, troza por troza» y «El
+ * patio, pieza por pieza»— y cinco `<h3>` del mismo peso: con todo al mismo
+ * nivel, nada es el título.
  */
 
 import { useState } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, Search } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
+import { AlertTriangle, RefreshCw, Search } from "@buleje/design-system/icons";
 import type { EstadoTroza } from "@/lib/forestal/trozas-patio";
 import CtpApartarEnLoteModal from "./CtpApartarEnLoteModal";
 import CtpCodigosDuplicados from "./CtpCodigosDuplicados";
@@ -58,14 +65,22 @@ export default function CtpTrozasView() {
   const [apartando, setApartando] = useState<{ id: string; codigo: string | null; especie: string | null }[] | null>(null);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <CardTitle className="text-lg font-bold text-[var(--text-primary)]">El patio, troza por troza</CardTitle>
-        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-          Qué hay parado hoy, qué se puede llevar a la sierra y qué lleva demasiado tiempo esperando.
-          Consumos cuenta m³ por guía; acá la unidad es la pieza.
-        </p>
-      </div>
+    <div data-vista-trozas className="space-y-2.5">
+      <header className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <SectionTitle>El patio, troza por troza</SectionTitle>
+          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
+            Qué hay parado hoy, qué se puede llevar a la sierra y qué lleva demasiado tiempo esperando.
+            Consumos cuenta m³ por guía; acá la unidad es la pieza.
+          </p>
+        </div>
+        <button
+          type="button" onClick={() => void recargar()} disabled={cargando}
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60"
+        >
+          <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Actualizar
+        </button>
+      </header>
 
       {error && (
         <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
@@ -75,24 +90,21 @@ export default function CtpTrozasView() {
 
       {/* Va arriba de todo y no en una pestaña aparte: dos piezas con el mismo
           código rompen justamente lo que esta pantalla promete —pedir una troza
-          por su código—. Se esconde solo cuando no queda ninguno (ADR-336). */}
+          por su código—. Se esconde solo cuando no queda ninguno (ADR-336) y
+          entra en una línea: el problema se anuncia, pero no tapa el patio. */}
       <CtpCodigosDuplicados />
 
       <CtpTrozasPatio
         trozas={trozas}
         meta={meta}
         cargando={cargando}
-        onRecargar={() => void recargar()}
         estadoFiltro={estadoFiltro}
         onEstadoFiltro={setEstadoFiltro}
         tramoFiltro={tramoFiltro}
         onTramoFiltro={setTramoFiltro}
         especie={especie}
-        onEspecie={setEspecie}
         guia={guia}
-        onGuia={setGuia}
         titulo={titulo}
-        onTitulo={setTitulo}
       />
 
       <CtpTrozasLista
@@ -134,7 +146,7 @@ export default function CtpTrozasView() {
           type="button"
           onClick={() => setBuscadorAbierto((v) => !v)}
           aria-expanded={buscadorAbierto}
-          className="flex w-full items-center gap-2 px-3.5 py-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
+          className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-[var(--surface-sunken)]"
         >
           <Search className="h-4 w-4 shrink-0 text-[var(--accent)]" />
           <span className="min-w-0 flex-1">
@@ -149,7 +161,7 @@ export default function CtpTrozasView() {
           </span>
         </button>
         {buscadorAbierto && (
-          <div className="border-t-2 border-[var(--rule-base)] p-3.5">
+          <div className="border-t border-[var(--rule-base)] p-3">
             <CtpTrozasBuscador />
           </div>
         )}
