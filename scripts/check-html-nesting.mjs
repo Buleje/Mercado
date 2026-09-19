@@ -28,8 +28,9 @@
  */
 
 import ts from "typescript";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { dirname, resolve as resolverPath } from "node:path";
 
 const args = process.argv.slice(2);
 const strict = args.includes("--strict");
@@ -75,6 +76,77 @@ const tagDe = (n, sf) =>
     : ts.isJsxSelfClosingElement(n)
       ? n.tagName.getText(sf)
       : null;
+
+/**
+ * De qué archivo sale el componente `<Tag>` usado en `file`.
+ *
+ * Por qué existe (2026-09-19): el cruce del Paso B buscaba el wrapper por
+ * NOMBRE (`Etapa.children`) sin mirar de dónde venía. Dos componentes homónimos
+ * —uno exportado en `historia/EtapasDelLote`, otro privado en
+ * `LothTraceResumen`— daban dos roturas falsas y bloqueaban un commit legítimo.
+ *
+ * Devuelve el path del archivo que lo define, o `null` si no se pudo resolver
+ * (import de un paquete, re-export, alias raro). **`null` es deliberadamente
+ * permisivo con el gate, no con el código**: quien llama lo trata como «no sé,
+ * reportá igual» — un gate que se calla por no saber es peor que uno que grita.
+ */
+const EXTENSIONES = [".tsx", ".ts", "/index.tsx", "/index.ts"];
+const cacheOrigen = new Map();
+
+function resolverArchivo(base) {
+  for (const ext of EXTENSIONES) {
+    const p = base + ext;
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+
+/* `find` devuelve rutas relativas cuando la raíz es relativa y absolutas cuando
+   es absoluta, mientras que `path.resolve` siempre da absolutas. Compararlas
+   como strings da falso en algún caso y el gate deja de reportar roturas DE
+   VERDAD — un falso negativo que sólo aparece al probarlo con un caso real, y
+   que un gate mudo no delata. Por eso se comparan resueltas a absoluto. */
+const mismoArchivo = (a, b) => resolverPath(a) === resolverPath(b);
+
+function origenDe(tag, file, sf) {
+  const clave = `${file}|${tag}`;
+  if (cacheOrigen.has(clave)) return cacheOrigen.get(clave);
+
+  // El nombre puede venir calificado (`Foo.Bar`): manda el primer segmento.
+  const raiz = tag.split(".")[0];
+  let origen = null;
+
+  for (const st of sf.statements) {
+    if (!ts.isImportDeclaration(st) || !st.importClause) continue;
+    const nombres = [];
+    if (st.importClause.name) nombres.push(st.importClause.name.getText(sf));
+    const b = st.importClause.namedBindings;
+    if (b && ts.isNamedImports(b)) for (const e of b.elements) nombres.push(e.name.getText(sf));
+    if (b && ts.isNamespaceImport(b)) nombres.push(b.name.getText(sf));
+    if (!nombres.includes(raiz)) continue;
+
+    const spec = st.moduleSpecifier.getText(sf).slice(1, -1);
+    if (spec.startsWith(".")) origen = resolverArchivo(resolverPath(dirname(file), spec));
+    else if (spec.startsWith("@/")) origen = resolverArchivo(resolverPath(process.cwd(), spec.slice(2)));
+    // Un paquete de node_modules no se resuelve: queda `null` = «no sé».
+    break;
+  }
+
+  // Sin import que lo traiga, o es local o viene de un `declare`: si el archivo
+  // lo define, el origen es él mismo.
+  if (!origen) {
+    const defineAca = sf.statements.some(
+      (st) =>
+        (ts.isFunctionDeclaration(st) && st.name?.getText(sf) === raiz) ||
+        (ts.isVariableStatement(st) &&
+          st.declarationList.declarations.some((d) => d.name.getText(sf) === raiz)),
+    );
+    if (defineAca) origen = file;
+  }
+
+  cacheOrigen.set(clave, origen);
+  return origen;
+}
 
 /** Componente que contiene al nodo (la función con nombre más cercana). */
 function componenteDe(node, sf) {
@@ -178,17 +250,24 @@ for (const file of archivos) {
     if (apertura) {
       const tag = apertura.tagName.getText(sf);
       if (/^[A-Z]/.test(tag)) {
+        /* El wrapper se busca por nombre, así que hay que confirmar que ESTE
+           `<Tag>` es el mismo componente y no un homónimo de otro archivo. Si
+           el origen no se puede resolver (`null`), se conserva la sospecha. */
+        const origen = origenDe(tag, file, sf);
+        const esElMismo = (clave) =>
+          origen == null || (wrappers.get(clave) ?? []).some((u) => mismoArchivo(u.file, origen));
+
         for (const attr of apertura.attributes.properties) {
           if (!ts.isJsxAttribute(attr) || !attr.initializer) continue;
           const clave = `${tag}.${attr.name.getText(sf)}`;
-          if (!wrappers.has(clave)) continue;
+          if (!wrappers.has(clave) || !esElMismo(clave)) continue;
           const bloques = bloquesEn(attr.initializer, sf);
           if (bloques.length) {
             const linea = sf.getLineAndCharacterOfPosition(attr.getStart(sf)).line + 1;
             roturas.push({ clave, file, linea, bloques });
           }
         }
-        if (ts.isJsxElement(n) && wrappers.has(`${tag}.children`)) {
+        if (ts.isJsxElement(n) && wrappers.has(`${tag}.children`) && esElMismo(`${tag}.children`)) {
           const bloques = [...new Set(n.children.flatMap((c) => bloquesEn(c, sf)))];
           if (bloques.length) {
             const linea = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
