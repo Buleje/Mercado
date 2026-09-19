@@ -33,6 +33,7 @@ import {
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import { printLothInforme } from "@/lib/forestal/loth-informe-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
@@ -665,6 +666,12 @@ export default function LothLibroOperaciones() {
       groups={LOTH_GROUPS}
       view={view}
       onView={irA}
+      /* El permiso de TRABAJO, al lado de la carátula (Brandon 2026-09-19).
+         Son dos cosas distintas y por eso van separadas: la carátula es la
+         identidad del libro —de quién es este LO-TH— y el contrato es bajo qué
+         papel se está registrando ahora, que se elige acá y vale en todo el
+         panel. */
+      contrato={<ContratoActivoChip />}
       status={
         // La carátula ES la identidad del libro: sin ella, ningún export es
         // presentable. Por eso el chip vive en la cabina y no en un banner.

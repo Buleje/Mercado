@@ -73,6 +73,9 @@ interface LibroChromeProps {
   alerts?: Record<string, number>;
   /** Chip de estado (score de cumplimiento). */
   status?: ReactNode;
+  /** Chip del permiso/contrato bajo el que se trabaja (`ContratoActivoChip`).
+   *  Lo pasa cada libro forestal: `shared` no importa de `forestal`. */
+  contrato?: ReactNode;
   /** Control de contexto del libro (período). */
   context?: ReactNode;
   /** Acciones sueltas a la izquierda del menú (ej. el asistente IA). */
@@ -98,6 +101,7 @@ export default function LibroChrome({
   onView,
   alerts,
   status,
+  contrato,
   context,
   tools,
   actions,
@@ -269,12 +273,18 @@ export default function LibroChrome({
                 >
                   {g.label}
                   {alertas > 0 && (
-                    <span
-                      title={`${alertas} pendiente${alertas === 1 ? "" : "s"} en ${g.label}`}
-                      className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--data-warning-500)] px-1 font-mono text-[length:var(--ts-2xs)] tabular-nums text-white"
-                    >
-                      {alertas}
-                    </span>
+                    <>
+                      <span
+                        title={`${alertas} pendiente${alertas === 1 ? "" : "s"} en ${g.label}`}
+                        className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--data-warning-500)] px-1 font-mono text-[length:var(--ts-2xs)] tabular-nums text-white"
+                        aria-hidden="true"
+                      >
+                        {alertas}
+                      </span>
+                      {/* El número suelto se leía pegado al nombre del grupo
+                          («Operación 11»), que suena a un grupo llamado así. */}
+                      <span className="sr-only">{`· ${alertas} pendiente${alertas === 1 ? "" : "s"}`}</span>
+                    </>
                   )}
                 </button>
               );
@@ -289,6 +299,11 @@ export default function LibroChrome({
               pestañas. El score y el menú de acciones quedan a la vista: son
               un vistazo y un clic. */}
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            {/* El permiso de trabajo va ANTES del estado: es bajo qué papel se
+                está parado, y eso manda sobre cualquier indicador. Lo pasa cada
+                libro (los forestales) en vez de importarlo acá: `shared` no
+                depende de `forestal`. */}
+            {contrato}
             {status}
             {(context || tools) ? (
               <HerramientasDelLibro>
@@ -338,8 +353,25 @@ export default function LibroChrome({
                 >
                   <VIcon className="h-4 w-4 shrink-0" />
                   <span>{v.label}</span>
+                  {/* El aviso de la vista era un punto de 6 px con `aria-hidden`:
+                      no decía CUÁNTOS y un lector de pantalla no lo anunciaba
+                      (2026-09-19, medido con el pendiente de corridas sin
+                      materia prima, que llevaba meses sin poder encenderse).
+                      Ahora es el mismo badge numérico que el del grupo —una sola
+                      forma de avisar en toda la banda— y lleva el conteo al
+                      nombre accesible del botón. */}
                   {(alerts?.[v.key] ?? 0) > 0 && (
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--data-warning-500)]" aria-hidden="true" />
+                    <>
+                      <span
+                        className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-[var(--data-warning-500)] px-1 font-mono text-[length:var(--ts-2xs)] tabular-nums text-white"
+                        aria-hidden="true"
+                      >
+                        {alerts?.[v.key]}
+                      </span>
+                      <span className="sr-only">
+                        {`· ${alerts?.[v.key]} pendiente${alerts?.[v.key] === 1 ? "" : "s"}`}
+                      </span>
+                    </>
                   )}
                 </button>
               );

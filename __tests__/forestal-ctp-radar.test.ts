@@ -96,6 +96,24 @@ describe("balance del radar", () => {
     expect(a.totales.trazabilidadPct).toBe(0);
   });
 
+  /* EL BUG DEL RADAR (2026-09-14): antes esta función miraba sólo el VOLUMEN
+     de `consumos` para decidir si una corrida tenía materia prima, ignorando
+     `reprocesos` por completo. Una corrida nacida de un reproceso (ADR-316)
+     —sin ningún consumo directo, pero con su cadena escrita hacia otra
+     corrida del mismo libro— salía "sin origen" acá aunque el resumen de
+     Consumos (`corridaSinOrigen`) ya la diera con origen: una pantalla decía
+     14 huérfanas y la otra 9 sobre las mismas corridas de Blas. */
+  it("corrida nacida de un reproceso (sin consumo directo) NO es huérfana", () => {
+    const g = cadenaCompleta();
+    g.consumos = []; // sin consumo directo
+    g.reprocesos = [{ from: "c0", to: "c1", quantity: 3 }]; // pero le llegó un reproceso
+    const a = analizarRadar(g);
+    expect(a.corridas.get("c1")!.estado).not.toBe("warn");
+    expect(a.totales.corridasHuerfanas).toBe(0);
+    // El despacho que sale de esa corrida tampoco queda contaminado.
+    expect(a.despachos.get("d1")!.estado).not.toBe("warn");
+  });
+
   it("despacho sin ningún origen: hueco", () => {
     const g = cadenaCompleta();
     g.origenes = [];

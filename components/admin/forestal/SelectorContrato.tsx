@@ -18,12 +18,24 @@
  *
  * Si el código sugerido NO está cargado como contrato, no se inventa nada: se
  * avisa y se deja el camino para crearlo desde la pantalla de Contratos.
+ *
+ * ## El contrato activo de la banda del libro llena el hueco (2026-09-19)
+ *
+ * Cuando ninguna de las dos cosas de arriba aplica —no hay elección propia NI
+ * documento que sugiera algo (ni siquiera uno huérfano)— el permiso fijado en
+ * la banda del libro (`useContratoActivo`) es el default. Sigue siendo un
+ * default: el documento manda si trae código, y el usuario manda si ya tocó
+ * el selector. `sugerirActivo={false}` apaga esto por completo — lo usa quien
+ * esté EDITANDO un registro ya guardado, para no pisar un «sin contrato»
+ * elegido a mano en su momento (que en el estado es indistinguible de «nunca
+ * se tocó»).
  */
 
 import { useEffect, useMemo } from "react";
 import { FileText, TriangleAlert } from "@buleje/design-system/icons";
 import { normalizarCodigoContrato } from "@/lib/forestal/contratos";
 import { useContratos } from "@/hooks/use-contratos";
+import { useContratoActivo } from "@/contexts/contrato-activo-context";
 
 interface Props {
   /** El contrato elegido, o `null` para «sin contrato». */
@@ -40,6 +52,10 @@ interface Props {
   disabled?: boolean;
   /** Para el `aria-describedby` del formulario que lo monta. */
   id?: string;
+  /** Apagar el default del contrato activo de la banda (ver doc de arriba).
+   *  Por defecto `true`: sólo hace falta `false` en un formulario que EDITA un
+   *  registro existente (uno en blanco no tiene nada que proteger). */
+  sugerirActivo?: boolean;
 }
 
 export default function SelectorContrato({
@@ -51,8 +67,10 @@ export default function SelectorContrato({
   requerido = false,
   disabled = false,
   id = "selector-contrato",
+  sugerirActivo = true,
 }: Props) {
   const { contratos, cargando } = useContratos();
+  const { contratoId: activoId } = useContratoActivo();
 
   /** El contrato que corresponde al código del papel, si está cargado. */
   const sugerido = useMemo(() => {
@@ -60,6 +78,15 @@ export default function SelectorContrato({
     if (!norm) return null;
     return contratos.find((c) => c.codigoNorm === norm) ?? null;
   }, [codigoSugerido, contratos]);
+
+  /** El activo sigue existiendo entre los contratos cargados: uno borrado o
+   *  renombrado en localStorage no debe terminar seleccionado a ciegas. */
+  const activoCargado = useMemo(
+    () => (activoId ? (contratos.find((c) => c.id === activoId) ?? null) : null),
+    [activoId, contratos],
+  );
+
+  const hayCodigoSugerido = Boolean(codigoSugerido?.trim());
 
   /**
    * Auto-elegir el sugerido, SÓLO si el usuario todavía no eligió nada.
@@ -69,6 +96,18 @@ export default function SelectorContrato({
   useEffect(() => {
     if (value == null && sugerido) onChange(sugerido.id);
   }, [sugerido, value, onChange]);
+
+  /**
+   * Sin elección propia y sin nada que el documento sugiera —ni siquiera un
+   * código huérfano: ESE manda aunque no resuelva a un id—, el permiso fijado
+   * en la banda llena el hueco. `hayCodigoSugerido` (no `sugerido`) es a
+   * propósito: un código que el papel trae y todavía no es contrato no debe
+   * terminar imputado a otro permiso distinto sólo porque el activo sí carga.
+   */
+  useEffect(() => {
+    if (!sugerirActivo || value != null || hayCodigoSugerido || !activoCargado) return;
+    onChange(activoCargado.id);
+  }, [sugerirActivo, value, hayCodigoSugerido, activoCargado, onChange]);
 
   const codigoHuerfano = Boolean(codigoSugerido?.trim()) && !sugerido && !cargando;
 

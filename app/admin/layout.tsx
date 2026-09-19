@@ -3,6 +3,7 @@ import { AdminProviders } from "./providers";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 import DesignTokensProvider from "@/components/admin/DesignTokensProvider";
 import { TenantSlugProvider } from "@/contexts/tenant-context";
+import { ContratoActivoProvider } from "@/contexts/contrato-activo-context";
 import { cookies } from "next/headers";
 import TenantCacheGuard from "./TenantCacheGuard";
 import "./print.css";
@@ -49,9 +50,16 @@ async function AdminTenantTree({ children }: { children: React.ReactNode }) {
       <TenantSlugProvider slug={tenantSlug ?? undefined}>
         {/* Skip-link WCAG 2.4.1 — apunta al <main id="main-content"> en AdminMainContent. */}
         <SkipLink />
-        <DesignTokensProvider tenantId={tenantSlug}>
-          {children}
-        </DesignTokensProvider>
+        {/* El permiso/contrato bajo el que se trabaja (Brandon 2026-09-19): va
+            acá y no dentro del módulo forestal porque tiene que sobrevivir al
+            cambio de pestaña — se elige en el libro y se propone al registrar
+            un gasto o un adelanto, que viven en otro módulo. Sólo guarda lo
+            elegido en localStorage: no pide nada al montar. */}
+        <ContratoActivoProvider tenant={tenantSlug ?? "main"}>
+          <DesignTokensProvider tenantId={tenantSlug}>
+            {children}
+          </DesignTokensProvider>
+        </ContratoActivoProvider>
       </TenantSlugProvider>
     </AdminProviders>
   );

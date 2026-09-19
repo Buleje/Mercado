@@ -207,8 +207,17 @@ export function corridaSinOrigen(aristas: { consumos: number; reprocesos: number
   return aristas.consumos === 0 && aristas.reprocesos === 0;
 }
 
-/** Cuántas aristas llegan a cada nodo. */
-function aristasQueLlegan(aristas: ReadonlyArray<{ to: string }>): Map<string, number> {
+/**
+ * Cuántas aristas llegan a cada nodo.
+ *
+ * Exportada para que el Radar (`ctp-radar.ts`) cuente sus propios `consumos` y
+ * `reprocesos` con la misma cuenta que usa `resumenConsumos` — antes tenía una
+ * copia que sólo miraba el volumen de `consumos` e ignoraba `reprocesos` por
+ * completo, así que una corrida nacida de un reproceso (sin ningún consumo
+ * directo) salía "sin materia prima" en el Radar aunque `resumenConsumos` ya
+ * la reconociera con origen (ADR-316).
+ */
+export function aristasQueLlegan(aristas: ReadonlyArray<{ to: string }>): Map<string, number> {
   const cuenta = new Map<string, number>();
   for (const a of aristas) cuenta.set(a.to, (cuenta.get(a.to) ?? 0) + 1);
   return cuenta;

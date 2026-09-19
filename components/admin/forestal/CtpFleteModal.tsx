@@ -338,6 +338,10 @@ export default function CtpFleteModal({
               value={b.contratoId ?? null}
               onChange={(contratoId) => set({ contratoId })}
               codigoSugerido={prellenado?.originCode}
+              // Editando un flete existente: su contratoId (aunque sea `null`,
+              // "sin contrato" elegido a mano en su momento) se respeta tal
+              // cual quedó guardado — no se le mete el activo de la banda.
+              sugerirActivo={!flete}
             />
           </div>
         </Seccion>

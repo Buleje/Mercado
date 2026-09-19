@@ -17,6 +17,7 @@
  */
 
 import type { TrazaGrafo } from "@/lib/db/forest-ctp.db";
+import { aristasQueLlegan, corridaSinOrigen } from "./loctp-consumos-analisis";
 
 /** Tolerancia para comparar decimales de volumen (evita "0.0000001 sin atribuir"). */
 const EPS = 1e-4;
@@ -84,18 +85,34 @@ function balance(id: string, total: number, cubierto: number, opts: { vacioEsMut
  * Criterios:
  *  - **Ingreso**: cubierto = Σ de lo consumido por producción. Un ingreso sin
  *    consumir NO es un error (es stock en patio) → `muted`, no `warn`.
- *  - **Corrida**: sin materia prima atribuida = `warn` (rompe la cadena hacia
- *    atrás). Con materia prima, se mide qué parte de lo producido ya salió.
+ *  - **Corrida**: `corridaSinOrigen` (consumo de un ingreso O reproceso de otra
+ *    corrida, ADR-316) decide si rompe la cadena hacia atrás → `warn`. Con
+ *    origen, se mide qué parte de lo producido ya salió.
  *  - **Despacho**: sin origen = `warn`; con origen incompleto = `parcial`.
  */
 export function analizarRadar(g: TrazaGrafo): RadarAnalisis {
   const consumidoPorIngreso = new Map<string, number>();
-  const materiaPorCorrida = new Map<string, number>();
   for (const c of g.consumos) {
     const v = Number(c.volumeM3) || 0;
     consumidoPorIngreso.set(c.from, (consumidoPorIngreso.get(c.from) ?? 0) + v);
-    materiaPorCorrida.set(c.to, (materiaPorCorrida.get(c.to) ?? 0) + v);
   }
+
+  /* LA regla de "¿tiene origen?" vive en `loctp-consumos-analisis.ts`
+     (`corridaSinOrigen`, ADR-316): una corrida tiene origen si le llega
+     CUALQUIERA de las dos aristas, consumo de un ingreso o reproceso de otra
+     corrida. Antes acá se miraba sólo el VOLUMEN de `consumos`, así que una
+     corrida nacida de un reproceso —sin ningún consumo directo, pero con su
+     cadena escrita hacia otra línea del mismo libro— salía "sin materia
+     prima" en el Radar mientras el resumen de Consumos ya la daba con
+     origen: una pantalla decía 14 huérfanas y la otra 9 sobre las mismas
+     corridas de Blas (2026-09-14). */
+  const consumoEdgesPorCorrida = aristasQueLlegan(g.consumos);
+  const reprocesoEdgesPorCorrida = aristasQueLlegan(g.reprocesos ?? []);
+  const corridaEsHuerfana = (corridaId: string): boolean =>
+    corridaSinOrigen({
+      consumos: consumoEdgesPorCorrida.get(corridaId) ?? 0,
+      reprocesos: reprocesoEdgesPorCorrida.get(corridaId) ?? 0,
+    });
 
   const salidaPorCorrida = new Map<string, number>();
   const origenPorDespacho = new Map<string, number>();
@@ -117,13 +134,12 @@ export function analizarRadar(g: TrazaGrafo): RadarAnalisis {
 
   const corridas = new Map<string, RadarBalance>();
   for (const c of g.corridas) {
-    const materia = materiaPorCorrida.get(c.id) ?? 0;
-    if (materia <= EPS) {
-      // Sin materia prima: la cadena se corta hacia atrás, sin importar lo producido.
+    if (corridaEsHuerfana(c.id)) {
+      // Sin origen (ni consumo ni reproceso): la cadena se corta hacia atrás, sin importar lo producido.
       corridas.set(c.id, { id: c.id, total: Number(c.quantity) || 0, cubierto: 0, sinAtribuir: round(Number(c.quantity) || 0), pct: 0, estado: "warn" });
       continue;
     }
-    // Con materia prima: se mide qué parte de lo producido ya salió en despachos.
+    // Con origen: se mide qué parte de lo producido ya salió en despachos.
     corridas.set(c.id, balance(c.id, Number(c.quantity) || 0, salidaPorCorrida.get(c.id) ?? 0, { vacioEsMuted: true }));
   }
 
@@ -131,9 +147,9 @@ export function analizarRadar(g: TrazaGrafo): RadarAnalisis {
   for (const d of g.despachos) {
     const origen = origenPorDespacho.get(d.id) ?? 0;
     const base = balance(d.id, Number(d.quantity) || 0, origen);
-    // Aunque el volumen cuadre, si alguna corrida de origen no tiene materia
-    // prima la cadena no llega hasta la GTF: sigue siendo un hueco.
-    const cadenaRota = (corridasDeDespacho.get(d.id) ?? []).some((cid) => (materiaPorCorrida.get(cid) ?? 0) <= EPS);
+    // Aunque el volumen cuadre, si alguna corrida de origen no tiene origen propio
+    // (ni consumo ni reproceso) la cadena no llega hasta la GTF: sigue siendo un hueco.
+    const cadenaRota = (corridasDeDespacho.get(d.id) ?? []).some((cid) => corridaEsHuerfana(cid));
     despachos.set(d.id, cadenaRota ? { ...base, estado: "warn" } : base);
   }
 
