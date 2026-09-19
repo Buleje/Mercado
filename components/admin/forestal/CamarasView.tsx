@@ -19,15 +19,21 @@
  *     pasó algo y no hay foto.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, Camera, Check, Copy, HelpCircle, Image as ImageIcon, Loader2, MessageCircle, Plus, RefreshCw, Trash2, Upload,
+  AlertTriangle, Camera, Check, Copy, Eye, EyeOff, HelpCircle, Image as ImageIcon, Loader2, MessageCircle, Plus, RefreshCw, Trash2, Upload, Wifi,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
-  buscarCapturas, EVENTO_LABEL, estaCallada, horasSinVerse, type AvisosCamara, type Camara, type Captura,
+  buscarCapturas, EVENTO_LABEL, estaCallada, horasSinVerse, type AvisosCamara, type Captura,
 } from "@/lib/camaras/camaras";
+import ConectarCamaraModal, {
+  estadoDeConexion, PastillaConexion, queHacer,
+  type CamaraConConexion, type ConexionCamara, type DatosConexion, type ResultadoConexion,
+} from "./camaras/ConectarCamaraModal";
+import VisorEnVivo from "./camaras/VisorEnVivo";
+import ControlPtz from "./camaras/ControlPtz";
 
 const API = "/api/admin/camaras";
 
@@ -35,7 +41,7 @@ const cuando = (iso: string) =>
   new Date(iso).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
 export default function CamarasView() {
-  const [camaras, setCamaras] = useState<Camara[]>([]);
+  const [camaras, setCamaras] = useState<CamaraConConexion[]>([]);
   const [capturas, setCapturas] = useState<Captura[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,9 +52,9 @@ export default function CamarasView() {
   const [copiado, setCopiado] = useState<string | null>(null);
   /* Lo que se está tipeando en «avisar a» de cada cámara, antes de guardar. */
   const [avisosEdit, setAvisosEdit] = useState<Record<string, { whatsapp: string; cuando: AvisosCamara["cuando"] }>>({});
-  const avisosDe = (c: Camara) =>
+  const avisosDe = (c: CamaraConConexion) =>
     avisosEdit[c.id] ?? { whatsapp: c.avisos?.whatsapp ?? "", cuando: c.avisos?.cuando ?? "noche" };
-  const guardarAvisos = async (c: Camara) => {
+  const guardarAvisos = async (c: CamaraConConexion) => {
     const a = avisosDe(c);
     if (await escribir({ method: "PATCH", body: JSON.stringify({ id: c.id, accion: "avisos", whatsapp: a.whatsapp, cuando: a.cuando }) })) {
       setAvisosEdit((prev) => { const n = { ...prev }; delete n[c.id]; return n; });
@@ -58,19 +64,32 @@ export default function CamarasView() {
   /** Buscar por lo que se VE: «camión», una placa, «dos personas». */
   const [texto, setTexto] = useState("");
 
-  const cargar = useCallback(async () => {
-    setCargando(true);
+  // Una carga que salió antes de un cambio trae lo de antes. Con el GET del
+  // doble montaje o el de «Actualizar» todavía en vuelo, la foto borrada
+  // reaparecía y, tras «Cambiar la dirección», volvía la dirección vieja (la que
+  // ya no funciona) para copiarla (mismo bug medido en Tareas el 2026-09-14).
+  // Sólo aplica lo que trae la carga más nueva, y sólo si no hubo cambios
+  // mientras viajaba; cada escritura termina con una carga silenciosa.
+  const cargasRef = useRef({ ultima: 0, cambios: 0 });
+  const cargar = useCallback(async (opciones?: { silenciosa?: boolean }) => {
+    const esta = ++cargasRef.current.ultima;
+    const cambiosAlSalir = cargasRef.current.cambios;
+    const vigente = () => esta === cargasRef.current.ultima;
+    if (!opciones?.silenciosa) setCargando(true);
     try {
       const r = await fetch(API, { credentials: "include" });
       if (!r.ok) throw new Error(String(r.status));
-      const j = (await r.json()) as { camaras?: Camara[]; capturas?: Captura[] };
-      setCamaras(j.camaras ?? []);
-      setCapturas(j.capturas ?? []);
-      setError(null);
+      const j = (await r.json()) as { camaras?: CamaraConConexion[]; capturas?: Captura[] };
+      if (vigente() && cambiosAlSalir === cargasRef.current.cambios) {
+        setCamaras(j.camaras ?? []);
+        setCapturas(j.capturas ?? []);
+      }
+      // La silenciosa no borra el error de la escritura que la disparó.
+      if (vigente() && !opciones?.silenciosa) setError(null);
     } catch {
-      setError("No se pudo leer las cámaras.");
+      if (vigente() && !opciones?.silenciosa) setError("No se pudo leer las cámaras.");
     } finally {
-      setCargando(false);
+      if (vigente()) setCargando(false);
     }
   }, []);
 
@@ -79,13 +98,14 @@ export default function CamarasView() {
   const escribir = async (init: RequestInit & { url?: string }) => {
     setGuardando(true);
     setError(null);
+    cargasRef.current.cambios += 1;
     try {
       const r = await fetch(init.url ?? API, {
         ...init,
         credentials: "include",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
       });
-      const j = (await r.json().catch(() => ({}))) as { mensaje?: string; message?: string; error?: string; camaras?: Camara[] };
+      const j = (await r.json().catch(() => ({}))) as { mensaje?: string; message?: string; error?: string; camaras?: CamaraConConexion[] };
       if (!r.ok || j.error) throw new Error(j.message ?? j.error ?? `El servidor respondió ${r.status}`);
       if (j.camaras) setCamaras(j.camaras);
       if (j.mensaje) setAviso(j.mensaje);
@@ -95,6 +115,7 @@ export default function CamarasView() {
       return false;
     } finally {
       setGuardando(false);
+      void cargar({ silenciosa: true });
     }
   };
 
@@ -108,7 +129,7 @@ export default function CamarasView() {
   };
 
   /** La dirección que se copia en la cámara. Absoluta: el aparato no sabe de rutas. */
-  const direccionDe = (c: Camara) =>
+  const direccionDe = (c: CamaraConConexion) =>
     `${typeof window !== "undefined" ? window.location.origin : ""}/api/webhooks/camara?k=${c.token}`;
 
   /**
@@ -119,7 +140,7 @@ export default function CamarasView() {
    * como evento «manual» para que nunca se confunda con lo que mandó el aparato.
    */
   const [subiendo, setSubiendo] = useState<string | null>(null);
-  const subirAMano = async (c: Camara, archivo: File) => {
+  const subirAMano = async (c: CamaraConConexion, archivo: File) => {
     setSubiendo(c.id);
     setError(null);
     try {
@@ -146,7 +167,81 @@ export default function CamarasView() {
     }
   };
 
-  const copiar = async (c: Camara) => {
+  /**
+   * Conexión DIRECTA con el aparato (ADR-421).
+   *
+   * Estos tres no pasan por `escribir`: acá hace falta el cuerpo del error tal
+   * cual lo manda el servidor (`motivo`/`detalle`) para traducirlo a qué hacer,
+   * y `escribir` lo aplana en una sola frase. La guarda de carga vieja sí se
+   * respeta: se cuenta el cambio y se recarga en silencio al terminar.
+   */
+  const [conectando, setConectando] = useState<string | null>(null);
+  const [visorOculto, setVisorOculto] = useState<Record<string, boolean>>({});
+  const camaraAConectar = camaras.find((c) => c.id === conectando) ?? null;
+
+  const pedirConexion = async (cuerpo: Record<string, unknown>, camaraId: string): Promise<ResultadoConexion> => {
+    cargasRef.current.cambios += 1;
+    try {
+      const r = await fetch(API, {
+        method: "PATCH",
+        credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(cuerpo),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        camaras?: CamaraConConexion[]; conexion?: ConexionCamara | null;
+        motivo?: string; detalle?: string; error?: string; message?: string; respondio?: boolean;
+      };
+      if (j.camaras) setCamaras(j.camaras);
+      /* Estas acciones contestan 200 con el problema ADENTRO del cuerpo: el
+         `r.ok` solo no alcanza. `respondio: false` es «probar» diciendo que la
+         cámara no contestó, aunque la conexión guardada siga ahí. */
+      const conexion = j.conexion ?? j.camaras?.find((x) => x.id === camaraId)?.conexion ?? null;
+      const fallo = !r.ok || Boolean(j.error) || j.respondio === false;
+      if (!fallo && conexion) return { ok: true, conexion };
+      return {
+        ok: false,
+        motivo: j.motivo ?? j.error ?? "",
+        detalle: j.detalle ?? j.message ?? `El servidor respondió ${r.status}.`,
+      };
+    } catch (e) {
+      /* Ni siquiera salió el pedido: el panel no llegó a su propio servidor. */
+      return { ok: false, motivo: "inalcanzable", detalle: e instanceof Error ? e.message : String(e) };
+    } finally {
+      void cargar({ silenciosa: true });
+    }
+  };
+
+  const conectar = (c: CamaraConConexion, datos: DatosConexion) =>
+    pedirConexion({ id: c.id, accion: "conectar", ...datos }, c.id);
+
+  const probarDeNuevo = async (c: CamaraConConexion) => {
+    setError(null);
+    const r = await pedirConexion({ id: c.id, accion: "probar" }, c.id);
+    if (!r.ok) setError(queHacer(r.motivo, r.detalle));
+    else setAviso(`${c.nombre} contestó: la conexión funciona.`);
+  };
+
+  /**
+   * Mover la cámara. Va sin esperar respuesta a propósito: entre que se aprieta
+   * y se suelta pasan décimas, y encolar la vuelta del servidor haría que la
+   * cámara siguiera girando después de soltar el botón.
+   */
+  const moverCamara = (c: CamaraConConexion, x: number, y: number, zoom: number) => {
+    void fetch(API, {
+      method: "PATCH",
+      credentials: "include",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ id: c.id, accion: "ptz", x, y, zoom }),
+    })
+      .then(async (r) => {
+        const j = (await r.json().catch(() => ({}))) as { error?: string; message?: string };
+        if (!r.ok || j.error) setError(j.message ?? `No se pudo mover ${c.nombre}.`);
+      })
+      .catch((e: unknown) => setError(`No se pudo mover ${c.nombre}: ${e instanceof Error ? e.message : String(e)}`));
+  };
+
+  const copiar = async (c: CamaraConConexion) => {
     try {
       await navigator.clipboard.writeText(direccionDe(c));
       setCopiado(c.id);
@@ -174,8 +269,10 @@ export default function CamarasView() {
             Cámaras del patio
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)]">
-            La cámara manda la foto cuando detecta algo y acá queda con su hora. No es video en vivo:
-            con panel solar y datos móviles, transmitir todo el día vacía la batería.
+            La cámara manda la foto cuando detecta algo y acá queda con su hora. Y si el panel la
+            alcanza por la red, además se la puede ver ahora mismo: «Conectar», en su tarjeta. Con
+            panel solar y datos móviles el camino bueno sigue siendo el primero: transmitir todo el
+            día vacía la batería.
           </p>
         </div>
         <button
@@ -247,16 +344,43 @@ export default function CamarasView() {
         </div>
 
         <ul className="mt-3 space-y-2">
-          {camaras.map((c) => (
+          {camaras.map((c) => {
+            const est = estadoDeConexion(c);
+            return (
             <li key={c.id} className="rounded-xl border border-[var(--rule-base)] px-3 py-2.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="min-w-0 flex-1">
+                {/* En celular el nombre se queda con la fila entera: con la
+                    pastilla y «Conectar» al lado, «Portón del patio» se leía
+                    «Port…» (medido a 400 px). En sm+ comparte la fila. */}
+                <span className="min-w-0 flex-1 basis-full sm:basis-auto">
                   <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{c.nombre}</span>
                   <span className="block truncate text-xs text-[var(--text-tertiary)]">
                     {c.lugar || "Sin lugar declarado"} ·{" "}
                     {c.ultimaCapturaEn ? `última foto ${cuando(c.ultimaCapturaEn)}` : "todavía no mandó nada"}
                   </span>
                 </span>
+                {/* Dos caminos que conviven: la cámara manda fotos (siempre) y,
+                    si el panel la alcanza por la red, además se la puede ver. */}
+                <PastillaConexion estado={est} />
+                <button
+                  type="button"
+                  onClick={() => setConectando(c.id)}
+                  title="Ver esta cámara ahora, hablándole directo por su dirección IP"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                >
+                  <Wifi className="h-4 w-4" aria-hidden />
+                  {est.tipo === "push" ? "Conectar" : "Conexión"}
+                </button>
+                {est.tipo === "conectada" && (
+                  <button
+                    type="button"
+                    onClick={() => setVisorOculto((p) => ({ ...p, [c.id]: !p[c.id] }))}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                  >
+                    {visorOculto[c.id] ? <Eye className="h-4 w-4" aria-hidden /> : <EyeOff className="h-4 w-4" aria-hidden />}
+                    {visorOculto[c.id] ? "Ver ahora" : "Ocultar"}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => void copiar(c)}
@@ -347,8 +471,46 @@ export default function CamarasView() {
                     : "Sin aviso: la foto queda en el historial y nadie se entera hasta que lo abre."}
                 </span>
               </div>
+
+              {/* Conexión directa: sólo aparece cuando hay algo que decir. Una
+                  cámara que sólo empuja fotos no gana ninguna fila vacía. */}
+              {est.tipo === "falla" && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[var(--rule-soft)] pt-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" aria-hidden />
+                  <p className="min-w-[12rem] flex-1 text-xs text-[var(--text-secondary)]">
+                    {queHacer(est.motivo, est.detalle)}
+                    {est.detalle && (
+                      <span className="mt-0.5 block break-words font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                        {est.detalle}
+                      </span>
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void probarDeNuevo(c)}
+                    disabled={guardando}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Probar de nuevo
+                  </button>
+                </div>
+              )}
+              {est.tipo === "conectada" && !visorOculto[c.id] && (
+                <div className="mt-2 space-y-2 border-t border-[var(--rule-soft)] pt-2">
+                  <VisorEnVivo
+                    camaraId={c.id}
+                    nombre={c.nombre}
+                    direccionWebhook={direccionDe(c)}
+                    onGuardada={() => void cargar({ silenciosa: true })}
+                  />
+                  {est.conexion.soportaPtz && (
+                    <ControlPtz onMover={(x, y, zoom) => moverCamara(c, x, y, zoom)} disabled={guardando} />
+                  )}
+                </div>
+              )}
             </li>
-          ))}
+            );
+          })}
           {camaras.length === 0 && !cargando && (
             <li className="px-1 py-3 text-sm text-[var(--text-tertiary)]">
               Todavía no hay ninguna. Agrega la primera, copia su dirección y sigue la guía de abajo.
@@ -500,6 +662,20 @@ export default function CamarasView() {
           </ul>
         )}
       </div>
+
+      {camaraAConectar && (
+        <ConectarCamaraModal
+          /* Uno por cámara: al montarse lee la conexión que ya tiene, y así una
+             recarga de la lista mientras se escribe no pisa lo tipeado. */
+          key={camaraAConectar.id}
+          camara={camaraAConectar}
+          onCerrar={() => setConectando(null)}
+          onConectar={(datos) => conectar(camaraAConectar, datos)}
+          onDesconectar={async () => {
+            await escribir({ method: "PATCH", body: JSON.stringify({ id: camaraAConectar.id, accion: "desconectar" }) });
+          }}
+        />
+      )}
     </div>
   );
 }

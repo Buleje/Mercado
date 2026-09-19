@@ -1,15 +1,28 @@
 import "server-only";
+import { lookup } from "node:dns/promises";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { logger } from "@/lib/logger";
+import { logActivity } from "@/lib/activity-logger";
+import { cifrarSecreto, descifrarSecreto, hayClaveDeCifrado } from "@/lib/cripto-secretos";
+import type { CredencialesCamara } from "@/lib/camaras/isapi";
 import {
   agregarCamara,
   agregarCaptura,
+  anotarPrueba,
+  camarasParaPantalla,
+  conectarCamara,
+  desconectarCamara,
+  hostPermitido,
+  ipPermitida,
   nuevoToken,
+  puertoPermitido,
   quitarCamara,
   rotarToken,
   type Camara,
+  type CamaraPublica,
   type Captura,
   type EventoCamara,
+  type PruebaDeCamara,
   type ResultadoCamaras,
   configurarAvisos,
   type AvisosCamara,
@@ -41,6 +54,77 @@ type Indice = Record<string, { tenantId: string; camaraId: string }>;
 
 const listaDe = (raw: unknown): Camara[] =>
   Array.isArray(raw) ? (raw as Camara[]).filter((c) => c && typeof c.id === "string" && typeof c.token === "string") : [];
+
+/**
+ * El host pelado: sin corchetes y sin el puerto pegado.
+ *
+ * La dirección se copia de la app del fabricante y suele venir «192.168.1.64:8000».
+ * El `::` de una IPv6 se respeta: ahí los dos puntos no son un puerto.
+ */
+function soloHost(host: string): string {
+  const h = host.trim();
+  const conCorchetes = /^\[([^\]]+)\](?::\d+)?$/.exec(h);
+  if (conCorchetes) return conCorchetes[1];
+  if (!h.includes("::") && (h.match(/:/g)?.length ?? 0) === 1) return h.split(":")[0];
+  return h;
+}
+
+/**
+ * ¿A esta dirección se puede llamar DE VERDAD?
+ *
+ * `hostPermitido` sólo mira el texto, y un NOMBRE no dice a dónde apunta:
+ * `camara.mi-dominio.com` puede resolver a `169.254.169.254` y llevarse las
+ * credenciales de la nube. Por eso acá se resuelve con el DNS y se juzga **cada
+ * IP que devuelve** — no la primera, porque un dominio hostil puede devolver
+ * una buena y una mala y el sistema operativo elegir cualquiera.
+ *
+ * Lo que NO cierra: entre esta resolución y la conexión real hay una ventana
+ * (DNS rebinding) en la que el dueño del dominio puede cambiar la respuesta.
+ * Cerrarla pide fijar la IP en el socket, que no está en el contrato del
+ * cliente ISAPI. Por eso estos endpoints piden sesión de admin/owner: quien
+ * podría aprovecharla ya entró al panel.
+ */
+export async function destinoResuelto(
+  host: string,
+  puerto: number,
+): Promise<{ ok: true; ip: string } | { ok: false; motivo: string; detalle: string }> {
+  const forma = hostPermitido(host);
+  if (!forma.ok) return { ok: false, motivo: "bloqueado", detalle: forma.motivo };
+  const p = puertoPermitido(puerto);
+  if (!p.ok) return { ok: false, motivo: "bloqueado", detalle: p.motivo };
+
+  let direcciones: { address: string }[];
+  try {
+    /* `all` para ver TODAS las respuestas; el timeout evita que un DNS colgado
+       deje el pedido esperando hasta el tope de la plataforma. */
+    direcciones = await Promise.race([
+      lookup(soloHost(host), { all: true, verbatim: true }),
+      new Promise<never>((_, rechazar) => setTimeout(() => rechazar(new Error("dns-timeout")), 3000)),
+    ]);
+  } catch (err) {
+    return {
+      ok: false,
+      motivo: "inalcanzable",
+      detalle:
+        String(err).includes("dns-timeout")
+          ? "El nombre tardó demasiado en resolverse."
+          : `No se pudo resolver «${host}». Revisa que esté bien escrito.`,
+    };
+  }
+  if (!direcciones.length) {
+    return { ok: false, motivo: "inalcanzable", detalle: `«${host}» no apunta a ninguna dirección.` };
+  }
+  for (const d of direcciones) {
+    const v = ipPermitida(d.address);
+    if (!v.ok) return { ok: false, motivo: "bloqueado", detalle: v.motivo };
+  }
+  return { ok: true, ip: direcciones[0].address };
+}
+
+/** Las credenciales listas para usar, o por qué no se pueden usar. */
+export type CredencialesListas =
+  | { ok: true; camara: Camara; credenciales: CredencialesCamara }
+  | { ok: false; motivo: string; detalle: string };
 
 export const CamarasDB = {
   async list(tenantId: string): Promise<Camara[]> {
@@ -211,6 +295,146 @@ export const CamarasDB = {
     if (quedan.length === todas.length) return false;
     await PlatformSettingsDB.set(CLAVE_CAPTURAS(tenantId), quedan, user);
     return true;
+  },
+
+  /**
+   * Guarda cómo se llega a una cámara para verla en vivo.
+   *
+   * La prueba contra el aparato la hace el endpoint (es el que tiene el cliente
+   * ISAPI) y entra como dato: acá se cifra la clave y se guarda **sólo si la
+   * cámara contestó**. El texto plano no se escribe en ningún lado, ni siquiera
+   * en el log de auditoría.
+   */
+  async conectar(
+    tenantId: string,
+    camaraId: string,
+    datos: {
+      host: string;
+      puerto: number;
+      usuario: string;
+      clave: string;
+      https?: boolean;
+      canal?: number;
+      prueba: PruebaDeCamara;
+    },
+    user: string,
+  ): Promise<ResultadoCamaras> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!hayClaveDeCifrado()) {
+      /* Sin clave de cifrado la alternativa sería guardar el secreto en claro
+         en el KV: antes que eso, no se guarda nada. */
+      return {
+        ok: false,
+        motivo: "Falta la clave de cifrado del servidor: sin eso la clave de la cámara no se puede guardar. Avisa al soporte.",
+      };
+    }
+    const camaras = await this.list(tenantId);
+    const r = conectarCamara(camaras, camaraId, {
+      host: datos.host,
+      puerto: datos.puerto,
+      usuario: datos.usuario,
+      claveCifrada: cifrarSecreto(datos.clave),
+      https: datos.https,
+      canal: datos.canal,
+      prueba: datos.prueba,
+    });
+    if (!r.ok) return r;
+    await this.guardar(tenantId, r.camaras, user);
+    const conexion = r.camaras.find((c) => c.id === camaraId)?.conexion;
+    /* Auditoría SIN la clave: queda el quién, el cuándo y a qué aparato. */
+    logActivity(
+      "camara.conectar",
+      "camara",
+      `Conectó «${camaras.find((c) => c.id === camaraId)?.nombre ?? camaraId}» a ${datos.host}:${datos.puerto} (usuario ${datos.usuario}${conexion?.modelo ? `, ${conexion.modelo}` : ""})`,
+      camaraId,
+      user,
+      undefined,
+      tenantId,
+    ).catch((err) => logger.error("[camaras] no se pudo auditar la conexión", { error: String(err), tenantId }));
+    return r;
+  },
+
+  /** Saca la conexión y con ella la clave guardada. */
+  async desconectar(tenantId: string, camaraId: string, user: string): Promise<ResultadoCamaras> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const camaras = await this.list(tenantId);
+    const r = desconectarCamara(camaras, camaraId);
+    if (!r.ok) return r;
+    await this.guardar(tenantId, r.camaras, user);
+    logActivity(
+      "camara.desconectar",
+      "camara",
+      `Desconectó «${camaras.find((c) => c.id === camaraId)?.nombre ?? camaraId}»`,
+      camaraId,
+      user,
+      undefined,
+      tenantId,
+    ).catch((err) => logger.error("[camaras] no se pudo auditar la desconexión", { error: String(err), tenantId }));
+    return r;
+  },
+
+  /** Deja anotado cómo salió la última prueba, para que la pantalla lo cuente. */
+  async registrarPrueba(
+    tenantId: string,
+    camaraId: string,
+    prueba: PruebaDeCamara,
+    user: string,
+  ): Promise<ResultadoCamaras> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const camaras = await this.list(tenantId);
+    const r = anotarPrueba(camaras, camaraId, prueba);
+    if (!r.ok) return r;
+    await this.guardar(tenantId, r.camaras, user);
+    return r;
+  },
+
+  /**
+   * Las credenciales de una cámara, listas para llamarla.
+   *
+   * Es el único lugar donde la clave vuelve a texto plano, y sale de acá para
+   * morir dentro del handler que la usa. Antes de devolverla se revalida el
+   * destino: una conexión guardada hace un mes pudo quedar apuntando a un
+   * nombre que hoy resuelve a la metadata del servidor.
+   */
+  async credenciales(tenantId: string, camaraId: string): Promise<CredencialesListas> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const camara = (await this.list(tenantId)).find((c) => c.id === camaraId);
+    if (!camara) return { ok: false, motivo: "no-existe", detalle: "Esa cámara no está en la lista." };
+    const conexion = camara.conexion;
+    if (!conexion) {
+      return {
+        ok: false,
+        motivo: "sin-configurar",
+        detalle: "Esta cámara todavía no está conectada. Entra a Cámaras, toca «Conectar» y carga la dirección, el usuario y la clave del aparato.",
+      };
+    }
+    const destino = await destinoResuelto(conexion.host, conexion.puerto);
+    if (!destino.ok) return destino;
+    const clave = descifrarSecreto(conexion.claveCifrada);
+    if (clave === null) {
+      return {
+        ok: false,
+        motivo: "credenciales",
+        detalle: "No se pudo leer la clave guardada de la cámara. Vuelve a conectarla.",
+      };
+    }
+    return {
+      ok: true,
+      camara,
+      credenciales: {
+        host: conexion.host,
+        puerto: conexion.puerto,
+        usuario: conexion.usuario,
+        clave,
+        https: conexion.https,
+        canal: conexion.canal,
+      },
+    };
+  },
+
+  /** La lista SIN secretos: lo único que puede viajar al navegador. */
+  async listaParaPantalla(tenantId: string): Promise<CamaraPublica[]> {
+    return camarasParaPantalla(await this.list(tenantId));
   },
 
   async guardar(tenantId: string, camaras: Camara[], user: string): Promise<void> {
