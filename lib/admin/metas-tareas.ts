@@ -134,3 +134,41 @@ export function opcionalParaGuardar(v: string | null | undefined): string | null
   if (v === undefined) return undefined;
   return v === null || v.trim() === "" ? null : v.trim();
 }
+
+// ── Fechas sin hora, en el día de Lima ──────────────────────────────────────
+// `new Date("2026-09-14")` es medianoche UTC: en Lima son las 19:00 del 13. La
+// plantilla «Meta diaria» creada el 14 a la noche vencía el 15, y una tarea que
+// vence el 14 salía vencida y fechada «13/9» (medido 2026-09-14). Estas cuentas
+// trabajan con la clave "YYYY-MM-DD" y nunca pasan por la zona del navegador.
+
+const MS_DIA = 86_400_000;
+const aUtc = (fecha: string) => Date.UTC(Number(fecha.slice(0, 4)), Number(fecha.slice(5, 7)) - 1, Number(fecha.slice(8, 10)));
+
+/** Días de `desde` a `hasta`: del 14/09 al 30/09 son 16; hacia atrás, negativo. */
+export function diasEntreFechas(desde: string, hasta: string): number {
+  return Math.round((aUtc(hasta) - aUtc(desde)) / MS_DIA);
+}
+
+export function sumarDiasAFecha(fecha: string, dias: number): string {
+  return new Date(aUtc(fecha) + dias * MS_DIA).toISOString().slice(0, 10);
+}
+
+/** Un mes después; si el día no existe en ese mes (31/01 + 1 mes), el último del mes. */
+export function sumarMesesAFecha(fecha: string, meses: number): string {
+  const base = new Date(Date.UTC(Number(fecha.slice(0, 4)), Number(fecha.slice(5, 7)) - 1 + meses, 1));
+  const ultimo = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + 1, 0)).getUTCDate();
+  const dia = Math.min(Number(fecha.slice(8, 10)), ultimo);
+  return `${base.getUTCFullYear()}-${String(base.getUTCMonth() + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+}
+
+/** Cuándo vence una meta creada desde plantilla, contado desde `hoy` (el día de Lima): diaria hoy, semanal en 7 días, mensual en un mes. */
+export function vencimientoDePlantilla(periodo: PeriodoMeta, hoy: string): string {
+  if (periodo === "diario") return hoy;
+  if (periodo === "semanal") return sumarDiasAFecha(hoy, 7);
+  return sumarMesesAFecha(hoy, 1);
+}
+
+/** "2026-09-14" → "14/09/2026", sin pasar por `Date`. */
+export function fechaParaMostrar(fecha: string): string {
+  return `${fecha.slice(8, 10)}/${fecha.slice(5, 7)}/${fecha.slice(0, 4)}`;
+}
