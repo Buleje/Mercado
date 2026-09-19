@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import type { CorridaSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
 import {
   diaDeFechaOnly, diaDeLimiteLocal, diaEnPeriodo, pendientesDelLibro, TROZAS_VARADAS_DIAS,
   type DatosPendientes, type Pendiente,
@@ -45,7 +46,7 @@ type Respuesta = {
   m3?: number;
   ficha?: unknown;
   /** `?sinOrigen=1`: corridas del período sin materia prima atribuida. */
-  sinOrigen?: { corridas?: number; producidoM3?: number };
+  sinOrigen?: { corridas?: number; producidoM3?: number; detalle?: CorridaSinOrigen[] };
 };
 
 /** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
@@ -135,6 +136,7 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           despachosSinGtf: despachos.filter((e) => !e.gtfNumber?.trim()).length,
           despachosSinAnexo: despachos.filter((e) => !conAnexo.has(e.id)).length,
           corridasSinOrigen: Number(sinOrigen?.sinOrigen?.corridas) || 0,
+          corridasSinOrigenDetalle: sinOrigen?.sinOrigen?.detalle ?? [],
           saldosNegativos:
             arr<{ negativa?: boolean }>(saldos?.saldos?.materiaPrima).filter((s) => s.negativa).length +
             arr<{ negativo?: boolean }>(saldos?.saldos?.productos).filter((s) => s.negativo).length,

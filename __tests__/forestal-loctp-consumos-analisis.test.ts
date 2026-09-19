@@ -174,12 +174,12 @@ describe("agregarSinOrigen — el pendiente que nunca se disparaba", () => {
   });
 
   it("cuenta la corrida a la que no le llega ni consumo ni reproceso", () => {
-    expect(agregarSinOrigen([corrida()])).toEqual({ corridas: 1, producidoM3: 10 });
+    expect(agregarSinOrigen([corrida()])).toMatchObject({ corridas: 1, producidoM3: 10 });
   });
 
   it("no cuenta la que tiene consumo, ni la que tiene reproceso (ADR-316)", () => {
     const r = agregarSinOrigen([corrida({ consumos: 1 }), corrida({ reprocesos: 1 })]);
-    expect(r).toEqual({ corridas: 0, producidoM3: 0 });
+    expect(r).toMatchObject({ corridas: 0, producidoM3: 0 });
   });
 
   it("el volumen de entrada declarado NO da origen: sin arista, sigue huérfana", () => {
@@ -190,7 +190,7 @@ describe("agregarSinOrigen — el pendiente que nunca se disparaba", () => {
 
   it("una corrida en PT se cuenta, pero su cifra no entra en el total de m³", () => {
     const r = agregarSinOrigen([corrida({ unit: "pt", quantity: 2374 }), corrida({ quantity: 4.25 })]);
-    expect(r).toEqual({ corridas: 2, producidoM3: 4.25 });
+    expect(r).toMatchObject({ corridas: 2, producidoM3: 4.25 });
   });
 
   it("redondea a 4 decimales, como el resto del libro", () => {
@@ -199,6 +199,42 @@ describe("agregarSinOrigen — el pendiente que nunca se disparaba", () => {
   });
 
   it("sin corridas devuelve cero, no null", () => {
-    expect(agregarSinOrigen([])).toEqual({ corridas: 0, producidoM3: 0 });
+    expect(agregarSinOrigen([])).toMatchObject({ corridas: 0, producidoM3: 0, detalle: [] });
+  });
+});
+
+/* El detalle existe para que el pendiente pueda nombrar la corrida que DECLARA
+   madera de entrada y no tiene ni una troza: es la que un fiscalizador mira
+   primero, y decir sólo «N corridas» la promedia con las que no declararon nada. */
+describe("agregarSinOrigen — el detalle pone primero lo que más duele", () => {
+  const conId = (over: Partial<{ id: string; volumeInputM3: number; entryDate: string; lineNo: number }> = {}) => ({
+    quantity: 1, unit: "m3", consumos: 0, reprocesos: 0,
+    id: "x", lineNo: 1, entryDate: "2026-08-01", volumeInputM3: 0, ...over,
+  });
+
+  it("ordena por volumen declarado, de mayor a menor", () => {
+    const r = agregarSinOrigen([
+      conId({ id: "chica", volumeInputM3: 5.41 }),
+      conId({ id: "grande", volumeInputM3: 67.69 }),
+      conId({ id: "sin-declarar", volumeInputM3: 0 }),
+    ]);
+    expect(r.detalle.map((c) => c.id)).toEqual(["grande", "chica", "sin-declarar"]);
+  });
+
+  it("no lista la corrida que SÍ tiene origen", () => {
+    const r = agregarSinOrigen([conId({ id: "a" }), { ...conId({ id: "b" }), consumos: 1 }]);
+    expect(r.detalle.map((c) => c.id)).toEqual(["a"]);
+  });
+
+  it("una corrida en PT lleva su unidad y `producido` nulo: no se suma a los m³", () => {
+    const r = agregarSinOrigen([conId({ id: "pt" , unit: "pt" } as never)]);
+    expect(r.detalle[0]).toMatchObject({ unidad: "pt", producido: null });
+    expect(r.producidoM3).toBe(0);
+  });
+
+  it("sin id no hay fila en el detalle, pero sí cuenta en el total", () => {
+    const r = agregarSinOrigen([{ quantity: 3, unit: "m3", consumos: 0, reprocesos: 0 }]);
+    expect(r.corridas).toBe(1);
+    expect(r.detalle).toEqual([]);
   });
 });

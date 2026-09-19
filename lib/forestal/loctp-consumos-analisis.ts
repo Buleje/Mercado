@@ -223,10 +223,27 @@ export function aristasQueLlegan(aristas: ReadonlyArray<{ to: string }>): Map<st
   return cuenta;
 }
 
+/** Una corrida sin materia prima atribuida, como la lista el pendiente. */
+export interface CorridaSinOrigen {
+  id: string;
+  lineNo: number | null;
+  /** Date-only del libro (`YYYY-MM-DD`): se formatea con `timeZone:"UTC"`. */
+  fecha: string | null;
+  /** Lo producido, sólo si la corrida está en unidad de volumen. */
+  producido: number | null;
+  unidad: string | null;
+  /**
+   * Los m³ de entrada que el asiento DECLARA. Es la cifra que más duele: el
+   * libro dice cuánta madera entró y no hay una sola troza detrás.
+   */
+  declaradoM3: number;
+}
+
 /**
- * Agrega las corridas SIN ORIGEN de un período: cuántas son y cuánto m³
- * produjeron. Pura y probada; la llama `ForestCtpDB.contarCorridasSinOrigen`
- * con los dos contadores de puente que ya trae la consulta.
+ * Agrega las corridas SIN ORIGEN de un período: cuántas son, cuánto m³
+ * produjeron y cuáles. Pura y probada; la llama
+ * `ForestCtpDB.contarCorridasSinOrigen` con los contadores de puente que ya
+ * trae la consulta.
  *
  * Existe aparte del resumen de Consumos porque los pendientes del libro sólo
  * necesitan las dos cifras, no el grafo: hasta 2026-09-19 el pendiente estaba
@@ -240,19 +257,50 @@ export function agregarSinOrigen(
     unit?: string | null;
     consumos: number;
     reprocesos: number;
+    id?: string;
+    lineNo?: number | null;
+    entryDate?: string | null;
+    /** Los m³ de entrada que el asiento DECLARA (no atribuye). */
+    volumeInputM3?: number | string | null;
   }>,
-): { corridas: number; producidoM3: number } {
+): {
+  corridas: number;
+  producidoM3: number;
+  /** Las que declaran madera de entrada y no tienen ni una troza: primero. */
+  detalle: CorridaSinOrigen[];
+} {
   let corridas = 0;
   let producidoM3 = 0;
+  const detalle: CorridaSinOrigen[] = [];
   for (const f of filas) {
     if (!corridaSinOrigen({ consumos: f.consumos, reprocesos: f.reprocesos })) continue;
     corridas += 1;
+    const esVolumen = UNIDAD_VOLUMEN.test((f.unit ?? "").trim());
     /* Una corrida medida en PT se cuenta como sin origen igual, pero su cifra
        no entra en un total que dice «m³»: mezclar unidades es cómo nace un
        número que parece oficial y no lo es. */
-    if (UNIDAD_VOLUMEN.test((f.unit ?? "").trim())) producidoM3 += Number(f.quantity) || 0;
+    if (esVolumen) producidoM3 += Number(f.quantity) || 0;
+    if (f.id) {
+      detalle.push({
+        id: f.id,
+        lineNo: f.lineNo ?? null,
+        fecha: f.entryDate ?? null,
+        producido: esVolumen ? r4(Number(f.quantity) || 0) : null,
+        unidad: (f.unit ?? "").trim() || null,
+        declaradoM3: r4(Number(f.volumeInputM3) || 0),
+      });
+    }
   }
-  return { corridas, producidoM3: r4(producidoM3) };
+  /* El orden es el del daño: una corrida que DICE cuánta madera entró y no
+     tiene ni una troza es lo primero que mira un fiscalizador — el propio libro
+     declara el volumen. Las que no declaran nada van después, por fecha. */
+  detalle.sort(
+    (a, b) =>
+      b.declaradoM3 - a.declaradoM3 ||
+      (a.fecha ?? "").localeCompare(b.fecha ?? "") ||
+      (a.lineNo ?? 0) - (b.lineNo ?? 0),
+  );
+  return { corridas, producidoM3: r4(producidoM3), detalle };
 }
 
 /**

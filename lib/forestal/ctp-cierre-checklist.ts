@@ -39,7 +39,20 @@ export function revisarCierre(d: DatosPendientes, mes = "el mes"): RevisionCierr
     );
   }
   if (d.corridasSinOrigen > 0) {
-    observaciones.push(`${plural(d.corridasSinOrigen, "corrida", "corridas")} sin materia prima atribuida: su costo se congela sin origen.`);
+    /* No todas las corridas sin origen duelen igual. La que declara volumen de
+       entrada afirma, en el propio libro, cuánta madera entró — y no tiene ni
+       una troza detrás: es lo primero que mira un fiscalizador, y la que se
+       congela con un costo que no se puede defender. Decir sólo "N corridas"
+       las promedia con las que no declararon nada (Blas, 2026-09-19: 5 de 14
+       declaran 142,26 m³ entre todas). */
+    const conDeclarado = (d.corridasSinOrigenDetalle ?? []).filter((c) => c.declaradoM3 > 0);
+    const m3Declarados = Math.round(conDeclarado.reduce((a, c) => a + c.declaradoM3, 0) * 100) / 100;
+    observaciones.push(
+      `${plural(d.corridasSinOrigen, "corrida", "corridas")} sin materia prima atribuida: su costo se congela sin origen.` +
+        (conDeclarado.length > 0
+          ? ` ${plural(conDeclarado.length, "declara", "declaran")} ${m3Declarados.toLocaleString("es-PE")} m³ de entrada sin una sola troza.`
+          : ""),
+    );
   }
   if (d.ingresosPendientes > 0) {
     observaciones.push(`${plural(d.ingresosPendientes, "ingreso", "ingresos")} sin validar: no cuentan como materia prima disponible del mes.`);

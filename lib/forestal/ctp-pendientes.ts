@@ -27,6 +27,8 @@ export interface Pendiente {
   filtro?: "pendiente" | "fuera-de-plazo";
 }
 
+import type { CorridaSinOrigen } from "./loctp-consumos-analisis";
+
 export interface DatosPendientes {
   /** Ingresos de materia prima en estado "pendiente". */ ingresosPendientes: number;
   /** Ingresos vigentes registrados fuera del plazo legal. */ fueraDePlazo: number;
@@ -34,6 +36,11 @@ export interface DatosPendientes {
   /** Despachos vivos sin número de GTF de salida. */ despachosSinGtf: number;
   /** Despachos vivos sin ANEXO N° 04 emitido. */ despachosSinAnexo: number;
   /** Corridas de producción sin materia prima atribuida. */ corridasSinOrigen: number;
+  /**
+   * Cuáles son, con lo que cada una DECLARA de entrada. La que declara volumen
+   * y no tiene trozas es la que más duele: el libro afirma cuánta madera entró.
+   */
+  corridasSinOrigenDetalle?: CorridaSinOrigen[];
   /** Especies con saldo negativo (se despachó más de lo que entró). */ saldosNegativos: number;
   /**
    * Piezas que llevan `TROZAS_VARADAS_DIAS` o más paradas en el patio.

@@ -49,3 +49,47 @@ it("nombra el mes en el veredicto (convive con el panel de otro período)", () =
   expect(revisarCierre({ ...LIMPIO, saldosNegativos: 1 }, "junio de 2026").titulo).toBe("Revisa esto antes de cerrar junio de 2026");
   expect(revisarCierre(LIMPIO).titulo).toBe("Todo en orden para cerrar el mes");
 });
+
+/* La observación de corridas sin materia prima decía sólo «N corridas», y eso
+   promedia a la que no declaró nada con la que afirma en el libro cuánta madera
+   entró y no tiene ni una troza detrás — que es la que un fiscalizador mira
+   primero. Medido en Blas el 2026-09-19: 5 de 14 declaran 142,26 m³. */
+describe("cierre — la corrida que DECLARA entrada sin trozas se nombra aparte", () => {
+  const base = {
+    ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
+    despachosSinGtf: 0, despachosSinAnexo: 0, saldosNegativos: 0,
+    trozasVaradas: 0, ingresosSinCosto: 0, m3SinCosto: 0,
+  };
+  const corrida = (declaradoM3: number, id: string) => ({
+    id, lineNo: 1, fecha: "2026-08-01", producido: 1, unidad: "m3", declaradoM3,
+  });
+
+  it("dice cuántas declaran y cuánto, cuando alguna declara", () => {
+    const r = revisarCierre({
+      ...base,
+      corridasSinOrigen: 3,
+      corridasSinOrigenDetalle: [corrida(27.52, "a"), corrida(67.69, "b"), corrida(0, "c")],
+    });
+    const obs = r.observaciones.find((o) => o.includes("sin materia prima"));
+    expect(obs).toContain("3 corridas sin materia prima atribuida");
+    expect(obs).toContain("2 declaran 95.21 m³ de entrada sin una sola troza");
+  });
+
+  it("no inventa la frase cuando ninguna declara entrada", () => {
+    const r = revisarCierre({
+      ...base,
+      corridasSinOrigen: 2,
+      corridasSinOrigenDetalle: [corrida(0, "a"), corrida(0, "b")],
+    });
+    const obs = r.observaciones.find((o) => o.includes("sin materia prima"));
+    expect(obs).toContain("2 corridas sin materia prima atribuida");
+    expect(obs).not.toContain("declaran");
+  });
+
+  it("sin detalle (respuesta vieja cacheada) no rompe ni miente", () => {
+    const r = revisarCierre({ ...base, corridasSinOrigen: 4 });
+    const obs = r.observaciones.find((o) => o.includes("sin materia prima"));
+    expect(obs).toContain("4 corridas sin materia prima atribuida");
+    expect(obs).not.toContain("declaran");
+  });
+});

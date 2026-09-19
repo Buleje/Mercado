@@ -50,7 +50,7 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { jornadasDesdeFilas, type JornadaDelLibro } from "@/lib/forestal/detalle-de-jornada";
-import { agregarSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
+import { agregarSinOrigen, type CorridaSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
@@ -4298,7 +4298,7 @@ export class ForestCtpDB {
   static async contarCorridasSinOrigen(
     tenantId: string,
     opts: { fromDate?: Date; toDate?: Date } = {},
-  ): Promise<{ corridas: number; producidoM3: number }> {
+  ): Promise<{ corridas: number; producidoM3: number; detalle: CorridaSinOrigen[] }> {
     if (!tenantId) throw new Error("tenantId is required");
     const range = dateRange(opts);
     const where: Prisma.ForestCtpEntryWhereInput = {
@@ -4314,8 +4314,14 @@ export class ForestCtpDB {
       /* Sólo los dos contadores de puente y la cifra producida: no hace falta
          traer la corrida entera para saber si algo le llega. */
       select: {
+        id: true,
+        lineNo: true,
+        entryDate: true,
         quantity: true,
         unit: true,
+        /* Lo que el asiento DECLARA que entró: es la cifra que el pendiente
+           pone primero, porque el propio libro la afirma sin respaldo. */
+        volumeInputM3: true,
         _count: { select: { consumos: true, reprocesosEntrada: true } },
       },
       /* Mismo tope que la tira de días: una red, no una página. */
@@ -4326,12 +4332,17 @@ export class ForestCtpDB {
        traducen los contadores de puente de cada asiento. */
     return agregarSinOrigen(
       filas.map((f) => ({
-        /* `quantity` es Decimal de Prisma: se cruza a number acá, en la
-           frontera, como el resto del libro — no dentro de la función pura. */
+        /* `quantity` y `volumeInputM3` son Decimal de Prisma: se cruzan a
+           number acá, en la frontera, como el resto del libro — no dentro de la
+           función pura. La fecha es date-only: se corta el ISO, sin zona. */
         quantity: f.quantity == null ? null : Number(f.quantity),
         unit: f.unit,
         consumos: f._count.consumos,
         reprocesos: f._count.reprocesosEntrada,
+        id: f.id,
+        lineNo: f.lineNo,
+        entryDate: f.entryDate ? f.entryDate.toISOString().slice(0, 10) : null,
+        volumeInputM3: f.volumeInputM3 == null ? null : Number(f.volumeInputM3),
       })),
     );
   }
