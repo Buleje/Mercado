@@ -167,3 +167,18 @@ operaciones que realizo, y poder cambiar para que se aplique a todo».
 - El **gate de anidado HTML cruza componentes por NOMBRE**: dos `Etapa` distintos (uno exportado en `historia/EtapasDelLote`, otro privado en `LothTraceResumen`) daban 2 roturas falsas y bloqueaban el commit. Se renombró el privado a `PasoDelEmbudo`; el gate sigue pudiendo repetirlo con el próximo par de homónimos.
 - `curl $BSM_CURL_FLAGS` **no funciona**: bash lo parte por espacios y las comillas quedan literales → ristra de `HTTP 000` y un 401 engañoso. Usar `-b "$BSM_COOKIE" -H "x-csrf-token: $BSM_CSRF" -H "x-tenant-id: $BSM_TENANT"`.
 - En el login, `qaadmin` existe en **varias tiendas**: hay que elegir «Buleje · main» o el panel rebota al login.
+
+## ✅ Tercera ronda 19-09 — las 4 opciones que marcó Brandon
+
+| Frente | Estado | Commit |
+|---|---|---|
+| Chip de permiso en los libros hermanos | Lotes, Trámites (cubre Plantaciones) y Herramientas. **Cacao descartado a propósito**: no es forestal | `1572132c6` |
+| El gate de anidado que cruza por nombre | `origenDe()` resuelve el import; sin poder resolver, conserva la sospecha | `e6ca252cf` |
+| Las corridas que declaran madera sin trozas | El cierre agrega «N declaran X m³ de entrada sin una sola troza»; calla si ninguna declara | `b3771abbe` |
+| **Armar el lote desde la propuesta** | **Agente en curso al cerrar esta nota** — toca `forest-lote-aserrio.db.ts`, `wood-entries.db.ts`, `consumo-trozas.ts`, el endpoint de lotes y 2 archivos de test. **Sin commitear, sin revisar** | — |
+
+**Al terminar el agente del lote, lo que falta:** pasarlo por `reviewer` con contexto fresco (toca invariantes I1-I6 y locks de trozas: es zona de peligro), correr los gates y recién ahí commitear.
+
+**Dos falsos que cayeron esta ronda** (los dos aparecieron sólo al medir, no en los gates):
+- El gate de anidado bloqueaba commits legítimos por dos componentes homónimos; **y al arreglarlo, comparar rutas como strings lo dejó mudo** — detectaba cero. Sólo se vio porque el fixture incluía un caso que el gate DEBE seguir cazando.
+- «Listar las corridas una por una con su botón» ya existía en `CtpVincularEnTandaModal`. Lo que faltaba era la cifra declarada.
