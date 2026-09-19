@@ -93,6 +93,29 @@ if (evolutionLog?.evolutions?.length > 0) {
   lines.push(`**🧬 Ultima evolucion:** ${lastEvo.agent} — ${lastEvo.changes?.length ?? 0} cambios (${lastEvo.status})`);
 }
 
+// ── Paralelismo de la sesión anterior ──────────────────────────
+// Medido 2026-09-19: 14.054 tool-calls en 14.044 mensajes = 1,00 por mensaje.
+// La regla de paralelismo existe desde hace meses y no se cumplía porque nadie
+// la medía. El wall-clock ≈ número de TANDAS, así que la cifra va acá arriba.
+try {
+  const out = execSync(`node ${join(projectRoot, "scripts/medir-paralelismo.mjs")} --json`, {
+    encoding: "utf8", timeout: 4000,
+  });
+  const p = JSON.parse(out);
+  if (p.llamadas > 20) {
+    const enMeta = p.ratio >= p.meta;
+    lines.push("");
+    lines.push(
+      `**⚡ Paralelismo (sesión anterior):** ${p.ratio.toFixed(2)} tool-calls/mensaje ` +
+      `${enMeta ? "✅" : `⚠️ meta ${p.meta}`} · ${p.pctMulti}% de mensajes con 2+ llamadas · ` +
+      `${p.ratioAgente.toFixed(2)} subagentes por tanda`
+    );
+    if (!enMeta) {
+      lines.push("  → lo independiente viaja JUNTO en un mensaje (lecturas, greps, gates, agentes con archivos disjuntos).");
+    }
+  }
+} catch {}
+
 // ── Improvement Radar (propuestas pendientes) ──────────────────
 const radarPath = join(projectRoot, ".claude/improvement-radar.md");
 if (existsSync(radarPath)) {

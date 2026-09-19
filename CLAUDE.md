@@ -168,7 +168,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 
 ## 9. Power rules para el agente (velocidad + potencia)
 
-1. **Paralelismo máximo**: múltiples Agent/Bash/Read en UN mensaje cuando son independientes. Si hay 3+ tareas, invocar skill `turbo-parallel`.
+1. **Paralelismo máximo**: múltiples Agent/Bash/Read en UN mensaje cuando son independientes. Si hay 3+ tareas, invocar skill `turbo-parallel`. **Medido 2026-09-19: se incumplía casi siempre** — 1,00 tool-calls/mensaje en 14.044 mensajes y 1,00 subagentes por tanda (110/110). El wall-clock ≈ nº de TANDAS. Meta **≥1,5**; la cifra de la sesión anterior aparece en el arranque (`scripts/medir-paralelismo.mjs`). Criterio de modelo por agente: regla `agentic-style`.
 2. **No matar `node.exe` ni wipear `.next`**: restarts de Turbopack son caros (30-90s). Solo `dev:clean` si hay lock corrupto; `dev:nuke` solo si caché realmente corrupto.
 3. **Grep/Glob antes que `Explore` agent**: Explore es para preguntas open-ended. Target conocido = Grep directo (más rápido, menos tokens).
 4. **Batch reads**: leer N screenshots o N archivos en una sola tanda paralela, no secuencial.
@@ -198,7 +198,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 | `README.md` | Quick start, deployment Vercel, API endpoints |
 | `docs/adr/` | Decisiones de arquitectura vivas |
 | `SESSION_HANDOFF.md` | Estado de sesión anterior (si existe) |
-| `.claude/hooks/` | Hooks (wiring real en `settings.json`): mem-guard, danger-zone, pre-bash-guard (Pre); `post-edit-dispatcher` async (Post — gatea y spawnea hex/auto-learn/typography/screenshot/rubric solo si el path matchea); deploy-gates solo en Skill(deploy); Stop = gate agente de evidencia |
+| `.claude/hooks/` | Hooks (wiring real en `settings.json`): **`pre-tool-guard` (Pre, único)** = mem-guard + danger-zone + bash-guard + filtro de deploy-gates en UN proceso (2026-09-19: 83→33 ms por tool-call, −61 %; 0 divergencias en 18 casos; los 3 scripts viejos siguen en el dir para revertir); `post-edit-dispatcher` async (Post — gatea y spawnea hex/auto-learn/typography/screenshot/rubric solo si el path matchea); deploy-gates solo si `Skill(deploy)`; Stop = gate agente de evidencia |
 | `.claude/rules/` | Reglas path-scoped 2026 — cargan SOLO al tocar archivos que matchean (db, ui, danger-zone, agentic-style, code-quality) |
 | `.claude/workflows/` | Workflows guardados — `audit-verificado` (auditoría + refutación adversarial) |
 | `.claude/rubrics/` | Rubrics bash-verificables por capa (api, db, migration, ui) — las corre `post-edit-rubric-check.mjs` |

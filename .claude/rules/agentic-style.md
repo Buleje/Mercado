@@ -22,7 +22,19 @@
 
 - **Workflow-first en auditorías/migraciones**: "auditá/migrá/revisá X" → workflow `audit-verificado` (verifier en contexto fresco + refutación adversarial), NO N agentes sueltos sin verificación. El verifier independiente es la palanca #1 contra "alucinar terminado".
 
-- **Paralelismo por defecto**: N tool-calls/agentes independientes en 1 mensaje. Gates lentos en background. Para trabajo mecánico, bajá el modelo **en la invocación** del subagente (`model: haiku|sonnet`), no en el def.
+- **Paralelismo por defecto — la regla que más se incumplía (medido 2026-09-19)**: el censo de 35 transcripts dio **1,00 tool-calls por mensaje** (7 mensajes de 14.044 con 2+ llamadas) y **1,00 subagentes por tanda** (110 en 110 tandas). El wall-clock de una sesión ≈ número de TANDAS, no de llamadas: tres lecturas independientes en un mensaje cuestan UNA espera, no tres. Meta **≥1,5**; la cifra de la sesión anterior sale en el arranque (`scripts/medir-paralelismo.mjs`, enganchado a `session-start-context`). Viajan juntos: lecturas/greps de archivos distintos, gates de áreas distintas, agentes con archivos disjuntos, el `curl` y el `SELECT` que confirman la misma hipótesis. Gates lentos, a background.
+
+- **Con qué modelo invocar cada subagente** (el override va **en la invocación**, no en el def; medido: 88 % de los despachos heredaba Opus, incluidos barridos mecánicos):
+
+| Agente | `haiku` | `sonnet` | heredar (Opus) |
+|---|---|---|---|
+| `frontend` | barrido repetitivo con patrón ya escrito (cablear N modales igual, censar componentes, reemplazar tokens) | una pantalla con patrón establecido + screenshot light/dark | diseño nuevo, motion, bug de layout que no se ve en el DOM |
+| `backend` | mover un endpoint al patrón ya escrito | CRUD con Zod sobre una DB class existente | dinero, RBAC, state machine, integración nueva |
+| `database` | — | índice o columna aditiva | migración con datos, drift, schema |
+| `tester` | tests de un contrato ya definido; correr y reportar | reproducir un bug conocido | recorrido de usuario real con Playwright |
+| `reviewer` | **nunca** (es el evaluador) | diff chico de un área | zona de peligro, `diagnose` de un bug reportado |
+| `security` / `architect` | **nunca** | — | siempre (veto y diseño) |
+| `healer` | tokens del DS, lint puro | default del def | — |
 
 - **Un fork hereda TODO tu contexto, incluida tu meta grande** (fricción real 2026-08-19): un fork despachado con una directiva angosta de sólo-lectura puede igual "ayudar" continuando la tarea grande de la conversación — llegó a stagear y commitear en paralelo mientras el hilo principal tocaba el mismo índice de git. Si el hilo principal va a seguir mutando el mismo estado: decile explícitamente "NO continúes ninguna otra tarea, sólo esto". Para redirigir/parar: `SendMessage(to: agentId)` o `TaskStop` — NUNCA `Agent(subagent_type:"fork")` con el mismo `name` (crea un duplicado). Detalle: memoria `fork-tool-anomalous-response`.
 
