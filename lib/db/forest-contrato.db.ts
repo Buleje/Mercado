@@ -50,7 +50,11 @@ function aContrato(r: ContratoRow): Contrato {
     titularDocTipo: r.titularDocTipo,
     resolucionNumero: r.resolucionNumero,
     resolucionFecha: iso(r.resolucionFecha),
-    tipo: (r.tipo as TipoContrato) ?? null,
+    /* Sin tipo guardado se deduce del código: el papel ya lo dice y mostrar
+       «—» junto a un código que empieza con REG-PLT es un hueco inventado.
+       Los contratos sembrados antes del catálogo de tipos reales (PER-FMC,
+       concesiones CON-…) quedaron sin él. */
+    tipo: (r.tipo as TipoContrato) ?? tipoDesdeCodigo(r.codigo),
     arffs: r.arffs,
     region: r.region,
     provincia: r.provincia,
@@ -329,6 +333,191 @@ export class ForestContratoDB {
   }
 
   /**
+   * El balance de TODOS los contratos de un tirón, para la tabla.
+   *
+   * Seis agregaciones agrupadas por contrato, no seis por cada contrato: con
+   * una llamada a `balance()` por fila, seis contratos eran treinta y seis
+   * consultas y la tabla cargaba en cascada.
+   *
+   * Las ventas necesitan el reparto por proporción (un despacho puede mezclar
+   * permisos), que no se expresa con un `groupBy`: va en SQL parametrizado, con
+   * `$1` para el tenant — nunca interpolado.
+   */
+  static async balances(tenantId: string): Promise<Map<string, BalanceContrato>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const vivos = { tenantId, contratoId: { not: null } } as const;
+    const [madera, sinPrecio, produccion, gastos, fletes, adelantos, cuenta, ventasFilas] = await Promise.all([
+      prisma.woodEntry.groupBy({
+        by: ["contratoId"],
+        where: { ...vivos, deletedAt: null, status: { notIn: ["rechazado", "anulado"] } },
+        _count: { _all: true },
+        _sum: { volumeM3: true, costoTotal: true },
+      }),
+      prisma.woodEntry.groupBy({
+        by: ["contratoId"],
+        where: { ...vivos, deletedAt: null, status: { notIn: ["rechazado", "anulado"] }, costoTotal: null },
+        _count: { _all: true },
+      }),
+      prisma.forestCtpEntry.groupBy({
+        by: ["contratoId"],
+        where: { ...vivos, deletedAt: null, status: { not: "anulado" }, section: "produccion" },
+        _count: { _all: true },
+        _sum: { quantity: true },
+      }),
+      prisma.expense.groupBy({ by: ["contratoId"], where: vivos, _count: { _all: true }, _sum: { amount: true } }),
+      prisma.forestFlete.groupBy({
+        by: ["contratoId"],
+        where: { ...vivos, deletedAt: null },
+        _count: { _all: true },
+        _sum: { monto: true },
+      }),
+      prisma.adelanto.groupBy({
+        by: ["contratoId"],
+        where: vivos,
+        _count: { _all: true },
+        _sum: { montoAdelantado: true, saldoPendiente: true },
+      }),
+      prisma.forestCuentaMov.groupBy({
+        by: ["contratoId", "tipo"],
+        where: { ...vivos, deletedAt: null },
+        _count: { _all: true },
+        _sum: { monto: true },
+      }),
+      prisma.$queryRaw<{ contratoId: string; monto: number | null; documentos: bigint; sin_precio: bigint }[]>`
+        SELECT p."contratoId"                                            AS "contratoId",
+               sum(d."valorVenta" * least(o.parte, 1))                   AS monto,
+               count(DISTINCT d.id)                                      AS documentos,
+               count(DISTINCT d.id) FILTER (WHERE d."valorVenta" IS NULL) AS sin_precio
+          FROM (
+            SELECT og."despachoEntryId", og."produccionEntryId",
+                   sum(og.quantity)                            AS cantidad,
+                   sum(og.quantity) / NULLIF(max(de.quantity), 0) AS parte
+              FROM "ForestCtpDespachoOrigen" og
+              JOIN "ForestCtpEntry" de ON de.id = og."despachoEntryId"
+             WHERE og."tenantId" = ${tenantId}
+             GROUP BY og."despachoEntryId", og."produccionEntryId"
+          ) o
+          JOIN "ForestCtpEntry" p ON p.id = o."produccionEntryId"
+          JOIN "ForestCtpEntry" d ON d.id = o."despachoEntryId"
+         WHERE p."tenantId" = ${tenantId} AND p."contratoId" IS NOT NULL
+           AND d."deletedAt" IS NULL AND d.status <> 'anulado'
+         GROUP BY p."contratoId"`,
+    ]);
+
+    const n = (v: Prisma.Decimal | null | undefined) => Number(v ?? 0);
+    const salida = new Map<string, BalanceContrato>();
+    const de = (id: string): BalanceContrato =>
+      salida.get(id) ??
+      salida
+        .set(id, {
+          contratoId: id,
+          madera: { documentos: 0, monto: 0, m3: 0, sinValorizar: 0 },
+          produccion: { documentos: 0, monto: 0, m3: 0 },
+          ventas: { documentos: 0, monto: 0, sinValorizar: 0 },
+          gastos: { documentos: 0, monto: 0 },
+          fletes: { documentos: 0, monto: 0 },
+          adelantos: { documentos: 0, monto: 0 },
+          adelantosSaldo: 0,
+          cuentaCargos: { documentos: 0, monto: 0 },
+          cuentaAbonos: { documentos: 0, monto: 0 },
+        })
+        .get(id)!;
+
+    for (const g of madera) {
+      if (!g.contratoId) continue;
+      const b = de(g.contratoId);
+      b.madera = { documentos: g._count._all, monto: n(g._sum.costoTotal), m3: n(g._sum.volumeM3), sinValorizar: 0 };
+    }
+    for (const g of sinPrecio) if (g.contratoId) de(g.contratoId).madera.sinValorizar = g._count._all;
+    for (const g of produccion)
+      if (g.contratoId) de(g.contratoId).produccion = { documentos: g._count._all, monto: 0, m3: n(g._sum.quantity) };
+    for (const g of gastos)
+      if (g.contratoId) de(g.contratoId).gastos = { documentos: g._count._all, monto: n(g._sum.amount) };
+    for (const g of fletes)
+      if (g.contratoId) de(g.contratoId).fletes = { documentos: g._count._all, monto: n(g._sum.monto) };
+    for (const g of adelantos) {
+      if (!g.contratoId) continue;
+      const b = de(g.contratoId);
+      b.adelantos = { documentos: g._count._all, monto: n(g._sum.montoAdelantado) };
+      b.adelantosSaldo = n(g._sum.saldoPendiente);
+    }
+    for (const g of cuenta) {
+      if (!g.contratoId) continue;
+      const b = de(g.contratoId);
+      const bloque = { documentos: g._count._all, monto: n(g._sum.monto) };
+      if (g.tipo === "cargo") b.cuentaCargos = bloque;
+      else if (g.tipo === "abono") b.cuentaAbonos = bloque;
+    }
+    for (const v of ventasFilas) {
+      if (!v.contratoId) continue;
+      de(v.contratoId).ventas = {
+        documentos: Number(v.documentos ?? 0),
+        monto: Math.round(Number(v.monto ?? 0) * 100) / 100,
+        sinValorizar: Number(v.sin_precio ?? 0),
+      };
+    }
+    return salida;
+  }
+
+  /**
+   * Lo vendido que le toca a este contrato.
+   *
+   * Un despacho no es «de un contrato»: es de la madera que consumió, y esa
+   * madera puede venir de dos permisos. Por eso el `valorVenta` se reparte por
+   * la PROPORCIÓN de cantidad que salió de producciones de este contrato —
+   * sumarlo entero inventaría para uno la ganancia que pagó el otro.
+   *
+   * Un despacho sin `valorVenta` no aporta plata pero SÍ se cuenta en
+   * `sinValorizar`: es la diferencia entre «no vendí» y «vendí y no cargué el
+   * precio», que es justo lo que hace que un balance mienta sin avisar.
+   */
+  static async ventasAtribuidas(
+    tenantId: string,
+    contratoId: string,
+    rango?: { desde?: Date; hasta?: Date },
+  ): Promise<{ documentos: number; monto: number; sinValorizar: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    /* Los tramos despacho←producción cuya producción es de este contrato. */
+    const origenes = await prisma.forestCtpDespachoOrigen.findMany({
+      where: { tenantId, produccion: { contratoId, deletedAt: null } },
+      select: {
+        quantity: true,
+        despacho: {
+          select: { id: true, valorVenta: true, quantity: true, deletedAt: true, status: true, entryDate: true },
+        },
+      },
+    });
+
+    const porDespacho = new Map<string, { delContrato: number; total: number; valor: number | null }>();
+    for (const o of origenes) {
+      const d = o.despacho;
+      if (!d || d.deletedAt || d.status === "anulado") continue;
+      if (rango?.desde && d.entryDate < rango.desde) continue;
+      if (rango?.hasta && d.entryDate > rango.hasta) continue;
+      const prev = porDespacho.get(d.id) ?? {
+        delContrato: 0,
+        total: Number(d.quantity ?? 0),
+        valor: d.valorVenta == null ? null : Number(d.valorVenta),
+      };
+      prev.delContrato += Number(o.quantity ?? 0);
+      porDespacho.set(d.id, prev);
+    }
+
+    let monto = 0;
+    let sinValorizar = 0;
+    for (const d of porDespacho.values()) {
+      if (d.valor == null) {
+        sinValorizar += 1;
+        continue;
+      }
+      /* Sin cantidad total no hay proporción que calcular: se toma entero, que
+         es lo que pasa cuando el despacho salió de un solo origen. */
+      const parte = d.total > 0 ? Math.min(d.delContrato / d.total, 1) : 1;
+      monto += d.valor * parte;
+    }
+    return { documentos: porDespacho.size, monto: Math.round(monto * 100) / 100, sinValorizar };
+  }
+  /**
    * El balance del contrato: seis agregaciones, cero columnas derivadas.
    *
    * `rango` acota por fecha cuando la pantalla lo pide; sin él, es la vida
@@ -390,6 +579,7 @@ export class ForestContratoDB {
     ]);
 
     const n = (v: Prisma.Decimal | null | undefined) => Number(v ?? 0);
+    const ventas = await ForestContratoDB.ventasAtribuidas(tenantId, contratoId, rango);
     return {
       contratoId,
       madera: {
@@ -399,6 +589,7 @@ export class ForestContratoDB {
         sinValorizar: maderaSinPrecio,
       },
       produccion: { documentos: produccion._count._all, monto: 0, m3: n(produccion._sum.quantity) },
+      ventas,
       gastos: { documentos: gastos._count._all, monto: n(gastos._sum.amount) },
       fletes: { documentos: fletes._count._all, monto: n(fletes._sum.monto) },
       adelantos: { documentos: adelantos._count._all, monto: n(adelantos._sum.montoAdelantado) },

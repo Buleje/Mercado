@@ -66,10 +66,16 @@ export const GET = withApiHandler("forestal-contratos-get", async (req: NextRequ
     if (url.searchParams.get("candidatos") === "1") {
       return NextResponse.json({ candidatos: await ForestContratoDB.candidatos(auth.tenantId) });
     }
+    const contratos = await ForestContratoDB.list(auth.tenantId, {
+      incluirInactivos: url.searchParams.get("todos") === "1",
+    });
+    /* `?balances=1`: la tabla necesita la plata de cada fila. Va en una tanda
+       de seis agregaciones agrupadas, no en una llamada por contrato. */
+    if (url.searchParams.get("balances") !== "1") return NextResponse.json({ contratos });
+    const mapa = await ForestContratoDB.balances(auth.tenantId);
     return NextResponse.json({
-      contratos: await ForestContratoDB.list(auth.tenantId, {
-        incluirInactivos: url.searchParams.get("todos") === "1",
-      }),
+      contratos,
+      balances: Object.fromEntries([...mapa.entries()]),
     });
   } catch (err) {
     logger.error("[contratos.GET] failed", { error: String(err), tenantId: auth.tenantId });

@@ -68,6 +68,10 @@ async function motivo(r: Response, quePedia: string): Promise<string> {
  */
 export function useContratos() {
   const [contratos, setContratos] = useState<Contrato[]>([]);
+  /** El balance de cada contrato, por id — lo que la tabla muestra en sus
+   *  columnas de plata. Viene en la MISMA respuesta que la lista (`?balances=1`)
+   *  para que las dos cosas no puedan contradecirse. */
+  const [balances, setBalances] = useState<Record<string, BalanceContrato>>({});
   const [candidatos, setCandidatos] = useState<CandidatoContrato[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,15 +89,16 @@ export function useContratos() {
     }
     try {
       const [rl, rc] = await Promise.all([
-        fetch(BASE, { credentials: "include", cache: "no-store" }),
+        fetch(`${BASE}?balances=1`, { credentials: "include", cache: "no-store" }),
         fetch(`${BASE}?candidatos=1`, { credentials: "include", cache: "no-store" }),
       ]);
       if (!rl.ok) throw new Error(await motivo(rl, "cargar los contratos"));
       if (!rc.ok) throw new Error(await motivo(rc, "buscar los permisos del libro"));
-      const lista = (await rl.json()) as { contratos?: Contrato[] };
+      const lista = (await rl.json()) as { contratos?: Contrato[]; balances?: Record<string, BalanceContrato> };
       const cand = (await rc.json()) as { candidatos?: CandidatoContrato[] };
       if (esta === cargasRef.current.ultima && cambiosAlSalir === cargasRef.current.cambios) {
         setContratos(lista.contratos ?? []);
+        setBalances(lista.balances ?? {});
         setCandidatos(cand.candidatos ?? []);
       }
     } catch (e) {
@@ -174,7 +179,7 @@ export function useContratos() {
     [cargar],
   );
 
-  return { contratos, candidatos, cargando, error, sembrando, recargar: cargar, sembrar };
+  return { contratos, balances, candidatos, cargando, error, sembrando, recargar: cargar, sembrar };
 }
 
 /**

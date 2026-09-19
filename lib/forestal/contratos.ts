@@ -157,6 +157,15 @@ export interface BalanceContrato {
   /** Lo que ENTRÓ: la madera que amparó el permiso. */
   madera: BloqueBalance;
   produccion: BloqueBalance;
+  /**
+   * Lo que se VENDIÓ de este permiso (ADR-141, `ForestCtpEntry.valorVenta`).
+   *
+   * Un despacho puede mezclar madera de dos contratos, así que el valor se
+   * reparte por la proporción de cantidad que vino de cada uno: sumarlo entero
+   * a uno inventaría una ganancia que el otro pagó. `sinValorizar` cuenta los
+   * despachos del contrato que todavía no tienen precio de venta.
+   */
+  ventas: BloqueBalance;
   /** Lo que SALIÓ. */
   gastos: BloqueBalance;
   fletes: BloqueBalance;
@@ -181,9 +190,25 @@ export interface BalanceContrato {
 export function resumirBalance(b: BalanceContrato) {
   const egresos = b.madera.monto + b.gastos.monto + b.fletes.monto + b.adelantos.monto;
   const porRecuperar = b.adelantosSaldo + (b.cuentaCargos.monto - b.cuentaAbonos.monto);
+  /**
+   * Lo ganado: lo vendido menos lo puesto.
+   *
+   * `null` cuando NO hay ninguna venta cargada. Un contrato con gastos y sin
+   * despachos no perdió esa plata: todavía no vendió. Mostrar «-S/ 20.000»
+   * sería declarar una pérdida que nadie tuvo — la madera está en el patio.
+   */
+  /* `b.ventas` con `?.`: una respuesta que quedó en caché de ANTES de que el
+     balance trajera ventas no puede romper la pantalla entera. Sin ventas, la
+     ganancia es null — que es lo mismo que dice el caso «todavía no vendió». */
+  const ventas = b.ventas?.monto ?? 0;
+  const ganancia = (b.ventas?.documentos ?? 0) > 0 && ventas > 0 ? ventas - egresos : null;
   return {
     egresos,
     porRecuperar,
+    ventas,
+    ganancia,
+    /** Cuánto queda de cada sol vendido, después de lo puesto. `null` sin ventas. */
+    margenPct: ganancia != null && ventas > 0 ? (ganancia / ventas) * 100 : null,
     m3Ingresados: b.madera.m3 ?? 0,
     m3Producidos: b.produccion.m3 ?? 0,
     /** Cuánto costó cada m³ que entró. `null` cuando no hay volumen: dividir

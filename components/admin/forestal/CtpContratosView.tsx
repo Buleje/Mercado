@@ -38,7 +38,8 @@ function loAtado(r: ResultadoSembrado): string {
 }
 
 export default function CtpContratosView() {
-  const { contratos, candidatos, cargando, error, sembrando, recargar, sembrar } = useContratos();
+  const { contratos,
+    balances, candidatos, cargando, error, sembrando, recargar, sembrar } = useContratos();
   /** Qué contrato está abierto. Null = la lista. */
   const [elegido, setElegido] = useState<string | null>(null);
   const [ultimoSembrado, setUltimoSembrado] = useState<ResultadoSembrado | null>(null);
@@ -105,7 +106,7 @@ export default function CtpContratosView() {
           libro…
         </p>
       ) : (
-        <CtpContratosLista contratos={contratos} onElegir={(c) => setElegido(c.id)} />
+        <CtpContratosLista contratos={contratos} balances={balances} onElegir={(c) => setElegido(c.id)} />
       )}
     </div>
   );

@@ -15,8 +15,8 @@
 import { useMemo, useState } from "react";
 import { ChevronRight, FileSignature, Search } from "@buleje/design-system/icons";
 import { DataTable, EmptyState } from "@buleje/design-system";
-import type { Contrato } from "@/lib/forestal/contratos";
-import { ESTADO_CLASE, ESTADO_LABEL, TIPO_LABEL, vigenciaTexto } from "./contratos-ui";
+import { resumirBalance, type BalanceContrato, type Contrato } from "@/lib/forestal/contratos";
+import { ESTADO_CLASE, ESTADO_LABEL, soles, TIPO_LABEL, vigenciaTexto } from "./contratos-ui";
 
 /* Sin constantes de padding ni de tipografía: `DataTable` pinta `thead`, `td`
    y `tfoot` con variantes descendientes (`[&_tbody_td]:px-3`) que le GANAN por
@@ -34,11 +34,108 @@ function EstadoChip({ contrato }: { contrato: Contrato }) {
   );
 }
 
+/**
+ * Las cuatro celdas de plata de una fila.
+ *
+ * «Puesto» es lo que salió del bolsillo (madera + gastos + fletes + adelantos)
+ * y «Ganancia neta» es lo vendido menos eso. Sin ninguna venta cargada la
+ * ganancia va «—», NO en negativo: un contrato con gastos y sin despachos no
+ * perdió esa plata, todavía no vendió — la madera está en el patio. Y si hay
+ * ingresos sin precio, se avisa: el «puesto» está incompleto y el número
+ * de abajo saldría mejor de lo que es.
+ */
+function CeldasDePlata({ balance }: { balance?: BalanceContrato }) {
+  if (!balance) {
+    return (
+      <>
+        {[0, 1, 2, 3].map((i) => (
+          <td key={i} className={`${TD} text-right text-[var(--text-tertiary)]`}>
+            —
+          </td>
+        ))}
+      </>
+    );
+  }
+  const r = resumirBalance(balance);
+  const m3 = balance.madera.m3 ?? 0;
+  return (
+    <>
+      <td className={`${TD} text-right`}>
+        {m3 > 0 ? (
+          <>
+            <span className="whitespace-nowrap font-mono font-bold tabular-nums text-[var(--text-primary)]">
+              {m3.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³
+            </span>
+            <span className="block whitespace-nowrap text-xs text-[var(--text-tertiary)]">
+              {balance.madera.documentos} {balance.madera.documentos === 1 ? "ingreso" : "ingresos"}
+            </span>
+          </>
+        ) : (
+          <span className="text-[var(--text-tertiary)]">—</span>
+        )}
+      </td>
+      <td className={`${TD} text-right`}>
+        <span className="whitespace-nowrap font-mono tabular-nums text-[var(--text-primary)]">
+          {r.egresos > 0 ? soles(r.egresos) : "—"}
+        </span>
+        {(balance.madera.sinValorizar ?? 0) > 0 && (
+          <span
+            title={`${balance.madera.sinValorizar} ingresos de madera todavía no tienen precio: lo puesto es mayor que esto`}
+            className="block whitespace-nowrap text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+          >
+            faltan {balance.madera.sinValorizar} precios
+          </span>
+        )}
+      </td>
+      <td className={`${TD} text-right`}>
+        <span className="whitespace-nowrap font-mono tabular-nums text-[var(--text-primary)]">
+          {balance.ventas.documentos > 0 ? soles(balance.ventas.monto) : "—"}
+        </span>
+        {balance.ventas.documentos > 0 && (
+          <span className="block whitespace-nowrap text-xs text-[var(--text-tertiary)]">
+            {balance.ventas.documentos} {balance.ventas.documentos === 1 ? "despacho" : "despachos"}
+          </span>
+        )}
+      </td>
+      <td className={`${TD} text-right`}>
+        {r.ganancia == null ? (
+          <span
+            title="Todavía no hay ningún despacho con precio de venta cargado: no hay con qué comparar lo puesto."
+            className="whitespace-nowrap text-[var(--text-tertiary)]"
+          >
+            sin ventas
+          </span>
+        ) : (
+          <>
+            <span
+              className={`whitespace-nowrap font-mono font-bold tabular-nums ${
+                r.ganancia >= 0
+                  ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                  : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+              }`}
+            >
+              {soles(r.ganancia)}
+            </span>
+            {r.margenPct != null && (
+              <span className="block whitespace-nowrap text-xs text-[var(--text-tertiary)]">
+                {r.margenPct.toLocaleString("es-PE", { maximumFractionDigits: 1 })}% de lo vendido
+              </span>
+            )}
+          </>
+        )}
+      </td>
+    </>
+  );
+}
+
 export default function CtpContratosLista({
+  balances,
   contratos,
   onElegir,
 }: {
   contratos: Contrato[];
+  /** El balance de cada contrato por id. Ausente = todavía cargando. */
+  balances?: Record<string, BalanceContrato>;
   onElegir: (c: Contrato) => void;
 }) {
   const [busqueda, setBusqueda] = useState("");
@@ -86,6 +183,13 @@ export default function CtpContratosLista({
             <th scope="col">Tipo</th>
             <th scope="col">Estado</th>
             <th scope="col">Vigencia</th>
+            {/* La plata del contrato. Tres columnas y no una: «ganó tanto» sin
+                mostrar lo puesto ni lo vendido es un número que nadie puede
+                discutir — y el que discute un balance es el dueño del permiso. */}
+            <th scope="col" className="text-right">Madera</th>
+            <th scope="col" className="text-right">Puesto</th>
+            <th scope="col" className="text-right">Vendido</th>
+            <th scope="col" className="text-right">Ganancia neta</th>
             <th scope="col" className="text-right">
               Balance
             </th>
@@ -119,6 +223,7 @@ export default function CtpContratosLista({
                 <EstadoChip contrato={c} />
               </td>
               <td className={TD}>{vigenciaTexto(c.vigenciaDesde, c.vigenciaHasta)}</td>
+              <CeldasDePlata balance={balances?.[c.id]} />
               <td className={`${TD} text-right`}>
                 <button
                   type="button"

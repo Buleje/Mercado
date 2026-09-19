@@ -26,9 +26,12 @@ vi.mock("@/components/admin/shared/ConfirmDialog", () => ({
 
 import CtpContratosView from "@/components/admin/forestal/CtpContratosView";
 
-const LISTA = "/api/admin/forestal/contratos";
-const CANDIDATOS = `${LISTA}?candidatos=1`;
-const ALTA = `${LISTA}?vincular=1`;
+const BASE = "/api/admin/forestal/contratos";
+/* La lista pide `?balances=1`: la tabla muestra la plata de cada contrato y
+   viene en la MISMA respuesta, para que lista y balances no se contradigan. */
+const LISTA = `${BASE}?balances=1`;
+const CANDIDATOS = `${BASE}?candidatos=1`;
+const ALTA = `${BASE}?vincular=1`;
 
 const contrato = (codigo: string) => ({
   id: codigo,
@@ -71,6 +74,8 @@ const BALANCE_SIN_PRECIO = {
   contratoId: "CON-25-PAS-0033",
   madera: { documentos: 2, monto: 0, m3: 13.939, sinValorizar: 2 },
   produccion: { documentos: 0, monto: 0, m3: 0 },
+  /* Sin ningún despacho: la ganancia tiene que salir «sin ventas», no en negativo. */
+  ventas: { documentos: 0, monto: 0, sinValorizar: 0 },
   gastos: { documentos: 0, monto: 0 },
   fletes: { documentos: 0, monto: 0 },
   adelantos: { documentos: 0, monto: 0 },
@@ -179,7 +184,7 @@ describe("Balance del contrato — lo que no se puede saber es «—», nunca «
     await act(async () => {
       screen.getByRole("button", { name: /Ver el balance de CON-25-PAS-0033/ }).click();
     });
-    const balanceUrl = `${LISTA}/CON-25-PAS-0033?balance=1`;
+    const balanceUrl = `${BASE}/CON-25-PAS-0033?balance=1`;
     await waitFor(() => expect(de(balanceUrl)).toHaveLength(1));
     await resolver(de(balanceUrl)[0], {
       contrato: contrato("CON-25-PAS-0033"),
