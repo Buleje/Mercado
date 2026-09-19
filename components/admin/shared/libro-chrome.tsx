@@ -219,7 +219,10 @@ export default function LibroChrome({
         className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
       >
         {/* Identidad + estado + contexto + acciones — una sola fila. */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4">
+        {/* `lg:gap-x-2`: con carátula cargada el chip del LOTH es ~85 px más
+            ancho, y a 1650 px la fila se partía por 9 px (medido). Los gaps de
+            la banda ceden 4 px cada uno antes que truncar el título. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4 lg:gap-x-2">
           <span
             aria-hidden="true"
             className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white shadow-[var(--shadow-sm)]"
@@ -245,7 +248,7 @@ export default function LibroChrome({
           <div
             role="tablist"
             aria-label="Fase del libro"
-            className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-1 scrollbar-none sm:ml-2"
+            className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-1 scrollbar-none sm:ml-1"
             style={{ scrollbarWidth: "none" }}
           >
             {groups.map((g) => {
@@ -258,7 +261,7 @@ export default function LibroChrome({
                   role="tab"
                   aria-selected={activo}
                   onClick={() => !activo && onView?.(g.views[0].key)}
-                  className={`relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors sm:px-3 ${
+                  className={`relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors ${
                     activo
                       ? "bg-[var(--surface-raised)] text-[var(--accent-dark)] shadow-[var(--shadow-sm)] dark:text-[var(--accent)]"
                       : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"

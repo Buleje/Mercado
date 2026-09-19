@@ -12,7 +12,7 @@ import { AlertTriangle, FileText, Plus, Printer, Ban, Loader2, Search, ShieldChe
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
+import { ingresarGtfAlCtp } from "./LothGtfCtp";
 import { documentoGtfLoth, type LothGtfCaratula, type LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { esc } from "@/lib/forestal/ctp-documento-print";
@@ -125,11 +125,8 @@ export default function LothGtfView({
     return () => clearTimeout(t);
   }, [focusGtf, loading, gtfs, onFocusHandled]);
 
-  /** Manda la guía al Libro CTP: deja el N° en sessionStorage y navega al módulo. */
-  function ingresarAlCtp(gtfNumber: string) {
-    try { sessionStorage.setItem(CTP_INGRESAR_GTF_KEY, gtfNumber); } catch { /* modo privado: el form abre vacío, no rompe */ }
-    window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: CTP_MODULE_TAB_ID } }));
-  }
+  /** Manda la guía al Libro CTP (el mismo puente que usa el despacho de trozas). */
+  const ingresarAlCtp = ingresarGtfAlCtp;
 
   /**
    * Anular no borra: deja la guía visible con su motivo. Por eso el motivo es

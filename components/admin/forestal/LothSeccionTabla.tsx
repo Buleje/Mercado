@@ -14,8 +14,7 @@
  */
 
 import { DataTable } from "@buleje/design-system";
-import { Ban, Copy, Eye, PencilLine, Share2 } from "@buleje/design-system/icons";
-import { IconAction } from "./ctp-shared";
+import LothLineaAcciones from "./LothLineaAcciones";
 import {
   diasDeRegistro,
   estaFueraDePlazo,
@@ -138,7 +137,7 @@ export default function LothSeccionTabla({
                 <td className={`${TD} text-right`}>
                   <span className="font-mono tabular-nums text-[var(--text-tertiary)]">{e.lineNo}</span>
                 </td>
-                <td className={TD}>
+                <td className={`${TD} whitespace-nowrap`}>
                   <span className="text-[var(--text-secondary)]">{fmtFecha(e.entryDate)}</span>
                 </td>
                 {cols.map((c) => (
@@ -166,28 +165,16 @@ export default function LothSeccionTabla({
                     )}
                   </div>
                 </td>
-                <td className={`${TD} text-right`}>
-                  <div className="inline-flex items-center justify-end gap-1">
-                    <IconAction icon={Eye} label="Ver el detalle de la línea" onClick={() => onDetalle(e)} />
-                    {(e.trozaCode || e.treeCode) && (
-                      <IconAction
-                        icon={Share2}
-                        label="Ver la cadena de custodia de este árbol/troza"
-                        onClick={() => onCadena((e.trozaCode || e.treeCode) as string)}
-                      />
-                    )}
-                    {!anulada && !mesCerrado && (
-                      <>
-                        <IconAction icon={Copy} label="Duplicar: registrar otra línea partiendo de ésta" onClick={() => onDuplicar(e)} />
-                        <IconAction
-                          icon={PencilLine}
-                          label="Corregir (subsanación SERFOR: se asienta una línea nueva, ésta queda)"
-                          onClick={() => onCorregir(e)}
-                        />
-                        <IconAction icon={Ban} tone="danger" label="Anular (queda visible con su motivo)" onClick={() => onAnular(e)} />
-                      </>
-                    )}
-                  </div>
+                <td className={`${TD} whitespace-nowrap text-right`}>
+                  <LothLineaAcciones
+                    e={e}
+                    mesCerrado={mesCerrado}
+                    onDetalle={onDetalle}
+                    onCadena={onCadena}
+                    onDuplicar={onDuplicar}
+                    onCorregir={onCorregir}
+                    onAnular={onAnular}
+                  />
                 </td>
               </tr>
             );
@@ -211,7 +198,7 @@ export default function LothSeccionTabla({
               {cols.map((c, i) => (
                 <td key={c.key} className={`${TD} ${c.align === "right" ? "text-right" : ""}`}>
                   {i === cols.length - 1 && (
-                    <span className="font-mono text-base font-black tabular-nums text-[var(--text-primary)]">
+                    <span className="whitespace-nowrap font-mono text-base font-black tabular-nums text-[var(--text-primary)]">
                       {queSuma === "volumen"
                         ? `${fmtM3(totales.volumenM3)} m³`
                         : queSuma === "cantidad"
@@ -265,8 +252,8 @@ function Encabezado({
         type="button"
         onClick={() => onOrdenar(campo)}
         title={`Ordenar por ${label.toLowerCase()}`}
-        className={`inline-flex items-center gap-1 rounded transition-colors hover:text-[var(--accent)] ${
-          activo ? "text-[var(--accent)]" : ""
+        className={`inline-flex items-center gap-1 rounded uppercase transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
+          activo ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""
         }`}
       >
         {label}

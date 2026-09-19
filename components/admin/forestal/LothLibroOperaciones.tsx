@@ -10,14 +10,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Plus,
-  Search,
   TreePine,
   AlertCircle,
   RefreshCw,
-  Boxes,
   FileText,
-  ShieldAlert,
   ShieldCheck,
   Ban,
   Printer,
@@ -33,9 +29,7 @@ import {
   Coins,
   Scissors,
   Upload,
-  Info,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -43,8 +37,6 @@ import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import { printLothInforme } from "@/lib/forestal/loth-informe-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
 import {
-  LOTH_SECTION_GROUPS,
-  PLAZO_REGISTRO_DIAS,
   estaFueraDePlazo,
   type LothSection,
   type LothEntryDTO,
@@ -57,6 +49,13 @@ import LothGtfView from "./LothGtfView";
 import LothAnalyticsView from "./LothAnalyticsView";
 import LothCompliancePanel from "./LothCompliancePanel";
 import LothResumenStrip from "./LothResumenStrip";
+import LothSeccionesRiel from "./LothSeccionesRiel";
+import LothSeccionKpis from "./LothSeccionKpis";
+import LothSeccionBarra from "./LothSeccionBarra";
+import { GtfConCtp, GtfCtpContext } from "./LothGtfCtp";
+import { useGtfEnCtp } from "./hooks/use-gtf-en-ctp";
+import { CTP_MODULE_TAB_ID } from "./ctp-shared";
+import { useEnabledSpecs } from "@/hooks/use-enabled-specs";
 import LothCadenaModal from "./LothCadenaModal";
 import LothSeccionTabla, { type ColDef } from "./LothSeccionTabla";
 import LothLineaDetalleModal from "./LothLineaDetalleModal";
@@ -127,7 +126,8 @@ const COLS: Record<LothSection, Col[]> = {
   despacho_troza: [
     { key: "troza", label: "Cód. troza", orden: "codigo", render: (e) => <Code v={e.trozaCode} /> },
     { key: "desp", label: "Cód. despacho", render: (e) => <span className="text-[var(--text-secondary)]">{e.despachoCode ?? "—"}</span> },
-    { key: "gtf", label: "N° GTF", render: (e) => <Mono v={e.gtfNumber ?? "—"} bold /> },
+    // La guía es el puente al Libro CTP: la celda dice si ya entró a la planta.
+    { key: "gtf", label: "N° GTF", render: (e) => <GtfConCtp gtf={e.gtfNumber} /> },
   ],
   consumo_troza: [
     { key: "troza", label: "Cód. troza", orden: "codigo", render: (e) => <Code v={e.trozaCode} /> },
@@ -201,41 +201,6 @@ const LOTH_VIEW_KEYS = LOTH_GROUPS.flatMap((g) => g.views.map((v) => v.key));
 /** Las mismas claves, tipadas: es lo que valida la vista que pide la URL. */
 const LOTH_VIEW_KEYS_TIPADAS = LOTH_VIEW_KEYS as LothView[];
 
-/** Un chip de sub-tab de sección, agrupado bajo su rótulo bosque/transformación. */
-function SectionChip({
-  meta,
-  active,
-  count,
-  onClick,
-}: {
-  meta: { index: number; short: string };
-  active: boolean;
-  count: number;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-xl border-2 px-3.5 min-h-10 text-sm font-semibold transition ${
-        active
-          ? "border-[var(--data-success-600)] bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
-      }`}
-    >
-      <span className="grid h-5 w-5 place-items-center rounded-md bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] tabular-nums">
-        {meta.index}
-      </span>
-      {meta.short}
-      {count > 0 && (
-        <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
-
 export default function LothLibroOperaciones() {
   const [section, setSection] = useState<LothSection>("tala");
   const [entries, setEntries] = useState<LothEntry[]>([]);
@@ -302,7 +267,7 @@ export default function LothLibroOperaciones() {
         titular: caratula?.titularName ?? null,
         planNumber: caratula?.tituloHabilitante ?? null,
       });
-      if (count === 0) setError("No hay códigos imprimibles en esta sección (usá Trozado o Tala).");
+      if (count === 0) setError("No hay códigos imprimibles en esta sección: las etiquetas salen de Tala y Trozado.");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -621,10 +586,11 @@ export default function LothLibroOperaciones() {
     () => (censoArboles.length > 0 ? new Set(censoArboles.map((c) => c.speciesCommon)) : undefined),
     [censoArboles],
   );
-  const periodos = useMemo(() => periodosDe(allEntries.filter((e) => e.section === section)), [allEntries, section]);
+  const lineasSeccion = useMemo(() => allEntries.filter((e) => e.section === section), [allEntries, section]);
+  const periodos = useMemo(() => periodosDe(lineasSeccion), [lineasSeccion]);
   const especiesSeccion = useMemo(
-    () => Array.from(new Set(allEntries.filter((e) => e.section === section).map((e) => e.speciesCommon).filter((x): x is string => !!x))).sort((a, b) => a.localeCompare(b, "es")),
-    [allEntries, section],
+    () => Array.from(new Set(lineasSeccion.map((e) => e.speciesCommon).filter((x): x is string => !!x))).sort((a, b) => a.localeCompare(b, "es")),
+    [lineasSeccion],
   );
   const visibles = useMemo(
     () => ordenarLineas(filtrarLineas(entries, filtro, estaFueraDePlazo, correcciones.corregidaPor), orden, ordenDir),
@@ -640,12 +606,55 @@ export default function LothLibroOperaciones() {
     }
   };
 
-  const citesCount = entries.filter((e) => e.cites && e.status === "registrado").length;
-  const tardiasSeccion = entries.filter((e) => e.status === "registrado" && estaFueraDePlazo(e.entryDate, e.createdAt)).length;
   const cols = COLS[section];
-  // Qué métrica tiene sentido en el KPI de cada sección (evita el "0.00" de ruido).
-  const usaVolumen = section === "tala" || section === "trozado" || section === "consumo_troza";
-  const usaCantidad = section === "producto_terminado" || section === "despacho_producto";
+
+  // Puente al Libro CTP: sólo si el negocio lo tiene (spec habilitada).
+  const { enabledKeys } = useEnabledSpecs();
+  const hayLibroCtp = enabledKeys.has("spec:forestal:ctp-libro");
+  const { estado: gtfEnCtp } = useGtfEnCtp(
+    section === "despacho_troza" ? entries.map((e) => e.gtfNumber) : [],
+    hayLibroCtp && view === "secciones" && section === "despacho_troza",
+  );
+
+  /** Lo que se hace de vez en cuando en una sección: plegado en «Opciones». */
+  const opcionesSeccion: LibroAction[] = [
+    ...(section === "trozado"
+      ? [
+          {
+            id: "trozar",
+            label: "Trozar un árbol",
+            hint: "Registra todas las trozas de un mismo árbol en una sola pantalla",
+            icon: Scissors,
+            onSelect: () => setShowTrozar(true),
+          },
+        ]
+      : []),
+    {
+      id: "importar",
+      label: "Importar líneas",
+      hint: "Pega un cuadro de Excel o sube un CSV con muchas líneas",
+      icon: Upload,
+      onSelect: () => setShowImport(true),
+    },
+    {
+      id: "etiquetas",
+      label: "Etiquetas QR",
+      hint: "Imprime el QR de origen de cada código en pantalla",
+      icon: QrCode,
+      busy: printingLabels,
+      disabled: entries.length === 0,
+      onSelect: () => void doPrintLabels(),
+    },
+    {
+      id: "csv",
+      label: "Descargar CSV",
+      hint: "Las líneas que ves, con los filtros puestos",
+      icon: FileSpreadsheet,
+      disabled: visibles.length === 0,
+      meta: `${visibles.length} ${visibles.length === 1 ? "línea" : "líneas"}`,
+      onSelect: () => descargarCsv(visibles, `libro-th-${section}.csv`),
+    },
+  ];
 
   return (
     <LibroChrome
@@ -662,20 +671,33 @@ export default function LothLibroOperaciones() {
         <button
           type="button"
           onClick={() => setShowCaratula(true)}
-          title={caratula ? "Carátula del libro — titular, título habilitante, registro y tomo" : "El libro necesita carátula para poder presentarse"}
-          className={`inline-flex h-10 max-w-[18rem] items-center gap-2 rounded-xl border-2 px-3 text-sm transition-colors ${
+          title={
             caratula
-              ? "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-              : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+              ? `Carátula del libro: ${[caratula.tituloHabilitante, caratula.titularName].filter(Boolean).join(" · ")}. Titular, título habilitante, registro y tomo.`
+              : "El libro necesita carátula para poder presentarse"
+          }
+          /* Con carátula es un dato, no un aviso: borde neutro de 1 px (ADR-068)
+             y ancho acotado, para que título + fases + botones entren en UNA
+             fila de la cabina. Lo que distingue un libro de otro es el código
+             del título habilitante: ése va siempre y entero. El titular sólo
+             desde 1800 px: medido a 1650 con «17-CPO/C-J-045-26», dentro de
+             13rem el titular quedaba en «M…» y además le recortaba el código.
+             Sin carátula sí es un aviso, y el borde de color va a 2 px. */
+          className={`inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm transition-colors ${
+            caratula
+              ? "max-w-[12rem] border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] min-[1800px]:max-w-[22rem]"
+              : "border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
           }`}
         >
           <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
           {caratula ? (
             <>
-              <span className="truncate font-bold">{caratula.titularName}</span>
+              <span className="min-w-0 truncate font-mono text-xs font-bold tabular-nums">
+                {caratula.tituloHabilitante ?? caratula.titularName}
+              </span>
               {caratula.tituloHabilitante && (
-                <span className="hidden shrink-0 font-mono text-xs text-[var(--text-tertiary)] lg:inline">
-                  {caratula.tituloHabilitante}
+                <span className="hidden min-w-0 flex-1 basis-0 truncate text-[var(--text-tertiary)] min-[1800px]:inline">
+                  {caratula.titularName}
                 </span>
               )}
             </>
@@ -695,14 +717,6 @@ export default function LothLibroOperaciones() {
             className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva línea
           </button>
         </>
       }
@@ -781,7 +795,7 @@ export default function LothLibroOperaciones() {
 
       {view === "secciones" && (
         <>
-      {/* Resumen "de un vistazo" del aprovechamiento (bosque → producto) */}
+      {/* Resumen del libro entero (bosque → producto). Se pliega y se recuerda. */}
       <LothResumenStrip onNavigate={(v) => setView(v)} reloadSignal={reloadSignal} />
 
       {libroTruncado && (
@@ -792,93 +806,42 @@ export default function LothLibroOperaciones() {
         </div>
       )}
 
-      {/* Sub-tabs de las 6 secciones, agrupadas: bosque (RDE 264-2019 §1-3) vs
-          transformación en el propio TH (§4-6) — dos momentos del MISMO libro,
-          no dos libros. Ver `LOTH_SECTION_GROUPS` en loth-constants. */}
-      <div className="flex flex-col gap-2.5">
-        {LOTH_SECTION_GROUPS.map((g) => (
-          <div key={g.key}>
-            <div className="mb-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-              {g.label}
-              {g.key === "transformacion" && (
-                <span
-                  title="Obligatorio en el LO-TH (RDE 264-2019) solo si el titular transforma su propia madera. Si toda la troza sale con GTF a un CTP aparte, estas 3 secciones quedan en cero — es correcto, no falta nada."
-                  className="grid h-3.5 w-3.5 cursor-help place-items-center text-[var(--text-tertiary)]"
-                >
-                  <Info className="h-3.5 w-3.5" />
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {g.sections.map((s) => (
-                <SectionChip
-                  key={s}
-                  meta={SECTION_META[s]}
-                  active={s === section}
-                  count={statBy.get(s)?.count ?? 0}
-                  onClick={() => setSection(s)}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Las 6 secciones en un riel: bosque (RDE 264-2019 §1-3) | transformación
+          en el propio TH (§4-6) — dos momentos del MISMO libro, no dos libros. */}
+      <LothSeccionesRiel
+        section={section}
+        contar={(s) => statBy.get(s)?.count ?? 0}
+        onSection={setSection}
+        onIrAlCtp={
+          hayLibroCtp
+            ? () => window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: CTP_MODULE_TAB_ID } }))
+            : undefined
+        }
+      />
 
-      {/* KPIs — adaptados a la sección (evita mostrar métricas que no aplican:
-          volumen en tala/trozado/consumo · cantidad en producto/despacho PT). */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <StatCard density="compact" label={`Líneas · ${SECTION_META[section].short}`} value={(cur?.count ?? 0).toString()} subValue={`${totalLines} en el libro`} icon={Boxes} emphasis="neutral" />
-        {usaVolumen ? (
-          <StatCard density="compact" label="Volumen registrado" value={`${(cur?.totalVolumeM3 ?? 0).toFixed(2)} m³`} subValue={SECTION_META[section].short} icon={TreePine} emphasis="success" />
-        ) : usaCantidad ? (
-          <StatCard density="compact" label="Cantidad registrada" value={(cur?.totalQuantity ?? 0).toFixed(2)} subValue={SECTION_META[section].short} icon={FileText} emphasis="success" />
-        ) : (
-          <StatCard density="compact" label="Trozas despachadas" value={(cur?.count ?? 0).toString()} subValue="con N° de GTF" icon={Truck} emphasis="success" />
-        )}
-        {/* El tercer KPI decía «Especies CITES 0» casi siempre: un tercio de la
-            fila para un cero. Ahora muestra lo que sí cambia una decisión —el
-            registro tardío, que es lo primero que mira una fiscalización— y
-            deja el CITES como subtítulo cuando lo hay. */}
-        <StatCard
-          density="compact"
-          label="Fuera de plazo"
-          value={tardiasSeccion.toString()}
-          subValue={
-            tardiasSeccion > 0
-              ? `de ${entries.length} en pantalla · plazo ${PLAZO_REGISTRO_DIAS} días`
-              : citesCount > 0
-                ? `${citesCount} especie(s) CITES en la sección`
-                : "todo asentado en plazo"
-          }
-          icon={tardiasSeccion > 0 ? AlertCircle : citesCount > 0 ? ShieldAlert : ShieldCheck}
-          emphasis={tardiasSeccion > 0 ? "warning" : citesCount > 0 ? "error" : "success"}
-        />
-      </div>
+      {/* Título de la sección + sus indicadores, plegables y recordados (una
+          preferencia para las seis: ver LothSeccionKpis). Con el libro entero
+          leído, el «fuera de plazo» cuenta la sección y no sólo la página. */}
+      <LothSeccionKpis
+        section={section}
+        cur={cur}
+        totalLibro={totalLines}
+        lineas={allEntries.length > 0 ? lineasSeccion : entries}
+        delLibroEntero={allEntries.length > 0 && !libroTruncado}
+      />
 
-      {/* Búsqueda + etiquetas */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
-          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && loadEntries()}
-            placeholder="Buscar por código, especie o GTF..."
-            className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={() => doPrintLabels()}
-          disabled={printingLabels || entries.length === 0}
-          title="Imprimir etiquetas con QR de origen para las trozas de esta sección"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
-        >
-          {printingLabels ? <RefreshCw className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
-          <span>Etiquetas QR</span>
-        </button>
-      </div>
+      {/* Buscar y filtrar a la vista; lo de vez en cuando, en «Opciones». */}
+      <LothSeccionBarra
+        search={search}
+        onSearch={setSearch}
+        onBuscar={() => void loadEntries()}
+        filtro={filtro}
+        setFiltro={setFiltro}
+        periodos={periodos}
+        especies={especiesSeccion}
+        opciones={opcionesSeccion}
+        onNuevaLinea={() => setShowForm(true)}
+      />
 
       {error && (
         <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)]">
@@ -888,82 +851,6 @@ export default function LothLibroOperaciones() {
           </div>
         </div>
       )}
-
-      {/* Filtros del libro: período (el libro cierra por mes), estado y especie. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
-          <span className="text-[var(--text-tertiary)]">Período</span>
-          <select
-            value={filtro.periodo}
-            onChange={(e) => setFiltro((f) => ({ ...f, periodo: e.target.value }))}
-            className="bg-transparent font-bold text-[var(--text-primary)] outline-none"
-          >
-            <option value="">Todos</option>
-            {periodos.map((p) => (
-              <option key={p.periodo} value={p.periodo}>
-                {p.label} ({p.count})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
-          <span className="text-[var(--text-tertiary)]">Estado</span>
-          <select
-            value={filtro.estado}
-            onChange={(e) => setFiltro((f) => ({ ...f, estado: e.target.value as FiltroSeccion["estado"] }))}
-            className="bg-transparent font-bold text-[var(--text-primary)] outline-none"
-          >
-            <option value="todas">Todas</option>
-            <option value="registrado">Registradas</option>
-            <option value="fuera_plazo">Fuera de plazo</option>
-            <option value="corregidas">Corregidas</option>
-            <option value="anulado">Anuladas</option>
-          </select>
-        </label>
-        {especiesSeccion.length > 1 && (
-          <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
-            <span className="text-[var(--text-tertiary)]">Especie</span>
-            <select
-              value={filtro.especie}
-              onChange={(e) => setFiltro((f) => ({ ...f, especie: e.target.value }))}
-              className="max-w-[10rem] bg-transparent font-bold text-[var(--text-primary)] outline-none"
-            >
-              <option value="">Todas</option>
-              {especiesSeccion.map((sp) => (
-                <option key={sp} value={sp}>
-                  {sp}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {section === "trozado" && (
-          <button
-            type="button"
-            onClick={() => setShowTrozar(true)}
-            title="Registrar todas las trozas de un mismo árbol en una sola pantalla"
-            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-          >
-            <Scissors className="h-4 w-4" /> Trozar árbol
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => setShowImport(true)}
-          title="Pegar un cuadro de Excel o subir un CSV con muchas líneas"
-          className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-        >
-          <Upload className="h-4 w-4" /> Importar
-        </button>
-        <button
-          type="button"
-          onClick={() => descargarCsv(visibles, `libro-th-${section}.csv`)}
-          disabled={visibles.length === 0}
-          className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
-        >
-          <FileSpreadsheet className="h-4 w-4" /> CSV
-        </button>
-      </div>
 
       {/* Barra de selección — sólo cuando hay algo elegido */}
       {seleccionadas.length > 0 && (
@@ -1004,6 +891,7 @@ export default function LothLibroOperaciones() {
         </div>
       )}
 
+      <GtfCtpContext.Provider value={gtfEnCtp}>
       <LothSeccionTabla
         section={section}
         entries={visibles}
@@ -1039,6 +927,7 @@ export default function LothLibroOperaciones() {
         }}
         onAnular={(e) => setAnularLineas([e])}
       />
+      </GtfCtpContext.Provider>
 
       {!loading && visibles.length === 0 && (
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
@@ -1049,7 +938,7 @@ export default function LothLibroOperaciones() {
               : "Ninguna línea coincide con el filtro."}
           </p>
           <p className="mt-1 text-sm">
-            {entries.length === 0 ? 'Haz click en "Nueva línea" para registrar el primer movimiento.' : "Prueba con otro período o estado."}
+            {entries.length === 0 ? "Usa «Nueva línea» para registrar el primer movimiento." : "Prueba con otro período o estado."}
           </p>
         </div>
       )}
