@@ -83,7 +83,7 @@ function censarProcesos() {
     try { cmd = readFileSync(`/proc/${pid}/cmdline`, "utf8"); } catch { continue; }
     if (!cmd) continue;
     const linea = cmd.replace(/\0/g, " ");
-    if (linea.includes("tsc --noEmit")) tsc++;
+    if (linea.includes("/tsc --noEmit")) tsc++;
     if (/chrome|chromium/.test(linea)) {
       // ppid = campo 4 de /proc/<pid>/stat; ppid 1 = huérfano adoptado por init
       try {
