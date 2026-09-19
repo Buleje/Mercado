@@ -32,7 +32,7 @@ Pedido: «soluciona problemas y errores en general» + log de consola con 404 en
 | Reconexión del stream de notificaciones | 10 s fijos para siempre; si fallaba la verificación de sesión, abandonaba hasta recargar | test nuevo 6/6 (espera exacta 10/20/40 s, tope 5 min) |
 | 10 `console.error` de RRHH → `sinDato` | Cada falla de carga salía como error rojo en el overlay de Next | eslint 0, typecheck 0, vitest 9/9, consola RRHH 0 errores / 0 × 4xx |
 
-## 👥 RRHH: hoja semanal con lo ganado + PDF con firma + fotocheck (ADR-416) — SIN commitear
+## 👥 RRHH: hoja semanal con lo ganado + PDF con firma + fotocheck (ADR-416) — `c1ffc99c` + `ad50ca90`, subidos
 Pedido de Brandon (texto libre en la ronda de cierre): formato semanal en Asistencia con ganancia diaria y semanal acumulada, referencia, días trabajados, PDF con columna de firma; y en Personal un fotocheck con foto y QR descargable en PDF.
 | Qué | Verificación |
 |---|---|
@@ -43,7 +43,7 @@ Pedido de Brandon (texto libre en la ronda de cierre): formato semanal en Asiste
 | `scripts/dev-with-canary.mjs`: sonda al arrancar; si una ruta /api da HTML 404 (estado viejo al relanzar), toca su route.ts y la refresca | medido: con `/api/health` en 404, tocar la ruta → health 200 y sonda 401; el log dice `rutas /api al día` |
 **Producción:** aplicar `adr-415-metas-y-tareas.sql` y `adr-416-foto-colaborador.sql` ANTES de subir el código.
 
-## 🗂️ Metas y tareas por negocio (ADR-415) — SIN commitear
+## 🗂️ Metas y tareas por negocio (ADR-415) — `d9e2e549`, subido
 Pedido: «Metas y tareas por negocio». Antes: `local-data/*.json` sin `tenantId` (una lista para los 14 negocios) y en Vercel el disco es de sólo lectura (producción nunca guardó una).
 | Qué | Verificación |
 |---|---|
@@ -54,7 +54,35 @@ Pedido: «Metas y tareas por negocio». Antes: `local-data/*.json` sin `tenantId
 | Carga vieja que pisaba lo optimista (Tareas y Metas): el GET del doble montaje volvía 470 ms después de Eliminar y la tarea reaparecía | e2e 11/11 (antes 10/11) + test de componente que falla sin la guarda |
 **Producción:** aplicar el SQL ANTES de subir este código (sin tablas → P2021 y el panel de metas vacío).
 
+## 🧷 Ronda de cierre (noche) — SIN commitear
+Pedido: «Logo y nombre en los PDF, misma guarda en 12 pantallas, fechas de metas en hora de Lima» (ADR-415/416 y la sonda ya subidos).
+| Qué | Verificación |
+|---|---|
+| **Nombre y logo del negocio en los PDF**: `GET /api/admin/membrete` (`lib/admin/membrete.ts`, `lib/db/membrete.db.ts`): nombre de Ajustes → nombre registrado del tenant; logo de Ajustes → logo del tenant. Hoja semanal y fotocheck lo dibujan; sin CORS, el PDF sale con el nombre solo | 5 tests; ruta 200 `{"nombre":"Buleje"}`; «BULEJE» en los dos PDF (`pdftotext`). Logo sin datos reales: ningún negocio tiene uno |
+| **Fechas de metas y tareas en hora de Lima**: `diasEntreFechas`, `vencimientoDePlantilla`, `fechaParaMostrar` en `lib/admin/metas-tareas.ts` | 6 tests con el reloj a las 20:30 de Lima (ya es mañana en UTC) |
+| **Guarda de carga vieja en 11 pantallas más** (lo borrado reaparecía; en Cámaras «Copiar dirección» copiaba la vieja): PurchaseOrdersTab, DevolucionesProveedor, PuntoCompraView (lista de borrados, sin recarga por `"use cache"`), Promotions, Promociones, MarketingAutomation, CustomKPI, Distribuciones y Cubicaciones guardadas, Cámaras, AdminChatHead. POSView = falso positivo | 11 archivos de test, cada uno falla con el código de HEAD; 72/72 en 16 archivos; eslint 0 en líneas tocadas; typecheck 0; navegador (Compras ×3, Promociones ×2, Campañas): 0 errores, 0 × 4xx, 0 pedidos en 8 s quietos |
+| **Arreglos del revisor con contexto fresco**: el dorso del fotocheck había perdido el contacto (Blas y mi-pollo tienen la dirección en `storeTheme`) → vuelve como respaldo; el título con logo cortaba «AGR / OFORESTALES» → corta entre palabras, baja hasta 6 pt y permite 3 líneas; Promociones y KPIs: un Recargar con Eliminar en camino traía la fila → contador de cambios en el `finally`, y (2ª pasada del revisor) la carga descartada vuelve a pedir: sin eso, crear durante la carga inicial dejaba la lista sólo con lo nuevo; el negocio se busca por id antes que por slug | test del caso Blas; 2 tests que fallan sin el contador y 5 que fallan sin el reintento (swap + `cmp`); jsPDF: «INVERSIONES / AGROFORESTALES BLAS / SAC» |
+| **Sin resolver**: `"use cache"` + `revalidateTag("max")` tras escribir. En dev la lectura ni pasó por la caché (la promo creada apareció aunque `add` no invalida), así que medir ahí no prueba nada; la doc y el código de Next dicen que se entrega lo viejo. Medir con build + start | radar |
+
+## 🪵 Producir sin lote (noche) — SIN commitear, en verificación
+Pedido (texto libre, prioridad 1): en «Cargar piezas» la caja de dictado primero con Importar Excel y las funciones de voz adentro; campo «Código» con sugerencias de las trozas disponibles que rellena la especie (interno, no afecta nada); detalle flotante por día en «Día del registro» (dueño, especies, clasificación…); lista de funciones para seguir.
+| Qué | Estado |
+|---|---|
+| Caja «Dictar o importar piezas» con grupos Entrada (Importar Excel) y Voz (repite, probar, ajustes); sin dictado siguen a la vista | 10 tests; vale también para el Cubicador principal |
+| Campo Código (sólo con `conCodigoDeTroza`): combobox con trozas disponibles del patio (`/trozas/patio`), «-» = sin código, prefijo antes que contiene, especie por catálogo con `claveEspecie`; no va al servidor ni agrupa paquetes (`sinCodigoDeTroza`) | 43 tests (`forestal-codigo-de-troza*`, `cubicador-codigo-troza-campo`) |
+| `jornadasDeProduccion` agrega `detalle?` sólo en producción (especies, clasificación, dueño, permisos, líneas, sin materia prima, paquetes, 6 corridas) + `CtpDetalleDeJornada` con ícono, hover y táctil | 23 tests; con filas reales de Blas el 01/08 da 6 clasificaciones y 32.416 PT, igual que el casillero |
+| Gates conjuntos | typecheck 0, eslint 0 errores (1 aviso en línea movida, `cubicador-entrada-voz.tsx:305`), tokens 0 |
+| Revisor 1 (Código y disposición) | Arreglado: sugería trozas de guías **sin recibir** (104 de 111 en Blas) → mismo corte que el patio (`guiaRecepcionada !== false`), quedan 7 sugerencias reales; la opción marcada quedaba vieja tras Escape → se reinicia (test que falla sin el arreglo). El código no sale del modal por ningún camino (verificado por el revisor) |
+| Navegador (QA) | 1ª corrida: `trozas/patio` y `ctp/cierre` en **HTML 404** con sesión aunque la sonda dijo «al día» → tocar otra ruta las destrabó; `scripts/dev-with-canary.mjs` ahora toca la ruta SIEMPRE al arrancar. 2ª corrida: 0 errores de consola, 0 × 4xx en claro, oscuro y 400 px, sin scroll horizontal |
+| Panel del día en el navegador | Visto en claro, oscuro y 400 px con el QA del 09/09: 4 corridas · 2.374 PT · 5,600 m³, especies, clasificación, dueño («De tercero · QA Aserrío» 3 + «Sin declarar» 1), líneas y corridas. Ajustes: alto máximo 448 → 560 px (el botón final quedaba bajo el scroll), «sin materia prima» en tono neutro (9 de 14 corridas reales con la misma regla que `produccionSinMateriaPrima`), casillero con `pt-4` en celular (checkbox e ícono tapaban «MIÉ»). Ojo al medir: `[role=dialog]` sin filtro agarra el menú lateral del panel |
+| Revisor 2 (detalle del día) | En curso (agente): portal dentro del `[role=dialog]` (en «Declarar producción» la tira vive en el cuerpo con scroll del `AdminModal` y el panel se recortaba), «sin trozas vinculadas» con el criterio del Radar (`corridasSinOrigen`: 14 de 14 en Blas; el panel contaba 9 y omitía el 01/08), especies por `claveEspecie`, tests. Hecho por mí: `useModalAccesible` ya no se calla por un `role=dialog` SIN `aria-modal` dentro de la caja (Tab se escapaba con el panel abierto; test que falla sin el arreglo; barrido de modales anidados en verde) |
+| Navegador del panel | Producir sin lote (QA, 09/09) en claro/oscuro/400 px: se abre por hover, dentro de la pantalla, Escape cierra sólo el panel, 0 errores, 0 × 4xx. **«Declarar producción» NO verificable en el navegador**: el tenant QA tiene 0 lotes y ninguna corrida abierta — queda cubierto por test de componente del portal |
+| Cierre verificado | Agente: portal en el `[role=dialog]` (`hooks/use-ubicar-flotante.ts`), «sin trozas vinculadas» = `corridaSinOrigen` extraída de `resumenConsumos` (14 de 14 en Blas), especies por `claveEspecie`, `jornadasDesdeFilas` testeable. Gates: typecheck 0 · eslint 0 en 24 archivos tocados · tokens 0 · 222 tests relacionados. Dev relanzado: `rutas /api al día y refrescadas al arrancar`. Navegador final (QA) claro/oscuro/400 px: 0 errores, 0 × 4xx, panel por hover dentro de pantalla, Escape sólo el panel. **Tenant QA `active=false`** |
+| Queda | «Declarar producción» sin ver en navegador (QA sin lotes); sugerencias con trozas reales sin ver (QA sin trozas; en Blas salen 7 por las guías sin recibir); el Radar (`analizarRadar`) usa otra regla de «sin origen» (sólo volumen de consumo, sin reprocesos); `CtpSemanaDeRegistro.tsx` 517 líneas; `CubicadorTrozas.tsx:408` tiene su propia caja de dictado sin el reordenamiento; nada commiteado |
+
 ## ⚠️ Pendientes medidos de esta noche
+- POSView: tras vender llama `fetchProducts()` sin guarda; un GET de productos en vuelo desde antes puede pintar el stock de antes de la venta (deducido por código, no medido).
+- `"use cache"` + `revalidateTag(tag, "max")`: 19 llamadas en 7 archivos de `lib` sirven lo viejo en la primera lectura después de escribir.
 - Voseo fuera del panel: ~370 en marketplace/tienda, ~166 en superadmin, checkout (zona de peligro) y landing.
 - 2 `.catch(() => null)` en zona de peligro: `app/api/orders/route.ts:479`, `app/api/checkout/fiado-option/route.ts:30`.
 
@@ -72,3 +100,70 @@ Pedido: «Metas y tareas por negocio». Antes: `local-data/*.json` sin `tenantId
 
 ## 🧹 Estado de QA
 Tenant `inversiones-agroforestales-blas-sociedad-op-qa-ui` **inactivo** (`active=false`, apagado al terminar); conserva: 9 personas «QA …», 4 puestos, asistencia del 08 al 14/09. Usuarios `qaadmin`, `qaalmacenero` y `qamanager` (`scripts/create-qa-manager.mjs`); para reactivarlo: `active=true` en `Tenant`.
+
+---
+
+# SESIÓN 2026-09-19 — harness más rápido + el pendiente que nunca se disparaba
+
+Pedido de Brandon: «continuá con la sesión anterior y con las mejoras, y optimizame en agentes para que seas mejor y más rápido».
+
+## ⚡ Optimización del harness (todo medido antes/después, sin commitear)
+| Cambio | Antes | Después | Evidencia |
+|---|---|---|---|
+| **`pre-tool-guard.mjs` único** en `PreToolUse` (mem-guard + danger-zone + bash-guard + filtro de deploy en 1 proceso) | 83,4 ms/tool-call | **32,5 ms (−61 %)** | batería de 18 casos: **0 divergencias** (bloquea y deja pasar igual que los 3 viejos); `BSM_DZ_BLOCK=1` sigue bloqueando |
+| `Skill(*)`: los 3 deploy-gates se spawneaban siempre | 91 ms | **30 ms** | con `skill=deploy` sigue entrando y bloqueando (10 console.log) |
+| mem-guard: censo de procesos | 2 × `ps \| awk` | `/proc` en JS + caché 4 s | — |
+| `lsmcp` | activo (LSP tsgo, 69+14 MB) | **desactivado** | **0 invocaciones reales** en 35 transcripts (el grep que daba 4.458 contaba listados de tools) |
+| `danger-zone`: nombraba 5 agentes inexistentes y «131 modelos» | — | 8 agentes reales, skills reales, 189 modelos | los 5 (`checkout-squad`, `security-squad`, `database-engineer`, `frontend-engineer`, `backend-platform-engineer`) no existen desde el 09-14 |
+
+**Revertir:** los 3 scripts viejos siguen intactos en `.claude/hooks/`; respaldos `settings.json.bak-2026-09-19` y `.mcp.json.bak-2026-09-19`.
+
+## 🚨 El hallazgo grande: el paralelismo no se cumplía
+Censo de 35 transcripts (`scripts/medir-paralelismo.mjs`, nuevo):
+- **1,00 tool-calls por mensaje** (14.054 llamadas en 14.044 mensajes); 7 mensajes con 2+ llamadas = **0,05 %**
+- **1,00 subagentes por tanda** (110 en 110); 88 % heredaba Opus, incluidos barridos mecánicos
+
+El wall-clock ≈ nº de TANDAS, no de llamadas. Pesa mucho más que los milisegundos de hooks. Ahora la cifra de la sesión anterior **sale sola en el arranque** (enganchado a `session-start-context.mjs`, +98 ms una vez) y la regla `agentic-style` trae la tabla de qué modelo usar por agente y tipo de trabajo.
+**Descartado:** medir la duración de cada subagente por transcript no sirve — en background el `tool_result` vuelve al instante y todo da 0 s.
+
+## 🪵 Libro CTP: el pendiente que estaba fijo en 0 (radar → applied)
+`hooks/use-ctp-pendientes.ts` tenía `corridasSinOrigen: 0` hardcodeado: el único pendiente que **bloquea el cierre** no se disparó nunca.
+| Qué | Dónde |
+|---|---|
+| `agregarSinOrigen` — cuenta pura, con LA regla (`corridaSinOrigen`), no una segunda copia | `lib/forestal/loctp-consumos-analisis.ts` |
+| `ForestCtpDB.contarCorridasSinOrigen` — cuenta en el servidor, sin bajar el grafo | `lib/db/forest-ctp.db.ts` |
+| `GET /api/admin/forestal/ctp?sinOrigen=1` — dos números, no un grafo | `app/api/admin/forestal/ctp/route.ts` |
+| Cableado + tipo `Respuesta` | `hooks/use-ctp-pendientes.ts` |
+
+**Verificado (QA, tenant `main`):** endpoint 200 → 5 corridas / 14,2525 m³ (año), 2 / 5,4335 (trimestre que mira la pantalla). **Cruce contra el grafo del Radar: los mismos 5 por la otra vía** (es el bug de «14 vs 9» del 09-14, que así no vuelve). Navegador claro + oscuro: la pestaña **Producción** enciende su aviso (es el ÚNICO pendiente de esa vista) y el **cierre de agosto** ya observa «1 corrida sin materia prima atribuida: su costo se congela sin origen». **0 errores de consola.** Gates: typecheck 0 · eslint 0 en los 4 archivos · **20/20 tests** (6 nuevos).
+
+## ⏳ Queda
+- **Nada de esto está commiteado** — ahora son ~136 archivos sucios (los 130 de la sesión pasada + 6 de ésta).
+- El aviso del pendiente es un **punto de 6 px con `aria-hidden`** (`libro-chrome.tsx:341`): un lector de pantalla no lo anuncia y a simple vista cuesta verlo.
+- El radar sigue con 42 `pending`.
+
+## ✅ Segunda mitad del 19-09 — los 5 frentes que eligió Brandon + su pedido nuevo
+
+Brandon marcó las 4 opciones del menú y agregó, señalando la banda del LO-TH:
+«que ahí estén las opciones de contrato o permiso para escoger rápido, y
+establecerse el permiso en toda la página para poner fijo ese contrato en las
+operaciones que realizo, y poder cambiar para que se aplique a todo».
+
+| Frente | Qué quedó | Commit |
+|---|---|---|
+| **Permiso de trabajo en la banda** (pedido nuevo) | `ContratoActivoChip` en el LO-TH y el Libro CTP + `contexts/contrato-activo-context` (localStorage por tenant, `storage` entre pestañas). La propuesta vive DENTRO de `SelectorContrato`: llena el hueco, no pisa `codigoSugerido` ni una elección a mano; `CtpFleteModal` con `sugerirActivo={!flete}` | `0c8ae9a95` |
+| **El aviso que nadie veía** | El punto de 6 px `aria-hidden` de cada vista es ahora el mismo badge numérico del grupo + `sr-only` con el conteo | `0c8ae9a95` |
+| **Dos reglas de «sin origen»** | `analizarRadar` usa `corridaSinOrigen` (antes ignoraba reprocesos, ADR-316). Ninguna cifra cambia hoy; el test nuevo falla con HEAD | `0c8ae9a95` |
+| **Medición contra Blas real** | **14 de 15 corridas sin materia prima, 85,44 m³.** 5 declaran volumen de entrada y ni una troza (01/08). 4 meses cerrarían observados. Corrige el «14 de 14» del 09-15 | (radar) |
+| **Guardar todo** | 10 commits: harness ×2, CTP sin origen, contrato activo, cámaras, membrete+fechas, carga vieja ×12 pantallas, LOTH ×2, producir sin lote | — |
+
+**Verificación del chip** (navegador, claro + oscuro, 1280 y 400 px): elegido en el Libro CTP, aparece en el LO-TH; sobrevive a recargar y a cambiar de libro. Menú en portal —la tarjeta del libro tiene `overflow-hidden` y lo recortaba— y acotado a la pantalla: sin eso se salía 172 px por la izquierda a 400 px. Seleccionar funciona con el portal (el `mousedown` de «afuera» debía mirar también el menú). 0 errores de consola, sin scroll horizontal. typecheck 0 · eslint 0 · 42 tests en 3 archivos · tokens del DS 0.
+
+## 🧹 Lo que quedó sucio a propósito
+- `scripts/tmp-{ganancia,medir-2,medir-despacho,medir-patio-blas}.mjs`: scripts de medición de la sesión pasada, sin commitear. Borralos o movelos si no los querés.
+- `main-data.json`: aparece modificado con diff vacío (permisos o fin de línea).
+
+## ⚠️ Gotchas nuevos
+- El **gate de anidado HTML cruza componentes por NOMBRE**: dos `Etapa` distintos (uno exportado en `historia/EtapasDelLote`, otro privado en `LothTraceResumen`) daban 2 roturas falsas y bloqueaban el commit. Se renombró el privado a `PasoDelEmbudo`; el gate sigue pudiendo repetirlo con el próximo par de homónimos.
+- `curl $BSM_CURL_FLAGS` **no funciona**: bash lo parte por espacios y las comillas quedan literales → ristra de `HTTP 000` y un 401 engañoso. Usar `-b "$BSM_COOKIE" -H "x-csrf-token: $BSM_CSRF" -H "x-tenant-id: $BSM_TENANT"`.
+- En el login, `qaadmin` existe en **varias tiendas**: hay que elegir «Buleje · main» o el panel rebota al login.
