@@ -79,10 +79,16 @@ export function useModalAccesible(
      * AlertDialog de Radix. Sin él, un «¿Eliminar?» abierto desde un modal a
      * mano perdía el Tab y su Escape cerraba el modal de abajo.
      */
+    /* Un `role="dialog"` DENTRO de esta caja que no es modal (el detalle flotante
+       de un día, un popover de celda) no está encima: es parte de este modal.
+       Contarlo como otro diálogo apagaba el Tab de este modal mientras el panel
+       estaba abierto y el foco se iba a la página de atrás (lo reprodujo un
+       revisor el 2026-09-14). Un modal de verdad anidado adentro sí manda. */
     const hayOtroDialogoEncima = () => {
       const dialogos = document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]');
       const ultimo = dialogos[dialogos.length - 1];
-      return !!ultimo && ultimo !== caja;
+      if (!ultimo || ultimo === caja) return false;
+      return !caja.contains(ultimo) || ultimo.getAttribute("aria-modal") === "true";
     };
 
     const enfocables = () =>

@@ -109,3 +109,40 @@ describe("sin nada encima, el de abajo sigue mandando", () => {
     cleanup();
   });
 });
+
+/**
+ * Un `role="dialog"` DENTRO del modal que no es modal —el detalle flotante de un
+ * día de la tira, un popover de celda— es parte de este modal, no uno encima.
+ * Contarlo como «otro diálogo» apagaba la trampa de Tab mientras estaba abierto
+ * y el foco se escapaba a la página de atrás (revisor, 2026-09-14).
+ */
+function ModalConDialogoAdentro({ adentroEsModal }: { adentroEsModal: boolean }) {
+  const caja = useRef<HTMLDivElement>(null);
+  useModalAccesible(caja, { onCerrar: vi.fn() });
+  return (
+    <div ref={caja} role="dialog" aria-modal="true" aria-label="Producir sin lote" tabIndex={-1}>
+      <button type="button">Un botón del modal</button>
+      <div role="dialog" aria-label="Detalle del miércoles 09/09" {...(adentroEsModal ? { "aria-modal": "true" } : {})}>
+        <button type="button">Cerrar el detalle</button>
+      </div>
+    </div>
+  );
+}
+
+describe("un diálogo adentro de la caja", () => {
+  it("si NO es modal (popover), el modal sigue atrapando Tab", () => {
+    render(<ModalConDialogoAdentro adentroEsModal={false} />);
+    const evento = new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true });
+    document.dispatchEvent(evento);
+    expect(evento.defaultPrevented).toBe(true);
+    cleanup();
+  });
+
+  it("si ES modal (aria-modal), el de adentro manda y el de afuera cede", () => {
+    render(<ModalConDialogoAdentro adentroEsModal />);
+    const evento = new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true });
+    document.dispatchEvent(evento);
+    expect(evento.defaultPrevented).toBe(false);
+    cleanup();
+  });
+});

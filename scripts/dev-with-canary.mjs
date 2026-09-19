@@ -109,6 +109,13 @@ for (const sig of ["SIGINT", "SIGTERM"]) {
 // arriba no ve nada roto. Tocar CUALQUIER route.ts las refrescó a todas. Se
 // sondea una ruta que sin sesión debe dar 401 en JSON (no pasa por el guard de
 // /api/admin de proxy.ts); si da HTML 404, se toca y se vuelve a sondear.
+//
+// Y se toca SIEMPRE una vez al arrancar (medido la noche del 2026-09-14): el
+// estado viejo puede ser PARCIAL. La sonda dio 401 («al día») mientras
+// /api/admin/forestal/trozas/patio y /ctp/cierre daban HTML 404 con sesión, y una
+// sonda sin sesión no puede verlas: proxy.ts responde 401 en /api/admin/* antes
+// de llegar a la ruta. Tocar la de RRHH las destrabó al primer intento. Cuesta
+// recompilar una ruta.
 // Apagar con DEV_SIN_SONDA=1.
 const PUERTO = process.env.PORT || "3000";
 const RUTA_SONDA = "/api/rrhh/colaboradores/desde-adelantos";
@@ -138,8 +145,22 @@ async function repararRutasViejas() {
     console.log("\x1b[33m[dev] la sonda de rutas /api no obtuvo respuesta del servidor en 3 min.\x1b[0m");
     return;
   }
+  const estabaVieja = estaVieja(r);
+  // El toque preventivo: las rutas de /api/admin que la sonda no ve también se refrescan.
+  try {
+    const ahora = new Date();
+    utimesSync(ARCHIVO_SONDA, ahora, ahora);
+  } catch (err) {
+    console.log(`\x1b[31m[dev] no pude tocar ${ARCHIVO_SONDA}: ${err.message}\x1b[0m`);
+  }
+  await esperar(2000);
+  r = await sondear();
   if (!estaVieja(r)) {
-    console.log(`[dev] rutas /api al día (${RUTA_SONDA} → ${r?.status ?? "sin respuesta"}).`);
+    console.log(
+      estabaVieja
+        ? `\x1b[32m[dev] ✅ rutas /api refrescadas (${RUTA_SONDA} → ${r?.status ?? "sin respuesta"}).\x1b[0m`
+        : `[dev] rutas /api al día y refrescadas al arrancar (${RUTA_SONDA} → ${r?.status ?? "sin respuesta"}).`,
+    );
     return;
   }
   console.log(`\x1b[33m[dev] ⚠️  ${RUTA_SONDA} responde 404 en HTML: rutas /api con estado viejo. Refrescando…\x1b[0m`);

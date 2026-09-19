@@ -136,6 +136,9 @@ function Contenido({
 
   /** Al cerrar se avisa lo que quedó a medias, para que la tabla no mienta. */
   function cerrar() {
+    /* En medio del envío no se cierra: Escape y el clic fuera son gestos baratos
+       y el pedido de la fila 2 de 3 seguiría vivo con el modal desmontado. */
+    if (enviando) return;
     if (pendiente.current) {
       onListo(pendiente.current);
       pendiente.current = null;
@@ -319,8 +322,8 @@ function Contenido({
               apartar:
             </p>
             <ul className="mt-1 space-y-0.5 text-sm text-[var(--text-secondary)]">
-              {fallos.map((f) => (
-                <li key={f.etiqueta}>
+              {fallos.map((f, i) => (
+                <li key={`${f.etiqueta}-${i}`}>
                   <span className="font-mono font-bold text-[var(--text-primary)]">
                     {f.etiqueta}
                   </span>

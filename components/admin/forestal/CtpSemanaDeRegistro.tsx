@@ -24,11 +24,22 @@
  * un guard acá le impediría al aserradero anotar su segundo turno.
  */
 
-import { useMemo, useState } from "react";
-import { AlertTriangle, BarChart3, CalendarDays, ChevronLeft, ChevronRight, Loader2, Lock } from "@buleje/design-system/icons";
+import { useId, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  BarChart3,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Info,
+  Loader2,
+  Lock,
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import CtpResumenDeJornadasModal from "./CtpResumenDeJornadasModal";
+import CtpDetalleDeJornada from "./CtpDetalleDeJornada";
+import { useDetalleFlotante } from "./hooks/use-detalle-flotante";
 import {
   correrSemanas,
   diasDeLaSemana,
@@ -145,9 +156,20 @@ export default function CtpSemanaDeRegistro({
   const marcar = (iso: string) =>
     setMarcados((prev) => (prev.includes(iso) ? prev.filter((d) => d !== iso) : [...prev, iso]));
 
+  /* El detalle flotante de un día (Brandon, 2026-09-14): especies,
+     clasificación, dueño… sin abrir el resumen. Sólo en producción y sólo si
+     la respuesta lo trae — una vieja del caché deja la tira como antes. */
+  const idTira = useId();
+  const flotante = useDetalleFlotante(
+    idTira,
+    esProduccion ? dias.filter((d) => porDia.get(d)?.detalle) : [],
+  );
+
   /** Flechas sobre la tira: mover de a un día es lo que se hace al corregir. */
   const onTeclas = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    /* Dentro del panel las flechas son del panel: no mueven el día elegido. */
+    if (e.target instanceof Element && e.target.closest("[data-detalle-panel]")) return;
     const desde = esIsoValido(valor) ? valor : base;
     const i = dias.indexOf(desde);
     if (i < 0) return;
@@ -224,17 +246,44 @@ export default function CtpSemanaDeRegistro({
         onKeyDown={onTeclas}
         className="mt-2 grid grid-cols-7 gap-1"
       >
-        {dias.map((iso) => {
+        {dias.map((iso, columna) => {
           const j = porDia.get(iso);
           const elegido = iso === valor;
           const esHoy = iso === hoy;
           const futuro = iso > hoy;
+          /* El detalle sólo si la respuesta lo trae: consumo y despacho no lo
+             piden, y una respuesta vieja del caché tampoco lo tiene. */
+          const detalle = esProduccion ? j?.detalle : undefined;
+          const abiertoAca = !!detalle && flotante.abierto === iso;
+          const idPanel = `${idTira}-detalle-${iso}`;
           return (
             /* La marca NO va adentro del botón del día: un control dentro de
                otro control es anidado inválido y el clic se vuelve ambiguo —
                tocar el casillero elige el día, tocar la marca lo suma al
-               resumen, y son dos decisiones distintas. */
-            <div key={iso} className="relative">
+               resumen, y son dos decisiones distintas. Lo mismo el ícono del
+               detalle. El panel se dibuja en un portal dentro del diálogo
+               (`use-ubicar-flotante`), pero en React es hijo del casillero: el
+               foco y el mouse que salen del panel suben hasta acá. */
+            <div
+              key={iso}
+              data-casillero={flotante.clave(iso)}
+              className="relative"
+              onPointerEnter={
+                detalle
+                  ? (e) => {
+                      if (e.pointerType === "mouse") flotante.entrar(iso);
+                    }
+                  : undefined
+              }
+              onPointerLeave={
+                detalle
+                  ? (e) => {
+                      if (e.pointerType === "mouse") flotante.salir();
+                    }
+                  : undefined
+              }
+              onBlur={detalle ? flotante.alPerderFoco : undefined}
+            >
               <button
                 type="button"
                 onClick={() => onElegir(iso)}
@@ -243,12 +292,20 @@ export default function CtpSemanaDeRegistro({
                 title={
                   bloqueado(iso)
                     ? `${etiquetaLarga(iso)} — todavía no llegó: un ${nombre.uno} no se anota antes de que pase`
-                    : j
-                      ? `${etiquetaLarga(iso)} — ya tiene ${fmtPt(j.pt)} PT · ${fmtM3(j.m3)} m³ · ${fmtPiezas(j.piezas)} pza en ${j.corridas} ${j.corridas === 1 ? nombre.uno : nombre.varios}`
-                      : `${etiquetaLarga(iso)} — sin ${nombre.varios} anotados`
+                    : detalle
+                      ? /* El panel dice más: el globo nativo encima sería ruido. */
+                        undefined
+                      : j
+                        ? `${etiquetaLarga(iso)} — ya tiene ${fmtPt(j.pt)} PT · ${fmtM3(j.m3)} m³ · ${fmtPiezas(j.piezas)} pza en ${j.corridas} ${j.corridas === 1 ? nombre.uno : nombre.varios}`
+                        : `${etiquetaLarga(iso)} — sin ${nombre.varios} anotados`
                 }
                 className={cn(
-                  "flex min-h-[4.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-1.5 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                  "flex h-full min-h-[4.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-1.5 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                  /* A 400 px el casillero mide ~42 px y la marca y el ícono,
+                     arriba, pisaban el nombre del día. Se les reserva la franja
+                     de arriba en TODOS los casilleros, para que la tira no quede
+                     despareja. */
+                  esProduccion && "max-sm:pt-5",
                   elegido
                     ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)] ring-1 ring-[var(--accent)]"
                     : j
@@ -317,6 +374,45 @@ export default function CtpSemanaDeRegistro({
                     className="h-3.5 w-3.5 cursor-pointer accent-[var(--accent)]"
                   />
                 </label>
+              )}
+              {detalle && j && (
+                <>
+                  <button
+                    type="button"
+                    data-detalle-ancla
+                    onPointerDown={flotante.alPresionarAncla}
+                    onFocus={() => flotante.alEnfocarAncla(iso)}
+                    onKeyDown={(e) => flotante.alTeclaEnAncla(e, iso)}
+                    onClick={() => flotante.alternar(iso)}
+                    aria-label={`Ver el detalle del ${etiquetaLarga(iso)}`}
+                    aria-haspopup="dialog"
+                    aria-expanded={abiertoAca}
+                    aria-controls={abiertoAca ? idPanel : undefined}
+                    className={cn(
+                      "absolute right-0.5 top-0.5 grid h-6 w-6 place-items-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]",
+                      abiertoAca && "bg-[var(--surface-raised)] text-[var(--accent-ink)] dark:text-[var(--accent)]",
+                    )}
+                  >
+                    <Info className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+                  {abiertoAca && (
+                    <CtpDetalleDeJornada
+                      id={idPanel}
+                      clave={flotante.clave(iso)}
+                      jornada={j}
+                      detalle={detalle}
+                      columna={columna}
+                      onEntrar={() => flotante.entrar(iso)}
+                      onSalir={flotante.salir}
+                      onVolverAlAncla={flotante.volverAlAncla}
+                      onCerrar={flotante.cerrarDesdePanel}
+                      onVerResumen={() => {
+                        flotante.cerrar();
+                        setResumen([iso]);
+                      }}
+                    />
+                  )}
+                </>
               )}
             </div>
           );

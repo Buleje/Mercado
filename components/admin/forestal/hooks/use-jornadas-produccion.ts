@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { esIsoValido, rangoDeLaSemana } from "@/lib/forestal/semana-de-registro";
+import type { DetalleDeJornada } from "@/lib/forestal/detalle-de-jornada";
 
 /** Lo que se produjo en UN día. Sólo viajan los días que tienen algo. */
 export interface JornadaDeProduccion {
@@ -25,6 +26,12 @@ export interface JornadaDeProduccion {
   /** Pie tablar — como habla el aserradero. */
   pt: number;
   piezas: number;
+  /**
+   * Especies, clasificación, dueño… del día, para el panel flotante de la tira
+   * (2026-09-14). Sólo en `seccion="produccion"`; opcional porque una respuesta
+   * vieja del caché no lo trae, y sin él la tira se ve como antes.
+   */
+  detalle?: DetalleDeJornada;
 }
 
 /** Qué hecho del libro cuenta la tira: lo que salió de la sierra, lo que entró, o lo que se fue con guía. */

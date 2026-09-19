@@ -13,9 +13,10 @@
  * sugerencias se scopean por ese id — con el mismo id en las dos copias, las
  * flechas del teclado saltarían a la copia equivocada.
  */
+import { useId } from "react";
 import {
   Calculator, FileSpreadsheet, Settings, Mic, MicOff, Volume2, VolumeX,
-  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Settings2, Trees,
+  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Settings2, Trees, Play,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -30,6 +31,8 @@ import {
 } from "@/lib/forestal/cubicador-config";
 import { CeldaNum, useTecladoGrilla } from "./celdas-excel";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
+import CampoCodigoDeTroza from "./cubicador-codigo-troza";
+import type { TrozaParaCodigo } from "@/lib/forestal/codigo-de-troza";
 
 const ESPECIES = ESPECIES_MADERA;
 const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
@@ -38,6 +41,12 @@ const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
 const CARGA_COLUMNAS = [COL_CANT, COL_ESPESOR, COL_ANCHO, COL_LARGO] as const;
 
 export type Manual = { cantidad: string; espesor: string; ancho: string; largo: string };
+
+/** Botones de la barra de la caja de dictado: mismo alto, ícono + texto. */
+const HERRAMIENTA = "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition";
+const HERRAMIENTA_NEUTRA = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+const HERRAMIENTA_ACTIVA = "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
+const KICKER_GRUPO = "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]";
 
 interface PanelEntradaVozProps {
   grillaId: string;
@@ -83,6 +92,19 @@ interface PanelEntradaVozProps {
   manual: Manual;
   onManualChange: (v: Manual) => void;
   onConfirmarCarga: (grillaId: string) => void;
+  /**
+   * El «Código» de la troza (sólo «Producir sin lote»). Sin esto el campo no
+   * se dibuja y el panel es el de siempre. Es interno: ver
+   * `lib/forestal/codigo-de-troza.ts`.
+   */
+  codigoTroza?: {
+    valor: string;
+    onValor: (v: string) => void;
+    onElegir: (troza: TrozaParaCodigo) => void;
+    trozas: readonly TrozaParaCodigo[];
+    cargando: boolean;
+    error: string | null;
+  };
 }
 
 export default function PanelEntradaVoz({
@@ -92,9 +114,10 @@ export default function PanelEntradaVoz({
   fijas, onAplicarFijas, especie, onEspecieChange, especies = ESPECIES, onAbrirEspecies,
   dueno, onDuenoChange, duenosConocidos, onAbrirDuenos,
   liveGroups, errMsg, lastAdded, addedFlash, onDeshacer, fmtPt,
-  manual, onManualChange, onConfirmarCarga,
+  manual, onManualChange, onConfirmarCarga, codigoTroza,
 }: PanelEntradaVozProps) {
   const speakOn = config.speak;
+  const ajustesId = useId();
   const teclasCarga = useTecladoGrilla({
     grilla: grillaId,
     onConfirmar: () => onConfirmarCarga(grillaId),
@@ -108,10 +131,11 @@ export default function PanelEntradaVoz({
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Calculator className="h-4 w-4 text-[var(--accent)]" /> Cargar piezas
         </CardTitle>
+        {/* En la barra del título queda lo que es del PANEL: el catálogo, la
+            presentación y plegar. Importar Excel, la voz y sus ajustes se
+            mudaron adentro de la caja de dictado (Brandon, 2026-09-14): son
+            maneras de ENTRAR piezas y van donde se entran. */}
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onImportar} title="Importar un Excel/CSV de piezas al lote" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
-            <FileSpreadsheet className="h-3.5 w-3.5" /> Importar Excel
-          </button>
           {/* El catálogo, con nombre y todo, en la barra: el engranaje pegado al
               selector se ve recién cuando se busca la especie — y la pregunta
               «¿dónde doy de alta una madera nueva?» llega antes que eso. */}
@@ -120,9 +144,6 @@ export default function PanelEntradaVoz({
               <Trees className="h-3.5 w-3.5" /> Especies
             </button>
           )}
-          <button type="button" onClick={onToggleAjustes} aria-pressed={showAjustes} title="Ajustes de voz y comandos" className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition ${showAjustes ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
-            <Settings className="h-3.5 w-3.5" /> Ajustes
-          </button>
           {onPresent && <CacaoChartPresent title="Cubicador de madera" onClick={onPresent} />}
           {/* Plegar el panel entero: cargando desde la tabla —o revisando un
               lote ya medido— el micrófono y la fila de carga ocupan media
@@ -146,84 +167,51 @@ export default function PanelEntradaVoz({
           de arriba y partía en dos el lugar donde se decide sobre el lote —
           «Cerrar apartado» es una acción del lote, como Guardar o Enviar. */}
 
-      {/* Panel de AJUSTES — voz (velocidad/tono/qué dicta) + comandos editables */}
-      {showAjustes && (
-        <div className="mb-4 grid gap-4 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-4 sm:grid-cols-2">
-          <div className="space-y-3">
-            <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Voz</div>
-            <label className="block">
-              <span className="text-xs font-bold text-[var(--text-secondary)]">Velocidad: {config.voiceRate.toFixed(1)}×</span>
-              <input type="range" min={0.6} max={3} step={0.1} value={config.voiceRate} onChange={(e) => onUpdateConfig({ voiceRate: Number(e.target.value) })} className="mt-1 w-full accent-[var(--accent)]" />
-            </label>
-            <label className="block">
-              <span className="text-xs font-bold text-[var(--text-secondary)]">Tono / voz</span>
-              <select value={config.voiceURI} onChange={(e) => onUpdateConfig({ voiceURI: e.target.value })} className="mt-1 h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
-                <option value="">Voz por defecto</option>
-                {voices.filter((v) => v.lang.toLowerCase().startsWith("es")).map((v) => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}
-              </select>
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => onUpdateConfig({ speak: !config.speak })} className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition ${config.speak ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}>
-                {config.speak ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />} El sistema repite {config.speak ? "SÍ" : "NO"}
-              </button>
-              <button type="button" onClick={onProbarVoz} className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Probar voz</button>
-              <button
-                type="button"
-                onClick={() => onUpdateConfig({ avisarRaras: !config.avisarRaras })}
-                title="Resalta las piezas con medidas fuera de lo común (no las cambia)"
-                className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition ${config.avisarRaras ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}
-              >
-                <AlertTriangle className="h-3.5 w-3.5" /> Avisar medidas raras {config.avisarRaras ? "SÍ" : "NO"}
-              </button>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Comandos de voz (separados por coma)</div>
-              <button type="button" onClick={() => onUpdateConfig({ voiceRate: CONFIG_DEFAULT.voiceRate, voiceURI: "", speak: true, comandos: CONFIG_DEFAULT.comandos })} className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]">Restablecer</button>
-            </div>
-            <CmdField label="Pausar" value={frasesToText(config.comandos.pausar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, pausar: textToFrases(v) } })} />
-            <CmdField label="Continuar" value={frasesToText(config.comandos.continuar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, continuar: textToFrases(v) } })} />
-            <CmdField label="Borrar último" value={frasesToText(config.comandos.borrarUltimo)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, borrarUltimo: textToFrases(v) } })} />
-            <CmdField label="Especie (prefijos)" value={frasesToText(config.comandos.especie)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, especie: textToFrases(v) } })} />
-            <CmdField label="Dueño (prefijos)" value={frasesToText(config.comandos.dueno ?? [])} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, dueno: textToFrases(v) } })} />
-            <CmdField label="Fijar medida" value={frasesToText(config.comandos.fijar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, fijar: textToFrases(v) } })} />
-            <CmdField label="Soltar lo fijo" value={frasesToText(config.comandos.desfijar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, desfijar: textToFrases(v) } })} />
-          </div>
-        </div>
-      )}
+      {/* ── 1. DICTAR ──────────────────────────────────────────────────────
+          Lo PRIMERO del panel y con sus herramientas adentro (Brandon,
+          2026-09-14): *«que en esa sección de "toca el micrófono y dicta" se
+          pongan esas funciones: importar Excel y las otras funciones de voz,
+          bien acomodados»*. Importar Excel y Ajustes vivían en la barra del
+          título, lejos del micrófono, y la voz que repite colgaba suelta al
+          lado del texto.
 
-      {supported ? (
-        <>
-          {/* ── 1. DICTAR ──────────────────────────────────────────────────
-              La caja entera se tiñe mientras escucha. El estado del micrófono
-              es lo único que hay que ver de lejos, con las manos ocupadas y el
-              celular apoyado: un borde de color a media pantalla se lee, un
-              botón chico que cambia de ícono no. */}
-          <section
-            className={`rounded-2xl border-2 p-4 transition-colors ${
-              listening
-                ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10"
-                : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]"
-            }`}
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <button
-                type="button"
-                onClick={onToggleListen}
-                aria-pressed={listening}
-                aria-label={listening ? "Detener el dictado" : "Empezar a dictar"}
-                className={`inline-flex h-16 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 px-5 text-sm font-extrabold transition sm:h-20 sm:w-20 sm:px-0 ${
-                  listening
-                    ? "animate-pulse border-[var(--data-error-500)] bg-[var(--surface-raised)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
-                    : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] hover:brightness-95 dark:text-[var(--accent)]"
-                }`}
-              >
-                {listening ? <MicOff className="h-7 w-7" /> : <Mic className="h-7 w-7" />}
-                <span className="sm:hidden">{listening ? "Detener" : "Dictar"}</span>
-              </button>
+          La caja entera se tiñe mientras escucha. El estado del micrófono
+          es lo único que hay que ver de lejos, con las manos ocupadas y el
+          celular apoyado: un borde de color a media pantalla se lee, un
+          botón chico que cambia de ícono no.
 
-              <div className="min-w-0 flex-1">
+          Sin dictado (cualquier navegador que no sea Chrome) la caja sigue
+          en pie sin el micrófono: importar un Excel y la voz que repite lo
+          cargado a mano no dependen de él. Antes quedaba sólo un aviso. */}
+      <section
+        aria-label="Dictar o importar piezas"
+        className={`rounded-2xl border-2 p-4 transition-colors ${
+          listening
+            ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10"
+            : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]"
+        }`}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          {supported && (
+            <button
+              type="button"
+              onClick={onToggleListen}
+              aria-pressed={listening}
+              aria-label={listening ? "Detener el dictado" : "Empezar a dictar"}
+              className={`inline-flex h-16 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 px-5 text-sm font-extrabold transition sm:h-20 sm:w-20 sm:px-0 ${
+                listening
+                  ? "animate-pulse border-[var(--data-error-500)] bg-[var(--surface-raised)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                  : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] hover:brightness-95 dark:text-[var(--accent)]"
+              }`}
+            >
+              {listening ? <MicOff className="h-7 w-7" /> : <Mic className="h-7 w-7" />}
+              <span className="sm:hidden">{listening ? "Detener" : "Dictar"}</span>
+            </button>
+          )}
+
+          <div className="min-w-0 flex-1">
+            {supported ? (
+              <>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-base font-extrabold text-[var(--text-primary)]">
                     {paused
@@ -240,20 +228,6 @@ export default function PanelEntradaVoz({
                     ariaLabel="Cómo se dicta: comandos por voz y atajos"
                     body={<AyudaDeVoz />}
                   />
-                  <button
-                    type="button"
-                    onClick={() => onUpdateConfig({ speak: !config.speak })}
-                    aria-pressed={speakOn}
-                    title={speakOn ? "La voz repite lo dictado — toca para silenciar" : "Activar voz que repite lo dictado"}
-                    className={`ml-auto inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[length:var(--ts-2xs)] font-bold transition ${
-                      speakOn
-                        ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                        : "border-[var(--rule-base)] text-[var(--text-tertiary)]"
-                    }`}
-                  >
-                    {speakOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-                    Voz {speakOn ? "on" : "off"}
-                  </button>
                 </div>
                 <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                   {numerosPorPieza(fijas) === 3 ? (
@@ -262,48 +236,141 @@ export default function PanelEntradaVoz({
                     <>Con lo fijo puesto, dicta <b className="text-[var(--text-secondary)]">{numerosPorPieza(fijas) === 1 ? "un número" : `${numerosPorPieza(fijas)} números`}</b> por pieza ({DIMENSIONES.filter((d) => fijas[d] == null).join(" · ")}). Para soltarlo di <b className="text-[var(--text-secondary)]">&ldquo;quita el fijo&rdquo;</b>.</>
                   )}
                 </p>
-              </div>
-            </div>
-
-            {/* El caption vive DENTRO de la caja de dictado: es lo que el
-                micrófono está entendiendo, no un bloque aparte. */}
-            {listening && (
-              <div className="mt-3 min-h-[2.75rem] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
-                {liveGroups && (liveGroups.triples.length > 0 || liveGroups.resto.length > 0) ? (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {liveGroups.triples.map((t, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-100)] px-2 py-0.5 font-mono text-sm font-bold text-[var(--data-success-700)]">
-                        {t.join(" · ")}
-                      </span>
-                    ))}
-                    {liveGroups.resto.length > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--data-warning-500)] px-2 py-0.5 font-mono text-sm text-[var(--data-warning-700)]">
-                        {liveGroups.resto.join(" · ")}<span className="ml-1 opacity-60">· falta{liveGroups.resto.length === 2 ? " 1" : "n 2"}</span>
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]"><Volume2 className="h-3.5 w-3.5" /> escuchando…</div>
-                )}
-                <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                  Cada bloque verde = una pieza (espesor · ancho · largo). Si un cuadrado quedó mal, pausa y edita esa fila con su micrófono.
-                </p>
-              </div>
-            )}
-
-            {errMsg && (
-              <p className="mt-3 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
-                {errMsg}
+              </>
+            ) : (
+              <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-sm font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+                Este navegador no soporta dictado por voz (usa Chrome). Puedes importar un Excel o cargar las medidas a mano abajo.
               </p>
             )}
-          </section>
 
-        </>
-      ) : (
-        <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
-          Este navegador no soporta dictado por voz (usá Chrome). Puedes cargar las medidas a mano abajo.
-        </p>
-      )}
+            {/* Las herramientas de entrada, en dos grupos del mismo alto. Cada
+                grupo se envuelve entero en un celular: el rótulo no queda en
+                un renglón y sus botones en el otro. */}
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <div role="group" aria-label="Entrada" className="flex flex-wrap items-center gap-2">
+                <span aria-hidden className={KICKER_GRUPO}>Entrada</span>
+                <button
+                  type="button"
+                  onClick={onImportar}
+                  title="Importar un Excel/CSV de piezas al lote"
+                  className={`${HERRAMIENTA} ${HERRAMIENTA_NEUTRA}`}
+                >
+                  <FileSpreadsheet className="h-4 w-4" aria-hidden /> Importar Excel
+                </button>
+              </div>
+              <div role="group" aria-label="Voz" className="flex flex-wrap items-center gap-2 sm:border-l sm:border-[var(--rule-soft)] sm:pl-4">
+                <span aria-hidden className={KICKER_GRUPO}>Voz</span>
+                <button
+                  type="button"
+                  onClick={() => onUpdateConfig({ speak: !config.speak })}
+                  aria-pressed={speakOn}
+                  title={speakOn ? "La voz repite lo dictado — toca para silenciar" : "Activar voz que repite lo dictado"}
+                  className={`${HERRAMIENTA} ${speakOn ? HERRAMIENTA_ACTIVA : HERRAMIENTA_NEUTRA}`}
+                >
+                  {speakOn ? <Volume2 className="h-4 w-4" aria-hidden /> : <VolumeX className="h-4 w-4" aria-hidden />}
+                  Repite: {speakOn ? "sí" : "no"}
+                </button>
+                <button
+                  type="button"
+                  onClick={onProbarVoz}
+                  title="Escucha cómo suena con la velocidad y el tono elegidos"
+                  className={`${HERRAMIENTA} ${HERRAMIENTA_NEUTRA}`}
+                >
+                  <Play className="h-4 w-4" aria-hidden /> Probar voz
+                </button>
+                <button
+                  type="button"
+                  onClick={onToggleAjustes}
+                  aria-pressed={showAjustes}
+                  aria-controls={showAjustes ? ajustesId : undefined}
+                  title="Ajustes de voz y comandos"
+                  className={`${HERRAMIENTA} ${showAjustes ? HERRAMIENTA_ACTIVA : HERRAMIENTA_NEUTRA}`}
+                >
+                  <Settings className="h-4 w-4" aria-hidden /> Ajustes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel de AJUSTES — velocidad, tono, qué avisa y comandos editables.
+            Se abre debajo de la barra que lo abre, dentro de la misma caja.
+            «El sistema repite» y «Probar voz» salieron de acá: están un
+            renglón más arriba, y dos botones iguales a 40 px no dicen nada. */}
+        {showAjustes && (
+          <div id={ajustesId} className="mt-3 grid gap-4 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-raised)] p-4 sm:grid-cols-2">
+            <div className="space-y-3">
+              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Voz</div>
+              <label className="block">
+                <span className="text-xs font-bold text-[var(--text-secondary)]">Velocidad: {(Number(config.voiceRate) || 1).toFixed(1)}×</span>
+                <input type="range" min={0.6} max={3} step={0.1} value={config.voiceRate} onChange={(e) => onUpdateConfig({ voiceRate: Number(e.target.value) })} className="mt-1 w-full accent-[var(--accent)]" />
+              </label>
+              <label className="block">
+                <span className="text-xs font-bold text-[var(--text-secondary)]">Tono / voz</span>
+                <select value={config.voiceURI} onChange={(e) => onUpdateConfig({ voiceURI: e.target.value })} className="mt-1 h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+                  <option value="">Voz por defecto</option>
+                  {voices.filter((v) => v.lang.toLowerCase().startsWith("es")).map((v) => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}
+                </select>
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onUpdateConfig({ avisarRaras: !config.avisarRaras })}
+                  title="Resalta las piezas con medidas fuera de lo común (no las cambia)"
+                  className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition ${config.avisarRaras ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" /> Avisar medidas raras {config.avisarRaras ? "SÍ" : "NO"}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Comandos de voz (separados por coma)</div>
+                <button type="button" onClick={() => onUpdateConfig({ voiceRate: CONFIG_DEFAULT.voiceRate, voiceURI: "", speak: true, comandos: CONFIG_DEFAULT.comandos })} className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]">Restablecer</button>
+              </div>
+              <CmdField label="Pausar" value={frasesToText(config.comandos.pausar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, pausar: textToFrases(v) } })} />
+              <CmdField label="Continuar" value={frasesToText(config.comandos.continuar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, continuar: textToFrases(v) } })} />
+              <CmdField label="Borrar último" value={frasesToText(config.comandos.borrarUltimo)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, borrarUltimo: textToFrases(v) } })} />
+              <CmdField label="Especie (prefijos)" value={frasesToText(config.comandos.especie)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, especie: textToFrases(v) } })} />
+              <CmdField label="Dueño (prefijos)" value={frasesToText(config.comandos.dueno ?? [])} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, dueno: textToFrases(v) } })} />
+              <CmdField label="Fijar medida" value={frasesToText(config.comandos.fijar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, fijar: textToFrases(v) } })} />
+              <CmdField label="Soltar lo fijo" value={frasesToText(config.comandos.desfijar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, desfijar: textToFrases(v) } })} />
+            </div>
+          </div>
+        )}
+
+        {/* El caption vive DENTRO de la caja de dictado: es lo que el
+            micrófono está entendiendo, no un bloque aparte. */}
+        {listening && (
+          <div className="mt-3 min-h-[2.75rem] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
+            {liveGroups && (liveGroups.triples.length > 0 || liveGroups.resto.length > 0) ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {liveGroups.triples.map((t, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-100)] px-2 py-0.5 font-mono text-sm font-bold text-[var(--data-success-700)]">
+                    {t.join(" · ")}
+                  </span>
+                ))}
+                {liveGroups.resto.length > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--data-warning-500)] px-2 py-0.5 font-mono text-sm text-[var(--data-warning-700)]">
+                    {liveGroups.resto.join(" · ")}<span className="ml-1 opacity-60">· falta{liveGroups.resto.length === 2 ? " 1" : "n 2"}</span>
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]"><Volume2 className="h-3.5 w-3.5" /> escuchando…</div>
+            )}
+            <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              Cada bloque verde = una pieza (espesor · ancho · largo). Si un cuadrado quedó mal, pausa y edita esa fila con su micrófono.
+            </p>
+          </div>
+        )}
+
+        {errMsg && (
+          <p className="mt-3 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+            {errMsg}
+          </p>
+        )}
+      </section>
 
       {/* ── Lo que se le pega + cargala a mano, EN LA MISMA FILA ──────────
           Brandon 2026-09-11: *«la sección "o cargala a mano" que ponga en la
@@ -319,7 +386,7 @@ export default function PanelEntradaVoz({
           de la voz: sin dictado —cualquier navegador que no sea Chrome— no se
           dibujaba, y entonces la carga a mano no tenía dónde elegir la especie.
           Se cargaba todo «Sin especie» y nadie veía por qué. */}
-      <div className="mt-3 grid items-start gap-3 xl:grid-cols-[minmax(17rem,24rem)_minmax(0,1fr)]">
+      <div className={`mt-3 grid items-start gap-3 ${codigoTroza ? "xl:grid-cols-[minmax(17rem,36rem)_minmax(0,1fr)]" : "xl:grid-cols-[minmax(17rem,24rem)_minmax(0,1fr)]"}`}>
           {/* ── 2. CON QUÉ ENTRA ───────────────────────────────────────────
             Especie, dueño y medidas fijas eran tres controles de formas y
             alturas distintas apilados en una columna. Son la misma cosa —lo
@@ -330,6 +397,17 @@ export default function PanelEntradaVoz({
             Lo que se le pega a cada pieza
           </p>
           <div className="flex flex-wrap items-end gap-2">
+            {/* El código de la troza, ANTES de la especie: elegir una troza
+                del patio pone también su especie (Brandon, 2026-09-14). */}
+            {codigoTroza && (
+              <CampoCodigoDeTroza
+                valor={codigoTroza.valor}
+                onValor={codigoTroza.onValor}
+                onElegir={codigoTroza.onElegir}
+                trozas={codigoTroza.trozas}
+                cargando={codigoTroza.cargando}
+              />
+            )}
             <label className="flex min-w-[10rem] flex-1 flex-col gap-1 sm:max-w-[14rem]">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
               <span className="flex h-11 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pr-1">
@@ -340,6 +418,10 @@ export default function PanelEntradaVoz({
                 >
                   <option value="">Sin especie</option>
                   {especies.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {/* La especie que puso una troza del patio y el catálogo no
+                      tiene: sin esta opción el selector se vería «Sin
+                      especie» mientras las piezas entran con ella. */}
+                  {especie && !especies.includes(especie) && <option value={especie}>{especie}</option>}
                 </select>
                 {/* El catálogo se edita DONDE se usa: mandar a otra pantalla a
                     dar de alta una especie en medio de una carga es perderla. */}
@@ -420,6 +502,10 @@ export default function PanelEntradaVoz({
               </div>
             )}
           </div>
+
+          {codigoTroza?.error && (
+            <p className="mt-2 text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{codigoTroza.error}</p>
+          )}
 
           {duenosConocidos.length > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -509,7 +595,7 @@ export default function PanelEntradaVoz({
             title={speakOn ? "Apagar la voz que repite cada pieza (más rápido para cargar)" : "Prender la voz que repite cada pieza"}
             className={`col-span-2 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold transition sm:col-auto sm:h-10 ${speakOn ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]" : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
           >
-            {speakOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />} Voz {speakOn ? "on" : "off"}
+            {speakOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />} Voz: {speakOn ? "sí" : "no"}
           </button>
         </div>
         {/* Sólo tiene sentido con teclado físico — en celular es ruido. Y
@@ -544,7 +630,7 @@ export default function PanelEntradaVoz({
           <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)]">
             <Check className="h-4 w-4" />
             {addedFlash > 1 ? `${addedFlash} piezas · última: ` : "Agregada: "}
-            {lastAdded.espesor}&Prime; × {lastAdded.ancho}&Prime; × {lastAdded.largo} pies{lastAdded.especie ? ` · ${lastAdded.especie}` : ""}
+            {lastAdded.espesor}&Prime; × {lastAdded.ancho}&Prime; × {lastAdded.largo} pies{lastAdded.especie ? ` · ${lastAdded.especie}` : ""}{lastAdded.codigo ? ` · cód. ${lastAdded.codigo}` : ""}
             <span className="font-mono">= {fmtPt(lastAdded.pieTablar)} PT</span>
           </span>
           <button type="button" onClick={onDeshacer} className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95">
