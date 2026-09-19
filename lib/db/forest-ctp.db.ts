@@ -50,6 +50,7 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { jornadasDesdeFilas, type JornadaDelLibro } from "@/lib/forestal/detalle-de-jornada";
+import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -316,6 +317,10 @@ export interface CtpEntryInput {
    * `originCode` del ingreso; acá no se pisa nada, se llena un hueco.
    */
   originCode?: string | null;
+  /** El contrato/permiso bajo el que se produjo (ADR-421). Cuando la corrida
+   *  consume guías, lo natural es heredarlo de ellas; acá se guarda el elegido
+   *  para las que no consumen ninguna. */
+  contratoId?: string | null;
   /**
    * De quién es la madera (ADR-412): `"propia"` | `"tercero"` | `null`.
    *
@@ -697,6 +702,7 @@ export class ForestCtpDB {
           gtfIngreso: input.gtfIngreso?.trim() || null,
           materiaPrimaRef: input.materiaPrimaRef?.trim() || null,
           originCode: input.originCode?.trim() || null,
+          contratoId: input.contratoId ?? (await ForestContratoDB.idPorCodigo(tenantId, input.originCode)),
           /* Lo que llegue se normaliza con las reglas del libro: «de tercero»
              sin nombre y «propia» con titular no se guardan a medias. */
           ...(() => {

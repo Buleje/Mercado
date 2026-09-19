@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Save, Truck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import SelectorContrato from "./SelectorContrato";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { claveBusqueda, formatearPlaca, normalizarPlaca } from "@/lib/forestal/directorio";
 import {
@@ -46,6 +47,7 @@ function aBorrador(f: Flete | null): Borrador {
       monto: null,
       volumenM3: null,
       tipoTransporte: "privado",
+      contratoId: null,
     };
   }
   return {
@@ -69,6 +71,7 @@ function aBorrador(f: Flete | null): Borrador {
     estadoPago: f.estadoPago,
     fechaPago: f.fechaPago ? f.fechaPago.slice(0, 10) : "",
     notas: f.notas ?? "",
+    contratoId: f.contratoId,
   };
 }
 
@@ -88,6 +91,7 @@ function aBorradorDesdeCandidato(c: CandidatoFlete): Borrador {
     pagaQuien: "ctp",
     estadoPago: "pendiente",
     monto: null,
+    contratoId: null,
   };
 }
 
@@ -328,6 +332,14 @@ export default function CtpFleteModal({
               onChange={(e) => set({ gtfNumber: e.target.value })}
             />
           </Field>
+          <div className="sm:col-span-12">
+            <SelectorContrato
+              id="flete-contrato"
+              value={b.contratoId ?? null}
+              onChange={(contratoId) => set({ contratoId })}
+              codigoSugerido={prellenado?.originCode}
+            />
+          </div>
         </Seccion>
 
         <Seccion numero={2} title="Quién lo hizo" hint="Del directorio: así se puede agrupar después">

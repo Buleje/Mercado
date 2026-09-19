@@ -11,6 +11,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { decodeExpenseDescription } from "@/lib/expense-meta";
+import SelectorContrato from "@/components/admin/forestal/SelectorContrato";
 
 type Expense = { id: string; category: string; description: string; amount: number; date: string; recurring: boolean };
 type Summary = { category: string; total: number; count: number };
@@ -63,7 +64,12 @@ export default function ExpensesTab() {
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
 
   // form
-  const [form, setForm] = useState({ category: "otros", description: "", amount: "", date: new Date().toISOString().slice(0, 10), recurring: false });
+  const [form, setForm] = useState<{
+    category: string; description: string; amount: string; date: string; recurring: boolean;
+    /** El permiso al que se le imputa (ADR-421). No hay código que sugerir acá:
+     *  arranca "Sin contrato" y lo elige quien registra. */
+    contratoId: string | null;
+  }>({ category: "otros", description: "", amount: "", date: new Date().toISOString().slice(0, 10), recurring: false, contratoId: null });
 
   useEffect(() => {
     let active = true;
@@ -119,7 +125,7 @@ export default function ExpensesTab() {
       body: JSON.stringify({ ...form, amount: Number(form.amount) }),
     });
     if (res.ok) {
-      setForm({ category: "otros", description: "", amount: "", date: new Date().toISOString().slice(0, 10), recurring: false });
+      setForm({ category: "otros", description: "", amount: "", date: new Date().toISOString().slice(0, 10), recurring: false, contratoId: null });
       setShowForm(false);
       setTick(v => v + 1);
     }
@@ -234,6 +240,12 @@ export default function ExpensesTab() {
             {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
           <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
+          <SelectorContrato
+            id="gasto-contrato"
+            value={form.contratoId}
+            onChange={(contratoId) => setForm(f => ({ ...f, contratoId }))}
+            hint="No hay un permiso sugerido para un gasto: elegilo si corresponde a uno."
+          />
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm">S/</span>

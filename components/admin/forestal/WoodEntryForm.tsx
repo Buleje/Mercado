@@ -17,6 +17,7 @@ import {
   Sparkles, TreePine, X, ClipboardList,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import SelectorContrato from "./SelectorContrato";
 import CtpPiezasDelIngreso from "./CtpPiezasDelIngreso";
 import { Btn, estaFueraDePlazo, Field, I, ModalFooter, PLAZO_REGISTRO_DIAS, Seccion, useAtajoGuardar } from "./ctp-shared";
 import CtpParteBarra from "./CtpParteBarra";
@@ -168,6 +169,9 @@ interface DraftData {
   providerDocumentType: string;
   originType: string;
   originCode: string;
+  /** El permiso al que se imputa este ingreso (ADR-421). Vínculo aparte del
+   *  código de origen: éste sigue siendo lo que se declara ante SERFOR. */
+  contratoId: string | null;
   /** (5) N° Fuente de origen/procedencia (el documento que ampara la fuente). */
   originSourceNumber: string;
   /** (9) Código de CTP — sólo si la madera viene de otro centro. */
@@ -202,6 +206,7 @@ const INITIAL: DraftData = {
   providerDocumentType: "RUC",
   originType: "concesion",
   originCode: "",
+  contratoId: null,
   originSourceNumber: "",
   ctpProductCode: "",
   originRegion: "Ucayali",
@@ -887,6 +892,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         providerDocumentType: data.providerDocument.trim() ? data.providerDocumentType : null,
         originType: data.originType,
         originCode: data.originCode.trim() || null,
+        // El permiso vinculado (ADR-421) — el código de arriba sigue siendo lo
+        // que se declara ante SERFOR, esto es sólo el vínculo interno.
+        contratoId: data.contratoId,
         originSourceNumber: data.originSourceNumber.trim() || null,
         ctpProductCode: data.ctpProductCode.trim() || null,
         originRegion: data.originRegion === "Otra" ? null : data.originRegion,
@@ -958,6 +966,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
           providerDocumentType: prev.providerDocumentType,
           originType: prev.originType,
           originCode: prev.originCode,
+          contratoId: prev.contratoId,
           originRegion: prev.originRegion,
           originDistrict: prev.originDistrict,
         }));
@@ -1827,6 +1836,14 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     className={I}
                   />
                 </Field>
+                <div className="sm:col-span-12">
+                  <SelectorContrato
+                    id="wood-entry-contrato"
+                    value={data.contratoId}
+                    onChange={(contratoId) => update("contratoId", contratoId)}
+                    codigoSugerido={data.originCode}
+                  />
+                </div>
                 <Field span={6} label="N° fuente de origen" casillero={5} hint="De qué fuente viene la madera (Apartado 1)">
                   <input
                     type="text"

@@ -319,6 +319,10 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
     beneficiario: row.beneficiario ? mapBeneficiario(row.beneficiario) : undefined,
     modalidad: row.modalidad as AdelantoModalidad,
     montoAdelantado,
+    // ADR-421 — se guardaba en `create()` pero el mapper no lo devolvía: la
+    // pantalla nunca podía confirmar que quedó imputado a un contrato
+    // (mismo whitelist desactualizado que ExpensesDB.mapExpense).
+    contratoId: row.contratoId,
     moneda: row.moneda,
     fechaAdelanto: row.fechaAdelanto.toISOString(),
     fechaVencimiento: iso(row.fechaVencimiento),

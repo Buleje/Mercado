@@ -28,6 +28,7 @@ import type { CambioRecepcion } from "@/lib/forestal/recepcion-trozas";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
+import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 
 /**
  * Alta de una GTF de SERFOR completa (ADR-312): la cabecera es del documento y
@@ -57,6 +58,9 @@ export interface WoodEntryDesdeGtfInput {
   originCode?: string | null;
   originSourceNumber?: string | null;
   originRegion?: string | null;
+  /** El contrato/permiso bajo el que entró esta madera (ADR-421). Lo elige la
+   *  pantalla; `originCode` sigue siendo el texto que se declara. */
+  contratoId?: string | null;
   originDistrict?: string | null;
 
   /** Lo que pone el CTP, no el documento: se repite en las N líneas. */
@@ -161,6 +165,9 @@ export interface WoodEntryCreateInput {
   originSourceNumber?: string | null;
   /** (9) Código de CTP: sólo si la materia prima llega de OTRO centro. */
   ctpProductCode?: string | null;
+  /** El contrato/permiso bajo el que entró esta madera (ADR-421). Lo elige la
+   *  pantalla; `originCode` sigue siendo el texto que se declara. */
+  contratoId?: string | null;
   originRegion?: string | null;
   originDistrict?: string | null;
 
@@ -763,6 +770,11 @@ export class WoodEntriesDB {
    * Status default = `pendiente` (validación posterior).
    */
   static async create(tenantId: string, input: WoodEntryCreateInput) {
+    /* El ingreso ya trae el código del permiso: si ese permiso es un contrato
+       cargado, queda imputado solo (ADR-421). Se resuelve ACÁ, fuera de la
+       transacción: una consulta a otra tabla adentro alarga el lock del folio
+       sin ninguna razón. */
+    const contratoDelCodigo = input.contratoId ?? (await ForestContratoDB.idPorCodigo(tenantId, input.originCode));
     if (!tenantId) throw new Error("tenantId is required");
     if (!input.gtfNumber?.trim()) throw new Error("gtfNumber is required");
     if (!input.providerName?.trim()) throw new Error("providerName is required");
@@ -833,6 +845,7 @@ export class WoodEntriesDB {
           providerDocumentType: input.providerDocumentType ?? null,
           originType: input.originType ?? "otro",
           originCode: input.originCode ?? null,
+          contratoId: contratoDelCodigo,
           originSourceNumber: input.originSourceNumber?.trim() || null,
           ctpProductCode: input.ctpProductCode?.trim() || null,
           originRegion: input.originRegion ?? null,
@@ -977,6 +990,8 @@ export class WoodEntriesDB {
       );
     }
 
+    const contratoDeLasLineas = input.contratoId ?? (await ForestContratoDB.idPorCodigo(tenantId, input.originCode));
+
     const creados = await prisma.$transaction(async (tx) => {
       // El folio se lee UNA vez y avanza en memoria: leerlo por línea dentro de
       // la misma tx devolvería el mismo máximo y las líneas saldrían con folios
@@ -1003,6 +1018,7 @@ export class WoodEntriesDB {
             providerDocumentType: input.providerDocumentType ?? null,
             originType: input.originType ?? "otro",
             originCode: input.originCode ?? null,
+            contratoId: contratoDeLasLineas,
             originSourceNumber: input.originSourceNumber ?? null,
             ctpProductCode: input.ctpProductCode ?? null,
             originRegion: input.originRegion ?? null,

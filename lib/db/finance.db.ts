@@ -158,6 +158,10 @@ function mapExpense(e: PExpense): DbExpense {
     attachmentUrl: e.attachmentUrl, costCenter: e.costCenter, createdBy: e.createdBy,
     notes: e.notes, templateId: e.templateId,
     paidAt: e.paidAt ? toISO(e.paidAt) : null,
+    // ADR-421 — se guardaba en `add()` (línea `contratoId: data.contratoId`)
+    // pero el mapper no lo devolvía: la pantalla nunca podía confirmar que
+    // quedó imputado a un contrato (whitelist desactualizada).
+    contratoId: e.contratoId,
   };
 }
 

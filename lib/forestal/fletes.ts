@@ -93,6 +93,8 @@ export interface Flete {
   estadoPago: EstadoPago;
   fechaPago: string | null;
   notas: string | null;
+  /** El permiso bajo el que se hizo el viaje (ADR-421). */
+  contratoId: string | null;
 }
 
 // ── Esquemas ────────────────────────────────────────────────────────────────
@@ -269,6 +271,9 @@ export interface IngresoParaFlete {
   volumeM3: string | number | null;
   /** JSON crudo — se lee con `leerGtfDatos`, nunca se confía a ciegas. */
   gtfDatos: unknown;
+  /** El código de permiso ya declarado en el ingreso (ADR-421) — sugiere el
+   *  contrato del viaje sin volver a preguntarlo. */
+  originCode?: string | null;
 }
 
 /** Un viaje propuesto desde la guía: todavía no es un `Flete`, falta el monto. */
@@ -281,6 +286,8 @@ export interface CandidatoFlete {
   transportistaNombre: string | null;
   conductorNombre: string | null;
   tipoTransporte: TipoTransporte;
+  /** El código de permiso de la guía de origen (ADR-421), para sugerir el contrato. */
+  originCode: string | null;
 }
 
 /**
@@ -309,6 +316,7 @@ export function candidatoDesdeIngreso(e: IngresoParaFlete): CandidatoFlete | nul
     transportistaNombre: transportista,
     conductorNombre: d.vehiculo.conductor.trim() || null,
     tipoTransporte: d.vehiculo.tipoTransporte,
+    originCode: (e.originCode ?? "").trim() || null,
   };
 }
 

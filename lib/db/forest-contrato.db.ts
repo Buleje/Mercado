@@ -103,6 +103,25 @@ export class ForestContratoDB {
     return r ? aContrato(r) : null;
   }
 
+  /**
+   * El id del contrato que corresponde a un código, o `null`.
+   *
+   * Liviano a propósito (sólo el id): lo llaman las altas de madera, producción
+   * y lotes para imputar SOLAS lo que ya trae el código escrito en el papel. Si
+   * el permiso todavía no es contrato, devuelve `null` y el registro queda sin
+   * imputar —que es la verdad— en vez de inventar un vínculo.
+   */
+  static async idPorCodigo(tenantId: string, codigo: string | null | undefined): Promise<string | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const codigoNorm = normalizarCodigoContrato(codigo ?? "");
+    if (!codigoNorm) return null;
+    const r = await prisma.forestContrato.findFirst({
+      where: { tenantId, codigoNorm, deletedAt: null },
+      select: { id: true },
+    });
+    return r?.id ?? null;
+  }
+
   static async crear(tenantId: string, input: ContratoInput, actor: string): Promise<Contrato> {
     if (!tenantId) throw new Error("tenantId is required");
     const codigo = (input.codigo ?? "").trim();

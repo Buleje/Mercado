@@ -39,6 +39,7 @@ const flete = (over: Partial<Flete> = {}): Flete => ({
   estadoPago: "pendiente",
   fechaPago: null,
   notas: null,
+  contratoId: null,
   ...over,
 });
 

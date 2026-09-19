@@ -26,6 +26,7 @@ import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelan
 import type { AdelantoModalidad, DbAdelanto } from "@/lib/db/adelantos.db";
 import CapturaFoto from "./CapturaFoto";
 import { Field, ModalShell, fmtMon, inputCls } from "./shared";
+import SelectorContrato from "@/components/admin/forestal/SelectorContrato";
 import SelectorPersona from "./crear-adelanto/SelectorPersona";
 import PlanDeEntregas from "./crear-adelanto/PlanDeEntregas";
 import Vencimiento from "./crear-adelanto/Vencimiento";
@@ -126,6 +127,9 @@ export default function CrearAdelantoModal({
   /** De dónde sale la plata; "" = no anotar movimiento de caja. */
   const [metodoCaja, setMetodoCaja] = useState<string>("efectivo");
   const [comprobante, setComprobante] = useState<string | null>(null);
+  /** El permiso al que se le imputa (ADR-421). No hay código que sugerir en un
+   *  adelanto: arranca "Sin contrato" y lo elige quien atiende. */
+  const [contratoId, setContratoId] = useState<string | null>(null);
   const [cuotas, setCuotas] = useState<CuotaBorrador[]>([]);
   /** (2026-08-28) Volumen de madera de referencia — no toca saldoPendiente ni
    *  el tope de crédito. Uno sin el otro no se manda (ver submit). */
@@ -246,6 +250,7 @@ export default function CrearAdelantoModal({
           // Dato de referencia: sin sentido uno sin el otro (ver PiesTablares).
           piesTablares: piesTablares && piesTablaresTipo ? Number(piesTablares) : undefined,
           piesTablaresTipo: piesTablares && piesTablaresTipo ? piesTablaresTipo : undefined,
+          contratoId,
         }),
       });
       if (res.ok) {
@@ -357,6 +362,13 @@ export default function CrearAdelantoModal({
             onPersonaCreada={onPersonaCreada}
           />
           {persona && <FichaPersona persona={persona} credito={credito} />}
+
+          <SelectorContrato
+            id="adelanto-contrato"
+            value={contratoId}
+            onChange={setContratoId}
+            hint="No hay un permiso sugerido para un adelanto: elegilo si corresponde a uno."
+          />
 
           {/* Ya se le dio plata hoy: el caso real no es el fraude, son dos
               personas atendiendo el mismo mostrador o el botón apretado dos

@@ -62,6 +62,7 @@ function aFlete(r: FleteRow): Flete {
     estadoPago: r.estadoPago as EstadoPago,
     fechaPago: r.fechaPago ? r.fechaPago.toISOString() : null,
     notas: r.notas,
+    contratoId: r.contratoId,
   };
 }
 
@@ -188,6 +189,7 @@ export const ForestFleteDB = {
         providerName: e.providerName,
         volumeM3: e.volumeM3 as unknown as string | number | null,
         gtfDatos: e.gtfDatos,
+        originCode: e.originCode,
       });
       if (c) candidatos.push(c);
     }

@@ -89,6 +89,8 @@ const createSchema = z.object({
 
   originType: originTypeEnum.optional(),
   originCode: z.string().trim().max(100).nullable().optional(),
+  /** El contrato/permiso bajo el que entra la madera (ADR-421). */
+  contratoId: z.string().trim().max(64).nullable().optional(),
   originSourceNumber: z.string().trim().max(100).nullable().optional(),
   ctpProductCode: z.string().trim().max(60).nullable().optional(),
   originRegion: z.string().trim().max(80).nullable().optional(),

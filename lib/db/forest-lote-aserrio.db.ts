@@ -17,6 +17,7 @@ import {
   rendimientoDeCorrida,
   TOPE_RENDIMIENTO_PCT,
 } from "@/lib/forestal/vincular-produccion";
+import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 
 /**
  * Lote de ASERRÍO (ADR-334): las trozas de una misma especie que van juntas a
@@ -63,6 +64,8 @@ export interface LoteAserrioInput {
    */
   code?: string | null;
   createdBy: string;
+  /** El contrato/permiso bajo el que se arma el lote (ADR-421). */
+  contratoId?: string | null;
 }
 
 /**
@@ -76,6 +79,8 @@ export interface LoteEditInput {
   speciesCommon?: string;
   speciesScientific?: string | null;
   permiso?: string | null;
+  /** El contrato/permiso bajo el que se arma el lote (ADR-421). */
+  contratoId?: string | null;
   notes?: string | null;
   ordenProduccion?: string | null;
   tipoProductoConsumir?: string | null;
@@ -720,6 +725,10 @@ export class ForestLoteAserrioDB {
     if (!especie) throw new CtpInvariantError("El lote necesita una especie.", "LOTE_SIN_ESPECIE");
 
     const code = await ForestLoteAserrioDB.codigoAUsar(tenantId, input.code);
+    /* El lote ya sabe qué permiso va a consumir (ADR-393): si ese permiso es un
+       contrato cargado, se imputa solo (ADR-421). Pedirlo otra vez en pantalla
+       sería pedir dos veces el mismo dato. */
+    const contratoId = input.contratoId ?? (await ForestContratoDB.idPorCodigo(tenantId, input.permiso));
     const lote = await prisma.forestLoteAserrio.create({
       data: {
         tenantId,
@@ -731,6 +740,7 @@ export class ForestLoteAserrioDB {
         tipoProductoConsumir: input.tipoProductoConsumir?.trim() || null,
         /* El título habilitante que el lote va a consumir (ADR-393). */
         permiso: input.permiso?.trim() || null,
+        contratoId,
         inicioProceso: input.inicioProceso ?? null,
         finProceso: input.finProceso ?? null,
         createdBy: input.createdBy,
