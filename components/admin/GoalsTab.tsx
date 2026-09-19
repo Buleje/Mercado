@@ -8,7 +8,8 @@ import {
   Calendar, AlertTriangle, CheckCircle2, Clock, RefreshCw, Sparkles,
   Users, Coins, Package,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
+import { diasEntreFechas, vencimientoDePlantilla } from "@/lib/admin/metas-tareas";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 import { Field } from "@/components/admin/shared/Field";
@@ -145,12 +146,9 @@ function computeStatus(goal: Goal): GoalStatus {
   return "active";
 }
 
+/** Días desde hoy (Lima) hasta la fecha límite; con `new Date(dateStr)` se corría un día. */
 function daysBetween(dateStr: string): number {
-  const target = new Date(dateStr);
-  const today  = new Date();
-  target.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  return diasEntreFechas(limaDateKey(), dateStr.slice(0, 10));
 }
 
 function formatDaysRemaining(dateStr: string): { text: string; tone: "ok" | "warn" | "danger" } {
@@ -460,12 +458,8 @@ export default function GoalsTab() {
 
   // ─── Templates handler ────────────────────────────────────────────────────
   const applyTemplate = (t: Template) => {
-    const today = new Date();
-    const due = new Date(today);
-    if (t.period === "diario")        due.setHours(23, 59, 59);
-    else if (t.period === "semanal")  due.setDate(today.getDate() + 7);
-    else                              due.setMonth(today.getMonth() + 1);
-    const dueIso = due.toISOString().slice(0, 10);
+    // Contado desde el día de Lima: con toISOString(), la «Meta diaria» creada de noche vencía mañana.
+    const dueIso = vencimientoDePlantilla(t.period, limaDateKey());
 
     const auto = pickAutoCurrent(t.category, t.period, autoStats);
     setForm({

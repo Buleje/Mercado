@@ -314,10 +314,20 @@ export default function PurchaseOrdersTab() {
   const [recurringNotifyDays, setRecurringNotifyDays] = useState(2);
   const [guardandoRecurrente, setGuardandoRecurrente] = useState(false);
 
+  // Una carga que salió antes de un cambio trae la lista vieja: el GET del doble
+  // montaje (o el que sigue a «Crear OC ahora») podía volver después de eliminar
+  // y la recurrencia borrada reaparecía (mismo bug que Tareas, 2026-09-14). Sólo
+  // aplica su lista la carga más nueva y sin cambios de por medio.
+  const recurrentesRef = useRef({ ultima: 0, cambios: 0 });
   const cargarRecurrentes = useCallback(async () => {
+    const esta = ++recurrentesRef.current.ultima;
+    const cambiosAlSalir = recurrentesRef.current.cambios;
     try {
       const res = await fetch("/api/compras/recurrentes");
-      if (res.ok) setRecurringOrders(await res.json());
+      if (res.ok) {
+        const lista = (await res.json()) as DbRecurringPurchase[];
+        if (esta === recurrentesRef.current.ultima && cambiosAlSalir === recurrentesRef.current.cambios) setRecurringOrders(lista);
+      }
     } catch (err) {
       console.warn("[compras] no se pudieron cargar los pedidos recurrentes", err);
     }
@@ -356,12 +366,16 @@ export default function PurchaseOrdersTab() {
   };
 
   const removeRecurring = async (id: string) => {
+    recurrentesRef.current.cambios += 1;
     try {
       const res = await fetch(`/api/compras/recurrentes/${id}`, { method: "DELETE", headers: csrfHeaders() });
       if (!res.ok) { avisar("No se pudo eliminar la recurrencia", "error"); return; }
       setRecurringOrders(prev => prev.filter(r => r.id !== id));
     } catch {
       avisar("Sin conexión con el servidor", "error");
+    } finally {
+      // La carga que estaba en vuelo se descartó: esta trae lo guardado.
+      void cargarRecurrentes();
     }
   };
 
@@ -447,19 +461,28 @@ export default function PurchaseOrdersTab() {
   const [newProdForm, setNewProdForm] = useState({ name: "", category: "abarrotes", price: 0, costPrice: 0, unit: "und", barcode: "", stock: 1 });
   const [savingNewProd, setSavingNewProd] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // Una carga que salió antes de un cambio de estado trae las órdenes viejas: el
+  // GET del doble montaje podía volver después de elegir el estado y el select
+  // regresaba al anterior aunque ya estaba guardado (mismo bug que Tareas,
+  // 2026-09-14). Sólo aplica lo suyo la carga más nueva y sin cambios de por
+  // medio; cada cambio de estado termina con una carga que trae lo guardado.
+  const ordenesRef = useRef({ ultima: 0, cambios: 0 });
+  const load = useCallback(async (opciones?: { silenciosa?: boolean }) => {
+    const esta = ++ordenesRef.current.ultima;
+    const cambiosAlSalir = ordenesRef.current.cambios;
+    const vigente = () => esta === ordenesRef.current.ultima && cambiosAlSalir === ordenesRef.current.cambios;
+    if (!opciones?.silenciosa) setLoading(true);
     try {
       const [poRes, supRes, prodRes] = await Promise.all([
         fetch("/api/purchases"),
         fetch("/api/suppliers"),
         fetch("/api/products"),
       ]);
-      if (poRes.ok) { const d = await poRes.json(); setOrders(Array.isArray(d) ? d : d?.purchases ?? []); }
-      if (supRes.ok) { const d = await supRes.json(); setSuppliers(Array.isArray(d) ? d : d?.suppliers ?? []); }
-      if (prodRes.ok) { const d = await prodRes.json(); setProducts((Array.isArray(d) ? d : []).filter((p: DbProduct) => p.active)); }
+      if (poRes.ok) { const d = await poRes.json(); if (vigente()) setOrders(Array.isArray(d) ? d : d?.purchases ?? []); }
+      if (supRes.ok) { const d = await supRes.json(); if (vigente()) setSuppliers(Array.isArray(d) ? d : d?.suppliers ?? []); }
+      if (prodRes.ok) { const d = await prodRes.json(); if (vigente()) setProducts((Array.isArray(d) ? d : []).filter((p: DbProduct) => p.active)); }
     } catch {}
-    setLoading(false);
+    if (esta === ordenesRef.current.ultima) setLoading(false);
   }, []);
 
    
@@ -591,6 +614,9 @@ export default function PurchaseOrdersTab() {
       });
       if (!ok) return;
     }
+    ordenesRef.current.cambios += 1;
+    // Recibido, parcial y cancelado recargan con spinner, como antes; el resto, en silencio.
+    let recargaConSpinner = false;
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
     try {
       const res = await fetch(`/api/purchases/${id}`, {
@@ -615,7 +641,7 @@ export default function PurchaseOrdersTab() {
         return;
       }
       // Marcar recibido mueve stock: recargar para ver los totales reales.
-      if (status === "recibido" || status === "parcial") load();
+      if (status === "recibido" || status === "parcial") recargaConSpinner = true;
       if (status === "cancelado") {
         const detalle = await leerJson<{ cuentaPorPagar?: string }>(res);
         avisar(
@@ -626,11 +652,14 @@ export default function PurchaseOrdersTab() {
               : "Orden cancelada.",
           detalle?.cuentaPorPagar === "conservada_con_pagos" ? "error" : "ok",
         );
-        load();
+        recargaConSpinner = true;
       }
     } catch {
       if (anterior) setOrders(prev => prev.map(o => o.id === id ? { ...o, status: anterior } : o));
       avisar("Sin conexión con el servidor — el estado no se guardó", "error");
+    } finally {
+      // La carga que estaba en vuelo se descartó: esta trae lo guardado.
+      void load({ silenciosa: !recargaConSpinner });
     }
   };
 

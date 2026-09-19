@@ -96,13 +96,19 @@ export default function AdminChatHead() {
   }, [refreshThreads]);
 
   // ── Mensajes del thread activo (el GET marca leído seller-side) ────
+  // Sólo pinta la respuesta del GET más nuevo. Un poll que salió antes de enviar
+  // volvía después del GET que trae tu respuesta y el mensaje desaparecía hasta
+  // el siguiente poll; y el poll de un chat recién minimizado pintaba sus
+  // mensajes en la ventana del cliente que abriste después.
+  const ultimoGetMensajesRef = useRef(0);
   const fetchMessages = useCallback(async () => {
     if (!active) return;
+    const esta = ++ultimoGetMensajesRef.current;
     try {
       const res = await tenantFetch(`/api/admin/chat/threads/${active.id}/messages`);
       if (!res.ok) return;
       const j = (await res.json()) as { data: ChatMessageView[] };
-      setMessages(j.data ?? []);
+      if (esta === ultimoGetMensajesRef.current) setMessages(j.data ?? []);
     } catch { /* polling no crítico */ }
   }, [active]);
 

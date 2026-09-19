@@ -1,7 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Target, Plus, Pencil, Trash2, Check, Download, RefreshCw, TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { CustomKpi, KpiTrendPoint } from "@/app/api/custom-kpis/route";
@@ -51,18 +51,36 @@ export default function CustomKPITab() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
 
+  // Con el doble montaje salen dos GET; si el primero vuelve después de Eliminar
+  // o Guardar, pisa la lista y lo borrado reaparece (el mismo bug medido en Tareas
+  // el 2026-09-14). Sólo aplica su resultado la carga más nueva. Si un cambio
+  // terminó mientras viajaba, lo que trae es de antes (un GET que leyó antes de
+  // guardarse el borrado trae la fila): esa misma carga vuelve a pedir, así lo
+  // recién creado no queda solo en la lista. No recargamos tras cada cambio: con
+  // 0 KPIs el GET devuelve los de ejemplo y los pintaría.
+  const cargasRef = useRef({ ultima: 0, cambios: 0 });
   const load = useCallback(async () => {
+    const esta = ++cargasRef.current.ultima;
+    const vigente = () => esta === cargasRef.current.ultima;
+    let cambiosAlSalir = cargasRef.current.cambios;
     setLoading(true);
     try {
-      const res = await fetch("/api/custom-kpis");
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setKpis(data.kpis ?? []);
-      setIsDemo(!!data.demo);
+      for (;;) {
+        cambiosAlSalir = cargasRef.current.cambios;
+        const res = await fetch("/api/custom-kpis");
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (!vigente()) return;
+        if (cambiosAlSalir !== cargasRef.current.cambios) continue;
+        setKpis(data.kpis ?? []);
+        setIsDemo(!!data.demo);
+        return;
+      }
     } catch {
-      setKpis([]);
+      // Un fallo no vacía lo que un cambio acaba de dejar en pantalla.
+      if (vigente() && cambiosAlSalir === cargasRef.current.cambios) setKpis([]);
     } finally {
-      setLoading(false);
+      if (vigente()) setLoading(false);
     }
   }, []);
 
@@ -96,6 +114,7 @@ export default function CustomKPITab() {
         setKpis(prev => [...prev, { id: data.id, name: form.name, description: form.desc, formula: form.formula, currentValue: 0, target: Number(form.target) || 0, unit: form.unit, trend: "flat", changePercent: 0, period: "Hoy", category: form.category, color: form.color, history: [] }]);
       }
     } finally {
+      cargasRef.current.cambios += 1;
       setSaving(false);
       setShowModal(false);
     }
@@ -103,6 +122,7 @@ export default function CustomKPITab() {
 
   const remove = async (id: string) => {
     await fetch(`/api/custom-kpis?id=${id}`, { method: "DELETE", headers: csrfHeaders() }).catch((err) => console.warn("[CustomKPITab] delete failed:", err));
+    cargasRef.current.cambios += 1;
     setKpis(prev => prev.filter(k => k.id !== id));
   };
 

@@ -3,7 +3,7 @@
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
-import { useState, useEffect, useId, useMemo, useCallback } from "react";
+import { useState, useEffect, useId, useMemo, useCallback, useRef } from "react";
 import {
   Megaphone, Plus, Trash2, Users, Clock, CheckCircle2,
   Loader2, MessageCircle, Bell, Send, Ban, Eye, TrendingUp,
@@ -101,15 +101,25 @@ export default function MarketingAutomationTab({
   const channelId = useId();
   const scheduledAtId = useId();
 
+  // Con el doble montaje salen dos GET; si el primero vuelve después de Eliminar,
+  // la campaña borrada reaparece (el mismo bug medido en Tareas el 2026-09-14).
+  // Sólo aplica su lista la carga más nueva. Eliminar NO recarga después a
+  // propósito: el GET sale de "use cache" con revalidateTag(tag, "max"), que
+  // sirve la lista vieja una vez más y traería la fila de vuelta.
+  const cargasRef = useRef({ ultima: 0 });
   const load = useCallback(async () => {
+    const esta = ++cargasRef.current.ultima;
     setLoading(true);
     try {
       const res = await fetch("/api/campaigns");
-      if (res.ok) setCampaigns(await res.json());
+      if (res.ok) {
+        const lista = (await res.json()) as Campaign[];
+        if (esta === cargasRef.current.ultima) setCampaigns(lista);
+      }
     } catch {
       /* silencioso: lista vacía si falla */
     } finally {
-      setLoading(false);
+      if (esta === cargasRef.current.ultima) setLoading(false);
     }
   }, []);
 

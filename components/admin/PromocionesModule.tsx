@@ -1,7 +1,7 @@
 "use client";
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Tag, Plus, Trash2, ToggleLeft, ToggleRight, X, Loader2, RefreshCw,
   Gift, Package, ShoppingCart, DollarSign,
@@ -192,18 +192,32 @@ export default function PromocionesModule() {
     return () => clearTimeout(t);
   }, [successMsg]);
 
+  // Con el doble montaje salen dos GET; si el primero vuelve después de Eliminar
+  // o de activar/pausar, pisa la lista y lo borrado reaparece (el mismo bug medido
+  // en Tareas el 2026-09-14). Sólo aplica su lista la carga más nueva. Y si un
+  // cambio terminó mientras viajaba, lo que trae es de antes (con Eliminar en
+  // camino, un Recargar que leyó antes de guardarse el borrado traería la fila):
+  // esa misma carga vuelve a pedir, así lo recién creado o lo que agregó otro
+  // llega igual en vez de perderse.
+  const cargasRef = useRef({ ultima: 0, cambios: 0 });
   const fetchPromos = useCallback(async () => {
+    const esta = ++cargasRef.current.ultima;
     setLoading(true);
     try {
-      const res = await fetch("/api/discount-rules");
-      if (res.ok) {
+      for (;;) {
+        const cambiosAlSalir = cargasRef.current.cambios;
+        const res = await fetch("/api/discount-rules");
+        if (!res.ok || esta !== cargasRef.current.ultima) return;
         const data = await res.json();
+        if (esta !== cargasRef.current.ultima) return;
+        if (cambiosAlSalir !== cargasRef.current.cambios) continue;
         setPromos(data);
+        return;
       }
     } catch {
       // silencioso
     } finally {
-      setLoading(false);
+      if (esta === cargasRef.current.ultima) setLoading(false);
     }
   }, []);
 
@@ -236,6 +250,7 @@ export default function PromocionesModule() {
     } catch {
       setFormError("Error de conexión. Intenta de nuevo.");
     } finally {
+      cargasRef.current.cambios += 1;
       setSaving(false);
     }
   }, [promos]);
@@ -263,6 +278,7 @@ export default function PromocionesModule() {
     } catch {
       setFormError("Error de conexión al eliminar la promoción.");
     } finally {
+      cargasRef.current.cambios += 1;
       setSaving(false);
     }
   }, [confirm]);
@@ -309,6 +325,7 @@ export default function PromocionesModule() {
     } catch {
       setFormError("Error de conexión. Intenta nuevamente.");
     } finally {
+      cargasRef.current.cambios += 1;
       setSaving(false);
     }
   }, [form]);

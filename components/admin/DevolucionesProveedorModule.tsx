@@ -1,6 +1,6 @@
 "use client";
 import { CardTitle, LoadingState } from "@buleje/design-system";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { RotateCcw, Plus, X, ChevronDown, ChevronUp, Package, Truck, AlertCircle, Loader2, RefreshCw, BarChart2, Download, Clock, CheckCircle2 } from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
@@ -199,7 +199,13 @@ export default function DevolucionesProveedorModule() {
   // Cargar devoluciones con cache localStorage SWR (TTL 60s).
   // `forzar` = ignorar el TTL: lo usa el botón de recargar, que existe
   // justamente para desconfiar de lo que hay en pantalla.
-  const fetchDevoluciones = useCallback(async (forzar = false) => {
+  // Una carga que salió antes de un cambio trae la lista vieja (y la dejaba en el
+  // cache): el GET del doble montaje o el del botón recargar podía volver después
+  // de eliminar o guardar y la pantalla retrocedía (mismo bug que Tareas,
+  // 2026-09-14). Sólo aplica su lista la carga más nueva y sin cambios de por
+  // medio; cada cambio termina con una carga silenciosa que trae lo guardado.
+  const cargasRef = useRef({ ultima: 0, cambios: 0 });
+  const fetchDevoluciones = useCallback(async (forzar = false, opciones?: { silenciosa?: boolean }) => {
     // Hidratar de cache primero
     if (!forzar) {
       try {
@@ -214,22 +220,30 @@ export default function DevolucionesProveedorModule() {
         }
       } catch { /* ignore */ }
     }
-    setLoading(true);
+    const esta = ++cargasRef.current.ultima;
+    const cambiosAlSalir = cargasRef.current.cambios;
+    if (!opciones?.silenciosa) setLoading(true);
     try {
       const res = await fetch("/api/supplier-returns");
       if (res.ok) {
         const data = await res.json();
-        setDevoluciones(data);
-        try {
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
-        } catch { /* quota */ }
+        if (esta === cargasRef.current.ultima && cambiosAlSalir === cargasRef.current.cambios) {
+          setDevoluciones(data);
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+          } catch { /* quota */ }
+        }
+      } else if (opciones?.silenciosa) {
+        // La silenciosa no pisa el aviso de la acción que la disparó.
+        console.warn("[DevolucionesProveedorModule] recarga silenciosa sin éxito:", res.status);
       } else {
         setAviso({ tipo: "error", texto: await mensajeDeError(res, "cargar las devoluciones") });
       }
-    } catch {
-      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. Revisa tu internet." });
+    } catch (err) {
+      if (opciones?.silenciosa) console.warn("[DevolucionesProveedorModule] recarga silenciosa falló:", String(err));
+      else setAviso({ tipo: "error", texto: "Sin conexión con el servidor. Revisa tu internet." });
     } finally {
-      setLoading(false);
+      if (esta === cargasRef.current.ultima) setLoading(false);
     }
   }, []);
 
@@ -374,6 +388,7 @@ export default function DevolucionesProveedorModule() {
     const itemsValidos = items.filter(i => i.nombre.trim() !== "");
     if (!proveedorId || itemsValidos.length === 0) return;
 
+    cargasRef.current.cambios += 1;
     setGuardando(true);
     setAviso(null);
     try {
@@ -403,6 +418,7 @@ export default function DevolucionesProveedorModule() {
       setAviso({ tipo: "error", texto: "Sin conexión con el servidor. La devolución no se guardó." });
     } finally {
       setGuardando(false);
+      void fetchDevoluciones(true, { silenciosa: true });
     }
   }
 
@@ -412,6 +428,7 @@ export default function DevolucionesProveedorModule() {
     const siguiente = ESTADO_SIGUIENTE[dev.estado];
     if (!siguiente) return;
 
+    cargasRef.current.cambios += 1;
     setActionId(id);
     setAviso(null);
     try {
@@ -444,6 +461,7 @@ export default function DevolucionesProveedorModule() {
       setAviso({ tipo: "error", texto: "Sin conexión con el servidor. El estado no cambió." });
     } finally {
       setActionId(null);
+      void fetchDevoluciones(true, { silenciosa: true });
     }
   }
 
@@ -460,6 +478,7 @@ export default function DevolucionesProveedorModule() {
       confirmLabel: "Sí, eliminar",
     }))) return;
 
+    cargasRef.current.cambios += 1;
     setActionId(id);
     setAviso(null);
     try {
@@ -474,6 +493,7 @@ export default function DevolucionesProveedorModule() {
       setAviso({ tipo: "error", texto: "Sin conexión con el servidor. No se eliminó nada." });
     } finally {
       setActionId(null);
+      void fetchDevoluciones(true, { silenciosa: true });
     }
   }
 

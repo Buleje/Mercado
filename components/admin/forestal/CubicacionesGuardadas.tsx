@@ -9,7 +9,7 @@
  * respaldo de una compra o un despacho y tiene que sobrevivir al celular que
  * se formatea y verse desde la computadora de la oficina.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Calculator, Copy, FileText, Loader2, Search, Table, Trash2, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -53,9 +53,20 @@ export default function CubicacionesGuardadas({
       .catch(() => setCopiadoId(null));
   };
 
-  const cargar = useCallback(async () => {
-    setCargando(true);
-    setError(null);
+  // Una carga que salió antes de un cambio trae la lista vieja: el GET del doble
+  // montaje (o el de `recargarToken`) volvía después del borrado y la fila
+  // reaparecía aunque ya no estaba en la base (mismo bug medido en Tareas el
+  // 2026-09-14). Sólo aplica su lista la carga más nueva, y sólo si no hubo
+  // cambios mientras viajaba; cada borrado termina con una carga silenciosa.
+  const cargasRef = useRef({ ultima: 0, cambios: 0 });
+  const cargar = useCallback(async (opciones?: { silenciosa?: boolean }) => {
+    const esta = ++cargasRef.current.ultima;
+    const cambiosAlSalir = cargasRef.current.cambios;
+    // La silenciosa no muestra el spinner ni borra el aviso de un borrado fallido.
+    if (!opciones?.silenciosa) {
+      setCargando(true);
+      setError(null);
+    }
     try {
       const r = await fetch("/api/admin/forestal/cubicaciones", { credentials: "include", cache: "no-store" });
       if (!r.ok) {
@@ -63,11 +74,15 @@ export default function CubicacionesGuardadas({
         throw new Error(j?.message ?? `No se pudo cargar el historial (HTTP ${r.status})`);
       }
       const j = (await r.json()) as { cubicaciones: CubicacionRegistro[] };
-      setLista(j.cubicaciones ?? []);
+      if (esta === cargasRef.current.ultima && cambiosAlSalir === cargasRef.current.cambios) {
+        setLista(j.cubicaciones ?? []);
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (esta === cargasRef.current.ultima && !opciones?.silenciosa) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
     } finally {
-      setCargando(false);
+      if (esta === cargasRef.current.ultima) setCargando(false);
     }
   }, []);
 
@@ -81,6 +96,7 @@ export default function CubicacionesGuardadas({
       confirmLabel: "Sí, borrar",
     }))) return;
     setBorrando(c.id);
+    cargasRef.current.cambios += 1;
     try {
       const r = await fetch(`/api/admin/forestal/cubicaciones?id=${encodeURIComponent(c.id)}`, {
         method: "DELETE", headers: csrfHeaders(), credentials: "include",
@@ -91,6 +107,7 @@ export default function CubicacionesGuardadas({
       setError(`No se pudo borrar: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBorrando(null);
+      void cargar({ silenciosa: true });
     }
   };
 

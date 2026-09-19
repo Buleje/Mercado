@@ -348,18 +348,31 @@ export default function PuntoCompraView() {
   }, []);
 
   // ── Fetch catálogo de gastos recurrentes (audit 2026-05-17) ───────────────────
+  // Una carga que salió antes de borrar trae la lista vieja: el doble montaje de
+  // React lanza dos GET y, si el segundo volvía después de eliminar, la
+  // plantilla borrada reaparecía (el mismo bug medido en Tareas el 2026-09-14).
+  // Sólo aplica su lista la carga más nueva, y nunca vuelve a mostrar lo borrado.
+  // No se recarga tras borrar como en Tareas: `ExpensesDB.getAll` usa "use cache"
+  // y el borrado invalida con `revalidateTag(tag, "max")`, que sirve la copia
+  // vieja al pedido siguiente, así que esa recarga traería la plantilla de vuelta.
+  const cargasCatalogoRef = useRef({ ultima: 0, borrados: new Set<string>() });
   const fetchExpenseCatalog = useCallback(async () => {
+    const esta = ++cargasCatalogoRef.current.ultima;
     setExpenseCatalogLoading(true);
     try {
       const res = await fetch("/api/expenses?recurring=true");
       if (res.ok) {
         const data = await res.json();
-        setExpenseCatalog(Array.isArray(data) ? data : []);
+        if (esta === cargasCatalogoRef.current.ultima) {
+          const lista: ExpenseTemplate[] = Array.isArray(data) ? data : [];
+          const { borrados } = cargasCatalogoRef.current;
+          setExpenseCatalog(borrados.size > 0 ? lista.filter((e) => !borrados.has(e.id)) : lista);
+        }
       }
     } catch (err) {
       console.warn("[PuntoCompraView] expense catalog fetch failed", err);
     } finally {
-      setExpenseCatalogLoading(false);
+      if (esta === cargasCatalogoRef.current.ultima) setExpenseCatalogLoading(false);
     }
   }, []);
 
@@ -431,8 +444,8 @@ export default function PuntoCompraView() {
     }
   }, [executingTemplateId, playDing]);
 
-  // Eliminar template recurrente del catálogo. Pide confirmación con prompt nativo
-  // para evitar borrados accidentales. Se invalida cache local + refetch.
+  // Eliminar template recurrente del catálogo. Pide confirmación para evitar
+  // borrados accidentales; el id queda anotado para que ninguna carga lo devuelva.
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
   const handleDeleteTemplate = useCallback(async (tpl: ExpenseTemplate, humanDesc: string) => {
     if (deletingTemplateId) return;
@@ -450,6 +463,7 @@ export default function PuntoCompraView() {
         headers: csrfHeaders({}),
       });
       if (res.ok) {
+        cargasCatalogoRef.current.borrados.add(tpl.id);
         setExpenseCatalog((prev) => prev.filter((e) => e.id !== tpl.id));
         playDing();
         setToastMsg(`Eliminado: ${humanDesc || tpl.category}`);

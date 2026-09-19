@@ -224,17 +224,30 @@ export default function PromotionsTab() {
     }
   }, [campaigns]);
 
+  // Una carga que salió antes que otra trae la lista vieja: con el doble montaje
+  // salen dos GET y, si el primero vuelve después del que sigue a Eliminar, la
+  // promo borrada reaparece y el «Cargando…» se apaga antes de tiempo (el mismo
+  // bug medido en Tareas el 2026-09-14). Sólo aplica lo suyo la carga más nueva;
+  // cada cambio de promo ya termina en load(), por eso no hace falta contar cambios.
+  const cargasRef = useRef({ ultima: 0 });
   const load = useCallback(async () => {
+    const esta = ++cargasRef.current.ultima;
     setLoading(true);
     try {
       const [pRes, cRes] = await Promise.all([
         fetch("/api/promotions"),
         fetch("/api/customers"),
       ]);
-      if (pRes.ok) setPromos(await pRes.json());
-      if (cRes.ok) setCustomers(await cRes.json());
+      if (pRes.ok) {
+        const lista = (await pRes.json()) as DbPromotion[];
+        if (esta === cargasRef.current.ultima) setPromos(lista);
+      }
+      if (cRes.ok) {
+        const lista = (await cRes.json()) as DbCustomer[];
+        if (esta === cargasRef.current.ultima) setCustomers(lista);
+      }
     } catch {}
-    setLoading(false);
+    if (esta === cargasRef.current.ultima) setLoading(false);
   }, []);
 
    

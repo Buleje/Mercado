@@ -4,7 +4,8 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ClipboardList, ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
+import { fechaParaMostrar } from "@/lib/admin/metas-tareas";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 import { Field } from "@/components/admin/shared/Field";
@@ -235,8 +236,8 @@ export default function TasksTab() {
                       )}
                       {t.module && <span className="text-[length:var(--ts-2xs)] bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
                       {t.dueDate && (
-                        <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)]", new Date(t.dueDate) < new Date() && t.status !== "completada" ? "text-[var(--data-error-500)] font-bold" : "text-[var(--text-tertiary)] dark:text-muted")}>
-                          <Clock className="h-3 w-3" />{new Date(t.dueDate).toLocaleDateString("es-PE")}
+                        <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)]", t.dueDate < limaDateKey() && t.status !== "completada" ? "text-[var(--data-error-500)] font-bold" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                          <Clock className="h-3 w-3" />{fechaParaMostrar(t.dueDate)}
                         </span>
                       )}
                     </div>
