@@ -321,6 +321,8 @@ describe("huecos de atribución (GTF fantasma y producto sin troza)", () => {
     const [op] = buildTraceOperations([
       entry({ section: "tala", treeCode: "41-TOR", volumeM3: "10" }),
       entry({ section: "trozado", treeCode: "41-TOR", trozaCode: "41-A", volumeM3: "7" }),
+      // La troza fue al aserrío: recién ahí el árbol puede haber dado producto.
+      entry({ section: "consumo_troza", trozaCode: "41-A", volumeM3: "7" }),
       // Sin trozaCode: cae al fallback por especie.
       entry({ section: "producto_terminado", productType: "Madera aserrada", quantity: "3", unit: "m3" }),
       entry({ section: "despacho_producto", productType: "Madera aserrada", quantity: "3", unit: "m3", gtfNumber: "G-41" }),
@@ -329,6 +331,61 @@ describe("huecos de atribución (GTF fantasma y producto sin troza)", () => {
     ]);
     expect(op.productoSinTroza).toBe(2);
     expect(op.alerts.some((a) => a.level === "warn" && /no declaran de qué troza/.test(a.message))).toBe(true);
+  });
+
+  it("el producto sin troza sólo se reparte entre los árboles que fueron al aserrío", () => {
+    // Medido en `main` (2026-09-19): el despacho de producto sin troza caía en
+    // los 8 árboles de Tornillo — un árbol recién tumbado quedaba con «cadena
+    // completa», 3/6 etapas, la GTF del producto acusada como fantasma y una
+    // salida 58 días ANTES de su tala.
+    const ops = buildTraceOperations(
+      [
+        // 50: tumbado, nada más.
+        entry({ section: "tala", treeCode: "50-TOR", volumeM3: "4", entryDate: "2026-05-01" }),
+        // 51: troza vendida entera (salió como troza, no por el aserrío).
+        entry({ section: "tala", treeCode: "51-TOR", volumeM3: "5", entryDate: "2026-02-01" }),
+        entry({ section: "trozado", treeCode: "51-TOR", trozaCode: "51-A", volumeM3: "4", entryDate: "2026-02-02" }),
+        entry({ section: "despacho_troza", trozaCode: "51-A", gtfNumber: "G-51", entryDate: "2026-02-05" }),
+        // 52: fue al aserrío.
+        entry({ section: "tala", treeCode: "52-TOR", volumeM3: "6", entryDate: "2026-02-01" }),
+        entry({ section: "trozado", treeCode: "52-TOR", trozaCode: "52-A", volumeM3: "5", entryDate: "2026-02-02" }),
+        entry({ section: "consumo_troza", trozaCode: "52-A", volumeM3: "5", entryDate: "2026-02-03" }),
+        // El producto y su despacho, sin troza, escritos en MAYÚSCULAS.
+        entry({ section: "producto_terminado", speciesCommon: "TORNILLO", quantity: "2", unit: "m3", entryDate: "2026-02-04" }),
+        entry({ section: "despacho_producto", speciesCommon: "TORNILLO", quantity: "2", unit: "m3", gtfNumber: "G-PT", entryDate: "2026-03-01" }),
+      ],
+      { gtfEmitidas: new Set(["G-51"]) },
+    );
+    const por = (t: string) => ops.find((o) => o.tree === t)!;
+
+    expect(por("50-TOR").producto).toHaveLength(0);
+    expect(por("50-TOR").chain).toBe("iniciada");
+    expect(por("50-TOR").stagesReached).toBe(1);
+    expect(por("50-TOR").gtfsFantasma).toEqual([]);
+    expect(por("50-TOR").diasTalaSalida).toBeNull();
+
+    expect(por("51-TOR").despachoPT).toHaveLength(0);
+    expect(por("51-TOR").stagesReached).toBe(3);
+    expect(por("51-TOR").productoSinTroza).toBe(0);
+
+    // «TORNILLO» y «Tornillo» son la misma madera.
+    expect(por("52-TOR").producto).toHaveLength(1);
+    expect(por("52-TOR").despachoPT).toHaveLength(1);
+    expect(por("52-TOR").chain).toBe("completa");
+    expect(por("52-TOR").gtfsFantasma).toEqual(["G-PT"]);
+  });
+
+  it("el resumen no cuenta como merma lo que todavía no se trozó", () => {
+    const s = buildTraceSummary(
+      buildTraceOperations([
+        entry({ section: "tala", treeCode: "60-TOR", volumeM3: "10" }),
+        entry({ section: "trozado", treeCode: "60-TOR", trozaCode: "60-A", volumeM3: "7" }),
+        entry({ section: "tala", treeCode: "61-TOR", volumeM3: "1.2" }),
+      ]),
+    );
+    expect(s.mermaVolM3).toBeCloseTo(3, 6);
+    expect(s.sinTrozarVolM3).toBeCloseTo(1.2, 6);
+    expect(s.talaVolM3).toBeCloseTo(s.trozadoVolM3 + s.mermaVolM3 + s.sinTrozarVolM3, 6);
   });
 
   it("el resumen junta las guías fantasma sin repetirlas", () => {

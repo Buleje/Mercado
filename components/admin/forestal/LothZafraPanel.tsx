@@ -11,8 +11,9 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, CheckCircle2, TrendingUp } from "@buleje/design-system/icons";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { DataTable } from "@buleje/design-system";
 import { ZAFRA_ESTADO_LABEL, ZAFRA_ESTADO_TONE, type ZafraAnalisis } from "@/lib/forestal/loth-zafra";
+import { BloquePlan } from "./loth-plan-ui";
 
 const TONE_CLASS = {
   success: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
@@ -52,23 +53,20 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
   const hayOcultos = mesesVisibles.length < zafra.meses.length;
 
   return (
-    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <div>
-          <CardTitle as="h3" className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
-            Zafra · avance contra la vigencia
-          </CardTitle>
-          <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-            {zafra.diasTotales > 0
-              ? `${zafra.diasTranscurridos} de ${zafra.diasTotales} días · quedan ${zafra.diasRestantes}`
-              : "Sin vigencia cargada en el plan"}
-          </p>
-        </div>
+    <BloquePlan
+      id="loth-plan-zafra"
+      titulo="Zafra · avance contra la vigencia"
+      sub={
+        zafra.diasTotales > 0
+          ? `${zafra.diasTranscurridos} de ${zafra.diasTotales} días · quedan ${zafra.diasRestantes}`
+          : "Sin vigencia cargada en el plan"
+      }
+      acciones={
         <span className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black uppercase tracking-wide ${TONE_CLASS[tone]}`}>
-          <CalendarClock className="h-3.5 w-3.5" /> {ZAFRA_ESTADO_LABEL[zafra.estado]}
+          <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" /> {ZAFRA_ESTADO_LABEL[zafra.estado]}
         </span>
-      </header>
-
+      }
+    >
       <div className="space-y-4 p-4">
         {/* Barras: volumen vs tiempo */}
         <div className="space-y-2">
@@ -81,7 +79,9 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
           {zafra.mensaje}
         </p>
 
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Dos por fila desde el celular: de a una, las cuatro cifras se
+            llevaban una pantalla entera a 400 px. */}
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           <Dato label="Saldo por movilizar" valor={`${zafra.saldoM3.toFixed(3)} m³`} />
           <Dato label="Ritmo actual" valor={`${zafra.ritmoActualM3Dia.toFixed(3)} m³/día`} />
           <Dato
@@ -100,7 +100,8 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
         {/* Cronograma mensual */}
         {zafra.meses.length > 0 && (
           <>
-          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
+          {/* Sin caja propia alrededor: `DataTable` ya trae la suya con borde, y
+              dos cajas anidadas dibujaban un doble filete. */}
             <DataTable className="w-full border-collapse text-sm">
               <thead className="bg-[var(--surface-canvas)]">
                 <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
@@ -126,7 +127,6 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
                 ))}
               </tbody>
             </DataTable>
-          </div>
           {hayOcultos && (
             <button
               type="button"
@@ -140,12 +140,12 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
           )}
           </>
         )}
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+        <p className="text-xs text-[var(--text-tertiary)]">
           La meta mensual es un reparto lineal del volumen autorizado sobre la vigencia — sirve de referencia, no reemplaza el
           cronograma aprobado en el plan.
         </p>
       </div>
-    </section>
+    </BloquePlan>
   );
 }
 

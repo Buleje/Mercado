@@ -13,14 +13,15 @@
  */
 
 import { useMemo, useState } from "react";
-import { CardTitle, DataTable } from "@buleje/design-system";
-import { AlertTriangle, Printer, TreePine } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
+import { AlertTriangle, Printer } from "@buleje/design-system/icons";
 import {
   metaDeDias,
   planDeTala,
   type ArbolParaTalar,
   type SaldoEspecie,
 } from "@/lib/forestal/loth-plan-tala";
+import { BloquePlan } from "./loth-plan-ui";
 
 const n3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
@@ -53,19 +54,18 @@ export default function LothPlanTalaPanel({
   if (saldoTotalM3 <= 0) return null;
 
   return (
-    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0">
-          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-            <TreePine className="h-4 w-4 text-[var(--accent)]" /> Qué talar para no perder saldo
-          </CardTitle>
-          <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-            Al ritmo que pide la zafra ({n3(ritmoRequeridoM3Dia)} m³/día), esto es lo que hay que tumbar. Es una propuesta:
-            no registra nada hasta que la tala ocurra.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border border-[var(--rule-base)] p-0.5">
+    <BloquePlan
+      id="loth-plan-tala"
+      titulo="Qué talar para no perder saldo"
+      sub={
+        <>
+          Al ritmo que pide la zafra (<span className="font-mono tabular-nums">{n3(ritmoRequeridoM3Dia)}</span> m³/día), esto es lo que hay que tumbar.
+          Es una propuesta: no registra nada hasta que la tala ocurra.
+        </>
+      }
+      acciones={
+        <>
+          <div role="group" aria-label="Días a planificar" className="flex rounded-lg border border-[var(--rule-base)] p-0.5">
             {OPCIONES_DIAS.map((d) => (
               <button
                 key={d}
@@ -87,9 +87,10 @@ export default function LothPlanTalaPanel({
               <Printer className="h-3.5 w-3.5" /> Imprimir
             </button>
           )}
-        </div>
-      </div>
-
+        </>
+      }
+    >
+      <div className="p-4">
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Cifra label="Meta del período" valor={`${n3(meta)} m³`} nota={`${Math.min(dias, diasRestantes || dias)} ${dias === 1 ? "jornada" : "jornadas"}`} />
         <Cifra label="El plan suma" valor={`${n3(plan.totalM3)} m³`} nota={`${plan.lineas.length} ${plan.lineas.length === 1 ? "árbol" : "árboles"}`} tono={plan.faltanteM3 > 0 ? "warn" : "ok"} />
@@ -121,8 +122,8 @@ export default function LothPlanTalaPanel({
       ) : (
         <div className="overflow-x-auto">
           <DataTable className="w-full text-sm">
-            <thead className="border-b-2 border-[var(--rule-base)]">
-              <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+            <thead>
+              <tr>
                 <th className="px-2 py-2 w-8">#</th>
                 <th className="px-2 py-2">Código</th>
                 <th className="px-2 py-2">Especie</th>
@@ -134,12 +135,12 @@ export default function LothPlanTalaPanel({
             <tbody>
               {plan.lineas.map((l, i) => (
                 <tr key={l.arbol.id} className="border-b border-[var(--rule-soft)] last:border-0">
-                  <td className="px-2 py-1.5 font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)]">{i + 1}</td>
+                  <td className="px-2 py-1.5 font-mono text-xs tabular-nums text-[var(--text-secondary)]">{i + 1}</td>
                   <td className="px-2 py-1.5 font-mono font-bold text-[var(--text-primary)]">{l.arbol.treeCode}</td>
                   <td className="px-2 py-1.5 text-[var(--text-secondary)]">{l.arbol.especie}</td>
                   <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n3(l.arbol.volumenM3)}</td>
                   <td className="px-2 py-1.5 text-right font-mono font-bold tabular-nums text-[var(--text-secondary)]">{n3(l.acumuladoM3)}</td>
-                  <td className="px-2 py-1.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+                  <td className="px-2 py-1.5 font-mono text-xs tabular-nums text-[var(--text-secondary)]">
                     {l.arbol.parcela && <span className="mr-1.5">{l.arbol.parcela}</span>}
                     {l.arbol.utmX != null && l.arbol.utmY != null
                       ? `${Math.round(l.arbol.utmX)} E · ${Math.round(l.arbol.utmY)} N`
@@ -169,7 +170,8 @@ export default function LothPlanTalaPanel({
           </ul>
         </details>
       )}
-    </div>
+      </div>
+    </BloquePlan>
   );
 }
 
@@ -184,7 +186,7 @@ function Cifra({ label, valor, nota, tono = "muted" }: {
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">{label}</p>
       <p className={`font-mono text-lg font-bold leading-tight tabular-nums ${color}`}>{valor}</p>
-      <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{nota}</p>
+      <p className="text-xs text-[var(--text-secondary)]">{nota}</p>
     </div>
   );
 }

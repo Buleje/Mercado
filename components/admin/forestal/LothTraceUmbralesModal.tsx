@@ -20,6 +20,7 @@ import {
   TiradorDeVentana,
 } from "@/components/admin/shared/modal-controles-ventana";
 import { RotateCcw, Save, X } from "@buleje/design-system/icons";
+import { Kicker } from "@buleje/design-system";
 import {
   acotarUmbral,
   LIMITE_UMBRAL,
@@ -131,7 +132,7 @@ export default function LothTraceUmbralesModal({
         {/* Cabecera — y asa para arrastrar la ventana. */}
         <header
           {...ventana.asaProps}
-          className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
+          className="flex items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-3"
         >
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Umbrales de merma</p>
@@ -168,9 +169,9 @@ export default function LothTraceUmbralesModal({
             </div>
           </div>
 
-          <p className="mb-2 mt-4 text-[length:var(--ts-2xs)] font-black uppercase tracking-widest text-[var(--text-tertiary)]">
+          <Kicker as="p" className="mb-2 mt-4 text-[var(--text-secondary)]">
             Por especie del libro
-          </p>
+          </Kicker>
           {especies.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">Todavía no hay especies registradas en el libro.</p>
           ) : (
@@ -209,7 +210,7 @@ export default function LothTraceUmbralesModal({
           )}
         </div>
 
-        <footer className="flex flex-wrap items-center justify-between gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
+        <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--rule-base)] px-5 py-3">
           <button
             type="button"
             onClick={() => setDraft(UMBRALES_DEFAULT)}
@@ -235,7 +236,7 @@ export default function LothTraceUmbralesModal({
 function Campo({ label, valor, onChange }: { label: string; valor: number; onChange: (v: number) => void }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label} %</span>
+      <span className="text-xs font-semibold text-[var(--text-secondary)]">{label} %</span>
       <input
         type="number"
         min={LIMITE_UMBRAL.min}

@@ -38,6 +38,13 @@ const unit = (u: string | null) => (u === "m3" ? "m³" : u === "kg" ? "Kg" : u =
  * presenta ante una autoridad.
  */
 const rendPct = (op: TraceOperation) => (op.talaVolM3 > 0 ? (op.trozadoVolM3 / op.talaVolM3) * 100 : 0);
+/**
+ * Antes del trozado no hay rendimiento ni merma: el pasaporte imprimía «0.0 %»
+ * en rojo y el árbol ENTERO como merma — un documento para OSINFOR declarando
+ * perdida madera que todavía no se midió (2026-09-19).
+ */
+const trozado = (op: TraceOperation) => op.talaVolM3 > 0 && op.trozadoVolM3 > 0;
+const rendTexto = (op: TraceOperation) => (trozado(op) ? `${rendPct(op).toFixed(1)}%` : "— (sin trozar)");
 const plural = (n: number, sing: string, plur: string) => `${n} ${n === 1 ? sing : plur}`;
 
 /**
@@ -75,8 +82,8 @@ function pasaporteBody(op: TraceOperation, caratula?: PasaporteCaratula | null, 
     <div class="metrics">
       <div><span class="mlabel">Talado</span><span class="mval">${op.talaVolM3.toFixed(3)} m³</span></div>
       <div><span class="mlabel">Trozado</span><span class="mval">${op.trozadoVolM3.toFixed(3)} m³</span></div>
-      <div><span class="mlabel">Rendimiento</span><span class="mval" style="color:${rendColor}">${rend.toFixed(1)}%</span></div>
-      <div><span class="mlabel">Merma</span><span class="mval">${op.mermaVolM3.toFixed(3)} m³</span></div>
+      <div><span class="mlabel">Rendimiento</span><span class="mval" style="color:${trozado(op) ? rendColor : "#64748b"}">${rendTexto(op)}</span></div>
+      <div><span class="mlabel">Merma</span><span class="mval">${trozado(op) ? `${op.mermaVolM3.toFixed(3)} m³` : "—"}</span></div>
       <div><span class="mlabel">Estado de cadena</span><span class="mval" style="color:${chainColor};text-transform:capitalize">${op.chain}</span></div>
     </div>`;
 
@@ -205,7 +212,7 @@ export async function printTrozaPasaportes(ops: TraceOperation[], caratula?: Pas
           ${ops
             .map(
               (o) =>
-                `<tr><td><b>${esc(o.tree)}</b></td><td>${esc(o.species ?? "—")}</td><td>${o.talaVolM3.toFixed(3)} m³</td><td>${rendPct(o).toFixed(1)}%</td><td>${o.stagesReached}/6</td><td>${
+                `<tr><td><b>${esc(o.tree)}</b></td><td>${esc(o.species ?? "—")}</td><td>${o.talaVolM3.toFixed(3)} m³</td><td>${rendTexto(o)}</td><td>${o.stagesReached}/6</td><td>${
                   o.alerts.length ? esc(o.alerts.map((a) => a.message).join(" · ")) : "<span class='muted'>—</span>"
                 }</td></tr>`,
             )

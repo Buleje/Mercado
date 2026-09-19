@@ -68,9 +68,14 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
 
   return (
     <>
-      {/* Lectura de coordenadas del cursor */}
-      <div className="pointer-events-none absolute right-3 top-3 z-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-md backdrop-blur">
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+      {/* Lectura de coordenadas del cursor. En el celular no hay mouse: sin
+          cursor la caja sólo tapaba un cuarto del mapa diciendo que lo movieras. */}
+      <div
+        className={`pointer-events-none absolute right-3 top-3 z-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-md backdrop-blur ${
+          utm ? "" : "max-sm:hidden"
+        }`}
+      >
+        <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
           {utm ? `UTM ${utm.zone}${utm.band} · WGS 84` : "UTM · WGS 84"}
         </p>
         {utm && cursor ? (
@@ -84,7 +89,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
           </>
         ) : (
           <p className="max-w-[190px] text-xs font-semibold text-[var(--text-tertiary)]">
-            Mueves el mouse sobre el mapa para leer la coordenada.
+            Mueve el mouse sobre el mapa para leer la coordenada.
           </p>
         )}
       </div>
@@ -93,7 +98,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
       <div className="pointer-events-none absolute bottom-3 left-3 z-20 flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-md backdrop-blur">
         <div className="flex flex-col items-center text-[var(--text-primary)]">
           <Compass className="h-6 w-6" />
-          <span className="text-[length:var(--ts-2xs)] font-black leading-none">N</span>
+          <span className="text-xs font-black leading-none">N</span>
         </div>
         <div>
           <div className="flex h-2.5 overflow-hidden rounded-[2px] border border-[var(--text-primary)]" style={{ width: `${barPx}px` }}>
@@ -111,7 +116,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
       {/* Leyenda */}
       {items.length > 0 && (
         <div className="pointer-events-none absolute bottom-3 right-3 z-20 max-w-[230px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 shadow-md backdrop-blur">
-          <p className="border-b-2 border-[var(--rule-base)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-widest text-[var(--text-secondary)]">
+          <p className="border-b border-[var(--rule-base)] px-3 py-1.5 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)]">
             Leyenda
           </p>
           <ul className="space-y-1 px-3 py-2">

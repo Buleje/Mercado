@@ -8,7 +8,7 @@
  * `loth-pasaporte-print` (el pasaporte imprimible por árbol para OSINFOR).
  */
 
-import { diasDeRegistro, PLAZO_REGISTRO_DIAS, type LothEntryDTO } from "./loth-constants";
+import { claveEspecie, diasDeRegistro, PLAZO_REGISTRO_DIAS, type LothEntryDTO } from "./loth-constants";
 import { DIAS_SIN_TROZAR } from "./loth-arbol";
 import { umbralDe, veredictoMerma, UMBRALES_DEFAULT, type UmbralesMerma, type VeredictoMerma } from "./loth-trace-umbrales";
 
@@ -172,14 +172,31 @@ export function buildTraceOperations(
       const trozado = reg.filter((e) => e.section === "trozado" && e.treeCode === tree);
       const trozaCodes = new Set(trozado.map((t) => t.trozaCode).filter(Boolean));
       const belongs = (c: string | null) => !!c && (trozaCodes.has(c) || c.startsWith(`${tree}-`) || c === tree);
-      const bySpeciesFallback = (e: LothEntryDTO, species: string | null) =>
-        e.trozaCode ? belongs(e.trozaCode) : !!species && e.speciesCommon === species;
 
       const species = tala[0]?.speciesCommon ?? trozado[0]?.speciesCommon ?? null;
       const despachoTroza = reg.filter((e) => e.section === "despacho_troza" && belongs(e.trozaCode));
       const consumo = reg.filter((e) => e.section === "consumo_troza" && belongs(e.trozaCode));
-      const producto = reg.filter((e) => e.section === "producto_terminado" && bySpeciesFallback(e, species));
-      const despachoPT = reg.filter((e) => e.section === "despacho_producto" && bySpeciesFallback(e, species));
+      /**
+       * El producto que no dice de qué troza salió se reparte por ESPECIE, pero
+       * sólo entre los árboles que mandaron trozas al aserrío: sin consumo no hay
+       * de dónde saliera una tabla. Antes caía en TODOS los de la especie —un
+       * árbol recién tumbado, o uno cuyas trozas se vendieron enteras,
+       * «producía» madera aserrada, sumaba las etapas 5 y 6, pasaba a cadena
+       * completa y heredaba la GTF del despacho de producto—. Medido en `main`
+       * (2026-09-19): 8 de 8 cadenas «completas» con 4 árboles que nunca
+       * salieron del patio, la misma guía «sin emitir» acusada 8 veces y una
+       * mediana tala→salida de −58 días. En Blas, el 001-TOR (troza vendida
+       * entera) figuraba despachando producto.
+       *
+       * La especie se compara por `claveEspecie`: «Tornillo» y «TORNILLO» son
+       * la misma madera escrita dos veces.
+       */
+      const fueAlAserrio = consumo.length > 0;
+      const claveSp = claveEspecie(species);
+      const porTrozaOEspecie = (e: LothEntryDTO) =>
+        e.trozaCode ? belongs(e.trozaCode) : fueAlAserrio && claveSp !== "" && claveEspecie(e.speciesCommon) === claveSp;
+      const producto = reg.filter((e) => e.section === "producto_terminado" && porTrozaOEspecie(e));
+      const despachoPT = reg.filter((e) => e.section === "despacho_producto" && porTrozaOEspecie(e));
 
       const talaVolM3 = sumVol(tala, "volumeM3");
       const trozadoVolM3 = sumVol(trozado, "volumeM3");
@@ -263,7 +280,7 @@ export function buildTraceOperations(
       if (productoSinTroza > 0) {
         alerts.push({
           level: "warn",
-          message: `${productoSinTroza} línea(s) de producto no declaran de qué troza salieron: ese volumen se atribuye por especie y se le cuenta a todos los árboles de ${species ?? "la especie"}.`,
+          message: `${productoSinTroza} línea(s) de producto no declaran de qué troza salieron: ese volumen se atribuye por especie y se le cuenta a todos los árboles de ${species ?? "la especie"} que fueron al aserrío.`,
         });
       }
 
@@ -336,8 +353,14 @@ export interface TraceSummary {
   conPatio: number;
   patioVolM3: number;
   species: string[];
-  /** Volumen que se perdió entre el tocón y las trozas. */
+  /**
+   * Volumen que se perdió entre el tocón y las trozas — SÓLO de los árboles que
+   * ya se trozaron. Un árbol tumbado ayer todavía no perdió nada: su volumen va
+   * en `sinTrozarVolM3`, no acá (antes se sumaba entero como merma).
+   */
   mermaVolM3: number;
+  /** Lo talado de los árboles que todavía no tienen ninguna troza. */
+  sinTrozarVolM3: number;
   /** Árboles con merma por encima del escalón grave de su especie. */
   mermaGrave: number;
   /** Árboles con al menos una línea asentada fuera del plazo de registro. */
@@ -367,7 +390,8 @@ export function buildTraceSummary(ops: TraceOperation[]): TraceSummary {
     conPatio: ops.filter((o) => o.trozasEnPatio > 0).length,
     patioVolM3: ops.reduce((a, o) => a + o.patioVolM3, 0),
     species: Array.from(new Set(ops.map((o) => o.species).filter((s): s is string => !!s))).sort(),
-    mermaVolM3: ops.reduce((a, o) => a + o.mermaVolM3, 0),
+    mermaVolM3: ops.filter((o) => o.trozadoVolM3 > 0).reduce((a, o) => a + o.mermaVolM3, 0),
+    sinTrozarVolM3: ops.filter((o) => !(o.trozadoVolM3 > 0)).reduce((a, o) => a + o.talaVolM3, 0),
     mermaGrave: ops.filter((o) => o.mermaVeredicto === "grave").length,
     conTardias: ops.filter((o) => o.tardias > 0).length,
     gtfsFantasma: Array.from(new Set(ops.flatMap((o) => o.gtfsFantasma))).sort(),

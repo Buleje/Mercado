@@ -11,6 +11,8 @@
 import type { TraceOperation } from "@/lib/forestal/loth-trace";
 import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import type { VeredictoMerma } from "@/lib/forestal/loth-trace-umbrales";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { esIsoValido, etiquetaCorta, hoyEnLima, nombreDelDia } from "@/lib/forestal/semana-de-registro";
 
 /** Tonos de un veredicto de merma. El `-700` necesita su `dark:` o se apaga. */
 export const TONO_MERMA: Record<VeredictoMerma, { texto: string; barra: string; chip: string }> = {
@@ -36,23 +38,27 @@ export const TONO_MERMA: Record<VeredictoMerma, { texto: string; barra: string; 
 export const tonoDe = (v: VeredictoMerma | null) => TONO_MERMA[v ?? "ok"];
 
 /**
- * Fecha del libro en corto. `timeZone: "UTC"` no es opcional: las fechas son
- * date-only y en Lima (UTC−5) formatearlas en local muestra el día anterior.
+ * Fecha del libro en corto: «Jue 10/09», con el año sólo si no es el de hoy.
+ *
+ * Días y meses escritos a mano (`semana-de-registro`), no pedidos a `Intl`:
+ * `toLocaleDateString` decía «10 set.» o «10 sept.» según la versión de ICU del
+ * navegador. Las fechas son date-only, así que se leen los 10 primeros
+ * caracteres y nunca pasan por la hora de Lima (que las corría un día).
  */
 export function fmtFecha(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+  const d = (iso ?? "").slice(0, 10);
+  if (!esIsoValido(d)) return "—";
+  return `${nombreDelDia(d)} ${etiquetaCorta(d)}${sufijoAnio(d)}`;
 }
 
-/** Fecha larga, para el detalle y el pasaporte. */
+/** Fecha larga, para el detalle: «jueves 10/09». */
 export function fmtFechaLarga(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
+  const d = (iso ?? "").slice(0, 10);
+  if (!esIsoValido(d)) return "—";
+  return `${nombreDelDia(d, true)} ${etiquetaCorta(d)}${sufijoAnio(d)}`;
 }
+
+const sufijoAnio = (d: string) => (d.slice(0, 4) === hoyEnLima().slice(0, 4) ? "" : `/${d.slice(0, 4)}`);
 
 /** «3 días» / «1 día» / «el mismo día» / «—». */
 export function fmtDias(d: number | null | undefined): string {
@@ -65,8 +71,14 @@ export function fmtDias(d: number | null | undefined): string {
 export function fmtRecorrido(d: number | null | undefined): string {
   if (d == null) return "todavía sin salida";
   if (d === 0) return "salió el mismo día de la tala";
+  // Una salida anotada antes que la tala es un error de fecha del libro, no un
+  // recorrido: «−58 días» se leía como un número más.
+  if (d < 0) return `la salida figura ${fmtDias(-d)} ANTES de la tala`;
   return `${fmtDias(d)} de la tala a la salida`;
 }
+
+/** Porcentaje con `dp` decimales: «47.7%». Un solo lugar para el formato. */
+export const fmtPct = (v: number, dp = 1) => `${v.toFixed(dp)}%`;
 
 /** Plural sin el «1 trozas» que decía la pantalla vieja. */
 export const plural = (n: number, singular: string, plural_: string) => `${n} ${n === 1 ? singular : plural_}`;
@@ -76,6 +88,28 @@ export const plural = (n: number, singular: string, plural_: string) => `${n} ${
 export type TraceFiltro = "todas" | "completa" | "alertas" | "cites" | "patio" | "plazo" | "merma" | "en_pie" | "gtf_fantasma" | "sin_troza";
 export type TraceOrden = "volumen" | "merma" | "rendimiento" | "codigo" | "etapas" | "fecha" | "precision";
 export type TraceModo = "tarjetas" | "tabla";
+
+/**
+ * Los estados por los que se filtra, en un solo lugar: el desplegable los lista
+ * todos y la barra de pastillas muestra sólo los que piden trabajo (`deuda`) y
+ * están en más de cero — un contador de pendientes no es un indicador, y un
+ * «Fuera de plazo 0» pintado de ámbar enseña a ignorar el color.
+ */
+export const FILTROS_ESTADO: { key: TraceFiltro; label: string; deuda?: "error" | "warning" }[] = [
+  { key: "todas", label: "Todos los árboles" },
+  { key: "alertas", label: "Con alertas", deuda: "error" },
+  { key: "merma", label: "Merma alta", deuda: "warning" },
+  { key: "plazo", label: "Fuera de plazo", deuda: "warning" },
+  { key: "gtf_fantasma", label: "GTF sin emitir", deuda: "error" },
+  { key: "sin_troza", label: "Producto sin troza", deuda: "warning" },
+  { key: "patio", label: "En patio", deuda: "warning" },
+  { key: "completa", label: "Cadena completa" },
+  { key: "cites", label: "CITES" },
+  { key: "en_pie", label: "En pie (censo)" },
+];
+
+/** La especie de la fila como clave: «Tornillo» y «TORNILLO» filtran juntas. */
+export const claveDeFila = (f: TraceFila) => claveEspecie(f.especie);
 
 export const ORDEN_LABEL: Record<TraceOrden, string> = {
   volumen: "Mayor volumen",

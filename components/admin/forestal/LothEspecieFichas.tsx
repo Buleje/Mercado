@@ -19,7 +19,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, Pencil, Printer, ShieldAlert, Trash2 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { BloquePlan } from "./loth-plan-ui";
 
 export interface FichaEspecie {
   species: string;
@@ -79,7 +79,7 @@ function Paso({ label, valor, sub, apagado }: { label: string; valor: string; su
       <p className={`font-mono text-sm font-bold tabular-nums ${apagado ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"}`}>
         {valor}
       </p>
-      {sub && <p className="truncate text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{sub}</p>}
+      {sub && <p className="truncate text-xs text-[var(--text-tertiary)]">{sub}</p>}
     </div>
   );
 }
@@ -106,38 +106,35 @@ export default function LothEspecieFichas({
   const [abierta, setAbierta] = useState<string | null>(null);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <div className="min-w-0">
-          <CardTitle as="h3" className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
-            Especies del plan
-          </CardTitle>
-          <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-            Lo autorizado contra lo censado, talado y movilizado — con su saldo
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {onImprimir && (
-            <button
-              type="button"
-              onClick={onImprimir}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-            >
-              <Printer className="h-3.5 w-3.5" /> Imprimir
-            </button>
-          )}
-          {onAgregar && (
-            <button
-              type="button"
-              onClick={onAgregar}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3 text-xs font-bold text-white hover:opacity-90"
-            >
-              + Agregar
-            </button>
-          )}
-        </div>
-      </header>
-
+    <BloquePlan
+      id="loth-plan-especies"
+      titulo="Especies del plan"
+      sub="Lo autorizado contra lo censado, talado y movilizado — con su saldo"
+      acciones={
+        onImprimir || onAgregar ? (
+          <>
+            {onImprimir && (
+              <button
+                type="button"
+                onClick={onImprimir}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              >
+                <Printer className="h-3.5 w-3.5" /> Imprimir
+              </button>
+            )}
+            {onAgregar && (
+              <button
+                type="button"
+                onClick={onAgregar}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3 text-xs font-bold text-white hover:opacity-90"
+              >
+                + Agregar
+              </button>
+            )}
+          </>
+        ) : undefined
+      }
+    >
       <ul className="divide-y divide-[var(--rule-soft)]">
         {fichas.map((f) => {
           const t = TONO[f.tone];
@@ -153,7 +150,7 @@ export default function LothEspecieFichas({
                   <span className={`h-2 w-2 shrink-0 rounded-full ${t.punto}`} aria-hidden />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-[var(--text-primary)]">{f.species}</p>
-                    <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold">
                       {f.cites && <span className="rounded bg-[var(--data-warning-500)]/20 px-1 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">CITES</span>}
                       {!f.autorizada ? (
                         <span className={t.texto}>fuera del plan</span>
@@ -190,7 +187,7 @@ export default function LothEspecieFichas({
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                  <p className="mt-1 text-xs text-[var(--text-tertiary)]">
                     saldo <span className="font-mono font-bold tabular-nums text-[var(--text-secondary)]">{m3(f.saldo)}</span> m³
                   </p>
                 </div>
@@ -258,7 +255,7 @@ export default function LothEspecieFichas({
       </ul>
 
       {(valorTotal != null || pagoDerechoTotal != null) && (
-        <footer className="flex flex-wrap items-center justify-end gap-x-5 gap-y-1 border-t-2 border-[var(--rule-base)] px-4 py-2.5 text-xs">
+        <footer className="flex flex-wrap items-center justify-end gap-x-5 gap-y-1 border-t border-[var(--rule-base)] px-4 py-2.5 text-xs">
           {valorTotal != null && (
             <span className="text-[var(--text-tertiary)]">
               Valor movilizado <b className="font-mono tabular-nums text-[var(--text-primary)]">{soles(valorTotal)}</b>
@@ -276,6 +273,6 @@ export default function LothEspecieFichas({
           )}
         </footer>
       )}
-    </section>
+    </BloquePlan>
   );
 }

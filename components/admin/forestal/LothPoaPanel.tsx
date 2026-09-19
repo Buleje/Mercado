@@ -15,18 +15,22 @@
  */
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Check, Info, Loader2, Printer, Save, Settings2, TreePine, XCircle } from "@buleje/design-system/icons";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { AlertTriangle, BarChart3, Check, Info, Loader2, Printer, Save, Settings2, TreePine, XCircle } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import {
   CATEGORIA_COLOR,
   CATEGORIA_LABEL,
-  dmcParaEspecie,
   ordenarAlertas,
   type PoaAnalisis,
   type PoaConfig,
 } from "@/lib/forestal/loth-poa";
-import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import LothPoaParametros from "./LothPoaParametros";
+import { BloquePlan, BotonPlegar, CifraLinea } from "./loth-plan-ui";
+
+/** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
+export const CLAVE_INDICADORES_POA = "loth:plan:poa-indicadores-abiertos";
 
 const CELL = "px-3 py-2 text-sm";
 const NUM = `${CELL} text-right font-mono tabular-nums`;
@@ -37,9 +41,12 @@ interface Props {
   analisis: PoaAnalisis;
   config: PoaConfig;
   saving: boolean;
+  /** Hay parámetros cambiados sin guardar: sólo entonces aparece «Guardar». */
+  sucio?: boolean;
   onConfig: (next: PoaConfig) => void;
   onSave: () => void;
-  onPrint: () => void;
+  /** Sin él no hay botón: en la vista del plan el anexo vive en «Opciones». */
+  onPrint?: () => void;
 }
 
 const NIVEL_ICON = {
@@ -53,62 +60,77 @@ const NIVEL_CLASS = {
   info: "text-[var(--text-tertiary)]",
 } as const;
 
-export default function LothPoaPanel({ analisis, config, saving, onConfig, onSave, onPrint }: Props) {
+export default function LothPoaPanel({ analisis, config, saving, sucio = false, onConfig, onSave, onPrint }: Props) {
   const [editando, setEditando] = useState(false);
+  const [todasLasAlertas, setTodasLasAlertas] = useState(false);
+  const [kpisAbiertos, setKpisAbiertos] = useLocalStorage<boolean>(CLAVE_INDICADORES_POA, false);
   const { especies, totales, intensidad } = analisis;
   const alertas = useMemo(() => ordenarAlertas(analisis.alertas), [analisis.alertas]);
-
-  const setDmc = (especie: string, valor: string) => {
-    // FIX 2026-08-22: la clave tiene que ser la MISMA que lee `dmcParaEspecie`
-    // (`normEspecie` → `claveEspecie`) — antes esta normalización local no
-    // quitaba el científico entre paréntesis, así que un override para
-    // "Tornillo (Cedrelinga catenaeformis)" se guardaba bajo una clave que
-    // `dmcParaEspecie` nunca iba a buscar: el override se perdía en silencio,
-    // el DMC volvía siempre al oficial/general.
-    const key = claveEspecie(especie);
-    const next = { ...config.dmcOverrides };
-    const cm = Number(valor);
-    if (!valor.trim() || !Number.isFinite(cm) || cm <= 0) delete next[key];
-    else next[key] = Math.round(cm);
-    onConfig({ ...config, dmcOverrides: next });
-  };
+  const intensidadTxt = intensidad.m3PorHa != null ? `${intensidad.m3PorHa.toFixed(2)} m³/ha` : "—";
 
   return (
-    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <div>
-          <CardTitle as="h3" className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
-            Plan Operativo · aprovechable según DMC
-          </CardTitle>
-          <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-            Diámetro mínimo de corta (RJ 458-2002-INRENA, editable por plan) + {config.semillerosPct}% de semilleros en pie
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
+    <BloquePlan
+      id="loth-plan-poa"
+      titulo="Plan Operativo · aprovechable según DMC"
+      sub={`Diámetro mínimo de corta (RJ 458-2002-INRENA, editable por plan) + ${config.semillerosPct}% de semilleros en pie`}
+      acciones={
+        <>
+          <BotonPlegar
+            abierto={kpisAbiertos}
+            onClick={() => setKpisAbiertos(!kpisAbiertos)}
+            controla="loth-plan-poa-indicadores"
+            label="Indicadores"
+            icon={BarChart3}
+            compacto
+            titulo={kpisAbiertos ? "Oculta los indicadores del POA. Se recuerda en este navegador." : "Muestra los indicadores del POA"}
+          />
           <button type="button" onClick={() => setEditando((v) => !v)} aria-pressed={editando} className={BTN}>
             <Settings2 className="h-3.5 w-3.5" /> Parámetros
           </button>
-          <button type="button" onClick={onSave} disabled={saving} className={BTN}>
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Guardar
-          </button>
-          <button
-            type="button"
-            onClick={onPrint}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
-          >
-            <Printer className="h-3.5 w-3.5" /> Anexo POA
-          </button>
-        </div>
-      </header>
-
-      {/* Indicadores */}
-      <div className="grid gap-2 border-b-2 border-[var(--rule-base)] p-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* «Guardar» aparece cuando hay algo que guardar: siempre a la vista
+              era un botón más que no hacía nada la mayor parte del tiempo. */}
+          {(editando || sucio || saving) && (
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving || !sucio}
+              className={sucio ? "inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50" : BTN}
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {sucio ? "Guardar cambios" : "Guardado"}
+            </button>
+          )}
+          {onPrint && (
+            <button
+              type="button"
+              onClick={onPrint}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
+            >
+              <Printer className="h-3.5 w-3.5" /> Anexo POA
+            </button>
+          )}
+        </>
+      }
+    >
+      {/* Indicadores: plegados dicen sus cifras en una línea —las mismas que
+          las tarjetas— y la preferencia se recuerda en el navegador. */}
+      {!kpisAbiertos && (
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-[var(--rule-soft)] px-4 py-2.5 text-sm">
+          <CifraLinea valor={String(totales.aprovechables)} label={`aprovechables (${fmtM3(totales.volumenAprovechableM3)} m³)`} tono="ok" />
+          <span aria-hidden="true" className="text-[var(--text-tertiary)]">·</span>
+          <CifraLinea valor={String(totales.semilleros)} label="semilleros en pie" />
+          <span aria-hidden="true" className="text-[var(--text-tertiary)]">·</span>
+          <CifraLinea valor={String(totales.bajoDmc)} label="bajo DMC" tono={totales.bajoDmc > 0 ? "warn" : undefined} />
+          <span aria-hidden="true" className="text-[var(--text-tertiary)]">·</span>
+          <CifraLinea valor={intensidadTxt} label="de intensidad" />
+        </p>
+      )}
+      <div id="loth-plan-poa-indicadores" hidden={!kpisAbiertos} className="grid gap-2 border-b border-[var(--rule-soft)] p-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Aprovechables" valor={String(totales.aprovechables)} sub={`${fmtM3(totales.volumenAprovechableM3)} m³`} tone="success" />
         <Kpi label="Semilleros en pie" valor={String(totales.semilleros)} sub={`${config.semillerosPct}% de los ≥ DMC`} tone="accent" />
         <Kpi label="Bajo DMC" valor={String(totales.bajoDmc)} sub="no aprovechables por norma" tone="warning" />
         <Kpi
           label="Intensidad"
-          valor={intensidad.m3PorHa != null ? `${intensidad.m3PorHa.toFixed(2)} m³/ha` : "—"}
+          valor={intensidadTxt}
           sub={
             intensidad.arbolesPorHa != null
               ? // En áreas grandes el ratio por hectárea es < 0,01: sin decimales
@@ -121,48 +143,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
       </div>
 
       {/* Parámetros */}
-      {editando && (
-        <div className="space-y-3 border-b-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
-          <label className="flex flex-wrap items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
-            Semilleros a dejar en pie
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={config.semillerosPct}
-              onChange={(e) => onConfig({ ...config, semillerosPct: Math.max(0, Math.min(100, Number(e.target.value) || 0)) })}
-              className="h-10 w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
-            />
-            % de los árboles que superan el DMC (se reservan los de mayor DAP)
-          </label>
-          <div>
-            <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">DMC por especie (cm)</p>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {especies.map((e) => {
-                const oficial = dmcParaEspecie(e.especie);
-                return (
-                  <label key={e.especie} className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
-                    <span className="min-w-0 flex-1 truncate">{e.especie}</span>
-                    <input
-                      type="number"
-                      min={10}
-                      max={200}
-                      placeholder={String(oficial.cm)}
-                      value={config.dmcOverrides[normKey(e.especie)] ?? ""}
-                      onChange={(ev) => setDmc(e.especie, ev.target.value)}
-                      className="h-10 w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold text-[var(--text-primary)]"
-                    />
-                    <span className="w-16 shrink-0 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                      {oficial.fuente === "oficial" ? `norma ${oficial.cm}` : `gral. ${oficial.cm}`}
-                    </span>
-                  </label>
-                );
-              })}
-              {especies.length === 0 && <p className="text-sm text-[var(--text-tertiary)]">Carga el censo para configurar el DMC por especie.</p>}
-            </div>
-          </div>
-        </div>
-      )}
+      {editando && <LothPoaParametros especies={especies} config={config} onConfig={onConfig} />}
 
       {/* Cuadro por especie */}
       <div className="overflow-x-auto">
@@ -198,7 +179,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
                 </td>
                 <td className={NUM}>
                   {e.dmcCm}
-                  <span className="ml-1 text-[length:var(--ts-2xs)] font-sans text-[var(--text-tertiary)]">
+                  <span className="ml-1 text-xs font-sans text-[var(--text-tertiary)]">
                     {e.dmcFuente === "plan" ? "plan" : e.dmcFuente === "oficial" ? "norma" : "gral."}
                   </span>
                 </td>
@@ -222,7 +203,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
           </tbody>
           {especies.length > 0 && (
             <tfoot>
-              <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] font-bold">
+              <tr className="border-t border-[var(--rule-base)] bg-[var(--surface-canvas)] font-bold">
                 <td className={CELL}>Total</td>
                 <td className={NUM}>—</td>
                 <td className={NUM}>{totales.censados}</td>
@@ -240,8 +221,11 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
 
       {/* Alertas */}
       {alertas.length > 0 && (
-        <ul className="space-y-1.5 border-t-2 border-[var(--rule-base)] p-4">
-          {alertas.slice(0, 8).map((a, i) => {
+        <ul className="space-y-1.5 border-t border-[var(--rule-soft)] p-4">
+          {/* Las tres primeras (vienen ordenadas por gravedad) y el resto a un
+              clic: cinco avisos de dos renglones empujaban el editor de
+              especies fuera de la pantalla. */}
+          {alertas.slice(0, todasLasAlertas ? 8 : 3).map((a, i) => {
             const Icon = NIVEL_ICON[a.nivel];
             return (
               <li key={`${a.titulo}-${i}`} className="flex items-start gap-2 text-sm">
@@ -253,10 +237,22 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
               </li>
             );
           })}
+          {Math.min(alertas.length, 8) > 3 && (
+            <li>
+              <button
+                type="button"
+                onClick={() => setTodasLasAlertas((v) => !v)}
+                aria-expanded={todasLasAlertas}
+                className="text-xs font-bold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
+              >
+                {todasLasAlertas ? "Ver sólo las tres primeras" : `Ver los ${Math.min(alertas.length, 8)} avisos`}
+              </button>
+            </li>
+          )}
         </ul>
       )}
 
-      <p className="border-t border-[var(--rule-subtle)] px-4 py-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+      <p className="border-t border-[var(--rule-subtle)] px-4 py-2 text-xs text-[var(--text-tertiary)]">
         Leyenda del censo:{" "}
         {(["aprovechable", "semillero", "bajo_dmc", "talado"] as const).map((c) => (
           <span key={c} className="mr-3 inline-flex items-center gap-1">
@@ -265,11 +261,9 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
           </span>
         ))}
       </p>
-    </section>
+    </BloquePlan>
   );
 }
-
-const normKey = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
 function Kpi({ label, valor, sub, tone }: { label: string; valor: string; sub: string; tone: "success" | "warning" | "accent" | "info" }) {
   const color =

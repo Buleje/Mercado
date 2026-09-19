@@ -2,7 +2,8 @@
 
 /**
  * LothTraceTabla — la misma información de las tarjetas, en densidad de hoja de
- * fiscalización.
+ * fiscalización. El código del árbol abre su ventana de detalle, igual que en
+ * las tarjetas (la cadena de custodia se abre desde ahí).
  *
  * Reemplaza al cuadro «Censo vs realidad» que vivía debajo de la lista: era la
  * misma pregunta contestada por segunda vez, con otros decimales y sin las
@@ -15,11 +16,13 @@ import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, ArrowDown, TreePine } from "@buleje/design-system/icons";
 import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import { FLAG_LABEL, FLAG_TONE } from "@/lib/forestal/loth-arbol";
-import { fmtFecha, tonoDe, type TraceNav, type TraceOrden } from "./loth-trace-ui";
+import { fmtDias, fmtFecha, fmtPct, tonoDe, type TraceOrden } from "./loth-trace-ui";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
-const CELL = "px-3 py-2 text-sm";
-const NUM = `${CELL} text-right font-mono tabular-nums`;
+/* El padding lo pone `DataTable` (sus variantes descendientes le ganan a una
+   clase en la celda): acá sólo tamaño y alineación. */
+const CELL = "text-sm";
+const NUM = `${CELL} text-right tabular-nums`;
 
 const FLAG_CLASS = {
   error: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)] bg-[var(--data-error-500)]/15",
@@ -52,24 +55,33 @@ const HEAD = {
   trozado: "Trozado m³",
   rend: "Rend.",
   merma: "Merma",
-  movilizado: "Movilizado m³",
+  movilizado: "Salió m³",
   etapas: "Etapas",
   ultima: "Última",
   obs: "Observaciones",
 } as const;
 
+/** Lo que aclara el encabezado cuando la palabra sola no alcanza. */
+const HEAD_TITLE: Partial<Record<keyof typeof HEAD, string>> = {
+  precision: "Talado ÷ censo: qué tan cerca estuvo la estimación",
+  rend: "Trozado ÷ talado. «—» = todavía sin trozar",
+  merma: "Talado − trozado, sólo de los árboles ya trozados",
+  movilizado: "Salió del patio: trozas despachadas o al aserrío",
+};
+
 export default function LothTraceTabla({
   filas,
-  nav,
   seleccion,
   onSeleccionar,
+  onAbrir,
   orden,
   onOrden,
 }: {
   filas: TraceFila[];
-  nav?: TraceNav;
   seleccion?: Set<string>;
   onSeleccionar?: (tree: string) => void;
+  /** Abre la ventana de detalle del árbol. */
+  onAbrir?: (tree: string) => void;
   orden: TraceOrden;
   onOrden: (o: TraceOrden) => void;
 }) {
@@ -83,52 +95,54 @@ export default function LothTraceTabla({
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <DataTable className="w-full border-collapse">
-        <thead className="sticky top-0 z-10 bg-[var(--surface-canvas)]">
-          <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
-            {onSeleccionar && <th className={`${CELL} w-10`}><span className="sr-only">Seleccionar</span></th>}
-            {COLUMNAS.map((c) => (
-              <th key={c.key} className={`${CELL} font-bold ${c.num ? "text-right" : "text-left"}`}>
-                {c.orden ? (
-                  <button
-                    type="button"
-                    onClick={() => onOrden(c.orden!)}
-                    className={`inline-flex items-center gap-1 rounded transition-colors hover:text-[var(--text-primary)] ${
-                      orden === c.orden ? "text-[var(--text-primary)]" : ""
-                    }`}
-                    title={`Ordenar por ${HEAD[c.key].toLowerCase()}`}
-                  >
-                    {HEAD[c.key]}
-                    {orden === c.orden && <ArrowDown className="h-3 w-3" />}
-                  </button>
-                ) : (
-                  HEAD[c.key]
-                )}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {filas.map((f) => (
-            <Fila key={f.tree} f={f} nav={nav} seleccionada={seleccion?.has(f.tree)} onSeleccionar={onSeleccionar} />
+    <DataTable className="w-full border-collapse" wrapperClassName="rounded-2xl bg-[var(--surface-raised)]">
+      <thead>
+        <tr>
+          {onSeleccionar && (
+            <th className="w-10">
+              <span className="sr-only">Seleccionar</span>
+            </th>
+          )}
+          {COLUMNAS.map((c) => (
+            <th key={c.key} className={c.num ? "text-right" : "text-left"} title={HEAD_TITLE[c.key]}>
+              {c.orden ? (
+                <button
+                  type="button"
+                  onClick={() => onOrden(c.orden!)}
+                  className={`inline-flex items-center gap-1 rounded transition-colors hover:text-[var(--text-primary)] ${
+                    orden === c.orden ? "text-[var(--text-primary)]" : ""
+                  }`}
+                  title={`Ordenar por ${HEAD[c.key].toLowerCase()}`}
+                >
+                  {HEAD[c.key]}
+                  {orden === c.orden && <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />}
+                </button>
+              ) : (
+                HEAD[c.key]
+              )}
+            </th>
           ))}
-        </tbody>
-      </DataTable>
-    </div>
+        </tr>
+      </thead>
+      <tbody>
+        {filas.map((f) => (
+          <Fila key={f.tree} f={f} seleccionada={seleccion?.has(f.tree)} onSeleccionar={onSeleccionar} onAbrir={onAbrir} />
+        ))}
+      </tbody>
+    </DataTable>
   );
 }
 
 function Fila({
   f,
-  nav,
   seleccionada,
   onSeleccionar,
+  onAbrir,
 }: {
   f: TraceFila;
-  nav?: TraceNav;
   seleccionada?: boolean;
   onSeleccionar?: (tree: string) => void;
+  onAbrir?: (tree: string) => void;
 }) {
   const tono = tonoDe(f.mermaVeredicto);
   const fondo =
@@ -136,7 +150,7 @@ function Fila({
   const desvio = f.precisionCensoPct != null ? Math.abs(f.precisionCensoPct - 100) : null;
 
   return (
-    <tr className={`border-t border-[var(--rule-soft)] ${fondo} ${seleccionada ? "outline outline-2 -outline-offset-2 outline-[var(--data-info-500)]" : ""}`}>
+    <tr className={`border-t border-[var(--rule-soft)] ${fondo} ${seleccionada ? "outline outline-1 -outline-offset-1 outline-[var(--data-info-500)]" : ""}`}>
       {onSeleccionar && (
         <td className={CELL}>
           <input
@@ -148,12 +162,12 @@ function Fila({
           />
         </td>
       )}
-      <td className={`${CELL} font-mono font-bold text-[var(--text-primary)]`}>
-        {nav?.onVerCadena ? (
+      <td className={`${CELL} font-bold text-[var(--text-primary)]`}>
+        {f.op && onAbrir ? (
           <button
             type="button"
-            onClick={() => nav.onVerCadena?.(f.tree)}
-            title="Ver la cadena de custodia de este árbol"
+            onClick={() => onAbrir(f.tree)}
+            title="Ver el detalle del árbol: alertas, dónde se fue la madera y las seis secciones"
             className="rounded underline decoration-dotted decoration-1 underline-offset-4 transition-colors hover:text-[var(--data-info-700)] dark:hover:text-[var(--data-info-500)]"
           >
             {f.tree}
@@ -164,23 +178,23 @@ function Fila({
       </td>
       <td className={`${CELL} text-[var(--text-secondary)]`}>
         {f.especie ?? "—"}
-        {f.cites && <span className="ml-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">CITES</span>}
+        {f.cites && <span className="ml-1 text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">CITES</span>}
       </td>
       <td className={NUM}>{f.censoM3 != null ? fmtM3(f.censoM3) : "—"}</td>
       <td className={NUM}>{f.taladoM3 != null ? fmtM3(f.taladoM3) : "—"}</td>
       <td className={`${NUM} font-bold ${desvio != null && desvio > 25 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"}`}>
-        {f.precisionCensoPct != null ? `${f.precisionCensoPct.toFixed(1)}%` : "—"}
+        {f.precisionCensoPct != null ? fmtPct(f.precisionCensoPct) : "—"}
       </td>
       <td className={NUM}>{f.trozadoM3 > 0 ? fmtM3(f.trozadoM3) : "—"}</td>
-      <td className={`${NUM} font-bold ${tono.texto}`}>{f.rendimientoPct != null ? `${f.rendimientoPct.toFixed(1)}%` : "—"}</td>
+      <td className={`${NUM} font-bold ${tono.texto}`}>{f.rendimientoPct != null ? fmtPct(f.rendimientoPct) : "—"}</td>
       <td className={`${NUM} ${f.mermaVeredicto && f.mermaVeredicto !== "ok" ? `font-bold ${tono.texto}` : "text-[var(--text-secondary)]"}`}>
-        {f.mermaPct != null ? `${f.mermaM3.toFixed(3)} · ${f.mermaPct.toFixed(0)}%` : "—"}
+        {f.mermaM3 != null && f.mermaPct != null ? `${fmtM3(f.mermaM3)} · ${fmtPct(f.mermaPct, 0)}` : "—"}
       </td>
       <td className={NUM}>
         {f.movilizadoM3 > 0 ? fmtM3(f.movilizadoM3) : "—"}
         {f.patioM3 > 0 && (
-          <span className="block text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            {f.patioM3.toFixed(2)} en patio
+          <span className="block text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            {fmtM3(f.patioM3)} en patio
           </span>
         )}
       </td>
@@ -188,8 +202,8 @@ function Fila({
       <td className={`${NUM} text-[var(--text-secondary)]`}>
         {fmtFecha(f.op?.lastDate)}
         {f.diasParado != null && (
-          <span className="block text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            parado {f.diasParado} d
+          <span className="block text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            parado {fmtDias(f.diasParado)}
           </span>
         )}
       </td>

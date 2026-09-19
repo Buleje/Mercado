@@ -9,6 +9,10 @@
  * donde estás parado, sin tipear coordenadas.
  *
  * La coordenada se muestra en UTM porque es la que se anota en la libreta.
+ *
+ * El interruptor vive en la barra del mapa (ícono «Modo campo»); esto es la
+ * franja que aparece debajo mientras está prendido. Se monta siempre —el
+ * `watchPosition` y su limpieza viven acá— pero no pinta nada apagado.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -27,7 +31,6 @@ interface Props {
   posicion: PosicionCampo | null;
   parcela: LatLng[];
   declarada: boolean;
-  onToggle: () => void;
   onPosicion: (p: PosicionCampo | null) => void;
   onMarcarAqui: (p: LatLng) => void;
   /** Centrar el mapa en la posición actual. */
@@ -39,7 +42,6 @@ export default function LothCampoBar({
   posicion,
   parcela,
   declarada,
-  onToggle,
   onPosicion,
   onMarcarAqui,
   onCentrar,
@@ -60,6 +62,8 @@ export default function LothCampoBar({
     if (!activo) {
       onPosicion(null);
       setPrimeraFija(false);
+      // Apagado, la franja no se pinta: un error viejo no puede dejarla prendida.
+      setError(null);
       return;
     }
     if (!navigator.geolocation) {
@@ -83,21 +87,13 @@ export default function LothCampoBar({
   const dentro = posicion && declarada ? pointInPolygon([posicion.lat, posicion.lng], parcela) : null;
   const utm = posicion ? toUtm(posicion.lat, posicion.lng) : null;
 
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-pressed={activo}
-        className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-bold transition ${
- activo
- ? "border-transparent bg-[var(--accent-ink)] text-white"
- : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
- }`}
-      >
-        <Navigation className="h-3.5 w-3.5" /> {activo ? "Siguiendo tu GPS" : "Modo campo"}
-      </button>
+  if (!activo && !error) return null;
 
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] px-3 py-2">
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
+        <Navigation className="h-3.5 w-3.5" aria-hidden="true" /> Modo campo
+      </span>
       {activo && posicion && utm && (
         <>
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1.5 font-mono text-xs font-bold tabular-nums text-[var(--text-secondary)]">

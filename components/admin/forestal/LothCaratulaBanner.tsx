@@ -77,7 +77,7 @@ export default function LothCaratulaBanner({ caratula, titularSugerido, onSaved 
   const puedeGuardar = departamento.trim() && provincia.trim() && distrito.trim() && (caratula?.id || titular.trim().length > 1);
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] p-3 dark:bg-[var(--data-warning-500)]/12">
+    <div className="rounded-2xl border border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] p-3 dark:bg-[var(--data-warning-500)]/12">
       <div className="flex flex-wrap items-center gap-2">
         <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />
         <p className="flex-1 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">

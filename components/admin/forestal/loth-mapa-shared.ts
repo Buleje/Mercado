@@ -42,6 +42,24 @@ export const CENSO_ESTADO_COLOR: Record<string, string> = {
   descartado: "#6b7280",
 };
 
+/**
+ * Color de cada herramienta del mapa: el MISMO en el trazo de Leaflet y en el
+ * panel que la acompaña bajo la barra, para que se lea cuál es cuál sin
+ * etiqueta. Son colores de la cartografía (como los de las secciones), no del
+ * tema: no cambian con el modo oscuro porque el mapa tampoco.
+ */
+export const COLOR_HERRAMIENTA = {
+  medir: "#f59e0b",
+  faja: "#0284c7",
+  perfil: "#0f766e",
+  comparar: "#7c3aed",
+} as const;
+
+/** Borde y fondo de un panel teñido con el color de su herramienta. */
+export function panelTenido(color: string): { borderColor: string; backgroundColor: string } {
+  return { borderColor: `${color}99`, backgroundColor: `${color}1a` };
+}
+
 /** Teal del DS — polígono del área de aprovechamiento (UMF). */
 export const PARCELA_COLOR = "#0d9488";
 

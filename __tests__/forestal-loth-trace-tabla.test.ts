@@ -7,7 +7,7 @@
 import { describe, it, expect } from "vitest";
 import { buildTraceOperations } from "@/lib/forestal/loth-trace";
 import { construirFichasArbol, type ArbolCensoInput } from "@/lib/forestal/loth-arbol";
-import { construirFilasTrace, filasToCsv } from "@/lib/forestal/loth-trace-tabla";
+import { construirFilasTrace, filasToCsv, resumirFilas } from "@/lib/forestal/loth-trace-tabla";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 
 let seq = 0;
@@ -134,5 +134,52 @@ describe("filasToCsv", () => {
   it("escapa las comas del código de árbol", () => {
     const csv = filasToCsv(filas([entry({ section: "tala", treeCode: "A,1", volumeM3: "5" })], []));
     expect(csv.split("\n")[1]).toContain('"A,1"');
+  });
+});
+
+describe("resumirFilas (el embudo de la vista)", () => {
+  // Un libro con todos los casos: trozado y despachado, tumbado sin trozar,
+  // tala sin volumen, troza en patio, troza sin código, trozado que supera a su
+  // tala (T4), fuera del censo, y un censado en pie.
+  const mixto: LothEntryDTO[] = [
+    entry({ section: "tala", treeCode: "01-TOR", volumeM3: "10" }),
+    entry({ section: "trozado", treeCode: "01-TOR", trozaCode: "01-TOR-A", volumeM3: "4" }),
+    entry({ section: "trozado", treeCode: "01-TOR", trozaCode: "01-TOR-B", volumeM3: "2" }),
+    entry({ section: "trozado", treeCode: "01-TOR", trozaCode: null, volumeM3: "1" }),
+    entry({ section: "despacho_troza", trozaCode: "01-TOR-A", gtfNumber: "G-1" }),
+    entry({ section: "tala", treeCode: "02-TOR", volumeM3: "1.2" }),
+    entry({ section: "tala", treeCode: "03-TOR", volumeM3: null }),
+    entry({ section: "tala", treeCode: "04-TOR", volumeM3: "3" }),
+    entry({ section: "trozado", treeCode: "04-TOR", trozaCode: "04-TOR-A", volumeM3: "3.5" }),
+    entry({ section: "consumo_troza", trozaCode: "04-TOR-A", volumeM3: "3.5" }),
+  ];
+  const cen: ArbolCensoInput[] = [
+    { treeCode: "01-TOR", speciesCommon: "Tornillo", dapM: 0.8, volumenEstimadoM3: 11, estado: "aprovechable" },
+    { treeCode: "99-TOR", speciesCommon: "Tornillo", dapM: 0.9, volumenEstimadoM3: 6, estado: "aprovechable" },
+  ];
+
+  it("las cuentas cierran: árboles, talados y los dos balances de m³", () => {
+    const r = resumirFilas(filas(mixto, cen));
+    expect(r.arboles).toBe(r.talados + r.enPie);
+    expect(r.talados).toBe(r.trozados + r.sinTrozar);
+    expect(r.m3.talado + r.m3.exceso).toBeCloseTo(r.m3.trozado + r.m3.merma + r.m3.sinTrozar, 9);
+    expect(r.m3.trozado).toBeCloseTo(r.m3.movilizado + r.m3.patio + r.m3.sinCodigo, 9);
+
+    expect(r).toMatchObject({ arboles: 5, enPie: 1, talados: 4, trozados: 2, sinTrozar: 2, conSalida: 2 });
+    expect(r).toMatchObject({ censados: 2, taladosDelCenso: 1, taladosSinCenso: 3, taladosSinVolumen: 1 });
+    expect(r.m3.merma).toBeCloseTo(3, 9); // 10 − 7 del 01; el 04 no perdió
+    expect(r.m3.exceso).toBeCloseTo(0.5, 9); // el 04 trozó 3.5 de 3
+    expect(r.m3.sinTrozar).toBeCloseTo(1.2, 9);
+    expect(r.m3.patio).toBeCloseTo(2, 9);
+    expect(r.m3.sinCodigo).toBeCloseTo(1, 9);
+    expect(r.mermaPct).toBeCloseTo(23.1, 1); // 3 de 13 talados que ya se trozaron
+  });
+
+  it("antes del trozado no hay merma ni rendimiento: «—», no 100 % ni 0 %", () => {
+    const f = filas(mixto, cen).find((x) => x.tree === "02-TOR")!;
+    expect(f.mermaM3).toBeNull();
+    expect(f.mermaPct).toBeNull();
+    expect(f.rendimientoPct).toBeNull();
+    expect(filas(mixto, cen).find((x) => x.tree === "03-TOR")!.taladoM3).toBeNull();
   });
 });
