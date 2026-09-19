@@ -29,6 +29,7 @@ import {
   BarChart3,
   ClipboardList,
   Coins,
+  FileSignature,
   FileSpreadsheet,
   FileText,
   FolderOpen,
@@ -69,6 +70,7 @@ import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
 import CtpDirectorioView from "./CtpDirectorioView";
+import CtpContratosView from "./CtpContratosView";
 import CtpFletesView from "./CtpFletesView";
 import CtpGuiasEmitidasView from "./CtpGuiasEmitidasView";
 import CtpCierrePanel from "./CtpCierrePanel";
@@ -132,6 +134,7 @@ type CtpView =
   | "fletes"
   | "guias"
   | "directorio"
+  | "contratos"
   | "ficha";
 
 /**
@@ -209,6 +212,11 @@ const CTP_GROUPS: LibroGroup[] = [
       { key: "analisis", ...CTP_VISTAS_POR_KEY["analisis"], icon: TrendingUp, tecla: "a" },
       { key: "fletes", ...CTP_VISTAS_POR_KEY["fletes"], icon: Truck, tecla: "j" },
       { key: "directorio", ...CTP_VISTAS_POR_KEY["directorio"], icon: Users, tecla: "g" },
+      /* El contrato es el eje del movimiento (ADR-421): va en Gestión, al
+         lado del directorio, porque contesta la pregunta del dueño —«¿cómo
+         viene este permiso?»— y no una del turno de la sierra. La tecla es
+         «w» porque «c» ya es Cumplimiento y «o», Reprocesos. */
+      { key: "contratos", ...CTP_VISTAS_POR_KEY["contratos"], icon: FileSignature, tecla: "w" },
       { key: "ficha", ...CTP_VISTAS_POR_KEY["ficha"], icon: Building2, tecla: "f" },
     ],
   },
@@ -229,7 +237,19 @@ const CTP_MODULE_ID = "ctp-libro";
    Ofrecer el selector ahí mandaba a cambiar un período que no cambia el saldo,
    y sus filtros vacíos culpaban al período de un vacío que causaba otra cosa
    (producto marcado como usado). */
-const SIN_PERIODO: CtpView[] = ["analisis", "cierre", "ficha", "trozas", "directorio", "lotes", "disponibles"];
+/* `contratos` entra acá (ADR-421): un contrato se mira entero, desde que se
+   firmó hasta hoy. Acotar su balance al trimestre del libro mostraría una
+   parte de la plata puesta y la haría pasar por el total. */
+const SIN_PERIODO: CtpView[] = [
+  "analisis",
+  "cierre",
+  "ficha",
+  "trozas",
+  "directorio",
+  "lotes",
+  "disponibles",
+  "contratos",
+];
 
 export default function CTPLibroOperaciones() {
   /** Un solo estado de cierres para el asistente y el historial. */
@@ -663,6 +683,7 @@ export default function CTPLibroOperaciones() {
         )}
         {view === "fletes" && <CtpFletesView period={period} />}
         {view === "directorio" && <CtpDirectorioView />}
+        {view === "contratos" && <CtpContratosView />}
         {view === "ficha" && <CtpFichaEditor />}
       </LibroChrome>
 

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Geist, Instrument_Serif, Fraunces, Source_Serif_4 } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif, Fraunces, Source_Serif_4 } from "next/font/google";
 
 // Body — Geist: tipografía moderna, neutral, optimizada para pantalla.
 // PERF 2026-05-12 (Performance agent P0): preload TRUE para Geist (body
@@ -28,6 +28,23 @@ const InstrumentDisplay = Instrument_Serif({
   // disponible cross-browser/OS.
   fallback: ["Georgia", "Cambria", "Times New Roman", "serif"],
 });
+// Mono — las CIFRAS del panel. `globals.css` define
+// `--font-mono: var(--font-geist-mono), monospace` desde siempre, pero nadie
+// cargaba la fuente: la variable no existía, la declaración quedaba inválida y
+// las 1.965 apariciones de `font-mono` en 447 archivos del admin (montos, m³,
+// códigos de guía, N° de libro) renderizaban en Geist SANS. Medido en el
+// navegador el 2026-09-18: `fontFamily: "Geist, Geist Fallback"` en todas.
+// `tabular-nums` sí funcionaba, así que las columnas alineaban — por eso pasó
+// desapercibido tanto tiempo.
+// preload FALSE: el storefront casi no usa mono y no tiene por qué pagar la
+// descarga; en el panel baja en el primer render, que es donde se usa.
+const GeistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+});
+
 // Cuarta opción del probador de tipografía (`?tipo=source`): serif de
 // documento, más neutra que Fraunces. preload FALSE — sólo baja si alguien
 // pide esa variante por URL. Se borra junto con el probador.
@@ -330,7 +347,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es-PE" className={`${GeistSans.variable} ${InstrumentDisplay.variable} ${FrauncesDisplay.variable} ${SourceSerifDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="es-PE" className={`${GeistSans.variable} ${GeistMono.variable} ${InstrumentDisplay.variable} ${FrauncesDisplay.variable} ${SourceSerifDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head suppressHydrationWarning>
         <Suspense>
           <DynamicHeadContent />

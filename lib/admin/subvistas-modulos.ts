@@ -45,6 +45,7 @@ export const CTP_VISTAS: readonly SubvistaModulo[] = [
   { key: "analisis", label: "Análisis", hint: "Reorden + tendencias" },
   { key: "fletes", label: "Fletes", hint: "Lo que cuesta traer la madera y a quién se le debe" },
   { key: "directorio", label: "Directorio", hint: "Proveedores, compradores, transportistas y placas" },
+  { key: "contratos", label: "Contratos", hint: "El permiso bajo el que se trabaja y su balance: madera, gastos, fletes y adelantos" },
   { key: "ficha", label: "Ficha CTP", hint: "Identidad legal SERFOR" },
 ];
 
