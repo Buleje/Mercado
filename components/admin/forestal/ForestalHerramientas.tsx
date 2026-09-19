@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { Wrench, Calculator, Activity, Ruler, Gauge, BarChart3, Trees } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
+import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
 import { TOOL_ONCE_STORAGE_KEY } from "@/lib/forestal/sembrar-reparto";
 
 const cargando = (
@@ -74,6 +75,10 @@ export default function ForestalHerramientas() {
       eyebrow="Forestal · Herramientas"
       title="Herramientas Forestales"
       icon={Wrench}
+      /* El permiso de TRABAJO (Brandon 2026-09-19): el cubicador de trozas
+         coteja contra la GTF de un título habilitante puntual — mismo
+         contexto que el resto del forestal, aunque acá no escriba nada. */
+      contrato={<ContratoActivoChip />}
       groups={TOOL_GROUPS}
       view={tool}
       onView={(v) => setTool(v as Tool)}

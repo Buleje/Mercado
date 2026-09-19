@@ -14,6 +14,7 @@ import {
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import LibroChrome from "@/components/admin/shared/libro-chrome";
+import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
 import { useDebounce } from "@/hooks/use-debounce";
 import { resumenLotes } from "@/lib/forestal/lote-metricas";
 import LoteForm from "./LoteForm";
@@ -79,6 +80,10 @@ export default function ForestLotesModule() {
       eyebrow="Forestal · Especialización"
       title="Lotes de Producción"
       icon={Layers}
+      /* El permiso de TRABAJO (Brandon 2026-09-19): un lote empaqueta corridas
+         que ya salieron del Libro CTP bajo un título habilitante — saber cuál
+         importa tanto acá como en el libro de origen. */
+      contrato={<ContratoActivoChip />}
       tools={
         <button
           type="button"

@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Building2, CalendarClock, FileText, Inbox, Stamp, TreePine } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
+import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
 import { useForestTramites } from "@/hooks/use-forest-tramites";
 import { useForestPlantaciones } from "@/hooks/use-forest-plantaciones";
 import { FORMATOS_TRAMITE, datosParaDuplicar, formatoPorId, type DatosTramite } from "@/lib/forestal/tramites-catalogo";
@@ -182,6 +183,11 @@ export default function ForestalTramites() {
       eyebrow="Forestal · SERFOR · ARFFS · OSINFOR"
       title="Trámites y Oficios"
       icon={Stamp}
+      /* El permiso de TRABAJO (Brandon 2026-09-19): estos formatos se
+         presentan A NOMBRE de un título habilitante puntual — CITES,
+         inspección, cambio de regente. Saber cuál está fijado evita
+         redactar un oficio bajo el permiso equivocado. */
+      contrato={<ContratoActivoChip />}
       groups={GRUPOS}
       view={vista}
       onView={(v) => {
