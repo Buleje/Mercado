@@ -77,6 +77,13 @@ export interface ActionMenuProps {
   title?: string;
   /** En móvil el botón se encoge a cuadrado y deja el label como `sr-only`. */
   compactoEnMovil?: boolean;
+  /**
+   * Botón cuadrado de sólo ícono en TODOS los anchos (el label queda para el
+   * lector de pantalla y el tooltip). Lo usa la banda de los libros, donde el
+   * título, las fases y los botones tienen que caber en una fila: con el texto
+   * «Acciones» puesto, la fila se partía en dos por unos 70 px.
+   */
+  soloIcono?: boolean;
   /** Clases extra del botón (ej. `max-sm:flex-1` para que el CTA se estire). */
   className?: string;
   /**
@@ -163,6 +170,7 @@ export default function ActionMenu({
   disabled,
   title,
   compactoEnMovil = false,
+  soloIcono = false,
   className = "",
   abrirSignal,
   vacio,
@@ -424,11 +432,11 @@ export default function ActionMenu({
         className={`inline-flex shrink-0 items-center justify-center gap-2 font-bold transition disabled:opacity-60 ${ALTO[size]} ${RADIO[size]} ${piel} ${
           size === "xs" ? "gap-1.5 px-2 text-xs" : "px-4"
         } ${variant === "primary" ? "text-base" : size === "xs" ? "" : "text-sm"} ${
-          compactoEnMovil ? "max-sm:w-12 max-sm:px-0" : ""
+          soloIcono ? "w-10 justify-center px-0" : compactoEnMovil ? "max-sm:w-12 max-sm:px-0" : ""
         } ${className}`}
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BotonIcono className="h-4 w-4 shrink-0" />}
-        <span className={compactoEnMovil ? "max-sm:sr-only" : ""}>{busy ? "Generando…" : label}</span>
+        <span className={soloIcono ? "sr-only" : compactoEnMovil ? "max-sm:sr-only" : ""}>{busy ? "Generando…" : label}</span>
         {badge != null && badge > 0 && (
           <span
             className={`rounded-full px-1.5 text-xs font-bold tabular-nums ${
@@ -440,7 +448,7 @@ export default function ActionMenu({
         )}
         <ChevronDown
           className={`h-3.5 w-3.5 shrink-0 opacity-60 transition-transform ${open ? "rotate-180" : ""} ${
-            compactoEnMovil ? "max-sm:hidden" : ""
+            soloIcono ? "hidden" : compactoEnMovil ? "max-sm:hidden" : ""
           }`}
           aria-hidden
         />

@@ -227,10 +227,10 @@ export default function LibroChrome({
             <Icon className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            {/* `libro-kicker`/`libro-title` no pintan nada por sí solas: son el
-                gancho de la prueba tipográfica del libro CTP (globals.css,
-                `[data-typeset^="ctp-"]`). Sin el atributo en <html> el header
-                se ve exactamente igual que antes. */}
+            {/* `libro-kicker`/`libro-title`: tamaño propio del título de libro
+                y kicker legible (globals.css, bloque «PANEL ADMIN —
+                Tipografía»). El título usa `--ts-libro-title` para que no lo
+                encoja el `max-height` de las laptops. */}
             <Kicker className="libro-kicker block leading-none">{eyebrow}</Kicker>
             <PageTitle className="libro-title font-display text-[length:var(--ts-xl)] font-normal sm:text-[length:var(--ts-2xl)]">
               {title}
@@ -296,7 +296,9 @@ export default function LibroChrome({
             ) : (
               flat.length > 1 && <BotonAtajos onClick={abrirAyuda} />
             )}
-            {actions && actions.length > 0 && <ActionMenu label={actionsLabel} actions={actions} />}
+            {actions && actions.length > 0 && (
+              <ActionMenu label={actionsLabel} title={actionsLabel} actions={actions} soloIcono />
+            )}
           </div>
         </div>
 
@@ -468,14 +470,19 @@ function HerramientasDelLibro({ children }: { children: ReactNode }) {
         aria-expanded={open}
         aria-haspopup="dialog"
         title="Herramientas del libro: período, búsqueda, avisos, modo patio y atajos"
-        className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition-colors ${
+        aria-label="Herramientas del libro"
+        /* Sólo ícono en todos los anchos (Brandon, 2026-09-19: «que los botones
+           no ocupen mucho espacio»). Con el texto puesto, título + fases +
+           botones no entraban en una fila y los botones caían solos a una
+           segunda. Borde de 1 px: el neutro del panel es uno solo (ADR-068). */
+        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${
           open
             ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
         }`}
       >
         <SlidersHorizontal className="h-4 w-4" aria-hidden />
-        <span className="max-sm:sr-only">Herramientas</span>
+        <span className="sr-only">Herramientas</span>
       </button>
       {typeof document !== "undefined" && panel ? createPortal(panel, portalARef.current ?? document.body) : null}
     </>
