@@ -5,7 +5,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { normalizarPlaca } from "@/lib/forestal/directorio";
-import { candidatoDesdeIngreso, type CandidatoFlete } from "@/lib/forestal/fletes";
+import { agruparCandidatosPorGuia, candidatoDesdeIngreso, type CandidatoFlete } from "@/lib/forestal/fletes";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import type { EstadoPago, Flete, FleteInput, Pagador, TipoFlete, TipoTransporte } from "@/lib/forestal/fletes";
 
@@ -180,6 +180,7 @@ export const ForestFleteDB = {
     });
     const yaAnotados = new Set(anotados.map((f) => f.gtfNumber));
 
+    /* Un candidato por GUÍA: el detalle y el porqué, en `agruparCandidatosPorGuia`. */
     const candidatos: CandidatoFlete[] = [];
     for (const e of vigentes) {
       if (yaAnotados.has(e.gtfNumber)) continue;
@@ -193,7 +194,7 @@ export const ForestFleteDB = {
       });
       if (c) candidatos.push(c);
     }
-    return candidatos;
+    return agruparCandidatosPorGuia(candidatos);
   },
 
   /** Marca pagado/pendiente sin abrir el formulario entero. */

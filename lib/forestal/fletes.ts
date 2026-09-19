@@ -321,6 +321,41 @@ export function candidatoDesdeIngreso(e: IngresoParaFlete): CandidatoFlete | nul
 }
 
 /**
+ * Un candidato por GUÍA, no por asiento (bug 2026-09-19).
+ *
+ * Una GTF con dos especies son dos asientos del libro —el formato oficial pide
+ * una línea por especie— pero **un solo viaje**: el camión vino una vez. Sin
+ * esto, la bandeja ofrecía anotar el mismo viaje hasta cuatro veces, y el
+ * volumen que mostraba era el de UN asiento: en el tenant real, la guía
+ * 010-001-0000008 son 13.845 m³ y la fila decía 6.049. Un flete que se cobra
+ * por m³ se cobraba de menos.
+ *
+ * El volumen se suma; la fecha es la del asiento más viejo (el camión llegó ese
+ * día, no el del último renglón cargado); los datos del papel —placa,
+ * transportista, permiso— son los mismos en todos los asientos, así que se
+ * completa lo que al primero le falte.
+ */
+export function agruparCandidatosPorGuia(candidatos: readonly CandidatoFlete[]): CandidatoFlete[] {
+  const porGuia = new Map<string, CandidatoFlete>();
+  for (const c of candidatos) {
+    const yaEsta = porGuia.get(c.gtfNumber);
+    if (!yaEsta) {
+      porGuia.set(c.gtfNumber, { ...c });
+      continue;
+    }
+    yaEsta.volumenM3 =
+      yaEsta.volumenM3 == null && c.volumenM3 == null ? null : (yaEsta.volumenM3 ?? 0) + (c.volumenM3 ?? 0);
+    if (c.fecha < yaEsta.fecha) yaEsta.fecha = c.fecha;
+    yaEsta.placa ??= c.placa;
+    yaEsta.transportistaNombre ??= c.transportistaNombre;
+    yaEsta.conductorNombre ??= c.conductorNombre;
+    yaEsta.proveedorNombre ??= c.proveedorNombre;
+    yaEsta.originCode ??= c.originCode;
+  }
+  return [...porGuia.values()];
+}
+
+/**
  * Qué le falta al viaje para servir de algo. No bloquea guardar: un flete se
  * anota cuando el camión llega y el precio se cierra después.
  */
