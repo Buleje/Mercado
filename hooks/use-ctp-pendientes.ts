@@ -44,6 +44,8 @@ type Respuesta = {
   piezas?: number;
   m3?: number;
   ficha?: unknown;
+  /** `?sinOrigen=1`: corridas del período sin materia prima atribuida. */
+  sinOrigen?: { corridas?: number; producidoM3?: number };
 };
 
 /** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
@@ -109,8 +111,13 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
          la Ficha, para los documentos por vencer. Dos agregados, no listas. */
       json(`/api/admin/forestal/trozas/patio?varadas=${TROZAS_VARADAS_DIAS - HORIZONTE_TROZA_DIAS}`),
       json("/api/admin/forestal/ctp-ficha"),
+      /* Corridas sin origen del período: dos números contados en el servidor
+         con LA regla (`corridaSinOrigen`). Hasta 2026-09-19 este pendiente
+         estaba fijo en 0 —el único que bloquea el cierre no se disparaba
+         nunca— porque calcularlo acá pedía bajarse el grafo entero. */
+      json(`/api/admin/forestal/ctp?sinOrigen=1&${q}`),
     ])
-      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha]) => {
+      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen]) => {
         if (miCarga !== cargaRef.current) return;   // llegó tarde: manda la más nueva
         const despachos = arr<{ status?: string; gtfNumber?: string | null; id: string }>(desp?.entries)
           .filter((e) => e.status === "registrado");
@@ -127,7 +134,7 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           guiasSinIngresar: guias.length,
           despachosSinGtf: despachos.filter((e) => !e.gtfNumber?.trim()).length,
           despachosSinAnexo: despachos.filter((e) => !conAnexo.has(e.id)).length,
-          corridasSinOrigen: 0,   // requiere la trazabilidad completa: se mira en Radar
+          corridasSinOrigen: Number(sinOrigen?.sinOrigen?.corridas) || 0,
           saldosNegativos:
             arr<{ negativa?: boolean }>(saldos?.saldos?.materiaPrima).filter((s) => s.negativa).length +
             arr<{ negativo?: boolean }>(saldos?.saldos?.productos).filter((s) => s.negativo).length,

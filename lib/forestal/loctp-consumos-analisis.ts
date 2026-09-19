@@ -165,12 +165,12 @@ export function resumenConsumos(
      sierra (`reprocesos`, ADR-316). Contar sólo la primera acusaba de huérfana
      a la corrida reprocesada, que es justo la que tiene su cadena escrita —su
      origen es otra línea del mismo libro, con su propia GTF detrás. */
-  const conOrigen = new Set([
-    ...(grafo?.consumos ?? []).map((c) => c.to),
-    ...(grafo?.reprocesos ?? []).map((r) => r.to),
-  ]);
+  const porConsumo = aristasQueLlegan(grafo?.consumos ?? []);
+  const porReproceso = aristasQueLlegan(grafo?.reprocesos ?? []);
   const corridasSinOrigen = corridas
-    .filter((c) => !conOrigen.has(c.id))
+    .filter((c) =>
+      corridaSinOrigen({ consumos: porConsumo.get(c.id) ?? 0, reprocesos: porReproceso.get(c.id) ?? 0 }),
+    )
     .map((c) => ({
       id: c.id,
       lineNo: c.lineNo,
@@ -187,6 +187,63 @@ export function resumenConsumos(
     corridasSinOrigen,
     producidoSinOrigen,
   };
+}
+
+/**
+ * ¿La corrida quedó sin origen? — LA regla, en un solo lugar.
+ *
+ * Tiene origen si le llega CUALQUIERA de las dos aristas de la cadena: madera
+ * de un ingreso (`ForestCtpConsumo`, con sus trozas por pieza — ADR-326) o
+ * producto de otra corrida que volvió a la sierra (`ForestCtpReproceso` como
+ * destino, ADR-316). El volumen de entrada escrito en el asiento NO cuenta: es
+ * un número, no una atribución — sin arista no se sabe de qué guía salió.
+ *
+ * La usan el resumen de Consumos (`corridasSinOrigen`) y el detalle flotante de
+ * la tira de días. Con dos reglas, una pantalla decía 14 y la otra 9 sobre las
+ * mismas corridas de Blas (2026-09-14): el 01/08 declaraba 142 m³ de entrada y
+ * ninguna troza.
+ */
+export function corridaSinOrigen(aristas: { consumos: number; reprocesos: number }): boolean {
+  return aristas.consumos === 0 && aristas.reprocesos === 0;
+}
+
+/** Cuántas aristas llegan a cada nodo. */
+function aristasQueLlegan(aristas: ReadonlyArray<{ to: string }>): Map<string, number> {
+  const cuenta = new Map<string, number>();
+  for (const a of aristas) cuenta.set(a.to, (cuenta.get(a.to) ?? 0) + 1);
+  return cuenta;
+}
+
+/**
+ * Agrega las corridas SIN ORIGEN de un período: cuántas son y cuánto m³
+ * produjeron. Pura y probada; la llama `ForestCtpDB.contarCorridasSinOrigen`
+ * con los dos contadores de puente que ya trae la consulta.
+ *
+ * Existe aparte del resumen de Consumos porque los pendientes del libro sólo
+ * necesitan las dos cifras, no el grafo: hasta 2026-09-19 el pendiente estaba
+ * hardcodeado en 0 justamente porque calcularlo exigía bajarse el grafo entero.
+ * La regla es la MISMA (`corridaSinOrigen`) — con dos reglas, una pantalla dijo
+ * 14 y la otra 9 sobre las mismas corridas de Blas.
+ */
+export function agregarSinOrigen(
+  filas: ReadonlyArray<{
+    quantity?: number | string | null;
+    unit?: string | null;
+    consumos: number;
+    reprocesos: number;
+  }>,
+): { corridas: number; producidoM3: number } {
+  let corridas = 0;
+  let producidoM3 = 0;
+  for (const f of filas) {
+    if (!corridaSinOrigen({ consumos: f.consumos, reprocesos: f.reprocesos })) continue;
+    corridas += 1;
+    /* Una corrida medida en PT se cuenta como sin origen igual, pero su cifra
+       no entra en un total que dice «m³»: mezclar unidades es cómo nace un
+       número que parece oficial y no lo es. */
+    if (UNIDAD_VOLUMEN.test((f.unit ?? "").trim())) producidoM3 += Number(f.quantity) || 0;
+  }
+  return { corridas, producidoM3: r4(producidoM3) };
 }
 
 /**

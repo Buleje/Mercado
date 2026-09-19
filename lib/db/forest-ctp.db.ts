@@ -50,6 +50,7 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { jornadasDesdeFilas, type JornadaDelLibro } from "@/lib/forestal/detalle-de-jornada";
+import { agregarSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
@@ -4276,6 +4277,63 @@ export class ForestCtpDB {
         .filter((c) => c.disponible > 0);
     }
     return [];
+  }
+
+  /**
+   * Cuántas corridas del período quedaron SIN ORIGEN, y cuánto produjeron.
+   *
+   * Por qué existe (radar 2026-09-15): el pendiente «corridas sin origen» del
+   * libro estaba **hardcodeado en 0** (`hooks/use-ctp-pendientes.ts`) porque
+   * calcularlo pedía bajar el grafo entero al cliente. Resultado: el único
+   * pendiente que BLOQUEA el cierre no se disparó nunca, con corridas que
+   * declaran volumen de entrada y no tienen un solo consumo atribuido.
+   *
+   * La regla es la misma de Consumos y del detalle del día —`corridaSinOrigen`,
+   * un solo lugar— para no repetir el error de 2026-09-14, cuando dos reglas
+   * distintas decían 14 y 9 sobre las mismas corridas. El volumen de entrada
+   * escrito en el asiento NO da origen: es un número, no una atribución.
+   *
+   * Cuenta en el servidor y devuelve dos cifras (regla #6: totales en backend).
+   */
+  static async contarCorridasSinOrigen(
+    tenantId: string,
+    opts: { fromDate?: Date; toDate?: Date } = {},
+  ): Promise<{ corridas: number; producidoM3: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const range = dateRange(opts);
+    const where: Prisma.ForestCtpEntryWhereInput = {
+      tenantId,
+      deletedAt: null,
+      status: "registrado",
+      section: "produccion",
+    };
+    if (range) where.entryDate = range;
+
+    const filas = await prisma.forestCtpEntry.findMany({
+      where,
+      /* Sólo los dos contadores de puente y la cifra producida: no hace falta
+         traer la corrida entera para saber si algo le llega. */
+      select: {
+        quantity: true,
+        unit: true,
+        _count: { select: { consumos: true, reprocesosEntrada: true } },
+      },
+      /* Mismo tope que la tira de días: una red, no una página. */
+      take: 2000,
+    });
+
+    /* La cuenta vive en `agregarSinOrigen` (pura y probada): acá sólo se
+       traducen los contadores de puente de cada asiento. */
+    return agregarSinOrigen(
+      filas.map((f) => ({
+        /* `quantity` es Decimal de Prisma: se cruza a number acá, en la
+           frontera, como el resto del libro — no dentro de la función pura. */
+        quantity: f.quantity == null ? null : Number(f.quantity),
+        unit: f.unit,
+        consumos: f._count.consumos,
+        reprocesos: f._count.reprocesosEntrada,
+      })),
+    );
   }
 
   /**

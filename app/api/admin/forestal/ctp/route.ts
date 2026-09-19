@@ -666,6 +666,14 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
         grafo: await ForestCtpDB.grafoTrazabilidad(auth.tenantId, period),
       });
     }
+    /* Sólo el conteo de corridas sin origen del período: lo que los pendientes
+       del libro necesitan sin bajarse el grafo entero (que para el Radar pesa
+       300 ingresos + sus enlaces). Dos números, no un grafo. */
+    if (url.searchParams.get("sinOrigen") === "1") {
+      return NextResponse.json({
+        sinOrigen: await ForestCtpDB.contarCorridasSinOrigen(auth.tenantId, period),
+      });
+    }
     // Kardex (cuenta corriente) de la materia prima de una especie.
     const kardexEspecie = url.searchParams.get("kardex");
     if (kardexEspecie) {

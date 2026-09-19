@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  agregarSinOrigen,
   agruparConsumos,
   juzgarRendimientoConsumo,
   resumenConsumos,
@@ -153,5 +154,51 @@ describe("juzgarRendimientoConsumo", () => {
 
   it("sin dato no opina", () => {
     expect(juzgarRendimientoConsumo(null).tono).toBe("neutro");
+  });
+});
+
+/* ── Corridas sin origen para los pendientes del libro ────────────────────────
+   Hasta 2026-09-19 el pendiente «corridas sin materia prima» estaba hardcodeado
+   en 0 en `use-ctp-pendientes.ts`: el único que bloquea el cierre no se disparó
+   nunca. `agregarSinOrigen` es la cuenta que ahora lo alimenta, con LA regla
+   (`corridaSinOrigen`) y no una segunda copia. Medido contra el tenant QA el
+   día que se cableó: 5 de 14 corridas, 14,2525 m³, y el grafo del Radar dio los
+   mismos 5 por la otra vía. */
+describe("agregarSinOrigen — el pendiente que nunca se disparaba", () => {
+  const corrida = (over: Partial<{ quantity: number; unit: string; consumos: number; reprocesos: number }> = {}) => ({
+    quantity: 10,
+    unit: "m3",
+    consumos: 0,
+    reprocesos: 0,
+    ...over,
+  });
+
+  it("cuenta la corrida a la que no le llega ni consumo ni reproceso", () => {
+    expect(agregarSinOrigen([corrida()])).toEqual({ corridas: 1, producidoM3: 10 });
+  });
+
+  it("no cuenta la que tiene consumo, ni la que tiene reproceso (ADR-316)", () => {
+    const r = agregarSinOrigen([corrida({ consumos: 1 }), corrida({ reprocesos: 1 })]);
+    expect(r).toEqual({ corridas: 0, producidoM3: 0 });
+  });
+
+  it("el volumen de entrada declarado NO da origen: sin arista, sigue huérfana", () => {
+    // La corrida del 01/08 de Blas declaraba 142 m³ de entrada y ninguna troza.
+    const r = agregarSinOrigen([corrida({ quantity: 142 })]);
+    expect(r.corridas).toBe(1);
+  });
+
+  it("una corrida en PT se cuenta, pero su cifra no entra en el total de m³", () => {
+    const r = agregarSinOrigen([corrida({ unit: "pt", quantity: 2374 }), corrida({ quantity: 4.25 })]);
+    expect(r).toEqual({ corridas: 2, producidoM3: 4.25 });
+  });
+
+  it("redondea a 4 decimales, como el resto del libro", () => {
+    const r = agregarSinOrigen([corrida({ quantity: 1.00005 }), corrida({ quantity: 2.00005 })]);
+    expect(r.producidoM3).toBe(3.0001);
+  });
+
+  it("sin corridas devuelve cero, no null", () => {
+    expect(agregarSinOrigen([])).toEqual({ corridas: 0, producidoM3: 0 });
   });
 });
