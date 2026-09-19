@@ -15,7 +15,7 @@ import {
   type CtpPeriod,
 } from "./ctp-period";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "./ctp-compliance";
-import { especieCoincide } from "./ctp-ficha-types";
+import { coordenadasUtmLinea, especieCoincide } from "./ctp-ficha-types";
 import { RENDIMIENTO_REF_ASERRADA, evaluarRendimiento } from "./ctp-rendimiento";
 import {
   faltantesIngreso,
@@ -386,6 +386,8 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
 interface CtpFichaLite {
   nombreCtp: string; codigoCtp: string; ruc: string; razonSocial: string;
   arffs: string; registroArffs: string; registroArffsFecha: string;
+  registroLibro: string; establecimientoAnexo: string; tipoEstablecimiento: string;
+  utmEste: string; utmNorte: string; utmZona: string;
   titulos: { tipo: string; codigo: string; vencimiento: string }[];
   citesPermisos: { especie: string; numero: string; vencimiento: string }[];
   representante: string; representanteDni: string;
@@ -547,14 +549,28 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
   wc.addRow(["Formato conforme RDE N° D000025-2023-MIDAGRI-SERFOR-DE · Ley 29763", ""]);
   wc.addRow([]);
   const kv = (k: string, v: string) => { const r = wc.addRow([k, v || "—"]); r.getCell(1).font = { bold: true }; };
+  // Los trece primeros son los campos de la CARÁTULA (Anexo 1 de la RDE
+  // D000025-2023), en su orden y con sus nombres: así el fiscalizador la lee
+  // sin traducir. Lo que la Ficha no tenga sale "—", nunca inventado.
+  kv("N° Registro del libro de operaciones", ficha?.registroLibro ?? "");
+  kv("Titular del centro de transformación primaria", ficha?.razonSocial ?? "");
+  kv("Representante legal", [ficha?.representante, ficha?.representanteDni && `DNI: ${ficha.representanteDni}`].filter(Boolean).join(" · "));
+  kv("N° de autorización o registro", [ficha?.registroArffs, ficha?.registroArffsFecha].filter(Boolean).join(" · "));
+  kv("N° RUC", ficha?.ruc ?? "");
+  kv("N° del establecimiento anexo", ficha?.establecimientoAnexo ?? "");
+  kv("Tipo de establecimiento", ficha?.tipoEstablecimiento ?? "");
+  kv("Domicilio", ficha?.direccion ?? "");
+  kv("Departamento", ficha?.region ?? "");
+  kv("Provincia", ficha?.provincia ?? "");
+  kv("Distrito", ficha?.distrito ?? "");
+  kv("Coordenadas UTM", coordenadasUtmLinea(ficha));
+  kv("Número de teléfono", ficha?.telefono ?? "");
+  kv("Correo electrónico", ficha?.email ?? "");
+  // Lo de abajo NO es de la carátula: son los datos con los que el centro
+  // emite sus propios papeles (certificado de trazabilidad, GTF de salida).
   kv("Nombre del CTP", ficha?.nombreCtp ?? "");
   kv("Código de CTP", codigoCtp);
-  kv("RUC del titular", ficha?.ruc ?? "");
-  kv("Razón social", ficha?.razonSocial ?? "");
   kv("ARFFS competente", ficha?.arffs ?? "");
-  kv("Registro ARFFS", [ficha?.registroArffs, ficha?.registroArffsFecha].filter(Boolean).join(" · "));
-  kv("Representante legal", [ficha?.representante, ficha?.representanteDni].filter(Boolean).join(" · "));
-  kv("Dirección", [ficha?.direccion, ficha?.distrito, ficha?.provincia, ficha?.region].filter(Boolean).join(", "));
   kv("Serie GTF autorizada", ficha?.gtfSerie ?? "");
   kv("Período del libro", period.label);
   kv("Generado", new Date().toLocaleString("es-PE"));

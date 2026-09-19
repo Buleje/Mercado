@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
+import { CTP_TIPOS_ESTABLECIMIENTO } from "@/lib/forestal/ctp-ficha-types";
 import { LOGO_MAX_BYTES, motivoLogoInvalido } from "@/lib/forestal/directorio";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
@@ -41,6 +42,18 @@ const fichaSchema = z.object({
   arffs: z.string().trim().max(160).optional(),
   registroArffs: z.string().trim().max(120).optional(),
   registroArffsFecha: z.string().trim().max(10).optional(),
+  // ── Carátula del Libro (Anexo 1 de la RDE D000025-2023) ──
+  registroLibro: z.string().trim().max(60).optional(),
+  establecimientoAnexo: z.string().trim().max(10).optional(),
+  // Lista cerrada: la carátula sólo acepta uno de los siete tipos de SUNAT.
+  // Se admite "" porque la ficha se carga de a poco.
+  tipoEstablecimiento: z.enum(CTP_TIPOS_ESTABLECIMIENTO).or(z.literal("")).optional(),
+  // Coordenadas UTM como texto: el casillero se llena con el número tal cual
+  // lo trae el GPS. La validación de que cae en el Perú es un AVISO en la
+  // pantalla, no un rechazo — media coordenada no puede costar todo el formulario.
+  utmEste: z.string().trim().max(12).optional(),
+  utmNorte: z.string().trim().max(12).optional(),
+  utmZona: z.string().trim().max(5).optional(),
   titulos: z.array(tituloSchema).max(50).optional(),
   citesPermisos: z.array(citesPermisoSchema).max(50).optional(),
   representante: z.string().trim().max(160).optional(),

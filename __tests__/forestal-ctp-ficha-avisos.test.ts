@@ -7,8 +7,9 @@
  */
 import { describe, expect, it } from "vitest";
 import {
-  avisosDeFicha, ctpFichaFaltantes, diasParaVencer, documentosVencimientoDeFicha, emptyCtpFicha, estadoVencimiento,
-  fechaCortaUTC, requisitosFaltantes, rucValido, tituloDeGuia, type CtpFicha,
+  avisosDeFicha, completitudFichaCtp, coordenadaUtmDeFicha, coordenadasUtmLinea, ctpFichaFaltantes,
+  diasParaVencer, dniValido, documentosVencimientoDeFicha, emptyCtpFicha, estadoVencimiento,
+  fechaCortaUTC, requisitosFaltantes, rucValido, tituloDeGuia, utmAGeograficas, type CtpFicha,
 } from "@/lib/forestal/ctp-ficha-types";
 
 /** 2026-08-12 12:00 UTC — "hoy" fijo para que los tests no dependan del reloj. */
@@ -23,8 +24,18 @@ function ficha(over: Partial<CtpFicha> = {}): CtpFicha {
     razonSocial: "Maderera San Martín S.A.C.",
     arffs: "GORE Ucayali · DRSAFFS",
     representante: "Juan Pérez",
+    representanteDni: "73546733",
     direccion: "Carretera Federico Basadre Km 12",
     region: "Ucayali", provincia: "Coronel Portillo", distrito: "Callería",
+    // Carátula del Libro (Anexo 1 de la RDE D000025-2023): sin estos campos la
+    // Ficha ya NO está completa — la pantalla lo avisa como casilleros en blanco.
+    registroLibro: "001",
+    registroArffs: "RD-SD-549",
+    establecimientoAnexo: "001",
+    tipoEstablecimiento: "Sede Productiva",
+    utmEste: "435126", utmNorte: "8756846", utmZona: "18S",
+    telefono: "961234567",
+    email: "legal@sanmartin.pe",
     gtfSerie: "GTF-001",
     titulos: [{ tipo: "concesion", codigo: "CONC-001", resolucion: "R.A. 123-2024", planManejo: "PGMF", vencimiento: "2030-01-01" }],
     ...over,
@@ -266,5 +277,97 @@ describe("requisitosFaltantes — por documento, no por campo suelto", () => {
   it("ctpFichaFaltantes sigue siendo el mínimo de 4 (lo usa WoodEntryForm)", () => {
     expect(ctpFichaFaltantes(emptyCtpFicha())).toEqual(["nombreCtp", "codigoCtp", "ruc", "razonSocial"]);
     expect(ctpFichaFaltantes(ficha())).toEqual([]);
+  });
+});
+
+describe("carátula del Libro (Anexo 1 · RDE D000025-2023)", () => {
+  it("los 15 campos de la carátula se miden aparte de los papeles del centro", () => {
+    const c = completitudFichaCtp(ficha(), "caratula");
+    expect(c.total).toBe(15);
+    expect(c.faltan).toEqual([]);
+    expect(c.pct).toBe(100);
+  });
+
+  it("una ficha vacía no tiene NADA cargado: es el estado del tenant real", () => {
+    const c = completitudFichaCtp(emptyCtpFicha());
+    expect(c.completos).toBe(0);
+    expect(c.pct).toBe(0);
+    expect(c.faltan).toHaveLength(c.total);
+  });
+
+  it("el título habilitante cuenta como cargado recién con uno en la lista", () => {
+    const sinTitulo = completitudFichaCtp(ficha({ titulos: [] }), "documentos");
+    expect(sinTitulo.faltan.map((r) => r.label)).toEqual(["Título habilitante"]);
+  });
+
+  it("avisa los casilleros en blanco y dice cuántos son", () => {
+    const f = ficha({ registroLibro: "", establecimientoAnexo: "", tipoEstablecimiento: "" });
+    const aviso = avisosDeFicha(f, HOY).find((a) => a.clave === "caratula-incompleta");
+    expect(aviso?.nivel).toBe("aviso");
+    expect(aviso?.titulo).toContain("3 campos");
+    expect(aviso?.detalle).toContain("N° Registro del libro de operaciones");
+  });
+
+  /** No decir el mismo campo dos veces: el RUC vacío ya sale como identidad
+   *  incompleta (crítico) y no tiene que repetirse en el aviso de carátula. */
+  it("no repite lo que ya dijo «identidad incompleta»", () => {
+    const f = ficha({ ruc: "", razonSocial: "" });
+    const aviso = avisosDeFicha(f, HOY).find((a) => a.clave === "caratula-incompleta");
+    expect(aviso).toBeUndefined();
+  });
+
+  it("una carátula completa no genera el aviso", () => {
+    expect(claves(ficha())).not.toContain("caratula-incompleta");
+  });
+});
+
+describe("dniValido — el documento del representante va en la carátula", () => {
+  it("ocho dígitos es un DNI", () => {
+    expect(dniValido("73546733")).toBe(true);
+  });
+
+  it("siete dígitos (un cero comido al pegar de Excel) se cuestiona", () => {
+    expect(dniValido("7354673")).toBe(false);
+    expect(claves(ficha({ representanteDni: "7354673" }))).toContain("dni-invalido");
+  });
+
+  it("un carné de extranjería NO se marca en rojo: no hay regla que verificar", () => {
+    expect(dniValido("CE123456789")).toBe(true);
+    expect(claves(ficha({ representanteDni: "CE123456789" }))).not.toContain("dni-invalido");
+  });
+
+  it("vacío no es inválido: es un campo que falta, y eso se avisa aparte", () => {
+    expect(dniValido("")).toBe(true);
+  });
+});
+
+describe("coordenadas UTM de la carátula", () => {
+  it("las tres piezas arman la línea del formato oficial", () => {
+    expect(coordenadasUtmLinea(ficha())).toBe("E 435126 N 8756846 · Zona 18S");
+  });
+
+  it("media coordenada no se imprime: el casillero queda en blanco", () => {
+    expect(coordenadasUtmLinea(ficha({ utmNorte: "" }))).toBe("");
+    expect(coordenadasUtmLinea(ficha({ utmZona: "" }))).toBe("");
+    expect(coordenadaUtmDeFicha(emptyCtpFicha())).toBeNull();
+  });
+
+  it("el ejemplo de la guía oficial (E 435126 N 8756846 · 18S) cae dentro del Perú", () => {
+    const geo = utmAGeograficas(coordenadaUtmDeFicha(ficha()));
+    expect(geo).not.toBeNull();
+    expect(geo!.lat).toBeCloseTo(-11.245, 2);
+    expect(geo!.lng).toBeCloseTo(-75.594, 2);
+  });
+
+  /** El error más común al copiar de un GPS: el Este y el Norte cambiados de
+   *  lugar. La línea se lee igual de bien y ubica la planta en el mar. */
+  it("Este y Norte cambiados de lugar caen fuera del Perú y se avisa", () => {
+    const f = ficha({ utmEste: "8756846", utmNorte: "435126" });
+    expect(utmAGeograficas(coordenadaUtmDeFicha(f))).toBeNull();
+    expect(claves(f)).toContain("utm-fuera-del-peru");
+  });
+
+  it("una zona que no es del Perú (17, 18 o 19) también se avisa", () => {
+    expect(utmAGeograficas(coordenadaUtmDeFicha(ficha({ utmZona: "30S" })))).toBeNull();
   });
 });

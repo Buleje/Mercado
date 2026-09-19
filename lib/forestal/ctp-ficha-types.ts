@@ -7,6 +7,8 @@
  * módulo de DB al bundle del navegador. La DB class re-exporta desde acá.
  */
 
+import { fromUtm, parseUtmZone, zoneLabel } from "./loth-utm";
+
 /** Título habilitante que ampara el origen de la materia prima del CTP. */
 export interface CtpTituloHabilitante {
   /**
@@ -59,6 +61,35 @@ export interface CtpFicha {
   arffs: string; // ARFFS competente (ej. "GORE Ucayali · DRSAFFS")
   registroArffs: string; // N° de constancia/registro del CTP ante la ARFFS
   registroArffsFecha: string; // YYYY-MM-DD de la constancia
+  /**
+   * «N° Registro del libro de operaciones» — primer campo de la carátula
+   * (Anexo 1 de la RDE D000025-2023): *"consignar el número de registro
+   * otorgado por la ARFFS"*. Es el número que la ARFFS le da AL LIBRO, y es
+   * OTRO que `registroArffs` (la autorización del establecimiento): en el
+   * ejemplo oficial conviven "001" y "RD-SD-549".
+   */
+  registroLibro: string;
+  /**
+   * «N° del establecimiento anexo» — correlativo del local dentro del RUC.
+   * *"Si la empresa tiene solo un local o establecimiento, el número será
+   * siempre 001"* (Anexo 1).
+   */
+  establecimientoAnexo: string;
+  /**
+   * «Tipo de establecimiento» — la identificación **registrada en SUNAT**, una
+   * de las siete de `CTP_TIPOS_ESTABLECIMIENTO`. No es el rubro del centro
+   * (aserradero / laminadora): eso la carátula no lo pide.
+   */
+  tipoEstablecimiento: string;
+  /**
+   * «Coordenadas UTM» de la carátula: *"consignar el número de coordenadas UTM
+   * (E, N) y zona latitudinal"*. Tres campos y no un texto libre para poder
+   * avisar cuando el punto cae fuera del Perú — un Este y un Norte cambiados
+   * de lugar ubican la planta en el mar y nadie lo nota leyendo la línea.
+   */
+  utmEste: string;
+  utmNorte: string;
+  utmZona: string;
   // ── Títulos habilitantes vinculados (origen legal de la materia prima) ──
   titulos: CtpTituloHabilitante[];
   // ── Permisos CITES de especies protegidas que procesa el CTP ──
@@ -101,6 +132,12 @@ export function emptyCtpFicha(): CtpFicha {
     arffs: "",
     registroArffs: "",
     registroArffsFecha: "",
+    registroLibro: "",
+    establecimientoAnexo: "",
+    tipoEstablecimiento: "",
+    utmEste: "",
+    utmNorte: "",
+    utmZona: "",
     titulos: [],
     citesPermisos: [],
     representante: "",
@@ -152,6 +189,12 @@ export function normalizeCtpFicha(raw: unknown): CtpFicha {
     arffs: s(r.arffs),
     registroArffs: s(r.registroArffs),
     registroArffsFecha: s(r.registroArffsFecha),
+    registroLibro: s(r.registroLibro),
+    establecimientoAnexo: s(r.establecimientoAnexo),
+    tipoEstablecimiento: s(r.tipoEstablecimiento),
+    utmEste: s(r.utmEste),
+    utmNorte: s(r.utmNorte),
+    utmZona: s(r.utmZona),
     titulos,
     citesPermisos,
     representante: s(r.representante),
@@ -210,6 +253,177 @@ export function tituloTipoLabel(tipo: string): string {
   return CTP_TITULO_TIPOS.find((x) => x.value === tipo)?.label ?? (tipo || "—");
 }
 
+/**
+ * «Tipo de establecimiento» de la carátula (Anexo 1). Lista CERRADA a
+ * propósito: la instrucción oficial dice *"consignar la identificación del
+ * tipo de establecimiento registrada en SUNAT, según se detalla a
+ * continuación"* y enumera exactamente estas siete. Un valor fuera de la lista
+ * no lo acepta la ARFFS, así que acá el `select` es correcto (a diferencia del
+ * plan de manejo, donde la nomenclatura varía por región y va como texto).
+ */
+export const CTP_TIPOS_ESTABLECIMIENTO = [
+  "Casa Matriz",
+  "Sucursal",
+  "Agencia",
+  "Local Comercial o de Servicio",
+  "Sede Productiva",
+  "Depósito o Almacén",
+  "Oficina Administrativa",
+] as const;
+
+/** Uno de los siete tipos de establecimiento de SUNAT que acepta la carátula. */
+export type TipoEstablecimientoCtp = (typeof CTP_TIPOS_ESTABLECIMIENTO)[number];
+
+/**
+ * ¿Parece un DNI? Ocho dígitos. El documento del representante legal va en la
+ * carátula y en el pie de la GTF; con siete dígitos (un cero comido al pegar
+ * de Excel) el fiscalizador no puede cruzarlo contra RENIEC.
+ *
+ * Devuelve `true` para un **carné de extranjería** (alfanumérico, 9-12): no se
+ * puede verificar, y marcarlo en rojo enseñaría a ignorar el aviso. Sólo se
+ * cuestiona lo que dice ser un DNI —puros dígitos— y no tiene ocho.
+ */
+export function dniValido(doc: string): boolean {
+  const d = s(doc);
+  if (!d) return true; // vacío no es inválido: es un campo que falta, y eso ya se avisa aparte
+  if (!/^\d+$/.test(d)) return true; // CE / pasaporte: no hay regla que verificar
+  return d.length === 8;
+}
+
+/** Las tres piezas de la coordenada UTM ya numéricas, o `null` si falta alguna. */
+export interface CoordenadaUtm {
+  este: number;
+  norte: number;
+  zona: number;
+  /** Hemisferio sur (en Perú, siempre). */
+  sur: boolean;
+}
+
+/** Lee `utmEste`/`utmNorte`/`utmZona` de la Ficha. `null` = incompleta, no cero. */
+export function coordenadaUtmDeFicha(
+  f: { utmEste?: string; utmNorte?: string; utmZona?: string } | null | undefined,
+): CoordenadaUtm | null {
+  const este = Number(s(f?.utmEste).replace(/[^\d.]/g, ""));
+  const norte = Number(s(f?.utmNorte).replace(/[^\d.]/g, ""));
+  if (!Number.isFinite(este) || !Number.isFinite(norte) || este <= 0 || norte <= 0) return null;
+  const { zone, south } = parseUtmZone(s(f?.utmZona) || "18S");
+  return { este, norte, zona: zone, sur: south };
+}
+
+/** Caja que contiene al Perú continental con holgura (lat, lng en WGS84). */
+const PERU_BBOX = { latMin: -18.6, latMax: 0.5, lngMin: -82.0, lngMax: -68.3 };
+
+/**
+ * La coordenada de la carátula convertida a lat/lng, o `null` si cae fuera del
+ * Perú. No es un capricho geográfico: si el Este y el Norte se escriben
+ * cambiados de lugar —el error más común al copiar de un GPS— la carátula
+ * declara un establecimiento en medio del Atlántico y la línea se lee igual de
+ * bien. Reusa la conversión del plano del LO-TH (`loth-utm`), no una propia.
+ */
+export function utmAGeograficas(c: CoordenadaUtm | null): { lat: number; lng: number } | null {
+  if (!c) return null;
+  if (c.zona < 17 || c.zona > 19) return null; // el Perú entra en las zonas 17, 18 y 19
+  const [lat, lng] = fromUtm(c.este, c.norte, c.zona, c.sur);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < PERU_BBOX.latMin || lat > PERU_BBOX.latMax) return null;
+  if (lng < PERU_BBOX.lngMin || lng > PERU_BBOX.lngMax) return null;
+  return { lat, lng };
+}
+
+/**
+ * La línea «Coordenadas UTM» tal como va en la carátula: `E 435126 N 8756846 ·
+ * Zona 18S`. Vacío si falta alguna de las tres — media coordenada no se
+ * imprime, se deja el casillero en blanco.
+ */
+export function coordenadasUtmLinea(
+  f: { utmEste?: string; utmNorte?: string; utmZona?: string } | null | undefined,
+): string {
+  const c = coordenadaUtmDeFicha(f);
+  if (!c || !s(f?.utmZona)) return "";
+  return `E ${c.este} N ${c.norte} · Zona ${zoneLabel(c.zona, c.sur)}`;
+}
+
+/** Un dato que la Ficha necesita, agrupado por para qué sirve. */
+export interface RequisitoFichaCtp {
+  /** Etiqueta con la que lo pide el documento (la del Anexo 1, si es carátula). */
+  label: string;
+  /** Claves de la Ficha que lo llenan: todas tienen que estar para contarlo. */
+  campos: (keyof CtpFicha)[];
+  grupo: "caratula" | "documentos";
+  /** La instrucción oficial de cómo se llena — se muestra como ayuda, textual. */
+  comoSeLlena: string;
+}
+
+/**
+ * **La carátula del Libro, campo por campo, en el orden del Anexo 1** de la
+ * RDE N° D000025-2023-MIDAGRI-SERFOR-DE, más lo que necesitan los papeles que
+ * el centro emite por su cuenta.
+ *
+ * Es la lista contra la que se mide "cuánto le falta a la Ficha": no una
+ * selección nuestra de campos lindos. Lo que no está en el Anexo 1 no entra
+ * acá (el logo está en el formato como *"en caso se cuente"*, así que no
+ * cuenta como faltante).
+ */
+export const REQUISITOS_FICHA_CTP: RequisitoFichaCtp[] = [
+  { grupo: "caratula", label: "N° Registro del libro de operaciones", campos: ["registroLibro"], comoSeLlena: "El número de registro que te dio la ARFFS para el libro. En el ejemplo oficial es «001»." },
+  { grupo: "caratula", label: "Titular del centro de transformación primaria", campos: ["razonSocial"], comoSeLlena: "El nombre de la persona natural o jurídica según el registro de SUNAT." },
+  { grupo: "caratula", label: "Representante legal", campos: ["representante"], comoSeLlena: "Si el titular es persona jurídica, van además los nombres y apellidos del representante legal." },
+  { grupo: "caratula", label: "Documento del representante", campos: ["representanteDni"], comoSeLlena: "El número de documento de identidad del representante legal." },
+  { grupo: "caratula", label: "N° de autorización o registro", campos: ["registroArffs"], comoSeLlena: "El número de autorización que dio la ARFFS para el establecimiento del centro." },
+  { grupo: "caratula", label: "N° RUC", campos: ["ruc"], comoSeLlena: "El RUC del centro de transformación primaria." },
+  { grupo: "caratula", label: "N° del establecimiento anexo", campos: ["establecimientoAnexo"], comoSeLlena: "El correlativo del local. Si tienes un solo establecimiento es siempre «001»." },
+  { grupo: "caratula", label: "Tipo de establecimiento", campos: ["tipoEstablecimiento"], comoSeLlena: "El tipo con el que ese local figura en SUNAT (Sede Productiva, Casa Matriz, Sucursal…)." },
+  { grupo: "caratula", label: "Domicilio", campos: ["direccion"], comoSeLlena: "La dirección física del establecimiento del centro." },
+  { grupo: "caratula", label: "Departamento", campos: ["region"], comoSeLlena: "El departamento donde se ubica el establecimiento." },
+  { grupo: "caratula", label: "Provincia", campos: ["provincia"], comoSeLlena: "La provincia donde se ubica el establecimiento." },
+  { grupo: "caratula", label: "Distrito", campos: ["distrito"], comoSeLlena: "El distrito donde se ubica el establecimiento." },
+  { grupo: "caratula", label: "Coordenadas UTM", campos: ["utmEste", "utmNorte", "utmZona"], comoSeLlena: "El Este, el Norte y la zona latitudinal del establecimiento (en el Perú, 17, 18 o 19 Sur)." },
+  { grupo: "caratula", label: "Número de teléfono", campos: ["telefono"], comoSeLlena: "Teléfono fijo o móvil del establecimiento o del representante legal." },
+  { grupo: "caratula", label: "Correo electrónico", campos: ["email"], comoSeLlena: "Correo del establecimiento o del representante legal." },
+  { grupo: "documentos", label: "Nombre del CTP", campos: ["nombreCtp"], comoSeLlena: "Cómo se llama el centro. Encabeza el certificado de trazabilidad y el export del Libro." },
+  { grupo: "documentos", label: "Código de CTP", campos: ["codigoCtp"], comoSeLlena: "El código que la ARFFS le asignó al centro." },
+  { grupo: "documentos", label: "ARFFS competente", campos: ["arffs"], comoSeLlena: "La autoridad regional que te registró (ej. «GORE Ucayali · DRSAFFS»)." },
+  { grupo: "documentos", label: "Serie GTF autorizada", campos: ["gtfSerie"], comoSeLlena: "La serie del talonario de guías de salida que autorizó la ARFFS." },
+  { grupo: "documentos", label: "Título habilitante", campos: ["titulos"], comoSeLlena: "Al menos una concesión, permiso o autorización que ampare el origen de la materia prima." },
+];
+
+/** Cuánto de la Ficha está cargado y qué falta exactamente. */
+export interface CompletitudFichaCtp {
+  total: number;
+  completos: number;
+  /** Los requisitos sin llenar, en el orden del formato. */
+  faltan: RequisitoFichaCtp[];
+  /** 0-100, redondeado hacia abajo: 99 % nunca se lee como "listo". */
+  pct: number;
+}
+
+/** ¿Está cargado este requisito? Todas sus claves con algo adentro. */
+function requisitoCompleto(f: CtpFicha, r: RequisitoFichaCtp): boolean {
+  return r.campos.every((k) => {
+    const v = f[k];
+    return Array.isArray(v) ? v.length > 0 : !!s(v);
+  });
+}
+
+/**
+ * Cuánto le falta a la Ficha, medido contra `REQUISITOS_FICHA_CTP`. `grupo` acota
+ * la cuenta a la carátula o a los papeles propios del centro.
+ *
+ * Es la MISMA lista que alimenta el aviso «la carátula sale con casilleros en
+ * blanco» de `avisosDeFicha` — el indicador y el aviso no pueden discrepar.
+ */
+export function completitudFichaCtp(f: CtpFicha, grupo?: RequisitoFichaCtp["grupo"]): CompletitudFichaCtp {
+  const lista = grupo ? REQUISITOS_FICHA_CTP.filter((r) => r.grupo === grupo) : REQUISITOS_FICHA_CTP;
+  const faltan = lista.filter((r) => !requisitoCompleto(f, r));
+  const completos = lista.length - faltan.length;
+  return {
+    total: lista.length,
+    completos,
+    faltan,
+    pct: lista.length === 0 ? 100 : Math.floor((completos / lista.length) * 100),
+  };
+}
+
 /** Cómo se nombra cada campo en pantalla y en los avisos. Single source: el
  *  editor, la vista de lectura y los avisos leen de acá (si no, el mismo campo
  *  se llama distinto en cada lugar y el operador no sabe qué tiene que llenar). */
@@ -220,8 +434,16 @@ export const CTP_FICHA_LABELS: Record<keyof CtpFicha, string> = {
   ruc: "RUC",
   razonSocial: "Razón social",
   arffs: "ARFFS competente",
-  registroArffs: "N° de registro ARFFS",
+  // Los nombres de la carátula son los del Anexo 1 al pie de la letra: el
+  // operador los va a buscar tal cual en el formato que le pide la ARFFS.
+  registroArffs: "N° de autorización o registro",
   registroArffsFecha: "Fecha de registro",
+  registroLibro: "N° Registro del libro de operaciones",
+  establecimientoAnexo: "N° del establecimiento anexo",
+  tipoEstablecimiento: "Tipo de establecimiento",
+  utmEste: "Coordenada UTM Este (E)",
+  utmNorte: "Coordenada UTM Norte (N)",
+  utmZona: "Zona UTM",
   titulos: "Títulos habilitantes",
   citesPermisos: "Permisos CITES",
   representante: "Representante legal",
@@ -438,6 +660,25 @@ export function avisosDeFicha(f: CtpFicha, ahora: number = Date.now()): AvisoFic
     });
   }
 
+  if (s(f.representanteDni) && !dniValido(f.representanteDni)) {
+    out.push({
+      clave: "dni-invalido",
+      nivel: "aviso",
+      titulo: "El documento del representante no tiene 8 dígitos",
+      detalle: `«${f.representanteDni}» va en la carátula del Libro y al pie de la guía de salida. Un DNI son 8 dígitos: si es un carné de extranjería, escríbelo con su letra para que no se lea como un DNI incompleto.`,
+    });
+  }
+
+  const utm = coordenadaUtmDeFicha(f);
+  if (utm && s(f.utmZona) && !utmAGeograficas(utm)) {
+    out.push({
+      clave: "utm-fuera-del-peru",
+      nivel: "aviso",
+      titulo: "Las coordenadas UTM caen fuera del Perú",
+      detalle: `E ${utm.este} · N ${utm.norte} · zona ${zoneLabel(utm.zona, utm.sur)} no ubica el establecimiento en el país. Revisa que el Este y el Norte no estén cambiados de lugar y que la zona sea 17, 18 o 19.`,
+    });
+  }
+
   if (s(f.ruc) && !rucValido(f.ruc)) {
     out.push({
       clave: "ruc-invalido",
@@ -454,6 +695,26 @@ export function avisosDeFicha(f: CtpFicha, ahora: number = Date.now()): AvisoFic
       nivel: "critico",
       titulo: "Identidad legal incompleta",
       detalle: `Falta ${faltanBase.map((k) => CTP_FICHA_LABELS[k]).join(", ")}. Sin eso, el certificado y el export del Libro salen sin identificar al centro.`,
+    });
+  }
+
+  // La carátula del Libro (Anexo 1) es UNA cosa: un aviso con todo lo que le
+  // falta, no quince. Se saca lo que ya nombró «identidad incompleta» para no
+  // decir dos veces el mismo campo (mismo criterio que los avisos por documento).
+  // Se cruza por CLAVE de la Ficha, no por etiqueta: la carátula llama "N° RUC"
+  // a lo que el aviso de identidad llama "RUC", y comparar textos dejaba pasar
+  // el duplicado.
+  const yaNombrados = new Set<keyof CtpFicha>(faltanBase);
+  const caratula = completitudFichaCtp(f, "caratula");
+  const faltanCaratula = caratula.faltan
+    .filter((r) => !r.campos.some((k) => yaNombrados.has(k)))
+    .map((r) => r.label);
+  if (faltanCaratula.length > 0) {
+    out.push({
+      clave: "caratula-incompleta",
+      nivel: "aviso",
+      titulo: `La carátula del Libro sale con ${faltanCaratula.length} ${faltanCaratula.length === 1 ? "campo" : "campos"} en blanco`,
+      detalle: `El Anexo 1 de la RDE D000025-2023 pide ${caratula.total} datos y tienes ${caratula.completos}. Falta ${faltanCaratula.join(", ")}. La ARFFS recibe esa carátula al frente de los Cuadros Resumen todos los meses.`,
     });
   }
 
