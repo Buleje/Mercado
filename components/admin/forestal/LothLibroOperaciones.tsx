@@ -29,6 +29,7 @@ import {
   Coins,
   Scissors,
   Upload,
+  LayoutGrid,
 } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -45,6 +46,7 @@ import {
 import LothEntryForm, { SECTION_META } from "./LothEntryForm";
 import LothCaratulaForm from "./LothCaratulaForm";
 import LothTraceView from "./LothTraceView";
+import LothTableroTrozas from "./LothTableroTrozas";
 import LothPlanView from "./LothPlanView";
 import LothGtfView from "./LothGtfView";
 import LothAnalyticsView from "./LothAnalyticsView";
@@ -152,7 +154,7 @@ const COLS: Record<LothSection, Col[]> = {
   ],
 };
 
-type LothView = "secciones" | "trazabilidad" | "plan" | "gtf" | "analitica" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
+type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "analitica" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
 
 // Navegación en cabina compartida con el Libro CTP (`libro-chrome`): las nueve
 // vistas agrupadas por fase, con los MISMOS nombres de grupo que el otro libro
@@ -178,6 +180,7 @@ const LOTH_GROUPS: LibroGroup[] = [
       { key: "plan", ...LOTH_VISTAS_POR_KEY["plan"], icon: MapIcon },
       { key: "mapa", ...LOTH_VISTAS_POR_KEY["mapa"], icon: MapPin },
       { key: "trazabilidad", ...LOTH_VISTAS_POR_KEY["trazabilidad"], icon: Share2 },
+      { key: "tablero", ...LOTH_VISTAS_POR_KEY["tablero"], icon: LayoutGrid },
     ],
   },
   {
@@ -495,7 +498,7 @@ export default function LothLibroOperaciones() {
    * la pantalla se veía bien y no tenía datos.
    */
   useEffect(() => {
-    if (view === "trazabilidad" || view === "secciones" || view === "cierre" || view === "rentabilidad") loadAll();
+    if (view === "trazabilidad" || view === "tablero" || view === "secciones" || view === "cierre" || view === "rentabilidad") loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
@@ -761,6 +764,29 @@ export default function LothLibroOperaciones() {
       {view === "rentabilidad" && <LothRentabilidadPanel reloadSignal={reloadSignal} entries={allEntries} />}
 
       {/* Vista de trazabilidad — operación completa por árbol */}
+      {view === "tablero" && (
+        <>
+          {loading ? (
+            <div className="p-8 text-center text-[var(--text-tertiary)]">
+              <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
+              <p className="mt-2 text-sm">Cargando el control del permiso...</p>
+            </div>
+          ) : (
+            <LothTableroTrozas
+              entries={allEntries}
+              caratula={caratula}
+              nav={{
+                onVerCadena: (code) => setCadenaCode(code),
+                onVerGtf: (gtf) => {
+                  setFocoGtf(gtf);
+                  setView("gtf");
+                },
+              }}
+            />
+          )}
+        </>
+      )}
+
       {view === "trazabilidad" && (
         <>
           {error && (
