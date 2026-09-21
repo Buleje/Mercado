@@ -21,6 +21,8 @@ import { useState } from "react";
 import { AlertTriangle, Check, Loader2, Plus } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import DirectorioPicker from "./DirectorioPicker";
+import type { Parte } from "@/lib/forestal/directorio";
 import { Field, cls } from "./loth-plan-ui";
 import {
   ESPECIALIDADES_REGENTE,
@@ -46,6 +48,31 @@ export default function LothPlanForm({ onClose, onSaved }: { onClose: () => void
   const meta = metaDe(f.planType);
   const faltaRegente = meta.regente === "obligatorio" && f.regenteName.trim().length < 2;
   const puedeGuardar = f.titularName.trim().length >= 2 && !busy;
+
+  /**
+   * El titular del plan es, casi siempre, alguien que YA está en el Directorio
+   * (`ForestParty`): la comunidad, la empresa o el propietario del predio. Y la
+   * libreta guarda justo los campos que este formulario pedía a mano — título
+   * habilitante, resolución, ARFFS y representante legal con su DNI.
+   *
+   * Sólo se completa lo que está vacío: si alguien ya escribió algo, no se le
+   * pisa. Traer del Directorio es una ayuda de carga, no una sobreescritura.
+   */
+  function traerDelDirectorio(p: Parte) {
+    setF((prev) => {
+      const sinPisar = (actual: string, nuevo: string | null | undefined) =>
+        actual.trim() ? actual : (nuevo ?? "");
+      return {
+        ...prev,
+        titularName: p.nombre || prev.titularName,
+        representanteLegal: sinPisar(prev.representanteLegal, p.representante),
+        arffs: sinPisar(prev.arffs, p.arffs),
+        region: sinPisar(prev.region === "Ucayali" ? "" : prev.region, p.region) || prev.region,
+        tituloHabilitante: sinPisar(prev.tituloHabilitante, p.tituloHabilitante),
+        resolucionNumber: sinPisar(prev.resolucionNumber, p.resolucion),
+      };
+    });
+  }
 
   function elegirTipo(tipo: TipoPlan) {
     setF((p) => ({
@@ -148,7 +175,14 @@ export default function LothPlanForm({ onClose, onSaved }: { onClose: () => void
       </Bloque>
 
       {/* 3 · Quién responde: titular y regente */}
-      <Bloque n={3} titulo="Titular y regente">
+      <Bloque n={3} titulo="Titular y regente" accion={
+        <DirectorioPicker
+          rol="proveedor"
+          label="Traer del Directorio"
+          ayuda="La misma libreta del Libro CTP: comunidades, empresas y propietarios."
+          onElegir={traerDelDirectorio}
+        />
+      }>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Field label="Titular *">
             <input value={f.titularName} onChange={(e) => set("titularName", e.target.value)} placeholder="Maderera ... SAC" required className={cls} />
@@ -226,15 +260,29 @@ export default function LothPlanForm({ onClose, onSaved }: { onClose: () => void
 }
 
 /** Un paso del formulario, numerado: el alta tiene un orden, no doce campos sueltos. */
-function Bloque({ n, titulo, children }: { n: number; titulo: string; children: React.ReactNode }) {
+function Bloque({
+  n,
+  titulo,
+  children,
+  accion,
+}: {
+  n: number;
+  titulo: string;
+  children: React.ReactNode;
+  /** Algo a la derecha del título (por ejemplo, traer datos del Directorio). */
+  accion?: React.ReactNode;
+}) {
   return (
     <section className="space-y-2">
-      <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
-          {n}
-        </span>
-        {titulo}
-      </CardTitle>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
+            {n}
+          </span>
+          {titulo}
+        </CardTitle>
+        {accion}
+      </div>
       {children}
     </section>
   );
