@@ -458,6 +458,13 @@ export interface LothEntryDTO {
   gtfNumber: string | null;
   discarded: boolean;
   consumoInterno: boolean;
+  /** Cómo se midió, para poder reconstruir el promedio (ADR-422). */
+  medicionCruda?: {
+    mayor: number[];
+    menor: number[];
+    totalM: number | null;
+    descuentos: { tipo: string; metros: number }[];
+  } | null;
   /** Marcado físico del código (RDE 264-2019 §1 item 3). */
   marcadoFuste?: boolean;
   marcadoTocon?: boolean;

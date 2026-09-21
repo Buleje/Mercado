@@ -6014,6 +6014,17 @@ model ForestLothEntry {
   marcadoFuste Boolean @default(false)
   marcadoTocon Boolean @default(false)
 
+  // ── Cómo se llegó a los números del formato (ADR-422) ───────────────
+  // El libro consigna el Ø PROMEDIO y la longitud APROVECHABLE, que es lo que
+  // pide la RDE 264-2019. Pero esos dos salen de una cuenta: dos medidas
+  // cruzadas por sección (items 6 y 7) y el total menos los descuentos por
+  // aletas/defectos/despunte (item 8). Sin esto, la cuenta no se puede
+  // reconstruir ni discutir. Va como JSON porque es respaldo para leer junto a
+  // la línea, no algo que se agregue ni se filtre.
+  // Forma: { mayor: number[], menor: number[], totalM: number,
+  //          descuentos: { tipo: string, metros: number }[] }
+  medicionCruda Json?
+
   // ── Subsanación SERFOR (corrección visible, no borrar) ─
   correctsLineNo Int? // esta línea corrige a la línea N
   correctionNote String?

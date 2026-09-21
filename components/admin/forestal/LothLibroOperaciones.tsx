@@ -109,7 +109,7 @@ const POR_PAGINA = 50;
 
 const COLS: Record<LothSection, Col[]> = {
   tala: [
-    { key: "tree", label: "Cód. árbol", orden: "codigo", render: (e) => <Code v={e.treeCode} rama={e.isRama} /> },
+    { key: "tree", label: "Cód. árbol", orden: "codigo", render: (e) => <Code v={e.treeCode} rama={e.isRama} marcado={estadoMarcadoDe(e)} /> },
     { key: "esp", label: "Especie", orden: "especie", render: (e) => <Species e={e} /> },
     { key: "dM", label: "Ø may", align: "right", render: (e) => <Mono v={num(e.diamMayorM, 2)} /> },
     { key: "dm", label: "Ø men", align: "right", render: (e) => <Mono v={num(e.diamMenorM, 2)} /> },
@@ -1141,13 +1141,43 @@ export default function LothLibroOperaciones() {
 function Mono({ v, bold }: { v: string; bold?: boolean }) {
   return <span className={`font-mono tabular-nums text-[var(--text-primary)] ${bold ? "font-bold" : ""}`}>{v}</span>;
 }
-function Code({ v, rama }: { v: string | null; rama?: boolean }) {
+function Code({ v, rama, marcado }: { v: string | null; rama?: boolean; marcado?: "completo" | "parcial" | "sin" }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className="font-mono font-bold text-[var(--text-primary)]">{v ?? "—"}</span>
       {rama && <span className="rounded bg-[var(--surface-sunken)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">R</span>}
+      {marcado && marcado !== "sin" && (
+        <span
+          title={
+            marcado === "completo"
+              ? "Código marcado en el fuste y en el tocón (RDE 264-2019, item 3)"
+              : "Marcado declarado a medias: falta el fuste o el tocón"
+          }
+          className={`rounded px-1 text-[length:var(--ts-2xs)] font-bold ${
+            marcado === "completo"
+              ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]"
+              : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
+          }`}
+        >
+          {marcado === "completo" ? "M" : "M·"}
+        </span>
+      )}
     </span>
   );
+}
+
+/**
+ * El marcado físico del item 3 se guardaba y no se veía en ninguna parte: un
+ * dato que no se puede leer no existe para quien fiscaliza. Va como pastilla
+ * junto al código —no como columna nueva— para no ensanchar una tabla que ya
+ * tiene seis.
+ */
+function estadoMarcadoDe(e: LothEntryDTO): "completo" | "parcial" | "sin" {
+  const f = e.marcadoFuste === true;
+  const t = e.marcadoTocon === true;
+  if (f && t) return "completo";
+  if (f || t) return "parcial";
+  return "sin";
 }
 function Species({ e }: { e: LothEntry }) {
   if (!e.speciesCommon) return <span className="text-[var(--text-tertiary)]">—</span>;

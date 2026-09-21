@@ -98,7 +98,9 @@ const FIELDS: Record<LothSection, Set<string>> = {
   despacho_troza: new Set(["trozaCode", "despachoCode", "gtf", "obs"]),
   consumo_troza: new Set(["trozaCode", "species", "volumeManual", "consumoInterno", "obs"]),
   producto_terminado: new Set(["trozaCode", "productType", "species", "quantity", "unit", "obs"]),
-  despacho_producto: new Set(["gtf", "productType", "species", "pieces", "quantity", "unit", "obs"]),
+  // La Sección 6 tiene el nombre científico como columna PROPIA (item 6),
+  // aparte de la especie (item 5). No es un detalle de observaciones.
+  despacho_producto: new Set(["gtf", "productType", "species", "scientific", "pieces", "quantity", "unit", "obs"]),
 };
 
 /**
@@ -164,6 +166,10 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const [isRama, setIsRama] = useState(plantilla?.isRama ?? false);
   const [speciesSlug, setSpeciesSlug] = useState(slugDePlantilla ?? "tornillo");
   const [customSpecies, setCustomSpecies] = useState(slugDePlantilla === "otro" ? (plantilla?.speciesCommon ?? "") : "");
+  /** Sección 6: el científico es columna propia y se puede corregir a mano. */
+  const [scientificManual, setScientificManual] = useState<string | null>(
+    plantilla?.speciesScientific ?? null,
+  );
   const [diamMayor, setDiamMayor] = useState(plantilla?.diamMayorM ?? "");
   const [diamMenor, setDiamMenor] = useState(plantilla?.diamMenorM ?? "");
   const [lengthM, setLengthM] = useState(plantilla?.lengthM ?? "");
@@ -175,13 +181,33 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
    * oficial—; acá se guarda cómo se llegó a esos números, que es lo que el
    * motosierrista tiene en la mano. Ver `lib/forestal/loth-tala.ts`.
    */
-  const [medidasTala, setMedidasTala] = useState<MedidasTala>(() => ({
-    modo: null,
-    mayor: [plantilla?.diamMayorM ?? "", ""],
-    menor: [plantilla?.diamMenorM ?? "", ""],
-    totalM: plantilla?.lengthM ?? "",
-    descuentos: [],
-  }));
+  const [medidasTala, setMedidasTala] = useState<MedidasTala>(() => {
+    // Si la línea de la que se parte guardó cómo se midió (ADR-422), se
+    // restaura tal cual: duplicar la troza siguiente del mismo árbol no debería
+    // obligar a volver a tipear las dos medidas cruzadas.
+    const cruda = plantilla?.medicionCruda;
+    if (cruda && (cruda.mayor?.length || cruda.menor?.length || cruda.totalM != null)) {
+      const aTexto = (ns: number[] | undefined) => {
+        const base = (ns ?? []).map(String);
+        while (base.length < 2) base.push("");
+        return base;
+      };
+      return {
+        modo: null,
+        mayor: aTexto(cruda.mayor),
+        menor: aTexto(cruda.menor),
+        totalM: cruda.totalM != null ? String(cruda.totalM) : "",
+        descuentos: (cruda.descuentos ?? []) as MedidasTala["descuentos"],
+      };
+    }
+    return {
+      modo: null,
+      mayor: [plantilla?.diamMayorM ?? "", ""],
+      menor: [plantilla?.diamMenorM ?? "", ""],
+      totalM: plantilla?.lengthM ?? "",
+      descuentos: [],
+    };
+  });
   /** Los casos que el item 10 tipifica, en vez de un textarea en blanco. */
   const [motivosTala, setMotivosTala] = useState<MotivoTala[]>([]);
   const [detalleMotivo, setDetalleMotivo] = useState("");
@@ -607,6 +633,19 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       };
       // Tala: el estado de la línea sale de los casos del item 10, no de dos
       // checkboxes que podían contradecir al texto de observaciones.
+      if (section === "tala" || section === "trozado") {
+        // ADR-422: de dónde salieron el Ø promedio y la longitud. Sin esto, la
+        // cuenta no se puede reconstruir después.
+        const nums = (arr: string[]) => arr.map(Number).filter((n) => Number.isFinite(n) && n > 0);
+        const cruda = {
+          mayor: nums(medidasTala.mayor),
+          menor: nums(medidasTala.menor),
+          totalM: Number(medidasTala.totalM) > 0 ? Number(medidasTala.totalM) : null,
+          descuentos: medidasTala.descuentos.filter((d) => d.metros > 0),
+        };
+        const midioAlgo = cruda.mayor.length > 0 || cruda.menor.length > 0 || cruda.totalM != null;
+        payload.medicionCruda = midioAlgo ? cruda : null;
+      }
       if (section === "tala") {
         payload.discarded = motivosTala.includes("descartado");
         payload.consumoInterno = motivosTala.includes("consumo_interno");
@@ -625,7 +664,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       if (fields.has("isRama")) payload.isRama = isRama;
       if (fields.has("species")) {
         payload.speciesCommon = speciesName || null;
-        payload.speciesScientific = scientific;
+        payload.speciesScientific = (scientificManual ?? scientific)?.trim() || null;
         payload.cites = cites;
       }
       if (fields.has("diams")) {
@@ -977,6 +1016,25 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           {fields.has("species") && isCustom && (
             <Field label="Nombre de la especie" required>
               <input type="text" value={customSpecies} onChange={(e) => setCustomSpecies(e.target.value)} placeholder="ej: Aguano masha" className={cls.input} />
+            </Field>
+          )}
+
+          {/* Sección 6 · item 6: el nombre científico es una columna del formato.
+              La nota al pie del Anexo 02 exceptúa a los productos formados por
+              más de una especie (carbón, entre otros): ahí no es obligatorio ni
+              el nombre común ni el científico. */}
+          {fields.has("scientific") && (
+            <Field
+              label="Nombre científico"
+              hint="Columna 6 del formato. Si el producto mezcla especies (ej. carbón), puede ir vacío"
+            >
+              <input
+                type="text"
+                value={scientificManual ?? scientific ?? ""}
+                onChange={(e) => setScientificManual(e.target.value)}
+                placeholder="ej: Cedrelinga catenaeformis"
+                className={`${cls.input} italic`}
+              />
             </Field>
           )}
 

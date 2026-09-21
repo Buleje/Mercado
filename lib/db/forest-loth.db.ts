@@ -103,6 +103,8 @@ export interface LothEntryCreateInput {
 
   discarded?: boolean;
   consumoInterno?: boolean;
+  /** ADR-422: medidas crudas de campo (respaldo del promedio y la longitud). */
+  medicionCruda?: unknown;
   /** RDE 264-2019 §1 item 3: el código va marcado en el fuste y en el tocón. */
   marcadoFuste?: boolean;
   marcadoTocon?: boolean;
@@ -279,6 +281,7 @@ export class ForestLothDB {
           gtfNumber: input.gtfNumber?.trim() || null,
           discarded: input.discarded ?? false,
           consumoInterno: input.consumoInterno ?? false,
+          medicionCruda: (input.medicionCruda ?? undefined) as never,
           marcadoFuste: input.marcadoFuste ?? false,
           marcadoTocon: input.marcadoTocon ?? false,
           // La justificación del DMC queda EN el libro: es la explicación que

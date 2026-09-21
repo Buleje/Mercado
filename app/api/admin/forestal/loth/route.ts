@@ -50,6 +50,17 @@ const createSchema = z.object({
 
   discarded: z.boolean().optional(),
   consumoInterno: z.boolean().optional(),
+  // ADR-422: cómo se llegó al Ø promedio y a la longitud aprovechable.
+  // Forma explícita en vez de `z.any()`: lo que entra al libro se valida.
+  medicionCruda: z
+    .object({
+      mayor: z.array(z.number().positive()).max(6),
+      menor: z.array(z.number().positive()).max(6),
+      totalM: z.number().positive().nullable(),
+      descuentos: z.array(z.object({ tipo: z.string().max(40), metros: z.number().nonnegative() })).max(10),
+    })
+    .nullable()
+    .optional(),
   marcadoFuste: z.boolean().optional(),
   marcadoTocon: z.boolean().optional(),
   observations: z.string().trim().max(1000).nullable().optional(),

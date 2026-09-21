@@ -200,6 +200,24 @@ export default function LothLineaDetalleModal({
             {linea.isRama && <Dato label="Origen" valor="Rama aprovechable" />}
             {linea.discarded && <Dato label="Descartado" valor="Sí" />}
             {linea.consumoInterno && <Dato label="Consumo interno" valor="Sí" />}
+            {/* Item 3 de la RDE: el código va marcado en el fuste y en el tocón.
+                Se muestra siempre en tala —incluso cuando falta— porque «no
+                consta» es justamente lo que hay que poder ver antes de que lo
+                vea un supervisor. */}
+            {linea.section === "tala" && (
+              <Dato
+                label="Código marcado"
+                valor={
+                  linea.marcadoFuste && linea.marcadoTocon
+                    ? "Fuste y tocón"
+                    : linea.marcadoFuste
+                      ? "Sólo el fuste — falta el tocón"
+                      : linea.marcadoTocon
+                        ? "Sólo el tocón — falta el fuste"
+                        : "No consta"
+                }
+              />
+            )}
           </dl>
 
           {linea.observations && (

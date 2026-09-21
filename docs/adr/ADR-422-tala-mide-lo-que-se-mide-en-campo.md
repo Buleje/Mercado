@@ -45,9 +45,11 @@ de campo estaba construida y sin estrenar.
 
 **1. Capturar las medidas crudas y derivar lo que el formato pide.** `lib/forestal/loth-tala.ts`
 concentra la aritmética: `promedioCruzado()` (N medidas por sección, ignora vacías, `null` nunca
-`0`), `calcularLongitud()` (total − descuentos tipificados) y `volumenDeMedidas()`. Lo que se
-guarda sigue siendo **Ø promedio + longitud aprovechable + volumen**, que es exactamente lo que
-exige el formato oficial: no se agregan columnas para las medidas crudas.
+`0`), `calcularLongitud()` (total − descuentos tipificados) y `volumenDeMedidas()`. Las columnas
+del libro siguen siendo **Ø promedio + longitud aprovechable + volumen**, que es exactamente lo
+que exige el formato oficial; las medidas de las que salen se guardan aparte, en `medicionCruda`
+(ver «En contra / a vigilar»), para que la cuenta se pueda reconstruir sin cambiar lo que el
+formato consigna.
 
 **2. Obligatoriedad según el modo de aprovechamiento.** `obligatoriedadTala(modo)` traduce el
 Art. 4: con `despacho_trozas` sólo se exige la longitud; con `aserrio_en_area` también diámetros
@@ -88,9 +90,13 @@ cilíndrico.
 
 **En contra / a vigilar**
 - Dos columnas más en un modelo ya ancho.
-- Las medidas crudas (las dos cruzadas, los descuentos) **no se persisten**: viven en el
-  formulario y se pierden al guardar. Se consigna el resultado, que es lo que el formato pide;
-  si alguna vez hace falta auditar de dónde salió un promedio, habrá que persistirlas.
+- ~~Las medidas crudas no se persisten.~~ **Resuelto en la misma ronda**: la columna
+  `medicionCruda` (JSONB, nullable, migración `20260921010000_loth_medicion_cruda`) guarda
+  `{ mayor, menor, totalM, descuentos }`. El libro sigue consignando el promedio y la longitud
+  aprovechable —lo que pide el formato— y ahora la cuenta se puede reconstruir y discutir. Al
+  duplicar una línea se restauran, así que la troza siguiente del mismo árbol no obliga a
+  volver a tipear las dos medidas cruzadas. Va como JSON, no como cuatro columnas, porque es
+  respaldo para leer junto a la línea: no se agrega ni se filtra por él.
 - `LothMedicionFuste` sirve a dos secciones con una prop: si aparece una tercera con reglas
   propias, conviene partirlo antes que encadenar condicionales.
 
@@ -98,9 +104,10 @@ cilíndrico.
 
 - **Dejar los tres campos y explicar en un tooltip.** Descartado: el hint «Promedio 2 medidas»
   ya existía y no evitaba la cuenta mental ni dejaba rastro de las medidas.
-- **Persistir las medidas crudas en columnas nuevas.** Descartado por ahora: el formato oficial
-  consigna el promedio, y agregar cuatro columnas para reconstruir una cuenta que la norma no
-  pide es peso sin destinatario.
+- **Persistir las medidas crudas en cuatro columnas escalares.** Descartado a favor de un solo
+  JSONB: el número de medidas por sección es variable (la norma admite «2 o más») y los
+  descuentos son una lista, así que columnas fijas obligarían a elegir un máximo arbitrario y a
+  migrar de nuevo al primer fuste que necesite una tercera medida.
 - **Exigir siempre diámetros y volumen «por las dudas».** Descartado: contradice el texto
   expreso de la norma y fabrica el dato inventado que la regla pretendía evitar.
 
@@ -117,6 +124,7 @@ base (no el formulario):
 | Volumen Smalian | — | `11.5523` |
 | Marcado fuste + tocón | — | `true` / `true` |
 | Motivo «Descartado» + detalle | término exacto | `Descartado · hueco de base a copa`, `discarded=true` |
+| Cómo se midió | reconstruible | `{"mayor":[1.3,1.1],"menor":[0.8,0.9],"totalM":15,"descuentos":[{"tipo":"aletas","metros":1}]}` |
 
 Dos defectos aparecieron **sólo** al guardar de verdad, invisibles para `tsc`, `eslint` y los
 tests: el cliente Prisma cacheado del dev server descartaba en silencio las columnas nuevas

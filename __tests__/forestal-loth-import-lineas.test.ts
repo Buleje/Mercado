@@ -98,3 +98,43 @@ describe("parseImportLineas · otras secciones", () => {
     expect(parseImportLineas("", "tala").filas).toHaveLength(0);
   });
 });
+
+describe("tala y trozado no piden lo mismo (RDE 264-2019)", () => {
+  /**
+   * El importador exigía volumen > 0 en las dos secciones y rechazaba la fila.
+   * Pero en TALA los diámetros y el volumen son obligatorios sólo cuando el
+   * aserrío se hace dentro del área (notas de los items 6, 7 y 9); lo que se
+   * registra siempre es la longitud aprovechable (item 8). El formulario ya lo
+   * respetaba: importar por Excel aceptaba menos que cargar a mano, que es
+   * tener dos reglas para el mismo libro.
+   */
+  const cab = "Cód. árbol,Especie,Ø mayor,Ø menor,Longitud,Volumen";
+
+  it("tala con longitud pero SIN volumen ni diámetros es válida", () => {
+    const r = parseImportLineas([cab, "001-TOR,Tornillo,,,14,"].join("\n"), "tala");
+    expect(r.filas[0].estado).toBe("ok");
+    expect(r.filas[0].motivos).toEqual([]);
+  });
+
+  it("tala sin longitud ni volumen sí se rechaza, y dice por qué", () => {
+    const r = parseImportLineas([cab, "001-TOR,Tornillo,,,,"].join("\n"), "tala");
+    expect(r.filas[0].estado).toBe("error");
+    expect(r.filas[0].motivos.join(" ")).toContain("longitud");
+  });
+
+  it("tala con diámetros y longitud cubica sola", () => {
+    const r = parseImportLineas([cab, "001-TOR,Tornillo,1.20,0.85,14,"].join("\n"), "tala");
+    expect(r.filas[0].estado).toBe("ok");
+    expect(r.filas[0].volumeM3).toBeGreaterThan(0);
+    expect(r.filas[0].volumenCalculado).toBe(true);
+  });
+
+  it("trozado SIN volumen sigue rechazándose: su item 9 no tiene excepción", () => {
+    const r = parseImportLineas(
+      ["Cód. árbol,Cód. troza,Especie,Ø mayor,Ø menor,Longitud", "001-TOR,001-TOR-A,Tornillo,,,"].join("\n"),
+      "trozado",
+    );
+    expect(r.filas[0].estado).toBe("error");
+    expect(r.filas[0].motivos.join(" ")).toContain("volumen");
+  });
+});

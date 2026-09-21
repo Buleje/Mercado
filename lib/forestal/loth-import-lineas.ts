@@ -215,8 +215,32 @@ export function parseImportLineas(
       if (fila[req as keyof FilaImport] == null) fila.motivos.push(`Falta ${ETIQUETA[req] ?? req}`);
     }
     if (val("entryDate") && !fila.entryDate) fila.motivos.push("Fecha ilegible (usa DD/MM/AAAA o AAAA-MM-DD)");
-    if ((section === "tala" || section === "trozado") && !(fila.volumeM3 && fila.volumeM3 > 0)) {
+    // Tala y Trozado NO piden lo mismo, aunque se parezcan (RDE 264-2019):
+    //
+    //  · En TROZADO el volumen es obligatorio siempre — su item 9 no trae la
+    //    nota condicional.
+    //  · En TALA lo único que se exige en todos los casos es la **longitud
+    //    aprovechable** (item 8); los diámetros y el volumen sólo cuando el
+    //    aserrío se hace dentro del área (notas de los items 6, 7 y 9).
+    //
+    // Antes esta validación exigía volumen en las dos y rechazaba la fila. El
+    // formulario ya respetaba la norma, así que importar por Excel y cargar a
+    // mano aceptaban cosas distintas: dos caminos al mismo libro con dos
+    // reglas. Si vienen los diámetros, el volumen se calcula solo más arriba.
+    if (section === "trozado" && !(fila.volumeM3 && fila.volumeM3 > 0)) {
       fila.motivos.push("Sin volumen: carga Ø mayor, Ø menor y longitud, o el volumen directo");
+    }
+    if (section === "tala") {
+      const tieneLongitud = fila.lengthM != null && fila.lengthM > 0;
+      const tieneVolumen = fila.volumeM3 != null && fila.volumeM3 > 0;
+      if (!tieneLongitud && !tieneVolumen) {
+        fila.motivos.push("Sin longitud aprovechable: es el dato que la norma exige en toda línea de tala");
+      }
+      const tieneDiametros =
+        fila.diamMayorM != null && fila.diamMayorM > 0 && fila.diamMenorM != null && fila.diamMenorM > 0;
+      if (tieneDiametros && !tieneVolumen && !tieneLongitud) {
+        fila.motivos.push("Trae diámetros pero no longitud: no se puede cubicar");
+      }
     }
     // Duplicado DENTRO del archivo: se marca, no se descarta solo.
     const clave = fila.trozaCode ?? fila.treeCode;
@@ -229,7 +253,13 @@ export function parseImportLineas(
     }
 
     // Sólo los faltantes duros invalidan: lo demás son avisos que el usuario lee.
-    const duro = fila.motivos.some((m) => m.startsWith("Falta") || m.startsWith("Sin volumen") || m.startsWith("Fecha ilegible"));
+    //
+    // «Sin longitud» entra acá porque en Tala es el único dato que la norma
+    // exige en toda línea (item 8). Sin este prefijo el motivo se escribía pero
+    // la fila seguía en «ok»: una validación decorativa, que es peor que
+    // ninguna porque parece que valida.
+    const DUROS = ["Falta", "Sin volumen", "Sin longitud", "Fecha ilegible", "Trae diámetros"];
+    const duro = fila.motivos.some((m) => DUROS.some((p) => m.startsWith(p)));
     fila.estado = duro ? "error" : "ok";
     return fila;
   });
