@@ -11,6 +11,8 @@ import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { estadoVencimiento, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
+import DirectorioPicker from "./DirectorioPicker";
+import type { Parte } from "@/lib/forestal/directorio";
 
 interface Caratula {
   id: string;
@@ -64,6 +66,40 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
 
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const isValid = f.titularName.trim().length >= 2;
+
+  /**
+   * El titular del libro se tipeaba a mano, con el RUC, el domicilio y el
+   * título habilitante al lado — los mismos datos que ya están en el Directorio
+   * (`ForestParty`) y que se imprimen en CADA hoja del LO-TH. Escribirlos dos
+   * veces es cómo «Maderera El Aguajal SAC» y «MADERERA EL AGUAJAL S.A.C.»
+   * terminan siendo dos titulares distintos entre la carátula y las guías.
+   *
+   * No pisa lo que ya está escrito: rellena sólo los campos vacíos.
+   */
+  const [traido, setTraido] = useState<string | null>(null);
+  function traerDelDirectorio(p: Parte) {
+    setF((prev) => {
+      const sinPisar = (actual: string, nuevo: string | null | undefined) => (actual.trim() ? actual : (nuevo ?? ""));
+      return {
+        ...prev,
+        titularName: p.nombre || prev.titularName,
+        representanteLegal: sinPisar(prev.representanteLegal, p.representante),
+        ruc: sinPisar(prev.ruc, p.docTipo === "RUC" ? p.docNumero : null),
+        dni: sinPisar(prev.dni, p.representanteDni ?? (p.docTipo === "DNI" ? p.docNumero : null)),
+        tituloHabilitante: sinPisar(prev.tituloHabilitante, p.tituloHabilitante),
+        resolucionNumber: sinPisar(prev.resolucionNumber, p.resolucion),
+        domicilio: sinPisar(prev.domicilio, p.direccion),
+        // El departamento arranca en «Ucayali» por default: eso no es un dato
+        // cargado, así que el del Directorio sí puede completarlo.
+        departamento: sinPisar(prev.departamento === "Ucayali" ? "" : prev.departamento, p.region) || prev.departamento,
+        provincia: sinPisar(prev.provincia, p.provincia),
+        distrito: sinPisar(prev.distrito, p.distrito),
+        telefono: sinPisar(prev.telefono, p.telefono ?? p.whatsapp),
+        email: sinPisar(prev.email, p.email),
+      };
+    });
+    setTraido(p.nombre);
+  }
 
   // ── Catálogo de permisos CITES (KV, sin migración) ─────────────────────────
   const [permisos, setPermisos] = useState<LothCitesPermiso[]>([]);
@@ -151,6 +187,20 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
               <div>{error}</div>
             </div>
           )}
+
+          <div className="sm:col-span-2 flex flex-wrap items-end justify-between gap-2">
+            <p className="text-xs text-[var(--text-tertiary)]">
+              {traido
+                ? `Completado con los datos de ${traido} — revisa lo que quedó y corrige lo que haga falta.`
+                : "El titular ya puede estar en el Directorio con su RUC, domicilio y título."}
+            </p>
+            <DirectorioPicker
+              rol="proveedor"
+              label="Traer del Directorio"
+              ayuda="El titular del título habilitante: su RUC, domicilio y permiso"
+              onElegir={traerDelDirectorio}
+            />
+          </div>
 
           <Field label="Titular del título habilitante" required>
             <input type="text" value={f.titularName} onChange={(e) => set("titularName", e.target.value)} placeholder="Maderera El Aguajal SAC" required className={cls.input} />

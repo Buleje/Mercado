@@ -14,7 +14,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { MessageCircle, Share2, Loader2, Pencil, Plus, Search, Trash2, Truck, Users } from "@buleje/design-system/icons";
+import { MessageCircle, Share2, Loader2, Pencil, Plus, Search, Trash2, Truck, Upload, Users, Download } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   CATEGORIA_LABEL,
@@ -40,6 +40,9 @@ import CtpParteModal from "./CtpParteModal";
 import CtpVehiculoModal from "./CtpVehiculoModal";
 import CtpProveedorTrazaModal from "./CtpProveedorTrazaModal";
 import { Btn, I, TablaSkeleton, VistaHeader, IconAction } from "./ctp-shared";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import CtpImportarPartesModal from "./CtpImportarPartesModal";
+import { partesACsv } from "@/lib/forestal/directorio-importar";
 
 type Pestaña = RolParte | "vehiculos";
 
@@ -61,6 +64,7 @@ export default function CtpDirectorioView() {
   const [borrando, setBorrando] = useState<string | null>(null);
   /** Titular cuya cadena se está mirando (ADR-319). */
   const [trazando, setTrazando] = useState<string | null>(null);
+  const [importando, setImportando] = useState(false);
 
   const esVehiculos = pestaña === "vehiculos";
   const transportistas = useMemo(() => dir.porRol("transportista"), [dir]);
@@ -91,6 +95,20 @@ export default function CtpDirectorioView() {
     () => (esVehiculos ? ordenarPorUso(filtrarVehiculos(dir.vehiculos, q)) : []),
     [dir.vehiculos, q, esVehiculos],
   );
+
+  /**
+   * Baja LO QUE SE ESTÁ VIENDO, con el filtro y la pestaña puestos: un export
+   * que ignora el filtro obliga a rehacer el trabajo en la planilla.
+   */
+  function descargarCsv() {
+    const blob = new Blob([partesACsv(partesVisibles)], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `directorio-${pestaña}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const conteo = (p: Pestaña) =>
     p === "vehiculos" ? dir.vehiculos.length : dir.partes.filter((x) => x.roles.includes(p as RolParte)).length;
@@ -128,6 +146,32 @@ export default function CtpDirectorioView() {
           <Plus className="h-4 w-4" />
           {esVehiculos ? "Agregar vehículo" : `Agregar ${ROL_LABEL[pestaña as RolParte].toLowerCase()}`}
         </Btn>
+        {/* La planilla entra y sale por las MISMAS columnas: lo exportado se
+            corrige en Excel y vuelve sin traducir nada. Van en el menú porque
+            no son de uso diario — el de uso diario es agregar. */}
+        {!esVehiculos && (
+          <ActionMenu
+            label="Planilla"
+            size="sm"
+            actions={[
+              {
+                id: "exportar",
+                label: "Bajar lo que estoy viendo",
+                hint: `${partesVisibles.length} ${partesVisibles.length === 1 ? "ficha" : "fichas"} a Excel, con el filtro puesto`,
+                icon: Download,
+                disabled: partesVisibles.length === 0,
+                onSelect: () => descargarCsv(),
+              },
+              {
+                id: "importar",
+                label: "Traer de una planilla",
+                hint: "Un .xlsx o .csv; se ve qué entra antes de guardar",
+                icon: Upload,
+                onSelect: () => setImportando(true),
+              },
+            ]}
+          />
+        )}
       </VistaHeader>
 
       {/* La libreta que ya está escrita en las guías (ADR-357). Va ARRIBA de las
@@ -228,6 +272,9 @@ export default function CtpDirectorioView() {
           parte={editando.valor}
           rolInicial={esVehiculos ? "destinatario" : (pestaña as RolParte)}
           existentes={dir.partes}
+          // La misma ficha abierta desde el picker lista los camiones del
+          // transportista; sin esto, la de ESTA pantalla no los mostraba.
+          vehiculos={dir.vehiculos}
           onGuardar={async (input) => {
             await dir.guardarParte(input);
           }}
@@ -235,6 +282,14 @@ export default function CtpDirectorioView() {
         />
       )}
       {trazando && <CtpProveedorTrazaModal proveedor={trazando} onClose={() => setTrazando(null)} />}
+      {importando && (
+        <CtpImportarPartesModal
+          existentes={dir.partes}
+          rol={esVehiculos ? "destinatario" : (pestaña as RolParte)}
+          onImportar={(input) => dir.guardarParte(input)}
+          onClose={() => setImportando(false)}
+        />
+      )}
       {editando?.tipo === "vehiculo" && (
         <CtpVehiculoModal
           vehiculo={editando.valor}
