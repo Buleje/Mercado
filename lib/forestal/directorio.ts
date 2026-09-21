@@ -167,6 +167,154 @@ export function formatearPlaca(v: string): string {
   return `${n.slice(0, 3)}-${n.slice(3)}`;
 }
 
+// ── Condiciones comerciales ─────────────────────────────────────────────────
+
+export const CONDICIONES_PAGO = ["contado", "credito"] as const;
+export type CondicionPago = (typeof CONDICIONES_PAGO)[number];
+
+/**
+ * `type` y no `interface` a propósito: Prisma sólo acepta como `Json` los tipos
+ * con index signature implícito, y una `interface` no lo tiene — el guardado no
+ * compilaba.
+ */
+export type NotaBitacora = {
+  texto: string;
+  /** Quién la escribió. Lo pone el servidor, no el formulario. */
+  autor: string;
+  /** ISO del momento en que se guardó. */
+  fecha: string;
+};
+
+/**
+ * Cómo se le paga a esta parte, en una línea.
+ *
+ * `null` NO es contado: que nadie haya pactado nada es distinto de haber
+ * pactado pago inmediato, y confundirlos hace aparecer deuda cero donde en
+ * realidad no se sabe.
+ */
+export function textoCondicionPago(
+  condicion: CondicionPago | null | undefined,
+  dias: number | null | undefined,
+): string {
+  if (condicion === "contado") return "Contado";
+  if (condicion === "credito") {
+    if (dias == null) return "A crédito, sin plazo pactado";
+    return `Crédito a ${dias} día${dias === 1 ? "" : "s"}`;
+  }
+  return "Sin condición pactada";
+}
+
+/**
+ * Cuándo vence lo que se le compre hoy. Devuelve `null` cuando no hay plazo
+ * pactado — una fecha inventada sería peor que ninguna, porque se ordenaría
+ * junto a las reales.
+ */
+export function fechaDePagoPactada(
+  compra: Date,
+  condicion: CondicionPago | null | undefined,
+  dias: number | null | undefined,
+): Date | null {
+  if (condicion === "contado") return new Date(compra);
+  if (condicion !== "credito" || dias == null) return null;
+  const d = new Date(compra);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d;
+}
+
+// ── Punto de acopio ─────────────────────────────────────────────────────────
+
+export interface Coordenadas {
+  lat: number;
+  lng: number;
+}
+
+/** Caja del Perú continental, con margen. Sirve para AVISAR, no para rechazar. */
+const PERU = { latMin: -18.6, latMax: 0.5, lngMin: -81.5, lngMax: -68.5 };
+
+/**
+ * Entiende lo que la gente pega: dos números, o un link de Google Maps.
+ *
+ * En el campo nadie tipea coordenadas: se comparten por WhatsApp como
+ * `-8.379100, -74.553900` o como un link `.../@-8.3791,-74.5539,17z`. Pedir dos
+ * campos numéricos separados garantiza que el dato no se cargue nunca.
+ */
+export function parsearCoordenadas(v: string): Coordenadas | null {
+  const t = (v ?? "").trim();
+  if (!t) return null;
+  // Link de Google Maps: `@lat,lng,zoom`, `?q=lat,lng`, `!3dlat!4dlng`.
+  const at = /@(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)/.exec(t);
+  const d3d4 = /!3d(-?\d{1,3}(?:\.\d+)?)!4d(-?\d{1,3}(?:\.\d+)?)/.exec(t);
+  const par = at ?? d3d4 ?? /(-?\d{1,3}(?:\.\d+)?)\s*[, ]\s*(-?\d{1,3}(?:\.\d+)?)/.exec(t);
+  if (!par) return null;
+  const lat = Number(par[1]);
+  const lng = Number(par[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng };
+}
+
+/**
+ * Qué está mal con esa coordenada, en castellano, o `null` si está bien.
+ *
+ * El error que de verdad pasa es pegarlas **invertidas** (longitud primero):
+ * el punto cae en el Atlántico y nadie lo nota hasta que el camión sale.
+ */
+export function motivoCoordenadaSospechosa(c: Coordenadas | null): string | null {
+  if (!c) return null;
+  const dentro = (x: Coordenadas) =>
+    x.lat >= PERU.latMin && x.lat <= PERU.latMax && x.lng >= PERU.lngMin && x.lng <= PERU.lngMax;
+  if (dentro(c)) return null;
+  if (dentro({ lat: c.lng, lng: c.lat })) {
+    return "Parece que están al revés: primero la latitud (empieza en -), después la longitud.";
+  }
+  return "Ese punto cae fuera del Perú. Revisa que lo hayas copiado completo.";
+}
+
+/** Link a Google Maps del punto, para abrirlo desde la ficha. */
+export function linkDelMapa(c: Coordenadas): string {
+  return `https://www.google.com/maps?q=${c.lat},${c.lng}`;
+}
+
+/** Coordenadas como se leen en el papel: 6 decimales, latitud primero. */
+export function formatearCoordenadas(c: Coordenadas): string {
+  return `${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}`;
+}
+
+// ── Bitácora ────────────────────────────────────────────────────────────────
+
+/** Tope de notas guardadas por ficha: la bitácora es memoria, no un chat. */
+export const BITACORA_MAX = 100;
+
+/**
+ * Agrega una nota fechada y firmada, más nueva primero.
+ *
+ * Nunca edita ni borra las anteriores: el valor de una bitácora es que lo
+ * escrito el martes siga diciendo lo mismo el viernes.
+ */
+export function agregarNota(
+  previas: readonly NotaBitacora[] | null | undefined,
+  texto: string,
+  autor: string,
+  ahora: Date = new Date(),
+): NotaBitacora[] {
+  const t = (texto ?? "").trim();
+  if (!t) return [...(previas ?? [])];
+  const nota: NotaBitacora = { texto: t.slice(0, 500), autor: (autor || "desconocido").slice(0, 60), fecha: ahora.toISOString() };
+  return [nota, ...(previas ?? [])].slice(0, BITACORA_MAX);
+}
+
+/** Lo guardado en `Json?` puede ser cualquier cosa: se lee sin romper la ficha. */
+export function leerBitacora(v: unknown): NotaBitacora[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is NotaBitacora => {
+      if (!x || typeof x !== "object") return false;
+      const o = x as Record<string, unknown>;
+      return typeof o.texto === "string" && typeof o.autor === "string" && typeof o.fecha === "string";
+    })
+    .slice(0, BITACORA_MAX);
+}
+
 // ── Nombres ─────────────────────────────────────────────────────────────────
 
 /** Espacios colapsados y sin bordes. No cambia mayúsculas: la razón social se respeta. */
@@ -338,8 +486,23 @@ export const parteInputSchema = z.object({
   whatsapp: texto(30).optional(),
   contactoNombre: texto(160).optional(),
   contactoTelefono: texto(30).optional(),
+  contacto2Nombre: texto(160).optional(),
+  contacto2Telefono: texto(30).optional(),
+  emailCobranza: texto(160).optional(),
+  condicionPago: z.enum(CONDICIONES_PAGO).optional().nullable(),
+  /** Tope 365: más de un año no es crédito comercial, es un error de tipeo. */
+  diasCredito: z.number().int().min(0).max(365).optional().nullable(),
+  acopioLat: z.number().min(-90).max(90).optional().nullable(),
+  acopioLng: z.number().min(-180).max(180).optional().nullable(),
+  acopioReferencia: texto(250).optional(),
   tituloVigenciaHasta: texto(30).optional(),
   notas: texto(500).optional(),
+  /**
+   * Una nota para la bitácora. Sólo el TEXTO viaja: la fecha y el autor los
+   * pone el servidor, porque una nota firmada por quien elige su propio nombre
+   * no prueba nada.
+   */
+  nuevaNota: texto(500).optional(),
   activo: z.boolean().optional(),
   /** Data URL; se valida el formato y el peso, no el contenido de la imagen. */
   logo: z
@@ -410,9 +573,21 @@ export interface Parte {
   whatsapp?: string | null;
   contactoNombre?: string | null;
   contactoTelefono?: string | null;
+  contacto2Nombre?: string | null;
+  contacto2Telefono?: string | null;
+  emailCobranza?: string | null;
+  /** `contado` | `credito`. `null` = no se pactó, que NO es contado. */
+  condicionPago?: CondicionPago | null;
+  diasCredito?: number | null;
+  /** Punto de acopio: dónde se carga el camión, no la dirección legal. */
+  acopioLat?: number | null;
+  acopioLng?: number | null;
+  acopioReferencia?: string | null;
   /** Vigencia del título habilitante del proveedor (ISO date). */
   tituloVigenciaHasta?: string | null;
   notas: string | null;
+  /** Historial de notas con su fecha y su autor, más nueva primero. */
+  bitacora?: NotaBitacora[];
   activo: boolean;
   usos: number;
   ultimoUso: string | null;
@@ -541,6 +716,14 @@ export function parteAInput(p: Parte): ParteInput & { id: string } {
     whatsapp: p.whatsapp ?? "",
     contactoNombre: p.contactoNombre ?? "",
     contactoTelefono: p.contactoTelefono ?? "",
+    contacto2Nombre: p.contacto2Nombre ?? "",
+    contacto2Telefono: p.contacto2Telefono ?? "",
+    emailCobranza: p.emailCobranza ?? "",
+    condicionPago: p.condicionPago ?? null,
+    diasCredito: p.diasCredito ?? null,
+    acopioLat: p.acopioLat ?? null,
+    acopioLng: p.acopioLng ?? null,
+    acopioReferencia: p.acopioReferencia ?? "",
     tituloVigenciaHasta: (p.tituloVigenciaHasta ?? "").slice(0, 10),
     notas: p.notas ?? "",
     activo: p.activo,

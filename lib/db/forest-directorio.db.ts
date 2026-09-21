@@ -12,6 +12,8 @@ import type {
   FilaIngresoProveedor,
 } from "@/lib/forestal/proveedor-trazabilidad";
 import {
+  agregarNota,
+  leerBitacora,
   nombresDelLibroQueCoinciden,
   normalizarDocumento,
   normalizarNombre,
@@ -24,6 +26,7 @@ import {
   type Vehiculo,
   type VehiculoInput,
   type AdjuntoParte,
+  type CondicionPago,
 } from "@/lib/forestal/directorio";
 
 /**
@@ -116,8 +119,19 @@ function aParte(r: ParteRow): Parte {
     whatsapp: r.whatsapp,
     contactoNombre: r.contactoNombre,
     contactoTelefono: r.contactoTelefono,
+    contacto2Nombre: r.contacto2Nombre,
+    contacto2Telefono: r.contacto2Telefono,
+    emailCobranza: r.emailCobranza,
+    condicionPago: (r.condicionPago as CondicionPago | null) ?? null,
+    diasCredito: r.diasCredito,
+    // Decimal(9,6) → número: la pantalla y el link del mapa trabajan con
+    // números, y el Decimal de Prisma serializa como string en el JSON.
+    acopioLat: r.acopioLat == null ? null : Number(r.acopioLat),
+    acopioLng: r.acopioLng == null ? null : Number(r.acopioLng),
+    acopioReferencia: r.acopioReferencia,
     tituloVigenciaHasta: r.tituloVigenciaHasta ? r.tituloVigenciaHasta.toISOString() : null,
     notas: r.notas,
+    bitacora: leerBitacora(r.bitacora),
     activo: r.activo,
     usos: r.usos,
     ultimoUso: r.ultimoUso ? r.ultimoUso.toISOString() : null,
@@ -264,6 +278,16 @@ export const ForestDirectorioDB = {
       whatsapp: vacioANull(input.whatsapp),
       contactoNombre: vacioANull(input.contactoNombre),
       contactoTelefono: vacioANull(input.contactoTelefono),
+      contacto2Nombre: vacioANull(input.contacto2Nombre),
+      contacto2Telefono: vacioANull(input.contacto2Telefono),
+      emailCobranza: vacioANull(input.emailCobranza),
+      condicionPago: input.condicionPago ?? null,
+      // El plazo sólo existe si es a crédito: dejar 30 días colgando de una
+      // ficha que pasó a contado haría aparecer un vencimiento que nadie pactó.
+      diasCredito: input.condicionPago === "credito" ? (input.diasCredito ?? null) : null,
+      acopioLat: input.acopioLat ?? null,
+      acopioLng: input.acopioLng ?? null,
+      acopioReferencia: vacioANull(input.acopioReferencia),
       tituloVigenciaHasta: vacioANull(input.tituloVigenciaHasta) ? new Date(input.tituloVigenciaHasta as string) : null,
       notas: vacioANull(input.notas),
       ...(input.activo === undefined ? {} : { activo: input.activo }),
@@ -294,6 +318,15 @@ export const ForestDirectorioDB = {
         : null;
     const existente = vivo ?? dadoDeBaja;
 
+    /**
+     * La nota nueva se firma ACÁ, con el usuario de la sesión y la hora del
+     * servidor. El formulario sólo manda el texto: una bitácora donde el autor
+     * lo elige quien escribe no prueba nada.
+     */
+    const bitacora = input.nuevaNota?.trim()
+      ? agregarNota(leerBitacora(existente?.bitacora), input.nuevaNota, usuario)
+      : undefined;
+
     let row: ParteRow;
     if (existente) {
       /**
@@ -320,13 +353,20 @@ export const ForestDirectorioDB = {
         where: { id: existente.id },
         data: {
           ...data,
+          ...(bitacora ? { bitacora } : {}),
           roles,
           ...(existente.deletedAt ? { deletedAt: null, activo: input.activo ?? true } : {}),
         },
       });
     } else {
       row = await prisma.forestParty.create({
-        data: { tenantId, roles: input.roles, ...campos, createdBy: usuario || "unknown" },
+        data: {
+          tenantId,
+          roles: input.roles,
+          ...campos,
+          ...(bitacora ? { bitacora } : {}),
+          createdBy: usuario || "unknown",
+        },
       });
     }
 

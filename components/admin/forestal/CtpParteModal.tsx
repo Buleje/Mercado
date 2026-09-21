@@ -29,8 +29,11 @@ import {
   ROLES_PARTE,
   ROL_DESCRIPCION,
   ROL_LABEL,
+  CONDICIONES_PAGO,
   categoriaEfectiva,
   claveBusqueda,
+  parteAInput,
+  textoCondicionPago,
   fuenteAutocompletado,
   motivoDocInvalido,
   motivoRepresentanteDniInvalido,
@@ -46,6 +49,8 @@ import {
 import { consultarDocumento } from "@/hooks/use-directorio-forestal";
 import { Btn, CampoGrid, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
 import CtpParteLogo from "./CtpParteLogo";
+import CtpPartePuntoAcopio from "./CtpPartePuntoAcopio";
+import CtpParteBitacora from "./CtpParteBitacora";
 import CtpParteAdjuntos from "./CtpParteAdjuntos";
 
 /** Lo que el libro ya sabe de este proveedor, resumido para la ficha. */
@@ -68,34 +73,22 @@ interface RespuestaTrazabilidad {
 
 type Borrador = ParteInput & { id?: string };
 
+/**
+ * De ficha guardada a borrador del formulario.
+ *
+ * Usa `parteAInput`, que es la ÚNICA lista completa de campos de una parte. La
+ * copia a mano que había acá se quedó corta apenas se agregaron campos: los
+ * datos de pago y de contacto salían vacíos al editar y, como la edición con
+ * `id` sí pisa con `null` lo que no llega, guardar los BORRABA. Es el mismo
+ * patrón que costó dos rondas en RRHH con `PuestoInput`/`ColaboradorInput`.
+ */
 function aBorrador(p: Parte | null, rolInicial: RolParte): Borrador {
   if (!p) return { roles: [rolInicial], nombre: "", categoria: "ccnn", docTipo: "RUC" };
   return {
-    id: p.id,
+    ...parteAInput(p),
     roles: p.roles.length ? p.roles : [rolInicial],
-    nombre: p.nombre,
     categoria: categoriaEfectiva(p.categoria),
-    codigoCtp: p.codigoCtp ?? "",
     docTipo: p.docTipo ?? "RUC",
-    docNumero: p.docNumero ?? "",
-    direccion: p.direccion ?? "",
-    region: p.region ?? "",
-    provincia: p.provincia ?? "",
-    distrito: p.distrito ?? "",
-    zona: p.zona ?? "",
-    ubigeo: p.ubigeo ?? "",
-    telefono: p.telefono ?? "",
-    email: p.email ?? "",
-    registroMtc: p.registroMtc ?? "",
-    licencia: p.licencia ?? "",
-    tituloHabilitante: p.tituloHabilitante ?? "",
-    resolucion: p.resolucion ?? "",
-    planManejo: p.planManejo ?? "",
-    arffs: p.arffs ?? "",
-    representante: p.representante ?? "",
-    representanteDni: p.representanteDni ?? "",
-    notas: p.notas ?? "",
-    activo: p.activo,
     logo: p.logo ?? "",
     adjuntos: p.adjuntos ?? [],
   };
@@ -627,6 +620,22 @@ export default function CtpParteModal({
           <Field label="Teléfono del contacto" span={6}>
             <input type="text" className={I} value={b.contactoTelefono ?? ""} onChange={(e) => set({ contactoTelefono: e.target.value })} />
           </Field>
+          {/* El segundo que contesta. En comunidades y empresas chicas el primer
+              contacto se queda sin señal o cambia de número, y la guía se frena
+              por no tener a quién llamar. */}
+          <Field label="Otro contacto" span={6} hint="El que contesta cuando el primero no">
+            <input type="text" className={I} value={b.contacto2Nombre ?? ""} onChange={(e) => set({ contacto2Nombre: e.target.value })} />
+          </Field>
+          <Field label="Su teléfono" span={6}>
+            <input type="text" className={I} value={b.contacto2Telefono ?? ""} onChange={(e) => set({ contacto2Telefono: e.target.value })} />
+          </Field>
+          {/* Dónde se carga el camión: no es la dirección legal. */}
+          <CtpPartePuntoAcopio
+            lat={b.acopioLat}
+            lng={b.acopioLng}
+            referencia={b.acopioReferencia ?? ""}
+            onCambio={(v) => set(v)}
+          />
         </Seccion>
 
         {(esTransportista || esConductor || esProveedor) && (
@@ -790,6 +799,47 @@ export default function CtpParteModal({
           <Field label="La cuenta está a nombre de" span={12} hint="Sólo si no coincide con el titular de la ficha (pasa: la comunidad cobra en la cuenta de su jefe)">
             <input type="text" className={I} value={b.cuentaTitular ?? ""} onChange={(e) => set({ cuentaTitular: e.target.value })} />
           </Field>
+
+          {/* Contado o crédito: es lo que decide si una compra deja una fecha de
+              pago que vigilar. Sin pactar NO es contado — asumirlo haría
+              aparecer deuda cero donde en realidad no se sabe. */}
+          <Field label="Condición de pago" span={4} hint={textoCondicionPago(b.condicionPago, b.diasCredito)}>
+            <select
+              className={I}
+              value={b.condicionPago ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                set({
+                  condicionPago: v ? (v as (typeof CONDICIONES_PAGO)[number]) : null,
+                  ...(v === "credito" ? {} : { diasCredito: null }),
+                });
+              }}
+            >
+              <option value="">Sin pactar</option>
+              <option value="contado">Contado</option>
+              <option value="credito">Crédito</option>
+            </select>
+          </Field>
+          {b.condicionPago === "credito" && (
+            <Field label="Días de crédito" span={4} hint="Los que se pactaron: de ahí sale el vencimiento">
+              <input
+                type="number"
+                min={0}
+                max={365}
+                inputMode="numeric"
+                className={`${I} font-mono tabular-nums`}
+                value={b.diasCredito ?? ""}
+                onChange={(e) => set({ diasCredito: e.target.value === "" ? null : Number(e.target.value) })}
+              />
+            </Field>
+          )}
+          <Field
+            label="Correo de cobranza"
+            span={b.condicionPago === "credito" ? 4 : 8}
+            hint="Dónde mandar factura y liquidación, si no es el correo general"
+          >
+            <input type="email" className={I} value={b.emailCobranza ?? ""} onChange={(e) => set({ emailCobranza: e.target.value })} />
+          </Field>
         </Seccion>
 
         <Seccion numero={nro.logo} title="Logo y papeles del titular">
@@ -833,9 +883,14 @@ export default function CtpParteModal({
 
         <Seccion numero={nro.notas} title="Notas">
           <CampoGrid className="sm:col-span-12">
-            <Field label="Observaciones internas" span={12}>
+            <Field label="Observaciones internas" span={12} hint="Una línea que describe a la parte; se pisa al editarla">
               <input type="text" className={I} value={b.notas ?? ""} onChange={(e) => set({ notas: e.target.value })} />
             </Field>
+            <CtpParteBitacora
+              notas={parte?.bitacora ?? []}
+              nueva={b.nuevaNota ?? ""}
+              onNueva={(nuevaNota) => set({ nuevaNota })}
+            />
           </CampoGrid>
         </Seccion>
 
