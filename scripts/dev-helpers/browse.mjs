@@ -23,7 +23,7 @@
  * pase 10min de inactividad.
  */
 import { chromium } from "playwright";
-import { existsSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
+import { existsSync, writeFileSync, readFileSync, unlinkSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
@@ -31,13 +31,45 @@ const BASE = "http://localhost:3000";
 const TENANT = "main";
 const USER = "qaadmin";
 const PASS = "Qa-admin-1234";
-const CHROMIUM = path.join(process.env.HOME ?? "", ".cache/ms-playwright/chromium-1208/chrome-linux64/chrome");
+/**
+ * El build de chromium estaba clavado en `chromium-1208`: cuando el repo movió
+ * `playwright-core`, la caché quedó con 1223/1226 y TODO screenshot empezó a
+ * fallar con "executable doesn't exist" — el skill `/preview` dejó de servir
+ * sin que nada lo avisara. Ahora se resuelve el build más nuevo que exista, y
+ * si no hay ninguno se dice qué comando lo instala, en vez de un path muerto.
+ */
+function resolverChromium() {
+  const base = path.join(process.env.HOME ?? "", ".cache/ms-playwright");
+  const candidatos = ["chrome-linux64/chrome", "chrome-linux/chrome"];
+  let dirs = [];
+  try {
+    dirs = readdirSync(base)
+      .filter((d) => /^chromium-\d+$/.test(d))
+      .sort((a, b) => Number(b.split("-")[1]) - Number(a.split("-")[1]));
+  } catch {
+    dirs = [];
+  }
+  for (const d of dirs) {
+    for (const c of candidatos) {
+      const p = path.join(base, d, c);
+      if (existsSync(p)) return p;
+    }
+  }
+  return null;
+}
+
+const CHROMIUM = resolverChromium();
 const STATE_FILE = "/tmp/bsm-browser-state.json";
 const WS_LOG = "/tmp/bsm-browser-ws.txt";
 
 async function startServer() {
   // Lanzar browser en server mode (chromium con --remote-debugging-port o usando server pattern)
   // Para simplificar: cada invocación abre+cierra. Si hay state cookies/auth/url los persiste.
+  if (!CHROMIUM) {
+    throw new Error(
+      "No hay chromium de Playwright en ~/.cache/ms-playwright. Instalalo con: npx playwright install chromium",
+    );
+  }
   const browser = await chromium.launch({ headless: true, executablePath: CHROMIUM });
   return browser;
 }
