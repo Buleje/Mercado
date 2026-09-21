@@ -6005,6 +6005,15 @@ model ForestLothEntry {
   consumoInterno Boolean @default(false) // "consumo interno"
   observations   String?
 
+  // ── Marcado físico del código (RDE 264-2019, Sección 1, item 3) ─────
+  // «Este código debe ser colocado físicamente en el fuste y el tocón con
+  // materiales durables (placa metálica o plástica, pintura esmalte, etc.)».
+  // Es lo primero que un supervisor de OSINFOR busca en campo y no vivía en
+  // ninguna parte del libro. Aditivo y con default: una línea vieja queda en
+  // false, que es «no consta», no «no se marcó».
+  marcadoFuste Boolean @default(false)
+  marcadoTocon Boolean @default(false)
+
   // ── Subsanación SERFOR (corrección visible, no borrar) ─
   correctsLineNo Int? // esta línea corrige a la línea N
   correctionNote String?

@@ -16,6 +16,7 @@ import {
   componerObservaciones,
   motivoPideCientifico,
   estadoMarcado,
+  MOTIVOS_TALA,
 } from "@/lib/forestal/loth-tala";
 import { smalianVolume } from "@/lib/forestal/loth-constants";
 
@@ -161,6 +162,30 @@ describe("componerObservaciones — los términos que el fiscalizador busca (ite
 
   it("sin motivos ni texto devuelve cadena vacía, no basura", () => {
     expect(componerObservaciones({ motivos: [] })).toBe("");
+  });
+});
+
+describe("las keys de los motivos son contrato con el formulario", () => {
+  /**
+   * `LothEntryForm` deriva los flags de la línea de estas dos keys exactas:
+   *   payload.discarded      = motivos.includes("descartado")
+   *   payload.consumoInterno = motivos.includes("consumo_interno")
+   * Renombrarlas no rompe ningún tipo (son strings dentro de un union), pero
+   * deja el flag en false con la observación diciendo «Descartado»: el texto y
+   * el dato contándose cosas distintas. Ya pasó una vez, por otra vía —el
+   * checkbox viejo pisaba la asignación—, y sólo se vio guardando de verdad.
+   */
+  it("existen las keys que el payload consulta", () => {
+    const keys = MOTIVOS_TALA.map((m) => m.key);
+    expect(keys).toContain("descartado");
+    expect(keys).toContain("consumo_interno");
+  });
+
+  it("cada motivo que pide detalle tiene su término y su ayuda", () => {
+    for (const m of MOTIVOS_TALA) {
+      expect(m.termino.length).toBeGreaterThan(0);
+      expect(m.ayuda.length).toBeGreaterThan(0);
+    }
   });
 });
 

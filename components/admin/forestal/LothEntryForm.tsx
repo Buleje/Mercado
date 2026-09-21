@@ -32,7 +32,7 @@ import {
   type LothEntryDTO,
   type LothSection,
 } from "@/lib/forestal/loth-constants";
-import LothTalaMedicion, { derivarTala, type MedidasTala } from "./LothTalaMedicion";
+import LothMedicionFuste, { derivarTala, type MedidasTala } from "./LothMedicionFuste";
 import LothTalaObservaciones from "./LothTalaObservaciones";
 import {
   componerObservaciones,
@@ -185,8 +185,17 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   /** Los casos que el item 10 tipifica, en vez de un textarea en blanco. */
   const [motivosTala, setMotivosTala] = useState<MotivoTala[]>([]);
   const [detalleMotivo, setDetalleMotivo] = useState("");
-  /** Item 3: el código va marcado en el fuste Y en el tocón. */
-  const [marcasFisicas, setMarcasFisicas] = useState<MarcaFisica[]>([]);
+  /**
+   * Item 3: el código va marcado en el fuste Y en el tocón. Al duplicar una
+   * línea se hereda lo declarado: la troza siguiente del mismo árbol sale del
+   * mismo tocón ya marcado.
+   */
+  const [marcasFisicas, setMarcasFisicas] = useState<MarcaFisica[]>(() => {
+    const previas: MarcaFisica[] = [];
+    if (plantilla?.marcadoFuste) previas.push("fuste");
+    if (plantilla?.marcadoTocon) previas.push("tocon");
+    return previas;
+  });
   const [productType, setProductType] = useState(plantilla?.productType ?? PRODUCT_TYPES[0]);
   const [quantity, setQuantity] = useState(plantilla?.quantity ?? "");
   const [unit, setUnit] = useState<"m3" | "kg" | "unidad">((plantilla?.unit as "m3" | "kg" | "unidad") ?? "m3");
@@ -303,8 +312,20 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     applySpecies(it.species);
     if (section === "tala") {
       if (it.code) setTreeCode(it.code);
-      if (it.dapM) { setDiamMayor(String(it.dapM)); setDiamMenor(String(it.dapM)); }
-      if (it.hcM) setLengthM(String(it.hcM));
+      // El censo arranca la medición, no la reemplaza: el DAP es del árbol EN
+      // PIE y la altura comercial es estimada. Antes se copiaba el DAP en Ø
+      // mayor y Ø menor a la vez —fingiendo dos medidas cruzadas que nadie
+      // tomó, y dando un volumen cilíndrico—; ahora entra como primera medida
+      // y la pantalla avisa que hay que confirmarla contra el tocón.
+      if (it.dapM || it.hcM) {
+        setMedidasTala((m) => ({
+          ...m,
+          mayor: [it.dapM ? String(it.dapM) : "", ""],
+          menor: ["", ""],
+          totalM: it.hcM ? String(it.hcM) : m.totalM,
+          origenCenso: true,
+        }));
+      }
       aplicarCoordCenso(it.code, it.utmZona ?? null, it.utmX ?? null, it.utmY ?? null);
     } else if (section === "trozado") {
       // Prefill un código de troza COMPLETO y válido (árbol + "-A"); el operador lo
@@ -437,7 +458,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
    */
   const derivados = useMemo(() => derivarTala(medidasTala), [medidasTala]);
   useEffect(() => {
-    if (section !== "tala") return;
+    if (section !== "tala" && section !== "trozado") return;
     setDiamMayor(derivados.diamMayorM != null ? String(derivados.diamMayorM) : "");
     setDiamMenor(derivados.diamMenorM != null ? String(derivados.diamMenorM) : "");
     setLengthM(derivados.longitudM != null ? String(derivados.longitudM) : "");
@@ -586,12 +607,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       };
       // Tala: el estado de la línea sale de los casos del item 10, no de dos
       // checkboxes que podían contradecir al texto de observaciones.
-      // El marcado físico (fuste/tocón) todavía NO tiene columna propia: se
-      // declara en pantalla como checklist de campo. Darle persistencia pide
-      // migración — anotado en el radar, no inventado acá.
       if (section === "tala") {
         payload.discarded = motivosTala.includes("descartado");
         payload.consumoInterno = motivosTala.includes("consumo_interno");
+        // Item 3: el código marcado en el fuste y en el tocón. Ya tiene columna
+        // propia (migración 20260921000000_loth_marcado_fisico).
+        payload.marcadoFuste = marcasFisicas.includes("fuste");
+        payload.marcadoTocon = marcasFisicas.includes("tocon");
       }
       if (fields.has("treeCode")) payload.treeCode = treeCode.trim() || null;
       // despacho_producto no muestra input de troza pero SÍ hereda la del producto
@@ -617,8 +639,12 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       if (fields.has("unit")) payload.unit = unit;
       if (fields.has("pieces")) payload.pieces = pieces ? Number(pieces) : null;
       if (fields.has("gtf")) payload.gtfNumber = gtfNumber.trim() || null;
-      if (fields.has("discarded")) payload.discarded = discarded;
-      if (fields.has("consumoInterno")) payload.consumoInterno = consumoInterno;
+      // En tala estos dos ya salieron de los motivos del item 10, más arriba.
+      // Sin esta guarda, el checkbox —que en tala ni se muestra— los pisaba con
+      // false y la línea quedaba con «Descartado» escrito en observaciones pero
+      // sin el flag: el texto decía una cosa y el dato, otra.
+      if (fields.has("discarded") && section !== "tala") payload.discarded = discarded;
+      if (fields.has("consumoInterno") && section !== "tala") payload.consumoInterno = consumoInterno;
 
       if (justificacionDmc.trim()) payload.justificacionDmc = justificacionDmc.trim();
       payload.gpsLat = gpsLat ?? null;
@@ -979,12 +1005,14 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             );
           })()}
 
-          {/* Tala: medidas crudas de campo → el libro guarda lo que pide el formato */}
-          {section === "tala" && (
-            <LothTalaMedicion medidas={medidasTala} onChange={setMedidasTala} />
+          {/* Tala y Trozado: medidas crudas de campo → el libro guarda lo que
+              pide el formato. Los items 6 y 7 de las dos secciones repiten la
+              misma instrucción («2 o más medidas de forma cruzada»). */}
+          {(section === "tala" || section === "trozado") && (
+            <LothMedicionFuste medidas={medidasTala} onChange={setMedidasTala} seccion={section} />
           )}
 
-          {fields.has("diams") && section !== "tala" && (
+          {fields.has("diams") && section !== "tala" && section !== "trozado" && (
             <>
               <div className="grid grid-cols-3 gap-3 sm:col-span-2">
                 <Field label="Ø mayor (m)" hint="Promedio 2 medidas">
@@ -1086,6 +1114,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               nombreCientifico={scientific}
               marcas={marcasFisicas}
               onMarcas={setMarcasFisicas}
+              tieneFoto={!!photoUrl}
             />
           )}
 
@@ -1099,7 +1128,10 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           {/* Evidencia de campo (GPS + foto) */}
           <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:col-span-2">
             <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-              Evidencia de campo <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span>
+              Evidencia de campo{" "}
+              <span className="font-normal text-[var(--text-tertiary)]">
+                {section === "tala" ? "(la foto del tocón es la prueba del marcado)" : "(opcional)"}
+              </span>
             </CardTitle>
 
             {/* GPS — teléfono, censo o UTM tecleada */}

@@ -50,6 +50,8 @@ const createSchema = z.object({
 
   discarded: z.boolean().optional(),
   consumoInterno: z.boolean().optional(),
+  marcadoFuste: z.boolean().optional(),
+  marcadoTocon: z.boolean().optional(),
   observations: z.string().trim().max(1000).nullable().optional(),
   // T8: motivo para talar un árbol bajo el DMC de su especie (queda en el libro).
   justificacionDmc: z.string().trim().max(500).nullable().optional(),

@@ -21,6 +21,7 @@ import { CardTitle } from "@buleje/design-system";
 import {
   MODOS_UI,
   obligatoriedadTala,
+  obligatoriedadTrozado,
   promedioCruzado,
   fusteIrregular,
   calcularLongitud,
@@ -40,6 +41,13 @@ export interface MedidasTala {
   /** Longitud total del fuste, antes de descuentos. */
   totalM: string;
   descuentos: DescuentoLongitud[];
+  /**
+   * Los números vinieron del censo, no de la forcípula. El DAP es del árbol EN
+   * PIE y la altura comercial es una estimación: sirven para arrancar, pero el
+   * libro consigna lo que se midió en el tocón. Mientras esté en true, la
+   * pantalla lo dice en vez de disfrazar un estimado de medición.
+   */
+  origenCenso?: boolean;
 }
 
 export interface DerivadosTala {
@@ -76,21 +84,29 @@ export function derivarTala(m: MedidasTala): DerivadosTala {
 const INPUT =
   "h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-mono tabular-nums text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--data-success-500)]";
 
-export default function LothTalaMedicion({
+export default function LothMedicionFuste({
   medidas,
   onChange,
+  seccion = "tala",
 }: {
   medidas: MedidasTala;
   onChange: (m: MedidasTala) => void;
+  /**
+   * Trozado mide la misma cruz pero no elige modo ni descuenta aletas: eso ya
+   * se hizo sobre el fuste, en Tala. Ver `obligatoriedadTrozado`.
+   */
+  seccion?: "tala" | "trozado";
 }) {
-  const oblig = obligatoriedadTala(medidas.modo);
+  const esTala = seccion === "tala";
+  const oblig = esTala ? obligatoriedadTala(medidas.modo) : obligatoriedadTrozado();
   const d = useMemo(() => derivarTala(medidas), [medidas]);
   const largo = calcularLongitud(Number(medidas.totalM) || null, medidas.descuentos);
 
   const setMedida = (campo: "mayor" | "menor", i: number, v: string) => {
     const arr = [...medidas[campo]];
     arr[i] = v;
-    onChange({ ...medidas, [campo]: arr });
+    // Tocar una medida a mano es medir: el aviso del censo deja de aplicar.
+    onChange({ ...medidas, [campo]: arr, origenCenso: false });
   };
 
   const addDescuento = (tipo: TipoDescuento) =>
@@ -110,8 +126,9 @@ export default function LothTalaMedicion({
       <header className="flex flex-wrap items-center justify-between gap-2">
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Ruler className="h-4 w-4 text-[var(--data-success-700)]" strokeWidth={1.75} />
-          Medición del fuste
+          {esTala ? "Medición del fuste" : "Medición de la troza"}
         </CardTitle>
+        {esTala && (
         <div role="group" aria-label="Modo de aprovechamiento" className="flex gap-1.5">
           {MODOS_UI.map((m) => {
             const activo = medidas.modo === m.key;
@@ -132,12 +149,23 @@ export default function LothTalaMedicion({
             );
           })}
         </div>
+        )}
       </header>
 
       <p className="flex items-start gap-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-xs text-[var(--text-secondary)]">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
         <span>{oblig.razon}</span>
       </p>
+
+      {medidas.origenCenso && (
+        <p className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/50 bg-[var(--data-warning-100)] px-3 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            Estos números salieron del censo (DAP del árbol en pie y altura comercial estimada). Reemplázalos con
+            lo que mediste en el tocón antes de guardar.
+          </span>
+        </p>
+      )}
 
       {/* Diámetros: dos medidas cruzadas por sección, el promedio lo hace el libro */}
       {oblig.diametros && (
@@ -164,7 +192,7 @@ export default function LothTalaMedicion({
         <div className="flex flex-wrap items-end gap-3">
           <label className="min-w-36 flex-1">
             <span className="mb-1 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Longitud total del fuste (m)
+              {esTala ? "Longitud total del fuste (m)" : "Longitud de la troza (m)"}
             </span>
             <input
               type="number"
@@ -172,11 +200,12 @@ export default function LothTalaMedicion({
               min="0"
               inputMode="decimal"
               value={medidas.totalM}
-              onChange={(e) => onChange({ ...medidas, totalM: e.target.value })}
+              onChange={(e) => onChange({ ...medidas, totalM: e.target.value, origenCenso: false })}
               placeholder="15.00"
               className={`${INPUT} w-full`}
             />
           </label>
+          {esTala && (
           <div className="rounded-xl bg-[var(--data-success-50)] px-4 py-2 text-right">
             <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-700)]">
               Aprovechable
@@ -185,9 +214,10 @@ export default function LothTalaMedicion({
               {d.longitudM != null ? `${Number(d.longitudM).toFixed(2)} m` : "—"}
             </span>
           </div>
+          )}
         </div>
 
-        {medidas.descuentos.map((dd, i) => {
+        {esTala && medidas.descuentos.map((dd, i) => {
           const tipo = TIPOS_DESCUENTO.find((t) => t.key === dd.tipo);
           return (
             <div key={`${dd.tipo}-${i}`} className="flex items-center gap-2">
@@ -217,6 +247,7 @@ export default function LothTalaMedicion({
           );
         })}
 
+        {esTala && (
         <div className="flex flex-wrap gap-1.5">
           {TIPOS_DESCUENTO.filter((t) => !medidas.descuentos.some((x) => x.tipo === t.key)).map((t) => (
             <button
@@ -231,8 +262,9 @@ export default function LothTalaMedicion({
             </button>
           ))}
         </div>
+        )}
 
-        {largo.excede && (
+        {esTala && largo.excede && (
           <p className="flex items-start gap-2 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-semibold text-[var(--data-error-700)]">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             Los descuentos ({Number(largo.descontadoM).toFixed(2)} m) igualan o superan el fuste entero. Revisa la medida

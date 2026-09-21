@@ -36,6 +36,7 @@ export default function LothTalaObservaciones({
   nombreCientifico,
   marcas,
   onMarcas,
+  tieneFoto = false,
 }: {
   motivos: MotivoTala[];
   onMotivos: (m: MotivoTala[]) => void;
@@ -46,6 +47,8 @@ export default function LothTalaObservaciones({
   nombreCientifico: string | null;
   marcas: MarcaFisica[];
   onMarcas: (m: MarcaFisica[]) => void;
+  /** ¿Se adjuntó la foto? Declarar el marcado sin una prueba es una promesa. */
+  tieneFoto?: boolean;
 }) {
   const marcado = estadoMarcado(marcas);
   const pideDetalle = motivos.some((k) => MOTIVOS_TALA.find((m) => m.key === k)?.pideDetalle);
@@ -100,6 +103,12 @@ export default function LothTalaObservaciones({
             ? "Fuste y tocón marcados — es lo que el supervisor verifica en campo."
             : `Falta declarar: ${marcado.faltan.join(" y ")}. Con placa, plástico o pintura esmalte.`}
         </p>
+        {marcado.completo && !tieneFoto && (
+          <p className="text-xs font-semibold text-[var(--data-warning-700)]">
+            Declaraste el marcado pero no hay foto. Súbela abajo, en Evidencia de campo: una foto del tocón con el
+            código visible es lo que sostiene esta línea si te supervisan.
+          </p>
+        )}
       </div>
 
       {/* Item 10 — los casos que la norma tipifica */}

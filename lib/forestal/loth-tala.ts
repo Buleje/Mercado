@@ -87,6 +87,26 @@ export function obligatoriedadTala(modo: ModoAprovechamiento | null | undefined)
   };
 }
 
+/**
+ * Sección 2 · Trozado. Mide la misma cruz que Tala (sus items 6 y 7 repiten
+ * palabra por palabra lo de «2 o más medidas en dicha sección de forma
+ * cruzada»), pero con dos diferencias que importan:
+ *
+ *  · su item 9 **no** trae la nota «sólo cuando el aserrío se realice dentro
+ *    del área»: el volumen de la troza se registra siempre; y
+ *  · su item 8 pide «la longitud de la troza», no una longitud aprovechable —
+ *    los descuentos por aletas y despunte ya se hicieron en Tala, sobre el
+ *    fuste. Restarlos otra vez sería descontar dos veces la misma madera.
+ */
+export function obligatoriedadTrozado(): ObligatoriedadTala {
+  return {
+    diametros: true,
+    volumen: true,
+    longitud: true,
+    razon: "Trozado: la norma pide los diámetros y el volumen de cada troza siempre, sin importar qué se haga después con ella.",
+  };
+}
+
 // ─── Item 6 y 7 · el diámetro es un promedio de medidas cruzadas ───────────
 
 /**

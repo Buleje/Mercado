@@ -458,6 +458,9 @@ export interface LothEntryDTO {
   gtfNumber: string | null;
   discarded: boolean;
   consumoInterno: boolean;
+  /** Marcado físico del código (RDE 264-2019 §1 item 3). */
+  marcadoFuste?: boolean;
+  marcadoTocon?: boolean;
   observations: string | null;
   status: "registrado" | "anulado";
   annulledReason: string | null;

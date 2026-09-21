@@ -103,6 +103,9 @@ export interface LothEntryCreateInput {
 
   discarded?: boolean;
   consumoInterno?: boolean;
+  /** RDE 264-2019 §1 item 3: el código va marcado en el fuste y en el tocón. */
+  marcadoFuste?: boolean;
+  marcadoTocon?: boolean;
   observations?: string | null;
   /**
    * Motivo por el que se tala un árbol bajo el DMC de su especie (T8). Sin esto
@@ -276,6 +279,8 @@ export class ForestLothDB {
           gtfNumber: input.gtfNumber?.trim() || null,
           discarded: input.discarded ?? false,
           consumoInterno: input.consumoInterno ?? false,
+          marcadoFuste: input.marcadoFuste ?? false,
+          marcadoTocon: input.marcadoTocon ?? false,
           // La justificación del DMC queda EN el libro: es la explicación que
           // el titular tiene que poder mostrar en una fiscalización.
           observations: buildObservations(input),
