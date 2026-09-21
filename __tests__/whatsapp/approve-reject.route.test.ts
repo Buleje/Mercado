@@ -6,7 +6,7 @@
  *  - POST /api/superadmin/payment-approvals/[id]/reject
  *
  * Mockea: superadmin-auth, payment-approval.db, order-payment-link.db,
- *         orders.db, notify-yape-result.
+ *         orders.db, notify-yape-result, rate-limit.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -62,6 +62,17 @@ const mockNotifyRejected = vi.fn();
 vi.mock("@/lib/whatsapp/notify-yape-result", () => ({
   notifyYapeApproved: (...args: unknown[]) => mockNotifyApproved(...args),
   notifyYapeRejected: (...args: unknown[]) => mockNotifyRejected(...args),
+}));
+
+// Rate limit — always pass-through in unit tests (in-memory store otherwise
+// accumulates across the 22-test suite and triggers 429 on later calls).
+// getClientIp is also exported from this module and used by audit-context.
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: vi.fn().mockReturnValue(null),
+  applyRateLimitWithTenant: vi.fn().mockReturnValue(null),
+  getClientIp: vi.fn().mockReturnValue("127.0.0.1"),
+  getClientId: vi.fn().mockReturnValue("127.0.0.1"),
+  rateLimit: vi.fn().mockReturnValue({ allowed: true, remaining: 10, resetAt: Date.now() + 900000 }),
 }));
 
 // ─── Imports after mocks ──────────────────────────────────────────────────────

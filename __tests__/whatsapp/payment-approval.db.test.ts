@@ -142,7 +142,8 @@ describe("PaymentApprovalDb", () => {
     it("delta <5% (exacto) → status permanece pending", async () => {
       // expectedAmount=100, detectedAmount=104 → delta=4 → 4% < 5% → pending
       const row = makeApprovalRow({ expectedAmount: "100.00" });
-      mockQueryRaw.mockResolvedValue([row]);
+      // 1st call: getById in setVisionResult; 2nd: H002 yapeOpCode dedup (no dupes)
+      mockQueryRaw.mockResolvedValueOnce([row]).mockResolvedValueOnce([]);
 
       await PaymentApprovalDb.setVisionResult("pap_test_001", {
         detectedAmount: 104.0,
@@ -186,7 +187,8 @@ describe("PaymentApprovalDb", () => {
     it("delta exactamente 5% → permanece pending (boundary — no supera)", async () => {
       // expectedAmount=100, detectedAmount=105 → delta=5 → pct=0.05 → NOT > 0.05 → pending
       const row = makeApprovalRow({ expectedAmount: "100.00" });
-      mockQueryRaw.mockResolvedValue([row]);
+      // 1st call: getById in setVisionResult; 2nd: H002 yapeOpCode dedup (no dupes)
+      mockQueryRaw.mockResolvedValueOnce([row]).mockResolvedValueOnce([]);
 
       await PaymentApprovalDb.setVisionResult("pap_test_001", {
         detectedAmount: 105.0,

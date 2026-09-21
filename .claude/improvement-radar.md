@@ -7,6 +7,16 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ---
 
+## Weekly health 2026-09-21
+
+- **tsc:** clean (exit 0) after `npm ci --ignore-scripts` — all 5 prior script errors were missing `node_modules` in fresh container.
+- **tests (whatsapp+delivery):** 143 passed | 3 skipped (was: 5 failing) — fixed rate-limit mock accumulation (approve-reject + yape-capture), H002 yapeOpCode dedup mock sequencing (payment-approval.db), and tenant guard allowlist for drivers/apply route (4 usages, not 2).
+- **lint:** 410 legacy ESLint errors present — skipped (owned by weekly-eslint-cleanup routine).
+- **outdated deps:** not evaluated — `npm ci` ran but `npm outdated` not scoped to this PR's goal.
+- **action:** PR opened `fix/weekly-2026-09-21-test-regressions` — 4 test files patched, no production code changed.
+
+---
+
 ## Aplicadas en sesión 2026-04-28
 
 ### [applied] 2026-04-28 — OOM cap tsc bajado a 4096 MB
