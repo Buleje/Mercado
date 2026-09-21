@@ -25,7 +25,21 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
-import { claveEspecie, LOTH_SECTIONS, type LothEntryDTO, type LothSection } from "@/lib/forestal/loth-constants";
+import {
+  claveEspecie,
+  LOTH_SECTIONS,
+  smalianVolume,
+  type LothEntryDTO,
+  type LothSection,
+} from "@/lib/forestal/loth-constants";
+import LothTalaMedicion, { derivarTala, type MedidasTala } from "./LothTalaMedicion";
+import LothTalaObservaciones from "./LothTalaObservaciones";
+import {
+  componerObservaciones,
+  obligatoriedadTala,
+  type MarcaFisica,
+  type MotivoTala,
+} from "@/lib/forestal/loth-tala";
 import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
 import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -87,11 +101,12 @@ const FIELDS: Record<LothSection, Set<string>> = {
   despacho_producto: new Set(["gtf", "productType", "species", "pieces", "quantity", "unit", "obs"]),
 };
 
-function smalian(dMayor: number, dMenor: number, len: number): number {
-  if (!(dMayor > 0) || !(dMenor > 0) || !(len > 0)) return 0;
-  const dProm = (dMayor + dMenor) / 2;
-  return Math.round(0.7854 * dProm * dProm * len * 10000) / 10000;
-}
+/**
+ * La fórmula vive en `loth-constants` (single source). Acá había una copia
+ * propia, que es exactamente cómo se llega a que dos pantallas cubiquen
+ * distinto el mismo árbol.
+ */
+const smalian = smalianVolume;
 
 export default function LothEntryForm({ section, caratulaId, onClose, onSaved, plantilla, corrigeLineNo }: Props) {
   /**
@@ -153,6 +168,25 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const [diamMenor, setDiamMenor] = useState(plantilla?.diamMenorM ?? "");
   const [lengthM, setLengthM] = useState(plantilla?.lengthM ?? "");
   const [volumeM3, setVolumeM3] = useState(plantilla?.volumeM3 ?? "");
+
+  /**
+   * Sección 1 (Tala): las medidas CRUDAS de campo. El libro sigue guardando el
+   * diámetro promedio y la longitud aprovechable —lo que pide el formato
+   * oficial—; acá se guarda cómo se llegó a esos números, que es lo que el
+   * motosierrista tiene en la mano. Ver `lib/forestal/loth-tala.ts`.
+   */
+  const [medidasTala, setMedidasTala] = useState<MedidasTala>(() => ({
+    modo: null,
+    mayor: [plantilla?.diamMayorM ?? "", ""],
+    menor: [plantilla?.diamMenorM ?? "", ""],
+    totalM: plantilla?.lengthM ?? "",
+    descuentos: [],
+  }));
+  /** Los casos que el item 10 tipifica, en vez de un textarea en blanco. */
+  const [motivosTala, setMotivosTala] = useState<MotivoTala[]>([]);
+  const [detalleMotivo, setDetalleMotivo] = useState("");
+  /** Item 3: el código va marcado en el fuste Y en el tocón. */
+  const [marcasFisicas, setMarcasFisicas] = useState<MarcaFisica[]>([]);
   const [productType, setProductType] = useState(plantilla?.productType ?? PRODUCT_TYPES[0]);
   const [quantity, setQuantity] = useState(plantilla?.quantity ?? "");
   const [unit, setUnit] = useState<"m3" | "kg" | "unidad">((plantilla?.unit as "m3" | "kg" | "unidad") ?? "m3");
@@ -396,6 +430,23 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     return smalian(Number(diamMayor), Number(diamMenor), Number(lengthM));
   }, [diamMayor, diamMenor, lengthM, fields]);
 
+  /**
+   * Tala: las medidas crudas mandan. Lo que se guarda en el libro (Ø promedio,
+   * longitud aprovechable, volumen) se deriva de ellas, para que la columna
+   * oficial y lo que se midió no puedan separarse.
+   */
+  const derivados = useMemo(() => derivarTala(medidasTala), [medidasTala]);
+  useEffect(() => {
+    if (section !== "tala") return;
+    setDiamMayor(derivados.diamMayorM != null ? String(derivados.diamMayorM) : "");
+    setDiamMenor(derivados.diamMenorM != null ? String(derivados.diamMenorM) : "");
+    setLengthM(derivados.longitudM != null ? String(derivados.longitudM) : "");
+    setVolumeM3(derivados.volumenM3 != null ? derivados.volumenM3.toFixed(4) : "");
+  }, [section, derivados]);
+
+  /** Qué exige la norma para ESTA línea de tala (Art. 4 + notas items 6/7/9). */
+  const obligTala = useMemo(() => obligatoriedadTala(medidasTala.modo), [medidasTala.modo]);
+
   const filteredSpecies = useMemo(() => {
     const q = speciesQuery.trim().toLowerCase();
     if (!q) return speciesOptions.slice(0, 12);
@@ -419,12 +470,25 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     if (fields.has("volumeManual") && !(Number(volumeM3) > 0)) m.push("Volumen (m³)");
     // Tala/Trozado: exigir volumen > 0 (manual o calculado por Smalian) — antes se
     // podía registrar con Ø/longitud vacíos y quedaba una línea con volumen 0.
-    if (fields.has("volume") && !(Number(volumeM3) > 0) && !(autoVolume > 0)) m.push("Volumen — completa Ø mayor, Ø menor y longitud");
+    //
+    // En TALA la exigencia es la de la norma, no una más dura: los diámetros y
+    // el volumen son obligatorios sólo si el aserrío se hace dentro del área
+    // (RDE 264-2019, notas de los items 6, 7 y 9); la longitud aprovechable se
+    // registra siempre. Pedir de más empuja a inventar un número.
+    if (section === "tala") {
+      if (!(derivados.longitudM != null && derivados.longitudM > 0)) m.push("Longitud aprovechable");
+      if (obligTala.volumen && !(Number(volumeM3) > 0) && !(autoVolume > 0)) {
+        m.push("Volumen — completa las medidas cruzadas y la longitud");
+      }
+      if (derivados.excedeDescuento) m.push("Los descuentos superan el fuste entero");
+    } else if (fields.has("volume") && !(Number(volumeM3) > 0) && !(autoVolume > 0)) {
+      m.push("Volumen — completa Ø mayor, Ø menor y longitud");
+    }
     if (fields.has("quantity") && !(Number(quantity) > 0)) m.push("Cantidad");
     if (fields.has("productType") && !productType.trim()) m.push("Tipo de producto");
     if (corrigeLineNo && correctionNote.trim().length < 3) m.push("Motivo de la corrección");
     return m;
-  }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, autoVolume, productType, corrigeLineNo, correctionNote]);
+  }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, autoVolume, productType, corrigeLineNo, correctionNote, derivados, obligTala]);
 
   const isValid = missing.length === 0;
 
@@ -510,8 +574,25 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         // Subsanación SERFOR: la línea nueva declara a cuál enmienda y por qué.
         // La vieja NO se toca — el libro corrige asentando, no borrando.
         ...(corrigeLineNo ? { correctsLineNo: corrigeLineNo, correctionNote: correctionNote.trim() || null } : {}),
-        observations: observations.trim() || null,
+        observations:
+          section === "tala"
+            ? componerObservaciones({
+                motivos: motivosTala,
+                detalle: detalleMotivo,
+                nombreCientifico: scientific,
+                textoLibre: observations,
+              }) || null
+            : observations.trim() || null,
       };
+      // Tala: el estado de la línea sale de los casos del item 10, no de dos
+      // checkboxes que podían contradecir al texto de observaciones.
+      // El marcado físico (fuste/tocón) todavía NO tiene columna propia: se
+      // declara en pantalla como checklist de campo. Darle persistencia pide
+      // migración — anotado en el radar, no inventado acá.
+      if (section === "tala") {
+        payload.discarded = motivosTala.includes("descartado");
+        payload.consumoInterno = motivosTala.includes("consumo_interno");
+      }
       if (fields.has("treeCode")) payload.treeCode = treeCode.trim() || null;
       // despacho_producto no muestra input de troza pero SÍ hereda la del producto
       // (link de trazabilidad por árbol), así que se manda aunque no esté en FIELDS.
@@ -898,7 +979,12 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             );
           })()}
 
-          {fields.has("diams") && (
+          {/* Tala: medidas crudas de campo → el libro guarda lo que pide el formato */}
+          {section === "tala" && (
+            <LothTalaMedicion medidas={medidasTala} onChange={setMedidasTala} />
+          )}
+
+          {fields.has("diams") && section !== "tala" && (
             <>
               <div className="grid grid-cols-3 gap-3 sm:col-span-2">
                 <Field label="Ø mayor (m)" hint="Promedio 2 medidas">
@@ -980,11 +1066,27 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             </Field>
           )}
 
-          {fields.has("discarded") && (
+          {/* En tala, «descartado» dejó de ser un checkbox suelto: es uno de los
+              casos del item 10, y viaja junto con su motivo y el término exacto. */}
+          {fields.has("discarded") && section !== "tala" && (
             <label className="flex items-center gap-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
               <input type="checkbox" checked={discarded} onChange={(e) => setDiscarded(e.target.checked)} className="h-4 w-4 accent-[var(--data-error-600)]" />
               Descartado <span className="text-[var(--text-tertiary)]">(no aprovechable — anota el motivo abajo)</span>
             </label>
+          )}
+
+          {section === "tala" && (
+            <LothTalaObservaciones
+              motivos={motivosTala}
+              onMotivos={setMotivosTala}
+              detalle={detalleMotivo}
+              onDetalle={setDetalleMotivo}
+              textoLibre={observations}
+              onTextoLibre={setObservations}
+              nombreCientifico={scientific}
+              marcas={marcasFisicas}
+              onMarcas={setMarcasFisicas}
+            />
           )}
 
           {fields.has("consumoInterno") && (
