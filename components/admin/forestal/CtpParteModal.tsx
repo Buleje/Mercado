@@ -10,10 +10,17 @@
  */
 
 import { useMemo, useState } from "react";
-import { Download, Loader2, Save, Users } from "@buleje/design-system/icons";
+import { Download, Loader2, MessageCircle, Save, Users } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
 import { ubigeoDeNombres } from "@/lib/peru-ubigeo";
+import {
+  completitud,
+  estadoTitulo,
+  motivoCciInvalido,
+  pendientesDeFicha,
+  type FichaParaSalud,
+} from "@/lib/forestal/directorio-salud";
 import {
   CATEGORIAS_PARTE,
   CATEGORIA_LABEL,
@@ -210,7 +217,33 @@ export default function CtpParteModal({
    * existía. Se numeran las que de verdad se pintan.
    */
   const hayPapel = esTransportista || esConductor || esProveedor;
-  const nro = { roles: 1, identidad: 2, donde: 3, papel: 4, logo: hayPapel ? 5 : 4, notas: hayPapel ? 6 : 5 };
+  const base = hayPapel ? 4 : 3;
+  const nro = {
+    roles: 1,
+    identidad: 2,
+    donde: 3,
+    papel: 4,
+    pago: base + 1,
+    logo: base + 2,
+    notas: base + 3,
+  };
+
+  // Qué le falta a esta ficha para servir en los papeles que cumple.
+  const pendientes = pendientesDeFicha(b as FichaParaSalud);
+  const listo = completitud(b as FichaParaSalud);
+  const cciMal = motivoCciInvalido(b.cuentaCci);
+  const vigencia = estadoTitulo(b.tituloVigenciaHasta || null);
+  /**
+   * `wa.me` quiere el número sin signos y con código de país. Un celular
+   * peruano de 9 dígitos se asume +51: es lo que hay en el 99 % de las fichas,
+   * y si alguien carga el código completo se respeta.
+   */
+  const whatsappLink = (() => {
+    const n = (b.whatsapp ?? "").replace(/\D/g, "");
+    if (!n) return null;
+    const conPais = n.length === 9 ? `51${n}` : n;
+    return conPais.length >= 10 ? `https://wa.me/${conPais}` : null;
+  })();
 
   const bodyRef = useAtajoGuardar(() => void guardar(), estado === "idle");
   const cerrar = useCierreSeguro(useHayCambios(b) && estado !== "guardando", onClose);
@@ -239,6 +272,52 @@ export default function CtpParteModal({
       }
     >
       <ModalBody ref={bodyRef}>
+        {/* Qué le falta a esta ficha para servir. No bloquea: es una lista de
+            pendientes, que es lo contrario de un formulario que no deja guardar. */}
+        <div className="col-span-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm font-bold text-[var(--text-primary)]">
+              {listo === 100 ? "Ficha completa para lo que hace" : `Ficha al ${listo}%`}
+            </span>
+            <span className="text-xs text-[var(--text-tertiary)]">
+              {pendientes.length === 0
+                ? "No falta nada de lo que piden estos papeles"
+                : `${pendientes.length} dato${pendientes.length === 1 ? "" : "s"} por cargar`}
+            </span>
+          </div>
+          <div
+            className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]"
+            role="progressbar"
+            aria-valuenow={listo}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Qué parte de la ficha está cargada"
+          >
+            <div
+              className={`h-full rounded-full transition-[width] ${
+                listo === 100 ? "bg-[var(--data-success-500)]" : listo >= 60 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
+              }`}
+              style={{ width: `${Math.max(4, listo)}%` }}
+            />
+          </div>
+          {pendientes.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {pendientes.slice(0, 4).map((x) => (
+                <li key={x.campo} className="flex items-start gap-1.5 text-xs">
+                  <span
+                    className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${
+                      x.nivel === "alto" ? "bg-[var(--data-error-500)]" : "bg-[var(--data-warning-500)]"
+                    }`}
+                  />
+                  <span className="text-[var(--text-secondary)]">
+                    <b className="text-[var(--text-primary)]">{x.campo}</b> — {x.porque}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         <Seccion numero={nro.roles} title="Qué papel cumple" hint="Se puede marcar más de uno">
           <div className="sm:col-span-12 flex flex-wrap gap-2">
             {ROLES_PARTE.map((rol) => {
@@ -357,11 +436,41 @@ export default function CtpParteModal({
           <Field label="Ubigeo" span={6} hint="Se completa solo al elegir departamento, provincia y distrito">
             <input type="text" className={`${I} font-mono`} value={b.ubigeo ?? ""} onChange={(e) => set({ ubigeo: e.target.value })} />
           </Field>
-          <Field label="Teléfono" span={6}>
+          <Field label="Teléfono" span={4}>
             <input type="text" className={I} value={b.telefono ?? ""} onChange={(e) => set({ telefono: e.target.value })} />
           </Field>
-          <Field label="Email" span={6}>
+          {/* WhatsApp aparte: en la selva el fijo no existe y el número que
+              contesta no siempre es el que figura en el RUC. */}
+          {/* El enlace va FUERA del Field, como el botón de SUNAT: `Field`
+              asocia el id por `htmlFor` y sólo a un input/select/textarea —
+              envolviéndolo en un div, el label quedaba sin campo asociado (se
+              vio: `label[for]` vacío para WhatsApp). */}
+          <Field label="WhatsApp" span={3} hint="Solo números, con o sin +51">
+            <input type="text" className={I} value={b.whatsapp ?? ""} onChange={(e) => set({ whatsapp: e.target.value })} />
+          </Field>
+          <div className="sm:col-span-1 flex items-end">
+            {whatsappLink && (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Abrir el chat de WhatsApp"
+                aria-label="Abrir el chat de WhatsApp"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--data-success-500)] text-[var(--data-success-700)] transition-colors hover:bg-[var(--data-success-50)]"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </a>
+            )}
+          </div>
+          <Field label="Email" span={4}>
             <input type="email" className={I} value={b.email ?? ""} onChange={(e) => set({ email: e.target.value })} />
+          </Field>
+          {/* Quien atiende de verdad, cuando no es el representante legal. */}
+          <Field label="Contacto" span={6} hint="El que coordina el flete o la entrega">
+            <input type="text" className={I} value={b.contactoNombre ?? ""} onChange={(e) => set({ contactoNombre: e.target.value })} />
+          </Field>
+          <Field label="Teléfono del contacto" span={6}>
+            <input type="text" className={I} value={b.contactoTelefono ?? ""} onChange={(e) => set({ contactoTelefono: e.target.value })} />
           </Field>
         </Seccion>
 
@@ -419,7 +528,32 @@ export default function CtpParteModal({
                     <Field label="Plan de manejo" span={4} hint="Casillero (9) — ej. DEMA, PMFI">
                       <input type="text" className={I} value={b.planManejo ?? ""} onChange={(e) => set({ planManejo: e.target.value })} />
                     </Field>
-                    <Field label="ARFFS competente" span={6} hint="Casillero (2) — la autoridad regional del titular">
+                    {/* Comprarle a alguien con el título vencido invalida la GTF
+                      que se emita con esa madera: es un dato de riesgo. */}
+                  <Field
+                    label="Su título vence el"
+                    span={6}
+                    hint={vigencia.nivel === "sin_dato" ? "Para que el sistema avise antes de comprarle" : vigencia.texto}
+                  >
+                    <input
+                      type="date"
+                      className={`${I} ${
+                        vigencia.tono === "danger"
+                          ? "border-[var(--data-error-500)]"
+                          : vigencia.tono === "warn"
+                            ? "border-[var(--data-warning-500)]"
+                            : ""
+                      }`}
+                      value={(b.tituloVigenciaHasta ?? "").slice(0, 10)}
+                      onChange={(e) => set({ tituloVigenciaHasta: e.target.value })}
+                    />
+                  </Field>
+                  {vigencia.nivel === "vencido" && (
+                    <p className="col-span-12 rounded-xl border border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+                      {vigencia.texto}. Pídele la renovación antes de registrar un ingreso con su guía.
+                    </p>
+                  )}
+                  <Field label="ARFFS competente" span={6} hint="Casillero (2) — la autoridad regional del titular">
                       <input type="text" className={I} value={b.arffs ?? ""} onChange={(e) => set({ arffs: e.target.value })} />
                     </Field>
                   </>
@@ -444,6 +578,32 @@ export default function CtpParteModal({
             )}
           </Seccion>
         )}
+
+        {/* Sin esto, cada pago vuelve a pedir el número de cuenta por chat. */}
+        <Seccion numero={nro.pago} title="Cómo se le paga" hint="Para transferirle sin volver a pedir los datos">
+          <Field label="Banco" span={4}>
+            <input type="text" className={I} value={b.banco ?? ""} onChange={(e) => set({ banco: e.target.value })} placeholder="BCP, Interbank…" />
+          </Field>
+          <Field label="N° de cuenta" span={4}>
+            <input type="text" className={`${I} font-mono`} value={b.cuentaNumero ?? ""} onChange={(e) => set({ cuentaNumero: e.target.value })} />
+          </Field>
+          <Field
+            label="CCI"
+            span={4}
+            hint={cciMal ?? "20 dígitos — es el que sirve para transferir entre bancos distintos"}
+          >
+            <input
+              type="text"
+              inputMode="numeric"
+              className={`${I} font-mono ${cciMal ? "border-[var(--data-error-500)]" : ""}`}
+              value={b.cuentaCci ?? ""}
+              onChange={(e) => set({ cuentaCci: e.target.value })}
+            />
+          </Field>
+          <Field label="La cuenta está a nombre de" span={12} hint="Sólo si no coincide con el titular de la ficha (pasa: la comunidad cobra en la cuenta de su jefe)">
+            <input type="text" className={I} value={b.cuentaTitular ?? ""} onChange={(e) => set({ cuentaTitular: e.target.value })} />
+          </Field>
+        </Seccion>
 
         <Seccion numero={nro.logo} title="Logo y papeles del titular">
           <CampoGrid className="sm:col-span-12">

@@ -6880,6 +6880,32 @@ model ForestParty {
   representanteDni  String?
   notas             String?
 
+  // ── Cómo se le paga (ADR-424) ───────────────────────────────────────
+  // A una comunidad o a un proveedor hay que transferirle. Sin esto, la cuenta
+  // vive en un cuaderno o en un chat, y el que paga la vuelve a pedir cada vez.
+  banco         String?
+  cuentaNumero  String?
+  /// Código de Cuenta Interbancario: 20 dígitos. Es el que sirve para
+  /// transferir entre bancos distintos, que es el caso normal acá.
+  cuentaCci     String?
+  /// A nombre de quién está la cuenta, cuando NO coincide con el titular de la
+  /// ficha (pasa: la comunidad cobra en la cuenta de su jefe).
+  cuentaTitular String?
+
+  // ── Cómo se le ubica ────────────────────────────────────────────────
+  /// WhatsApp aparte del teléfono: en la selva el fijo no existe y el número
+  /// que contesta no siempre es el que figura en el RUC.
+  whatsapp         String?
+  /// Quien atiende de verdad, cuando no es el representante legal.
+  contactoNombre   String?
+  contactoTelefono String?
+
+  // ── Hasta cuándo puede vender ───────────────────────────────────────
+  /// Vigencia del título habilitante DEL PROVEEDOR. Comprarle madera a alguien
+  /// con el permiso vencido invalida la GTF que se emita: es un dato de
+  /// riesgo, no un dato de contacto.
+  tituloVigenciaHasta DateTime?
+
   /// Logo del titular como data URL (PNG/JPG chico, ver `LOGO_MAX_BYTES`).
   ///
   /// Data URL y no una URL del storage a propósito: el PDF de la guía se arma

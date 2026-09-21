@@ -300,6 +300,15 @@ export const parteInputSchema = z.object({
   representante: texto(160).optional(),
   /** DNI del representante legal — Brandon 2026-08-26: "el DNI del representante legal o jefe". */
   representanteDni: texto(15).optional(),
+  // Cómo se le paga y cómo se le ubica (ADR-424).
+  banco: texto(80).optional(),
+  cuentaNumero: texto(40).optional(),
+  cuentaCci: texto(30).optional(),
+  cuentaTitular: texto(160).optional(),
+  whatsapp: texto(30).optional(),
+  contactoNombre: texto(160).optional(),
+  contactoTelefono: texto(30).optional(),
+  tituloVigenciaHasta: texto(30).optional(),
   notas: texto(500).optional(),
   activo: z.boolean().optional(),
   /** Data URL; se valida el formato y el peso, no el contenido de la imagen. */
@@ -359,6 +368,20 @@ export interface Parte {
   representante: string | null;
   /** DNI del representante legal, si es persona natural el que firma. */
   representanteDni: string | null;
+  /**
+   * Cómo se le paga y cómo se le ubica (ADR-424). Opcionales a propósito: hay
+   * partes SINTÉTICAS —las que `guia-partes` arma a partir de una guía vieja—
+   * que nunca tuvieron estos datos y no deberían fingir tenerlos en null.
+   */
+  banco?: string | null;
+  cuentaNumero?: string | null;
+  cuentaCci?: string | null;
+  cuentaTitular?: string | null;
+  whatsapp?: string | null;
+  contactoNombre?: string | null;
+  contactoTelefono?: string | null;
+  /** Vigencia del título habilitante del proveedor (ISO date). */
+  tituloVigenciaHasta?: string | null;
   notas: string | null;
   activo: boolean;
   usos: number;
@@ -481,6 +504,14 @@ export function parteAInput(p: Parte): ParteInput & { id: string } {
     arffs: p.arffs ?? "",
     representante: p.representante ?? "",
     representanteDni: p.representanteDni ?? "",
+    banco: p.banco ?? "",
+    cuentaNumero: p.cuentaNumero ?? "",
+    cuentaCci: p.cuentaCci ?? "",
+    cuentaTitular: p.cuentaTitular ?? "",
+    whatsapp: p.whatsapp ?? "",
+    contactoNombre: p.contactoNombre ?? "",
+    contactoTelefono: p.contactoTelefono ?? "",
+    tituloVigenciaHasta: (p.tituloVigenciaHasta ?? "").slice(0, 10),
     notas: p.notas ?? "",
     activo: p.activo,
   };
