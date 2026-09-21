@@ -17,7 +17,10 @@ import { withApiHandler } from "@/lib/api-handler";
 
 const planSchema = z.object({
   caratulaId: z.string().trim().min(1).nullable().optional(),
-  planType: z.enum(["PMFI", "PO", "DEMA"]).optional(),
+  // Los cinco documentos de gestión que se registran desde la pantalla.
+  // PGMF y PLANTACION faltaban: el formulario ofrecía tres siglas y el
+  // catálogo normativo (lib/forestal/loth-tipos-plan.ts) tiene cinco.
+  planType: z.enum(["PGMF", "PMFI", "PO", "DEMA", "PLANTACION"]).optional(),
   planNumber: z.string().trim().max(120).nullable().optional(),
   tituloHabilitante: z.string().trim().max(120).nullable().optional(),
   resolucionNumber: z.string().trim().max(120).nullable().optional(),
@@ -35,6 +38,12 @@ const planSchema = z.object({
   vigenciaHasta: z.coerce.date().nullable().optional(),
   estado: z.enum(["vigente", "vencido", "cerrado", "suspendido"]).optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
+  // Regente forestal (ADR-423): firma el informe de ejecución junto al
+  // titular y está inscrito en el Registro Nacional de Regentes de SERFOR.
+  regenteName: z.string().trim().max(200).nullable().optional(),
+  regenteRegistro: z.string().trim().max(60).nullable().optional(),
+  regenteEspecialidad: z.enum(["maderable", "no_maderable", "plantaciones"]).nullable().optional(),
+  representanteLegal: z.string().trim().max(200).nullable().optional(),
 });
 const patchSchema = planSchema.partial().extend({ id: z.string().trim().min(1) });
 

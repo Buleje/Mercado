@@ -31,6 +31,11 @@ export interface PlanInput {
   resolucionNumber?: string | null;
   resolucionDate?: Date | null;
   titularName: string;
+  /** Regente forestal a cargo (ADR-423) y su N° del Registro Nacional de SERFOR. */
+  regenteName?: string | null;
+  regenteRegistro?: string | null;
+  regenteEspecialidad?: string | null;
+  representanteLegal?: string | null;
   arffs?: string | null;
   region?: string | null;
   parcelaCorta?: string | null;
@@ -93,6 +98,10 @@ export class ForestPlanDB {
         resolucionNumber: input.resolucionNumber?.trim() || null,
         resolucionDate: input.resolucionDate ?? null,
         titularName: input.titularName.trim(),
+        regenteName: input.regenteName?.trim() || null,
+        regenteRegistro: input.regenteRegistro?.trim() || null,
+        regenteEspecialidad: input.regenteEspecialidad?.trim() || null,
+        representanteLegal: input.representanteLegal?.trim() || null,
         arffs: input.arffs?.trim() || null,
         region: input.region?.trim() || null,
         parcelaCorta: input.parcelaCorta?.trim() || null,

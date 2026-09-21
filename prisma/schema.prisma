@@ -6077,6 +6077,17 @@ model ForestPlan {
   vigenciaHasta DateTime?
   estado        String    @default("vigente") // vigente | vencido | cerrado | suspendido
 
+  // ── Regente forestal (ADR-423) ──────────────────────────────────────
+  // «Profesional responsable de la elaboración e implementación del Plan de
+  // Manejo», inscrito en el Registro Nacional de Regentes que conduce SERFOR
+  // (Directiva RJ 001-2018-OSINFOR). Firma el informe de ejecución junto al
+  // titular, así que su nombre y su N° de registro son parte del expediente.
+  regenteName         String?
+  regenteRegistro     String? // N° en el Registro Nacional de Regentes
+  regenteEspecialidad String? // maderable | no_maderable | plantaciones
+  /// Representante legal, cuando el titular es persona jurídica.
+  representanteLegal  String?
+
   notes     String?
   isActive  Boolean   @default(true)
   createdBy String

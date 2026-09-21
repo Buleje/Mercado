@@ -11,6 +11,8 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 export interface Plan {
   id: string; planType: string; planNumber: string | null; tituloHabilitante: string | null;
   resolucionNumber: string | null; resolucionDate: string | null; titularName: string;
+  regenteName?: string | null; regenteRegistro?: string | null; regenteEspecialidad?: string | null;
+  representanteLegal?: string | null;
   arffs: string | null; region: string | null; parcelaCorta: string | null;
   areaHa: string | null; uitRef: string | null; vigenciaDesde: string | null;
   vigenciaHasta: string | null; estado: string;
