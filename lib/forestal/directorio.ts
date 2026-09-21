@@ -93,6 +93,28 @@ export function normalizarDocumento(v: string): string {
 }
 
 /**
+ * ¿El último dígito del RUC cierra?
+ *
+ * El RUC peruano lleva dígito verificador por **módulo 11** sobre los diez
+ * primeros, con pesos 5-4-3-2-7-6-5-4-3-2. Antes se validaba sólo el largo y
+ * que empezara en 1 o 2, así que un número con un dígito bailado —el error de
+ * tipeo más común— entraba igual y se iba impreso en una GTF.
+ *
+ * Comprobado con un RUC real del directorio: 20156698963 suma 217, 217 % 11 = 8,
+ * 11 − 8 = 3, y el verificador es 3.
+ */
+export function rucChecksumOk(ruc: string): boolean {
+  const n = normalizarDocumento(ruc);
+  if (!/^\d{11}$/.test(n)) return false;
+  const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  let suma = 0;
+  for (let i = 0; i < 10; i += 1) suma += Number(n[i]) * pesos[i];
+  const resto = suma % 11;
+  const esperado = ((11 - resto) % 11) % 10;
+  return esperado === Number(n[10]);
+}
+
+/**
  * ¿El número corresponde al tipo? Devuelve el motivo, o `null` si está bien.
  *
  * Vacío es válido a propósito: una parte puede cargarse con el nombre y
@@ -105,6 +127,7 @@ export function motivoDocInvalido(docTipo: DocTipo, numero: string): string | nu
   if (docTipo === "RUC") {
     if (!/^\d{11}$/.test(n)) return "El RUC tiene 11 dígitos.";
     if (!/^[12]/.test(n)) return "Un RUC peruano empieza en 1 o 2.";
+    if (!rucChecksumOk(n)) return "Ese RUC no existe: el último dígito no corresponde. Revisa si bailó un número.";
     return null;
   }
   if (docTipo === "DNI") return /^\d{8}$/.test(n) ? null : "El DNI tiene 8 dígitos.";
@@ -157,6 +180,49 @@ export function claveBusqueda(v: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Partes que se parecen al nombre tipeado.
+ *
+ * El módulo existe para que «MADERERA DEL ORIENTE SAC» y «Maderera del Oriente»
+ * no sean dos filas distintas, y hasta ahora eso sólo se cazaba por documento:
+ * si la parte se cargaba sin RUC —pasa seguido con comunidades y compradores
+ * informales— no había ningún aviso.
+ *
+ * Se comparan las claves de búsqueda sin la forma societaria (SAC, SRL, EIRL,
+ * SA, SAA), porque es lo que la gente omite al tipear. Devuelve candidatas para
+ * *avisar*, nunca para bloquear: dos aserraderos del mismo dueño pueden
+ * llamarse parecido y ser dos.
+ */
+const FORMAS_SOCIETARIAS = /\b(s\.?a\.?c\.?|s\.?r\.?l\.?|e\.?i\.?r\.?l\.?|s\.?a\.?a\.?|s\.?a\.?|ltda|cia|comunidad nativa|comunidad campesina)\b/g;
+
+export function nucleoDelNombre(v: string): string {
+  return claveBusqueda(v)
+    .replace(FORMAS_SOCIETARIAS, " ")
+    // La puntuación que dejó atrás la forma societaria: «...ORIENTE S.A.C.» sin
+    // el «s.a.c.» deja un punto colgando, y ese punto hacía que dos nombres
+    // iguales no coincidieran.
+    .replace(/[.,;:·]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function partesParecidas<T extends { id?: string; nombre: string }>(
+  nombre: string,
+  existentes: readonly T[],
+  opts: { excluirId?: string | null } = {},
+): T[] {
+  const nucleo = nucleoDelNombre(nombre);
+  if (nucleo.length < 4) return []; // con tres letras todo se parece a todo
+  return existentes.filter((p) => {
+    if (opts.excluirId && p.id === opts.excluirId) return false;
+    const otro = nucleoDelNombre(p.nombre);
+    if (!otro) return false;
+    if (otro === nucleo) return true;
+    // Uno contenido en el otro: «Maderera del Oriente» vs «Maderera del Oriente Selva»
+    return otro.length >= 4 && (otro.includes(nucleo) || nucleo.includes(otro));
+  });
 }
 
 // ── Esquemas ────────────────────────────────────────────────────────────────

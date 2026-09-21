@@ -12,6 +12,8 @@
 import { useMemo, useState } from "react";
 import { Download, Loader2, Save, Users } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import CtpUbigeoSelects from "./CtpUbigeoSelects";
+import { ubigeoDeNombres } from "@/lib/peru-ubigeo";
 import {
   CATEGORIAS_PARTE,
   CATEGORIA_LABEL,
@@ -24,6 +26,7 @@ import {
   motivoDocInvalido,
   motivoRepresentanteDniInvalido,
   normalizarDocumento,
+  partesParecidas,
   type CategoriaParte,
   type DocTipo,
   type Parte,
@@ -115,6 +118,20 @@ export default function CtpParteModal({
     [existentes, docTipo, docNorm, docMal, b.id],
   );
   const coincideBloquea = Boolean(coincide && b.id);
+
+  /**
+   * El otro duplicado: el que el documento no caza.
+   *
+   * Una parte sin RUC —comunidades y compradores informales, que son muchos—
+   * podía entrar dos veces sin que nada avisara. Se compara el núcleo del
+   * nombre (sin la forma societaria, que es lo que la gente omite al tipear).
+   * Avisa y no bloquea: dos aserraderos del mismo dueño pueden llamarse
+   * parecido y ser dos fichas legítimas.
+   */
+  const parecidas = useMemo(
+    () => (coincide ? [] : partesParecidas(b.nombre ?? "", existentes, { excluirId: b.id ?? null })),
+    [b.nombre, b.id, existentes, coincide],
+  );
 
   function alternarRol(rol: RolParte) {
     const tiene = b.roles.includes(rol);
@@ -278,25 +295,66 @@ export default function CtpParteModal({
           <Field label="Nombre o razón social" required span={12}>
             <input type="text" className={I} value={b.nombre} onChange={(e) => set({ nombre: e.target.value })} />
           </Field>
+
+          {parecidas.length > 0 && (
+            <div className="col-span-12 rounded-xl border border-[var(--data-warning-500)]/50 bg-[var(--data-warning-100)] px-3 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
+              <p className="font-bold">
+                {parecidas.length === 1 ? "Ya hay una ficha parecida" : `Ya hay ${parecidas.length} fichas parecidas`}
+              </p>
+              <ul className="mt-1 space-y-0.5">
+                {parecidas.slice(0, 3).map((p) => (
+                  <li key={p.id ?? p.nombre} className="truncate">
+                    · {p.nombre}
+                    {p.docNumero ? ` — ${p.docTipo ?? "Doc"} ${p.docNumero}` : " — sin documento"}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1 opacity-90">
+                Si es la misma, cancela y edita la que ya existe. Si de verdad son dos, sigue: esto es sólo un aviso.
+              </p>
+            </div>
+          )}
         </Seccion>
 
         <Seccion numero={nro.donde} title="Dónde está" hint="La dirección del destinatario es el punto de llegada de la guía">
           <Field label="Dirección" span={12}>
             <input type="text" className={I} value={b.direccion ?? ""} onChange={(e) => set({ direccion: e.target.value })} />
           </Field>
-          <Field label="Región" span={4}>
-            <input type="text" className={I} value={b.region ?? ""} onChange={(e) => set({ region: e.target.value })} />
-          </Field>
-          <Field label="Provincia" span={4}>
-            <input type="text" className={I} value={b.provincia ?? ""} onChange={(e) => set({ provincia: e.target.value })} />
-          </Field>
-          <Field label="Distrito" span={4}>
-            <input type="text" className={I} value={b.distrito ?? ""} onChange={(e) => set({ distrito: e.target.value })} />
-          </Field>
+          {/* Región · provincia · distrito en cascada, con el mismo selector que
+              ya usa la Ficha del CTP. Antes eran tres campos de texto libre:
+              «Coronel Portillo» y «CORONEL PORTILLO» quedaban como dos lugares
+              distintos, y el ubigeo había que buscarlo aparte. Ahora el código
+              INEI sale solo de los tres nombres elegidos. */}
+          <CtpUbigeoSelects
+            span={4}
+            valor={{ departamento: b.region ?? "", provincia: b.provincia ?? "", distrito: b.distrito ?? "" }}
+            onChange={(v) => {
+              /**
+               * `CtpUbigeoSelects` emite un PATCH PARCIAL, no el valor entero:
+               * al cambiar la provincia manda `{provincia, distrito}` sin el
+               * departamento. Leerlo como `v.departamento ?? ""` borraba la
+               * región y dejaba el distrito sin opciones — se vio eligiendo
+               * Ucayali → Coronel Portillo y quedándose sin distritos.
+               */
+              const region = v.departamento !== undefined ? v.departamento : (b.region ?? "");
+              const provincia = v.provincia !== undefined ? v.provincia : (b.provincia ?? "");
+              const distrito = v.distrito !== undefined ? v.distrito : (b.distrito ?? "");
+              const code = ubigeoDeNombres(region, provincia, distrito);
+              set({
+                region,
+                provincia,
+                distrito,
+                // Sólo se pisa el ubigeo cuando los tres nombres resuelven a un
+                // código: si alguien lo tenía cargado a mano y la selección
+                // todavía está a medias, su dato no se borra.
+                ...(code ? { ubigeo: code } : {}),
+              });
+            }}
+          />
           <Field label="Zona" span={6} hint="Sector o caserío — identifica el punto de llegada cuando la dirección no tiene numeración">
             <input type="text" className={I} value={b.zona ?? ""} onChange={(e) => set({ zona: e.target.value })} />
           </Field>
-          <Field label="Ubigeo" span={6} hint="Código INEI de 6 dígitos, si lo tienes a mano">
+          <Field label="Ubigeo" span={6} hint="Se completa solo al elegir departamento, provincia y distrito">
             <input type="text" className={`${I} font-mono`} value={b.ubigeo ?? ""} onChange={(e) => set({ ubigeo: e.target.value })} />
           </Field>
           <Field label="Teléfono" span={6}>
