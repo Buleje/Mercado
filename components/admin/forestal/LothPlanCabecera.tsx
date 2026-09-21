@@ -21,7 +21,8 @@ import { SectionTitle, StatCard } from "@buleje/design-system";
 import { BarChart3, FileText, Scale, ShieldAlert, ShieldCheck, TreePine, TrendingUp } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { fmtRange, type Plan } from "./loth-plan-shared";
+import { type Plan } from "./loth-plan-shared";
+import LothPlanIdentidad from "./LothPlanIdentidad";
 import { BotonPlegar, CifraLinea } from "./loth-plan-ui";
 
 /** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
@@ -95,20 +96,9 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, op
         </div>
       </div>
 
-      {/* La carátula del plan en una línea: los mismos ocho datos que antes
-          ocupaban una tarjeta de dos filas con el titular como título. */}
-      {plan && (
-        <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          <Dato k="N° plan" v={plan.planNumber} />
-          <Dato k="Título hab." v={plan.tituloHabilitante} mono />
-          <Dato k="Resolución" v={plan.resolucionNumber} />
-          <Dato k="Parcela" v={plan.parcelaCorta} />
-          <Dato k="Región" v={plan.region} />
-          <Dato k="Área" v={plan.areaHa ? `${Number(plan.areaHa).toFixed(2)} ha` : null} mono />
-          <Dato k="Vigencia" v={fmtRange(plan.vigenciaDesde, plan.vigenciaHasta)} />
-          <Dato k="Estado" v={plan.estado} />
-        </dl>
-      )}
+      {/* Los mismos datos, agrupados por la pregunta que contestan. Sueltos en
+          una línea había que leerla entera para encontrar uno. */}
+      {plan && <LothPlanIdentidad plan={plan} />}
 
       {kpis && !abierto && <ResumenEnLinea k={kpis} />}
       {kpis && (
@@ -120,38 +110,57 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, op
   );
 }
 
-function Dato({ k, v, mono = false }: { k: string; v: string | null; mono?: boolean }) {
-  return (
-    <div className="flex min-w-0 items-baseline gap-1.5">
-      <dt className="shrink-0 text-[var(--text-tertiary)]">{k}</dt>
-      <dd className={`min-w-0 font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`}>{v || "—"}</dd>
-    </div>
-  );
-}
-
 const pctTxt = (p: number | null) => (p == null ? "—" : `${p.toFixed(0)}%`);
 /** Número con `dp` decimales (mismo formato que las tarjetas de antes). */
 const fx = (v: number, dp: number) => v.toFixed(dp);
 const tonoPct = (p: number | null) => (p == null ? undefined : p > 100 ? "danger" : p >= 85 ? "warn" : undefined);
 
-/** Plegado: las cinco cifras de las tarjetas, en el mismo orden, en una línea. */
+/**
+ * Plegado: las mismas cinco cifras de las tarjetas, en el mismo orden.
+ *
+ * Antes iban en un párrafo separadas por puntos medios: «320 m³ autorizados · 1
+ * especie · 1% aprovechado (4.1 m³ movilizados) · 315.9 m³ de saldo · …». Una
+ * fila de texto donde ninguna cifra se podía encontrar sin leerlas todas.
+ * Ahora cada una tiene su casilla, con la etiqueta arriba y el número abajo:
+ * ocupa lo mismo y se lee de un vistazo.
+ */
 function ResumenEnLinea({ k }: { k: KpisPlan }) {
+  const pct = k.aprovechamientoPct;
   return (
-    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-      <CifraLinea valor={`${fx(k.autorizadoTotal, 0)} m³`} label={`autorizados · ${k.especies} ${k.especies === 1 ? "especie" : "especies"}`} />
-      <span aria-hidden="true" className="text-[var(--text-tertiary)]">·</span>
-      <CifraLinea valor={pctTxt(k.aprovechamientoPct)} label={`aprovechado (${fx(k.movilizadoTotal, 1)} m³ movilizados)`} tono={tonoPct(k.aprovechamientoPct)} />
-      <span aria-hidden="true" className="text-[var(--text-tertiary)]">·</span>
-      <CifraLinea valor={`${fx(k.saldoTotal, 1)} m³`} label="de saldo" />
-      <span aria-hidden="true" className="text-[var(--text-tertiary)]">·</span>
-      <CifraLinea valor={k.censoTotal.toLocaleString("es-PE")} label={k.censoTotal === 1 ? "árbol censado" : "árboles censados"} tono={k.censoTruncado ? "warn" : undefined} />
-      <span aria-hidden="true" className="text-[var(--text-tertiary)]">·</span>
-      <CifraLinea
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      <Casilla etiqueta="Autorizado" valor={`${fx(k.autorizadoTotal, 0)} m³`} nota={`${k.especies} ${k.especies === 1 ? "especie" : "especies"}`} />
+      <Casilla etiqueta="Aprovechado" valor={pctTxt(pct)} nota={`${fx(k.movilizadoTotal, 1)} m³ movilizados`} tono={tonoPct(pct)} />
+      <Casilla etiqueta="Saldo" valor={`${fx(k.saldoTotal, 1)} m³`} nota={pct == null ? "sin volumen autorizado" : `${Math.max(0, 100 - pct).toFixed(0)}% del POA`} />
+      <Casilla
+        etiqueta="Censo"
+        valor={k.censoTotal.toLocaleString("es-PE")}
+        nota={k.censoTruncado ? `calculando sobre ${k.cargados}` : `${k.georrefPct}% con GPS`}
+        tono={k.censoTruncado ? "warn" : undefined}
+      />
+      <Casilla
+        etiqueta="Especies en regla"
         valor={`${k.okCount}/${k.controlCount}`}
-        label={k.fueraDelPlan > 0 ? `especies en regla · ${k.fueraDelPlan} fuera del plan` : "especies en regla"}
+        nota={k.fueraDelPlan > 0 ? `${k.fueraDelPlan} fuera del plan` : "todo autorizado"}
         tono={k.fueraDelPlan > 0 ? "danger" : undefined}
       />
-    </p>
+    </div>
+  );
+}
+
+/** Una cifra con su etiqueta: lo mínimo para que se pueda encontrar. */
+function Casilla({ etiqueta, valor, nota, tono }: { etiqueta: string; valor: string; nota?: string; tono?: "ok" | "warn" | "danger" }) {
+  const borde =
+    tono === "danger" ? "border-[var(--data-error-500)]/50"
+      : tono === "warn" ? "border-[var(--data-warning-500)]/50"
+        : "border-[var(--rule-base)]";
+  return (
+    <div className={`min-w-0 rounded-xl border bg-[var(--surface-raised)] px-3 py-2 ${borde}`}>
+      <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        {etiqueta}
+      </span>
+      <CifraLinea valor={valor} tono={tono} />
+      {nota && <span className="mt-0.5 block truncate text-xs text-[var(--text-tertiary)]" title={nota}>{nota}</span>}
+    </div>
   );
 }
 

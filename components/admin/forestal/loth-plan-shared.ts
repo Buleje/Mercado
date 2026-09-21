@@ -123,8 +123,21 @@ export const FLAG_LABEL: Record<ControlFlag, string> = {
   sin_censo: "Autorizada sin censo",
 };
 
+/**
+ * Una fecha date-only del plan.
+ *
+ * `timeZone: "UTC"` no es un detalle: sin eso, a las 20:00 de Pucallpa el
+ * navegador resta cinco horas y la resolución aparece fechada un día antes
+ * (bug off-by-one ya corregido en el resto del libro).
+ */
+export function fmtFecha(x: string | null | undefined): string | null {
+  if (!x) return null;
+  const d = new Date(x);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+}
+
 export function fmtRange(a: string | null, b: string | null) {
-  const d = (x: string | null) => (x ? new Date(x).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : null);
   if (!a && !b) return null;
-  return `${d(a) ?? "?"} → ${d(b) ?? "?"}`;
+  return `${fmtFecha(a) ?? "?"} → ${fmtFecha(b) ?? "?"}`;
 }
