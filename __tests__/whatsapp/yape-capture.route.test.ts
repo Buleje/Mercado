@@ -54,6 +54,16 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+// Rate limit — always pass-through in unit tests (in-memory store accumulates
+// across the 11-test suite and triggers 429 on the last call).
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: vi.fn().mockReturnValue(null),
+  applyRateLimitWithTenant: vi.fn().mockReturnValue(null),
+  getClientIp: vi.fn().mockReturnValue("127.0.0.1"),
+  getClientId: vi.fn().mockReturnValue("127.0.0.1"),
+  rateLimit: vi.fn().mockReturnValue({ allowed: true, remaining: 10, resetAt: Date.now() + 900000 }),
+}));
+
 // Twilio media download — fetch global
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
