@@ -208,6 +208,36 @@ export function nucleoDelNombre(v: string): string {
     .trim();
 }
 
+/**
+ * Los nombres con los que el LIBRO registró a este proveedor.
+ *
+ * El ingreso guarda el proveedor como **texto** (`providerName`, ADR-134) y el
+ * Directorio lo guarda como ficha: los dos escriben al mismo titular distinto.
+ * Medido en el libro de Blas: la ficha dice «COMUNIDAD SANTA ROSA DE CHIVIS» y
+ * las dos guías dicen «COMUNIDAD **NATIVA** SANTA ROSA DE CHIVIS» — un
+ * `contains` no las encuentra, y el resumen del proveedor daba 0 guías con
+ * 40,748 m³ ingresados a la vista en la pantalla de al lado.
+ *
+ * Devuelve los nombres del libro que corresponden al nombre buscado, usando la
+ * misma vara con la que el Directorio avisa duplicados (`partesParecidas`): el
+ * núcleo sin forma societaria, uno contenido en el otro. Se usa para *sumar* un
+ * historial, nunca para atribuir origen legal — eso sigue siendo la GTF.
+ */
+export function nombresDelLibroQueCoinciden(
+  nombre: string,
+  nombresDelLibro: readonly (string | null | undefined)[],
+): string[] {
+  const limpios = [...new Set(nombresDelLibro.map((n) => normalizarNombre(n ?? "")).filter(Boolean))];
+  const k = claveBusqueda(nombre);
+  if (!k) return [];
+  const exactos = limpios.filter((n) => claveBusqueda(n).includes(k));
+  if (exactos.length) return exactos;
+  return partesParecidas(
+    nombre,
+    limpios.map((n) => ({ nombre: n })),
+  ).map((x) => x.nombre);
+}
+
 export function partesParecidas<T extends { id?: string; nombre: string }>(
   nombre: string,
   existentes: readonly T[],

@@ -10,6 +10,7 @@ import { describe, it, expect } from "vitest";
 import {
   motivoDocInvalido,
   rucChecksumOk,
+  nombresDelLibroQueCoinciden,
   nucleoDelNombre,
   partesParecidas,
 } from "@/lib/forestal/directorio";
@@ -109,5 +110,40 @@ describe("nucleoDelNombre", () => {
   it("saca la forma societaria, que es lo que la gente omite al tipear", () => {
     expect(nucleoDelNombre("MADERERA DEL ORIENTE S.A.C.")).toBe("maderera del oriente");
     expect(nucleoDelNombre("Aserradero Pucallpa EIRL")).toBe("aserradero pucallpa");
+  });
+});
+
+describe("nombresDelLibroQueCoinciden — el libro y la ficha escriben distinto", () => {
+  // Medido en el libro de Blas el 2026-09-20: la ficha del Directorio dice
+  // «COMUNIDAD SANTA ROSA DE CHIVIS» y las dos guías dicen «COMUNIDAD NATIVA
+  // SANTA ROSA DE CHIVIS» (40,748 m³). Un `contains` daba cero.
+  const libro = [
+    "COMUNIDAD NATIVA SANTA ROSA DE CHIVIS",
+    "Maderera San Martín SAC",
+    "ASERRADERO PUCALLPA EIRL",
+  ];
+
+  it("encuentra al titular aunque la guía le agregue «NATIVA»", () => {
+    expect(nombresDelLibroQueCoinciden("COMUNIDAD SANTA ROSA DE CHIVIS", libro)).toEqual([
+      "COMUNIDAD NATIVA SANTA ROSA DE CHIVIS",
+    ]);
+  });
+
+  it("el nombre contenido gana: no hace falta el parecido", () => {
+    expect(nombresDelLibroQueCoinciden("Maderera San Martín", libro)).toEqual(["Maderera San Martín SAC"]);
+  });
+
+  it("no mezcla dos titulares distintos", () => {
+    expect(nombresDelLibroQueCoinciden("ASERRADERO IQUITOS SAC", libro)).toEqual([]);
+  });
+
+  it("sin nombre no devuelve el libro entero", () => {
+    expect(nombresDelLibroQueCoinciden("", libro)).toEqual([]);
+    expect(nombresDelLibroQueCoinciden("  ", libro)).toEqual([]);
+  });
+
+  it("ignora vacíos y repetidos del libro", () => {
+    const r = nombresDelLibroQueCoinciden("Maderera San Martin", ["Maderera San Martín SAC", "", null, "Maderera San Martín SAC"]);
+    expect(r).toEqual(["Maderera San Martín SAC"]);
   });
 });

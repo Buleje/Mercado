@@ -158,6 +158,12 @@ export default function DirectorioPicker({
             // paso siguiente siempre es usarla.
             if (guardada && modal === "nuevo") elegir(guardada);
           }}
+          onUsarExistente={(existente) => {
+            // El duplicado se resuelve en un clic: se cierra el alta y se sigue
+            // con la ficha que ya estaba, que es lo que el aviso pedía hacer.
+            setModal(null);
+            elegir(existente);
+          }}
           onClose={() => setModal(null)}
         />
       )}

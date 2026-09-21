@@ -52,7 +52,7 @@ export const GET = withApiHandler("forestal-proveedor-trazabilidad", async (req:
       datos.corridas,
       datos.despachos,
     );
-    return NextResponse.json({ proveedor, trazabilidad });
+    return NextResponse.json({ proveedor, trazabilidad, nombresEncontrados: datos.nombresEncontrados });
   } catch (err) {
     logger.error("[proveedor-trazabilidad.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

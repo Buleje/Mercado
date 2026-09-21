@@ -12,6 +12,7 @@ import type {
   FilaIngresoProveedor,
 } from "@/lib/forestal/proveedor-trazabilidad";
 import {
+  nombresDelLibroQueCoinciden,
   normalizarDocumento,
   normalizarNombre,
   normalizarPlaca,
@@ -545,6 +546,14 @@ export const ForestDirectorioDB = {
    * texto (ADR-134): el directorio completa esa identidad, pero migrar el
    * histórico es otro paso. `contains` insensible para que "Maderera del
    * Oriente SAC" encuentre también lo que se tipeó sin "SAC".
+   *
+   * Si eso no encuentra nada, se compara contra los nombres que el libro usó de
+   * verdad (`nombresDelLibroQueCoinciden`): medido en Blas, la ficha decía
+   * «COMUNIDAD SANTA ROSA DE CHIVIS» y las guías «COMUNIDAD NATIVA SANTA ROSA
+   * DE CHIVIS», así que el resumen daba 0 con 40,748 m³ a la vista. Se devuelve
+   * `nombresEncontrados` para que la pantalla pueda decir con qué nombre está
+   * escrito — el dato es del historial, no del origen legal, que sigue siendo
+   * la GTF.
    */
   async trazabilidadProveedor(
     tenantId: string,
@@ -555,21 +564,48 @@ export const ForestDirectorioDB = {
     consumos: FilaConsumoProveedor[];
     corridas: FilaCorridaProveedor[];
     despachos: FilaDespachoProveedor[];
+    /** Con qué nombres quedó escrito este proveedor en las guías del libro. */
+    nombresEncontrados: string[];
   }> {
     if (!tenantId) throw new Error("tenantId is required");
     const q = nombre.trim();
-    if (!q) return { ingresos: [], consumos: [], corridas: [], despachos: [] };
+    const vacio = { ingresos: [], consumos: [], corridas: [], despachos: [], nombresEncontrados: [] };
+    if (!q) return vacio;
+
+    const rangoFecha =
+      opts.desde || opts.hasta
+        ? { entryDate: { ...(opts.desde ? { gte: opts.desde } : {}), ...(opts.hasta ? { lte: opts.hasta } : {}) } }
+        : {};
+
+    // El nombre tipeado; si no da nada, los nombres que el libro usó de verdad.
+    let filtroNombre: Prisma.WoodEntryWhereInput = { providerName: { contains: q, mode: "insensitive" } };
+    const hayConEseNombre = await prisma.woodEntry.count({
+      where: { tenantId, deletedAt: null, ...filtroNombre, ...rangoFecha },
+    });
+    if (hayConEseNombre === 0) {
+      const distintos = await prisma.woodEntry.findMany({
+        where: { tenantId, deletedAt: null },
+        distinct: ["providerName"],
+        select: { providerName: true },
+        take: 1000,
+      });
+      const coinciden = nombresDelLibroQueCoinciden(
+        q,
+        distintos.map((d) => d.providerName),
+      );
+      if (!coinciden.length) return vacio;
+      filtroNombre = { providerName: { in: coinciden } };
+    }
 
     const entries = await prisma.woodEntry.findMany({
       where: {
         tenantId,
         deletedAt: null,
-        providerName: { contains: q, mode: "insensitive" },
-        ...(opts.desde || opts.hasta
-          ? { entryDate: { ...(opts.desde ? { gte: opts.desde } : {}), ...(opts.hasta ? { lte: opts.hasta } : {}) } }
-          : {}),
+        ...filtroNombre,
+        ...rangoFecha,
       },
       select: {
+        providerName: true,
         id: true,
         gtfNumber: true,
         serforNumeroRegistro: true,
@@ -585,6 +621,7 @@ export const ForestDirectorioDB = {
       take: 1000,
     });
 
+    const nombresEncontrados = [...new Set(entries.map((e) => e.providerName).filter(Boolean))];
     const ingresos: FilaIngresoProveedor[] = entries.map((e) => ({
       woodEntryId: e.id,
       gtfNumber: e.gtfNumber,
@@ -597,7 +634,7 @@ export const ForestDirectorioDB = {
       status: e.status,
       costoTotal: e.costoTotal == null ? null : Number(e.costoTotal),
     }));
-    if (!ingresos.length) return { ingresos, consumos: [], corridas: [], despachos: [] };
+    if (!ingresos.length) return { ingresos, consumos: [], corridas: [], despachos: [], nombresEncontrados };
 
     const ids = ingresos.map((i) => i.woodEntryId);
     // Sólo consumos VIGENTES: una corrida anulada devolvió su materia prima al
@@ -613,7 +650,7 @@ export const ForestDirectorioDB = {
     }));
 
     const idsCorridas = [...new Set(consumos.map((c) => c.produccionEntryId))];
-    if (!idsCorridas.length) return { ingresos, consumos, corridas: [], despachos: [] };
+    if (!idsCorridas.length) return { ingresos, consumos, corridas: [], despachos: [], nombresEncontrados };
 
     const filasCorrida = await prisma.forestCtpEntry.findMany({
       where: { tenantId, id: { in: idsCorridas }, deletedAt: null },
@@ -666,7 +703,7 @@ export const ForestDirectorioDB = {
       quantity: Number(d.quantity),
     }));
 
-    return { ingresos, consumos, corridas, despachos };
+    return { ingresos, consumos, corridas, despachos, nombresEncontrados };
   },
 
   invalidar(tenantId: string): void {

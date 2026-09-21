@@ -112,14 +112,19 @@ describe("validación de documento", () => {
     expect(motivoDocInvalido("DNI", "   ")).toBeNull();
   });
 
+  // Desde que la validación incluye el dígito verificador (módulo 11), un RUC
+  // inventado con el largo y el prefijo correctos ya NO pasa: por eso acá se usa
+  // uno real. Los casos de largo y prefijo siguen siendo más específicos que el
+  // checksum y se reportan primero.
   it("un RUC peruano tiene 11 dígitos y empieza en 1 o 2", () => {
-    expect(motivoDocInvalido("RUC", "20512345678")).toBeNull();
+    expect(motivoDocInvalido("RUC", "20156698963")).toBeNull();
     expect(motivoDocInvalido("RUC", "205123456")).toMatch(/11 dígitos/);
     expect(motivoDocInvalido("RUC", "30512345678")).toMatch(/1 o 2/);
+    expect(motivoDocInvalido("RUC", "20512345678")).toMatch(/último dígito/);
   });
 
   it("acepta el RUC tipeado con guiones (se normaliza antes de validar)", () => {
-    expect(motivoDocInvalido("RUC", "20-51234567-8")).toBeNull();
+    expect(motivoDocInvalido("RUC", "20-15669896-3")).toBeNull();
   });
 
   it("el DNI tiene 8 dígitos", () => {

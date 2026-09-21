@@ -9,9 +9,10 @@
  * lo que va en la guía y lo que nadie recuerda de memoria.
  */
 
-import { useMemo, useState } from "react";
-import { Download, Loader2, MessageCircle, Save, Users } from "@buleje/design-system/icons";
+import { useEffect, useMemo, useState } from "react";
+import { Check, Copy, Download, Loader2, MessageCircle, Save, Users } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { logger } from "@/lib/logger";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
 import { ubigeoDeNombres } from "@/lib/peru-ubigeo";
 import {
@@ -29,6 +30,7 @@ import {
   ROL_DESCRIPCION,
   ROL_LABEL,
   categoriaEfectiva,
+  claveBusqueda,
   fuenteAutocompletado,
   motivoDocInvalido,
   motivoRepresentanteDniInvalido,
@@ -45,6 +47,24 @@ import { consultarDocumento } from "@/hooks/use-directorio-forestal";
 import { Btn, CampoGrid, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
 import CtpParteLogo from "./CtpParteLogo";
 import CtpParteAdjuntos from "./CtpParteAdjuntos";
+
+/** Lo que el libro ya sabe de este proveedor, resumido para la ficha. */
+interface HistorialDeCompras {
+  guias: number;
+  ingresadoM3: number;
+  enPatioM3: number;
+  /** Guías sin factura cargada: sin costo no hay margen que calcular (ADR-134). */
+  guiasSinCosto: number;
+  /** Con qué nombre lo escribieron las guías, si no es el de la ficha. */
+  escritoComo: string | null;
+}
+
+interface RespuestaTrazabilidad {
+  trazabilidad?: {
+    balance?: { guias: number; ingresadoM3: number; enPatioM3: number; guiasSinCosto: number };
+  };
+  nombresEncontrados?: string[];
+}
 
 type Borrador = ParteInput & { id?: string };
 
@@ -86,6 +106,7 @@ export default function CtpParteModal({
   rolInicial,
   existentes = [],
   vehiculos: vehiculosDeLaLibreta = [],
+  onUsarExistente,
   onGuardar,
   onClose,
 }: {
@@ -94,6 +115,12 @@ export default function CtpParteModal({
   rolInicial: RolParte;
   /** La libreta de vehículos ya cargada, para listar los de este transportista. */
   vehiculos?: readonly Vehiculo[];
+  /**
+   * Resolver el duplicado en un clic: el aviso de «ficha parecida» deja de ser
+   * sólo una advertencia y pasa a ofrecer la existente. Sin esto, evitar el
+   * duplicado costaba cancelar, reabrir el picker y buscarla a mano.
+   */
+  onUsarExistente?: (p: Parte) => void;
   /** El resto de la libreta — para avisar si el documento ya es de otra ficha
    *  (el problema #1 que este módulo existe para evitar: "MADERERA DEL
    *  ORIENTE SAC" y "Maderera del Oriente" como dos filas distintas). */
@@ -102,6 +129,7 @@ export default function CtpParteModal({
   onClose: () => void;
 }) {
   const [b, setB] = useState<Borrador>(() => aBorrador(parte, rolInicial));
+  const [copiado, setCopiado] = useState<string | null>(null);
   const [estado, setEstado] = useState<"idle" | "consultando" | "guardando">("idle");
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -129,6 +157,17 @@ export default function CtpParteModal({
     [existentes, docTipo, docNorm, docMal, b.id],
   );
   const coincideBloquea = Boolean(coincide && b.id);
+
+  /**
+   * Retirar una ficha no exige que sus papeles estén bien.
+   *
+   * Medido en el navegador: la ficha «QA Aserrío» tenía el RUC con el dígito
+   * verificador mal y **no se podía dar de baja** — la validación que evita
+   * cargar un documento inventado terminaba defendiendo a la ficha basura que
+   * uno justamente quiere sacar de los selectores. Al desactivar se pide sólo
+   * el nombre; lo ya emitido con esa parte no cambia.
+   */
+  const dandoDeBaja = b.activo === false && parte?.activo !== false;
 
   /**
    * El otro duplicado: el que el documento no caza.
@@ -187,15 +226,15 @@ export default function CtpParteModal({
       setError("El nombre es obligatorio.");
       return;
     }
-    if (docMal) {
+    if (docMal && !dandoDeBaja) {
       setError(docMal);
       return;
     }
-    if (dniRepresentanteMal) {
+    if (dniRepresentanteMal && !dandoDeBaja) {
       setError(dniRepresentanteMal);
       return;
     }
-    if (coincideBloquea && coincide) {
+    if (coincideBloquea && coincide && !dandoDeBaja) {
       setError(`Ese documento ya lo tiene ${coincide.nombre}. Edita esa ficha en vez de repetir el documento acá.`);
       return;
     }
@@ -247,6 +286,61 @@ export default function CtpParteModal({
    * siendo la de esa pestaña, que ya valida placas duplicadas— para que la
    * ficha conteste «con qué camiones trabaja este».
    */
+  /**
+   * Resumen de lo que pasó con este proveedor.
+   *
+   * El detalle completo ya existe (`CtpProveedorTrazaModal`, ADR-319) pero se
+   * abre sólo desde la pantalla del Directorio. Acá va el RESUMEN, no otro
+   * modal: esta ficha suele abrirse desde un picker que a su vez está dentro de
+   * otro modal, y un cuarto nivel de ventana es justo lo que la regla de
+   * modales anidados dice evitar.
+   */
+  const [historial, setHistorial] = useState<HistorialDeCompras | null>(null);
+  useEffect(() => {
+    const nombre = (parte?.nombre ?? "").trim();
+    if (!nombre || !parte?.roles?.includes("proveedor")) return;
+    let vivo = true;
+    fetch(`/api/admin/forestal/directorio/trazabilidad?proveedor=${encodeURIComponent(nombre)}`, {
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: RespuestaTrazabilidad | null) => {
+        // El balance viaja DENTRO de `trazabilidad`; leerlo un nivel más arriba
+        // devolvía `undefined` sin error y la ficha no mostraba nada.
+        const b = j?.trazabilidad?.balance;
+        if (!vivo || !b) return;
+        const escritos = (j?.nombresEncontrados ?? []).filter(
+          (n) => claveBusqueda(n) !== claveBusqueda(nombre),
+        );
+        setHistorial({
+          guias: b.guias,
+          ingresadoM3: b.ingresadoM3,
+          enPatioM3: b.enPatioM3,
+          guiasSinCosto: b.guiasSinCosto,
+          escritoComo: escritos[0] ?? null,
+        });
+      })
+      .catch((err) => {
+        // El historial es contexto, no el trabajo: si falla, la ficha se edita igual.
+        logger.warn("[directorio] historial del proveedor no disponible", { error: String(err) });
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [parte?.nombre, parte?.roles]);
+
+  /** Copiar un dato para pegarlo en la web del banco o en un WhatsApp. */
+  const copiar = (valor: string, cual: string) => {
+    navigator.clipboard
+      .writeText(valor)
+      .then(() => {
+        setCopiado(cual);
+        window.setTimeout(() => setCopiado(null), 1600);
+      })
+      .catch((err) => logger.warn("[directorio] no se pudo copiar", { error: String(err) }));
+  };
+
   const susVehiculos = useMemo(
     () => (b.id ? vehiculosDeLaLibreta.filter((v) => v.transportistaId === b.id && v.activo) : []),
     [b.id, vehiculosDeLaLibreta],
@@ -282,7 +376,7 @@ export default function CtpParteModal({
           atajo
         >
           <Btn variant="ghost" onClick={cerrar}>Cancelar</Btn>
-          <Btn variant="primary" disabled={estado === "guardando" || coincideBloquea} onClick={() => void guardar()}>
+          <Btn variant="primary" disabled={estado === "guardando" || (coincideBloquea && !dandoDeBaja)} onClick={() => void guardar()}>
             {estado === "guardando" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Guardar
           </Btn>
@@ -290,6 +384,33 @@ export default function CtpParteModal({
       }
     >
       <ModalBody ref={bodyRef}>
+        {historial && historial.guias > 0 && (
+          <div className="col-span-12 flex flex-wrap items-center gap-x-5 gap-y-1 rounded-xl border border-[var(--data-info-100)] bg-[var(--data-info-50)] px-3 py-2">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-info-700)]">
+              Lo que compraste
+            </span>
+            <span className="text-sm text-[var(--text-primary)]">
+              <b className="font-mono tabular-nums">{historial.guias}</b> guía{historial.guias === 1 ? "" : "s"}
+            </span>
+            <span className="text-sm text-[var(--text-primary)]">
+              <b className="font-mono tabular-nums">{Number(historial.ingresadoM3).toFixed(2)}</b> m³ ingresados
+            </span>
+            <span className="text-sm text-[var(--text-primary)]">
+              <b className="font-mono tabular-nums">{Number(historial.enPatioM3).toFixed(2)}</b> m³ todavía en patio
+            </span>
+            {historial.guiasSinCosto > 0 && (
+              <span className="text-sm text-[var(--data-warning-700)]">
+                <b className="font-mono tabular-nums">{historial.guiasSinCosto}</b> sin factura cargada
+              </span>
+            )}
+            {historial.escritoComo && (
+              <span className="w-full text-xs text-[var(--text-tertiary)]">
+                En las guías está escrito «{historial.escritoComo}» — es el mismo titular con otro nombre.
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Qué le falta a esta ficha para servir. No bloquea: es una lista de
             pendientes, que es lo contrario de un formulario que no deja guardar. */}
         <div className="col-span-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5">
@@ -406,8 +527,24 @@ export default function CtpParteModal({
                   </li>
                 ))}
               </ul>
+              {onUsarExistente && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {parecidas.slice(0, 3).map((p) => (
+                    <button
+                      key={`usar-${p.id ?? p.nombre}`}
+                      type="button"
+                      onClick={() => onUsarExistente(p as Parte)}
+                      className="inline-flex min-h-8 items-center rounded-lg border border-[var(--data-warning-500)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--data-warning-700)] transition-colors hover:bg-[var(--data-warning-100)]"
+                    >
+                      Usar «{p.nombre.slice(0, 26)}»
+                    </button>
+                  ))}
+                </div>
+              )}
               <p className="mt-1 opacity-90">
-                Si es la misma, cancela y edita la que ya existe. Si de verdad son dos, sigue: esto es sólo un aviso.
+                {onUsarExistente
+                  ? "Si es la misma, tocá el botón y seguimos con esa. Si de verdad son dos, seguí cargando: esto es sólo un aviso."
+                  : "Si es la misma, cancela y edita la que ya existe. Si de verdad son dos, sigue: esto es sólo un aviso."}
               </p>
             </div>
           )}
@@ -642,6 +779,14 @@ export default function CtpParteModal({
               onChange={(e) => set({ cuentaCci: e.target.value })}
             />
           </Field>
+          <div className="sm:col-span-12 -mt-1 flex flex-wrap items-center gap-1.5">
+            <BotonCopiar valor={b.cuentaNumero} cual="el N° de cuenta" copiado={copiado} onCopiar={copiar} />
+            <BotonCopiar valor={b.cuentaCci} cual="el CCI" copiado={copiado} onCopiar={copiar} />
+            <BotonCopiar valor={b.docNumero} cual="el documento" copiado={copiado} onCopiar={copiar} />
+            <span className="text-xs text-[var(--text-tertiary)]">
+              {copiado ? `Copiado ${copiado}` : "Copiar para pegar en el banco o en un WhatsApp"}
+            </span>
+          </div>
           <Field label="La cuenta está a nombre de" span={12} hint="Sólo si no coincide con el titular de la ficha (pasa: la comunidad cobra en la cuenta de su jefe)">
             <input type="text" className={I} value={b.cuentaTitular ?? ""} onChange={(e) => set({ cuentaTitular: e.target.value })} />
           </Field>
@@ -662,6 +807,30 @@ export default function CtpParteModal({
           </CampoGrid>
         </Seccion>
 
+        {/* Dar de baja sin ir al Directorio. `activo` existía en el modelo y el
+            modal lo leía sin exponerlo: una parte que ya no opera sólo se podía
+            desactivar desde la otra pantalla. Sólo al EDITAR: una ficha que se
+            está creando inactiva no tiene sentido. */}
+        {parte && (
+          <div className="col-span-12">
+            <label className="flex items-start gap-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={b.activo === false}
+                onChange={(e) => set({ activo: !e.target.checked })}
+                className="mt-0.5 h-4 w-4 accent-[var(--data-error-600)]"
+              />
+              <span className="text-sm text-[var(--text-primary)]">
+                Dar de baja
+                <span className="block text-xs text-[var(--text-tertiary)]">
+                  Deja de ofrecerse en los selectores de guías y formularios. No se borra: lo que ya se emitió con
+                  esta parte sigue igual.
+                </span>
+              </span>
+            </label>
+          </div>
+        )}
+
         <Seccion numero={nro.notas} title="Notas">
           <CampoGrid className="sm:col-span-12">
             <Field label="Observaciones internas" span={12}>
@@ -672,5 +841,26 @@ export default function CtpParteModal({
 
       </ModalBody>
     </AdminModal>
+  );
+}
+
+function BotonCopiar({ valor, cual, copiado, onCopiar }: { valor?: string | null; cual: string; copiado: string | null; onCopiar: (v: string, c: string) => void }) {
+  const limpio = (valor ?? "").trim();
+  if (!limpio) return null;
+  const yaCopio = copiado === cual;
+  return (
+    <button
+      type="button"
+      onClick={() => onCopiar(limpio, cual)}
+      aria-label={`Copiar ${cual}`}
+      title={yaCopio ? "Copiado" : `Copiar ${cual}`}
+      className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition-colors ${
+        yaCopio
+          ? "border-[var(--data-success-500)] text-[var(--data-success-700)]"
+          : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
+      }`}
+    >
+      {yaCopio ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+    </button>
   );
 }
