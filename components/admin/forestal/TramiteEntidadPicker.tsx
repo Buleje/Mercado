@@ -54,7 +54,7 @@ const inputCls =
   "h-9 w-full rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
 export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: EntidadElegida) => void }) {
-  const { partes, cargando, error, guardarParte } = useDirectorioForestal();
+  const { partes, cargando, error, guardarParte, marcarUso } = useDirectorioForestal();
   const [abierto, setAbierto] = useState(false);
   const [q, setQ] = useState("");
   const [modal, setModal] = useState<"nuevo" | Parte | null>(null);
@@ -66,6 +66,9 @@ export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: Entid
     : comunidades.filter((p) => claveBusqueda(p.nombre).includes(k) || (p.docNumero ?? "").toLowerCase().includes(k));
 
   function elegir(p: Parte) {
+    // Mismo hueco que en `DirectorioPicker`: elegir del directorio no contaba
+    // como uso y el orden de la libreta no aprendía de los trámites.
+    marcarUso({ partes: [p.id] });
     onElegir({
       nombre: p.nombre,
       docTipo: p.docTipo,

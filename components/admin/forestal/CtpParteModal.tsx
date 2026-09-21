@@ -39,6 +39,7 @@ import {
   type Parte,
   type ParteInput,
   type RolParte,
+  type Vehiculo,
 } from "@/lib/forestal/directorio";
 import { consultarDocumento } from "@/hooks/use-directorio-forestal";
 import { Btn, CampoGrid, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
@@ -84,12 +85,15 @@ export default function CtpParteModal({
   parte,
   rolInicial,
   existentes = [],
+  vehiculos: vehiculosDeLaLibreta = [],
   onGuardar,
   onClose,
 }: {
   /** `null` = alta. */
   parte: Parte | null;
   rolInicial: RolParte;
+  /** La libreta de vehículos ya cargada, para listar los de este transportista. */
+  vehiculos?: readonly Vehiculo[];
   /** El resto de la libreta — para avisar si el documento ya es de otra ficha
    *  (el problema #1 que este módulo existe para evitar: "MADERERA DEL
    *  ORIENTE SAC" y "Maderera del Oriente" como dos filas distintas). */
@@ -233,6 +237,20 @@ export default function CtpParteModal({
   const listo = completitud(b as FichaParaSalud);
   const cciMal = motivoCciInvalido(b.cuentaCci);
   const vigencia = estadoTitulo(b.tituloVigenciaHasta || null);
+
+  /**
+   * Los vehículos de ESTE transportista.
+   *
+   * Existen desde siempre y tienen su propia pestaña en el Directorio, pero la
+   * ficha del transportista no los mencionaba: había que acordarse de ir a
+   * «Vehículos» y filtrar por dueño. Acá se listan en lectura —el alta sigue
+   * siendo la de esa pestaña, que ya valida placas duplicadas— para que la
+   * ficha conteste «con qué camiones trabaja este».
+   */
+  const susVehiculos = useMemo(
+    () => (b.id ? vehiculosDeLaLibreta.filter((v) => v.transportistaId === b.id && v.activo) : []),
+    [b.id, vehiculosDeLaLibreta],
+  );
   /**
    * `wa.me` quiere el número sin signos y con código de país. Un celular
    * peruano de 9 dígitos se asume +51: es lo que hay en el 99 % de las fichas,
@@ -477,9 +495,33 @@ export default function CtpParteModal({
         {(esTransportista || esConductor || esProveedor) && (
           <Seccion numero={nro.papel} title="Según el papel">
             {esTransportista && (
+              <>
+              {susVehiculos.length > 0 && (
+                <div className="col-span-12 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2">
+                  <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                    Sus vehículos
+                  </span>
+                  <ul className="mt-1 flex flex-wrap gap-1.5">
+                    {susVehiculos.map((v) => (
+                      <li
+                        key={v.id}
+                        className="rounded-lg bg-[var(--surface-sunken)] px-2 py-0.5 font-mono text-xs font-bold text-[var(--text-primary)]"
+                        title={[v.marca, v.tipo, v.capacidadM3 ? `${v.capacidadM3} m³` : null].filter(Boolean).join(" · ")}
+                      >
+                        {v.placa}
+                        {v.placaRemolque && <span className="text-[var(--text-tertiary)]"> + {v.placaRemolque}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                    Se dan de alta en Directorio → Vehículos, que valida las placas repetidas.
+                  </p>
+                </div>
+              )}
               <Field label="Registro MTC" span={4} hint="Si es empresa de transporte">
                 <input type="text" className={I} value={b.registroMtc ?? ""} onChange={(e) => set({ registroMtc: e.target.value })} />
               </Field>
+              </>
             )}
             {esConductor && (
               <Field label="Licencia de conducir" span={4} hint="Es lo que pide el puesto de control">

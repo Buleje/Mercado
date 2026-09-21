@@ -42,7 +42,7 @@ export default function DirectorioPicker({
   label?: string;
   ayuda?: string;
 }) {
-  const { partes, cargando, error, guardarParte } = useDirectorioForestal();
+  const { partes, vehiculos, cargando, error, guardarParte, marcarUso } = useDirectorioForestal();
   const [abierto, setAbierto] = useState(false);
   const [q, setQ] = useState("");
   const [modal, setModal] = useState<"nuevo" | Parte | null>(null);
@@ -57,6 +57,15 @@ export default function DirectorioPicker({
 
   function elegir(p: Parte) {
     onElegir(p);
+    /**
+     * La libreta se ordena por lo que se usa («el destinatario de todos los
+     * martes queda arriba sin que nadie lo configure»). Ese contador lo suben
+     * las pantallas de guías del CTP, pero ningún picker lo hacía: elegir una
+     * parte desde un formulario no contaba como uso, así que el orden sólo
+     * aprendía de una parte del trabajo. Es conveniencia, no compliance: si
+     * falla, la elección sigue igual.
+     */
+    marcarUso({ partes: [p.id] });
     setAbierto(false);
     setQ("");
   }
@@ -141,6 +150,7 @@ export default function DirectorioPicker({
           parte={modal === "nuevo" ? null : modal}
           rolInicial={rol}
           existentes={partes}
+          vehiculos={vehiculos}
           onGuardar={async (datos) => {
             const guardada = await guardarParte(datos);
             setModal(null);
