@@ -253,7 +253,14 @@ export default function LibroChrome({
             role="tablist"
             aria-label="Fase del libro"
             className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-1 scrollbar-none sm:ml-1"
-            style={{ scrollbarWidth: "none" }}
+            /* `contain: layout paint` (patrón de `StoreDetailClient.tsx`): sin
+               esto, el scroll horizontal de ESTE riel se filtraba al
+               `document.documentElement.scrollWidth` de toda la página (medido
+               400→551px a 400px de ancho apenas cargaba el badge de
+               pendientes) aunque el riel ya clipeaba su propio contenido —
+               Chromium deja "asomar" el overflow de un `overflow-x-auto`
+               anidado si nada aísla su layout. */
+            style={{ scrollbarWidth: "none", contain: "layout paint" }}
           >
             {groups.map((g) => {
               const activo = g.id === activeGroup?.id;
@@ -332,7 +339,12 @@ export default function LibroChrome({
             role="tablist"
             aria-label={activeGroup?.label}
             className="flex max-w-full items-center gap-1 overflow-x-auto scrollbar-none sm:flex-wrap"
-            style={{ scrollbarWidth: "none" }}
+            /* Mismo aislamiento que el riel de fases de arriba: sin `contain`
+               este riel (7 vistas con sus badges) era el que realmente
+               empujaba la página entera a 551px de ancho a 400px de viewport
+               — medido con Playwright hidiendo subárboles uno por uno hasta
+               aislar ESTE nodo como el único responsable. */
+            style={{ scrollbarWidth: "none", contain: "layout paint" }}
           >
             {activeGroup?.views.map((v) => {
               const activo = v.key === view;
