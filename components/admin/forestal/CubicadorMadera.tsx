@@ -57,7 +57,12 @@ import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import CubicadorKpis from "./cubicador-kpis";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
-import { useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
+import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-voz";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
+import {
+  agruparPorEspecie, empiezaBloque, esOrdenFilas, especieAlInicio, ordenarFilas, textoPorTramos, ultimaDictada,
+  type OrdenFilas,
+} from "@/lib/forestal/cubicador-bloques-especie";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -187,6 +192,11 @@ const leerGuardado = (sufijo: string, espacio = ""): string | null => {
   try { return localStorage.getItem(`${storageKey(espacio)}${sufijo}`); } catch { return null; }
 };
 const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+/** Con el orden por especie, cada cambio vuelve a acomodar la tabla en sus bloques. */
+const acomodarFilas = (filas: PiezaCubicada[], orden: OrdenFilas): PiezaCubicada[] =>
+  orden === "especie" ? agruparPorEspecie(filas) : filas;
+/** Las tres medidas, sin especie: lo que se lee dentro de un tramo de la misma especie. */
+const medidaSinEspecie = (r: PiezaCubicada) => `${r.espesor}, ${r.ancho}, ${r.largo}`;
 /** Cuánto tiempo el micrófono debe desconfiar de lo que escucha tras hablar. */
 const MARGEN_ECO_MS = 700;
 /** Números sueltos que esperan a completar un trío: caducan solos. */
@@ -374,6 +384,22 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, string>) : {};
     } catch { return {}; }
   }); // especie(lowercase) → S/ por PT
+  /**
+   * Orden de la tabla (Brandon, 2026-09-22): como se dictó, o en bloques de
+   * especie para revisar la pila especie por especie al terminar.
+   *
+   * No es una vista: REORDENA las filas. Así el N°, la lectura en voz alta, el
+   * PDF y el Excel dicen lo mismo que la pantalla — un orden sólo de pantalla
+   * hacía que «fila 12» nombrara una cosa en la tabla y otra en el parlante.
+   * Volver a «como se dictó» sale del id de cada pieza, que guarda cuándo se
+   * anotó. Se recuerda por libreta.
+   */
+  const [ordenFilas, setOrdenFilas] = useState<OrdenFilas>(() => {
+    const raw = leerGuardado("-orden", espacio);
+    return esOrdenFilas(raw) ? raw : "dictado";
+  });
+  /** Para los callbacks estables (dictado, importación): leen el orden de AHORA. */
+  const ordenRef = useRef<OrdenFilas>(ordenFilas);
   /**
    * Filas TILDADAS del lote (distinto de la selección de celdas tipo Excel).
    *
@@ -609,13 +635,17 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       /* Se RE-CUBICA al hidratar: un lote guardado antes de que el m³ saliera
          del pie tablar trae el volumen geométrico y el total lo arrastraría
          (13.026 PT mostraban 30,738 m³ en vez de 30,722). */
-      if (raw) setRows(recubicarPiezas(JSON.parse(raw) as PiezaCubicada[]));
+      if (raw) setRows(acomodarFilas(recubicarPiezas(JSON.parse(raw) as PiezaCubicada[]), ordenRef.current));
     } catch { /* ignore */ }
   }, []);
 
   const nuevoId = () => `p-${Date.now()}-${idRef.current++}`;
 
-  const persist = useCallback((next: PiezaCubicada[]) => { setRows(next); saveLocal(next, espacio); }, []);
+  const persist = useCallback((next: PiezaCubicada[]) => {
+    const acomodadas = acomodarFilas(next, ordenRef.current);
+    setRows(acomodadas);
+    saveLocal(acomodadas, espacio);
+  }, []);
 
   // addPieza estable (functional update) — lo llama el closure del reconocedor
   // con las filas frescas, sin depender de `rows` (que estaría stale).
@@ -625,7 +655,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   }) => {
     const { pieTablar, m3 } = cubicarPieza(p);
     const row: PiezaCubicada = { id: nuevoId(), ...p, pieTablar, m3 };
-    setRows((prev) => { const next = [...prev, row]; saveLocal(next, espacio); return next; });
+    /* Con el orden por especie, la pieza nueva cae al final de SU bloque. */
+    setRows((prev) => { const next = acomodarFilas([...prev, row], ordenRef.current); saveLocal(next, espacio); return next; });
     setLastAdded(row);
   }, []);
 
@@ -636,7 +667,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     // El Excel importado trae su propio pieTablar/m³: se re-cubica desde las
     // medidas para que ninguna planilla ajena imponga otra fórmula.
     const conId = recubicarPiezas(nuevas).map((p) => ({ ...p, id: nuevoId() }));
-    setRows((prev) => { const next = [...prev, ...conId]; saveLocal(next, espacio); return next; });
+    setRows((prev) => { const next = acomodarFilas([...prev, ...conId], ordenRef.current); saveLocal(next, espacio); return next; });
     setLastAdded(conId[conId.length - 1]);
     const piezas = nuevas.reduce((a, p) => a + p.cantidad, 0);
     pushToast({ tono: "success", msg: `${conId.length} ${conId.length === 1 ? "fila importada" : "filas importadas"}`, detail: `${piezas} piezas al lote` });
@@ -652,7 +683,15 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
 
   // Borra la última fila (comando de voz "elimina el último"). Estable.
   const borrarUltimo = useCallback(() => {
-    setRows((prev) => { if (!prev.length) return prev; const next = prev.slice(0, -1); saveLocal(next, espacio); return next; });
+    setRows((prev) => {
+      if (!prev.length) return prev;
+      /* Agrupada por especie, la última fila de la tabla no es la última que
+         se dictó: «elimina el último» borra lo que se acaba de anotar. */
+      const victima = ordenRef.current === "especie" ? ultimaDictada(prev) : prev[prev.length - 1];
+      const next = prev.filter((r) => r.id !== victima?.id);
+      saveLocal(next, espacio);
+      return next;
+    });
     setLastAdded(null);
     carryRef.current = { nums: [], ts: 0 };
   }, []);
@@ -726,7 +765,9 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         }
         else if (cmd.tipo === "especie") {
           const found = especiesRef.current.find((s) => sinAcentos(s).startsWith(cmd.palabra));
-          if (found) { setEspecie(found); hablar(found); }
+          /* La ref al toque: si la pieza llega en el mismo lote de resultados,
+             el efecto que la sincroniza todavía no corrió. */
+          if (found) { especieRef.current = found; setEspecie(found); hablar(found); }
           else setErrMsg(`No reconocí la especie "${cmd.palabra}".`);
         }
         else if (cmd.tipo === "dueno") {
@@ -772,14 +813,45 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         return;
       }
 
-      if (pausedRef.current) return; // en pausa: ignora números
+      /* ── LA ESPECIE SOLA (Brandon, 2026-09-22) ──
+         «panguana» cambia la especie de lo que sigue, sin el «especie»
+         delante; «panguana dos cuatro diez» la cambia y anota la pieza en la
+         misma frase. Dictar por bloques de especie es eso: la especie una vez
+         y después sólo medidas. Va DESPUÉS de los comandos (mandan ellos) y
+         del modo edición (ahí se esperan tres números). */
+      if (pausedRef.current) return; // en pausa: ignora números — y la especie sola, que en pausa es charla
+
+      let alts = alternativas;
+      let anuncio = "";
+      /* Sólo la lectura PRINCIPAL del reconocedor: una hipótesis dudosa no
+         puede cambiar la especie de todo lo que sigue. Las del catálogo y las
+         que ya están en la tabla (una especie que entró por Excel o por el
+         código de una troza también se dicta sola). */
+      const conocidas = [...especiesRef.current, ...rowsRef.current.map((r) => r.especie?.trim() ?? "").filter(Boolean)];
+      const detectada = especieAlInicio(alternativas[0] ?? "", conocidas);
+      if (detectada) {
+        alts = alternativas.map((a) => especieAlInicio(a, [detectada.especie])?.resto ?? a);
+        const sinMedidas = !alts.some((a) => /\d|[a-z]/i.test(a));
+        /* Ya era la especie en curso: no se anuncia. Si además no trae
+           medidas, es casi siempre el ECO del parlante diciendo «Panguana»
+           — `esEco` sólo compara números y repetirla armaba un lazo sin fin. */
+        if (claveEspecie(detectada.especie) === claveEspecie(especieRef.current)) {
+          if (sinMedidas) return;
+        } else {
+          especieRef.current = detectada.especie; // la pieza de esta misma frase ya entra con ella
+          setEspecie(detectada.especie);
+          setErrMsg(null);
+          anuncio = detectada.especie;
+          if (sinMedidas) { hablar(detectada.especie); return; }
+        }
+      }
 
       // Cantidad dictada ("cinco piezas de 2 8 10") separada de las medidas.
       // Se pasan las fijas y cuántos números quedaron esperando: sin eso, un
       // "quince" suelto se leería como espesor (imposible) y se partiría en 1·5.
       const carryVigente = Date.now() - carryRef.current.ts < CARRY_TTL_MS ? carryRef.current.nums : [];
       const { cantidad: cantDictada, nums } = leerDictado(
-        alternativas,
+        alts,
         fijasRef.current,
         carryVigente.length,
         { frecuentes: frecuentesRef.current },
@@ -818,11 +890,12 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           fijasRef.current.ancho == null ? ultima.ancho : null,
           fijasRef.current.largo == null ? ultima.largo : null,
         ].filter((v): v is number => v != null);
-        hablar(
-          added > 1 ? `${added} piezas`
-            : raro ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}. Revisa`
-              : `${cantDictada > 1 ? `${cantDictada} de ` : ""}${variables.join(", ")}`,
-        );
+        const confirmacion = added > 1 ? `${added} piezas`
+          : raro ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}. Revisa`
+            : `${cantDictada > 1 ? `${cantDictada} de ` : ""}${variables.join(", ")}`;
+        hablar(anuncio ? `${anuncio}. ${confirmacion}` : confirmacion);
+      } else if (anuncio) {
+        hablar(anuncio); // cambió la especie y los números quedaron esperando
       }
     };
 
@@ -899,8 +972,14 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   });
   const readingId = lecturaVoz.leyendoId;
   const stopLeer = lecturaVoz.detener;
+  /**
+   * Lectura por tramos de especie (Brandon, 2026-09-22): al entrar a 2+ filas
+   * seguidas de la misma especie dice «Continúa con panguana» UNA vez y
+   * después sólo las medidas; una fila suelta se lee como siempre, con su
+   * especie al final. Ver `textoPorTramos`.
+   */
   const medidaEnVoz = useCallback(
-    (r: PiezaCubicada) => `${r.espesor}, ${r.ancho}, ${r.largo}${r.especie ? `, ${r.especie}` : ""}`,
+    (r: PiezaCubicada, ctx: ContextoLectura<PiezaCubicada>) => textoPorTramos(r, ctx, medidaSinEspecie),
     [],
   );
 
@@ -1023,6 +1102,19 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       (r) => `${r.espesor}, ${r.ancho}, ${r.largo}`,
     );
   }, [lecturaVoz]);
+
+  /**
+   * Cambia el orden de la tabla y la REORDENA (ver `ordenFilas`). Si estaba
+   * leyendo, corta: seguir por el mismo índice en otro orden nombraría otra
+   * fila que la que se ve.
+   */
+  const cambiarOrden = useCallback((orden: OrdenFilas) => {
+    ordenRef.current = orden;
+    setOrdenFilas(orden);
+    try { localStorage.setItem(`${storageKey(espacio)}-orden`, orden); } catch { /* ignore */ }
+    if (lecturaVoz.activa()) lecturaVoz.detener();
+    persist(ordenarFilas(rowsRef.current, orden));
+  }, [espacio, lecturaVoz, persist]);
 
   const addManual = useCallback(() => {
     // SIEMPRE por ref (manualRef/fijasRef), nunca por el `manual`/`fijas` del
@@ -1158,7 +1250,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     const victima = rowsNow.find((r) => r.id === id);
     persist(rowsNow.filter((r) => r.id !== id));
     setLastAdded((prev) => (prev?.id === id ? null : prev));
-    if (victima) pushToast({ tono: "warning", msg: "Fila eliminada", detail: medidaTxt(victima), undo: () => persist(rowsNow) });
+    if (victima) pushToast({ tono: "warning", msg: "Fila eliminada", detail: medidaTxt(victima), undo: () => persist(ordenarFilas(rowsNow, ordenRef.current)) });
   }, [persist, pushToast, medidaTxt]);
   // Deshacer del flash de dictado: quita la última SIN toast (ya es una acción de deshacer).
   const deshacer = () => { if (lastAdded) { persist(rows.filter((r) => r.id !== lastAdded.id)); setLastAdded(null); } };
@@ -1166,7 +1258,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     if (rows.length === 0) return;
     const prev = rows;
     persist([]); setLastAdded(null);
-    pushToast({ tono: "warning", msg: "Lote vaciado", detail: `${prev.length} ${prev.length === 1 ? "fila" : "filas"}`, undo: () => persist(prev) });
+    pushToast({ tono: "warning", msg: "Lote vaciado", detail: `${prev.length} ${prev.length === 1 ? "fila" : "filas"}`, undo: () => persist(ordenarFilas(prev, ordenRef.current)) });
   };
 
   // Persistir el precio por PT (por tenant) y los precios por especie.
@@ -2246,6 +2338,21 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                 {especiesLote.map((e) => <option key={e} value={e}>{e}</option>)}
                 {haySinEspecie && <option value="__sin__">Sin especie</option>}
               </select>
+              {/* Orden (Brandon, 2026-09-22): no filtra, REORDENA — el N°, la
+                  lectura y el papel lo siguen. Con una sola especie no hay
+                  nada que agrupar, salvo para volver a como se dictó. */}
+              {(especiesLote.length + (haySinEspecie ? 1 : 0) > 1 || ordenFilas === "especie") && (
+                <select
+                  value={ordenFilas}
+                  onChange={(e) => { if (esOrdenFilas(e.target.value)) cambiarOrden(e.target.value); }}
+                  aria-label="Orden de las filas"
+                  title="Como se dictó: en el orden en que entraron las piezas. Por especie: la tabla en bloques de especie, y lo que dictes después cae al final de su bloque."
+                  className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+                >
+                  <option value="dictado">Orden: como se dictó</option>
+                  <option value="especie">Orden: por especie</option>
+                </select>
+              )}
               {duenosLote.length > 0 && (
                 <select
                   value={filtroDueno}
@@ -2418,6 +2525,11 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                   // así se ve hasta dónde va a llegar sin tener que adivinar.
                   const enRelleno = rellenoEspecie.objetivo.includes(pos) || rellenoTipo.objetivo.includes(pos) || rellenoApartado.objetivo.includes(pos) || rellenoDueno.objetivo.includes(pos) || rellenoCodigo.objetivo.includes(pos);
                   const numeroAp = asignados[r.id];
+                  /* Agrupada por especie, una raya más marcada separa los bloques. Va
+                     con `!`: `DataTable` pinta el borde de TODAS las filas con un
+                     selector descendiente (`[&_tbody_tr]:border-t`), que le gana a
+                     la clase de la fila por especificidad. */
+                  const inicioBloque = ordenFilas === "especie" && empiezaBloque(r, filasVisibles[pos - 1]?.r);
                   return (
                   <tr
                     key={r.id}
@@ -2427,7 +2539,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                        el asa se baja por cualquier parte de la fila, y repetir
                        el handler en once `<td>` sólo multiplicaba el trabajo. */
                     onMouseEnter={() => { rellenoEspecie.extender(pos); rellenoTipo.extender(pos); rellenoApartado.extender(pos); rellenoDueno.extender(pos); rellenoCodigo.extender(pos); }}
-                    className={`border-t border-[var(--rule-soft)] transition-colors ${enRelleno ? "bg-primary/10 outline-dashed outline-2 -outline-offset-2 outline-[var(--accent)]" : rowCls || (rara ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : "")}`}
+                    className={`${inicioBloque ? "border-t-2! border-t-[var(--rule-strong)]!" : "border-t border-[var(--rule-soft)]"} transition-colors ${enRelleno ? "bg-primary/10 outline-dashed outline-2 -outline-offset-2 outline-[var(--accent)]" : rowCls || (rara ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : "")}`}
                   >
                     <td className="px-2 py-2 text-center">
                       <input

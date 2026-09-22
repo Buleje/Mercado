@@ -730,6 +730,10 @@ function AyudaDeVoz() {
         Si una medida se repite toda la jornada, fíjala: di{" "}
         <Cmd>&ldquo;pon fijo el largo a cuatro&rdquo;</Cmd> y después dicta sólo espesor y ancho.
       </p>
+      <p>
+        Al leer la tabla en voz alta, cada tramo de una especie se anuncia una vez —{" "}
+        <Cmd>&ldquo;Continúa con panguana&rdquo;</Cmd>— y después sólo las medidas.
+      </p>
       <div>
         <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
           Comandos por voz
@@ -738,6 +742,10 @@ function AyudaDeVoz() {
           <li><Cmd>&laquo;pausa&raquo;</Cmd> / <Cmd>&laquo;continúa&raquo;</Cmd> — el micrófono deja de anotar y retoma.</li>
           <li><Cmd>&laquo;elimina el último&raquo;</Cmd> — borra la pieza recién dictada.</li>
           <li><Cmd>&laquo;especie tornillo&raquo;</Cmd> — de acá en adelante todo entra con esa especie.</li>
+          <li>
+            <Cmd>&laquo;panguana&raquo;</Cmd> — la especie sola también la cambia, para dictar por bloques;{" "}
+            <Cmd>&laquo;panguana dos cuatro diez&raquo;</Cmd> la cambia y anota la pieza de una vez.
+          </li>
           <li><Cmd>&laquo;dueño Juan&raquo;</Cmd> — lo mismo con el dueño de la madera.</li>
           <li><Cmd>&laquo;pon fijo el largo a cuatro&raquo;</Cmd> / <Cmd>&laquo;quita el fijo&raquo;</Cmd></li>
         </ul>

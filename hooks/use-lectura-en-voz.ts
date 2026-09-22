@@ -46,6 +46,27 @@ export interface EstadoLectura {
   haciaAtras: boolean;
 }
 
+/**
+ * Lo que el texto de una fila puede mirar además de la fila: dónde está, con
+ * qué vecinas y si es la primera que suena. Lo usa la lectura por tramos de
+ * especie (`textoPorTramos`), que anuncia la especie al ENTRAR a un tramo y
+ * tiene que saber cuál es la fila de antes en el sentido de la lectura.
+ */
+export interface ContextoLectura<T> {
+  /** Posición 0-based en la lista (la fila real de la tabla, también al revés). */
+  indice: number;
+  lista: readonly T[];
+  haciaAtras: boolean;
+  /**
+   * Primera fila que suena desde que se arrancó, se saltó a una fila o se
+   * retomó una pausa: quien escucha no oyó lo que venía antes.
+   */
+  primera: boolean;
+}
+
+/** El texto que se dice de cada fila. Las que no miran el contexto lo ignoran. */
+export type TextoDeFila<T> = (fila: T, ctx: ContextoLectura<T>) => string;
+
 /** Sentido de una tanda. Sin esto, se lee de la primera a la última. */
 export interface SentidoLectura {
   /** Arranca por la última fila y baja hasta la primera. */
@@ -62,6 +83,35 @@ export interface OpcionesLectura {
   onError?: (mensaje: string) => void;
   /** Id del `<tr>` para seguir la fila con la vista. */
   idDeFila?: (id: string) => string;
+}
+
+/**
+ * A qué fila seguir cuando termina la que sonaba.
+ *
+ * Si la fila no se movió, es la de al lado, como siempre (una agregada o
+ * borrada más adelante entra o sale sola). Si SE MOVIÓ —con la tabla agrupada
+ * por especie, cambiarle la especie la manda a otro bloque— o se borró, se
+ * sigue por la que venía después, buscada por id: por posición se saltaba una
+ * fila (medido por el revisor: P1, P2, P2, T1 — la P3 nunca sonó).
+ */
+export function siguienteIndice<T extends { id: string }>(
+  lista: readonly T[],
+  actualId: string,
+  siguienteId: string | undefined,
+  idx: number,
+  haciaAtras: boolean,
+): number {
+  const paso = haciaAtras ? -1 : 1;
+  const ahora = lista.findIndex((f) => f.id === actualId);
+  if (ahora === idx) return idx + paso;
+  if (siguienteId !== undefined) {
+    const j = lista.findIndex((f) => f.id === siguienteId);
+    if (j >= 0) return j;
+  }
+  if (ahora >= 0) return ahora + paso;
+  /* Se borró y no había otra detrás: hacia adelante la que ocupa su lugar es
+     la siguiente; hacia atrás, la de arriba. */
+  return haciaAtras ? idx - 1 : idx;
 }
 
 export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura) {
@@ -95,6 +145,8 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
    * al derecho leía UNA pieza y se apagaba sola.
    */
   const tandaRef = useRef(0);
+  /** La próxima fila que suene es la primera tras arrancar, saltar o retomar. */
+  const primeraRef = useRef(false);
   const pasoRef = useRef<(() => void) | null>(null);
   /* Las opciones se leen por ref para que cambiar la velocidad en Ajustes a
      mitad de una tanda no obligue a rearmar los callbacks. */
@@ -132,7 +184,7 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
    */
   const arrancar = useCallback((
     obtenerLista: () => T[],
-    texto: (fila: T) => string,
+    texto: TextoDeFila<T>,
     desde?: number,
     opciones?: SentidoLectura,
   ) => {
@@ -149,6 +201,7 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
     const miTanda = ++tandaRef.current;
     activaRef.current = true;
     pausaRef.current = false;
+    primeraRef.current = true;
     haciaAtrasRef.current = atras;
     obtenerListaRef.current = obtenerLista;
     idxRef.current = Math.max(0, Math.min(desde ?? (atras ? inicial.length - 1 : 0), inicial.length - 1));
@@ -186,14 +239,19 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
       if (idDom) {
         try { document.getElementById(idDom)?.scrollIntoView({ block: "center", behavior: "auto" }); } catch { /* ignore */ }
       }
-      const u = new SpeechSynthesisUtterance(texto(fila));
+      const ctx: ContextoLectura<T> = { indice: idxRef.current, lista, haciaAtras: atras, primera: primeraRef.current };
+      primeraRef.current = false;
+      /* La que viene después, por id: si mientras suena ésta la tabla se
+         reordena, se sigue por ella y no por una posición que ya es otra. */
+      const siguienteId = lista[idxRef.current + (atras ? -1 : 1)]?.id;
+      const u = new SpeechSynthesisUtterance(texto(fila, ctx));
       u.lang = "es-PE";
       u.rate = Math.min(3, optsRef.current.rate() + 0.3);
       const uri = optsRef.current.voiceURI();
       if (uri) { const v = synth.getVoices().find((x) => x.voiceURI === uri); if (v) u.voice = v; }
       u.onend = () => {
         if (miTanda !== tandaRef.current || pausaRef.current || !activaRef.current) return;
-        idxRef.current += atras ? -1 : 1;
+        idxRef.current = siguienteIndice(obtenerLista(), fila.id, siguienteId, idxRef.current, atras);
         paso();
       };
       /**
@@ -233,7 +291,7 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
    */
   const leer = useCallback((
     obtenerLista: () => T[],
-    texto: (fila: T) => string,
+    texto: TextoDeFila<T>,
     desde?: number,
     opciones?: SentidoLectura,
   ) => {
@@ -252,7 +310,7 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
    *  una fila, no se tocó el botón de encender y apagar. */
   const leerDesde = useCallback((
     obtenerLista: () => T[],
-    texto: (fila: T) => string,
+    texto: TextoDeFila<T>,
     id: string,
     opciones?: SentidoLectura,
   ) => {
@@ -272,6 +330,7 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
   const reanudar = useCallback(() => {
     if (!activaRef.current || !pasoRef.current) return;
     pausaRef.current = false;
+    primeraRef.current = true;
     pasoRef.current();
   }, []);
 
@@ -287,6 +346,7 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
        leerse como un fallo del motor. Se reactiva justo antes de seguir. */
     activaRef.current = false;
     pausaRef.current = false;
+    primeraRef.current = true;
     try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
     setTimeout(() => {
       activaRef.current = true;

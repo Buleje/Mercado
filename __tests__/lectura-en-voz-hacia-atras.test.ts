@@ -13,7 +13,7 @@
  */
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
+import { siguienteIndice, useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
 
 interface Fila { id: string }
 
@@ -284,5 +284,96 @@ describe("useLecturaEnVoz · sentido de la lectura", () => {
     correrTicks();
     terminarFila();
     expect(dichos).toEqual(["c", "b"]);
+  });
+});
+
+/**
+ * Leer por tramos de especie (Brandon, 2026-09-22): el texto de cada fila
+ * necesita saber dónde está, con qué vecinas y si es la primera que suena —
+ * para decir «Continúa con panguana» al ENTRAR a un tramo, y otra vez al
+ * arrancar o retomar a mitad de uno.
+ */
+describe("useLecturaEnVoz · contexto de cada fila", () => {
+  interface ConEspecie { id: string; especie?: string }
+  const texto = (f: ConEspecie, ctx: { indice: number; primera: boolean; haciaAtras: boolean; lista: readonly ConEspecie[] }) =>
+    `${f.id}@${ctx.indice}${ctx.primera ? "*" : ""}${ctx.haciaAtras ? "<" : ""}/${ctx.lista.length}`;
+  function montarEspecies() {
+    return renderHook(() => useLecturaEnVoz<ConEspecie>({ rate: () => 1, voiceURI: () => undefined })).result;
+  }
+
+  it("la primera fila de la tanda llega marcada; las siguientes no", () => {
+    const lista: ConEspecie[] = [{ id: "a" }, { id: "b" }, { id: "c" }];
+    const r = montarEspecies();
+    act(() => { r.current.leer(() => lista, texto); });
+    correrTicks();
+    terminarFila();
+    terminarFila();
+    expect(dichos).toEqual(["a@0*/3", "b@1/3", "c@2/3"]);
+  });
+
+  it("al revés el índice es la fila real y el sentido llega en el contexto", () => {
+    const lista: ConEspecie[] = [{ id: "a" }, { id: "b" }];
+    const r = montarEspecies();
+    act(() => { r.current.leer(() => lista, texto, undefined, { haciaAtras: true }); });
+    correrTicks();
+    terminarFila();
+    expect(dichos).toEqual(["b@1*</2", "a@0</2"]);
+  });
+
+  it("saltar a una fila y retomar una pausa vuelven a marcar la primera", () => {
+    const lista: ConEspecie[] = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }];
+    const r = montarEspecies();
+    act(() => { r.current.leer(() => lista, texto); });
+    correrTicks();
+    act(() => { r.current.irAFila(3); });
+    correrTicks();
+    act(() => { r.current.pausar(); });
+    act(() => { r.current.reanudar(); });
+    correrTicks();
+    terminarFila();
+    expect(dichos).toEqual(["a@0*/4", "c@2*/4", "c@2*/4", "d@3/4"]);
+  });
+});
+
+/**
+ * Con la tabla agrupada por especie, cambiarle la especie a la fila que suena
+ * la manda a otro bloque. Avanzando por posición se saltaba una fila (lo midió
+ * el revisor: P1, P2, P2, T1 — la P3 nunca sonó). Ahora se sigue por la que
+ * venía después, buscada por id.
+ */
+describe("useLecturaEnVoz · la tabla se reordena mientras lee", () => {
+  const ids = (...xs: string[]) => xs.map((id) => ({ id }));
+
+  it("siguienteIndice: sin moverse, la de al lado; movida o borrada, la que venía", () => {
+    expect(siguienteIndice(ids("a", "b", "c"), "a", "b", 0, false)).toBe(1);
+    expect(siguienteIndice(ids("a", "c", "b"), "b", "c", 1, false)).toBe(1);
+    expect(siguienteIndice(ids("a", "c"), "b", "c", 1, false)).toBe(1);
+    expect(siguienteIndice(ids("a"), "b", undefined, 1, false)).toBe(1);
+    expect(siguienteIndice(ids("b", "c"), "c", "b", 2, true)).toBe(0);
+    expect(siguienteIndice(ids("x", "a", "b", "c"), "b", "c", 1, false)).toBe(3);
+  });
+
+  it("la fila que suena se va a otro bloque: se lee la que venía y no se salta ninguna", () => {
+    let lista = ids("p1", "p2", "p3", "t1");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    terminarFila(); // p1 → suena p2
+    lista = ids("p1", "p3", "p2", "t1"); // a p2 le cambiaron la especie mientras sonaba
+    terminarFila();
+    terminarFila();
+    terminarFila();
+    expect(dichos).toEqual(["p1", "p2", "p3", "p2", "t1"]);
+  });
+
+  it("borrar la fila que suena sigue por la que ocupa su lugar, sin saltarla", () => {
+    let lista = ids("a", "b", "c");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    terminarFila(); // suena b
+    lista = ids("a", "c");
+    terminarFila();
+    expect(dichos).toEqual(["a", "b", "c"]);
   });
 });

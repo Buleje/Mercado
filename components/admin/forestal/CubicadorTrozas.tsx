@@ -22,7 +22,12 @@ import {
 import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
 import { loadConfig } from "@/lib/forestal/cubicador-config";
 import { useVozContinua } from "@/hooks/use-voz-continua";
-import { useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
+import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-voz";
+import {
+  agruparPorEspecie, empiezaBloque, esOrdenFilas, especieAlInicio, ordenarFilas, textoPorTramos, ultimaDictada,
+  type OrdenFilas,
+} from "@/lib/forestal/cubicador-bloques-especie";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import { Kpi } from "./cubicador-kpis";
@@ -62,6 +67,8 @@ const COLS_OPCIONALES_TROZA: { key: ColOpcionalTroza; label: string }[] = [
   { key: "m3", label: "m³" },
 ];
 const COLS_DEFAULT_TROZA: Record<ColOpcionalTroza, boolean> = { especie: true, m3: true };
+/** Con el orden por especie, cada cambio vuelve a acomodar el patio en sus bloques. */
+const acomodarTrozas = (filas: Fila[], orden: OrdenFilas): Fila[] => (orden === "especie" ? agruparPorEspecie(filas) : filas);
 /** Alto del visor de la tabla del patio, en px. Constante mientras se scrollea. */
 const ALTO_VISOR_PATIO = 600;
 
@@ -99,6 +106,19 @@ export default function CubicadorTrozas() {
   }, []);
   useEffect(() => { try { localStorage.setItem(`${storageKey()}-cols`, JSON.stringify(colsVisibles)); } catch { /* quota */ } }, [colsVisibles]);
   const [colsMenuOpen, setColsMenuOpen] = useState(false);
+  /**
+   * Orden del patio: como se dictó, o en bloques de especie — la misma regla
+   * que el cubicador de aserrada (Brandon, 2026-09-22). REORDENA las filas: el
+   * «#», la lectura y el CSV siguen lo que se ve. Se recuerda por tenant.
+   */
+  const [ordenFilas, setOrdenFilas] = useState<OrdenFilas>("dictado");
+  const ordenRef = useRef<OrdenFilas>("dictado");
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`${storageKey()}-orden`);
+      if (esOrdenFilas(raw)) { ordenRef.current = raw; setOrdenFilas(raw); }
+    } catch { /* ignore */ }
+  }, []);
   useEffect(() => {
     if (!colsMenuOpen) return;
     const cerrar = () => setColsMenuOpen(false);
@@ -138,7 +158,8 @@ export default function CubicadorTrozas() {
       m3: cubicarTroza(d1, largo, d2),
       sospechosa,
     };
-    setRows((prev) => { const next = [...prev, fila]; saveLocal(next); return next; });
+    /* Con el orden por especie, la troza nueva cae al final de SU bloque. */
+    setRows((prev) => { const next = acomodarTrozas([...prev, fila], ordenRef.current); saveLocal(next); return next; });
     setLastAdded(fila);
     return fila;
   };
@@ -150,26 +171,55 @@ export default function CubicadorTrozas() {
       if (cmd.tipo === "pausar") { pausedRef.current = true; setPaused(true); carryRef.current = []; hablar("en pausa"); }
       else if (cmd.tipo === "continuar") { pausedRef.current = false; setPaused(false); carryRef.current = []; hablar("sigo"); }
       else if (cmd.tipo === "borrar-ultimo") {
-        setRows((prev) => { if (!prev.length) return prev; const next = prev.slice(0, -1); saveLocal(next); return next; });
+        /* Agrupado por especie, la última fila no es la última dictada. */
+        setRows((prev) => {
+          if (!prev.length) return prev;
+          const victima = ordenRef.current === "especie" ? ultimaDictada(prev) : prev[prev.length - 1];
+          const next = prev.filter((r) => r.id !== victima?.id);
+          saveLocal(next);
+          return next;
+        });
         setLastAdded(null); carryRef.current = []; hablar("borrado");
       } else if (cmd.tipo === "especie") {
         const found = especiesRef.current.find((s) => sinAcentos(s).startsWith(cmd.palabra));
-        if (found) { setEspecie(found); hablar(found); }
+        if (found) { especieRef.current = found; setEspecie(found); hablar(found); }
       }
       return;
     }
-    if (pausedRef.current) return;
-    const nums = mejoresNumeros([texto]);
+    /* La especie sola cambia la de lo que sigue, como en el cubicador de
+       aserrada: «panguana» o «panguana treinta cuarenta ocho». */
+    if (pausedRef.current) return; // en pausa, ni números ni especie sola: es charla
+    let dictado = texto;
+    let anuncio = "";
+    const conocidas = [...especiesRef.current, ...rowsRef.current.map((r) => r.especie?.trim() ?? "").filter(Boolean)];
+    const detectada = especieAlInicio(texto, conocidas);
+    if (detectada) {
+      dictado = detectada.resto;
+      /* Ya era la especie en curso: no se anuncia, y sin medidas es el eco
+         del parlante (acá no hay filtro de eco) — repetirla armaba un lazo. */
+      if (claveEspecie(detectada.especie) === claveEspecie(especieRef.current)) {
+        if (!dictado.trim()) return;
+      } else {
+        especieRef.current = detectada.especie; // la troza de esta misma frase ya entra con ella
+        setEspecie(detectada.especie);
+        anuncio = detectada.especie;
+        if (!dictado.trim()) { hablar(detectada.especie); return; }
+      }
+    }
+    const nums = mejoresNumeros([dictado]);
     const { trozas, resto } = partirEnTrozas([...carryRef.current, ...nums]);
     carryRef.current = resto;
     let ultima: Fila | null = null;
     for (const t of trozas) ultima = addTroza(t.d1, t.d2, t.largo, t.sospechosa);
     if (ultima) {
-      hablar(trozas.length === 1 ? `${ultima.d1}, ${ultima.d2}, ${ultima.largo}` : `${trozas.length} trozas`);
+      const confirmacion = trozas.length === 1 ? `${ultima.d1}, ${ultima.d2}, ${ultima.largo}` : `${trozas.length} trozas`;
+      hablar(anuncio ? `${anuncio}. ${confirmacion}` : confirmacion);
+    } else if (anuncio) {
+      hablar(anuncio);
     }
   });
 
-  const persist = (next: Fila[]) => { setRows(next); saveLocal(next); };
+  const persist = (next: Fila[]) => { const acomodadas = acomodarTrozas(next, ordenRef.current); setRows(acomodadas); saveLocal(acomodadas); };
   const borrar = (id: string) => { persist(rows.filter((r) => r.id !== id)); if (lastAdded?.id === id) setLastAdded(null); };
   const deshacer = () => { if (lastAdded) borrar(lastAdded.id); };
   const limpiar = () => { persist([]); setLastAdded(null); carryRef.current = []; };
@@ -211,8 +261,10 @@ export default function CubicadorTrozas() {
     onAntesDeArrancar: () => { if (voz.listening) voz.toggle(); },
     idDeFila: (id) => `troza-row-${id}`,
   });
+  /* Por tramos de especie, igual que la aserrada: «Continúa con tornillo» al
+     entrar a 2+ trozas seguidas de la misma especie, después sólo medidas. */
   const textoTroza = useCallback(
-    (t: Fila) => `${t.d1}, ${t.d2}, ${t.largo}${t.especie ? `, ${t.especie}` : ""}`,
+    (t: Fila, ctx: ContextoLectura<Fila>) => textoPorTramos(t, ctx, (x) => `${x.d1}, ${x.d2}, ${x.largo}`),
     [],
   );
   const leerPatio = useCallback(
@@ -225,6 +277,17 @@ export default function CubicadorTrozas() {
     () => [...new Set(rows.map((r) => r.especie?.trim()).filter((e): e is string => !!e))],
     [rows],
   );
+  /** Con una sola especie no hay nada que agrupar, salvo para volver a como se dictó. */
+  const hayQueOrdenar = especiesActuales.length + (rows.some((r) => !r.especie?.trim()) ? 1 : 0) > 1 || ordenFilas === "especie";
+  /** Cambia el orden y REORDENA el patio. Corta la lectura: seguir por el mismo
+   *  índice en otro orden nombraría otra troza que la que se ve. */
+  const cambiarOrden = (orden: OrdenFilas) => {
+    ordenRef.current = orden;
+    setOrdenFilas(orden);
+    try { localStorage.setItem(`${storageKey()}-orden`, orden); } catch { /* ignore */ }
+    if (lectura.activa()) lectura.detener();
+    persist(ordenarFilas(rowsRef.current, orden));
+  };
 
   /**
    * El resumen del patio. Todo esto ya se calculaba o estaba a un `reduce` de
@@ -498,6 +561,18 @@ export default function CubicadorTrozas() {
               <Upload className="h-3.5 w-3.5" /> Importar
             </button>
             <CtpEspeciesBoton onClick={catalogoEspecies.abrir} />
+            {hayQueOrdenar && (
+              <select
+                value={ordenFilas}
+                onChange={(e) => { if (esOrdenFilas(e.target.value)) cambiarOrden(e.target.value); }}
+                aria-label="Orden de las trozas"
+                title="Como se dictó: en el orden en que entraron. Por especie: el patio en bloques, y lo que dictes después cae al final de su bloque."
+                className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] outline-none hover:border-[var(--accent)] focus:border-[var(--accent)]"
+              >
+                <option value="dictado">Orden: como se dictó</option>
+                <option value="especie">Orden: por especie</option>
+              </select>
+            )}
             {/* Columnas opcionales: ocultar/mostrar Especie y m³ — queda
                 guardado por tenant hasta que se vuelva a tocar. */}
             <div className="relative">
@@ -593,12 +668,16 @@ export default function CubicadorTrozas() {
                      el rótulo de sus botones tienen que seguir siendo el número
                      de la troza en el patio. */
                   const i = ventana.inicioVentana + iVentana;
+                  /* Agrupado por especie, una raya más marcada separa los bloques
+                     (con `!`: `DataTable` pinta el borde de todas las filas con
+                     un selector descendiente que le gana a la clase). */
+                  const inicioBloque = ordenFilas === "especie" && empiezaBloque(r, rows[i - 1]);
                   return (
                   <tr
                     key={r.id}
                     id={`troza-row-${r.id}`}
                     ref={iVentana === 0 ? ventana.primeraFilaRef : undefined}
-                    className={`border-t border-[var(--rule-soft)] ${
+                    className={`${inicioBloque ? "border-t-2! border-t-[var(--rule-strong)]!" : "border-t border-[var(--rule-soft)]"} ${
                       lectura.leyendoId === r.id
                         ? "bg-primary/10 outline outline-2 -outline-offset-2 outline-[var(--accent)]"
                         : r.sospechosa
