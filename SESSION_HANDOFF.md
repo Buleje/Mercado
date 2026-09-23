@@ -12,10 +12,15 @@
 
 **PC (medido tras reiniciar):** BIOS 305 aplicada, pero la iGPU sigue con 512 MB; 26 congelamientos DWM desde el 15-09; al arrancar ya hay 242 MB de VRAM en uso contra un presupuesto de 190 (Chrome 101). Externa a 1920×1080 @ 240 Hz. Ubuntu: 0 fallos, apt al día, npm 12.1, vercel 59.25.4, `pam_lastlog` comentado (`/etc/pam.d/login.bak-2026-09-23`).
 
+**Tarde (misma sesión):** push `8ab5cdd28..1bf4c9498` · `77db28e17` contexto de subagentes (agrupar llamadas, QA forestal) · `036a324ed` `scripts/qa-capturas.mjs` (recorrido en 1 llamada: 187→1 llamadas) · `430c4a12a` tope DAP 4 m. PC: 120 Hz aplicado (no libera VRAM), Chrome sin aceleración por política (**falta reiniciar Chrome**), PATH sin Node de Windows (`~/.bashrc`).
+
+**Noche (misma sesión), COMMITEADO:** `622a7c12e` aviso + arreglo de un clic «el trato empieza después» (ADR-430; reviewer + security sin veto; auditoría que perdía 3/16 renglones bajo carga) · `3ed8de960` «Producir sin lote»: anular el día (anula, no borra), detalle sin scroll, «Más nuevas primero», sin pastillas, tira plegable, más compacto (reviewer 5 + security sin veto). Incidente: un agente dejó `SET SESSION READ ONLY` pegado en el pooler 3 min (reparado, producción sin errores) → regla en memoria `pooler-set-session-se-pega` y en el contexto de subagentes.
+
 **Para retomar (en orden):**
-1. Lo que Brandon elija del menú de cierre (congelamientos: Chrome sin aceleración / 120 Hz / UMA en F2 · WASACO S/ 1 619,45 · push · compactar el vhdx).
-2. Probar el audio real: velocidad 10 con Microsoft Pablo en Windows, y el pitido en Android junto al micrófono.
-3. El censo aceptó un DAP de 15 m (tenant de prueba `pizza-pucallpa`): falta un tope en el formulario.
+1. **WASACO en Blas NO cobrado:** la app redondea por paquete → S/ 1 619,60 (exacto 1 619,45). Brandon todavía no eligió (cobrar 1 619,60 / redondear por corrida / no cobrar). Con el arreglo commiteado, se cobra desde la ficha de WASACO en el Directorio con un clic, o con `scratchpad/probe/tmp-backend-wasaco-arreglo.mts aplicar`.
+2. Compactar el vhdx al final del día: `C:\Users\Usuario\.claude-tune\2026-09-23\compactar-wsl.ps1` (APAGA WSL; deja `compactar.log`).
+3. Brandon: reiniciar Chrome (política sin aceleración) y mirar F2 → UMA; contar DWM id 500 desde el 23-09.
+4. Probar el audio real del cubicador (velocidad 10, pitido en Android).
 
 ---
 
