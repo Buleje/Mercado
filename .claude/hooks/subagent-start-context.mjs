@@ -52,7 +52,7 @@ const contexto = [
   "- Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima`; `main` es el tenant de QA (`qaadmin` / `Qa-admin-1234`). Leer del real, escribir solo en QA.",
   "- Editá sobre el checkout principal, nunca en worktree (en ramas largas branchea de una base vieja y se pierde lógica).",
   "- Reglas duras: `lib/db/*.db.ts` en vez de `prisma.*`; `tenantId` 1er parámetro sin fallback `\"main\"`; Zod `safeParse`; `requireAdmin(req, roles[])`; sin hex en UI (tokens del DS); totales en backend; sin `@ts-ignore`/`--no-verify`.",
-  "- Gates: `npm run typecheck:fast` (TS 7, pre-check, ~7 GB: uno por vez) → `npx tsc --noEmit` (5.9, decide); `npm run lint:fast` → `npm run lint`; tests del área con `npx vitest run <archivo>`. UI = screenshot light + dark, viewport 1280 y 400, consola sin errores nuestros.",
+  "- Gates: `npm run typecheck` (TS 7 nativo, ~22s caliente / 50s frío, ~7 GB: UNO POR VEZ) — es el que decide, el mismo que corre pre-commit y CI; `npm run lint:fast` → `npm run lint`; tests del área con `npx vitest run <archivo>`. UI = screenshot light + dark, viewport 1280 y 400, consola sin errores nuestros.",
   "- «Listo» solo con evidencia pegada (comando + salida) por el camino del usuario (navegador/curl), no por un script propio. Si no pudiste verificar, decilo.",
   "- Reporte final en español, ≤150 palabras + tabla (archivo:línea · evidencia · qué queda). Lo que aprendiste que un futuro agente no sabría → tu MEMORY.md si tenés memoria; si no, ponelo en el reporte bajo «Para memoria».",
   "- Si la tarea que recibiste define su propio formato de salida (schema JSON de un Workflow, «respondé en 3 líneas», etc.), ESE formato manda sobre el reporte de arriba.",

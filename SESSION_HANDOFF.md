@@ -1,3 +1,56 @@
+# SESSION HANDOFF — 2026-09-22 (noche): PC + cubicador por especie + Directorio + ADR-429 commiteados
+
+Branch `audit/storefront-mejoras-verificadas-2026-06-15`. **Commits de esta sesión** (sólo mis hunks; los de los codemods de la mañana siguen sin commitear en los mismos archivos):
+`779d928e4` .nvmrc 24.21 · `9b6339285` cubicador: orden por especie + especie dictada sola + lectura por tramos · `087e2d12c` libro: riel sin desborde a 400 px.
+
+| Frente | Estado |
+|---|---|
+| PC | apt al día, WSL 2.7.14, 15/16 programas por winget, DNS de «Ethernet 2» = 1.1.1.1/8.8.8.8 (`C:\Users\Usuario\.claude-tune\2026-09-22\revert-dns.ps1`), atajos de teclado apagados (`revert-teclado.ps1`). **Firmware ASUS 10.1.2.305 instalado, se aplica al REINICIAR** (Brandon debe reiniciar con cargador; luego verificar BIOS 305 + contar DWM id 500 vs 23). Memoria `pc-ronda-2026-09-22-dns-teclado-dwm` |
+| ADR-429 «Declarar producción» | **COMMITEADO** `7ac40e584` (antes: Directorio ADR-425/426/427 `3e8e0bf8a`, lib/format `9b7b98c9f`; después: 2 tests intermitentes). Cada commit exportado y compilado aparte. Pendiente: probar vincular+despachar con datos reales (el QA no tiene trozas) |
+| Pendiente tras ADR-429 | commit (junto con/después de ADR-425/427), ver la venta propuesta en el navegador cuando una corrida sin lote tenga materia prima vinculada; commit separando hunks (método: índice = worktree − hunks ajenos vía `git hash-object`+`update-index`, NUNCA `git apply --unidiff-zero` que corre renglones) |
+| Gotcha del hook | `vitest --changed HEAD` corre ~840 archivos: un test que importe un modal entero se corta a 15 s (memoria `test-que-importa-un-modal-se-corta-en-el-hook`) |
+
+---
+
+# SESSION HANDOFF — 2026-09-22 (uniformidad del panel, rondas 1 y 2 CERRADAS, nada commiteado)
+
+Branch: `audit/storefront-mejoras-verificadas-2026-06-15`. **Nada commiteado hoy**: ~620 archivos modificados (136 eran WIP
+previo de Brandon; el resto es de esta sesión). Cada frente tiene su patch de reversión en
+`/tmp/claude-1000/-home-usuario-proyectos-Mercado/1633d2ad-cb1c-4e39-a59c-09bc75252ebf/scratchpad/uniformidad/`
+(`codemod-formato.patch` 430 archivos · `codemod-z.patch` 96 · `codemod-densidad.patch` 106; `git apply -R <patch>` revierte uno solo).
+Memorias: `formato-canonico-lib-format`, `uniformidad-panel-ronda-2026-09-22`, `gate-tsc-nativo-y-react-compiler`, `grep-de-auditoria-miente`.
+
+## ✅ Ronda 1 (cerrada, gates verdes: tsc 4,5 s · tokens 0 errores · VRT 33/33 · vitest 11.083)
+| Frente | Resultado |
+|---|---|
+| Fechas/hora/moneda | `lib/format` canon (Lima, 24 h, «—», `soloFecha`), 430 archivos / 1.073 llamadas, 2 reglas nuevas (warning) |
+| Capas z | `globals.css §CAPAS` 6 nombres + `@utility`; 96 archivos + `AdminModal`; probado con `admin-css-probe.mjs` |
+| KPIs | `StatCard` único (+`highlight/accentBar/iconEmphasis`), 9/11 clones, `dashboard/KpiCard` borrado, gate |
+| Filtros Excel | primitivo `components/admin/shared/filtros-columna/` + `lib/admin/filtros-columna.ts`, 84/84 tests |
+| Densidad | sólo seguro: `space-y-5→4`, `space-y-8→6`, tarjeta `p-8→p-6` (106 archivos) |
+| Emojis | 50 archivos → iconos del DS; gate `ds-no-emoji-icon-admin`; nuevos iconos en `packages/design-system/src/icons.ts` |
+
+## 🔄 Ronda 2 (agentes despachados con archivos DISJUNTOS — no relanzar sobre lo mismo)
+| Agente | Alcance | Se lleva además |
+|---|---|---|
+| A filtros fase 2 (Opus) ✅ (reanudado tras el reset y cerrado) | HECHO en disco y compilando: 7 consumidores forestales al primitivo (`resumen-tabla-trabajo` no), `ctp-filtros-panel` −233 líneas, `DataTable.filtrable`, pilotos **Inventario / Compras (ReceivingTab) / Clientes (CRMTab)** con tests `*-filtros-columna.test.tsx`. Pedidos cerrado: kanban sin `<th>` → método de pago, repartidor y fecha como chips/selector en la barra, MISMO estado que `OrdersFilters` (badge «Filtros 2»); Clientes: un solo estado, pastilla = acceso rápido (verificado en ambos sentidos). Bugs hallados y corregidos: pastillas de categoría en 0 filas (`claveCategoria`, preexistente) y rótulos de cards móviles contaminados por el popover (`useMobileTableCards`). Gates finales: tsc 0 · eslint 0 · 98/98 tests · consola 0. **Pendiente**: captura del libro forestal (tenant correcto `inversiones-agroforestales-blas-sociedad-anonima`; `op-qa-ui` da 403) | la «escalera z» de `InventoryTab` no existía (falso positivo del censo) |
+| B formato clones (Sonnet) ✅ | 25/25: clones borrados o convertidos en wrapper (`ctp-shared` mantiene firma para ~40 forestales; `GoalsTab.formatNumber`→`formatGoalValue`; `WaConversationList`→`formatConversationTime`); 315−/228+; tsc 0 · eslint 0 nuevos · vitest 11.089 · navegador Préstamos/Fiados/OC. Bug real corregido: «S/9970»→«S/9,970». Sin mapear a propósito: 7 líneas USD/PEN de Préstamos (el canon es PEN), inputs editables, export Excel numérico, weekday combinado | la escalera z de `FiadoModals` no existía (falso positivo del censo) |
+| D rincones (Sonnet) ✅ | `CatalogOptionPicker` + `action-menu` a `z-system`/`z-modal-2` (orden DOM verificado); gate `ds-no-z-arbitrary-admin` (residuo 17 en archivos de A/C); `shared/KPICard` borrado tras migrar 6 consumidores (hex → `emphasis`); 7/16 clones de fuera migrados, 9 quedan con motivo (`onClick+active`, paletas por ícono, `KPIHeroCard` tiene más que StatCard) | también las capas de `ActivosModule`, `SimpleExpiryTab`, `SimpleMovementsTab` |
+| C densidad ✅ (reanudado tras el reset) | 6/6 módulos con captura antes/después: grilla de 6 KPIs de Inicio → `inicio/_shared/kpi-grid.ts` (3 col ≤1699 px, 6 ≥1700; monto en 1 línea a 1366/1280/400); 70 `p-2→p-3` (POS 17, Documentos 11, Cacao 7, Forestal 33, Creativo 2); escaleras z de `POSView`/`UbicacionDoc`/`StoreCreativeMode` a capas con nombre (orden DOM medido); **bugs preexistentes arreglados**: menú «Opciones» del POS invisible desde 2026-06-10 (`absolute` dentro de `overflow-x-auto`) y tintes inválidos `bg-primary/10/[0.07]` en el editor. Propone: ocultado de ícono móvil dentro de `StatCard`; token `--breakpoint-3xl` (hoy 6 clases `3xl:` no hacen nada); capa con nombre para flotantes (`z-40` chips + 17 `fixed bottom z-50`); sembrar cacao en `main`. Capturas en `reports/visual-verify/2026-09-22-densidad-modulos/` | módulo por módulo: Inicio, POS, Documentos, Cacao, Forestal (tenant forestal), StoreCreativeMode último; `p-2→p-3` con captura antes/después; **`p-5` NO se toca** | escaleras z de `POSView` (10/20/30/40), `UbicacionDoc` (30/40), `StoreCreativeMode` (100/115/120) |
+
+## ⚖️ Decisión pendiente de Brandon (con número)
+`StatCard` del DS declara `default: p-5`, pero el panel usa **89 `density="compact"` explícitos** y las tarjetas a mano son
+p-3 (65) vs p-5 (3). El «default» del DS es el que nadie usa. Opciones: (a) el DS pasa a `compact` por defecto dentro de
+`[data-area=admin]`; (b) el default del DS baja a p-4; (c) queda como está y el codemod deja p-5. A/B ya capturado (`reports/visual-verify/2026-09-22-densidad-ab/`): p-4 vs p-5 = 8 px por tarjeta, imperceptible; el defecto real es que la grilla de 6 KPIs de Inicio parte el monto en dos líneas a 1366 px → va al agente C como hallazgo concreto.
+
+## Residuo con número
+⚠️ B reinició el dev server por caída de RAM con 3 agentes: si `/tmp/dev-server.log` deja de crecer, el log vivo es otro.
+
+36 archivos del WIP de Brandon excluidos de TODOS los codemods (pasarlos cuando commitee) · 11 montos con ternario de nulo ·
+40 formas raras de fecha sin mapear · promover a error las reglas nuevas recién cuando el residuo baje.
+
+---
+
 # SESSION HANDOFF — 2026-09-14 (tarde)
 
 Branch: `audit/storefront-mejoras-verificadas-2026-06-15`. **Todo subido** (push de la noche: `dbcbc4a7`, `93978b2e`, `e7b11141` y la ronda de la consola).

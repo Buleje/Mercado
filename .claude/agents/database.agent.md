@@ -1,7 +1,7 @@
 ---
 name: database
 description: >
-  Schema Prisma (189 modelos), migraciones sobre Supabase, índices, DB classes y queries.
+  Schema Prisma (254 modelos), migraciones sobre Supabase, índices, DB classes y queries.
   Zona de peligro: prisma/schema.prisma. Usar para cualquier cambio de datos, columna,
   índice, drift (P2021/P2022) o consulta lenta.
 model: inherit
@@ -9,7 +9,6 @@ tools: Read, Edit, Write, Grep, Glob, Bash
 memory: project
 skills:
   - multi-tenant-guard
-  - db-sanity
 color: orange
 experimental:
   cacheTtl: 1h

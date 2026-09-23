@@ -25,20 +25,17 @@ const TELEMETRY_FILE = path.join(PROJECT_ROOT, ".claude", ".skill-usage.jsonl");
 // Keywords → skill mapping (top mappings, mantener corto)
 const KEYWORD_HINTS = {
   // dominio
-  checkout: ["audit-first", "outcome-evaluator"],
-  pago: ["audit-first", "outcome-evaluator"],
+  checkout: ["audit-first"],
+  pago: ["audit-first"],
   yape: ["audit-first"],
   fiado: ["multi-tenant-guard"],
   marketplace: ["bsm-typography-rules", "bsm-design-system"],
   pedido: ["bsm-design-system"],
   // database
-  database: ["db-sanity", "migration-planner", "outcome-evaluator"],
-  prisma: ["migration-planner", "db-sanity"],
+  database: ["migration-planner"],
+  prisma: ["migration-planner"],
   schema: ["migration-planner", "audit-first"],
-  migration: ["migration-planner", "bulk-safe-migrate"],
-  // performance/perf
-  performance: ["health", "deploy"],
-  lento: ["health"],
+  migration: ["migration-planner"],
   // seguridad
   security: ["multi-tenant-guard"],
   auth: ["multi-tenant-guard", "audit-first"],
@@ -46,14 +43,6 @@ const KEYWORD_HINTS = {
   dark: ["bsm-design-system", "bsm-typography-rules"],
   responsive: ["bsm-design-system", "bsm-typography-rules"],
   ui: ["bsm-design-system", "bsm-typography-rules"],
-  // operativos
-  deploy: ["deploy", "gates"],
-  test: ["gates"],
-  commit: ["commit", "review"],
-  pr: ["pr-describer", "review"],
-  // agentic
-  parallel: ["turbo-parallel"],
-  agent: ["turbo-parallel", "ultra-impact"],
   // memoria
   memory: ["dreaming"],
 };

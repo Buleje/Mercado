@@ -3,7 +3,8 @@ paths:
   - "components/**"
   - "app/t/**"
   - "app/(store)/**"
-  - "app/marketplace/**"
+  - "app/(store)/marketplace/**"
+  - "app/superadmin/marketplace/**"
 ---
 
 # Reglas al tocar UI visible
