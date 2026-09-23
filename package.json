@@ -265,5 +265,16 @@
   ],
   "optionalDependencies": {
     "@typescript/typescript-linux-x64": "7.0.2"
+  },
+  "allowScripts": {
+    "@prisma/engines": true,
+    "prisma": true,
+    "@sentry/cli": true,
+    "esbuild": true,
+    "sharp": true,
+    "msgpackr-extract": true,
+    "unrs-resolver": true,
+    "core-js": false,
+    "tesseract.js": false
   }
 }

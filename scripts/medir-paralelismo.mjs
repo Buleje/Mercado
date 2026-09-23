@@ -22,24 +22,40 @@ import { join } from "node:path";
 const DIR = "/home/usuario/.claude/projects/-home-usuario-proyectos-Mercado";
 const META = 1.5; // tool-calls por mensaje: por debajo, se está serializando trabajo paralelizable
 
+// OJO (corregido 2026-09-23): Claude Code escribe CADA bloque `tool_use` de un
+// mensaje como una línea aparte del transcript, todas con el mismo
+// `message.id`. Contar por línea daba siempre 1,00 — el «1,00 en 14.044
+// mensajes» del censo del 19-09 era el artefacto, no la conducta. La tanda es
+// el `message.id`; la línea sólo cuenta como tanda si no trae id.
 function censar(archivos) {
-  let mensajes = 0, llamadas = 0, tandasAgente = 0, agentes = 0, multi = 0;
+  let llamadas = 0;
+  const porTanda = new Map(); // clave de tanda → { n, ag }
   for (const f of archivos) {
     let texto;
     try { texto = readFileSync(f, "utf8"); } catch { continue; }
+    let linea = 0;
     for (const l of texto.split("\n")) {
+      linea++;
       if (!l.includes('"tool_use"')) continue;
       let e;
       try { e = JSON.parse(l); } catch { continue; }
       if (e.type !== "assistant" || !Array.isArray(e.message?.content)) continue;
       const usos = e.message.content.filter((x) => x.type === "tool_use");
       if (!usos.length) continue;
-      mensajes++; llamadas += usos.length;
-      if (usos.length > 1) multi++;
-      const ag = usos.filter((x) => x.name === "Agent").length;
-      if (ag) { tandasAgente++; agentes += ag; }
+      const clave = `${f}\0${e.message.id ?? `linea-${linea}`}`;
+      const t = porTanda.get(clave) ?? { n: 0, ag: 0 };
+      t.n += usos.length;
+      t.ag += usos.filter((x) => x.name === "Agent").length;
+      porTanda.set(clave, t);
+      llamadas += usos.length;
     }
   }
+  let multi = 0, tandasAgente = 0, agentes = 0;
+  for (const t of porTanda.values()) {
+    if (t.n > 1) multi++;
+    if (t.ag) { tandasAgente++; agentes += t.ag; }
+  }
+  const mensajes = porTanda.size;
   return {
     mensajes, llamadas, multi, agentes, tandasAgente,
     ratio: mensajes ? llamadas / mensajes : 0,

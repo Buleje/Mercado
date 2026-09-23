@@ -137,7 +137,10 @@ if (hotFiles.length > 0) {
 
 // ── 4. Update session state for handoff ──────────────────────────
 const sessionStatePath = join(projectRoot, ".claude/session-state.json");
-const existingState = readJSON(sessionStatePath) || {};
+// `nextActions` NO se arrastra: el spread lo mantuvo vivo desde abril y el
+// arranque lo mostraba como «pendiente de la sesión anterior». El pendiente
+// real lo lee session-start-context de SESSION_HANDOFF.md (2026-09-23).
+const { nextActions: _pendientesViejos, ...existingState } = readJSON(sessionStatePath) || {};
 
 const sessionState = {
   ...existingState,

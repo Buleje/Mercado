@@ -13,7 +13,7 @@
  *
  * Budget: <1s. Non-blocking. Exit 0 always.
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -54,7 +54,6 @@ const filesDirty = statusPorcelain
 
 const testFailedFlag = existsSync(join(projectRoot, ".husky/.last-test-run.FAILED"));
 
-const sessionState = readJSON(join(projectRoot, ".claude/session-state.json"));
 const evolutionLog = readJSON(join(projectRoot, ".claude/evolution-log.json"));
 
 // ── Build minimal context message ───────────────────────────────
@@ -74,13 +73,32 @@ if (testFailedFlag) {
   lines.push("⚠️ **TESTS FALLANDO** en ultimo post-commit. Correr `/self-heal test`.");
 }
 
-if (sessionState?.nextActions?.length > 0) {
-  lines.push("");
-  lines.push("**📋 Sesion anterior dejo trabajo pendiente:**");
-  sessionState.nextActions.slice(0, 3).forEach((a, i) => {
-    lines.push(`  ${i + 1}. ${a}`);
-  });
-}
+// ── Pendiente real = la PRIMERA entrada de SESSION_HANDOFF.md ────
+// Antes salía de `session-state.json → nextActions`, que nadie reescribía:
+// stop-checkpoint lo arrastraba con `...existingState` y cada sesión arrancaba
+// (hasta 2026-09-23) con los pendientes de ABRIL (drag&drop, Plan Fundador).
+// El handoff es lo que la sesión anterior escribió a mano: título + su lista
+// «Para retomar». Más de 7 días sin tocarse = ya no es «la sesión anterior».
+try {
+  const handoffPath = join(projectRoot, "SESSION_HANDOFF.md");
+  const edadDias = (Date.now() - statSync(handoffPath).mtimeMs) / 86_400_000;
+  if (edadDias < 7) {
+    const bloque = readFileSync(handoffPath, "utf8").split(/^# SESSION HANDOFF/m)[1] ?? "";
+    const titulo = bloque.split("\n")[0].replace(/^\s*[—-]\s*/, "").trim();
+    const desde = bloque.search(/para retomar/i);
+    const pasos = (desde >= 0 ? bloque.slice(desde) : bloque)
+      .split("\n")
+      .filter((l) => /^\d+\.\s/.test(l))
+      .slice(0, 3)
+      .map((l) => (l.length > 220 ? `${l.slice(0, 217)}…` : l));
+    if (titulo) {
+      lines.push("");
+      lines.push(`**📋 Handoff (${titulo}):**`);
+      pasos.forEach((p) => lines.push(`  ${p}`));
+      lines.push("  → detalle en `SESSION_HANDOFF.md` (sólo la primera entrada está vigente).");
+    }
+  }
+} catch {}
 
 if (filesDirty > 5) {
   lines.push("");
@@ -94,9 +112,9 @@ if (evolutionLog?.evolutions?.length > 0) {
 }
 
 // ── Paralelismo de la sesión anterior ──────────────────────────
-// Medido 2026-09-19: 14.054 tool-calls en 14.044 mensajes = 1,00 por mensaje.
-// La regla de paralelismo existe desde hace meses y no se cumplía porque nadie
-// la medía. El wall-clock ≈ número de TANDAS, así que la cifra va acá arriba.
+// Medido 2026-09-19 «1,00 por mensaje» era un artefacto del conteo por línea;
+// recontado por `message.id` (2026-09-23): 1,20 histórico, 11,9 % con 2+.
+// El wall-clock ≈ número de TANDAS, así que la cifra va acá arriba.
 try {
   const out = execSync(`node ${join(projectRoot, "scripts/medir-paralelismo.mjs")} --json`, {
     encoding: "utf8", timeout: 4000,
