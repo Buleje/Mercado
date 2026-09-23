@@ -628,6 +628,31 @@ interface Lectura {
   separadores: number;
 }
 
+/**
+ * Los números de una frase del cubicador de TROZAS, en el orden dicho.
+ *
+ * `mejoresNumeros` es de la madera aserrada: parte un «50» porque no existe un
+ * espesor de 50 pulgadas. En una troza 50 es un diámetro normal (cm) — medido
+ * el 23-09: «cincuenta sesenta cuatro punto cinco» entraba como 5, 6, 4.5 y
+ * «45 52 3» como 4, 5, 5, 2, 3 (6 de 6 frases mal). Acá sólo se parte lo que
+ * ningún diámetro puede ser: cuatro o más cifras pegadas por hablar rápido
+ * («5060» = 50 y 60), de a dos. Si son impares, la cifra que sobra es el
+ * largo, que se dice último y en metros de una cifra («50604» = 50, 60, 4).
+ */
+export function numerosDeTroza(texto: string): number[] {
+  const tokens = normalizeText(texto).match(/\d+(?:\.\d+)?/g) ?? [];
+  const out: number[] = [];
+  for (const t of tokens) {
+    if (/^\d{4,}$/.test(t)) {
+      for (let i = 0; i + 1 < t.length; i += 2) out.push(Number(t.slice(i, i + 2)));
+      if (t.length % 2 === 1) out.push(Number(t.slice(-1)));
+    } else {
+      out.push(parseFloat(t));
+    }
+  }
+  return out;
+}
+
 export function mejoresNumeros(
   alternativas: string[],
   fijas: MedidasFijas = {},

@@ -92,6 +92,9 @@ export interface TrozaParseada {
 
 export const LARGO_MAX_M = 15;
 export const DIAMETRO_MIN_CM = 10;
+/** Arriba de esto es un dictado mal oído, no una troza: las 413 trozas con
+ *  diámetro del libro (23-09) llegan a 115 cm y el p99 es 98. */
+export const DIAMETRO_MAX_CM = 200;
 
 export function partirEnTrozas(nums: number[]): { trozas: TrozaParseada[]; resto: number[] } {
   const trozas: TrozaParseada[] = [];
@@ -99,7 +102,9 @@ export function partirEnTrozas(nums: number[]): { trozas: TrozaParseada[]; resto
   for (; i + 3 <= nums.length; i += 3) {
     const [d1, d2, largo] = nums.slice(i, i + 3);
     if (d1 > 0 && d2 > 0 && largo > 0) {
-      const sospechosa = largo > LARGO_MAX_M || d1 < DIAMETRO_MIN_CM || d2 < DIAMETRO_MIN_CM;
+      const sospechosa = largo > LARGO_MAX_M
+        || d1 < DIAMETRO_MIN_CM || d2 < DIAMETRO_MIN_CM
+        || d1 > DIAMETRO_MAX_CM || d2 > DIAMETRO_MAX_CM;
       trozas.push({ d1, d2, largo, sospechosa });
     }
   }

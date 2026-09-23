@@ -15,7 +15,7 @@ import {
   Boxes, Check, Columns3, Layers, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Settings2, Sigma, Square, Table, Trash2, AlertTriangle, Upload, Volume2,
 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
-import { detectarComando, mejoresNumeros, PT_POR_M3 } from "@/lib/forestal/cubicacion";
+import { detectarComando, numerosDeTroza, PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import {
   compararConGtf, cubicarTroza, partirEnTrozas, totalesTrozas, type TrozaCubicada,
 } from "@/lib/forestal/cubicacion-trozas";
@@ -207,7 +207,7 @@ export default function CubicadorTrozas() {
         if (!dictado.trim()) { hablar(detectada.especie); return; }
       }
     }
-    const nums = mejoresNumeros([dictado]);
+    const nums = numerosDeTroza(dictado);
     const { trozas, resto } = partirEnTrozas([...carryRef.current, ...nums]);
     carryRef.current = resto;
     let ultima: Fila | null = null;
@@ -365,7 +365,7 @@ export default function CubicadorTrozas() {
   // Caption en vivo agrupado en tríos, como el cubicador de aserrada.
   const liveGroups = useMemo(() => {
     if (!voz.listening || !voz.liveText) return null;
-    const nums = mejoresNumeros([voz.liveText]);
+    const nums = numerosDeTroza(voz.liveText);
     const triples: number[][] = [];
     let i = 0;
     for (; i + 3 <= nums.length; i += 3) triples.push(nums.slice(i, i + 3));
