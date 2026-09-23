@@ -28,6 +28,13 @@ export interface PiezaCubicada {
    */
   dueno?: string;
   /**
+   * La ficha del Directorio de ese dueño, cuando se eligió de ahí (ADR-430):
+   * con ella el cubicador pone el precio de su trato. Los lotes guardados
+   * antes sólo traen `dueno` (texto) y siguen valiendo igual: sin ficha, el
+   * precio es el de a mano.
+   */
+  duenoParteId?: string;
+  /**
    * Código de la troza de la que salió, tipeado o elegido del patio. Sólo lo
    * pone «Producir sin lote» y es INTERNO (Brandon, 2026-09-14): no se manda al
    * servidor, no agrupa en `unificarPorMedida`, no se declara ni consume la
@@ -193,7 +200,7 @@ export function recubicarPiezas<T extends PiezaCubicada>(piezas: T[]): T[] {
 export function unificarPorMedida(piezas: PiezaCubicada[]): PiezaCubicada[] {
   const mapa = new Map<string, PiezaCubicada>();
   for (const p of piezas) {
-    const clave = [p.especie ?? "", p.tipo ?? "", p.dueno ?? "", p.espesor, p.uEspesor, p.ancho, p.uAncho, p.largo, p.uLargo].join("|");
+    const clave = [p.especie ?? "", p.tipo ?? "", p.dueno ?? "", p.duenoParteId ?? "", p.espesor, p.uEspesor, p.ancho, p.uAncho, p.largo, p.uLargo].join("|");
     const acc = mapa.get(clave);
     if (acc) {
       acc.cantidad += p.cantidad;

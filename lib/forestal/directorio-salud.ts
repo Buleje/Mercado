@@ -38,6 +38,8 @@ export interface FichaParaSalud {
   cuentaNumero?: string | null;
   cuentaCci?: string | null;
   tituloVigenciaHasta?: string | Date | null;
+  /** `contado` | `credito`; vacío = no se pactó (ADR-430: lo pide el cliente). */
+  condicionPago?: string | null;
 }
 
 /**
@@ -117,6 +119,14 @@ export function pendientesDeFicha(f: FichaParaSalud, ctx: ContextoDeFicha = {}):
     if (!lleno(f.banco) && !lleno(f.cuentaCci) && !lleno(f.cuentaNumero)) {
       p.push({ campo: "Cuenta para pagarle", porque: "Sin esto, cada pago vuelve a pedir el número por chat", nivel: "medio" });
     }
+  }
+
+  /* Al cliente se le cobra (ADR-430): sin pactar contado o crédito, su cargo no
+     deja una fecha que vigilar. Sin pactar NO es contado (ver
+     `textoCondicionPago`), así que se reclama en vez de suponerlo. Nivel medio:
+     se le puede cobrar igual. */
+  if (roles.includes("cliente") && !f.condicionPago) {
+    p.push({ campo: "Condición de pago", porque: "Contado o crédito decide si su cargo deja una fecha de pago que vigilar", nivel: "medio" });
   }
 
   if (!lleno(f.telefono) && !lleno(f.whatsapp)) {

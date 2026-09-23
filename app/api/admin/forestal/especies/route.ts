@@ -13,6 +13,7 @@ import {
   especiesOcultas,
   especiesQueFaltan,
 } from "@/lib/forestal/especies-catalogo";
+import { gruposEspeciesSchema } from "@/lib/forestal/precio-cliente";
 
 /**
  * /api/admin/forestal/especies — el catálogo de especies del aserradero.
@@ -24,7 +25,9 @@ import {
  *          forma. Va aparte porque cuesta cuatro `groupBy` y el selector de
  *          especie no lo necesita para dibujarse.
  * POST   — agrega una especie propia, siembra varias del libro (`accion:
- *          "sembrar"`) o unifica sus grafías EN EL LIBRO (`accion: "unificar"`).
+ *          "sembrar"`), unifica sus grafías EN EL LIBRO (`accion: "unificar"`)
+ *          o guarda los grupos de especies de la planta (`accion:
+ *          "grupos.guardar"`, ADR-430 — sólo admin/owner: deciden precios).
  * PATCH  — renombra / cambia el científico, o restaura una de fábrica oculta.
  * DELETE — `?clave=`: borra la propia, oculta la de fábrica.
  *
@@ -71,6 +74,11 @@ const postSchema = z.union([
   }),
   z.object({ nombre: nombreSchema, cientifico: cientificoSchema }),
 ]);
+/* Los grupos van aparte de la unión: su validación (una especie en UN solo
+   grupo) tiene mensajes propios, y la unión los taparía con «Escribe el
+   nombre de la especie». */
+const gruposSchema = z.object({ accion: z.literal("grupos.guardar"), grupos: gruposEspeciesSchema });
+
 const patchSchema = z.union([
   z.object({
     clave: z.string().trim().min(1).max(160),
@@ -86,6 +94,11 @@ const patchSchema = z.union([
       message: "Manda el nombre o el nombre científico.",
     }),
 ]);
+
+const ROLES_DE_PRECIOS: readonly string[] = ["admin", "owner", "manager"];
+
+/** Un rol que puede escribir el catálogo pero no fijar precios. 403, no 422. */
+class SinPermisoDePrecios extends Error {}
 
 /** Las tres escrituras comparten guardas, parseo del cuerpo y traducción de errores. */
 async function escribir(
@@ -115,6 +128,9 @@ async function escribir(
       await correr(auth.tenantId, auth.username ?? "unknown", body, auth.role ?? ""),
     );
   } catch (err) {
+    if (err instanceof SinPermisoDePrecios) {
+      return NextResponse.json({ error: "forbidden", message: err.message }, { status: 403 });
+    }
     if (err instanceof EspecieCatalogoError) {
       return NextResponse.json(
         { error: "catalogo_rechazado", message: err.message },
@@ -139,6 +155,8 @@ const respuesta = async (tenantId: string, mensaje?: string) => {
     catalogo,
     especies: especiesDisponibles(catalogo),
     ocultas: especiesOcultas(catalogo),
+    /* También dentro de `catalogo`; suelto para quien sólo quiere los grupos (ADR-430). */
+    grupos: catalogo.grupos ?? [],
     ...(mensaje ? { mensaje } : {}),
   };
 };
@@ -162,6 +180,23 @@ export const GET = withApiHandler("forestal-especies-get", async (req: NextReque
 
 export const POST = withApiHandler("forestal-especies-post", (req: NextRequest) =>
   escribir(req, async (tenantId, user, body, rol) => {
+    if ((body as { accion?: unknown } | null)?.accion === "grupos.guardar") {
+      /* Un grupo decide a cuánto se cobra el pie (tarifa de la planta y tratos
+         con clientes): los mismos roles que guardan esos precios — admin/owner
+         y el encargado, que `requireAdmin` deja pasar en esas rutas. */
+      if (!ROLES_DE_PRECIOS.includes(rol)) {
+        throw new SinPermisoDePrecios(
+          "Los grupos deciden precios: sólo el administrador, el dueño o el encargado pueden cambiarlos.",
+        );
+      }
+      const g = gruposSchema.safeParse(body);
+      if (!g.success) {
+        throw new EspecieCatalogoError(g.error.issues[0]?.message ?? "Los grupos no son válidos.");
+      }
+      const { mensaje } = await ForestEspeciesDB.guardarGrupos(tenantId, g.data.grupos, user);
+      return respuesta(tenantId, mensaje);
+    }
+
     const parsed = postSchema.safeParse(body);
     if (!parsed.success) throw new EspecieCatalogoError("Escribe el nombre de la especie.");
     const d = parsed.data;

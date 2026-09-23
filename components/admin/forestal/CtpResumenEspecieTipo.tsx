@@ -67,16 +67,28 @@ function Sugerencia({
         onClick={onUsar}
         className="rounded-md px-1.5 py-0.5 text-xs font-semibold text-[var(--accent-ink)] underline underline-offset-2 hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
       >
-        Usar {fmtPrecioPt(linea.sugerido.valor)} (el último)
+        Usar {fmtPrecioPt(linea.sugerido.valor)} ({linea.sugerido.origen === "cliente" ? "su precio pactado" : "el último"})
       </button>
     );
   }
+  if (linea.calculando) {
+    return <span className="text-xs text-[var(--text-tertiary)]">leyendo su precio…</span>;
+  }
   return (
     <span className="text-xs text-[var(--text-tertiary)]">
-      {linea.sugerido ? `tarifa ≈ ${fmtPrecioPt(linea.sugerido.valor)}` : "sin tarifa vigente"}
+      {linea.sugerido
+        ? `${linea.sugerido.origen === "cliente" ? "su precio" : "tarifa"} ≈ ${fmtPrecioPt(linea.sugerido.valor)}`
+        : "sin trato ni tarifa"}
     </span>
   );
 }
+
+/** Debajo del importe: de dónde salió cuando no hay precio a mano (ADR-430). */
+const SEGUN: Partial<Record<NonNullable<PrecioDeEspecie["desde"]>, string>> = {
+  tarifa: "según tarifa",
+  cliente: "según su precio pactado",
+  "cliente-y-tarifa": "según su precio y la tarifa",
+};
 
 export default function CtpResumenEspecieTipo({
   resumen,
@@ -92,6 +104,7 @@ export default function CtpResumenEspecieTipo({
 }) {
   const porClave = new Map(lineas.map((l) => [l.clave, l]));
   const total = totalDePrecios(lineas);
+  const calculando = lineas.some((l) => l.calculando);
   /* Lo «sin especie» no es una especie ni será una corrida: no se cuenta como tal. */
   const conNombre = resumen.especies.filter((e) => claveEspecie(e.especie)).length;
 
@@ -158,7 +171,13 @@ export default function CtpResumenEspecieTipo({
                             value={linea.texto}
                             disabled={!servicio}
                             onChange={(ev) => onPrecio(linea.clave, ev.target.value)}
-                            placeholder={servicio === "tercero" ? "tarifa" : "0.00"}
+                            placeholder={
+                              servicio === "tercero"
+                                ? linea.sugerido?.origen === "cliente"
+                                  ? "su precio"
+                                  : "tarifa"
+                                : "0.00"
+                            }
                             aria-label={`${servicio ? TITULO_PRECIO[servicio] : "Precio"} de ${linea.especie}, en soles por pie tablar`}
                             aria-invalid={linea.invalido || undefined}
                             className={`h-10 w-24 rounded-lg border bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] disabled:cursor-not-allowed disabled:bg-[var(--surface-sunken)] ${
@@ -189,15 +208,15 @@ export default function CtpResumenEspecieTipo({
                         <span className="font-bold text-[var(--text-primary)]">
                           {formatCurrency(linea.importe)}
                         </span>
-                        {linea.desde === "tarifa" && (
+                        {linea.desde && SEGUN[linea.desde] && (
                           <span className="block font-sans text-xs text-[var(--text-tertiary)]">
-                            según tarifa
+                            {SEGUN[linea.desde]}
                           </span>
                         )}
                       </>
                     ) : servicio && linea ? (
                       <span className="font-sans text-xs text-[var(--text-tertiary)]">
-                        {servicio === "propia" ? "sin precio" : "no se cobra"}
+                        {linea.calculando ? "calculando…" : servicio === "propia" ? "sin precio" : "no se cobra"}
                       </span>
                     ) : (
                       <span className="text-[var(--text-tertiary)]">—</span>
@@ -235,8 +254,14 @@ export default function CtpResumenEspecieTipo({
             <td className={NUM}>{fmtPiezas(resumen.total.piezas)}</td>
             <td />
             <td className={NUM}>
-              {servicio && total.total != null ? formatCurrency(total.total) : "—"}
-              {servicio && total.sinImporte.length > 0 && (
+              {calculando ? (
+                <span className="font-sans text-xs font-normal text-[var(--text-tertiary)]">calculando…</span>
+              ) : servicio && total.total != null ? (
+                formatCurrency(total.total)
+              ) : (
+                "—"
+              )}
+              {!calculando && servicio && total.sinImporte.length > 0 && (
                 <span className="block font-sans text-xs font-normal text-[var(--text-tertiary)]">
                   {servicio === "propia" ? "sin precio" : "sin cobro"}:{" "}
                   {total.sinImporte.join(", ")}

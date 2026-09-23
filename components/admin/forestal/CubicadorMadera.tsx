@@ -9,7 +9,7 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Columns3, ChevronDown, Maximize2, Minimize2, ArrowUp } from "@buleje/design-system/icons";
+import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Columns3, ChevronDown, Maximize2, Minimize2, ArrowUp, UserCheck } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -56,6 +56,9 @@ import { resolverEspecie, sinCodigoDeTroza, type FuenteCodigoDeTroza, type Troza
 import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import CubicadorKpis from "./cubicador-kpis";
+import CubicadorPrecio from "./CubicadorPrecio";
+import { usePrecioCubicador } from "./hooks/use-precio-cubicador";
+import { explicarPrecioDePieza, precioDePieza, type ContextoPrecio } from "@/lib/forestal/precio-de-pieza";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-voz";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
@@ -302,6 +305,24 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   /** De quién es lo que se está dictando ahora — se pone FIJO al elegirlo,
    *  igual que la especie, hasta que se cambie a mano. */
   const [dueno, setDueno] = useState("");
+  /** La ficha del Directorio del dueño fijo, si salió de ahí (ADR-430). Con
+   *  ella, cada pieza que se dicta queda atada a su cliente y toma su precio. */
+  const [duenoParteId, setDuenoParteId] = useState<string | null>(null);
+  const duenoParteIdRef = useRef<string | null>(null);
+  /** Los dueños elegidos alguna vez del Directorio en este equipo: nombre →
+   *  ficha. Así el chip, la voz («dueño Juan») o la celda de la tabla atan la
+   *  pieza a su ficha sin volver a buscarla. */
+  const [fichasDueno, setFichasDueno] = useState<Record<string, { id: string; nombre: string }>>(() => {
+    try {
+      const v = JSON.parse(leerGuardado("-duenos-directorio", espacio) ?? "{}") as unknown;
+      return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, { id: string; nombre: string }>) : {};
+    } catch { return {}; }
+  });
+  const fichasDuenoRef = useRef(fichasDueno);
+  const fichaDe = useCallback((nombre: string | null | undefined) => {
+    const k = (nombre ?? "").trim().toLowerCase();
+    return k ? (fichasDuenoRef.current[k] ?? null) : null;
+  }, []);
   /** El código de la troza que se le pega a lo que sigue (sólo con
    *  `codigoDeTroza`). El ref se pone al día en el MISMO evento, como
    *  `manualRef`: el Enter que agrega la pieza puede llegar antes del render. */
@@ -327,7 +348,25 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   }, []);
   /** Cambia el dueño actual Y lo recuerda para la próxima vez — el único
    *  camino que debería usar la UI (voz, selector, datalist de la tabla). */
-  const aplicarDueno = useCallback((v: string) => { setDueno(v); recordarDueno(v); }, [recordarDueno]);
+  const aplicarDueno = useCallback((v: string, ficha?: { id: string; nombre: string } | null) => {
+    /* Los refs al toque (como `codigoRef`): la pieza puede llegar en el mismo
+       lote de resultados de voz, antes del render. */
+    const f = ficha !== undefined ? ficha : fichaDe(v);
+    duenoRef.current = v;
+    duenoParteIdRef.current = f?.id ?? null;
+    setDueno(v);
+    setDuenoParteId(f?.id ?? null);
+    recordarDueno(v);
+  }, [recordarDueno, fichaDe]);
+  /** Un dueño elegido del Directorio: queda fijo, atado a su ficha, y se
+   *  recuerda para atar después las piezas escritas con ese nombre. */
+  const elegirDuenoDelDirectorio = useCallback((p: { id: string; nombre: string }) => {
+    const next = { ...fichasDuenoRef.current, [p.nombre.trim().toLowerCase()]: { id: p.id, nombre: p.nombre } };
+    fichasDuenoRef.current = next;
+    setFichasDueno(next);
+    try { localStorage.setItem(`${storageKey(espacio)}-duenos-directorio`, JSON.stringify(next)); } catch { /* quota */ }
+    aplicarDueno(p.nombre, p);
+  }, [aplicarDueno, espacio]);
   /** Saca un dueño de la lista GUARDADA — no toca las piezas que ya lo usan
    *  (son texto libre, no una referencia): borrar del catálogo no reescribe
    *  el lote. */
@@ -366,25 +405,9 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     manualRef.current = next;
     setManual(next);
   }, []);
-  /**
-   * Los precios se leen en el INICIALIZADOR, no en un efecto de carga.
-   *
-   * Con la carga en un efecto, el efecto que persiste corría primero con el
-   * estado vacío y escribía `{}` sobre lo guardado: al montar el cubicador se
-   * perdían los precios por especie, y los Resúmenes liquidaban todo el lote al
-   * precio general (medido: tres escrituras de `{}` antes de leer nada). Leer
-   * acá no puede llegar tarde — y el componente es `ssr:false`, así que
-   * localStorage existe.
-   */
-  const [precioPt, setPrecioPt] = useState(() => leerGuardado("-precio", espacio) ?? ""); // S/ por pie tablar → valor del lote
-  const [preciosEspecie] = useState<Record<string, string>>(() => {
-    const raw = leerGuardado("-precios-especie", espacio);
-    if (!raw) return {};
-    try {
-      const v = JSON.parse(raw) as unknown;
-      return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, string>) : {};
-    } catch { return {}; }
-  }); // especie(lowercase) → S/ por PT
+  /* Los precios del lote (general, por especie, modo y el trato de cada
+     dueño) viven en `usePrecioCubicador`, más abajo: se leen en SU
+     inicializador —nunca en un efecto que corra después del que persiste—. */
   /**
    * Orden de la tabla (Brandon, 2026-09-22): como se dictó, o en bloques de
    * especie para revisar la pila especie por especie al terminar.
@@ -459,6 +482,15 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   const [guardadoOk, setGuardadoOk] = useState<string | null>(null);
   const [historialToken, setHistorialToken] = useState(0);
   const [form, setForm] = useState({ nombre: "", fecha: hoyISO(), cliente: "", notas: "" });
+  /** El precio del lote (ADR-430): modo Aserrío/Venta/A mano, lo puesto a mano
+   *  y el trato de cada dueño del Directorio, vigente el día del lote. */
+  const precios = usePrecioCubicador({
+    espacio,
+    rows,
+    fecha: form.fecha,
+    grupos: catalogoEspecies.grupos,
+    cargandoGrupos: catalogoEspecies.cargando,
+  });
   const [paused, setPaused] = useState(false); // "pausar" por voz → ignora números hasta "continúa"
   /** Medidas que quedan fijas ("pon fijo el largo a 4"): no se dictan más. */
   const [fijas, setFijas] = useState<MedidasFijas>({});
@@ -652,7 +684,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   // con las filas frescas, sin depender de `rows` (que estaría stale).
   const addPieza = useCallback((p: {
     cantidad: number; espesor: number; ancho: number; largo: number;
-    uEspesor: Unidad; uAncho: Unidad; uLargo: Unidad; especie?: string; dueno?: string; codigo?: string;
+    uEspesor: Unidad; uAncho: Unidad; uLargo: Unidad; especie?: string; dueno?: string; duenoParteId?: string; codigo?: string;
   }) => {
     const { pieTablar, m3 } = cubicarPieza(p);
     const row: PiezaCubicada = { id: nuevoId(), ...p, pieTablar, m3 };
@@ -872,6 +904,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           uEspesor: "pulg", uAncho: "pulg", uLargo: "pies",
           especie: especieRef.current || undefined,
           dueno: duenoRef.current || undefined,
+          duenoParteId: (duenoRef.current && duenoParteIdRef.current) || undefined,
           codigo: codigoRef.current.trim() || undefined,
         });
         ultima = { espesor, ancho, largo }; added++;
@@ -1134,7 +1167,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       pushToast({ tono: "warning", msg: "Faltan medidas", detail: "Espesor, ancho y largo tienen que ser mayores a 0." });
       return false;
     }
-    addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined, dueno: duenoRef.current || undefined, codigo: codigoRef.current.trim() || undefined });
+    addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined, dueno: duenoRef.current || undefined, duenoParteId: (duenoRef.current && duenoParteIdRef.current) || undefined, codigo: codigoRef.current.trim() || undefined });
     // Lo fijado se conserva; sólo se limpia lo que se vuelve a tipear en cada pieza.
     setManualSync({
       cantidad: "1",
@@ -1208,9 +1241,12 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     persist(rowsRef.current.map((r) => (r.id === id ? { ...r, especie: especieNueva || undefined } : r)));
   }, [persist]);
   const editarDueno = useCallback((id: string, duenoNuevo: string) => {
-    persist(rowsRef.current.map((r) => (r.id === id ? { ...r, dueno: duenoNuevo.trim() || undefined } : r)));
+    /* Un nombre ya elegido del Directorio se ata a su ficha; cualquier otro
+       queda como texto, sin precio pactado (ADR-430). */
+    const ficha = fichaDe(duenoNuevo);
+    persist(rowsRef.current.map((r) => (r.id === id ? { ...r, dueno: duenoNuevo.trim() || undefined, duenoParteId: ficha?.id } : r)));
     recordarDueno(duenoNuevo);
-  }, [persist, recordarDueno]);
+  }, [persist, recordarDueno, fichaDe]);
   /** Código de la troza editado en la tabla: texto libre, como el dueño. No
    *  cambia la especie de la fila — eso sólo lo hace el campo de arriba. */
   const editarCodigo = useCallback((id: string, codigoNuevo: string) => {
@@ -1262,9 +1298,6 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     pushToast({ tono: "warning", msg: "Lote vaciado", detail: `${prev.length} ${prev.length === 1 ? "fila" : "filas"}`, undo: () => persist(ordenarFilas(prev, ordenRef.current)) });
   };
 
-  // Persistir el precio por PT (por tenant) y los precios por especie.
-  useEffect(() => { try { localStorage.setItem(`${storageKey(espacio)}-precio`, precioPt); } catch { /* ignore */ } }, [precioPt]);
-  useEffect(() => { try { localStorage.setItem(`${storageKey(espacio)}-precios-especie`, JSON.stringify(preciosEspecie)); } catch { /* ignore */ } }, [preciosEspecie]);
   useEffect(() => { try { localStorage.setItem(`${storageKey(espacio)}-apartados`, JSON.stringify(asignados)); } catch { /* ignore */ } }, [asignados]);
   useEffect(() => { try { localStorage.setItem(`${storageKey(espacio)}-apartados-nombres`, JSON.stringify(nombresApartado)); } catch { /* ignore */ } }, [nombresApartado]);
   /**
@@ -1338,7 +1371,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     const pt = rows.reduce((a, r) => a + r.pieTablar, 0);
     return { piezas: rows.reduce((a, r) => a + r.cantidad, 0), pt, m3: m3DesdePt(pt) };
   }, [rows]);
-  const precio = Number(precioPt) || 0;
+  const precio = precios.general;
 
   // Especies presentes en el lote (para el editor de precio por especie).
   const especiesLote = useMemo(
@@ -1515,7 +1548,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       const ids = new Set(posiciones.map((p) => filasVisibles[p]?.r.id).filter(Boolean));
       if (ids.size === 0) return;
       const valor = campo === "especie" ? base.especie : campo === "dueno" ? base.dueno : campo === "codigo" ? base.codigo : base.tipo;
-      persist(rows.map((r) => (ids.has(r.id) ? { ...r, [campo]: valor } : r)));
+      /* El dueño viaja con su ficha: copiar el nombre sin ella cambiaría el precio. */
+      persist(rows.map((r) => (!ids.has(r.id) ? r : campo === "dueno" ? { ...r, dueno: base.dueno, duenoParteId: base.duenoParteId } : { ...r, [campo]: valor })));
       if (campo === "dueno" && typeof valor === "string") recordarDueno(valor);
       const etiqueta = campo === "especie" ? (valor || "sin especie") : campo === "dueno" ? (valor || "sin dueño") : campo === "codigo" ? (valor || "sin código") : (valor ?? "automático");
       pushToast({
@@ -1548,20 +1582,46 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     });
   }, [filasVisibles, asignados, pushToast]);
   const rellenoApartado = useRellenoArrastre(rellenarApartado);
-  // Precio por PT de una pieza: el de su especie si está seteado (>0), si no el global.
-  const precioDe = useCallback((r: PiezaCubicada) => {
-    const esp = r.especie?.trim().toLowerCase();
-    const pe = esp ? Number(preciosEspecie[esp]) : 0;
-    return pe > 0 ? pe : precio;
-  }, [preciosEspecie, precio]);
-  // ¿Hay algún precio por especie distinto del global? Cambia el rótulo de la liquidación.
-  const hayPreciosEspecie = useMemo(
-    () => especiesLote.some((e) => Number(preciosEspecie[e.toLowerCase()]) > 0),
-    [especiesLote, preciosEspecie],
-  );
-  const conValor = precio > 0 || hayPreciosEspecie;
-  const valorLote = useMemo(() => rows.reduce((a, r) => a + r.pieTablar * precioDe(r), 0), [rows, precioDe]);
+  /* Precio por PT de cada pieza (ADR-430, `lib/forestal/precio-de-pieza`): el
+     trato de su dueño del Directorio, si el modo lo usa y lo cubre; si no, el
+     de su especie o el general a mano. Los seis que valorizan (resumen, valor,
+     cabecera, WhatsApp, CSV, PDF/Excel) leen ESTE resolver. */
+  const precioDe = precios.precioDe;
+  /** ¿Hay piezas con un precio que no es el general? Cambia cómo se rotula. */
+  const precioVariable = precios.precioVariable;
+  const conValor = precios.conValor;
+  const valorLote = precios.valorLote;
   const soles = (v: number) => formatNumber(v, 2);
+  const rotuloPrecio = precios.calculando
+    ? "leyendo el precio de los clientes…"
+    : !conValor
+      ? "pon el precio en «Precio», arriba de la tabla"
+      : precioVariable
+        ? precios.modo === "manual" ? "precio por especie" : "precio de cada cliente"
+        : `S/ ${soles(precio)} por PT`;
+  /* Piezas con dueño escrito a mano (sin ficha): en modo Aserrío/Venta van al
+     precio a mano. Las que ya se pueden atar —su nombre es de alguien elegido
+     antes del Directorio— se atan con un clic. */
+  const { sinDirectorio, vinculables } = useMemo(() => {
+    let sin = 0;
+    let atables = 0;
+    for (const r of rows) {
+      if (!r.dueno?.trim() || r.duenoParteId) continue;
+      sin += r.cantidad;
+      if (fichasDueno[r.dueno.trim().toLowerCase()]) atables += r.cantidad;
+    }
+    return { sinDirectorio: sin, vinculables: atables };
+  }, [rows, fichasDueno]);
+  const vincularConFichas = useCallback(() => {
+    persist(rowsRef.current.map((r) => {
+      const f = !r.duenoParteId ? fichaDe(r.dueno) : null;
+      return f ? { ...r, duenoParteId: f.id } : r;
+    }));
+  }, [persist, fichaDe]);
+  const nombreDeCliente = useCallback(
+    (id: string) => rows.find((r) => r.duenoParteId === id)?.dueno?.trim() || "un cliente",
+    [rows],
+  );
 
   // Espejo del total para el comando de voz "cuánto llevo" (el handler del
   // reconocedor vive en un closure; lee el ref para no quedar con datos viejos).
@@ -1767,7 +1827,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     }))) return;
     persist(recubicarPiezas(c.piezas));
     setEspecie(c.especie ?? "");
-    setPrecioPt(c.precioPt ? String(c.precioPt) : "");
+    precios.setPrecioPt(c.precioPt ? String(c.precioPt) : "");
     setForm({ nombre: c.nombre, fecha: c.fecha, cliente: c.cliente ?? "", notas: c.notas ?? "" });
     setCubicacionActual(c.id ? { id: c.id, nombre: c.nombre } : null);
     setShowHistorial(false);
@@ -1803,7 +1863,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       "",
       ...lineas,
       extra,
-      conValor ? `\n*Total: S/ ${soles(valorLote)}*${hayPreciosEspecie ? " (precio por especie)" : ` (S/ ${soles(precio)} por PT)`}` : "",
+      conValor ? `\n*Total: S/ ${soles(valorLote)}* (${rotuloPrecio})` : "",
     ].filter(Boolean).join("\n");
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
   };
@@ -1839,8 +1899,9 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         filtrando={filtrando}
         valorLote={valorLote}
         conValor={conValor}
-        hayPreciosEspecie={hayPreciosEspecie}
+        hayPreciosEspecie={precioVariable}
         precio={precio}
+        rotuloPrecio={rotuloPrecio}
         avisarRaras={avisarRaras}
         fmtPt={fmtPt}
         fmtM3={fmtM3}
@@ -1890,6 +1951,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         especies={especiesOfrecidas}
         onAbrirEspecies={() => setShowEspeciesModal(true)}
         dueno={dueno}
+        duenoDelDirectorio={Boolean(dueno && duenoParteId)}
         onDuenoChange={aplicarDueno}
         duenosConocidos={duenosParaDatalist}
         onAbrirDuenos={() => setShowDuenosModal(true)}
@@ -1911,6 +1973,22 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           error: codigoDeTroza.error,
         } : undefined}
       />
+      )}
+
+      {/* El precio del lote (ADR-430): con qué se valoriza cada pieza —el trato
+          de su dueño del Directorio o lo puesto a mano— y de dónde salió. Arriba
+          de la tabla: es lo que se mira antes de liquidar o mandar el papel. */}
+      {rows.length > 0 && (
+        <CubicadorPrecio
+          precios={precios}
+          especiesLote={especiesLote}
+          fecha={form.fecha}
+          nombreDe={nombreDeCliente}
+          sinDirectorio={sinDirectorio}
+          vinculables={vinculables}
+          onVincular={vincularConFichas}
+          onAbrirDirectorio={() => setShowDuenosModal(true)}
+        />
       )}
 
       {/* Tabla acumulada. Expandida se despega del flujo y toma la pantalla:
@@ -2071,7 +2149,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                       badge: marcadas.size > 0 ? `${marcadas.size} pza` : undefined,
                       hint: marcadas.size > 0 ? `Excel con las ${marcadas.size} piezas marcadas` : "Excel del lote entero",
                       onClick: () => descargarConAviso(
-                        exportarExcel(rowsParaPapel, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined, asignados, nombresApartado }),
+                        exportarExcel(rowsParaPapel, { precioPt: precio, especieGlobal: especie || undefined, precioDe: precioVariable ? precioDe : undefined, asignados, nombresApartado }),
                         "Excel generado",
                         "No se pudo generar el Excel.",
                       ),
@@ -2620,7 +2698,10 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                         datalist para poder escribir uno nuevo o elegir uno ya usado. */}
                     {colsVisibles.dueno && (
                       <td className="group/celda relative px-3 py-2">
-                        <DuenoCell valor={r.dueno ?? ""} onCommit={(v) => editarDueno(r.id, v)} />
+                        <span className="inline-flex items-center gap-1">
+                          <DuenoCell valor={r.dueno ?? ""} onCommit={(v) => editarDueno(r.id, v)} />
+                          {r.duenoParteId && <PrecioDelDueno pieza={r} ctx={precios.ctx} />}
+                        </span>
                         <AsaRelleno onTomar={() => rellenoDueno.iniciar(pos)} titulo="Arrastra hacia abajo para poner este dueño en las filas siguientes" />
                       </td>
                     )}
@@ -2755,6 +2836,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           onAgregar={recordarDueno}
           onQuitar={olvidarDueno}
           onElegir={(d) => { aplicarDueno(d); setShowDuenosModal(false); }}
+          actualParteId={dueno ? duenoParteId : null}
+          onElegirParte={(p) => { elegirDuenoDelDirectorio(p); setShowDuenosModal(false); }}
           onClose={() => setShowDuenosModal(false)}
         />
       )}
@@ -2774,7 +2857,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           rows={rowsParaPapel}
           especieGlobal={especie || undefined}
           onPdfDetallado={() => descargarConAviso(
-            exportarPDF(rowsParaPapel, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined, asignados, nombresApartado }),
+            exportarPDF(rowsParaPapel, { precioPt: precio, especieGlobal: especie || undefined, precioDe: precioVariable ? precioDe : undefined, asignados, nombresApartado }),
             "PDF detallado generado", "No se pudo generar el PDF.",
           )}
           onAviso={(msg, tono) => pushToast({ tono, msg })}
@@ -2838,6 +2921,36 @@ function ThCol({
         <Sigma className="h-3 w-3 opacity-50" aria-hidden />
       </button>
     </th>
+  );
+}
+
+/**
+ * Al lado del dueño que salió del Directorio (ADR-430): su precio pactado para
+ * ESTA pieza, o sólo la marca de «del Directorio» si el modo es a mano o su
+ * trato no la cubre. El origen completo va en el `title` —el alto de la fila
+ * no cambia: la tabla ventaneada lo mide una sola vez—.
+ */
+function PrecioDelDueno({ pieza, ctx }: { pieza: PiezaCubicada; ctx: ContextoPrecio }) {
+  const p = precioDePieza(pieza, ctx);
+  const delCliente = p.desde?.startsWith("cliente-") ?? false;
+  const titulo = delCliente
+    ? `Del Directorio · S/ ${formatNumber(p.precioPt, { min: 2, max: 4 })} por PT (${explicarPrecioDePieza(p, pieza)})`
+    : ctx.modo === "manual"
+      ? "Del Directorio · el precio va a mano (elige Aserrío o Venta en «Precio» para usar su trato)"
+      : `Del Directorio · su trato no cubre esta pieza: ${explicarPrecioDePieza(p, pieza)}`;
+  return (
+    <span
+      title={titulo}
+      aria-label={titulo}
+      className={`inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-md px-1 py-0.5 text-[length:var(--ts-2xs)] font-bold tabular-nums ${
+        delCliente
+          ? "bg-[var(--accent)]/12 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          : "text-[var(--text-tertiary)]"
+      }`}
+    >
+      <UserCheck className="h-3 w-3" aria-hidden />
+      {delCliente && formatNumber(p.precioPt, { min: 2, max: 4 })}
+    </span>
   );
 }
 

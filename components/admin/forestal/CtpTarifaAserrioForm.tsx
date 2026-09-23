@@ -10,8 +10,10 @@
  */
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Loader2, Plus, Save, Trash2 } from "@buleje/design-system/icons";
+import { AlertTriangle, Layers, Loader2, Plus, Save, Trash2 } from "@buleje/design-system/icons";
 import { ORDEN_TIPO, tipoCorto, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
+import type { GrupoEspecies } from "@/lib/forestal/precio-cliente";
 import {
   cotizarAserrio,
   explicarPrecio,
@@ -46,6 +48,8 @@ function bloqueDeEjemplo(especie: string | null): BloqueACobrar {
 export default function CtpTarifaAserrioForm({
   version,
   nombresCatalogo,
+  grupos,
+  onEditarGrupos,
   vigenteDesdeInicial,
   comoNueva,
   borradorProduccion,
@@ -56,6 +60,10 @@ export default function CtpTarifaAserrioForm({
   /** `null` = versión en blanco (nueva sin ninguna vigente todavía que copiar). */
   version: VersionTarifa | null;
   nombresCatalogo: readonly string[];
+  /** Los grupos de especies de la planta (ADR-410 KV, catálogo de especies). */
+  grupos: readonly GrupoEspecies[];
+  /** Abre el editor de grupos (ficha aparte, `aboveModals`): se arman una vez y sirven para todos los clientes y esta tarifa. */
+  onEditarGrupos: () => void;
   vigenteDesdeInicial: string;
   /**
    * «Nueva tarifa desde hoy»: `version` trae los VALORES de la vigente como
@@ -96,6 +104,8 @@ export default function CtpTarifaAserrioForm({
     setB((p) => ({ ...p, tipos: { ...p.tipos, [t]: v } }));
   const setEspecie = (i: number, v: string) =>
     setB((p) => ({ ...p, especies: p.especies.map((e, j) => (j === i ? { ...e, precioPt: v } : e)) }));
+  const setGrupo = (grupoId: string, v: string) =>
+    setB((p) => ({ ...p, grupos: { ...p.grupos, [grupoId]: v } }));
   const setLargo = (id: string, cambios: Partial<Omit<BorradorTarifa["largos"][number], "id">>) =>
     setB((p) => ({ ...p, largos: p.largos.map((l) => (l.id === id ? { ...l, ...cambios } : l)) }));
   const agregarLargo = () =>
@@ -112,14 +122,22 @@ export default function CtpTarifaAserrioForm({
   const revision = useMemo(() => revisarVersion(inputDesde(b)), [b]);
   const ejemplo = useMemo(() => {
     if (!revision.ok) return null;
+    /* Especie → grupo → general (ADR-430): el ejemplo sigue el mismo orden.
+       Sin precio de especie, se busca una del primer grupo CON precio puesto,
+       para que el ejemplo también pueda mostrar «grupo» como origen. */
+    const grupoConPrecio = grupos.find((g) => (b.grupos[g.id] ?? "").trim() !== "");
+    const especieDelGrupo = grupoConPrecio
+      ? nombresCatalogo.find((n) => grupoConPrecio.claves.includes(claveEspecie(n)))
+      : undefined;
     const especiePrimera =
-      b.especies.find((e) => e.precioPt.trim() !== "")?.nombre ?? nombresCatalogo[0] ?? null;
+      b.especies.find((e) => e.precioPt.trim() !== "")?.nombre ?? especieDelGrupo ?? nombresCatalogo[0] ?? null;
     const cot = cotizarAserrio(
       { ...revision.version, id: "preview", creadoPor: null, creadoEn: null },
       [bloqueDeEjemplo(especiePrimera)],
+      { grupos },
     );
     return { especiePrimera, cot };
-  }, [b, nombresCatalogo, revision]);
+  }, [b, grupos, nombresCatalogo, revision]);
 
   async function guardar() {
     setError(null);
@@ -218,6 +236,51 @@ export default function CtpTarifaAserrioForm({
         )}
       </div>
 
+      {/* Precio por grupo de especies (ADR-430): entra DESPUÉS de la especie
+          propia y ANTES del general — «especie → grupo → general» — así que
+          va justo debajo de "Precio por especie". Los grupos son de la
+          planta (el catálogo), los mismos que usa el precio de cada cliente. */}
+      <div>
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+            Precio por grupo de especies (S/ por PT)
+          </p>
+          <button
+            type="button"
+            onClick={onEditarGrupos}
+            className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+          >
+            <Layers className="h-3.5 w-3.5" aria-hidden />
+            {grupos.length ? "Editar los grupos" : "Armar grupos de especies"}
+          </button>
+        </div>
+        {grupos.length === 0 ? (
+          <p className="text-sm text-[var(--text-tertiary)]">
+            La planta todavía no tiene grupos de especies. Ármalos una vez y sirven para esta tarifa y
+            para el precio de cada cliente.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {grupos.map((g) => (
+              <label key={g.id} className="block text-sm">
+                <span className="mb-1 block truncate text-[var(--text-secondary)]" title={g.claves.join(", ")}>
+                  {g.nombre}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={b.grupos[g.id] ?? ""}
+                  onChange={(ev) => setGrupo(g.id, ev.target.value)}
+                  placeholder="general"
+                  className={`${I} font-mono ${resaltarVacios && !(b.grupos[g.id] ?? "").trim() ? avisoVacio : ""}`}
+                />
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Ajuste por tipo de pieza: siete filas fijas (el mismo orden que el
           cubicador), vacío = sin ajuste. Puede ser negativo. */}
       <div>
@@ -306,7 +369,7 @@ export default function CtpTarifaAserrioForm({
           </>
         ) : (
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            Pon al menos el precio general o el de una especie para ver el ejemplo.
+            Pon al menos el precio general, el de un grupo o el de una especie para ver el ejemplo.
           </p>
         )}
       </div>

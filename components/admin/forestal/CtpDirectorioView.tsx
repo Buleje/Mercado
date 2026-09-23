@@ -134,7 +134,7 @@ export default function CtpDirectorioView() {
       <VistaHeader
         titulo="Directorio"
         meta={`${plural(dir.partes.length, "parte", "partes")} · ${plural(dir.vehiculos.length, "vehículo", "vehículos")}`}
-        hint="Proveedores, destinatarios, transportistas, conductores y placas. Se completan solos en la guía."
+        hint="Proveedores, clientes, destinatarios, transportistas, conductores y placas. Se completan solos en la guía."
       >
         <Btn
           size="sm"

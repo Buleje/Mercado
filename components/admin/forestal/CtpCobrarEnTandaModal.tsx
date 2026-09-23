@@ -34,12 +34,15 @@ import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import {
   bloquesDeCorrida,
   corridaSinPt,
-  cotizarAserrio,
   versionVigente,
   type CobroAserrioValor,
+  type Cotizacion,
 } from "@/lib/forestal/tarifa-aserrio";
+import { cotizarCorrida } from "@/lib/forestal/argumentos-del-cobro";
 import { paquetesYaDeclarados } from "./hooks/guardar-produccion-corrida";
 import { useTarifaAserrio } from "./hooks/use-tarifa-aserrio";
+import { useTratoDelCliente } from "./hooks/use-trato-del-cliente";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import CtpCobroAserrio from "./CtpCobroAserrio";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { UNIT_LABELS, type CtpEntry } from "./ctp-section-shared";
@@ -83,6 +86,11 @@ export default function CtpCobrarEnTandaModal({
   const [fallaronPaquetes, setFallaronPaquetes] = useState<Set<string>>(new Set());
   const [cargando, setCargando] = useState(true);
   const [valor, setValor] = useState<CobroAserrioValor>({ duenoParteId: null, precioManualPt: null });
+  /* El trato del dueño elegido y los grupos de la planta (ADR-430): el servidor
+     cotiza cada corrida con el trato vigente en SU fecha, la tabla también. Se
+     leen acá y se le pasan al bloque de arriba para no pedirlos dos veces. */
+  const trato = useTratoDelCliente(valor.duenoParteId);
+  const catalogo = useEspeciesCatalogo();
   /** Si el operador YA eligió algo en «¿A quién se le asierra?» (aunque haya
    *  elegido explícitamente «Madera del centro»). Antes de esto, el botón
    *  de guardar queda deshabilitado: en la tanda el dueño SIEMPRE se manda
@@ -180,14 +188,24 @@ export default function CtpCobrarEnTandaModal({
    *  todas desde el principio le cambiaba el trato a la que ya tenía uno
    *  pactado (ALTO relacionado, revisión 2026-09-14). */
   const cotizacionesPorCorrida = useMemo(() => {
-    const m = new Map<string, ReturnType<typeof cotizarAserrio>>();
+    const m = new Map<string, Cotizacion>();
     for (const c of corridas) {
       const version = versionVigente(tarifa.tarifario, c.entryDate);
       const precioManualPt = precioParaCotizar(precioTocado, valor.precioManualPt, c.aserrioPrecioManualPt);
-      m.set(c.id, cotizarAserrio(version, bloquesPorCorrida.get(c.id) ?? [], { precioManualPt }));
+      m.set(
+        c.id,
+        cotizarCorrida(version, bloquesPorCorrida.get(c.id) ?? [], {
+          precioManualPt,
+          tarifasCliente: trato.tarifas,
+          grupos: catalogo.grupos,
+          fecha: c.entryDate,
+        }),
+      );
     }
     return m;
-  }, [corridas, bloquesPorCorrida, tarifa.tarifario, valor.precioManualPt, precioTocado]);
+  }, [corridas, bloquesPorCorrida, tarifa.tarifario, valor.precioManualPt, precioTocado, trato.tarifas, catalogo.grupos]);
+  /** Sin saber el trato (o la tarifa) todavía, los importes de la tabla no son los del servidor. */
+  const calculando = Boolean(valor.duenoParteId) && (trato.cargando || tarifa.cargando || catalogo.cargando);
   /* Sin los paquetes de una corrida, su cotización de acá es una suposición
      (cantidad total, sin tipo/dimensión) — no entra al total para no
      mezclarla con las que sí se pudieron leer bien. Una corrida sin PT
@@ -448,6 +466,7 @@ export default function CtpCobrarEnTandaModal({
               valor={valor}
               labelSinElegir="Elige a quién se le asierra"
               ocultarImportePreview
+              trato={trato}
               onTarifaGuardada={() => void tarifa.recargar()}
               onValidez={setAserrioValido}
               onChange={(v, tocado) => {
@@ -501,6 +520,8 @@ export default function CtpCobrarEnTandaModal({
                             <span className="font-sans text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                               No se pudo leer
                             </span>
+                          ) : valor.duenoParteId && calculando ? (
+                            <span className="font-sans text-xs font-normal text-[var(--text-tertiary)]">calculando…</span>
                           ) : valor.duenoParteId && cot ? (
                             `${formatCurrency(Number(cot.importe))}`
                           ) : (
@@ -517,7 +538,7 @@ export default function CtpCobrarEnTandaModal({
                       <td className="px-3 py-2" colSpan={5}>
                         Total{fallaronPaquetes.size > 0 || sinPtIds.size > 0 ? " (sin las que no se pueden cotizar acá)" : ""}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums">{formatCurrency(totalPreview)}</td>
+                      <td className="px-3 py-2 text-right font-mono tabular-nums">{calculando ? "—" : formatCurrency(totalPreview)}</td>
                     </tr>
                   </tfoot>
                 )}

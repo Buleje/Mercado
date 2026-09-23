@@ -12,13 +12,21 @@
  *
  * El saldo NO se recalcula acá: viene de `productosDisponibles`, que lo lee de
  * `saldosDeCorridas` (única fuente, ADR-316).
+ *
+ * La venta de cada fila entra PROPUESTA (ADR-430): con el trato de venta del
+ * cliente de la guía si lo tiene y cubre esa madera, si no con el precio que
+ * se puso al declararla. Mientras el trato se lee no se agrega nada —la fila
+ * entraría con el precio del paquete y quedaría así—.
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Boxes, Loader2, PackageOpen, Search } from "@buleje/design-system/icons";
+import { Boxes, HandCoins, Loader2, PackageOpen, Search } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { filasDeCorridas, r4, TOLERANCIA_M3, valorPropuesto, type CorridaDisponible, type FilaDespacho } from "@/lib/forestal/despacho-lista";
+import type { DestinatarioDeGuia } from "@/lib/forestal/cliente-de-la-guia";
+import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
+import { useTratoDeVenta } from "./hooks/use-trato-de-venta";
 import { Btn, ModalFooter, productLabel } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import { formatDateNumeric } from "@/lib/format";
@@ -41,7 +49,16 @@ export default function CtpProductosStockModal({
   presetCorridas,
   onAgregar,
   onCerrar,
+  destinatario,
+  fecha: fechaGuia,
 }: {
+  /**
+   * El destinatario de la guía (casilleros del cliente). Si es alguien del
+   * Directorio con precio de venta pactado, la venta se propone con él.
+   */
+  destinatario?: DestinatarioDeGuia | null;
+  /** El día de la guía (`AAAA-MM-DD`): elige la versión vigente del trato. Sin él, hoy. */
+  fecha?: string;
   /** uids que ya están en la lista de la guía: no se ofrecen dos veces. */
   yaElegidos: ReadonlySet<string>;
   presetProducto?: string | null;
@@ -55,7 +72,11 @@ export default function CtpProductosStockModal({
   onAgregar: (filas: FilaDespacho[]) => void;
   onCerrar: () => void;
 }) {
-  const [filas, setFilas] = useState<FilaDespacho[]>([]);
+  /* Lo que devolvió el servidor, crudo: las filas se arman con el trato del
+     cliente, que puede llegar después (y cambiar si se elige otro cliente). */
+  const [corridas, setCorridas] = useState<CorridaDisponible[]>([]);
+  const venta = useTratoDeVenta(destinatario, fechaGuia || hoyEnLima());
+  const filas = useMemo(() => filasDeCorridas(corridas, { trato: venta.trato }), [corridas, venta.trato]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,7 +100,7 @@ export default function CtpProductosStockModal({
       .then((r) => {
         if (!vivo) return;
         const nuevas = filasDeCorridas(r.corridas ?? []);
-        setFilas(nuevas);
+        setCorridas(r.corridas ?? []);
         setError(null);
         /* El preset llega de Saldos con la escritura del libro ("Madera
            aserrada") y el filtro compara contra la del catálogo ("MADERA
@@ -160,7 +181,8 @@ export default function CtpProductosStockModal({
   }, [seleccionadas]);
 
   const totalElegido = r4(seleccionadas.reduce((a, f) => a + (f.volumen || 0), 0));
-  const puedeAgregar = seleccionadas.length > 0 && excedidas.size === 0 && seleccionadas.every((f) => f.volumen > 0);
+  const puedeAgregar =
+    seleccionadas.length > 0 && excedidas.size === 0 && seleccionadas.every((f) => f.volumen > 0) && !venta.cargando;
 
   function alternar(uid: string) {
     setElegidas((prev) => {
@@ -210,6 +232,30 @@ export default function CtpProductosStockModal({
       }
     >
       <div className="space-y-3 px-5 py-4 sm:px-6">
+        {/* De dónde sale la venta propuesta (ADR-430): se dice antes de elegir. */}
+        {(venta.cargando || venta.error || venta.trato) && (
+          <p
+            aria-live="polite"
+            className={`flex items-start gap-1.5 rounded-xl px-3 py-2 text-sm ${
+              venta.error
+                ? "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+            }`}
+          >
+            <HandCoins className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>
+              {venta.cargando ? (
+                <>Leyendo el precio de venta pactado con {venta.cliente?.nombre ?? "el cliente de la guía"}…</>
+              ) : venta.error ? (
+                <>No se pudo leer el precio pactado con {venta.cliente?.nombre ?? "el cliente"}: la venta se propone con el precio de cada paquete.</>
+              ) : (
+                <>
+                  La venta se propone con el precio pactado con <b className="text-[var(--text-primary)]">{venta.trato?.parteNombre}</b>; lo que su trato no cubre, con el del paquete.
+                </>
+              )}
+            </span>
+          </p>
+        )}
         {/* Los seis filtros del formato, en el mismo orden. */}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-6">
           <Filtro label="Plan de manejo de origen">

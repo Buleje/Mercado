@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { gruposEspeciesSchema, type GruposEspeciesInput } from "@/lib/forestal/precio-cliente";
 import {
   CATALOGO_VACIO,
   nombresDisponibles,
@@ -50,6 +51,12 @@ export function useEspeciesCatalogo({ conLibro = false }: { conLibro?: boolean }
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * La LECTURA falló (distinto de `error`, que es de las ediciones). Sin
+   * catálogo se cubica igual con las de fábrica, pero una vista previa de
+   * cobro no puede fingir «sin grupos»: el servidor sí los tiene (ADR-430).
+   */
+  const [errorLectura, setErrorLectura] = useState<string | null>(null);
 
   const aplicar = useCallback((j: Respuesta) => {
     setCatalogo(j.catalogo ?? CATALOGO_VACIO);
@@ -70,7 +77,9 @@ export function useEspeciesCatalogo({ conLibro = false }: { conLibro?: boolean }
       if (!r.ok) throw new Error(String(r.status));
       aplicar((await r.json()) as Respuesta);
       setError(null);
+      setErrorLectura(null);
     } catch {
+      setErrorLectura("No se pudo leer el catálogo de especies.");
       /* Sin catálogo se cubica igual con las de fábrica: es una ayuda, no un
          requisito. El error se muestra recién cuando alguien intenta editar. */
       setCatalogo(CATALOGO_VACIO);
@@ -83,9 +92,15 @@ export function useEspeciesCatalogo({ conLibro = false }: { conLibro?: boolean }
     void recargar();
   }, [recargar]);
 
-  /** Las tres escrituras comparten forma: mandan, aplican y devuelven el aviso. */
+  /**
+   * Las escrituras comparten forma: mandan, aplican y devuelven el aviso.
+   *
+   * `null` = falló (el motivo queda en `error`). `porDefecto` es el aviso de
+   * éxito cuando el servidor no manda `mensaje`: sin él, un guardado bueno
+   * volvía `null` y la pantalla no podía distinguirlo de uno fallido.
+   */
   const escribir = useCallback(
-    async (init: RequestInit & { url?: string }): Promise<string | null> => {
+    async (init: RequestInit & { url?: string }, porDefecto?: string): Promise<string | null> => {
       setGuardando(true);
       setError(null);
       try {
@@ -99,7 +114,7 @@ export function useEspeciesCatalogo({ conLibro = false }: { conLibro?: boolean }
           error?: string;
         };
         if (!r.ok) throw new Error(j.message ?? j.error ?? `El servidor respondió ${r.status}`);
-        return aplicar(j);
+        return aplicar(j) ?? porDefecto ?? null;
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
         return null;
@@ -150,12 +165,37 @@ export function useEspeciesCatalogo({ conLibro = false }: { conLibro?: boolean }
     [escribir],
   );
 
+  /**
+   * Guarda TODOS los grupos de especies de la planta de una vez (ADR-430): la
+   * lista que llega reemplaza a la guardada. Se valida acá con el mismo
+   * esquema que el servidor —una especie en un solo grupo, sin nombres
+   * repetidos— para decirlo antes de viajar.
+   */
+  const guardarGrupos = useCallback(
+    async (grupos: GruposEspeciesInput): Promise<string | null> => {
+      const v = gruposEspeciesSchema.safeParse(grupos);
+      if (!v.success) {
+        setError(v.error.issues[0]?.message ?? "Los grupos no se pueden guardar así.");
+        return null;
+      }
+      return escribir(
+        { method: "POST", body: JSON.stringify({ accion: "grupos.guardar", grupos: v.data }) },
+        "Grupos guardados.",
+      );
+    },
+    [escribir],
+  );
+
   /** Sólo los nombres — es lo que consumen los `<select>` que ya existen. */
   const nombres = useMemo(() => nombresDisponibles(catalogo), [catalogo]);
+  /** Los grupos de especies de la planta (ADR-430): los usan la tarifa y los precios por cliente. */
+  const grupos = useMemo(() => catalogo.grupos ?? [], [catalogo]);
 
   return {
     catalogo,
     nombres,
+    grupos,
+    errorLectura,
     ocultas,
     delLibro,
     faltan,
@@ -170,5 +210,6 @@ export function useEspeciesCatalogo({ conLibro = false }: { conLibro?: boolean }
     editar,
     quitar,
     restaurar,
+    guardarGrupos,
   };
 }

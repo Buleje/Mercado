@@ -49,6 +49,15 @@ import { clasificarTipo, ORDEN_TIPO, type TipoComercial } from "./cubicacion-tip
 import { tipoComercialDelProducto } from "./loctp-catalogos";
 import { claveEspecie } from "./loth-constants";
 import { hoyEnLima } from "./semana-de-registro";
+import {
+  explicarOrigenCliente,
+  grupoDeEspecie,
+  precioDelCliente,
+  type GrupoEspecies,
+  type OrigenPrecioCliente,
+  type PrecioGrupo,
+  type TarifaCliente,
+} from "./precio-cliente";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
@@ -93,6 +102,13 @@ export interface VersionTarifa {
   /** S/ por PT para las especies que no tienen precio propio. */
   basePt: number;
   especies: PrecioEspecie[];
+  /**
+   * Precio por GRUPO de especies (ADR-430): los grupos son de la planta (el
+   * catálogo de especies) y una especie está en uno solo. Va después del
+   * precio propio de la especie y antes del general. Opcional: las versiones
+   * guardadas antes de ADR-430 no lo traen.
+   */
+  grupos?: PrecioGrupo[];
   tipos: AjusteTipo[];
   largos: TramoLargo[];
   nota: string | null;
@@ -123,6 +139,12 @@ export const versionTarifaInputSchema = z.object({
     .array(z.object({ nombre: z.string().trim().min(1).max(80), precioPt }))
     .max(300)
     .default([]),
+  /* Opcional (no `.default`): las versiones que se arman a mano sin grupos
+     —el borrador, las de antes de ADR-430— siguen valiendo tal cual. */
+  grupos: z
+    .array(z.object({ grupoId: z.string().trim().min(1).max(40), precioPt }))
+    .max(50)
+    .optional(),
   tipos: z
     .array(
       z.object({
@@ -167,6 +189,14 @@ export function revisarVersion(input: VersionTarifaInput): RevisionVersion {
     especies.push({ clave, nombre: e.nombre.trim(), precioPt: r4(e.precioPt) });
   }
 
+  const grupos: PrecioGrupo[] = [];
+  for (const g of input.grupos ?? []) {
+    if (grupos.some((x) => x.grupoId === g.grupoId)) {
+      return { ok: false, motivo: "Un grupo está dos veces: tiene un solo precio." };
+    }
+    if (g.precioPt > 0) grupos.push({ grupoId: g.grupoId, precioPt: r4(g.precioPt) });
+  }
+
   const tipos: AjusteTipo[] = [];
   for (const t of input.tipos) {
     if (!esTipoComercial(t.tipo)) return { ok: false, motivo: `El tipo «${t.tipo}» no existe.` };
@@ -194,8 +224,8 @@ export function revisarVersion(input: VersionTarifaInput): RevisionVersion {
     }
   }
 
-  if (!(input.basePt > 0) && !especies.some((e) => e.precioPt > 0)) {
-    return { ok: false, motivo: "Pon al menos un precio: el general o el de una especie." };
+  if (!(input.basePt > 0) && !especies.some((e) => e.precioPt > 0) && grupos.length === 0) {
+    return { ok: false, motivo: "Pon al menos un precio: el general, el de un grupo o el de una especie." };
   }
 
   return {
@@ -204,6 +234,7 @@ export function revisarVersion(input: VersionTarifaInput): RevisionVersion {
       vigenteDesde: input.vigenteDesde,
       basePt: r4(input.basePt),
       especies,
+      grupos,
       tipos,
       largos,
       nota: input.nota?.trim() || null,
@@ -238,6 +269,9 @@ export function normalizarTarifario(raw: unknown): Tarifario {
       especies: arr(v.especies)
         .map((e) => ({ clave: claveEspecie(String(e.nombre ?? e.clave ?? "")), nombre: String(e.nombre ?? ""), precioPt: num(e.precioPt) ?? -1 }))
         .filter((e) => e.clave && e.precioPt >= 0),
+      grupos: arr(v.grupos)
+        .map((g) => ({ grupoId: typeof g.grupoId === "string" ? g.grupoId : "", precioPt: num(g.precioPt) ?? -1 }))
+        .filter((g) => g.grupoId && g.precioPt > 0),
       tipos: arr(v.tipos)
         .map((t) => ({ tipo: t.tipo, ajustePt: num(t.ajustePt) }))
         .filter((t): t is AjusteTipo => esTipoComercial(t.tipo) && t.ajustePt != null),
@@ -316,7 +350,13 @@ export interface LineaCotizada {
   largoPies: number | null;
   pt: number;
   basePt: number;
-  baseDesde: "especie" | "general" | "manual";
+  /**
+   * De dónde salió la base. Los `cliente-*` son el trato del cliente (ADR-430):
+   * reemplazan a la tarifa de la planta y NO llevan ajustes por tipo ni largo.
+   */
+  baseDesde: "especie" | "grupo" | "general" | "manual" | OrigenPrecioCliente;
+  /** El grupo de especies cuando el precio salió de uno (del cliente o de la planta). */
+  grupo?: string | null;
   ajusteTipoPt: number;
   ajusteLargoPt: number;
   /** El tramo que aplicó, ya como texto. */
@@ -327,6 +367,8 @@ export interface LineaCotizada {
 
 export interface Cotizacion {
   versionId: string | null;
+  /** La versión del trato del cliente que se usó, si alguna línea salió de él (ADR-430). */
+  clienteTarifaId?: string | null;
   vigenteDesde: string | null;
   /** `true` si se cobró con un precio único puesto a mano. */
   manual: boolean;
@@ -369,13 +411,25 @@ function tipoDelBloque(b: BloqueACobrar): { tipo: TipoComercial | null; desde: L
 export function cotizarAserrio(
   version: VersionTarifa | null,
   bloques: readonly BloqueACobrar[],
-  opts: { precioManualPt?: number | null } = {},
+  opts: {
+    precioManualPt?: number | null;
+    /**
+     * El trato vigente del cliente para el servicio de aserrío (ADR-430). Va
+     * después del precio a mano y antes que la tarifa de la planta.
+     */
+    cliente?: TarifaCliente | null;
+    /** Los grupos de especies de la planta (catálogo). Sin ellos no hay precio por grupo. */
+    grupos?: readonly GrupoEspecies[];
+  } = {},
 ): Cotizacion {
   const manual = opts.precioManualPt != null && opts.precioManualPt > 0 ? r4(opts.precioManualPt) : null;
+  const grupos = opts.grupos ?? [];
   const avisos = new Set<string>();
   const lineas: LineaCotizada[] = [];
+  let usoCliente = false;
+  let usoPlanta = false;
 
-  if (manual == null && !version) {
+  if (manual == null && !version && !opts.cliente) {
     avisos.add("No hay una tarifa que rija ese día: pon el precio a mano o carga la tarifa.");
   }
 
@@ -387,19 +441,35 @@ export function cotizarAserrio(
 
     let basePt = 0;
     let baseDesde: LineaCotizada["baseDesde"] = "general";
+    let grupo: string | null = null;
     let ajusteTipoPt = 0;
     let ajusteLargoPt = 0;
     let tramo: string | null = null;
+    /* El trato del cliente (ADR-430): reemplaza entero a la planta — sin
+       ajustes por tipo ni largo (decisión 1 de Brandon). */
+    const delCliente = manual == null ? precioDelCliente(opts.cliente, grupos, b.especie, tipo) : null;
 
     if (manual != null) {
       basePt = manual;
       baseDesde = "manual";
+    } else if (delCliente) {
+      basePt = delCliente.precioPt;
+      baseDesde = delCliente.desde;
+      grupo = delCliente.grupo;
+      usoCliente = true;
     } else if (version) {
+      usoPlanta = true;
       const clave = claveEspecie(b.especie);
       const propia = clave ? version.especies.find((e) => e.clave === clave) : undefined;
+      const suGrupo = grupoDeEspecie(grupos, b.especie);
+      const delGrupo = suGrupo ? (version.grupos ?? []).find((g) => g.grupoId === suGrupo.id && g.precioPt > 0) : undefined;
       if (propia) {
         basePt = propia.precioPt;
         baseDesde = "especie";
+      } else if (suGrupo && delGrupo) {
+        basePt = delGrupo.precioPt;
+        baseDesde = "grupo";
+        grupo = suGrupo.nombre;
       } else {
         basePt = version.basePt;
         if (!(basePt > 0)) avisos.add(`${b.especie?.trim() || "La madera sin especie"} no tiene precio en la tarifa.`);
@@ -439,6 +509,7 @@ export function cotizarAserrio(
       pt,
       basePt,
       baseDesde,
+      grupo,
       ajusteTipoPt,
       ajusteLargoPt,
       tramo,
@@ -448,9 +519,13 @@ export function cotizarAserrio(
   }
 
   const importe = r2(lineas.reduce((a, l) => a + l.importe, 0));
+  if (manual == null && opts.cliente && !version && lineas.some((l) => !(l.precioPt > 0))) {
+    avisos.add("Hay madera que el trato del cliente no cubre y no hay tarifa de la planta que rija ese día.");
+  }
   return {
-    versionId: manual != null ? null : (version?.id ?? null),
-    vigenteDesde: manual != null ? null : (version?.vigenteDesde ?? null),
+    versionId: manual != null || !usoPlanta ? null : (version?.id ?? null),
+    clienteTarifaId: usoCliente ? (opts.cliente?.id ?? null) : null,
+    vigenteDesde: manual != null ? null : usoPlanta ? (version?.vigenteDesde ?? null) : usoCliente ? (opts.cliente?.vigenteDesde ?? null) : (version?.vigenteDesde ?? null),
     manual: manual != null,
     lineas,
     pt: r2(lineas.reduce((a, l) => a + l.pt, 0)),
@@ -581,12 +656,18 @@ export function etiquetaTramo(t: Pick<TramoLargo, "desdePies" | "hastaPies">): s
 
 /** «0.30 Tornillo + 0.05 Paquetería larga + 0.03 de 12 a 16 pies = S/ 0.38 por PT». */
 export function explicarPrecio(l: LineaCotizada): string {
+  if (l.baseDesde.startsWith("cliente-")) {
+    /* El trato del cliente no lleva ajustes: el precio ES la base (ADR-430). */
+    return `S/ ${precioTxt(l.precioPt)} por PT (${explicarOrigenCliente({ precioPt: l.precioPt, desde: l.baseDesde as OrigenPrecioCliente, grupo: l.grupo ?? null }, l.especie, l.tipo)})`;
+  }
   const partes = [
     l.baseDesde === "manual"
       ? `${precioTxt(l.basePt)} a mano`
       : l.baseDesde === "especie"
         ? `${precioTxt(l.basePt)} ${l.especie ?? ""}`.trim()
-        : `${precioTxt(l.basePt)} general`,
+        : l.baseDesde === "grupo"
+          ? `${precioTxt(l.basePt)} grupo ${l.grupo ?? ""}`.trim()
+          : `${precioTxt(l.basePt)} general`,
   ];
   if (l.ajusteTipoPt !== 0 && l.tipo) partes.push(`${firmado(l.ajusteTipoPt)} ${l.tipo}`);
   if (l.ajusteLargoPt !== 0 && l.tramo) partes.push(`${firmado(l.ajusteLargoPt)} ${l.tramo}`);
@@ -598,7 +679,9 @@ export function explicarPrecio(l: LineaCotizada): string {
         ? "precio a mano"
         : l.baseDesde === "especie"
           ? `precio de ${l.especie?.trim() || "la especie"}`
-          : "precio general";
+          : l.baseDesde === "grupo"
+            ? `precio del grupo ${l.grupo ?? ""}`.trim()
+            : "precio general";
     return `S/ ${precioTxt(l.precioPt)} por PT (${origen})`;
   }
   return `${partes.join(" ")} = S/ ${precioTxt(l.precioPt)} por PT`;

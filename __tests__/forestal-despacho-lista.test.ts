@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
+import { parteDelDestinatario } from "@/lib/forestal/cliente-de-la-guia";
 import {
+  aplicarTratoDeVenta,
+  leyendaDeVenta,
+  type TratoDeVenta,
   enviosDeLista,
   excesosDeCorrida,
   filasDeCorridas,
@@ -9,6 +13,8 @@ import {
   payloadDeFila,
   piezasTotales,
   problemasDeLista,
+  proponerVenta,
+  ptDeLaFila,
   resumenPorProducto,
   uidDeFila,
   volumenPorCorrida,
@@ -311,5 +317,192 @@ describe("la venta propuesta sigue al volumen editado (selector de stock)", () =
     expect(f.valorVenta).toBe(392);
     const mitad = { ...f, volumen: 0.1651 };
     expect(valorPropuesto(mitad)).toBe(196);
+  });
+});
+
+/**
+ * ADR-430 · la venta al despachar sale del trato de VENTA del cliente de la
+ * guía (su precio por PT × el PT de la fila); si no lo cubre, del precio del
+ * paquete; nunca 0. La leyenda dice de dónde salió.
+ */
+describe("venta propuesta con el trato de venta del cliente de la guía (ADR-430)", () => {
+  const TRATO: TratoDeVenta = {
+    parteNombre: "Maderera del Sur",
+    grupos: [{ id: "g-duras", nombre: "Duras", claves: ["shihuahuaco"] }],
+    tarifa: {
+      id: "tv", parteId: "p1", servicio: "venta", vigenteDesde: "2026-09-01", basePt: null,
+      grupos: [{ grupoId: "g-duras", precioPt: 5 }], especies: [{ clave: "tornillo", nombre: "Tornillo", precioPt: 3 }], tipos: [], nota: null,
+    },
+  };
+  const corrida = (especie: string, paquete: Partial<PaqueteDisponible> | null, disponible = 0.3774): CorridaDisponible => ({
+    id: `c-${especie}`, lineNo: 7, fecha: "2026-09-22", especie, especieCientifica: null,
+    producto: "MADERA ASERRADA", presentacion: "PIEZAS", unidad: "m3", disponible,
+    lote: null, lineaProduccion: "LP", gtfOrigen: [], titularOrigen: [],
+    paquetes: paquete
+      ? [{ id: "p1", codigo: "PQ-1", producto: null, presentacion: null, cantidad: 12, volumenM3: 0.3774, espesorCm: 5.08, anchoCm: 20.32, largoM: 3.05, ...paquete }]
+      : [],
+  } as CorridaDisponible);
+
+  it("PT medido × su precio pactado: 160 PT de Tornillo a S/ 3 son S/ 480, no los S/ 560 del paquete", () => {
+    const [f] = filasDeCorridas([corrida("Tornillo", { pieTablar: 160, precioVentaPt: 3.5 })], { trato: TRATO });
+    expect(f.valorVenta).toBe(480);
+    expect(f).toMatchObject({ valorPropuesto: true, precioVentaPt: 3, precioVentaDesde: "cliente-especie", precioPaquetePt: 3.5 });
+    expect(leyendaDeVenta(f)).toBe("propuesto · S/ 3.00 por PT · precio del cliente para Tornillo · Maderera del Sur");
+  });
+
+  it("por grupo de la planta: el Shihuahuaco sale del grupo Duras", () => {
+    const [f] = filasDeCorridas([corrida("Shihuahuaco", { pieTablar: 160, precioVentaPt: null })], { trato: TRATO });
+    expect(f).toMatchObject({ valorVenta: 800, precioVentaDesde: "cliente-grupo" });
+  });
+
+  it("si su trato no cubre la madera, el precio del paquete, como hoy", () => {
+    const [f] = filasDeCorridas([corrida("Cumala", { pieTablar: 160, precioVentaPt: 3.5 })], { trato: TRATO });
+    expect(f).toMatchObject({ valorVenta: 560, precioVentaDesde: "paquete" });
+    expect(leyendaDeVenta(f)).toMatch(/precio que se puso al declarar/);
+  });
+
+  it("ni trato ni precio del paquete: vacía, nunca 0", () => {
+    const [f] = filasDeCorridas([corrida("Cumala", { pieTablar: 160, precioVentaPt: null })], { trato: TRATO });
+    expect(f.valorVenta).toBeUndefined();
+    expect(f.valorPropuesto).toBeUndefined();
+  });
+
+  it("sin PT medido, el trato del cliente usa la regla de la plaza (m³ × 424); el precio del paquete no", () => {
+    const [conTrato] = filasDeCorridas([corrida("Tornillo", { pieTablar: null, precioVentaPt: 3.5 })], { trato: TRATO });
+    expect(conTrato.valorVenta).toBe(Math.round(0.3774 * 424 * 3 * 100) / 100);
+    const [sinTrato] = filasDeCorridas([corrida("Tornillo", { pieTablar: null, precioVentaPt: 3.5 })]);
+    expect(sinTrato.valorVenta).toBeUndefined();
+  });
+
+  it("una corrida sin paquetes también se propone con su trato", () => {
+    const [f] = filasDeCorridas([corrida("Tornillo", null, 0.5)], { trato: TRATO });
+    expect(f).toMatchObject({ paqueteId: null, valorVenta: 636, precioVentaDesde: "cliente-especie" });
+  });
+
+  it("elegir el cliente después de armar la lista re-propone lo propuesto y respeta lo tipeado", () => {
+    const [propuesta, vacia, tipeada] = filasDeCorridas([
+      corrida("Tornillo", { pieTablar: 160, precioVentaPt: 3.5 }),
+      corrida("Shihuahuaco", { pieTablar: 160, precioVentaPt: null }),
+      corrida("Tornillo", { pieTablar: 160, precioVentaPt: 3.5 }),
+    ]);
+    const aMano = { ...tipeada!, uid: "tipeada", valorVenta: 999, valorPropuesto: false };
+    const [a, b, c] = aplicarTratoDeVenta([propuesta!, vacia!, aMano], TRATO);
+    expect(a!.valorVenta).toBe(480);
+    expect(b!.valorVenta).toBe(800);
+    expect(c).toBe(aMano);
+    /* Sin cambios, el mismo arreglo: un setState con esto no re-renderiza. */
+    const ya = [a!, b!, c!];
+    expect(aplicarTratoDeVenta(ya, TRATO)).toBe(ya);
+    /* Y si la guía se queda sin cliente, vuelve el precio del paquete. */
+    expect(aplicarTratoDeVenta([a!], null)[0]).toMatchObject({ valorVenta: 560, precioVentaDesde: "paquete" });
+  });
+
+  it("la venta propuesta sigue al volumen editado también con el trato", () => {
+    const [f] = filasDeCorridas([corrida("Tornillo", { pieTablar: 160, precioVentaPt: 3.5 })], { trato: TRATO });
+    expect(valorPropuesto({ ...f!, volumen: 0.1887 })).toBe(240);
+  });
+});
+
+/**
+ * Defectos confirmados del ADR-430 («venta propuesta al despachar»).
+ */
+describe("una troza/rollizo NUNCA recibe venta propuesta (defecto alto)", () => {
+  const TRATO: TratoDeVenta = {
+    parteNombre: "Maderera del Sur",
+    grupos: [],
+    tarifa: {
+      id: "tv", parteId: "p1", servicio: "venta", vigenteDesde: "2026-09-01", basePt: 0.6,
+      grupos: [], especies: [], tipos: [], nota: null,
+    },
+  };
+  const troza: FilaDespacho = {
+    uid: "troza:t1:corrida", corridaId: "", trozaId: "t1", lineNo: null, paqueteId: null,
+    especie: "Tornillo", especieCientifica: null, cites: false, producto: "MADERA EN ROLLO",
+    codigo: "29/A", presentacion: "TROZAS", cantidad: 1, espesorCm: null, anchoCm: null, largoM: null,
+    volumen: 1.5, unidad: "m3", disponibleCorrida: 1.5,
+    gtfOrigen: [], titularOrigen: [], lote: null, linea: null, fechaProduccion: null,
+  };
+
+  it("una troza rolliza (con trozaId) no se propone: 1,5 m³ NO da S/ 381,60", () => {
+    const propuesta = proponerVenta(troza, TRATO);
+    expect(propuesta.valorVenta).toBeUndefined();
+    expect(propuesta.valorPropuesto).toBeUndefined();
+    expect(ptDeLaFila(troza)).toBeNull();
+  });
+
+  it("un producto declarado en rollo sin trozaId (corrida en rollo) tampoco se propone", () => {
+    const enRollo: FilaDespacho = { ...troza, corridaId: "c9", trozaId: null, lineNo: 3, uid: "c9:corrida" };
+    expect(proponerVenta(enRollo, TRATO).valorVenta).toBeUndefined();
+  });
+
+  it("una troza que YA tenía una venta tipeada a mano la conserva igual", () => {
+    const conVenta: FilaDespacho = { ...troza, valorVenta: 250, valorPropuesto: false };
+    expect(proponerVenta(conVenta, TRATO)).toBe(conVenta);
+  });
+});
+
+describe("una venta vaciada a mano no se re-propone (defecto medio)", () => {
+  const TRATO_A: TratoDeVenta = {
+    parteNombre: "Maderera del Sur", grupos: [],
+    tarifa: { id: "tv-a", parteId: "p1", servicio: "venta", vigenteDesde: "2026-09-01", basePt: 3, grupos: [], especies: [], tipos: [], nota: null },
+  };
+  const TRATO_B: TratoDeVenta = {
+    parteNombre: "Otro Cliente SAC", grupos: [],
+    tarifa: { id: "tv-b", parteId: "p2", servicio: "venta", vigenteDesde: "2026-09-01", basePt: 5, grupos: [], especies: [], tipos: [], nota: null },
+  };
+  const corrida = (): CorridaDisponible => ({
+    id: "c1", lineNo: 7, fecha: "2026-09-22", especie: "Tornillo", especieCientifica: null,
+    producto: "MADERA ASERRADA", presentacion: "PIEZAS", unidad: "m3", disponible: 0.3774,
+    lote: null, lineaProduccion: "LP", gtfOrigen: [], titularOrigen: [],
+    paquetes: [{ id: "p1", codigo: "PQ-1", producto: null, presentacion: null, cantidad: 12, volumenM3: 0.3774, espesorCm: 5.08, anchoCm: 20.32, largoM: 3.05, pieTablar: 160, precioVentaPt: null }],
+  } as CorridaDisponible);
+
+  it("vaciada a mano (ventaTocada) NO vuelve a llenarse al cambiar de destinatario", () => {
+    const [propuesta] = filasDeCorridas([corrida()], { trato: TRATO_A });
+    expect(propuesta!.valorVenta).toBe(160 * 3);
+    // El operador la vacía: «todavía no sé en cuánto se vendió» (cambiarFila).
+    const vaciada: FilaDespacho = { ...propuesta!, valorVenta: null, valorPropuesto: false, ventaTocada: true };
+    const [tras] = aplicarTratoDeVenta([vaciada], TRATO_B);
+    expect(tras).toBe(vaciada);
+    expect(tras!.valorVenta == null).toBe(true);
+  });
+
+  it("propuesta sola (sin tocar) SÍ se actualiza al cambiar de trato", () => {
+    const [propuesta] = filasDeCorridas([corrida()], { trato: TRATO_A });
+    expect(propuesta!.valorVenta).toBe(480);
+    const [tras] = aplicarTratoDeVenta([propuesta!], TRATO_B);
+    expect(tras!.valorVenta).toBe(800);
+    expect(tras!.valorPropuesto).toBe(true);
+  });
+});
+
+describe("aplicarTratoDeVenta es idempotente (soporta el efecto que depende de `filas`)", () => {
+  it("aplicarlo dos veces seguidas con el mismo trato devuelve el MISMO arreglo la segunda vez", () => {
+    const TRATO: TratoDeVenta = {
+      parteNombre: "Cliente", grupos: [],
+      tarifa: { id: "tv", parteId: "p1", servicio: "venta", vigenteDesde: "2026-09-01", basePt: 3, grupos: [], especies: [], tipos: [], nota: null },
+    };
+    const [f] = filasDeCorridas([{
+      id: "c1", lineNo: 7, fecha: "2026-09-22", especie: "Tornillo", especieCientifica: null,
+      producto: "MADERA ASERRADA", presentacion: "PIEZAS", unidad: "m3", disponible: 0.3774,
+      lote: null, lineaProduccion: "LP", gtfOrigen: [], titularOrigen: [],
+      paquetes: [{ id: "p1", codigo: "PQ-1", producto: null, presentacion: null, cantidad: 12, volumenM3: 0.3774, espesorCm: 5.08, anchoCm: 20.32, largoM: 3.05, pieTablar: 160, precioVentaPt: null }],
+    } as CorridaDisponible]);
+    const primeraPasada = aplicarTratoDeVenta([f!], TRATO);
+    const segundaPasada = aplicarTratoDeVenta(primeraPasada, TRATO);
+    expect(segundaPasada).toBe(primeraPasada);
+  });
+});
+
+describe("el cliente de la guía en el Directorio", () => {
+  const partes = [
+    { id: "a", nombre: "MADERERA DEL SUR", docNumero: "20123456789" },
+    { id: "b", nombre: "Juan Pérez", docNumero: null },
+  ];
+  it("por documento primero, después por nombre normalizado", () => {
+    expect(parteDelDestinatario(partes, { nombre: "Otro nombre", docNumero: "20123456789" })?.id).toBe("a");
+    expect(parteDelDestinatario(partes, { nombre: "juan perez" })?.id).toBe("b");
+    expect(parteDelDestinatario(partes, { nombre: "Nadie" })).toBeNull();
+    expect(parteDelDestinatario(partes, { nombre: "", docNumero: "20123456789" })).toBeNull();
   });
 });

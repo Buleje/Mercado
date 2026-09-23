@@ -443,7 +443,7 @@ export default function CtpGuiaDatosTab({
             <CtpParteBarra
               rol="destinatario"
               valor={datos.destinatario}
-              opciones={directorio.porRol("destinatario")}
+              opciones={directorio.receptores()}
               onAplicar={(v) => set("destinatario", v)}
               onElegir={onAnotarParte}
               onGuardar={onGuardarEnLibreta}

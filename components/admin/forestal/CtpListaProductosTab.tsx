@@ -15,6 +15,7 @@
 
 import { Boxes, Info, Ruler, Trash2, TreePine } from "@buleje/design-system/icons";
 import {
+  leyendaDeVenta,
   piezasTotales,
   resumenPorProducto,
   volumenTotal,
@@ -184,11 +185,12 @@ export default function CtpListaProductosTab({
                     {(f.valorVenta / f.volumen).toFixed(2)}/{f.unidad}
                   </div>
                 )}
-                {/* De dónde salió el número: el precio que se puso al declarar
-                    la madera propia (ADR-429). Editarlo lo vuelve propio. */}
-                {f.valorPropuesto && f.precioVentaPt != null && (
-                  <div className="mt-0.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                    propuesto · S/{"\u00a0"}{Number(f.precioVentaPt).toFixed(2)} por PT
+                {/* De dónde salió el número: el precio pactado con el cliente
+                    de la guía (ADR-430) o el que se puso al declarar la madera
+                    propia (ADR-429). Editarlo lo vuelve propio. */}
+                {leyendaDeVenta(f) && (
+                  <div className="mt-0.5 ml-auto max-w-[12rem] text-[length:var(--ts-2xs)] font-semibold leading-snug text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                    {leyendaDeVenta(f)}
                   </div>
                 )}
               </td>

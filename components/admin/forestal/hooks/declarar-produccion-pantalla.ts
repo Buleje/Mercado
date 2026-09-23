@@ -14,10 +14,18 @@
  */
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import {
-  cotizarAserrio,
+  esTipoComercial,
   type BloqueACobrar,
+  type Cotizacion,
   type VersionTarifa,
 } from "@/lib/forestal/tarifa-aserrio";
+import { cotizarCorrida, type DatosDelCobro } from "@/lib/forestal/argumentos-del-cobro";
+import {
+  precioDelCliente,
+  tarifaVigente,
+  type GrupoEspecies,
+  type TarifaCliente,
+} from "@/lib/forestal/precio-cliente";
 import {
   importe,
   precioValido,
@@ -67,11 +75,54 @@ export interface PrecioDeEspecie {
   invalido: boolean;
   /** Lo tipeado ya validado. Vacío o cero = `null` (sin precio, nunca 0). */
   precio: number | null;
-  /** Madera propia: el último usado. Tercero: lo que da la tarifa, en promedio por PT. */
-  sugerido: { valor: number; origen: "ultimo" | "tarifa" } | null;
+  /**
+   * Madera propia: el trato de VENTA del cliente si se eligió uno y cubre la
+   * especie (ADR-430), si no el último usado. Tercero: lo que da su trato de
+   * aserrío o la tarifa, en promedio por PT.
+   */
+  sugerido: { valor: number; origen: "ultimo" | "tarifa" | "cliente" } | null;
   /** La columna Importe. `null` = sin precio: se dice, no se pinta un 0. */
   importe: number | null;
-  desde: "precio" | "tarifa" | null;
+  /**
+   * De dónde sale el importe sin precio a mano: el trato del cliente, la
+   * tarifa de la planta, o los dos (lo que el trato no cubre va a la tarifa).
+   */
+  desde: "precio" | "tarifa" | "cliente" | "cliente-y-tarifa" | null;
+  /**
+   * Sin precio a mano y con el trato, la tarifa o los grupos todavía leyéndose:
+   * el importe no se sabe. La tabla dice «calculando», no «no se cobra».
+   */
+  calculando?: boolean;
+}
+
+/** De dónde salió una cotización sin precio a mano. */
+function origenDeCotizacion(c: Cotizacion): "tarifa" | "cliente" | "cliente-y-tarifa" {
+  const delCliente = c.lineas.some((l) => l.baseDesde.startsWith("cliente-"));
+  const deLaPlanta = c.lineas.some((l) => !l.baseDesde.startsWith("cliente-") && l.precioPt > 0);
+  return delCliente ? (deLaPlanta ? "cliente-y-tarifa" : "cliente") : "tarifa";
+}
+
+/**
+ * El precio de VENTA que el trato del cliente propone para una especie: el
+ * promedio por PT de sus paquetes, cada uno con el precio de su tipo. Sólo si
+ * el trato cubre TODOS: un promedio de la mitad de la madera parecería el
+ * precio de toda.
+ */
+export function ventaSugeridaDelCliente(
+  corrida: CorridaDeEspecie | undefined,
+  trato: TarifaCliente | null,
+  grupos: readonly GrupoEspecies[],
+): number | null {
+  if (!corrida || !trato || corrida.paquetes.length === 0) return null;
+  let pt = 0;
+  let soles = 0;
+  for (const p of corrida.paquetes) {
+    const precio = precioDelCliente(trato, grupos, corrida.especie, esTipoComercial(p.tipo) ? p.tipo : null);
+    if (!precio) return null;
+    pt += p.pieTablar;
+    soles += p.pieTablar * precio.precioPt;
+  }
+  return pt > 0 ? r4(soles / pt) : null;
 }
 
 /** Los paquetes de una especie en la forma que cotiza el aserrío. Con su PT: el servidor lo guarda (ADR-429). */
@@ -106,8 +157,26 @@ export function lineasDePrecio(args: {
   textos: TextosDePrecio;
   recordados: Readonly<Record<string, number>>;
   tarifa: VersionTarifa | null;
+  /**
+   * El trato del cliente elegido (ADR-430): TODAS sus versiones. Tercero usa
+   * la de aserrío vigente el día de la producción —la misma que busca el
+   * cobro del servidor (`argumentosDelCobro`)—; propia, la de venta.
+   */
+  tarifasCliente?: readonly TarifaCliente[];
+  /** Los grupos de especies de la planta: sin ellos no hay precio «por grupo». */
+  grupos?: readonly GrupoEspecies[];
+  /** El día de la producción (`AAAA-MM-DD`): con él se elige la versión vigente. */
+  fecha?: string;
 }): PrecioDeEspecie[] {
   const { servicio } = args;
+  const grupos = args.grupos ?? [];
+  /* Los MISMOS datos que `cobrarCorrida`: el trato vigente ese día y los grupos. */
+  const delCobro: Omit<DatosDelCobro, "precioManualPt"> = {
+    tarifasCliente: args.tarifasCliente ?? [],
+    grupos,
+    fecha: args.fecha ?? null,
+  };
+  const tratoVenta = tarifaVigente(args.tarifasCliente ?? [], "venta", args.fecha);
   return args.especies
     .filter((e) => claveEspecie(e.especie))
     .map((e): PrecioDeEspecie => {
@@ -126,30 +195,44 @@ export function lineasDePrecio(args: {
       const texto = args.textos[servicio][clave] ?? "";
       const invalido = textoInvalido(texto);
       const precio = invalido ? null : precioValido(texto);
+      const corrida = args.corridas.find((c) => claveEspecie(c.especie) === clave);
       if (servicio === "propia") {
         const ultimo = args.recordados[clave];
+        const delCliente = ventaSugeridaDelCliente(corrida, tratoVenta, grupos);
         const imp = importe(e.pt, precio);
         return {
           ...vacia,
           texto,
           invalido,
           precio,
-          sugerido: ultimo ? { valor: ultimo, origen: "ultimo" } : null,
+          sugerido:
+            delCliente != null
+              ? { valor: delCliente, origen: "cliente" }
+              : ultimo
+                ? { valor: ultimo, origen: "ultimo" }
+                : null,
           importe: imp,
           desde: imp != null ? "precio" : null,
         };
       }
-      /* Tercero: sin precio a mano, el servidor cobra la tarifa si hay una
-         vigente ese día — la vista previa dice lo mismo. */
-      const corrida = args.corridas.find((c) => claveEspecie(c.especie) === clave);
+      /* Tercero: sin precio a mano, el servidor cobra el trato del cliente y,
+         lo que no cubre, la tarifa vigente ese día — la vista previa dice lo
+         mismo porque cotiza con los mismos argumentos. */
       const bloques = corrida ? bloquesDeEspecie(corrida) : [];
-      const porTarifa = cotizarAserrio(args.tarifa, bloques);
+      const porTarifa = cotizarCorrida(args.tarifa, bloques, delCobro);
+      const origen = origenDeCotizacion(porTarifa);
+      /* El promedio de los PRECIOS pesado por PT, no importe ÷ PT: el importe
+         de cada paquete ya viene redondeado al céntimo y un trato de 0.50
+         parejo se leía «≈ 0.5005». */
       const sugerido =
         porTarifa.cobrable && porTarifa.pt > 0
-          ? { valor: r4(porTarifa.importe / porTarifa.pt), origen: "tarifa" as const }
+          ? {
+              valor: r4(porTarifa.lineas.reduce((a, l) => a + l.pt * l.precioPt, 0) / porTarifa.pt),
+              origen: origen === "tarifa" ? ("tarifa" as const) : ("cliente" as const),
+            }
           : null;
       if (precio != null) {
-        const cot = cotizarAserrio(args.tarifa, bloques, { precioManualPt: precio });
+        const cot = cotizarCorrida(args.tarifa, bloques, { ...delCobro, precioManualPt: precio });
         return {
           ...vacia,
           texto,
@@ -166,7 +249,7 @@ export function lineasDePrecio(args: {
         invalido,
         sugerido,
         importe: porTarifa.cobrable ? porTarifa.importe : null,
-        desde: porTarifa.cobrable ? "tarifa" : null,
+        desde: porTarifa.cobrable ? origen : null,
       };
     });
 }
@@ -208,6 +291,13 @@ export function faltaParaRegistrar(args: {
    * (medido por el revisor: S/ 9 272,68).
    */
   tarifa?: { cargando: boolean; error: string | null };
+  /**
+   * El trato del cliente (ADR-430) y los grupos de especies: el servidor los
+   * usa antes que la tarifa, así que valen el mismo criterio — sin saber qué
+   * dicen, no se sabe cuánto se carga.
+   */
+  trato?: { cargando: boolean; error: string | null; cliente?: string | null };
+  grupos?: { cargando: boolean; error?: boolean };
 }): string | null {
   const { corridas } = args;
   if (corridas.length === 0) return "Cubica al menos una medida para poder declarar.";
@@ -224,6 +314,13 @@ export function faltaParaRegistrar(args: {
   if (!args.servicio) return "Elige el tipo de servicio: madera propia o aserrío a un tercero.";
   if (args.servicio === "tercero" && !args.parteId) return "Elige la cuenta del cliente, o créala.";
   if (args.servicio === "tercero" && args.lineas.some((l) => l.precio == null)) {
+    const quien = args.trato?.cliente?.trim() || "el cliente";
+    if (args.trato?.cargando) return `Leyendo el precio pactado con ${quien}…`;
+    if (args.trato?.error)
+      return `No se pudo leer el precio pactado con ${quien}: pon el precio a mano en cada especie para saber cuánto se carga.`;
+    if (args.grupos?.cargando) return "Leyendo los grupos de especies…";
+    if (args.grupos?.error)
+      return "No se pudieron leer los grupos de especies: pon el precio a mano en cada especie para saber cuánto se carga.";
     if (args.tarifa?.cargando) return "Leyendo la tarifa de aserrío…";
     if (args.tarifa?.error)
       return "No se pudo leer la tarifa de aserrío: pon el precio a mano en cada especie para saber cuánto se carga.";
@@ -251,7 +348,7 @@ export function notaDelPie(args: {
     args.servicio === "tercero"
       ? total.total != null
         ? `Se cargará ${formatCurrency(total.total)} a la cuenta de ${quien}.`
-        : `No se carga nada a ${quien}: falta precio o tarifa.`
+        : `No se carga nada a ${quien}: falta precio, su trato o la tarifa.`
       : total.total != null
         ? `Valor de lo producido: ${formatCurrency(total.total)}${total.sinImporte.length ? ` · sin precio: ${total.sinImporte.join(", ")}` : ""}.`
         : "Sin precio de venta: se registra igual, sin valorizar.";

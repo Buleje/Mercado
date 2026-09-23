@@ -30,6 +30,14 @@ export interface BorradorTarifa {
   vigenteDesde: string;
   basePt: string;
   especies: FilaEspecie[];
+  /**
+   * Precio por grupo de especies de la planta (ADR-430), `grupoId → texto`.
+   * Como `tipos`: un mapa, no una lista construida al armar el borrador — así
+   * un grupo creado a mitad de la edición (desde «Armar grupos de especies»)
+   * aparece solo, con su precio en blanco, sin tener que reconstruir el
+   * borrador. Vacío = ese grupo usa el precio general.
+   */
+  grupos: Record<string, string>;
   tipos: Record<TipoComercial, string>;
   largos: FilaTramo[];
   nota: string;
@@ -62,6 +70,7 @@ export function borradorDesde(
       const e = porClave.get(claveEspecie(nombre));
       return { nombre, precioPt: e ? String(e.precioPt) : "" };
     }),
+    grupos: Object.fromEntries((version?.grupos ?? []).map((g) => [g.grupoId, String(g.precioPt)])),
     tipos: Object.fromEntries(
       ORDEN_TIPO.map((t) => [t, String(version?.tipos.find((x) => x.tipo === t)?.ajustePt ?? "")]),
     ) as Record<TipoComercial, string>,
@@ -88,6 +97,10 @@ export function borradorDesdeProduccion(input: VersionTarifaInput): BorradorTari
     vigenteDesde: input.vigenteDesde,
     basePt: "",
     especies: input.especies.map((e) => ({ nombre: e.nombre, precioPt: "" })),
+    /* El borrador de producción no sabe de grupos —el servidor sólo mira
+       corridas reales—; empieza vacío y se completa desde el catálogo vivo,
+       igual que al editar una versión existente. */
+    grupos: {},
     tipos: Object.fromEntries(ORDEN_TIPO.map((t) => [t, ""])) as Record<TipoComercial, string>,
     /* Un tramo con ajuste 0 en la producción real no distinguió nada — mostrar
        esa fila igual que las demás es ruido, no un ajuste a completar (BAJO,
@@ -123,6 +136,9 @@ export function inputDesde(b: BorradorTarifa): VersionTarifaInput {
     especies: b.especies
       .filter((e) => e.precioPt.trim() !== "")
       .map((e) => ({ nombre: e.nombre, precioPt: Number(e.precioPt) || 0 })),
+    grupos: Object.entries(b.grupos)
+      .filter(([, v]) => v.trim() !== "")
+      .map(([grupoId, v]) => ({ grupoId, precioPt: Number(v) || 0 })),
     tipos: ORDEN_TIPO.filter((t) => (b.tipos[t] ?? "").trim() !== "").map((t) => ({
       tipo: t,
       ajustePt: Number(b.tipos[t]) || 0,

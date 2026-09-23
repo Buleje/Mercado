@@ -150,6 +150,17 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
     [partes],
   );
 
+  /**
+   * Quién puede recibir la madera en una guía: el destinatario de siempre O un
+   * cliente (ADR-430). Un cliente dado de alta sólo como «cliente» no salía en
+   * la libreta del destinatario, así que su trato de venta nunca se proponía
+   * al despachar. Cada parte una sola vez, por uso.
+   */
+  const receptores = useCallback(
+    () => ordenarPorUso(partes.filter((p) => p.activo && (p.roles.includes("destinatario") || p.roles.includes("cliente")))),
+    [partes],
+  );
+
   const vehiculosActivos = useMemo(() => ordenarPorUso(vehiculos.filter((v) => v.activo)), [vehiculos]);
 
   /**
@@ -207,6 +218,7 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
     vehiculos,
     vehiculosActivos,
     porRol,
+    receptores,
     cargando,
     error,
     cargar,

@@ -308,7 +308,7 @@ export default function CtpGtfDatosForm({
             <CtpParteBarra
               rol="destinatario"
               valor={datos.destinatario}
-              opciones={directorio.porRol("destinatario")}
+              opciones={directorio.receptores()}
               onAplicar={(v) => set("destinatario", v)}
               onElegir={anotarParte}
               onGuardar={guardarEnLibreta}

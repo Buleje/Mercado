@@ -38,6 +38,8 @@ import {
   type TipoServicio,
 } from "@/lib/forestal/declarar-produccion";
 import { useTarifaAserrio } from "./hooks/use-tarifa-aserrio";
+import { useTratoDelCliente } from "./hooks/use-trato-del-cliente";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { useRegistrarProduccionSinLote } from "./hooks/use-registrar-produccion-sin-lote";
 import {
   TEXTOS_VACIOS,
@@ -63,7 +65,14 @@ import CtpServicioProduccion from "./CtpServicioProduccion";
 export interface BorradorDeclaracion {
   /** Sin valor inicial a propósito: suponer «propia» es la respuesta que nadie revisa. */
   servicio: TipoServicio | null;
+  /** Aserrío a un tercero: a quién se le carga. */
   parteId: string | null;
+  /**
+   * Madera propia: para qué cliente, si ya se sabe (opcional). Sólo sugiere el
+   * precio de venta de su trato (ADR-430); no viaja al servidor. Va aparte de
+   * `parteId`: el dueño de una madera ajena no es el comprador de la propia.
+   */
+  compradorId: string | null;
   textos: TextosDePrecio;
   linea: string;
   permiso: string;
@@ -75,6 +84,7 @@ export interface BorradorDeclaracion {
 const BORRADOR_INICIAL: BorradorDeclaracion = {
   servicio: null,
   parteId: null,
+  compradorId: null,
   textos: TEXTOS_VACIOS,
   /* La del día a día, como el alta con lote (`CtpRegistrarProduccionModal`). */
   linea: "LP",
@@ -121,7 +131,7 @@ function Dialogo({
 }) {
   const cambiar = (parcial: Partial<BorradorDeclaracion>) =>
     setBorrador((b) => ({ ...b, ...parcial }));
-  const { servicio, parteId, textos, especieParaSinEspecie } = borrador;
+  const { servicio, parteId, compradorId, textos, especieParaSinEspecie } = borrador;
 
   const piezasEfectivas = useMemo(
     () =>
@@ -154,6 +164,12 @@ function Dialogo({
   /* La tarifa sugiere el precio del aserrío y dice cuánto cobra lo que quede sin trato. */
   const tarifa = useTarifaAserrio();
   const version = versionVigente(tarifa.tarifario, fecha);
+  /* El trato del cliente (ADR-430): el de aserrío del tercero, o el de venta
+     de quien compra la madera propia. Con los grupos de la planta: el cobro
+     del servidor los usa, la vista previa también. */
+  const clienteId = servicio === "tercero" ? parteId : servicio === "propia" ? compradorId : null;
+  const trato = useTratoDelCliente(clienteId);
+  const catalogo = useEspeciesCatalogo();
   const [recordados] = useState(preciosDeVentaRecordados);
   const lineas = useMemo(
     () =>
@@ -164,14 +180,32 @@ function Dialogo({
         textos,
         recordados,
         tarifa: version,
+        tarifasCliente: trato.tarifas,
+        grupos: catalogo.grupos,
+        fecha,
       }),
-    [resumen.especies, corridas, servicio, textos, recordados, version],
+    [resumen.especies, corridas, servicio, textos, recordados, version, trato.tarifas, catalogo.grupos, fecha],
   );
   const total = useMemo(() => totalDePrecios(lineas), [lineas]);
-  const directorio = useDirectorioForestal({ activo: servicio === "tercero" });
-  const cliente = parteId
-    ? (directorio.partes.find((p) => p.id === parteId)?.nombre ?? null)
-    : null;
+  const directorio = useDirectorioForestal({ activo: servicio != null });
+  const nombreDe = (id: string | null) =>
+    id ? (directorio.partes.find((p) => p.id === id)?.nombre ?? null) : null;
+  const cliente = nombreDe(parteId);
+  /* Los grupos sólo importan si alguien cobra por grupo: si no, esperar el
+     catálogo sería frenar por nada. */
+  const usaGrupos =
+    trato.tarifas.some((t) => t.grupos.length > 0) || (version?.grupos?.length ?? 0) > 0;
+
+  /* Sin precio a mano en alguna especie, el cargo depende de lo que se está leyendo. */
+  const calculandoCargo =
+    servicio === "tercero" &&
+    lineas.some((l) => l.precio == null) &&
+    (trato.cargando || tarifa.cargando || (catalogo.cargando && usaGrupos));
+
+  const lineasVista = useMemo(
+    () => (calculandoCargo ? lineas.map((l) => (l.precio == null ? { ...l, calculando: true, importe: null, desde: null } : l)) : lineas),
+    [calculandoCargo, lineas],
+  );
 
   const falta = faltaParaRegistrar({
     corridas,
@@ -180,6 +214,8 @@ function Dialogo({
     lineas,
     fechaValida: esIsoValido(fecha),
     tarifa: { cargando: tarifa.cargando, error: tarifa.error },
+    trato: { cargando: trato.cargando, error: trato.error, cliente },
+    grupos: { cargando: catalogo.cargando && usaGrupos, error: !!catalogo.errorLectura && usaGrupos },
   });
   const { registrar, guardando, error } = useRegistrarProduccionSinLote();
 
@@ -286,9 +322,14 @@ function Dialogo({
               onServicio={(t) => cambiar({ servicio: t })}
               parteId={parteId}
               onParte={(id) => cambiar({ parteId: id })}
+              compradorId={compradorId}
+              onComprador={(id) => cambiar({ compradorId: id })}
               fecha={fecha}
               directorio={directorio}
               cargo={total}
+              trato={trato}
+              grupos={catalogo.grupos}
+              calculando={calculandoCargo}
             />
           </div>
         </Seccion>
@@ -298,7 +339,7 @@ function Dialogo({
             resumen={resumen}
             paquetes={paquetes}
             servicio={servicio}
-            lineas={lineas}
+            lineas={lineasVista}
             onPrecio={(clave, texto) =>
               servicio &&
               setBorrador((b) => ({

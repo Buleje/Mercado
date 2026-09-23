@@ -261,7 +261,9 @@ export function ordenarDetalle(paquetes: readonly PaqueteDeclarable[]): PaqueteD
 // ── El pedido al servidor ───────────────────────────────────────────────────
 
 const positivo = (max: number) => z.number().finite().positive().max(max);
-const precioSchema = z.number().finite().positive().max(100_000).nullable();
+/* Mismo tope que el precio a mano de «Cobrar aserrío» y que un trato con un
+   cliente (S/ 1000 por PT): un precio por pie más alto es un error de tipeo. */
+const precioSchema = z.number().finite().positive().max(1000, "Un precio de más de S/ 1000 por pie es un error de tipeo.").nullable();
 const especieSchema = z.string().trim().min(1).max(80);
 
 const paqueteSchema = z.object({

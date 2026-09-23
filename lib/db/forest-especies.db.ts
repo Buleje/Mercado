@@ -17,6 +17,7 @@ import {
   type EspecieEnElLibro,
   type ResultadoCatalogo,
 } from "@/lib/forestal/especies-catalogo";
+import { normalizarGrupos, type GruposEspeciesInput } from "@/lib/forestal/precio-cliente";
 
 /**
  * ForestEspeciesDB — el catálogo de especies que edita el aserradero.
@@ -32,6 +33,10 @@ import {
  */
 
 const KEY_PREFIX = "ctp-especies-catalogo:";
+
+/* Alias: dentro de `editar`/`quitar` el parámetro se llama `claveEspecie` y
+   tapa al import. */
+const normalizarClave = (nombre: string) => claveEspecie(nombre);
 
 const clave = (tenantId: string) => `${KEY_PREFIX}${tenantId}`;
 /** Caché de lo que el LIBRO tiene escrito (no del catálogo: eso ya lo cachea el KV). */
@@ -49,15 +54,44 @@ export class EspecieCatalogoError extends Error {
   }
 }
 
+/**
+ * Los grupos de especies (ADR-430) sobreviven a cualquier cambio de la lista.
+ *
+ * `agregarEspecie`, `quitarEspecie` y la edición de una de fábrica arman el
+ * catálogo nuevo con `{ agregadas, ocultas }` y sin `...catalogo`: sin esto,
+ * dar de alta una especie BORRABA los grupos y, con ellos, los precios por
+ * grupo de la planta y de cada cliente dejaban de aplicarse sin aviso.
+ *
+ * Si una especie cambia de nombre (y de clave), su lugar en el grupo la sigue.
+ */
+function conGrupos(
+  nuevo: CatalogoEspecies,
+  previo: CatalogoEspecies,
+  renombre?: { de: string; a: string },
+): CatalogoEspecies {
+  const grupos = nuevo.grupos ?? previo.grupos;
+  if (!grupos?.length) return nuevo;
+  const mover = renombre && renombre.de && renombre.a && renombre.de !== renombre.a ? renombre : null;
+  return {
+    ...nuevo,
+    grupos: mover
+      ? grupos.map((g) => ({ ...g, claves: [...new Set(g.claves.map((k) => (k === mover.de ? mover.a : k)))] }))
+      : grupos,
+  };
+}
+
 /** Guarda y deja el rastro. Devuelve el catálogo ya guardado. */
 async function aplicar(
   tenantId: string,
   resultado: ResultadoCatalogo,
   user: string,
   detalle: string,
+  previo: CatalogoEspecies,
+  renombre?: { de: string; a: string },
 ): Promise<{ catalogo: CatalogoEspecies; mensaje: string }> {
   if (!resultado.ok) throw new EspecieCatalogoError(resultado.motivo);
-  await PlatformSettingsDB.set(clave(tenantId), resultado.catalogo, user);
+  const catalogo = conGrupos(resultado.catalogo, previo, renombre);
+  await PlatformSettingsDB.set(clave(tenantId), catalogo, user);
   auditCtp({
     tenantId,
     action: "ctp_especie_catalogo",
@@ -66,7 +100,7 @@ async function aplicar(
     detail: detalle,
     user,
   });
-  return { catalogo: resultado.catalogo, mensaje: resultado.mensaje };
+  return { catalogo, mensaje: resultado.mensaje };
 }
 
 export const ForestEspeciesDB = {
@@ -128,7 +162,7 @@ export const ForestEspeciesDB = {
   ) {
     const actual = await this.get(tenantId);
     const r = agregarEspecie(actual, entrada, { usuario: user });
-    return aplicar(tenantId, r, user, `Agregó la especie «${entrada.nombre}» al catálogo`);
+    return aplicar(tenantId, r, user, `Agregó la especie «${entrada.nombre}» al catálogo`, actual);
   },
 
   async editar(
@@ -144,19 +178,71 @@ export const ForestEspeciesDB = {
       r,
       user,
       `Editó la especie «${claveEspecie}»${cambios.nombre ? ` → «${cambios.nombre}»` : ""}`,
+      actual,
+      cambios.nombre ? { de: normalizarClave(claveEspecie), a: normalizarClave(cambios.nombre) } : undefined,
     );
   },
 
   async quitar(tenantId: string, claveEspecie: string, user = "unknown") {
     const actual = await this.get(tenantId);
     const r = quitarEspecie(actual, claveEspecie);
-    return aplicar(tenantId, r, user, `Quitó la especie «${claveEspecie}» del catálogo`);
+    return aplicar(tenantId, r, user, `Quitó la especie «${claveEspecie}» del catálogo`, actual);
   },
 
   async restaurar(tenantId: string, claveEspecie: string, user = "unknown") {
     const actual = await this.get(tenantId);
     const r = restaurarEspecie(actual, claveEspecie);
-    return aplicar(tenantId, r, user, `Volvió a mostrar la especie «${claveEspecie}»`);
+    return aplicar(tenantId, r, user, `Volvió a mostrar la especie «${claveEspecie}»`, actual);
+  },
+
+  /**
+   * Guarda los grupos de especies de la planta (ADR-430): «Duras: Anacaspi,
+   * Shihuahuaco». Reemplaza la lista entera — la pantalla manda todos.
+   *
+   * La entrada ya viene validada por `gruposEspeciesSchema` (una especie en UN
+   * solo grupo); acá se normalizan las claves. Lista vacía = sin grupos, y el
+   * catálogo queda idéntico al de antes de ADR-430.
+   *
+   * Quitar un grupo apaga los precios que lo usaban (de la tarifa de la planta
+   * y de cada cliente): se dice en el mensaje, no se borra nada de los tratos.
+   */
+  async guardarGrupos(
+    tenantId: string,
+    input: GruposEspeciesInput,
+    user = "unknown",
+  ): Promise<{ catalogo: CatalogoEspecies; mensaje: string }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const actual = await this.get(tenantId);
+    const grupos = normalizarGrupos(input);
+    const catalogo: CatalogoEspecies = {
+      agregadas: actual.agregadas,
+      ocultas: actual.ocultas,
+      ...(grupos.length ? { grupos } : {}),
+    };
+    await PlatformSettingsDB.set(clave(tenantId), catalogo, user);
+
+    const nuevos = new Set(grupos.map((g) => g.id));
+    const quitados = (actual.grupos ?? []).filter((g) => !nuevos.has(g.id));
+    const especies = grupos.reduce((t, g) => t + g.claves.length, 0);
+    auditCtp({
+      tenantId,
+      action: "ctp_especie_catalogo",
+      entity: "ForestEspecieCatalogo",
+      entityId: tenantId,
+      detail:
+        `Guardó ${grupos.length} grupo(s) de especies` +
+        (grupos.length ? `: ${grupos.map((g) => `${g.nombre} (${g.claves.length})`).join(", ")}` : "") +
+        (quitados.length ? ` · quitó ${quitados.map((g) => g.nombre).join(", ")}` : ""),
+      user,
+    });
+    return {
+      catalogo,
+      mensaje:
+        `Quedaron ${grupos.length} grupo${grupos.length === 1 ? "" : "s"} con ${especies} especie${especies === 1 ? "" : "s"}.` +
+        (quitados.length
+          ? ` Se quitó ${quitados.map((g) => `«${g.nombre}»`).join(", ")}: los precios por ese grupo dejan de aplicarse.`
+          : ""),
+    };
   },
 
   /**
@@ -248,7 +334,8 @@ export const ForestEspeciesDB = {
     entradas: readonly { nombre: string; cientifico?: string | null }[],
     user = "unknown",
   ): Promise<{ catalogo: CatalogoEspecies; mensaje: string; agregadas: string[]; rechazadas: { nombre: string; motivo: string }[] }> {
-    let catalogo = await this.get(tenantId);
+    const previo = await this.get(tenantId);
+    let catalogo = previo;
     const agregadas: string[] = [];
     const rechazadas: { nombre: string; motivo: string }[] = [];
     for (const e of entradas) {
@@ -265,6 +352,7 @@ export const ForestEspeciesDB = {
         rechazadas[0]?.motivo ?? "No había ninguna especie nueva para agregar.",
       );
     }
+    catalogo = conGrupos(catalogo, previo);
     await PlatformSettingsDB.set(clave(tenantId), catalogo, user);
     /* Lo sembrado cambia qué especies «faltan»: el aviso tiene que recalcularse. */
     invalidate(claveLibro(tenantId));

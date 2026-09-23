@@ -19,6 +19,7 @@ import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import { versionVigente, type BaseDelBorrador, type VersionTarifa, type VersionTarifaInput } from "@/lib/forestal/tarifa-aserrio";
 import { useTarifaAserrio } from "./hooks/use-tarifa-aserrio";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
+import CtpEspeciesGruposModal from "./CtpEspeciesGruposModal";
 import CtpTarifaAserrioForm from "./CtpTarifaAserrioForm";
 import { Btn, ModalBody, formatDate } from "./ctp-shared";
 import { formatCurrency } from "@/lib/format";
@@ -35,6 +36,7 @@ export default function CtpTarifaAserrioModal({ open, onClose }: { open: boolean
   const [editando, setEditando] = useState<Editando>(null);
   const [borradorProduccion, setBorradorProduccion] = useState<{ borrador: VersionTarifaInput; base: BaseDelBorrador } | null>(null);
   const [cargandoBorrador, setCargandoBorrador] = useState(false);
+  const [editandoGrupos, setEditandoGrupos] = useState(false);
 
   const hoy = hoyEnLima();
   const vigente = versionVigente(tarifa.tarifario, hoy);
@@ -116,8 +118,8 @@ export default function CtpTarifaAserrioModal({ open, onClose }: { open: boolean
     >
       <ModalBody>
         <p className="mb-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-          Precio por pie tablar = <b>base</b> (de la especie, o la general) + <b>ajuste por tipo</b> +{" "}
-          <b>ajuste por largo</b>.
+          Precio por pie tablar = <b>base</b> (de la especie, de su grupo, o la general) +{" "}
+          <b>ajuste por tipo</b> + <b>ajuste por largo</b>.
         </p>
 
         {editando ? (
@@ -130,6 +132,8 @@ export default function CtpTarifaAserrioModal({ open, onClose }: { open: boolean
             }
             borradorProduccion={editando === "borrador" ? (borradorProduccion ?? undefined) : undefined}
             nombresCatalogo={catalogo.nombres}
+            grupos={catalogo.grupos}
+            onEditarGrupos={() => setEditandoGrupos(true)}
             guardando={tarifa.guardando}
             onGuardar={async (input) => {
               const motivo = await tarifa.guardar(input);
@@ -161,9 +165,11 @@ export default function CtpTarifaAserrioModal({ open, onClose }: { open: boolean
                   </span>
                   <span className="block text-xs text-[var(--text-tertiary)]">
                     General {formatCurrency(Number(v.basePt))} · {v.especies.length}{" "}
-                    {v.especies.length === 1 ? "especie" : "especies"} · {v.tipos.length}{" "}
-                    {v.tipos.length === 1 ? "ajuste de tipo" : "ajustes de tipo"} · {v.largos.length}{" "}
-                    {v.largos.length === 1 ? "tramo" : "tramos"} de largo
+                    {v.especies.length === 1 ? "especie" : "especies"}
+                    {(v.grupos?.length ?? 0) > 0 &&
+                      ` · ${v.grupos!.length} ${v.grupos!.length === 1 ? "grupo" : "grupos"}`}{" "}
+                    · {v.tipos.length} {v.tipos.length === 1 ? "ajuste de tipo" : "ajustes de tipo"} ·{" "}
+                    {v.largos.length} {v.largos.length === 1 ? "tramo" : "tramos"} de largo
                     {v.nota ? ` · ${v.nota}` : ""}
                   </span>
                 </div>
@@ -197,6 +203,13 @@ export default function CtpTarifaAserrioModal({ open, onClose }: { open: boolean
           </p>
         )}
       </ModalBody>
+
+      {editandoGrupos && (
+        <CtpEspeciesGruposModal
+          onClose={() => setEditandoGrupos(false)}
+          onCambio={() => void catalogo.recargar()}
+        />
+      )}
     </AdminModal>
   );
 }

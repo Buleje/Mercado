@@ -55,6 +55,7 @@ export default function CubicadorKpis({
   conValor,
   hayPreciosEspecie,
   precio,
+  rotuloPrecio,
   avisarRaras,
   fmtPt,
   fmtM3,
@@ -73,6 +74,11 @@ export default function CubicadorKpis({
   conValor: boolean;
   hayPreciosEspecie: boolean;
   precio: number;
+  /**
+   * Cómo se puso el precio, ya dicho por quien sabe (ADR-430: «precio de cada
+   * cliente», «leyendo…»). Manda sobre el rótulo armado con `precio`.
+   */
+  rotuloPrecio?: string;
   /** Si el operario apagó el aviso de medidas raras, acá tampoco se avisa. */
   avisarRaras: boolean;
   fmtPt: (v: number) => string;
@@ -197,11 +203,12 @@ export default function CubicadorKpis({
           /* Sin precio no se inventa un número: un «S/ 0» finge que la madera
              no vale nada, y ese cero después se copia a una liquidación. */
           sub={
-            conValor
+            rotuloPrecio ??
+            (conValor
               ? hayPreciosEspecie
                 ? "precio por especie"
                 : `S/ ${soles(precio)} por PT`
-              : "carga el precio por PT"
+              : "carga el precio por PT")
           }
           apagado={!conValor}
         />

@@ -68,7 +68,13 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
   const saldos = useMemo(() => saldosPorParte(movs), [movs]);
   const total = useMemo(() => calcularSaldo(movs), [movs]);
   const pendientes = useMemo(() => fletesSinCargar(fletes, movs), [fletes, movs]);
-  const partes = useMemo(() => [...dir.porRol("proveedor"), ...dir.porRol("transportista")], [dir]);
+  /* A quién se le puede anotar un movimiento. El cliente (ADR-430) es a quien
+     va la deuda del aserrío y de la venta. Una parte con dos papeles salía dos
+     veces en el selector: se deja una. */
+  const partes = useMemo(() => {
+    const todas = [...dir.porRol("proveedor"), ...dir.porRol("cliente"), ...dir.porRol("transportista")];
+    return todas.filter((p, i) => todas.findIndex((x) => x.id === p.id) === i);
+  }, [dir]);
 
   async function guardar(body: Record<string, unknown>) {
     const r = await fetch("/api/admin/forestal/cuenta", {

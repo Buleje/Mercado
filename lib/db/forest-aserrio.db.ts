@@ -23,6 +23,8 @@ import {
 import { CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestCuentaDB } from "./forest-cuenta.db";
+import { ForestEspeciesDB } from "./forest-especies.db";
+import { ForestParteTarifaDB } from "./forest-parte-tarifa.db";
 import { ForestTarifaAserrioDB } from "./forest-tarifa-aserrio.db";
 
 /**
@@ -194,11 +196,18 @@ export const ForestAserrioDB = {
     /* `undefined` mantiene el trato actual; `null` es la tarifa; un número, a mano. */
     const precioManualPt = precioManualAUsar(pedido.precioManualPt, corrida);
     /* La tarifa que regía EN LA FECHA de la corrida, no la de hoy (ADR-412 §2).
-       Y el cierre: un mes cerrado se cobra igual, pero su acta no se reescribe. */
-    const [version, cerrado] = await Promise.all([
+       Y el cierre: un mes cerrado se cobra igual, pero su acta no se reescribe.
+       ADR-430: también el trato de ESTE cliente a esa fecha y los grupos de
+       especies de la planta — los MISMOS argumentos que usa la vista previa de
+       la pantalla (`tarifaVigente` + `cotizarAserrio`), para que el importe que
+       se vio sea el que se cobra. */
+    const [version, cerrado, cliente, catalogo] = await Promise.all([
       ForestTarifaAserrioDB.vigente(tenantId, corrida.entryDate),
       ForestCtpCierreDB.closedPeriodOf(tenantId, corrida.entryDate),
+      ForestParteTarifaDB.vigente(tenantId, parte.id, "aserrio", corrida.entryDate),
+      ForestEspeciesDB.get(tenantId),
     ]);
+    const grupos = catalogo.grupos ?? [];
 
     const escribir = () =>
       prisma.$transaction(async (tx) => {
@@ -227,6 +236,9 @@ export const ForestAserrioDB = {
             unit: true,
             titularNombre: true,
             duenoParteId: true,
+            /* El permiso de la corrida viaja al cargo (ADR-430): sin él, el
+               aserrío no entraba al balance del permiso (ADR-421). */
+            contratoId: true,
             paquetes: {
               where: { deletedAt: null },
               orderBy: { codigo: "asc" },
@@ -265,7 +277,7 @@ export const ForestAserrioDB = {
               pieTablar: num(p.pieTablar),
             })),
           ),
-          { precioManualPt },
+          { precioManualPt, cliente, grupos },
         );
 
         /* Monto y parte también: la auditoría y la respuesta dicen qué había
@@ -320,6 +332,7 @@ export const ForestAserrioDB = {
               moneda: "PEN",
               referencia: m.referencia,
               notas: m.notas,
+              contratoId: actual.contratoId,
               createdBy: user || "unknown",
             },
             select: { id: true },
@@ -339,6 +352,8 @@ export const ForestAserrioDB = {
               monto: new Prisma.Decimal(m.monto),
               referencia: m.referencia,
               notas: m.notas,
+              /* Espejo de la corrida: si la pasaron a otro permiso, el cargo la sigue. */
+              contratoId: actual.contratoId,
             },
           });
           movimientoId = vivo.id;
@@ -388,8 +403,9 @@ export const ForestAserrioDB = {
   /**
    * Si la corrida ya se le cobraba a alguien, lo vuelve a cobrar sobre lo que
    * tiene AHORA (ampliar suma paquetes; corregir cambia cantidad o especie).
-   * Con el mismo trato: si se cobró a mano, a mano; si no, con la tarifa de su
-   * fecha. `null` = no se le cobraba a nadie, no hay nada que recalcular.
+   * Con el mismo trato: si se cobró a mano, a mano; si no, con el precio del
+   * cliente (ADR-430) o la tarifa de su fecha. `null` = no se le cobraba a
+   * nadie, no hay nada que recalcular.
    */
   async cobrarTanda(
     tenantId: string,

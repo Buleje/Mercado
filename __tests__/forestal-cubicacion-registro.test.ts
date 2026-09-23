@@ -3,6 +3,7 @@
  * así que los totales se congelan al guardar y no se creen del cliente.
  */
 import { describe, expect, it } from "vitest";
+import { limaDateKey } from "@/lib/utils";
 import {
   construirRegistro, filtrarCubicaciones, nombreSugerido, totalesDe,
   type CubicacionRegistro,
@@ -47,7 +48,9 @@ describe("construirRegistro", () => {
   });
 
   it("fecha por defecto = hoy; una fecha mal formada no se acepta", () => {
-    const hoy = new Date().toISOString().slice(0, 10);
+    /* Hoy en Lima, no el día UTC: desde las 19:00 de Pucallpa el UTC ya es
+       mañana (y con ADR-430 esa fecha elige el trato vigente del cliente). */
+    const hoy = limaDateKey();
     expect(construirRegistro({ nombre: "x", piezas }).fecha).toBe(hoy);
     expect(construirRegistro({ nombre: "x", piezas, fecha: "ayer" }).fecha).toBe(hoy);
     expect(construirRegistro({ nombre: "x", piezas, fecha: "2026-03-15" }).fecha).toBe("2026-03-15");

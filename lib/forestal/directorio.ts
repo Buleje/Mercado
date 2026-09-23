@@ -22,11 +22,17 @@ import { z } from "zod";
 // ── Roles ───────────────────────────────────────────────────────────────────
 
 /**
- * Los cuatro papeles que puede cumplir una parte. Son roles, no tipos: la misma
+ * Los papeles que puede cumplir una parte. Son roles, no tipos: la misma
  * empresa suele ser proveedor Y destinatario, y el dueño-chofer es transportista
  * Y conductor.
+ *
+ * «cliente» (ADR-430): a quien se le cobra el servicio de aserrío o se le vende
+ * la madera. Antes el dueño de la madera se daba de alta como «proveedor», que
+ * es otra cosa —el que nos trae la madera con su GTF— y le pedía un título
+ * habilitante que no tiene. Va al FINAL de la lista: el orden de las pestañas
+ * del Directorio sale de acá y las cuatro de siempre no se mueven.
  */
-export const ROLES_PARTE = ["proveedor", "destinatario", "transportista", "conductor"] as const;
+export const ROLES_PARTE = ["proveedor", "destinatario", "transportista", "conductor", "cliente"] as const;
 export type RolParte = (typeof ROLES_PARTE)[number];
 
 export const ROL_LABEL: Record<RolParte, string> = {
@@ -34,6 +40,7 @@ export const ROL_LABEL: Record<RolParte, string> = {
   destinatario: "Destinatario",
   transportista: "Transportista",
   conductor: "Conductor",
+  cliente: "Cliente",
 };
 
 /** Plural explícito: "destinatarioes" no existe y el `+ "es"` lo fabricaba. */
@@ -42,6 +49,7 @@ export const ROL_PLURAL: Record<RolParte, string> = {
   destinatario: "Destinatarios",
   transportista: "Transportistas",
   conductor: "Conductores",
+  cliente: "Clientes",
 };
 
 /** Qué hace cada rol, en el idioma del patio. Para la ayuda de la UI. */
@@ -50,6 +58,7 @@ export const ROL_DESCRIPCION: Record<RolParte, string> = {
   destinatario: "Recibe el producto despachado en el destino",
   transportista: "Empresa o persona que hace el traslado",
   conductor: "Quien maneja: el control le pide licencia y DNI",
+  cliente: "A quien le cobras el aserrío o le vendes la madera: su precio del pie va en su ficha",
 };
 
 export function esRolValido(v: string): v is RolParte {
@@ -453,7 +462,7 @@ export const adjuntoSchema = z.object({
 const texto = (max: number) => z.string().trim().max(max);
 
 export const parteInputSchema = z.object({
-  roles: z.array(z.enum(ROLES_PARTE)).min(1, "Elige al menos un rol").max(4),
+  roles: z.array(z.enum(ROLES_PARTE)).min(1, "Elige al menos un rol").max(ROLES_PARTE.length),
   nombre: texto(200).min(2, "El nombre es obligatorio"),
   categoria: z.enum(CATEGORIAS_PARTE).optional().nullable(),
   /** Código de CTP de la parte, cuando ella misma es otro aserradero/CTP. */

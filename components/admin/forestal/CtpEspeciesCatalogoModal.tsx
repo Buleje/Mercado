@@ -27,6 +27,7 @@ import { Btn } from "./ctp-shared";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { EspeciesDuplicadas, EspeciesQueFaltan, EspeciesSinCientifico } from "./ctp-especies-del-libro";
 import { especiesDisponibles } from "@/lib/forestal/especies-catalogo";
+import CtpEspeciesGrupos from "./CtpEspeciesGrupos";
 
 const CAMPO =
   "h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
@@ -319,6 +320,33 @@ export default function CtpEspeciesCatalogoModal({
             </ul>
           </details>
         )}
+
+        {/* Los grupos de especies (ADR-430): los usan la tarifa de la planta y
+            el precio de cada cliente. Plegados: se arman una vez y el gestor
+            de especies es, sobre todo, la lista de arriba. El resumen dice
+            cuántos hay aunque esté cerrado. */}
+        <details className="rounded-xl border border-[var(--rule-base)] px-3 py-2">
+          <summary className="cursor-pointer text-sm font-bold text-[var(--text-primary)]">
+            Grupos de especies ({cat.grupos.length}){" "}
+            <span className="font-normal text-[var(--text-tertiary)]">— para cobrar por grupo: «Duras», «Blandas»…</span>
+          </summary>
+          <div className="mt-3">
+            <CtpEspeciesGrupos
+              grupos={cat.grupos}
+              especies={lista}
+              guardando={cat.guardando}
+              error={cat.error}
+              /* Sin `tras`: el editor ya dice «Grupos guardados.» a la vista;
+                 repetirlo arriba serían dos avisos del mismo guardado. */
+              onGuardar={(input) =>
+                cat.guardarGrupos(input).then((m) => {
+                  if (m) onCambio?.();
+                  return m;
+                })
+              }
+            />
+          </div>
+        </details>
 
         <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
           Esta lista es de <b>esta planta</b> y se guarda para todos sus usuarios. Las que vienen de

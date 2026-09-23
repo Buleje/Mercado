@@ -33,6 +33,7 @@
 
 import { ESPECIES_MADERA } from "./cubicacion";
 import { claveEspecie } from "./loth-constants";
+import type { GrupoEspecies } from "./precio-cliente";
 import { findSpeciesByCommonName, listSpecies, type ForestrySpecies } from "@/data/forestry-species";
 
 /** Tope por tenant: es un JSON en el KV, no una tabla. */
@@ -54,6 +55,13 @@ export interface CatalogoEspecies {
   agregadas: EspeciePropia[];
   /** Claves de las de fábrica que este tenant no quiere ver. */
   ocultas: string[];
+  /**
+   * Grupos de especies de la planta (ADR-430): «Duras: Anacaspi, Shihuahuaco».
+   * Los reusan la tarifa de la planta y los precios de cada cliente. Una
+   * especie está en UN solo grupo. Opcional: los catálogos guardados antes no
+   * lo traen.
+   */
+  grupos?: GrupoEspecies[];
 }
 
 export const CATALOGO_VACIO: CatalogoEspecies = { agregadas: [], ocultas: [] };
@@ -96,7 +104,32 @@ export function normalizarCatalogo(raw: unknown): CatalogoEspecies {
         .filter(Boolean),
     ),
   ];
-  return { agregadas: agregadas.slice(0, MAX_ESPECIES), ocultas };
+  /* `grupos` sólo si hay: el catálogo de quien no los usa queda idéntico al de
+     antes de ADR-430, también guardado en el KV. */
+  const grupos = normalizarGruposGuardados(c.grupos);
+  return { agregadas: agregadas.slice(0, MAX_ESPECIES), ocultas, ...(grupos.length ? { grupos } : {}) };
+}
+
+/**
+ * Los grupos tal como vienen del KV, sin confiar en su forma: sin id o sin
+ * nombre se descartan, y una especie que aparece en dos grupos se queda en el
+ * PRIMERO (una especie tiene un solo precio de grupo, decisión 2 de ADR-430).
+ */
+function normalizarGruposGuardados(raw: unknown): GrupoEspecies[] {
+  if (!Array.isArray(raw)) return [];
+  const usadas = new Set<string>();
+  const grupos: GrupoEspecies[] = [];
+  for (const g of raw as Partial<GrupoEspecies>[]) {
+    const id = txt(g?.id);
+    const nombre = txt(g?.nombre);
+    if (!id || !nombre || grupos.some((x) => x.id === id)) continue;
+    const claves = (Array.isArray(g?.claves) ? g.claves : [])
+      .map((k) => claveEspecie(String(k)))
+      .filter((k) => k && !usadas.has(k));
+    claves.forEach((k) => usadas.add(k));
+    grupos.push({ id, nombre, claves: [...new Set(claves)] });
+  }
+  return grupos.slice(0, 50);
 }
 
 /** Las de fábrica, con su clave. */

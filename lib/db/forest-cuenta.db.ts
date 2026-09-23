@@ -10,6 +10,8 @@ import {
   lineNoDeReferencia,
   mensajeCargoDeCorrida,
 } from "@/lib/forestal/aserrio-cobro";
+import { RELACIONES_PARTE, type RelacionParte, type SaldoConsolidado } from "@/lib/forestal/vinculos-parte";
+import { exigirParteDelTenant } from "./forest-parte-tarifa.db";
 
 /**
  * ForestCuentaDB — la cuenta corriente con las partes del directorio (ADR-322).
@@ -268,6 +270,88 @@ export const ForestCuentaDB = {
     });
     this.invalidar(tenantId);
     return true;
+  },
+
+  /**
+   * El saldo de una parte y, al lado, el de cada parte vinculada a ella
+   * (ADR-430). Sólo para mirar: nunca se mezclan las libretas — la deuda de
+   * cada uno sigue en su cuenta y `total` es una suma a la vista, no un saldo.
+   *
+   * Sumado en la base (`groupBy`), sin el tope de 2000 filas de `listar`: un
+   * saldo no puede salir de una lista cortada. Los vínculos con un PERMISO no
+   * entran: un permiso no tiene cuenta, tiene balance (ADR-421).
+   *
+   * La parte se busca aunque esté dada de baja: puede tener plata viva, como
+   * en «Cuenta por persona».
+   *
+   * Cuenta los vínculos en los DOS sentidos, igual que la lista de vínculos de
+   * la ficha: si A anotó a B, la ficha de B muestra a A con su saldo.
+   *
+   * @throws ParteNoEncontradaError si la parte no es de este tenant.
+   */
+  async saldoConsolidado(tenantId: string, parteId: string): Promise<SaldoConsolidado> {
+    await exigirParteDelTenant(tenantId, parteId);
+
+    const vinculos = await prisma.forestParteVinculo.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        OR: [{ parteId, vinculadaParteId: { not: null } }, { vinculadaParteId: parteId }],
+      },
+      orderBy: { createdAt: "asc" },
+      select: { parteId: true, vinculadaParteId: true, relacion: true },
+      take: 200,
+    });
+    /* Una misma parte con dos vínculos (representa Y es tercero, o anotada
+       desde los dos lados) se muestra UNA vez: sumarla dos veces inventaría
+       deuda en el total. */
+    const relacionDe = new Map<string, { relacion: RelacionParte; sentido: "sale" | "entra" }>();
+    for (const v of vinculos) {
+      const sale = v.parteId === parteId;
+      const otra = sale ? v.vinculadaParteId : v.parteId;
+      if (!otra || otra === parteId || relacionDe.has(otra)) continue;
+      relacionDe.set(otra, {
+        relacion: (RELACIONES_PARTE as readonly string[]).includes(v.relacion) ? (v.relacion as RelacionParte) : "otro",
+        sentido: sale ? "sale" : "entra",
+      });
+    }
+    const ids = [...relacionDe.keys()];
+
+    const [nombres, sumas] = await Promise.all([
+      ids.length
+        ? prisma.forestParty.findMany({ where: { tenantId, id: { in: ids } }, select: { id: true, nombre: true } })
+        : Promise.resolve([]),
+      prisma.forestCuentaMov.groupBy({
+        by: ["parteId", "tipo"],
+        where: { tenantId, deletedAt: null, parteId: { in: [parteId, ...ids] } },
+        _sum: { monto: true },
+      }),
+    ]);
+
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    const cuenta = new Map<string, { cargos: number; abonos: number }>();
+    for (const g of sumas) {
+      const c = cuenta.get(g.parteId) ?? { cargos: 0, abonos: 0 };
+      if (g.tipo === "cargo") c.cargos += Number(g._sum.monto ?? 0);
+      else c.abonos += Number(g._sum.monto ?? 0);
+      cuenta.set(g.parteId, c);
+    }
+    const saldoDe = (id: string) => {
+      const c = cuenta.get(id);
+      return c ? r2(c.cargos - c.abonos) : 0;
+    };
+
+    const propia = cuenta.get(parteId) ?? { cargos: 0, abonos: 0 };
+    const nombreDe = new Map(nombres.map((p) => [p.id, p.nombre]));
+    const vinculados = ids.map((id) => ({
+      parteId: id,
+      nombre: nombreDe.get(id) ?? "Parte dada de baja",
+      relacion: relacionDe.get(id)?.relacion ?? "otro",
+      sentido: relacionDe.get(id)?.sentido ?? "sale",
+      saldo: saldoDe(id),
+    }));
+    const propio = { cargos: r2(propia.cargos), abonos: r2(propia.abonos), saldo: saldoDe(parteId) };
+    return { propio, vinculados, total: r2(propio.saldo + vinculados.reduce((t, v) => t + v.saldo, 0)) };
   },
 
   // ── Liquidación de cuentas (ADR-413): primitivas dentro de la tx de otro ──

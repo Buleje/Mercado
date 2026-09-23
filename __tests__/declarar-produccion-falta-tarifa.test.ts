@@ -34,3 +34,16 @@ describe("tercero sin precio a mano y la tarifa sin leer", () => {
     expect(faltaParaRegistrar({ ...base, servicio: "propia", lineas: [linea(null)], tarifa: { cargando: true, error: null } })).toBeNull();
   });
 });
+
+describe("tercero sin precio a mano y los grupos de especies sin leer (ADR-430)", () => {
+  it("si falló la lectura del catálogo y los grupos importan, no se registra: el servidor sí los usa", () => {
+    expect(
+      faltaParaRegistrar({ ...base, lineas: [linea(null)], tarifa: { cargando: false, error: null }, grupos: { cargando: false, error: true } }),
+    ).toMatch(/grupos de especies/);
+  });
+  it("con precio a mano en todas, los grupos no importan", () => {
+    expect(
+      faltaParaRegistrar({ ...base, lineas: [linea(0.35)], tarifa: { cargando: false, error: null }, grupos: { cargando: false, error: true } }),
+    ).toBeNull();
+  });
+});

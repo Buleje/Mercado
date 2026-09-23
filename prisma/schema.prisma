@@ -7285,6 +7285,87 @@ model ForestContrato {
   @@index([deletedAt])
 }
 
+/// ══════════════════════════════════════════════════════════════════════════
+/// ForestParteTarifa — el trato de precio con un cliente (ADR-430)
+/// ══════════════════════════════════════════════════════════════════════════
+/// Brandon, 2026-09-22: «para ese cliente, a cuánto se le cobra el pie de
+/// servicio de aserrío o de madera». Una fila = UNA versión del trato, por
+/// cliente, servicio y fecha de vigencia; rige hasta que empieza la siguiente.
+/// Lo ya cobrado no se toca: la cotización quedó congelada en la corrida.
+///
+/// «Global» es tener sólo `basePt`; «por grupos» es tener grupos con `basePt`
+/// como «lo demás». Sin columna de modo (ADR-430, alternativa descartada).
+///
+/// Tabla y no KV: hay que listar qué clientes tienen precio y auditar por
+/// cliente; un JSON por tenant crecería clientes × versiones.
+model ForestParteTarifa {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// La parte del Directorio (`ForestParty`). Ref. app-level sin FK, como
+  /// `ForestPlan.contratoId` (ADR-426): una FK aceptaría una parte de OTRO
+  /// tenant; lo que protege es el `findFirst({ id, tenantId })` de la DB class.
+  parteId  String
+  /// `aserrio` | `venta`.
+  servicio String
+
+  vigenteDesde DateTime @db.Date
+  /// El «Global» del cliente (o «lo demás» si hay grupos). NULL = sin global,
+  /// nunca 0: «no pactado» no es «gratis».
+  basePt       Decimal? @db.Decimal(10, 4)
+  /// `{ grupos: [{grupoId, precioPt}], especies: [{clave, nombre, precioPt}],
+  ///    tipos: [{tipo, precioPt}] }` — ver `TarifaCliente` en
+  /// `lib/forestal/precio-cliente.ts`.
+  detalle      Json
+  nota         String?
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  /// El unique (tenantId, parteId, servicio, vigenteDesde) va como índice
+  /// PARCIAL en SQL (`WHERE "deletedAt" IS NULL`): un `@@unique` total no deja
+  /// volver a cargar el día de una versión dada de baja, y Prisma no expresa
+  /// el parcial. Ver `prisma/migrations/adr-430-precios-cliente-y-vinculos.sql`.
+  @@index([tenantId, parteId, servicio, vigenteDesde(sort: Desc)])
+  @@index([deletedAt])
+}
+
+/// ══════════════════════════════════════════════════════════════════════════
+/// ForestParteVinculo — una parte vinculada a otra parte o a un permiso (ADR-430)
+/// ══════════════════════════════════════════════════════════════════════════
+/// «Vincular ese directorio a otro que sea un permiso o un tercero, e
+/// hipervincular todo con la cuenta o saldo.» Con UNA parte o con UN permiso,
+/// nunca con los dos (CHECK en SQL). El vínculo no mueve plata: la deuda va
+/// siempre al cliente; sólo deja ver el saldo de los vinculados al lado.
+model ForestParteVinculo {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Refs. app-level sin FK (ADR-426): se validan del MISMO tenant en la DB class.
+  parteId          String
+  /// trabaja_para · representa · intermediario_de · tercero · otro
+  /// (`RELACIONES_PARTE` en `lib/forestal/vinculos-parte.ts`).
+  relacion         String
+  vinculadaParteId String?
+  contratoId       String?
+
+  desde DateTime? @db.Date
+  hasta DateTime? @db.Date
+  notas String?
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId, parteId])
+  @@index([tenantId, vinculadaParteId])
+  @@index([tenantId, contratoId])
+  @@index([deletedAt])
+}
+
 // ─── Registro Nacional de Plantaciones Forestales — RNPF (ADR-380) ────────────
 // Formato Único para la Inscripción/Actualización de Plantaciones (Lineamientos
 // RNPF-SERFOR, base legal D.S. N°020-2015-MINAGRI). Relacional a propósito

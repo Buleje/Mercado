@@ -21,7 +21,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Truck, Wand2 } from "@buleje/design-system/icons";
+import { HandCoins, Loader2, Truck, Wand2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
@@ -38,6 +38,7 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   enviosDeLista,
   filasDeCorridas,
+  aplicarTratoDeVenta,
   problemasDeLista,
   valorPropuesto,
   volumenTotal,
@@ -51,6 +52,7 @@ import CtpGuiaRegistrada from "./CtpGuiaRegistrada";
 import CtpListaProductosTab from "./CtpListaProductosTab";
 import CtpCubicarProductoModal from "./CtpCubicarProductoModal";
 import CtpProductosStockModal from "./CtpProductosStockModal";
+import { useTratoDeVenta } from "./hooks/use-trato-de-venta";
 import CtpTrozasDespachoModal from "./CtpTrozasDespachoModal";
 import VerificarGtfSerfor, { type SelloSerfor } from "./VerificarGtfSerfor";
 import { logger } from "@/lib/logger";
@@ -343,6 +345,29 @@ export default function CtpDespachoGuiaModal({
     setDatos((p) => ({ ...p, traslado: { ...p.traslado, fechaInicio: v } }));
   }
 
+  /* La venta propuesta sale del trato de VENTA del destinatario, si es alguien
+     del Directorio con precio pactado (ADR-430); si no, del precio del paquete.
+     Elegir o cambiar el destinatario después de armar la lista la re-propone:
+     `proponerVenta` nunca pisa una venta tipeada a mano. */
+  const venta = useTratoDeVenta(datos.destinatario, emision || hoy);
+  /*
+   * Depende también de `filas`, no sólo de `venta.trato`.
+   *
+   * Un renglón que entra DESPUÉS de que el trato ya llegó —la precarga desde
+   * una cancha que responde tarde, «Cubicar producto», el selector de stock,
+   * las trozas— nunca lo recibía: el trato no había cambiado, así que este
+   * efecto no volvía a correr y esa fila se quedaba con el precio del paquete
+   * (o sin venta) para siempre.
+   *
+   * No es un loop de efectos: `aplicarTratoDeVenta` devuelve el MISMO arreglo
+   * cuando ninguna fila necesita cambiar (idempotente, con test dedicado). En
+   * cuanto la lista se estabiliza, `setFilas` recibe la misma referencia,
+   * React no vuelve a renderizar y el efecto no se repite.
+   */
+  useEffect(() => {
+    setFilas((p) => aplicarTratoDeVenta(p, venta.trato));
+  }, [venta.trato, filas]);
+
   const total = volumenTotal(filas);
   /** La unidad de la guía: la de sus productos (la lista no admite mezclarlas). */
   const unidadLista = UNIT_LABELS[filas[0]?.unidad ?? "m3"] ?? filas[0]?.unidad ?? "m³";
@@ -387,8 +412,17 @@ export default function CtpDespachoGuiaModal({
            despacha nada— pero un 0 en la venta diría "regalado" y le fabricaría
            al margen una pérdida del 100%. */
         if (campo === "valorVenta") {
-          /* Tocada a mano deja de ser la propuesta del precio guardado. */
-          return { ...f, valorVenta: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : null, valorPropuesto: false };
+          /* Tocada a mano deja de ser la propuesta del precio guardado —con un
+             valor o vaciada («todavía no sé»)—. `ventaTocada` es lo que hace
+             que el trato de venta (ADR-430) no la vuelva a llenar: sin ella,
+             vaciarla se veía igual que una fila que nunca tuvo propuesta y el
+             precio pactado la volvía a completar solo. */
+          return {
+            ...f,
+            valorVenta: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : null,
+            valorPropuesto: false,
+            ventaTocada: true,
+          };
         }
         const nueva = { ...f, [campo]: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : 0 };
         /* Mientras la venta sea la PROPUESTA (ADR-429), sigue al volumen: sacar
@@ -689,6 +723,34 @@ export default function CtpDespachoGuiaModal({
               }
             />
           ) : (
+            <>
+            {/* De dónde sale la venta propuesta (ADR-430): si el trato falla,
+                se dice en vez de registrar la guía con el precio del paquete
+                sin avisar (defecto confirmado, mismo aviso que Productos
+                disponibles). */}
+            {(venta.cargando || venta.error || venta.trato) && (
+              <p
+                aria-live="polite"
+                className={`flex items-start gap-1.5 rounded-xl px-3 py-2 text-sm ${
+                  venta.error
+                    ? "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+                }`}
+              >
+                <HandCoins className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <span>
+                  {venta.cargando ? (
+                    <>Leyendo el precio de venta pactado con {venta.cliente?.nombre ?? "el destinatario de la guía"}…</>
+                  ) : venta.error ? (
+                    <>No se pudo leer el precio pactado con {venta.cliente?.nombre ?? "el cliente"}: la venta se propone con el precio de cada paquete.</>
+                  ) : (
+                    <>
+                      La venta se propone con el precio pactado con <b className="text-[var(--text-primary)]">{venta.trato?.parteNombre}</b>; lo que su trato no cubre, con el del paquete.
+                    </>
+                  )}
+                </span>
+              </p>
+            )}
             <CtpListaProductosTab
               filas={filas}
               onCambiarFila={cambiarFila}
@@ -702,6 +764,7 @@ export default function CtpDespachoGuiaModal({
               onCubicar={() => setCubicarAbierto(true)}
               problemas={problemas}
             />
+            </>
           )}
           </>
           )}
@@ -733,6 +796,8 @@ export default function CtpDespachoGuiaModal({
       {stockAbierto && !registrado && (
         <CtpProductosStockModal
           yaElegidos={yaElegidos}
+          destinatario={datos.destinatario}
+          fecha={emision}
           presetProducto={presetProducto}
           presetEspecie={presetEspecie}
           onAgregar={agregarFilas}

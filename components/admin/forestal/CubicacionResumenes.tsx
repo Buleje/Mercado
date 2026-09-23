@@ -45,6 +45,8 @@ import ResumenTrozas from "./ResumenTrozas";
 import Anexo04Modal from "./Anexo04Modal";
 import TablaDeTrabajo, { type FilaTrabajo } from "./resumen-tabla-trabajo";
 import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
+import { leerPreciosGuardados, useResolverDePrecio, type PreciosGuardados } from "./hooks/use-precio-cubicador";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { formatDateLong } from "@/lib/format";
 
 /** Botón de acción de la cabecera: mismo alto y peso que los filtros del admin. */
@@ -65,27 +67,26 @@ const VISTAS: { value: Vista; label: string; icon: typeof Compass }[] = [
    los que ya la importaban de acá. */
 export { slugKey };
 
-/** Lee el lote + precios del localStorage y arma el resolver de precio por pieza. */
-function leerLote(): { rows: PiezaCubicada[]; precioDe: (r: PiezaCubicada) => number; conValor: boolean } {
+/**
+ * Lee el lote y lo que el cubicador guardó del precio. El resolver de precio
+ * por pieza NO se arma acá: es `useResolverDePrecio`, el mismo del cubicador
+ * (ADR-430) — antes esto era una copia de la cuenta, y con el trato de cada
+ * cliente una copia iba a decir otro número.
+ */
+function leerLote(): { rows: PiezaCubicada[]; precios: PreciosGuardados } {
   let rows: PiezaCubicada[] = [];
-  let precio = 0;
-  let preciosEsp: Record<string, string> = {};
   try {
     const raw = localStorage.getItem(slugKey());
     // Re-cubicar: el lote guardado puede traer el m³ viejo (volumen geométrico).
     if (raw) rows = recubicarPiezas(JSON.parse(raw) as PiezaCubicada[]);
-    precio = Number(localStorage.getItem(slugKey("-precio"))) || 0;
-    const pe = localStorage.getItem(slugKey("-precios-especie"));
-    if (pe) preciosEsp = JSON.parse(pe) as Record<string, string>;
   } catch { /* ignore */ }
-  const precioDe = (r: PiezaCubicada) => {
-    const esp = r.especie?.trim().toLowerCase();
-    const pe = esp ? Number(preciosEsp[esp]) : 0;
-    return pe > 0 ? pe : precio;
-  };
-  const hayEsp = Object.values(preciosEsp).some((v) => Number(v) > 0);
-  return { rows, precioDe, conValor: precio > 0 || hayEsp };
+  return { rows, precios: leerPreciosGuardados("") };
 }
+
+const LOTE_VACIO: { rows: PiezaCubicada[]; precios: PreciosGuardados } = {
+  rows: [],
+  precios: { precioPt: "", preciosEspecie: {}, modo: "manual", fecha: "" },
+};
 
 /** La vista elegida se recuerda: se vuelve a esta pantalla muchas veces al día. */
 function vistaGuardada(): Vista {
@@ -109,7 +110,9 @@ function contarBloquesRolliza(): number {
 }
 
 export default function CubicacionResumenes() {
-  const [{ rows, precioDe, conValor }, setLote] = useState(() => (typeof window === "undefined" ? { rows: [], precioDe: () => 0, conValor: false } : leerLote()));
+  const [{ rows, precios: preciosGuardados }, setLote] = useState(() => (typeof window === "undefined" ? LOTE_VACIO : leerLote()));
+  const catalogo = useEspeciesCatalogo();
+  const { precioDe, conValor } = useResolverDePrecio(rows, preciosGuardados, catalogo.grupos, catalogo.cargando);
   /**
    * Sembrar bloques desde otra pantalla (Capacidad de la planta, Resumen por
    * permiso) y encontrarse con «todavía no hay lote cubicado» es perder la

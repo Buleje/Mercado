@@ -16,7 +16,7 @@
 import { useId } from "react";
 import {
   Calculator, FileSpreadsheet, Settings, Mic, MicOff, Volume2, VolumeX,
-  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Settings2, Trees, Play,
+  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Settings2, Trees, Play, UserCheck,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -78,6 +78,8 @@ interface PanelEntradaVozProps {
   onAbrirEspecies?: () => void;
   /** De quién es lo que se va a dictar — se aplica a lo que sigue, igual que especie. */
   dueno: string;
+  /** El dueño salió del Directorio (ADR-430): sus piezas toman su precio pactado. */
+  duenoDelDirectorio?: boolean;
   onDuenoChange: (v: string) => void;
   /** Dueños ya usados (lote actual + aprendidos), para el datalist del combobox. */
   duenosConocidos: string[];
@@ -112,7 +114,7 @@ export default function PanelEntradaVoz({
   config, onUpdateConfig, voices, onProbarVoz,
   supported, listening, onToggleListen, paused,
   fijas, onAplicarFijas, especie, onEspecieChange, especies = ESPECIES, onAbrirEspecies,
-  dueno, onDuenoChange, duenosConocidos, onAbrirDuenos,
+  dueno, duenoDelDirectorio = false, onDuenoChange, duenosConocidos, onAbrirDuenos,
   liveGroups, errMsg, lastAdded, addedFlash, onDeshacer, fmtPt,
   manual, onManualChange, onConfirmarCarga, codigoTroza,
 }: PanelEntradaVozProps) {
@@ -451,6 +453,15 @@ export default function PanelEntradaVoz({
                   aria-label="Dueño de lo que se va a cubicar"
                   className="min-w-0 flex-1 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[var(--text-tertiary)]"
                 />
+                {duenoDelDirectorio && (
+                  <span
+                    title="Del Directorio: sus piezas toman su precio pactado"
+                    aria-label="Del Directorio"
+                    className="shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                  >
+                    <UserCheck className="h-4 w-4" aria-hidden />
+                  </span>
+                )}
                 {dueno && (
                   <button
                     type="button"
@@ -464,8 +475,8 @@ export default function PanelEntradaVoz({
                 <button
                   type="button"
                   onClick={onAbrirDuenos}
-                  title="Crear, guardar o borrar dueños de la lista"
-                  aria-label="Gestionar dueños guardados"
+                  title="Elegir del Directorio, o crear y borrar dueños de la lista"
+                  aria-label="Elegir el dueño del Directorio o gestionar los guardados"
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
                 >
                   <Plus className="h-3.5 w-3.5" />

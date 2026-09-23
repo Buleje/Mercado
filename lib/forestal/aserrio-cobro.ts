@@ -64,10 +64,24 @@ export function notasDelCobro(cotizacion: Cotizacion, especie: string | null | u
   const conQue =
     manual != null
       ? `precio a mano S/ ${precio(manual)} por PT`
-      : cotizacion.vigenteDesde
-        ? `tarifa del ${cotizacion.vigenteDesde}`
-        : null;
+      : cotizacion.clienteTarifaId
+        ? delTratoDelCliente(cotizacion)
+        : cotizacion.vigenteDesde
+          ? `tarifa del ${cotizacion.vigenteDesde}`
+          : null;
   return [que, conQue, ...cotizacion.avisos].filter(Boolean).join(" · ").slice(0, 500);
+}
+
+/**
+ * «precio del cliente S/ 0.50 por PT (desde 2026-09-01)» — ADR-430. Si parte
+ * de la madera salió de la tarifa de la planta, se dicen las dos: el cliente
+ * tiene que poder ver por qué una línea no va a su precio.
+ */
+function delTratoDelCliente(c: Cotizacion): string {
+  if (c.versionId) return `precio del cliente + tarifa del ${c.vigenteDesde ?? "—"}`;
+  const precios = [...new Set(c.lineas.map((l) => l.precioPt))];
+  const cuanto = precios.length === 1 ? ` S/ ${precio(precios[0])} por PT` : "";
+  return `precio del cliente${cuanto}${c.vigenteDesde ? ` (desde ${c.vigenteDesde})` : ""}`;
 }
 
 /** Una corrida sin paquetes declarada en kg o en unidades: no hay de dónde sacar el PT. */

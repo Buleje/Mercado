@@ -12,6 +12,7 @@
 
 import type { PiezaCubicada } from "./cubicacion";
 import { cubicarPieza, m3DesdePt } from "./cubicacion";
+import { limaDateKey } from "@/lib/utils";
 
 export interface CubicacionTotales {
   piezas: number;
@@ -57,7 +58,12 @@ export interface CubicacionRegistro {
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Fecha de hoy en formato date-only, sin arrastrar la hora. */
-export const hoyISO = (): string => new Date().toISOString().slice(0, 10);
+/**
+ * Hoy en Pucallpa (`AAAA-MM-DD`). Era el día UTC: desde las 19:00 de Lima ya
+ * decía «mañana», y con ADR-430 esa fecha elige el trato vigente del cliente
+ * en el cubicador — un precio que empieza mañana regía esta noche.
+ */
+export const hoyISO = (): string => limaDateKey();
 
 /** Totales de un conjunto de piezas (los mismos que muestra la tabla). */
 export function totalesDe(piezas: PiezaCubicada[]): CubicacionTotales {

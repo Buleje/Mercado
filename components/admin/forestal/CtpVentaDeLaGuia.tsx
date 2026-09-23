@@ -34,7 +34,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FilaDespacho } from "@/lib/forestal/despacho-lista";
-import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { parteDelDestinatario } from "@/lib/forestal/cliente-de-la-guia";
 import { Btn } from "./ctp-shared";
 import { formatCurrency } from "@/lib/format";
 
@@ -76,21 +76,20 @@ export default function CtpVentaDeLaGuia({
   }, [filas]);
 
   /** El cliente de la guía, buscado en el directorio por documento y si no por
-   *  nombre: la cuenta corriente necesita a QUIÉN, no un texto suelto. */
+   *  nombre: la cuenta corriente necesita a QUIÉN, no un texto suelto. La MISMA
+   *  búsqueda que propone la venta con su precio pactado (`useTratoDeVenta`). */
   const cliente = useMemo(() => {
     const d = datos.destinatario;
-    const doc = (d.docNumero ?? "").trim();
     const nombre = (d.nombre ?? "").trim();
     if (!nombre) return null;
-    const porDoc = doc
-      ? directorio.partes.find((p) => (p.docNumero ?? "").trim() === doc)
-      : undefined;
-    const porNombre = directorio.partes.find(
-      (p) => claveEspecie(p.nombre) === claveEspecie(nombre),
-    );
-    const parte = porDoc ?? porNombre ?? null;
-    return { nombre, doc, docTipo: d.docTipo, parte };
+    const parte = parteDelDestinatario(directorio.partes, d);
+    return { nombre, doc: (d.docNumero ?? "").trim(), docTipo: d.docTipo, parte };
   }, [datos.destinatario, directorio.partes]);
+
+  /** Cuántas líneas se valorizaron con el precio pactado con el cliente (ADR-430). */
+  const conSuPrecio = filas.filter(
+    (f) => f.valorVenta != null && typeof f.precioVentaDesde === "string" && f.precioVentaDesde.startsWith("cliente-"),
+  ).length;
 
   if (total <= 0 || !cliente) return null;
 
@@ -170,6 +169,13 @@ export default function CtpVentaDeLaGuia({
           )}
         </p>
       </div>
+
+      {conSuPrecio > 0 && (
+        <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+          {conSuPrecio === filas.length ? "Todo" : `${conSuPrecio} de ${filas.length} productos`} con el precio
+          pactado con {cliente.parte?.nombre ?? cliente.nombre}.
+        </p>
+      )}
 
       {sinPrecio > 0 && (
         <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">

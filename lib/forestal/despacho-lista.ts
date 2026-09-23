@@ -17,6 +17,17 @@
 
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
+import { clasificarTipo, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
+import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
+import { esTipoComercial } from "@/lib/forestal/tarifa-aserrio";
+import {
+  explicarOrigenCliente,
+  precioDelCliente,
+  type GrupoEspecies,
+  type OrigenPrecioCliente,
+  type TarifaCliente,
+} from "@/lib/forestal/precio-cliente";
 
 /**
  * Tolerancia de volumen, en m³.
@@ -76,6 +87,19 @@ export interface FilaDespacho {
    * él la venta entra propuesta; `null` = el paquete no trae precio.
    */
   precioVentaPt?: number | null;
+  /**
+   * De dónde sale `precioVentaPt` (ADR-430): el trato de VENTA del cliente de
+   * la guía (`cliente-*`) o el precio que se puso al declarar el paquete.
+   * Ausente = el paquete (filas armadas antes de ADR-430).
+   */
+  precioVentaDesde?: "paquete" | OrigenPrecioCliente | null;
+  /** Qué dice ese origen, en palabras: «precio del cliente para Tornillo · Juan Pérez». */
+  precioVentaExplicacion?: string | null;
+  /**
+   * El precio con que el paquete se declaró (ADR-429), guardado aparte: si la
+   * guía cambia de cliente, la propuesta vuelve a él en vez de perderlo.
+   */
+  precioPaquetePt?: number | null;
   /** PT por m³ de ESTE paquete (su PT medido ÷ su m³): prorratea lo que sale. */
   ptPorM3?: number | null;
   /**
@@ -83,6 +107,14 @@ export interface FilaDespacho {
    * si cambia el volumen, se recalcula. Al editarla a mano deja de serlo.
    */
   valorPropuesto?: boolean;
+  /**
+   * El operador tocó la venta a mano —con un valor o vaciándola («todavía no
+   * sé»)—. `valorVenta != null` no alcanza para detectarlo: vaciarla deja
+   * `valorVenta` en `null`, igual que una fila que nunca tuvo propuesta, y sin
+   * esta marca el trato la volvía a llenar en cuanto cambiaba el destinatario
+   * o llegaba con demora (defecto ADR-430).
+   */
+  ventaTocada?: boolean;
   // ── Contexto de origen (se muestra en la lista, no se guarda en la línea) ──
   gtfOrigen: string[];
   titularOrigen: string[];
@@ -363,17 +395,179 @@ export interface PaqueteDisponible {
   precioVentaPt?: number | null;
 }
 
+/** Lo que `valorPropuesto` necesita de una fila. */
+export interface FilaConPrecio {
+  volumen: number;
+  precioVentaPt?: number | null;
+  ptPorM3?: number | null;
+  precioVentaDesde?: FilaDespacho["precioVentaDesde"];
+  unidad?: string | null;
+  paqueteId?: string | null;
+  /** Presente en una troza que sale sin aserrar (ADR-363): no tiene PT. */
+  trozaId?: string | null;
+  producto?: string | null;
+}
+
+const delCliente = (d: FilaDespacho["precioVentaDesde"]) => typeof d === "string" && d.startsWith("cliente-");
+
 /**
- * La venta PROPUESTA de una fila: lo que sale (m³ × PT por m³ del paquete)
- * por el precio que se puso al declarar la madera propia (ADR-429, «se
- * propone al despachar»). `null` si falta el precio o el PT del paquete — no
- * se inventa con el 424 de la plaza: el precio se puso sobre el PT medido.
+ * Una troza sin aserrar (`trozaId`) o un producto declarado en rollo: el
+ * precio del trato de venta es S/ por PIE TABLAR de madera ASERRADA, y un
+ * rollizo no tiene PT, tiene m³. Proponerle una venta la calcularía con la
+ * fórmula de la madera aserrada — defecto confirmado del ADR-430 (una troza
+ * de 1,5 m³ salía con S/ 381,60 propuestos como si fuera tabla).
  */
-export function valorPropuesto(f: { volumen: number; precioVentaPt?: number | null; ptPorM3?: number | null }): number | null {
+const esRollizo = (f: Pick<FilaConPrecio, "trozaId" | "producto">) =>
+  Boolean(f.trozaId) || /rollo|rolliz/i.test((f.producto ?? "").trim());
+
+/**
+ * El PT de lo que sale en la fila.
+ *
+ * - Una troza sin aserrar o un producto en rollo: `null` — no tiene PT, tiene
+ *   m³, y no es lo que el trato de venta cotiza.
+ * - Un paquete con PT medido: m³ × (su PT ÷ su m³) — el PT del cubicado.
+ * - Una corrida en PT sin paquetes: el volumen ya ES pie tablar.
+ * - Sin PT medido, sólo con el trato del cliente: m³ × 424, la regla de la
+ *   plaza (la misma con la que se cobra el aserrío de un paquete sin medir).
+ *   Con el precio del PAQUETE no: ese precio se puso sobre su PT medido, y
+ *   cambiarle la base cambiaría el número que se pactó.
+ */
+export function ptDeLaFila(f: FilaConPrecio): number | null {
+  if (!(f.volumen > 0)) return null;
+  if (esRollizo(f)) return null;
+  if (!f.paqueteId && f.unidad === "pt") return f.volumen;
+  if (f.ptPorM3 != null && f.ptPorM3 > 0) return f.volumen * f.ptPorM3;
+  const enM3 = !f.unidad || f.unidad === "m3";
+  return enM3 && delCliente(f.precioVentaDesde) ? f.volumen * PT_POR_M3 : null;
+}
+
+/**
+ * La venta PROPUESTA de una fila: su PT (`ptDeLaFila`) por el precio que le
+ * toca —el trato de venta del cliente de la guía (ADR-430) o el que se puso al
+ * declarar la madera propia (ADR-429)—. `null` si falta el precio o el PT:
+ * nunca 0, que diría «regalado».
+ */
+export function valorPropuesto(f: FilaConPrecio): number | null {
   const precio = f.precioVentaPt ?? null;
-  const ptPorM3 = f.ptPorM3 ?? null;
-  if (precio == null || !(precio > 0) || ptPorM3 == null || !(ptPorM3 > 0) || !(f.volumen > 0)) return null;
-  return Math.round(f.volumen * ptPorM3 * precio * 100) / 100;
+  if (precio == null || !(precio > 0)) return null;
+  const pt = ptDeLaFila(f);
+  if (pt == null || !(pt > 0)) return null;
+  return Math.round(pt * precio * 100) / 100;
+}
+
+/**
+ * El trato de VENTA del cliente de la guía, listo para proponer precios.
+ * Lo arma `useTratoDeVenta`: la versión vigente el día de la guía.
+ */
+export interface TratoDeVenta {
+  parteNombre: string;
+  tarifa: TarifaCliente;
+  grupos: readonly GrupoEspecies[];
+}
+
+/** El tipo de lo que sale: por sus medidas, y si no por el producto declarado (como cobra el aserrío). */
+export function tipoDeLaFila(f: Pick<FilaDespacho, "espesorCm" | "anchoCm" | "largoM" | "producto">): TipoComercial | null {
+  if ((f.espesorCm ?? 0) > 0 && (f.anchoCm ?? 0) > 0 && (f.largoM ?? 0) > 0) {
+    const t = clasificarTipo({
+      espesor: Number(f.espesorCm), ancho: Number(f.anchoCm), largo: Number(f.largoM),
+      uEspesor: "cm", uAncho: "cm", uLargo: "m",
+    });
+    if (t !== "Otro") return t;
+  }
+  const delProducto = tipoComercialDelProducto(f.producto);
+  return esTipoComercial(delProducto) ? delProducto : null;
+}
+
+/**
+ * El precio por PT que se propone para una fila: el del trato de venta del
+ * cliente si lo cubre (especie → grupo → tipo → su global), si no el del
+ * paquete. `null` = ninguno de los dos: la venta queda vacía.
+ */
+export function precioDeVentaDeLaFila(
+  f: Pick<FilaDespacho, "especie" | "espesorCm" | "anchoCm" | "largoM" | "producto"> & { precioPaquetePt?: number | null },
+  trato: TratoDeVenta | null | undefined,
+): { precioPt: number; desde: NonNullable<FilaDespacho["precioVentaDesde"]>; explicacion: string } | null {
+  if (trato) {
+    const tipo = tipoDeLaFila(f);
+    const p = precioDelCliente(trato.tarifa, trato.grupos, f.especie, tipo);
+    if (p) {
+      return {
+        precioPt: p.precioPt,
+        desde: p.desde,
+        explicacion: `${explicarOrigenCliente(p, f.especie, tipo)} · ${trato.parteNombre}`,
+      };
+    }
+  }
+  const delPaquete = f.precioPaquetePt ?? null;
+  if (delPaquete != null && delPaquete > 0) {
+    return { precioPt: delPaquete, desde: "paquete", explicacion: "precio que se puso al declarar la madera" };
+  }
+  return null;
+}
+
+/**
+ * La fila con su venta propuesta según el trato (o sin él). Sólo toca las que
+ * nadie editó a mano: una venta tipeada es del operador y no se pisa.
+ *
+ * `f.ventaTocada` cubre el caso que `valorVenta != null` NO detecta: el
+ * operador la vació a mano («todavía no sé») y eso deja `valorVenta` en
+ * `null` —igual que una fila que nunca tuvo propuesta—, así que sin la marca
+ * el trato la volvía a llenar en cuanto cambiaba el destinatario/fecha o
+ * llegaba con demora (defecto confirmado del ADR-430). La otra mitad de la
+ * condición es compatibilidad con filas que traen `valorVenta` sin haber
+ * pasado por `cambiarFila` (por ejemplo, cargadas de otro lado).
+ *
+ * Tampoco se propone sobre una troza/rollizo: `ptDeLaFila` ya la excluye, así
+ * que acá se corta antes para no pisarle `precioVentaPt`/`precioVentaDesde`
+ * con un precio que de todos modos no se va a usar.
+ */
+export function proponerVenta(f: FilaDespacho, trato: TratoDeVenta | null | undefined): FilaDespacho {
+  if (f.ventaTocada || (f.valorVenta != null && !f.valorPropuesto)) return f;
+  if (esRollizo(f)) return f;
+  const precio = precioDeVentaDeLaFila(f, trato);
+  const base: FilaDespacho = {
+    ...f,
+    precioVentaPt: precio?.precioPt ?? null,
+    precioVentaDesde: precio?.desde ?? null,
+    precioVentaExplicacion: precio?.explicacion ?? null,
+  };
+  const propuesto = valorPropuesto(base);
+  if (propuesto == null) {
+    const { valorVenta: _v, valorPropuesto: _p, ...sinVenta } = base;
+    return sinVenta;
+  }
+  return { ...base, valorVenta: propuesto, valorPropuesto: true };
+}
+
+/**
+ * Vuelve a proponer la venta de toda la lista con el trato de AHORA — para
+ * cuando el destinatario de la guía se elige (o cambia) después de armar la
+ * lista. Devuelve el MISMO arreglo si nada cambió, así un `setState` con esto
+ * no dispara renders de más.
+ */
+export function aplicarTratoDeVenta(filas: readonly FilaDespacho[], trato: TratoDeVenta | null | undefined): FilaDespacho[] {
+  let cambio = false;
+  const nuevas = filas.map((f) => {
+    const n = proponerVenta(f, trato);
+    if (
+      n.valorVenta !== f.valorVenta ||
+      n.precioVentaPt !== f.precioVentaPt ||
+      n.precioVentaDesde !== f.precioVentaDesde ||
+      n.precioVentaExplicacion !== f.precioVentaExplicacion
+    ) {
+      cambio = true;
+      return n;
+    }
+    return f;
+  });
+  return cambio ? nuevas : (filas as FilaDespacho[]);
+}
+
+/** «propuesto · S/ 0.60 por PT · precio del cliente para Tornillo · Juan». `null` si la venta no es propuesta. */
+export function leyendaDeVenta(f: Pick<FilaDespacho, "valorPropuesto" | "precioVentaPt" | "precioVentaExplicacion">): string | null {
+  if (!f.valorPropuesto || f.precioVentaPt == null) return null;
+  const precio = Number(f.precioVentaPt).toFixed(2);
+  return `propuesto · S/\u00a0${precio} por PT${f.precioVentaExplicacion ? ` · ${f.precioVentaExplicacion}` : ""}`;
 }
 
 /** Una corrida con saldo, tal como la devuelve `?disponibles=1`. */
@@ -404,7 +598,16 @@ export interface CorridaDisponible {
  * único que sabe de paquetes, medidas y del techo de saldo — armar una fila a
  * mano deja una guía con las medidas en blanco y sin tope.
  */
-export function filasDeCorridas(corridas: readonly CorridaDisponible[]): FilaDespacho[] {
+export function filasDeCorridas(
+  corridas: readonly CorridaDisponible[],
+  opts: {
+    /**
+     * El trato de VENTA del cliente de la guía (ADR-430): si cubre la madera,
+     * la venta se propone con SU precio; si no, con el del paquete.
+     */
+    trato?: TratoDeVenta | null;
+  } = {},
+): FilaDespacho[] {
   return corridas.flatMap((c): FilaDespacho[] => {
     const base = {
       corridaId: c.id,
@@ -423,7 +626,9 @@ export function filasDeCorridas(corridas: readonly CorridaDisponible[]): FilaDes
     /* Las corridas viejas no tienen paquetes cargados: entran como una fila con
        su saldo. Ocultarlas escondería producto que existe en la pila. */
     if (c.paquetes.length === 0) {
-      return [{
+      /* Sin paquete no hay precio de la declaración; el trato del cliente sí
+         puede cubrirla (su PT sale de la unidad de la corrida). */
+      return [proponerVenta({
         ...base,
         uid: uidDeFila(c.id, null),
         paqueteId: null,
@@ -433,16 +638,17 @@ export function filasDeCorridas(corridas: readonly CorridaDisponible[]): FilaDes
         cantidad: 0,
         espesorCm: null, anchoCm: null, largoM: null,
         volumen: r4(c.disponible),
-      }];
+      }, opts.trato)];
     }
     return c.paquetes.map((p) => {
       /* Un paquete no puede sacar más de lo que le queda a su corrida: si ya
          salió parte, el tope es el saldo, no lo que el paquete pesó al nacer. */
       const volumen = r4(Math.min(p.volumenM3, c.disponible));
       const ptPorM3 = p.pieTablar != null && p.pieTablar > 0 && p.volumenM3 > 0 ? p.pieTablar / p.volumenM3 : null;
-      const precioVentaPt = p.precioVentaPt ?? null;
-      const propuesto = valorPropuesto({ volumen, precioVentaPt, ptPorM3 });
-      return {
+      /* La venta entra propuesta: el trato del cliente de la guía si la cubre
+         (ADR-430), si no el precio de la madera propia (ADR-429); sin ninguno,
+         vacía como siempre — nunca 0. */
+      return proponerVenta({
         ...base,
         uid: uidDeFila(c.id, p.id),
         paqueteId: p.id,
@@ -452,12 +658,9 @@ export function filasDeCorridas(corridas: readonly CorridaDisponible[]): FilaDes
         cantidad: p.cantidad,
         espesorCm: p.espesorCm, anchoCm: p.anchoCm, largoM: p.largoM,
         volumen,
-        precioVentaPt,
+        precioPaquetePt: p.precioVentaPt ?? null,
         ptPorM3,
-        /* La madera propia entra con su venta propuesta (ADR-429); sin precio
-           guardado, vacía como siempre — nunca 0. */
-        ...(propuesto != null ? { valorVenta: propuesto, valorPropuesto: true } : {}),
-      };
+      }, opts.trato);
     });
   });
 }

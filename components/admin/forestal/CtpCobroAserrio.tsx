@@ -11,6 +11,12 @@
  * La vista previa usa `cotizarAserrio`, la misma función pura que corre el
  * servidor al guardar: lo que se ve acá es lo que se va a cobrar, no una
  * cuenta aparte (regla 6 del repo: totales en backend, esto es preview).
+ *
+ * ADR-430: con los MISMOS argumentos que el cobro (`argumentosDelCobro`): el
+ * trato de aserrío del dueño vigente ese día y los grupos de especies de la
+ * planta. Mientras alguno de los dos se lee, la vista previa no dice un
+ * importe —«no se carga nada» mientras el servidor sí carga es el bug que
+ * midió el revisor de ADR-429—.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -20,13 +26,17 @@ import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { filtrarPartes, ordenarPorUso, type Parte } from "@/lib/forestal/directorio";
 import type { CandidatoParte } from "@/lib/forestal/directorio-desde-guias";
 import {
-  cotizarAserrio,
   explicarPrecio,
   versionVigente,
   type BloqueACobrar,
   type CobroAserrioValor,
 } from "@/lib/forestal/tarifa-aserrio";
+import { cotizarCorrida } from "@/lib/forestal/argumentos-del-cobro";
+import { tarifaVigente } from "@/lib/forestal/precio-cliente";
 import { useTarifaAserrio } from "./hooks/use-tarifa-aserrio";
+import { useTratoDelCliente, type TratoDelCliente } from "./hooks/use-trato-del-cliente";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
+import CtpLineaDelTrato from "./CtpLineaDelTrato";
 import { formatDate } from "./ctp-shared";
 import CtpTarifaAserrioModal from "./CtpTarifaAserrioModal";
 import CtpDuenoSugeridos from "./CtpDuenoSugeridos";
@@ -88,6 +98,9 @@ export default function CtpCobroAserrio({
   onTarifaGuardada,
   soloDueno = false,
   directorio: directorioExterno,
+  etiqueta = "¿A quién se le asierra?",
+  opcionSinDueno,
+  trato: tratoExterno,
 }: {
   fecha: string;
   bloques: BloqueACobrar[];
@@ -142,10 +155,27 @@ export default function CtpCobroAserrio({
    * hasta recargar: quedaba «Buscando…» con la ficha ya guardada.
    */
   directorio?: DirectorioForestal;
+  /** El rótulo del selector. «Declarar producción» lo cambia para la madera propia. */
+  etiqueta?: string;
+  /**
+   * La opción de «nadie» que se ofrece arriba de la lista. Sin esto, fuera de
+   * `soloDueno` es «Madera del centro — no se cobra», y en `soloDueno` no hay.
+   */
+  opcionSinDueno?: string;
+  /**
+   * El trato del dueño, si quien monta el bloque ya lo lee (`CtpCobrarEnTandaModal`
+   * lo necesita para su tabla): así no se pide dos veces.
+   */
+  trato?: TratoDelCliente;
 }) {
   const directorioPropio = useDirectorioForestal({ activo: !directorioExterno });
   const directorio = directorioExterno ?? directorioPropio;
   const tarifa = useTarifaAserrio();
+  /* El trato del dueño y los grupos (ADR-430). En `soloDueno` la vista previa
+     la hace quien monta el bloque: acá no se pide nada. */
+  const tratoPropio = useTratoDelCliente(!soloDueno && !tratoExterno ? valor.duenoParteId : null);
+  const trato = tratoExterno ?? tratoPropio;
+  const catalogo = useEspeciesCatalogo();
   const [abierto, setAbierto] = useState(false);
   const [q, setQ] = useState("");
   const buscador = useRef<HTMLInputElement>(null);
@@ -240,33 +270,49 @@ export default function CtpCobroAserrio({
      para siempre si el directorio quedó vacío. */
   const dadoDeBaja = Boolean(valor.duenoParteId) && !elegido && !buscandoDueno && !directorio.error;
 
-  /* Proveedores primero: son quienes más traen madera a asierrar por encargo.
-     El resto, por uso — mismo criterio que el resto de la libreta. */
+  /* Clientes primero (ADR-430: a quien se le asierra es cliente del
+     aserradero), después los proveedores —quienes más traían madera por
+     encargo antes de que existiera el papel— y el resto. Cada grupo por uso,
+     mismo criterio que el resto de la libreta. */
   const opciones = useMemo(() => {
     const activas = directorio.partes.filter((p) => p.activo);
-    const proveedores = ordenarPorUso(activas.filter((p) => p.roles.includes("proveedor")));
-    const resto = ordenarPorUso(activas.filter((p) => !p.roles.includes("proveedor")));
-    const todas = [...proveedores, ...resto];
+    const clientes = ordenarPorUso(activas.filter((p) => p.roles.includes("cliente")));
+    const proveedores = ordenarPorUso(activas.filter((p) => !p.roles.includes("cliente") && p.roles.includes("proveedor")));
+    const resto = ordenarPorUso(activas.filter((p) => !p.roles.includes("cliente") && !p.roles.includes("proveedor")));
+    const todas = [...clientes, ...proveedores, ...resto];
     return (q.trim() ? filtrarPartes(todas, q) : todas).slice(0, 40);
   }, [directorio.partes, q]);
 
   const version = versionVigente(tarifa.tarifario, fecha);
+  const tratoVigente = tarifaVigente(trato.tarifas, "aserrio", fecha);
   const cot = useMemo(
     () =>
-      cotizarAserrio(version, bloques, {
+      cotizarCorrida(version, bloques, {
         precioManualPt: modoPrecio === "manual" ? Number(manualTxt) || null : null,
+        tarifasCliente: trato.tarifas,
+        grupos: catalogo.grupos,
+        fecha,
       }),
-    [version, bloques, modoPrecio, manualTxt],
+    [version, bloques, modoPrecio, manualTxt, trato.tarifas, catalogo.grupos, fecha],
   );
+  /* Sin precio a mano, la cuenta depende de la tarifa, del trato y de los
+     grupos: mientras alguno se lee, el importe todavía no se sabe. */
+  const usaGrupos = trato.tarifas.some((t) => t.grupos.length > 0) || (version?.grupos?.length ?? 0) > 0;
+  const segunTrato = modoPrecio === "tarifa" && Boolean(valor.duenoParteId);
+  const calculando = segunTrato && (tarifa.cargando || trato.cargando || (catalogo.cargando && usaGrupos));
+  const sinTrato = segunTrato && !trato.cargando && Boolean(trato.error);
 
   /* «A mano» con el campo vacío o en 0 cotiza como si no hubiera precio a
      mano (cae a la tarifa) mientras el botón sigue mostrando «a mano»: la
      pantalla y lo que se manda a guardar dejan de coincidir. Sólo importa
      si hay a quién cobrarle — sin dueño, el precio no se usa para nada. */
   const precioInvalido = Boolean(valor.duenoParteId) && modoPrecio === "manual" && !(Number(manualTxt) > 0);
+  /* Tampoco se guarda sin saber cuánto se carga: el trato leyéndose o sin
+     poder leerse (con la tarifa pasa lo mismo que en Declarar producción). */
+  const invalido = !soloDueno && (precioInvalido || calculando || sinTrato);
   useEffect(() => {
-    onValidez?.(!precioInvalido);
-  }, [precioInvalido, onValidez]);
+    onValidez?.(!invalido);
+  }, [invalido, onValidez]);
 
   function elegir(p: Parte | null) {
     setDuenoTocado(true);
@@ -311,7 +357,7 @@ export default function CtpCobroAserrio({
   return (
     <div className="space-y-3">
       <div>
-        <span className={LABEL}>¿A quién se le asierra?</span>
+        <span className={LABEL}>{etiqueta}</span>
         <div className="relative mt-1">
           <button
             ref={botonDueno}
@@ -360,13 +406,13 @@ export default function CtpCobroAserrio({
                   className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
-              {!soloDueno && (
+              {(!soloDueno || opcionSinDueno) && (
                 <button
                   type="button"
                   onClick={() => elegir(null)}
                   className="mb-1 flex w-full items-center rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 >
-                  Madera del centro — no se cobra
+                  {opcionSinDueno ?? "Madera del centro — no se cobra"}
                 </button>
               )}
               {/* De entrada (buscador vacío) van ARRIBA de la lista: son la
@@ -386,9 +432,9 @@ export default function CtpCobroAserrio({
                         className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-primary/5"
                       >
                         <span className="min-w-0 flex-1 truncate font-medium text-[var(--text-primary)]">{p.nombre}</span>
-                        {p.roles.includes("proveedor") && (
+                        {(p.roles.includes("cliente") || p.roles.includes("proveedor")) && (
                           <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
-                            proveedor
+                            {p.roles.includes("cliente") ? "cliente" : "proveedor"}
                           </span>
                         )}
                       </button>
@@ -418,7 +464,7 @@ export default function CtpCobroAserrio({
             }}
             className={pill(modoPrecio === "tarifa")}
           >
-            Según la tarifa vigente el {formatDate(fecha)}
+            {tratoVigente ? "Según su precio pactado" : "Según la tarifa vigente"} el {formatDate(fecha)}
           </button>
           <button
             type="button"
@@ -462,10 +508,15 @@ export default function CtpCobroAserrio({
         {/* `!tarifa.cargando`: mientras el tarifario todavía no llegó, `version`
             también da `null` — sin el guard, este aviso salía un instante para
             una tarifa que sí existe (mismo patrón `loading && !X` de arriba). */}
-        {modoPrecio === "tarifa" && !tarifa.cargando && !version && (
+        {modoPrecio === "tarifa" && !tarifa.cargando && !trato.cargando && !version && !tratoVigente && (
           <p className="mt-1 text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
             No hay tarifa vigente el {formatDate(fecha)}: cárgala o pon un precio a mano.
           </p>
+        )}
+        {elegido && (
+          <div className="mt-1">
+            <CtpLineaDelTrato trato={trato} servicio="aserrio" fecha={fecha} grupos={catalogo.grupos} nombre={elegido.nombre} />
+          </div>
         )}
         {precioInvalido && (
           <p className="mt-1 text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
@@ -479,7 +530,7 @@ export default function CtpCobroAserrio({
         <div className="rounded-xl bg-[var(--surface-sunken)] p-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <span className="text-sm font-bold text-[var(--text-primary)]">Vista previa</span>
-            {!ocultarImportePreview && (
+            {!ocultarImportePreview && !calculando && (
               <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
                 {formatCurrency(Number(cot.importe))}{" "}
                 <span className="font-sans text-xs font-normal text-[var(--text-tertiary)]">
@@ -488,8 +539,19 @@ export default function CtpCobroAserrio({
               </span>
             )}
           </div>
+          {calculando && (
+            <p className="mt-1 text-xs text-[var(--text-tertiary)]" aria-live="polite">
+              Calculando con su precio pactado y la tarifa…
+            </p>
+          )}
+          {sinTrato && (
+            <p className="mt-1 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              No se pudo leer su precio pactado: pon el precio a mano para saber cuánto se carga.
+            </p>
+          )}
 
           {!ocultarImportePreview &&
+            !calculando &&
             cot.lineas.length > 0 &&
             (cot.lineas.length <= 3 ? (
               <ul className="mt-1 space-y-0.5">
@@ -514,7 +576,7 @@ export default function CtpCobroAserrio({
               </details>
             ))}
 
-          {cot.avisos.length > 0 && (
+          {!calculando && cot.avisos.length > 0 && (
             <ul className="mt-1.5 space-y-0.5">
               {cot.avisos.map((a, i) => (
                 <li key={i} className="flex items-start gap-1.5 text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
@@ -523,7 +585,7 @@ export default function CtpCobroAserrio({
               ))}
             </ul>
           )}
-          {!cot.cobrable && (
+          {!calculando && !sinTrato && !cot.cobrable && (
             <p className="mt-1.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
               No se va a cargar nada en su cuenta{cot.avisos[0] ? `: ${cot.avisos[0]}` : "."}
             </p>

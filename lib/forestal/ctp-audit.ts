@@ -45,6 +45,11 @@ export type CtpAuditEntity =
    *  los gastos, los fletes y los adelantos. Quién lo creó y quién le ató
    *  registros es parte de la trazabilidad de la plata, no sólo del papel. */
   | "ForestContrato"
+  /** El trato de precio con un cliente (ADR-430): a cuánto se le cobra el pie.
+   *  Es plata de un tercero — quién pactó qué y desde cuándo deja rastro. */
+  | "ForestParteTarifa"
+  /** Un vínculo parte↔parte o parte↔permiso del Directorio (ADR-430). */
+  | "ForestParteVinculo"
   /** Plan de Manejo del Libro de Títulos Habilitantes (ADR-126): el documento
    *  aprobado que autoriza especies y volúmenes. De él cuelgan el censo, los
    *  asientos del LO-TH y las guías, así que darlo de baja deja rastro. */
@@ -293,6 +298,12 @@ export type CtpAuditAction =
   /** Un renglón por tanda, además de los individuales: quién cobró cuántas
    *  corridas de una vez y por cuánto (ADR-412). */
   | "ctp_aserrio_cobrar_tanda"
+  // Precios por cliente y vínculos del Directorio (ADR-430): el trato que
+  // después decide un cobro, y con quién está atada cada parte.
+  | "ctp_tarifa_cliente_guardar"
+  | "ctp_tarifa_cliente_quitar"
+  | "ctp_vinculo_parte_crear"
+  | "ctp_vinculo_parte_quitar"
   | "ctp_cubicacion_update"
   | "ctp_cubicacion_delete"
   // Distribuciones de rolliza guardadas (Brandon, 2026-09-01): los bloques

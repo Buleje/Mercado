@@ -66,6 +66,14 @@ import CtpParteLogo from "./CtpParteLogo";
 import CtpPartePuntoAcopio from "./CtpPartePuntoAcopio";
 import CtpParteBitacora from "./CtpParteBitacora";
 import CtpParteAdjuntos from "./CtpParteAdjuntos";
+import CtpPartePrecios from "./CtpPartePrecios";
+import { guardarPreciosPendientes, type PrecioPendiente } from "@/lib/forestal/precio-cliente-borrador";
+import CtpParteVinculos from "./CtpParteVinculos";
+import CtpParteSaldo from "./CtpParteSaldo";
+import { useTarifasCliente } from "@/hooks/use-tarifas-cliente";
+import { useSaldoParte } from "@/hooks/use-saldo-parte";
+import { crearVinculosPendientes, type VinculoPendiente } from "@/hooks/use-vinculos-parte";
+import { ETIQUETA_SERVICIO_PRECIO } from "@/lib/forestal/precio-cliente";
 
 /** Id estable de este formulario para los campos personalizados (ADR-427). */
 const FORMULARIO_FICHA = "directorio.parte";
@@ -174,6 +182,18 @@ export default function CtpParteModal({
    * para el mismo número.
    */
   const [permisosDelTitular, setPermisosDelTitular] = useState(0);
+  /**
+   * Precios del cliente escritos y sin guardar (ADR-430). En el alta esperan el
+   * id de la ficha, como los permisos; al editar, el «Guardar» de la ficha
+   * también los guarda para no cerrar y perderlos.
+   */
+  const [preciosPendientes, setPreciosPendientes] = useState<PrecioPendiente[]>([]);
+  /** Vínculos cargados en el alta: se crean cuando la ficha tiene id. */
+  const [vinculosPendientes, setVinculosPendientes] = useState<VinculoPendiente[]>([]);
+  /* Sólo por su `guardar`: publica una versión con el id que la ficha recién
+     recibió. Con `null` no lee nada. */
+  const { guardar: guardarTarifa } = useTarifasCliente(null);
+  const saldo = useSaldoParte(parte?.id ?? null);
 
   const docTipo = (b.docTipo ?? "RUC") as DocTipo;
   const fuente = fuenteAutocompletado(docTipo);
@@ -279,6 +299,13 @@ export default function CtpParteModal({
       setError(`Ese documento ya lo tiene ${coincide.nombre}. Edita esa ficha en vez de repetir el documento acá.`);
       return;
     }
+    /* Un precio mal escrito se dice ANTES de guardar la ficha: después ya no
+       habría a quién decírselo sin dejar la ficha a medias. */
+    const precioMal = esCliente ? preciosPendientes.find((p) => !p.resultado.ok) : undefined;
+    if (precioMal && !precioMal.resultado.ok) {
+      setError(`Precio del cliente (${ETIQUETA_SERVICIO_PRECIO[precioMal.servicio]}): ${precioMal.resultado.error}`);
+      return;
+    }
     setEstado("guardando");
     setError(null);
     try {
@@ -309,6 +336,27 @@ export default function CtpParteModal({
           return;
         }
       }
+      /* Precios y vínculos del alta (ADR-430): igual que los permisos, recién
+         ahora hay id. Si fallan, la ficha YA está guardada y el modal queda
+         abierto diciendo cuál. */
+      if (idFicha && esCliente && preciosPendientes.length > 0) {
+        const rp = await guardarPreciosPendientes(guardarTarifa, idFicha, preciosPendientes);
+        setPreciosPendientes([]);
+        if (rp.errores.length > 0) {
+          setError(`La ficha se guardó. Sus precios: ${rp.errores.join(" · ")}`);
+          setEstado("idle");
+          return;
+        }
+      }
+      if (idFicha && vinculosPendientes.length > 0) {
+        const rv = await crearVinculosPendientes(idFicha, vinculosPendientes);
+        setVinculosPendientes([]);
+        if (rv.errores.length > 0) {
+          setError(`La ficha se guardó. Sus vínculos: ${rv.errores.join(" · ")}`);
+          setEstado("idle");
+          return;
+        }
+      }
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -319,6 +367,7 @@ export default function CtpParteModal({
   const esTransportista = b.roles.includes("transportista");
   const esConductor = b.roles.includes("conductor");
   const esProveedor = b.roles.includes("proveedor");
+  const esCliente = b.roles.includes("cliente");
   const categoriaProveedor = categoriaEfectiva(b.categoria as CategoriaParte | null | undefined);
 
   /**
@@ -326,7 +375,7 @@ export default function CtpParteModal({
    * formulario mostraba 01·02·03·05: el operador buscaba una sección 04 que no
    * existía. Se numeran las que de verdad se pintan.
    */
-  const hayPapel = esTransportista || esConductor || esProveedor;
+  const hayPapel = esTransportista || esConductor || esProveedor || esCliente;
   const base = hayPapel ? 4 : 3;
   const nro = {
     roles: 1,
@@ -334,8 +383,9 @@ export default function CtpParteModal({
     donde: 3,
     papel: 4,
     pago: base + 1,
-    logo: base + 2,
-    notas: base + 3,
+    vinculos: base + 2,
+    logo: base + 3,
+    notas: base + 4,
   };
 
   // Qué le falta a esta ficha para servir en los papeles que cumple.
@@ -437,10 +487,17 @@ export default function CtpParteModal({
   const bodyRef = useAtajoGuardar(() => void guardar(), estado === "idle");
   /* Un permiso cargado y todavía sin crear también es algo que perder: sin
      contarlo, cerrar de un roce se llevaba la lista sin preguntar. */
-  const cerrar = useCierreSeguro(
-    (useHayCambios(b) || permisosPendientes.length > 0) && estado !== "guardando",
-    onClose,
-  );
+  const fichaCambio = useHayCambios(b);
+  const hayCambios =
+    (fichaCambio || permisosPendientes.length > 0 || preciosPendientes.length > 0 || vinculosPendientes.length > 0) &&
+    estado !== "guardando";
+  const cerrar = useCierreSeguro(hayCambios, onClose);
+  /* «Ver su cuenta» sale de la ficha hacia Adelantos → Cuenta por persona: si
+     hay algo sin guardar, pregunta igual que al cerrar. */
+  const verCuenta = useCierreSeguro(hayCambios, () => {
+    onClose();
+    window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab: "adelantos" } }));
+  });
 
   return (
     <AdminModal
@@ -467,6 +524,11 @@ export default function CtpParteModal({
       }
     >
       <ModalBody ref={bodyRef}>
+        {parte && (
+          <div className="mb-3">
+            <CtpParteSaldo saldo={saldo.saldo} onVerCuenta={() => void verCuenta()} />
+          </div>
+        )}
         {historial && historial.guias > 0 && (
           <div className="col-span-12 flex flex-wrap items-center gap-x-5 gap-y-1 rounded-xl border border-[var(--data-info-100)] bg-[var(--data-info-50)] px-3 py-2">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-info-700)]">
@@ -649,8 +711,19 @@ export default function CtpParteModal({
           )}
         </Seccion>
 
-        {(esTransportista || esConductor || esProveedor) && (
+        {hayPapel && (
           <Seccion numero={nro.papel} title="Según el papel" className="lg:col-span-2">
+            {/* El precio del pie de este cliente (ADR-430): va primero porque
+                es lo que se viene a cargar cuando se marca «Cliente». */}
+            {esCliente && (
+              <>
+                <span className="sm:col-span-12 text-sm font-bold text-[var(--text-primary)]">
+                  A cuánto se le cobra el pie
+                  <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">· reemplaza a la tarifa de la planta, sin sus recargos</span>
+                </span>
+                <CtpPartePrecios parteId={b.id ?? null} onPendientes={setPreciosPendientes} />
+              </>
+            )}
             {esTransportista && (
               <>
               {susVehiculos.length > 0 && (
@@ -983,6 +1056,20 @@ export default function CtpParteModal({
           >
             <input type="email" className={I} value={b.emailCobranza ?? ""} onChange={(e) => set({ emailCobranza: e.target.value })} />
           </Field>
+        </Seccion>
+
+        {/* Con quién está vinculada (ADR-430): otra parte o un permiso, y el
+            saldo de cada uno en su libreta. Al lado del pago porque las dos
+            contestan «cómo está su cuenta». */}
+        <Seccion numero={nro.vinculos} title="Vínculos" hint="Con otra parte del Directorio o con un permiso">
+          <CtpParteVinculos
+            parteId={b.id ?? null}
+            existentes={existentes}
+            saldo={saldo.saldo}
+            pendientes={vinculosPendientes}
+            onPendientes={setVinculosPendientes}
+            onCambio={() => void saldo.recargar()}
+          />
         </Seccion>
 
         <Seccion numero={nro.logo} title="Logo y papeles del titular">

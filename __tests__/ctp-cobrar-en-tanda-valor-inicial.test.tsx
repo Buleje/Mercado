@@ -11,7 +11,7 @@
  * etiqueta a la acción destructiva real: «Dejar de cobrar».
  */
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import CtpCobrarEnTandaModal from "@/components/admin/forestal/CtpCobrarEnTandaModal";
 import type { CtpEntry } from "@/components/admin/forestal/ctp-section-shared";
@@ -110,9 +110,21 @@ vi.mock("@/components/admin/forestal/hooks/guardar-produccion-corrida", () => ({
 
 setTarifarioMock(TARIFARIO_VACIO);
 
+/* ADR-430: al elegir el dueño se lee su trato de precio y el catálogo de
+   especies (sus grupos). Acá el cliente no tiene trato: rige la tarifa. */
+beforeEach(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) =>
+      new Response(JSON.stringify(String(url).includes("/tarifas-cliente") ? { tarifas: [] } : {}), { status: 200 }),
+    ),
+  );
+});
+
 afterEach(() => {
   cleanup();
   setTarifarioMock(TARIFARIO_VACIO);
+  vi.unstubAllGlobals();
 });
 
 const tarifarioConBaseReal: Tarifario = {
@@ -219,7 +231,9 @@ describe("CtpCobrarEnTandaModal — la vista previa lee la unidad de la corrida 
     // 5.000 PT × S/ 0.30 = S/ 1.500,00. Sin `unit`, 5.000 se leería como m³
     // (÷ 424 al revés): 2.120.000 PT y un importe absurdo. Sale en la fila Y
     // en el total (una sola corrida) — `getAllByText` por eso, no `getByText`.
-    expect(screen.getAllByText("S/ 1,500.00").length).toBeGreaterThan(0);
+    // `waitFor`: mientras se lee el trato del cliente (ADR-430) la fila dice
+    // «calculando…», no un importe que todavía no se sabe.
+    await waitFor(() => expect(screen.getAllByText("S/ 1,500.00").length).toBeGreaterThan(0));
   });
 
   it("una corrida en kg sin paquetes no se puede cobrar por PT: muestra el motivo, no un número", async () => {
