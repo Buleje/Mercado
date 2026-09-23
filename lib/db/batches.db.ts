@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Batch as PBatch } from "@/lib/generated/prisma/client";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -308,8 +309,8 @@ export const BatchesDB = {
       include: { product: { select: { id: true, name: true } } },
     });
 
-    propagateExpiresAt(row.productId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+    propagateExpiresAt(row.productId).catch((_err) => {
+      logger.warn("[BatchesDB] propagateExpiresAt failed (fire-and-forget)", { error: String(_err) });
     });
 
     return mapBatch(row);
@@ -342,12 +343,12 @@ export const BatchesDB = {
     });
 
     // Propagar al producto anterior y al nuevo si cambió el productId
-    propagateExpiresAt(existing.productId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+    propagateExpiresAt(existing.productId).catch((_err) => {
+      logger.warn("[BatchesDB] propagateExpiresAt failed (fire-and-forget)", { error: String(_err) });
     });
     if (input.productId && input.productId !== existing.productId) {
-      propagateExpiresAt(input.productId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+      propagateExpiresAt(input.productId).catch((_err) => {
+      logger.warn("[BatchesDB] propagateExpiresAt failed (fire-and-forget)", { error: String(_err) });
     });
     }
 
@@ -372,8 +373,8 @@ export const BatchesDB = {
       include: { product: { select: { id: true, name: true } } },
     });
 
-    propagateExpiresAt(existing.productId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+    propagateExpiresAt(existing.productId).catch((_err) => {
+      logger.warn("[BatchesDB] propagateExpiresAt failed (fire-and-forget)", { error: String(_err) });
     });
 
     if (!row) return null;
@@ -390,8 +391,8 @@ export const BatchesDB = {
 
     await prisma.batch.deleteMany({ where: { id, tenantId } });
 
-    propagateExpiresAt(existing.productId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+    propagateExpiresAt(existing.productId).catch((_err) => {
+      logger.warn("[BatchesDB] propagateExpiresAt failed (fire-and-forget)", { error: String(_err) });
     });
 
     return true;

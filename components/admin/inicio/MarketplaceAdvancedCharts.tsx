@@ -39,6 +39,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
 
   // ── 1. FUNNEL DE PEDIDOS ────────────────────────────────────────────────
   const funnel = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- Date.now() called once when useMemo deps change, not on every render
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const recent = orders.filter((o) => new Date(o.createdAt).getTime() >= last30);
     const recibidos = recent.length;
@@ -98,6 +99,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
 
   // ── 3. TOP PRODUCTOS MARKETPLACE ─────────────────────────────────────────
   const topProducts = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- Date.now() called once when useMemo deps change, not on every render
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<string | number, { name: string; pedidos: number; unidades: number; ingresos: number }>();
     orders
@@ -144,6 +146,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
 
   // ── 5. COMPARATIVA SEMANAL ──────────────────────────────────────────────
   const comp = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- Date.now() called once when useMemo deps change, not on every render
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const buckets = Array.from({ length: 7 }).map(() => ({
@@ -180,6 +183,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
 
   // ── 6. HEATMAP HORA × DÍA 30D ───────────────────────────────────────────
   const heatmap = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- Date.now() called once when useMemo deps change, not on every render
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
     const BUCKETS = [
