@@ -11,11 +11,16 @@ import {
   claveDeDictado,
   empiezaBloque,
   especieAlInicio,
+  FUERA_PARA_SOLTAR,
   largoDelTramo,
+  largoFijoEn,
+  MINIMO_RACHA_LARGO,
   ordenDeDictado,
   ordenarFilas,
   textoPorTramos,
   ultimaDictada,
+  unidadDeLargoEnVoz,
+  type LargoEnLectura,
   type PosicionEnLectura,
 } from "@/lib/forestal/cubicador-bloques-especie";
 
@@ -179,5 +184,169 @@ describe("dictar la especie sola", () => {
     expect(especieAlInicio("CEDRO", catalogo)?.especie).toBe("Cedro");
     expect(especieAlInicio("dos cuatro panguana", catalogo)).toBeNull();
     expect(especieAlInicio("", catalogo)).toBeNull();
+  });
+});
+
+/**
+ * Largo fijo al leer (Brandon, 2026-09-23): «si el 7 de largo se repite
+ * continuamente, que diga la especie con largo fijo de 7 pies y después sólo
+ * espesor y ancho».
+ */
+describe("leer con largo fijo", () => {
+  interface P { id: string; especie?: string; e: number; a: number; l: number; u?: "pies" | "m" }
+  let n = 0;
+  const p = (especie: string | undefined, e: number, a: number, l: number, u?: "pies" | "m"): P => ({ id: `p-${++n}-0`, especie, e, a, l, u });
+  /** `k` piezas iguales de largo `l`. */
+  const varias = (k: number, especie: string | undefined, l: number, u?: "pies" | "m") =>
+    Array.from({ length: k }, (_, i) => p(especie, 2, 8 - (i % 2) * 2, l, u));
+  const LARGO: LargoEnLectura<P> = {
+    largo: (x) => x.l,
+    unidad: (x, v) => unidadDeLargoEnVoz(x.u ?? "pies", v),
+    sinLargo: (x) => `${x.e}, ${x.a}`,
+  };
+  const medida = (x: P) => `${x.e}, ${x.a}, ${x.l}`;
+  /** Lo que sonaría leyendo la tabla entera (o desde `desde`), como lo pide el hook. */
+  const leer = (lista: P[], { haciaAtras = false, desde }: { haciaAtras?: boolean; desde?: number } = {}) => {
+    const orden = lista.map((_, i) => i);
+    if (haciaAtras) orden.reverse();
+    const inicio = desde === undefined ? 0 : orden.indexOf(desde);
+    return orden.slice(inicio).map((i, k) =>
+      textoPorTramos(lista[i], { indice: i, lista, haciaAtras, primera: k === 0 }, medida, LARGO),
+    );
+  };
+
+  it("los umbrales son los medidos: 5 filas para fijar, 3 fuera para soltar", () => {
+    expect(MINIMO_RACHA_LARGO).toBe(5);
+    expect(FUERA_PARA_SOLTAR).toBe(3);
+  });
+
+  it("una racha de 5+ con el mismo largo se anuncia con la especie y después sólo espesor y ancho", () => {
+    const lista = [...varias(6, "Panguana", 7), p("Panguana", 3, 10, 8)];
+    expect(leer(lista)).toEqual([
+      "Continúa con Panguana, largo fijo 7 pies. 2, 8",
+      "2, 6",
+      "2, 8",
+      "2, 6",
+      "2, 8",
+      "2, 6",
+      "3, 10, largo 8",
+    ]);
+  });
+
+  it("si la especie ya venía sonando, sólo «Largo fijo»", () => {
+    const lista = [p("Panguana", 2, 4, 6), ...varias(5, "Panguana", 7)];
+    expect(leer(lista).slice(0, 3)).toEqual([
+      "Continúa con Panguana. 2, 4, 6",
+      "Largo fijo 7 pies. 2, 8",
+      "2, 6",
+    ]);
+  });
+
+  it("una pieza suelta de otro largo NO suelta el fijo; dos seguidas tampoco", () => {
+    const suelta = [...varias(5, "Tornillo", 7), p("Tornillo", 2, 8, 8), ...varias(2, "Tornillo", 7)];
+    expect(leer(suelta).slice(4)).toEqual(["2, 8", "2, 8, largo 8", "2, 8", "2, 6"]);
+    const dos = [...varias(5, "Tornillo", 7), p("Tornillo", 2, 8, 8), p("Tornillo", 2, 8, 9), ...varias(1, "Tornillo", 7)];
+    expect(leer(dos).slice(5)).toEqual(["2, 8, largo 8", "2, 8, largo 9", "2, 8"]);
+  });
+
+  it("tres piezas seguidas fuera del fijo lo sueltan: «Largo libre» y otra vez las tres medidas", () => {
+    const lista = [
+      ...varias(5, "Tornillo", 7),
+      p("Tornillo", 2, 8, 8), p("Tornillo", 2, 8, 9), p("Tornillo", 2, 8, 6),
+      ...varias(2, "Tornillo", 7),
+    ];
+    expect(leer(lista).slice(5)).toEqual([
+      "Largo libre. 2, 8, 8",
+      "2, 8, 9",
+      "2, 8, 6",
+      // el 7 vuelve pero en racha corta: ya no hay fijo, se dice entero
+      "2, 8, 7",
+      "2, 6, 7",
+    ]);
+  });
+
+  it("una racha nueva de 5+ con otro largo cambia el fijo y se anuncia; con el MISMO largo no se repite", () => {
+    const cambia = [...varias(5, "Tornillo", 7), ...varias(5, "Tornillo", 8)];
+    expect(leer(cambia)[5]).toBe("Largo fijo 8 pies. 2, 8");
+    const igual = [...varias(5, "Tornillo", 7), p("Tornillo", 2, 8, 8), ...varias(5, "Tornillo", 7)];
+    expect(leer(igual).slice(5, 7)).toEqual(["2, 8, largo 8", "2, 8"]);
+  });
+
+  it("4 piezas iguales no alcanzan: el anuncio no se pagaría", () => {
+    expect(leer(varias(4, "Tornillo", 7))).toEqual([
+      "Continúa con Tornillo. 2, 8, 7",
+      "2, 6, 7",
+      "2, 8, 7",
+      "2, 6, 7",
+    ]);
+  });
+
+  it("cambiar de especie reinicia: el fijo es del tramo, y se vuelve a anunciar con la especie nueva", () => {
+    const lista = [...varias(5, "Panguana", 7), ...varias(5, "Tornillo", 7)];
+    const leido = leer(lista);
+    expect(leido[4]).toBe("2, 8");
+    expect(leido[5]).toBe("Continúa con Tornillo, largo fijo 7 pies. 2, 8");
+  });
+
+  it("una fila sin especie en el medio corta el tramo y su fijo", () => {
+    const lista = [...varias(5, "Panguana", 7), p(undefined, 2, 8, 7), ...varias(2, "Panguana", 7)];
+    expect(leer(lista).slice(5)).toEqual([
+      "Sin especie. 2, 8, 7",
+      "Continúa con Panguana. 2, 8, 7",
+      "2, 6, 7",
+    ]);
+  });
+
+  it("un lote dictado sin especie también se beneficia", () => {
+    expect(leer(varias(6, undefined, 7)).slice(0, 2)).toEqual(["Largo fijo 7 pies. 2, 8", "2, 6"]);
+    const trasTramo = [...varias(2, "Cumala", 10), ...varias(5, undefined, 7)];
+    expect(leer(trasTramo)[2]).toBe("Sin especie, largo fijo 7 pies. 2, 8");
+  });
+
+  it("hacia atrás las rachas se cuentan en el orden en que se lee", () => {
+    const lista = [p("Panguana", 2, 8, 8), ...varias(5, "Panguana", 7)];
+    // al derecho: la de 8 va primero, sin fijo; la racha de 7 se anuncia después
+    expect(leer(lista).slice(0, 2)).toEqual(["Continúa con Panguana. 2, 8, 8", "Largo fijo 7 pies. 2, 8"]);
+    // al revés: se entra por la racha de 7 y la de 8 es una excepción al final
+    const alReves = leer(lista, { haciaAtras: true });
+    expect(alReves[0]).toBe("Continúa con Panguana, largo fijo 7 pies. 2, 8");
+    expect(alReves[alReves.length - 1]).toBe("2, 8, largo 8");
+  });
+
+  it("al revés, lo que al derecho era el final suelto que suelta el fijo, se lee antes de la racha", () => {
+    const lista = [...varias(5, "Tornillo", 7), p("Tornillo", 2, 8, 8), p("Tornillo", 2, 8, 9), p("Tornillo", 2, 8, 6)];
+    expect(leer(lista, { haciaAtras: true }).slice(0, 4)).toEqual([
+      "Continúa con Tornillo. 2, 8, 6",
+      "2, 8, 9",
+      "2, 8, 8",
+      "Largo fijo 7 pies. 2, 8",
+    ]);
+  });
+
+  it("arrancar o saltar a mitad de una racha dice la especie y el fijo vigente", () => {
+    const lista = [...varias(6, "Panguana", 7), p("Panguana", 3, 10, 8)];
+    expect(leer(lista, { desde: 3 })[0]).toBe("Continúa con Panguana, largo fijo 7 pies. 2, 6");
+    // arrancar justo en la excepción: el fijo se dice igual y la pieza lleva su largo
+    expect(leer(lista, { desde: 6 })[0]).toBe("Continúa con Panguana, largo fijo 7 pies. 3, 10, largo 8");
+    // arrancar donde el fijo ya se soltó: no se nombra ningún fijo
+    const suelto = [...varias(5, "Tornillo", 7), p("Tornillo", 2, 8, 8), p("Tornillo", 2, 8, 9), p("Tornillo", 2, 8, 6)];
+    expect(leer(suelto, { desde: 6 })[0]).toBe("Continúa con Tornillo. 2, 8, 9");
+  });
+
+  it("la unidad sale de la fila: metros en trozas, singular cuando es uno; 7 pies y 7 metros no son el mismo largo", () => {
+    expect(leer(varias(5, "Tornillo", 3.5, "m"))[0]).toBe("Continúa con Tornillo, largo fijo 3.5 metros. 2, 8");
+    expect(leer(varias(5, "Tornillo", 1))[0]).toBe("Continúa con Tornillo, largo fijo 1 pie. 2, 8");
+    const mezcla = [...varias(3, "Tornillo", 7), ...varias(3, "Tornillo", 7, "m")];
+    expect(largoFijoEn(mezcla, 0, false, LARGO).fijo).toBeNull();
+  });
+
+  it("sin la opción, se lee exactamente como antes", () => {
+    const lista = varias(6, "Panguana", 7);
+    expect(textoPorTramos(lista[0], { indice: 0, lista, haciaAtras: false, primera: true }, medida)).toBe("Continúa con Panguana. 2, 8, 7");
+  });
+
+  it("una fila suelta de especie no cambia", () => {
+    const lista = [...varias(5, "Panguana", 7), p("Tornillo", 1, 4, 7)];
+    expect(leer(lista)[5]).toBe("1, 4, 7, Tornillo");
   });
 });

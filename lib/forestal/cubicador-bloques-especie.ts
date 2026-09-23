@@ -132,6 +132,131 @@ export interface PosicionEnLectura<T> {
 }
 
 /**
+ * ── Largo fijo al leer (Brandon, 2026-09-23) ──
+ *
+ * «Si el 7 de largo se repite continuamente, que diga la especie con largo fijo
+ * de 7 pies y después sólo espesor y ancho.» Dentro de un tramo de la misma
+ * especie, cuando empieza una racha LARGA de filas con el mismo largo se
+ * anuncia una vez («largo fijo 7 pies») y esas filas se leen «2, 8».
+ *
+ * Por qué 5 filas y no 3 (medido sobre los 3 lotes guardados del tenant real,
+ * 700 piezas, 2026-09-23): el anuncio son 4 palabras y cada fila con el largo
+ * fijo ahorra una, así que recién se paga desde 5. Con 3, en los dos lotes de
+ * largos mezclados la lectura salía MÁS larga (113 % y 112 % de las palabras)
+ * por anuncios y excepciones; con 5 quedan igual (100 %) y el lote de largo
+ * parejo baja a 70 %.
+ */
+export const MINIMO_RACHA_LARGO = 5;
+/**
+ * Filas SEGUIDAS fuera del largo fijo que lo sueltan («largo libre»). Una o
+ * dos piezas de otro largo son una excepción —«2, 8, largo 8»— y el fijo
+ * sigue; tres seguidas dicen que la pila cambió, y seguir anunciando
+ * excepciones sería más largo que leer las tres medidas.
+ */
+export const FUERA_PARA_SOLTAR = 3;
+
+/** Cómo se lee el largo de una fila. Lo da cada cubicador (pies en madera, metros en trozas). */
+export interface LargoEnLectura<T> {
+  largo: (f: T) => number;
+  /** La unidad dicha, según el valor («pie»/«pies», «metro»/«metros»). */
+  unidad: (f: T, valor: number) => string;
+  /** Las medidas SIN el largo: lo que se lee mientras el largo está fijo. */
+  sinLargo: (f: T) => string;
+}
+
+/** Qué pasa con el largo en una fila de la lectura. */
+export interface EstadoLargoFijo {
+  /** El largo fijo después de esta fila; `null` si no hay. */
+  fijo: number | null;
+  unidad: string;
+  /** Lo que se anuncia EN esta fila: empieza un fijo, o se suelta. */
+  anuncio: "fijo" | "libre" | null;
+  /** Esta fila tiene otro largo y el fijo sigue: se lee «…, largo 8». */
+  excepcion: boolean;
+}
+
+const SIN_LARGO_FIJO: EstadoLargoFijo = { fijo: null, unidad: "", anuncio: null, excepcion: false };
+
+/**
+ * El largo fijo en `lista[indice]`, mirando su tramo de especie EN EL ORDEN EN
+ * QUE SE LEE (hacia atrás, el tramo empieza por abajo y las rachas también).
+ *
+ * Es una función de la posición, no de lo que ya sonó: arrancar o saltar a la
+ * mitad de una racha da el mismo fijo que se habría oído leyendo desde arriba.
+ * Cambio de especie —o fila sin especie— reinicia: el fijo es del tramo. Las
+ * filas sin especie seguidas forman su propio tramo (un lote dictado sin
+ * especie también se beneficia).
+ */
+export function largoFijoEn<T extends { especie?: string }>(
+  lista: readonly T[],
+  indice: number,
+  haciaAtras: boolean,
+  cfg: LargoEnLectura<T>,
+): EstadoLargoFijo {
+  const fila = lista[indice];
+  if (!fila) return SIN_LARGO_FIJO;
+  const paso = haciaAtras ? -1 : 1;
+  const clave = claveEspecie(fila.especie);
+  const delTramo = (k: number) => k >= 0 && k < lista.length && claveEspecie(lista[k].especie) === clave;
+  let ini = indice;
+  while (delTramo(ini - paso)) ini -= paso;
+  let fin = indice;
+  while (delTramo(fin + paso)) fin += paso;
+  const n = Math.abs(fin - ini) + 1;
+  if (n < MINIMO_RACHA_LARGO) return SIN_LARGO_FIJO;
+
+  /* El tramo en el orden de la lectura, y la clave de largo de cada fila
+     (valor + unidad: 7 pies y 7 metros no son el mismo largo). */
+  const filas: T[] = [];
+  for (let k = ini, c = 0; c < n; k += paso, c++) filas.push(lista[k]);
+  const pos = Math.abs(indice - ini);
+  const claveLargo = filas.map((f) => `${Math.round(cfg.largo(f) * 1000)}|${cfg.unidad(f, 2)}`);
+  /* Cuántas filas seguidas comparten largo desde cada una, hacia adelante. */
+  const racha = new Array<number>(n).fill(1);
+  for (let k = n - 2; k >= 0; k--) if (claveLargo[k] === claveLargo[k + 1]) racha[k] = racha[k + 1] + 1;
+  const empiezaRacha = (k: number) =>
+    (k === 0 || claveLargo[k - 1] !== claveLargo[k]) && racha[k] >= MINIMO_RACHA_LARGO;
+
+  let fijo: string | null = null;
+  let filaDelFijo: T | null = null;
+  let anuncio: EstadoLargoFijo["anuncio"] = null;
+  let excepcion = false;
+  for (let k = 0; k <= pos; k++) {
+    anuncio = null;
+    excepcion = false;
+    if (empiezaRacha(k) && claveLargo[k] !== fijo) {
+      fijo = claveLargo[k];
+      filaDelFijo = filas[k];
+      anuncio = "fijo";
+      continue;
+    }
+    if (fijo === null || claveLargo[k] === fijo) continue;
+    /* Otro largo con el fijo puesto: ¿excepción o la pila cambió? Se cuentan
+       las filas seguidas fuera del fijo (sin pasar a una racha nueva, que
+       cambiará el fijo por su cuenta). */
+    let fuera = 0;
+    for (let m = k; m < n && fuera < FUERA_PARA_SOLTAR && claveLargo[m] !== fijo && !(m > k && empiezaRacha(m)); m++) fuera++;
+    if (fuera >= FUERA_PARA_SOLTAR) {
+      fijo = null;
+      filaDelFijo = null;
+      anuncio = "libre";
+    } else {
+      excepcion = true;
+    }
+  }
+  if (!filaDelFijo) return { ...SIN_LARGO_FIJO, anuncio };
+  const valor = cfg.largo(filaDelFijo);
+  return { fijo: valor, unidad: cfg.unidad(filaDelFijo, valor), anuncio, excepcion };
+}
+
+/** «Continúa con X» + «largo fijo 7 pies» en una sola frase, con mayúscula al inicio. */
+function conCabeza(partes: readonly (string | null)[], cuerpo: string): string {
+  const cabeza = partes.filter((p): p is string => !!p).join(", ");
+  if (!cabeza) return cuerpo;
+  return `${cabeza.charAt(0).toUpperCase()}${cabeza.slice(1)}. ${cuerpo}`;
+}
+
+/**
  * El texto de una fila leída por tramos de especie.
  *
  * - Fila sin especie → sólo las medidas (como siempre), salvo que venga justo
@@ -146,23 +271,51 @@ export interface PosicionEnLectura<T> {
  * «Primera» se mira en el SENTIDO de la lectura: leyendo al revés, el tramo
  * empieza por abajo. Y se vuelve a anunciar al arrancar, al saltar a una fila
  * o al retomar una pausa: ahí no se escuchó la especie de lo que viene.
+ *
+ * Con `largo` (el ajuste «Largo fijo al leer»), además (ver `largoFijoEn`):
+ * - Empieza una racha de largo → «Continúa con Panguana, largo fijo 7 pies.
+ *   2, 8» (o «Largo fijo 7 pies. 2, 8» si la especie ya venía sonando).
+ * - Con el fijo puesto → «2, 8»; una pieza de otro largo → «2, 8, largo 8».
+ * - Se suelta → «Largo libre. 2, 6, 5».
+ * - La primera que suena tras arrancar/saltar/retomar dice el fijo vigente.
  */
 export function textoPorTramos<T extends { especie?: string }>(
   fila: T,
   pos: PosicionEnLectura<T>,
   medida: (f: T) => string,
+  largo?: LargoEnLectura<T>,
 ): string {
   const especie = fila.especie?.trim();
-  const base = medida(fila);
   const iAnterior = pos.indice + (pos.haciaAtras ? 1 : -1);
   const anterior = pos.lista[iAnterior];
+  const est = largo ? largoFijoEn(pos.lista, pos.indice, pos.haciaAtras, largo) : SIN_LARGO_FIJO;
+  const base = !largo || est.fijo === null
+    ? medida(fila)
+    : est.excepcion
+      ? `${largo.sinLargo(fila)}, largo ${largo.largo(fila)}`
+      : largo.sinLargo(fila);
+  const fraseFijo = `largo fijo ${est.fijo} ${est.unidad}`;
+  const dichoLargo = pos.primera
+    ? (est.fijo !== null ? fraseFijo : null)
+    : est.anuncio === "fijo" ? fraseFijo : est.anuncio === "libre" ? "largo libre" : null;
   if (!especie) {
     const saleDeUnTramo = !pos.primera && !!anterior && largoDelTramo(pos.lista, iAnterior) >= MINIMO_TRAMO;
-    return saleDeUnTramo ? `Sin especie. ${base}` : base;
+    return conCabeza([saleDeUnTramo ? "Sin especie" : null, dichoLargo], base);
   }
   if (largoDelTramo(pos.lista, pos.indice) < MINIMO_TRAMO) return `${base}, ${especie}`;
   const entra = pos.primera || !anterior || claveEspecie(anterior.especie) !== claveEspecie(especie);
-  return entra ? `Continúa con ${especie}. ${base}` : base;
+  return conCabeza([entra ? `Continúa con ${especie}` : null, dichoLargo], base);
+}
+
+/** Cómo se dice una unidad de largo, en singular o plural. */
+export function unidadDeLargoEnVoz(unidad: "pulg" | "cm" | "pies" | "m" | undefined, valor: number): string {
+  const uno = valor === 1;
+  switch (unidad) {
+    case "m": return uno ? "metro" : "metros";
+    case "cm": return uno ? "centímetro" : "centímetros";
+    case "pulg": return uno ? "pulgada" : "pulgadas";
+    default: return uno ? "pie" : "pies";
+  }
 }
 
 /**

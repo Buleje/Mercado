@@ -20,12 +20,14 @@ import {
   compararConGtf, cubicarTroza, partirEnTrozas, totalesTrozas, type TrozaCubicada,
 } from "@/lib/forestal/cubicacion-trozas";
 import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
-import { loadConfig } from "@/lib/forestal/cubicador-config";
+import { aplicarAjustesDeVoz, loadConfig } from "@/lib/forestal/cubicador-config";
+import { pitido, prepararPitido } from "@/lib/forestal/pitido";
 import { useVozContinua } from "@/hooks/use-voz-continua";
 import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-voz";
 import {
   agruparPorEspecie, empiezaBloque, esOrdenFilas, especieAlInicio, ordenarFilas, textoPorTramos, ultimaDictada,
-  type OrdenFilas,
+  unidadDeLargoEnVoz,
+  type LargoEnLectura, type OrdenFilas,
 } from "@/lib/forestal/cubicador-bloques-especie";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
@@ -82,12 +84,28 @@ function hablar(texto: string) {
     if (!synth) return;
     synth.cancel();
     const u = new SpeechSynthesisUtterance(texto);
-    u.lang = "es-PE";
-    u.rate = cfg.voiceRate;
-    if (cfg.voiceURI) { const v = synth.getVoices().find((x) => x.voiceURI === cfg.voiceURI); if (v) u.voice = v; }
+    aplicarAjustesDeVoz(u, cfg, synth.getVoices());
     synth.speak(u);
   } catch { /* TTS no disponible */ }
 }
+
+/**
+ * El tip de «guardada» con «Repite: no» — el mismo del cubicador de aserrada
+ * (Brandon, 2026-09-23). Sólo para lo dictado: la carga a mano no suena.
+ * Grave si la troza entró marcada con medidas raras.
+ */
+function tipSiNoRepite(veces: number, rara: boolean) {
+  const cfg = loadConfig();
+  if (cfg.speak || !cfg.pitidoAlGuardar) return;
+  pitido({ veces, tono: rara ? "revisa" : "guardado", volumen: cfg.voiceVolume });
+}
+
+/** El largo de una troza al leer con «Largo fijo al leer»: en metros. */
+const LARGO_TROZA_EN_VOZ: LargoEnLectura<Fila> = {
+  largo: (t) => t.largo,
+  unidad: (_t, valor) => unidadDeLargoEnVoz("m", valor),
+  sinLargo: (t) => `${t.d1}, ${t.d2}`,
+};
 
 export default function CubicadorTrozas() {
   const [rows, setRows] = useState<Fila[]>([]);
@@ -215,6 +233,7 @@ export default function CubicadorTrozas() {
     if (ultima) {
       const confirmacion = trozas.length === 1 ? `${ultima.d1}, ${ultima.d2}, ${ultima.largo}` : `${trozas.length} trozas`;
       hablar(anuncio ? `${anuncio}. ${confirmacion}` : confirmacion);
+      tipSiNoRepite(trozas.length, trozas.some((t) => t.sospechosa));
     } else if (anuncio) {
       hablar(anuncio);
     }
@@ -257,15 +276,21 @@ export default function CubicadorTrozas() {
   const lectura = useLecturaEnVoz<Fila>({
     rate: () => loadConfig().voiceRate,
     voiceURI: () => loadConfig().voiceURI,
+    pitch: () => loadConfig().voicePitch,
+    volume: () => loadConfig().voiceVolume,
     /* El micrófono y el parlante no pueden estar prendidos a la vez: lo que
        dicta la tabla entraría como si fuera una troza nueva. */
     onAntesDeArrancar: () => { if (voz.listening) voz.toggle(); },
     idDeFila: (id) => `troza-row-${id}`,
   });
   /* Por tramos de especie, igual que la aserrada: «Continúa con tornillo» al
-     entrar a 2+ trozas seguidas de la misma especie, después sólo medidas. */
+     entrar a 2+ trozas seguidas de la misma especie, después sólo medidas. Y
+     con «Largo fijo al leer» (Ajustes del cubicador de aserrada, la misma
+     config), 5+ trozas del mismo largo se leen «largo fijo 4 metros» y después
+     sólo los dos diámetros. */
   const textoTroza = useCallback(
-    (t: Fila, ctx: ContextoLectura<Fila>) => textoPorTramos(t, ctx, (x) => `${x.d1}, ${x.d2}, ${x.largo}`),
+    (t: Fila, ctx: ContextoLectura<Fila>) =>
+      textoPorTramos(t, ctx, (x) => `${x.d1}, ${x.d2}, ${x.largo}`, loadConfig().largoFijoAlLeer ? LARGO_TROZA_EN_VOZ : undefined),
     [],
   );
   const leerPatio = useCallback(
@@ -461,8 +486,9 @@ export default function CubicadorTrozas() {
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             <button
               type="button"
-              onClick={voz.toggle}
+              onClick={() => { prepararPitido(); voz.toggle(); }}
               aria-pressed={voz.listening}
+              aria-label={voz.listening ? "Detener el dictado" : "Empezar a dictar"}
               className={`inline-flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 transition ${voz.listening ? "animate-pulse border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]" : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:brightness-95"}`}
             >
               {voz.listening ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}

@@ -19,9 +19,10 @@ import {
   type PiezaCubicada, type Unidad, type MedidasFijas,
 } from "@/lib/forestal/cubicacion";
 import {
-  loadConfig, saveConfig, CONFIG_DEFAULT,
-  type CubicadorConfig,
+  loadConfig, saveConfig, CONFIG_DEFAULT, aplicarAjustesDeVoz,
+  type AjustesDeVoz, type CubicadorConfig,
 } from "@/lib/forestal/cubicador-config";
+import { pitido, prepararPitido } from "@/lib/forestal/pitido";
 import { exportarPDF, exportarExcel } from "@/lib/forestal/cubicador-export";
 import { hoyISO, nombreSugerido, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { agruparPor, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION, type DimensionResumen } from "@/lib/forestal/cubicacion-resumen";
@@ -64,8 +65,10 @@ import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-vo
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import {
   agruparPorEspecie, empiezaBloque, esOrdenFilas, especieAlInicio, ordenarFilas, textoPorTramos, ultimaDictada,
-  type OrdenFilas,
+  unidadDeLargoEnVoz,
+  type LargoEnLectura, type OrdenFilas,
 } from "@/lib/forestal/cubicador-bloques-especie";
+import { claveDueno, duenoDictado, opcionesDeDueno, reclavearFichas } from "@/lib/forestal/duenos-cubicador";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import { formatNumber } from "@/lib/format";
 
@@ -201,6 +204,12 @@ const acomodarFilas = (filas: PiezaCubicada[], orden: OrdenFilas): PiezaCubicada
   orden === "especie" ? agruparPorEspecie(filas) : filas;
 /** Las tres medidas, sin especie: lo que se lee dentro de un tramo de la misma especie. */
 const medidaSinEspecie = (r: PiezaCubicada) => `${r.espesor}, ${r.ancho}, ${r.largo}`;
+/** El largo de una pieza al leer con «Largo fijo al leer» (ver `largoFijoEn`). */
+const LARGO_EN_VOZ: LargoEnLectura<PiezaCubicada> = {
+  largo: (r) => r.largo,
+  unidad: (r, valor) => unidadDeLargoEnVoz(r.uLargo, valor),
+  sinLargo: (r) => `${r.espesor}, ${r.ancho}`,
+};
 /** Cuánto tiempo el micrófono debe desconfiar de lo que escucha tras hablar. */
 const MARGEN_ECO_MS = 700;
 /** Números sueltos que esperan a completar un trío: caducan solos. */
@@ -210,7 +219,7 @@ const CARRY_TTL_MS = 25_000;
 // dictado rápido gana el último, sin encolar audio viejo que quede atrás.
 // `onEco` publica la ventana en que suena el parlante — el reconocedor la usa
 // para no volver a guardar la pieza que él mismo acaba de cantar.
-function decir(texto: string, rate = 1.5, voiceURI = "", onEco?: (hasta: number, texto: string) => void) {
+function decir(texto: string, voz: AjustesDeVoz, onEco?: (hasta: number, texto: string) => void) {
   // TODO el trabajo de síntesis va DIFERIDO — incluido `cancel()`, no sólo
   // `speak()`. En Windows/SAPI `cancel()` en sí puede quedarse colgado un
   // rato largo si hay algo sonando, y si eso pasa en el MISMO tick que el
@@ -224,18 +233,31 @@ function decir(texto: string, rate = 1.5, voiceURI = "", onEco?: (hasta: number,
       if (!synth) return;
       synth.cancel();
       const u = new SpeechSynthesisUtterance(texto);
-      u.lang = "es-PE";
-      u.rate = rate;
-      if (voiceURI) { const v = synth.getVoices().find((x) => x.voiceURI === voiceURI); if (v) u.voice = v; }
+      aplicarAjustesDeVoz(u, voz, synth.getVoices());
       if (onEco) {
         // Estimación por si `onend` no llega (pasa si se cancela a mitad).
-        const estimadoMs = Math.max(800, (texto.length / Math.max(0.6, rate)) * 90);
+        // Con la velocidad REAL: en Windows 10× suena a 3×, y estimar con
+        // 10 acortaba la ventana y dejaba pasar el eco.
+        const estimadoMs = Math.max(800, (texto.length / Math.max(0.6, Math.min(3, u.rate))) * 90);
         onEco(Date.now() + estimadoMs + MARGEN_ECO_MS, texto);
         u.onend = () => onEco(Date.now() + MARGEN_ECO_MS, texto);
       }
       synth.speak(u);
     } catch { /* TTS no disponible */ }
   }, 0);
+}
+
+/**
+ * El tip de «guardado» (Brandon, 2026-09-23): con «Repite: no» una pieza
+ * dictada entra muda y quien dicta, sin mirar la pantalla, no sabe si se
+ * guardó. Sólo para lo que entra POR VOZ: a mano los ojos ya están en la
+ * pantalla y un tip en cada Enter sería ruido. Con la voz prendida, la
+ * confirmación ya es la voz. Grave si la pieza tiene medidas raras — la voz,
+ * en ese caso, dice «Revisa».
+ */
+function tipSiNoRepite(cfg: CubicadorConfig, veces: number, raro = false) {
+  if (cfg.speak || !cfg.pitidoAlGuardar) return;
+  pitido({ veces, tono: raro ? "revisa" : "guardado", volumen: cfg.voiceVolume });
 }
 
 /**
@@ -314,13 +336,13 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
    *  pieza a su ficha sin volver a buscarla. */
   const [fichasDueno, setFichasDueno] = useState<Record<string, { id: string; nombre: string }>>(() => {
     try {
-      const v = JSON.parse(leerGuardado("-duenos-directorio", espacio) ?? "{}") as unknown;
-      return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, { id: string; nombre: string }>) : {};
+      /* Re-clavea las guardadas por `toLowerCase()` (antes del 23-09). */
+      return reclavearFichas(JSON.parse(leerGuardado("-duenos-directorio", espacio) ?? "{}"));
     } catch { return {}; }
   });
   const fichasDuenoRef = useRef(fichasDueno);
   const fichaDe = useCallback((nombre: string | null | undefined) => {
-    const k = (nombre ?? "").trim().toLowerCase();
+    const k = claveDueno(nombre);
     return k ? (fichasDuenoRef.current[k] ?? null) : null;
   }, []);
   /** El código de la troza que se le pega a lo que sigue (sólo con
@@ -330,9 +352,10 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   const codigoRef = useRef("");
   const cambiarCodigo = useCallback((v: string) => { codigoRef.current = v; setCodigoTroza(v); }, []);
   const conCodigo = Boolean(codigoDeTroza);
-  /** Dueños ya usados en este dispositivo (no sólo en el lote actual): la
-   *  lista crece sola con cada nombre nuevo, así el select/datalist ofrece
-   *  el mismo dueño de ayer sin re-tipearlo. */
+  /** Dueños guardados en este dispositivo (no sólo en el lote actual). Se
+   *  CREAN sólo en el modal de Dueños o al elegir uno del Directorio; la
+   *  barra, la tabla y la voz sólo eligen de acá (Brandon 23-09: la barra
+   *  guardaba cada letra tipeada — «w», «l», «lu» — como un dueño). */
   const [duenosConocidos, setDuenosConocidos] = useState<string[]>(() => {
     try { return JSON.parse(leerGuardado("-duenos", espacio) ?? "[]") as string[]; } catch { return []; }
   });
@@ -340,14 +363,14 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     const limpio = nombre.trim();
     if (!limpio) return;
     setDuenosConocidos((prev) => {
-      if (prev.some((d) => d.toLowerCase() === limpio.toLowerCase())) return prev;
+      if (prev.some((d) => claveDueno(d) === claveDueno(limpio))) return prev;
       const next = [...prev, limpio].slice(-50); // tope: no crece sin límite
       try { localStorage.setItem(`${storageKey(espacio)}-duenos`, JSON.stringify(next)); } catch { /* quota */ }
       return next;
     });
   }, []);
-  /** Cambia el dueño actual Y lo recuerda para la próxima vez — el único
-   *  camino que debería usar la UI (voz, selector, datalist de la tabla). */
+  /** Cambia el dueño actual — ELIGE, no crea: el nombre ya tiene que estar
+   *  en la lista (la barra, la tabla y la voz sólo ofrecen lo que hay). */
   const aplicarDueno = useCallback((v: string, ficha?: { id: string; nombre: string } | null) => {
     /* Los refs al toque (como `codigoRef`): la pieza puede llegar en el mismo
        lote de resultados de voz, antes del render. */
@@ -356,23 +379,28 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     duenoParteIdRef.current = f?.id ?? null;
     setDueno(v);
     setDuenoParteId(f?.id ?? null);
-    recordarDueno(v);
-  }, [recordarDueno, fichaDe]);
-  /** Un dueño elegido del Directorio: queda fijo, atado a su ficha, y se
-   *  recuerda para atar después las piezas escritas con ese nombre. */
-  const elegirDuenoDelDirectorio = useCallback((p: { id: string; nombre: string }) => {
-    const next = { ...fichasDuenoRef.current, [p.nombre.trim().toLowerCase()]: { id: p.id, nombre: p.nombre } };
+  }, [fichaDe]);
+  /** Ata un nombre a su ficha del Directorio y lo suma a la lista: desde ahí
+   *  las piezas con ese nombre toman su precio pactado (ADR-430). */
+  const atarFichaDueno = useCallback((p: { id: string; nombre: string }) => {
+    const next = { ...fichasDuenoRef.current, [claveDueno(p.nombre)]: { id: p.id, nombre: p.nombre } };
     fichasDuenoRef.current = next;
     setFichasDueno(next);
     try { localStorage.setItem(`${storageKey(espacio)}-duenos-directorio`, JSON.stringify(next)); } catch { /* quota */ }
+    recordarDueno(p.nombre);
+  }, [recordarDueno, espacio]);
+  /** Un dueño elegido del Directorio: queda fijo, atado a su ficha, y se
+   *  recuerda para atar después las piezas escritas con ese nombre. */
+  const elegirDuenoDelDirectorio = useCallback((p: { id: string; nombre: string }) => {
+    atarFichaDueno(p);
     aplicarDueno(p.nombre, p);
-  }, [aplicarDueno, espacio]);
+  }, [aplicarDueno, atarFichaDueno]);
   /** Saca un dueño de la lista GUARDADA — no toca las piezas que ya lo usan
    *  (son texto libre, no una referencia): borrar del catálogo no reescribe
    *  el lote. */
   const olvidarDueno = useCallback((nombre: string) => {
     setDuenosConocidos((prev) => {
-      const next = prev.filter((d) => d !== nombre);
+      const next = prev.filter((d) => claveDueno(d) !== claveDueno(nombre));
       try { localStorage.setItem(`${storageKey(espacio)}-duenos`, JSON.stringify(next)); } catch { /* quota */ }
       return next;
     });
@@ -655,7 +683,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   }, []);
   const hablar = useCallback((texto: string) => {
     if (!configRef.current.speak) return;
-    decir(texto, configRef.current.voiceRate, configRef.current.voiceURI, (hasta, dicho) => {
+    decir(texto, configRef.current, (hasta, dicho) => {
       ecoRef.current = { hasta, texto: dicho };
     });
   }, []);
@@ -804,12 +832,16 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           else setErrMsg(`No reconocí la especie "${cmd.palabra}".`);
         }
         else if (cmd.tipo === "dueno") {
-          // Sin catálogo cerrado: si ya se usó un dueño parecido se reutiliza
-          // (mismo criterio que la especie), si no SE CREA con lo dictado.
-          const conocido = duenosConocidosRef.current.find((d) => sinAcentos(d).startsWith(cmd.palabra));
-          const nombre = conocido ?? (cmd.palabra.charAt(0).toUpperCase() + cmd.palabra.slice(1));
-          aplicarDueno(nombre);
-          hablar(nombre);
+          // Sólo ELIGE entre los que existen (guardados o ya en el lote): lo
+          // que el reconocedor oye mal no se vuelve un dueño nuevo. Se crean
+          // en el modal de Dueños (Brandon 23-09).
+          const opciones = opcionesDeDueno([
+            duenosConocidosRef.current,
+            rowsRef.current.map((r) => r.dueno ?? ""),
+          ]);
+          const nombre = duenoDictado(cmd.palabra, opciones);
+          if (nombre) { aplicarDueno(nombre); hablar(nombre); }
+          else setErrMsg(`«${cmd.palabra}» no está en tus dueños: créalo en Dueños (el botón + junto al campo).`);
         }
         else if (cmd.tipo === "resumen") {
           setShowResumen(true);
@@ -836,6 +868,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         if (nums.length >= 3 && nums[0] > 0 && nums[1] > 0 && nums[2] > 0) {
           updateRow(modeRef.current.id, nums[0], nums[1], nums[2]);
           hablar(`${nums[0]}, ${nums[1]}, ${nums[2]}`);
+          tipSiNoRepite(configRef.current, 1);
           modeRef.current = { type: "add" };
           setEditingId(null); wantListeningRef.current = false;
           setListening(false); setLiveText("");
@@ -928,6 +961,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           : raro ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}. Revisa`
             : `${cantDictada > 1 ? `${cantDictada} de ` : ""}${variables.join(", ")}`;
         hablar(anuncio ? `${anuncio}. ${confirmacion}` : confirmacion);
+        tipSiNoRepite(configRef.current, added, raro);
       } else if (anuncio) {
         hablar(anuncio); // cambió la especie y los números quedaron esperando
       }
@@ -989,6 +1023,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   const lecturaVoz = useLecturaEnVoz<PiezaCubicada>({
     rate: () => configRef.current.voiceRate,
     voiceURI: () => configRef.current.voiceURI,
+    pitch: () => configRef.current.voicePitch,
+    volume: () => configRef.current.voiceVolume,
     /* El micrófono y el parlante no pueden estar prendidos a la vez: lo que
        dicta la tabla entraría como una pieza nueva. Y se sale del modo edición,
        que apunta a una fila que la lectura va a dejar atrás. */
@@ -1011,9 +1047,15 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
    * seguidas de la misma especie dice «Continúa con panguana» UNA vez y
    * después sólo las medidas; una fila suelta se lee como siempre, con su
    * especie al final. Ver `textoPorTramos`.
+   *
+   * Con «Largo fijo al leer» (Brandon, 2026-09-23), una racha de 5+ piezas del
+   * mismo largo se anuncia una vez y se lee sólo espesor y ancho. El ajuste se
+   * mira en cada fila (por ref): apagarlo a mitad de la lectura vale desde la
+   * siguiente que se encola.
    */
   const medidaEnVoz = useCallback(
-    (r: PiezaCubicada, ctx: ContextoLectura<PiezaCubicada>) => textoPorTramos(r, ctx, medidaSinEspecie),
+    (r: PiezaCubicada, ctx: ContextoLectura<PiezaCubicada>) =>
+      textoPorTramos(r, ctx, medidaSinEspecie, configRef.current.largoFijoAlLeer ? LARGO_EN_VOZ : undefined),
     [],
   );
 
@@ -1063,6 +1105,9 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     }
     wantListeningRef.current = true;
     resetVoz(); setLiveText(""); setErrMsg(null);
+    /* Tocar el micrófono ES el gesto que destraba el audio del tip: las
+       piezas llegan desde el reconocedor, que no cuenta como gesto. */
+    prepararPitido();
     reinicioRef.current = { ultimo: 0, seguidos: 0 };
     void wakeLock(true);
     try { rec.start(); setListening(true); } catch { /* ya corriendo */ }
@@ -1081,6 +1126,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     }
     modeRef.current = { type: "edit", id: rowId };
     setEditingId(rowId); setErrMsg(null); setLiveText(""); resetVoz();
+    prepararPitido(); // el tip de «corregida» también llega desde el reconocedor
     if (!wantListeningRef.current) {
       wantListeningRef.current = true;
       try { rec.start(); setListening(true); } catch { /* ya corriendo */ }
@@ -1245,10 +1291,9 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
        queda como texto, sin precio pactado (ADR-430). */
     const ficha = fichaDe(duenoNuevo);
     persist(rowsRef.current.map((r) => (r.id === id ? { ...r, dueno: duenoNuevo.trim() || undefined, duenoParteId: ficha?.id } : r)));
-    recordarDueno(duenoNuevo);
-  }, [persist, recordarDueno, fichaDe]);
-  /** Código de la troza editado en la tabla: texto libre, como el dueño. No
-   *  cambia la especie de la fila — eso sólo lo hace el campo de arriba. */
+  }, [persist, fichaDe]);
+  /** Código de la troza editado en la tabla: texto libre. No cambia la
+   *  especie de la fila — eso sólo lo hace el campo de arriba. */
   const editarCodigo = useCallback((id: string, codigoNuevo: string) => {
     persist(rowsRef.current.map((r) => (r.id === id ? { ...r, codigo: codigoNuevo.trim() || undefined } : r)));
   }, [persist]);
@@ -1386,10 +1431,11 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     [rows],
   );
   const haySinDueno = useMemo(() => rows.some((r) => !r.dueno?.trim()), [rows]);
-  // Sugerencias del datalist de la celda: lo usado en ESTE lote + lo aprendido
-  // en el dispositivo, sin duplicar.
-  const duenosParaDatalist = useMemo(
-    () => [...new Set([...duenosLote, ...duenosConocidos])],
+  // Lo que se puede ELEGIR en la barra y en la tabla: los guardados en el
+  // dispositivo (con su forma escrita) + los que ya trae ESTE lote, sin repetir
+  // aunque cambien mayúsculas o acentos.
+  const duenosParaElegir = useMemo(
+    () => opcionesDeDueno([duenosConocidos, duenosLote]),
     [duenosLote, duenosConocidos],
   );
   /** Los códigos del patio para el datalist de la celda «Código», sin repetir. */
@@ -1550,7 +1596,6 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       const valor = campo === "especie" ? base.especie : campo === "dueno" ? base.dueno : campo === "codigo" ? base.codigo : base.tipo;
       /* El dueño viaja con su ficha: copiar el nombre sin ella cambiaría el precio. */
       persist(rows.map((r) => (!ids.has(r.id) ? r : campo === "dueno" ? { ...r, dueno: base.dueno, duenoParteId: base.duenoParteId } : { ...r, [campo]: valor })));
-      if (campo === "dueno" && typeof valor === "string") recordarDueno(valor);
       const etiqueta = campo === "especie" ? (valor || "sin especie") : campo === "dueno" ? (valor || "sin dueño") : campo === "codigo" ? (valor || "sin código") : (valor ?? "automático");
       pushToast({
         tono: "success",
@@ -1558,7 +1603,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         detail: "Arrastra el cuadradito de la esquina para repetir un valor.",
       });
     },
-    [filasVisibles, rows, persist, pushToast, recordarDueno],
+    [filasVisibles, rows, persist, pushToast],
   );
   const rellenoEspecie = useRellenoArrastre(useMemo(() => rellenarCampo("especie"), [rellenarCampo]));
   const rellenoTipo = useRellenoArrastre(useMemo(() => rellenarCampo("tipo"), [rellenarCampo]));
@@ -1608,7 +1653,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     for (const r of rows) {
       if (!r.dueno?.trim() || r.duenoParteId) continue;
       sin += r.cantidad;
-      if (fichasDueno[r.dueno.trim().toLowerCase()]) atables += r.cantidad;
+      if (fichasDueno[claveDueno(r.dueno)]) atables += r.cantidad;
     }
     return { sinDirectorio: sin, vinculables: atables };
   }, [rows, fichasDueno]);
@@ -1939,7 +1984,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         config={config}
         onUpdateConfig={updateConfig}
         voices={voices}
-        onProbarVoz={() => decir("dos, seis, ocho", config.voiceRate, config.voiceURI)}
+        onProbarVoz={() => decir("dos, seis, ocho", config)}
         supported={supported}
         listening={listening}
         onToggleListen={toggleListen}
@@ -1953,7 +1998,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         dueno={dueno}
         duenoDelDirectorio={Boolean(dueno && duenoParteId)}
         onDuenoChange={aplicarDueno}
-        duenosConocidos={duenosParaDatalist}
+        duenosConocidos={duenosParaElegir}
         onAbrirDuenos={() => setShowDuenosModal(true)}
         liveGroups={liveGroups}
         errMsg={errMsg}
@@ -2497,9 +2542,6 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                 )}
               </div>
             </div>
-            <datalist id="cub-duenos-datalist">
-              {duenosParaDatalist.map((d) => <option key={d} value={d} />)}
-            </datalist>
             {conCodigo && (
               <datalist id="cub-codigos-datalist">
                 {codigosParaDatalist.map((t) => (
@@ -2699,7 +2741,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                     {colsVisibles.dueno && (
                       <td className="group/celda relative px-3 py-2">
                         <span className="inline-flex items-center gap-1">
-                          <DuenoCell valor={r.dueno ?? ""} onCommit={(v) => editarDueno(r.id, v)} />
+                          <DuenoCell valor={r.dueno ?? ""} opciones={duenosParaElegir} onCommit={(v) => editarDueno(r.id, v)} />
                           {r.duenoParteId && <PrecioDelDueno pieza={r} ctx={precios.ctx} />}
                         </span>
                         <AsaRelleno onTomar={() => rellenoDueno.iniciar(pos)} titulo="Arrastra hacia abajo para poner este dueño en las filas siguientes" />
@@ -2816,6 +2858,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       {showImportar && (
         <ImportarCubicacionModal
           filasActuales={rows.length}
+          duenos={duenosParaElegir}
           onAgregar={(piezas) => { agregarVarias(piezas); setEnviado(false); }}
           onCerrar={() => setShowImportar(false)}
         />
@@ -2838,6 +2881,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           onElegir={(d) => { aplicarDueno(d); setShowDuenosModal(false); }}
           actualParteId={dueno ? duenoParteId : null}
           onElegirParte={(p) => { elegirDuenoDelDirectorio(p); setShowDuenosModal(false); }}
+          fichaDe={fichaDe}
+          onAtar={atarFichaDueno}
           onClose={() => setShowDuenosModal(false)}
         />
       )}
@@ -2955,30 +3000,26 @@ function PrecioDelDueno({ pieza, ctx }: { pieza: PiezaCubicada; ctx: ContextoPre
 }
 
 /**
- * Dueño editable en la tabla — texto libre (con datalist), no un `<select>`
- * como especie: no hay catálogo cerrado, cualquier nombre nuevo es válido.
- *
- * Mismo buffer LOCAL que `Num` de acá abajo: comitea recién al perder el
- * foco (o Enter), para no disparar `recordarDueno` con cada letra tipeada
- * (guardaría "J", "Ju", "Jua"… como dueños "conocidos" a medio escribir) y
- * para no pisar lo que se está tipeando si otra fila cambia mientras tanto.
+ * Dueño de la pieza en la tabla — un `<select>` como la especie: se ELIGE de
+ * los dueños guardados y de los que ya tiene el lote; se crean en el modal de
+ * Dueños (Brandon 23-09). Antes era texto libre y cada nombre a medio escribir
+ * quedaba guardado como dueño. La pieza que trae un dueño que no está en la
+ * lista (pegado de un Excel, un lote viejo) lo conserva como opción.
  */
-function DuenoCell({ valor, onCommit }: { valor: string; onCommit: (v: string) => void }) {
-  const [texto, setTexto] = useState(valor);
-  const enfocado = useRef(false);
-  useEffect(() => { if (!enfocado.current) setTexto(valor); }, [valor]);
+function DuenoCell({ valor, opciones, onCommit }: { valor: string; opciones: readonly string[]; onCommit: (v: string) => void }) {
+  /* El valor de la pieza va PRIMERO: si la lista lo tiene escrito distinto
+     («Wasaco» y «wasaco»), el `<select>` igual tiene que encontrarlo. */
+  const lista = opcionesDeDueno([valor ? [valor] : [], opciones]);
   return (
-    <input
-      list="cub-duenos-datalist"
-      value={texto}
-      onFocus={() => { enfocado.current = true; }}
-      onChange={(e) => setTexto(e.target.value)}
-      onBlur={() => { enfocado.current = false; if (texto !== valor) onCommit(texto); }}
-      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+    <select
+      value={valor}
+      onChange={(e) => { if (e.target.value !== valor) onCommit(e.target.value); }}
       aria-label="Dueño de la pieza"
-      placeholder="—"
-      className="w-[110px] rounded-xl border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
-    />
+      className="max-w-[130px] rounded-xl border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+    >
+      <option value="">—</option>
+      {lista.map((d) => <option key={d} value={d}>{d}</option>)}
+    </select>
   );
 }
 

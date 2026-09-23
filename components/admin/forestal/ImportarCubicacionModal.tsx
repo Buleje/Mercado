@@ -32,13 +32,15 @@ function leerComoDataUrl(file: File): Promise<string> {
 }
 
 export default function ImportarCubicacionModal({
-  onAgregar, onCerrar, filasActuales = 0,
+  onAgregar, onCerrar, filasActuales = 0, duenos = [],
 }: {
   /** Suma las piezas leídas al lote del cubicador. */
   onAgregar: (piezas: PiezaImportada[]) => void;
   onCerrar: () => void;
   /** Filas que YA tiene el lote — se muestra que la importación se suma a ellas. */
   filasActuales?: number;
+  /** Los dueños que ya existen: «dueño X» en un audio sólo elige entre ellos. */
+  duenos?: readonly string[];
 }) {
   const [modo, setModo] = useState<"excel" | "foto" | "audio">("excel");
   const [resultado, setResultado] = useState<ResultadoImport | null>(null);
@@ -112,13 +114,13 @@ export default function ImportarCubicacionModal({
       // El vocabulario de comandos ("fijo"/"especie"/"eliminá el último") es el
       // MISMO que el operario personalizó para el micrófono en vivo en Ajustes
       // — si no, el importador de audio sólo reconocería las frases DEFAULT.
-      setResultado(interpretarDictadoAudio(String(j.transcript ?? ""), loadConfig().comandos));
+      setResultado(interpretarDictadoAudio(String(j.transcript ?? ""), loadConfig().comandos, duenos));
     } catch (e) {
       setErrorGeneral(e instanceof Error ? e.message : String(e));
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [duenos]);
 
   const [bajando, setBajando] = useState(false);
   const descargarPlantilla = () => {

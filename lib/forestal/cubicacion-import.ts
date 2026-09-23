@@ -11,6 +11,7 @@
  * el archivo).
  */
 
+import { duenoDictado } from "./duenos-cubicador";
 import { COMANDOS_DEFAULT, cubicarPieza, detectarComando, ESPECIES_MADERA, leerDictado, medidaSospechosa, partirConFijas, type ComandosCfg, type MedidasFijas, type PiezaCubicada, type Unidad } from "./cubicacion";
 
 /** Una celda del archivo tal como la devuelve la lectura (string o número). */
@@ -278,8 +279,16 @@ function separarEnOraciones(texto: string): string[] {
  * como una sola tira de números. Lo que no cierra en una pieza completa se
  * reporta con la oración exacta de la que salió — nunca se inventa una
  * tercera medida ni se adivina a qué pieza pertenecía un número suelto.
+ *
+ * `duenos` son los que ya existen en el cubicador: «dueño X» sólo ELIGE entre
+ * ellos, igual que el dictado en vivo (Brandon 23-09). Crear el que oyó el
+ * reconocedor («Lu» por «Lucho») llenaba la lista de pedazos de nombres.
  */
-export function interpretarDictadoAudio(texto: string, cfg: ComandosCfg = COMANDOS_DEFAULT): ResultadoImport {
+export function interpretarDictadoAudio(
+  texto: string,
+  cfg: ComandosCfg = COMANDOS_DEFAULT,
+  duenos: readonly string[] = [],
+): ResultadoImport {
   const errores: { fila: number; motivo: string }[] = [];
   const out: PiezaImportada[] = [];
 
@@ -329,9 +338,9 @@ export function interpretarDictadoAudio(texto: string, cfg: ComandosCfg = COMAND
         if (encontrada) especieActual = encontrada;
         else errores.push({ fila: filaNro, motivo: `No reconocí la especie "${cmd.palabra}" dictada en "${oracion}" — lo que sigue se importa sin especie hasta que la corrijas.` });
       } else if (cmd.tipo === "dueno") {
-        // Sin lista cerrada (el dueño no es un catálogo fijo como la especie):
-        // lo que se dictó SE CREA, capitalizado, y se aplica a lo que sigue.
-        duenoActual = cmd.palabra.charAt(0).toUpperCase() + cmd.palabra.slice(1);
+        const elegido = duenoDictado(cmd.palabra, duenos);
+        if (elegido) duenoActual = elegido;
+        else errores.push({ fila: filaNro, motivo: `No hay un dueño "${cmd.palabra}" en el cubicador (dictado en "${oracion}") — lo que sigue se importa con el dueño de antes. Si es nuevo, créalo en «Dueños» e importa de nuevo.` });
       } else if (cmd.tipo === "borrar-ultimo") {
         if (out.length > 0) out.pop();
         else errores.push({ fila: filaNro, motivo: `Dijiste "${oracion}" pero todavía no había ninguna pieza para quitar.` });

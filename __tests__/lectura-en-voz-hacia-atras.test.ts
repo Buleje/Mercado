@@ -17,11 +17,20 @@ import { siguienteIndice, useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
 
 interface Fila { id: string }
 
-/** Lo que dijo el parlante, en orden. */
+/** Lo que dijo el parlante, en orden: se anota cuando la utterance EMPIEZA a sonar. */
 let dichos: string[] = [];
-type UtteranceLike = { text: string; onend?: (() => void) | null; onerror?: ((e: unknown) => void) | null };
-/** La utterance que está sonando: terminarla dispara el paso siguiente. */
+type UtteranceLike = {
+  text: string;
+  onstart?: (() => void) | null;
+  onend?: (() => void) | null;
+  onerror?: ((e: unknown) => void) | null;
+};
+/** La utterance que está sonando: terminarla hace sonar la encolada. */
 let sonando: UtteranceLike | null = null;
+/** Las que esperan en el motor, en orden (el motor las empalma solo). */
+let enEspera: UtteranceLike[] = [];
+/** Cuántas veces se llamó `cancel()`: entre filas de una tanda no debe llamarse. */
+let cancelaciones = 0;
 /**
  * Chrome dispara `onend` sobre la utterance cortada por `cancel()`, y puede
  * llegar tarde — cuando la lectura nueva ya arrancó. Acá se guarda para poder
@@ -33,27 +42,51 @@ class UtteranceFalsa {
   text: string;
   lang = "";
   rate = 1;
+  pitch = 1;
+  volume = 1;
   voice: unknown = null;
+  onstart: (() => void) | null = null;
   onend: (() => void) | null = null;
   onerror: ((e: unknown) => void) | null = null;
   constructor(text: string) { this.text = text; }
 }
 
+/** El motor: si no suena nada, empieza la primera que espera (como Chrome). */
+function avanzarMotor() {
+  if (sonando) return;
+  const u = enEspera.shift();
+  if (!u) return;
+  sonando = u;
+  dichos.push(u.text);
+  u.onstart?.();
+}
+
+/** Todo lo que se le entregó al motor, en orden (la que suena y las que esperan). */
+let entregadas: UtteranceFalsa[] = [];
+
 beforeEach(() => {
   vi.useFakeTimers();
   dichos = [];
   sonando = null;
+  enEspera = [];
+  entregadas = [];
+  cancelaciones = 0;
   fantasmas = [];
   vi.stubGlobal("SpeechSynthesisUtterance", UtteranceFalsa);
   vi.stubGlobal("speechSynthesis", {
-    speak: (u: UtteranceFalsa) => { dichos.push(u.text); sonando = u; },
-    /* Chrome dispara `onerror: canceled` sobre la utterance en curso cada vez
-       que se llama `cancel()` — el hook lo trata como propio, no como fallo. */
+    speak: (u: UtteranceFalsa) => { entregadas.push(u); enEspera.push(u); avanzarMotor(); },
+    /* Chrome dispara `onerror: canceled` sobre la utterance en curso —y sobre
+       las encoladas— cada vez que se llama `cancel()`: el hook lo trata como
+       propio, no como fallo. */
     cancel: () => {
+      cancelaciones++;
       const u = sonando;
+      const pendientes = enEspera;
       sonando = null;
+      enEspera = [];
+      pendientes.forEach((p) => p.onerror?.({ error: "canceled" }));
       if (!u) return;
-      u.onerror?.({ error: "canceled" });
+      u.onerror?.({ error: "interrupted" });
       fantasmas.push(u);
     },
     getVoices: () => [],
@@ -78,11 +111,15 @@ function correrTicks() {
   act(() => { vi.runAllTimers(); });
 }
 
-/** Termina la fila que suena: es lo que encadena la siguiente. */
+/** Termina la fila que suena: el motor empalma la encolada, sin esperar a nadie. */
 function terminarFila() {
   const u = sonando;
   if (!u) throw new Error("no hay ninguna fila sonando");
-  act(() => { u.onend?.(); });
+  act(() => {
+    sonando = null;
+    u.onend?.();
+    avanzarMotor();
+  });
   correrTicks();
 }
 
@@ -353,7 +390,7 @@ describe("useLecturaEnVoz · la tabla se reordena mientras lee", () => {
     expect(siguienteIndice(ids("x", "a", "b", "c"), "b", "c", 1, false)).toBe(3);
   });
 
-  it("la fila que suena se va a otro bloque: se lee la que venía y no se salta ninguna", () => {
+  it("la fila que suena se va a otro bloque: se lee la que venía y no se salta ni se repite ninguna", () => {
     let lista = ids("p1", "p2", "p3", "t1");
     const r = montar();
     act(() => { r.current.leer(() => lista, (f) => f.id); });
@@ -363,7 +400,22 @@ describe("useLecturaEnVoz · la tabla se reordena mientras lee", () => {
     terminarFila();
     terminarFila();
     terminarFila();
-    expect(dichos).toEqual(["p1", "p2", "p3", "p2", "t1"]);
+    /* Antes de la cola sonaba «p1, p2, p3, p2, t1»: la p2 dos veces. */
+    expect(dichos).toEqual(["p1", "p2", "p3", "t1"]);
+  });
+
+  it("una fila que ya sonó y se muda al final no se vuelve a leer", () => {
+    let lista = ids("a", "b", "c", "d");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    terminarFila(); // suena b, c encolada
+    lista = ids("a", "c", "d", "b"); // b se fue al último bloque
+    terminarFila();
+    terminarFila();
+    terminarFila();
+    expect(dichos).toEqual(["a", "b", "c", "d"]);
+    expect(r.current.estado?.terminada).toBe(true);
   });
 
   it("borrar la fila que suena sigue por la que ocupa su lugar, sin saltarla", () => {
@@ -375,5 +427,139 @@ describe("useLecturaEnVoz · la tabla se reordena mientras lee", () => {
     lista = ids("a", "c");
     terminarFila();
     expect(dichos).toEqual(["a", "b", "c"]);
+  });
+});
+
+/**
+ * Sin huecos entre filas (Brandon, 2026-09-23: «demora mucho y es lento»).
+ * La siguiente fila se entrega al motor mientras suena la actual, y `cancel()`
+ * no se llama entre filas: en Windows se cuelga y cada utterance arrancaba en
+ * frío. Lo que se mira acá es lo que el motor recibe y cuándo.
+ */
+describe("useLecturaEnVoz · la siguiente fila ya está encolada", () => {
+  const ids = (...xs: string[]) => xs.map((id) => ({ id }));
+
+  it("al arrancar entrega la que suena y la siguiente; al terminar una, encola otra", () => {
+    const lista = ids("a", "b", "c", "d");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    expect(entregadas.map((u) => u.text)).toEqual(["a", "b"]);
+    expect(dichos).toEqual(["a"]);
+
+    terminarFila();
+    expect(entregadas.map((u) => u.text)).toEqual(["a", "b", "c"]);
+    expect(dichos).toEqual(["a", "b"]);
+  });
+
+  it("no llama `cancel()` entre filas: sólo una vez, al arrancar", () => {
+    const lista = ids("a", "b", "c", "d");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    terminarFila();
+    terminarFila();
+    terminarFila();
+    expect(dichos).toEqual(["a", "b", "c", "d"]);
+    expect(cancelaciones).toBe(1);
+  });
+
+  it("resalta la fila que SUENA, no la encolada", () => {
+    const lista = ids("a", "b", "c");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    expect(r.current.leyendoId).toBe("a"); // b ya está en el motor, pero no suena
+    expect(r.current.estado?.idx).toBe(0);
+    terminarFila();
+    expect(r.current.leyendoId).toBe("b");
+    expect(r.current.estado?.idx).toBe(1);
+  });
+
+  it("borrar la fila ENCOLADA: suena con el texto de antes, y sigue por la de después sin saltarla", () => {
+    let lista = ids("a", "b", "c", "d");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks(); // suena a, b encolada
+    lista = ids("a", "c", "d");
+    terminarFila();
+    terminarFila();
+    terminarFila();
+    expect(dichos).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("una fila agregada mientras suena la última entra en la lectura", () => {
+    let lista = ids("a", "b");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    terminarFila(); // suena b, no hay nada detrás
+    lista = ids("a", "b", "c");
+    terminarFila();
+    expect(dichos).toEqual(["a", "b", "c"]);
+    terminarFila();
+    expect(r.current.estado?.terminada).toBe(true);
+  });
+
+  it("pausar corta también la encolada; seguir retoma la que sonaba y vuelve a encolar", () => {
+    const lista = ids("a", "b", "c");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    act(() => { r.current.pausar(); });
+    expect(sonando).toBeNull();
+    expect(enEspera).toEqual([]);
+    /* El `onend` tardío de la cortada no mueve nada en pausa. */
+    soltarFantasmas();
+    expect(dichos).toEqual(["a"]);
+
+    act(() => { r.current.reanudar(); });
+    correrTicks();
+    expect(dichos).toEqual(["a", "a"]);
+    terminarFila();
+    terminarFila();
+    expect(dichos).toEqual(["a", "a", "b", "c"]);
+  });
+
+  it("en pausa se insertan filas antes de la que sonaba: al seguir, retoma ESA (por id)", () => {
+    let lista = ids("a", "b", "c");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    terminarFila(); // suena b
+    act(() => { r.current.pausar(); });
+    lista = ids("x", "a", "b", "c");
+    act(() => { r.current.reanudar(); });
+    correrTicks();
+    expect(dichos).toEqual(["a", "b", "b"]);
+    expect(r.current.estado?.idx).toBe(2);
+  });
+
+  it("cambiar de sentido con una fila encolada: los eventos de las dos viejas no mueven la tanda nueva", () => {
+    const lista = ids("a", "b", "c", "d");
+    const r = montar();
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks(); // suena a, b encolada
+    act(() => { r.current.leer(() => lista, (f) => f.id, undefined, { haciaAtras: true }); });
+    correrTicks();
+    soltarFantasmas();
+    terminarFila();
+    terminarFila();
+    expect(dichos).toEqual(["a", "d", "c", "b"]);
+  });
+
+  it("la velocidad pasa de 3: el tope es el de la Web Speech API (10)", () => {
+    const lista = ids("a");
+    const r = renderHook(() => useLecturaEnVoz<{ id: string }>({
+      rate: () => 9, voiceURI: () => undefined, pitch: () => 0.8, volume: () => 0.5,
+    })).result;
+    act(() => { r.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    expect(entregadas[0]).toMatchObject({ rate: 9.3, pitch: 0.8, volume: 0.5 });
+
+    const r2 = renderHook(() => useLecturaEnVoz<{ id: string }>({ rate: () => 10, voiceURI: () => undefined })).result;
+    act(() => { r2.current.leer(() => lista, (f) => f.id); });
+    correrTicks();
+    expect(entregadas[entregadas.length - 1].rate).toBe(10);
   });
 });

@@ -16,7 +16,7 @@
 import { useId } from "react";
 import {
   Calculator, FileSpreadsheet, Settings, Mic, MicOff, Volume2, VolumeX,
-  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Settings2, Trees, Play, UserCheck,
+  Lock, Unlock, X, Check, RotateCcw, Plus, Settings2, Trees, Play, UserCheck,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -25,14 +25,13 @@ import {
   numerosPorPieza, DIMENSIONES, ESPECIES_MADERA,
   type PiezaCubicada, type MedidasFijas,
 } from "@/lib/forestal/cubicacion";
-import {
-  frasesToText, textToFrases, CONFIG_DEFAULT,
-  type CubicadorConfig,
-} from "@/lib/forestal/cubicador-config";
+import type { CubicadorConfig } from "@/lib/forestal/cubicador-config";
 import { CeldaNum, useTecladoGrilla } from "./celdas-excel";
+import AjustesDeVoz from "./cubicador-ajustes-voz";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 import CampoCodigoDeTroza from "./cubicador-codigo-troza";
 import type { TrozaParaCodigo } from "@/lib/forestal/codigo-de-troza";
+import { opcionesDeDueno } from "@/lib/forestal/duenos-cubicador";
 
 const ESPECIES = ESPECIES_MADERA;
 const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
@@ -81,7 +80,7 @@ interface PanelEntradaVozProps {
   /** El dueño salió del Directorio (ADR-430): sus piezas toman su precio pactado. */
   duenoDelDirectorio?: boolean;
   onDuenoChange: (v: string) => void;
-  /** Dueños ya usados (lote actual + aprendidos), para el datalist del combobox. */
+  /** Los dueños que se pueden elegir (guardados + los del lote actual). */
   duenosConocidos: string[];
   /** Abre el modal de gestión: crear/guardar/borrar/elegir un dueño de la lista. */
   onAbrirDuenos: () => void;
@@ -300,45 +299,7 @@ export default function PanelEntradaVoz({
             «El sistema repite» y «Probar voz» salieron de acá: están un
             renglón más arriba, y dos botones iguales a 40 px no dicen nada. */}
         {showAjustes && (
-          <div id={ajustesId} className="mt-3 grid gap-4 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-raised)] p-4 sm:grid-cols-2">
-            <div className="space-y-3">
-              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Voz</div>
-              <label className="block">
-                <span className="text-xs font-bold text-[var(--text-secondary)]">Velocidad: {(Number(config.voiceRate) || 1).toFixed(1)}×</span>
-                <input type="range" min={0.6} max={3} step={0.1} value={config.voiceRate} onChange={(e) => onUpdateConfig({ voiceRate: Number(e.target.value) })} className="mt-1 w-full accent-[var(--accent)]" />
-              </label>
-              <label className="block">
-                <span className="text-xs font-bold text-[var(--text-secondary)]">Tono / voz</span>
-                <select value={config.voiceURI} onChange={(e) => onUpdateConfig({ voiceURI: e.target.value })} className="mt-1 h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
-                  <option value="">Voz por defecto</option>
-                  {voices.filter((v) => v.lang.toLowerCase().startsWith("es")).map((v) => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}
-                </select>
-              </label>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onUpdateConfig({ avisarRaras: !config.avisarRaras })}
-                  title="Resalta las piezas con medidas fuera de lo común (no las cambia)"
-                  className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition ${config.avisarRaras ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}
-                >
-                  <AlertTriangle className="h-3.5 w-3.5" /> Avisar medidas raras {config.avisarRaras ? "SÍ" : "NO"}
-                </button>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Comandos de voz (separados por coma)</div>
-                <button type="button" onClick={() => onUpdateConfig({ voiceRate: CONFIG_DEFAULT.voiceRate, voiceURI: "", speak: true, comandos: CONFIG_DEFAULT.comandos })} className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]">Restablecer</button>
-              </div>
-              <CmdField label="Pausar" value={frasesToText(config.comandos.pausar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, pausar: textToFrases(v) } })} />
-              <CmdField label="Continuar" value={frasesToText(config.comandos.continuar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, continuar: textToFrases(v) } })} />
-              <CmdField label="Borrar último" value={frasesToText(config.comandos.borrarUltimo)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, borrarUltimo: textToFrases(v) } })} />
-              <CmdField label="Especie (prefijos)" value={frasesToText(config.comandos.especie)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, especie: textToFrases(v) } })} />
-              <CmdField label="Dueño (prefijos)" value={frasesToText(config.comandos.dueno ?? [])} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, dueno: textToFrases(v) } })} />
-              <CmdField label="Fijar medida" value={frasesToText(config.comandos.fijar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, fijar: textToFrases(v) } })} />
-              <CmdField label="Soltar lo fijo" value={frasesToText(config.comandos.desfijar)} onChange={(v) => onUpdateConfig({ comandos: { ...config.comandos, desfijar: textToFrases(v) } })} />
-            </div>
-          </div>
+          <AjustesDeVoz id={ajustesId} config={config} onUpdateConfig={onUpdateConfig} voices={voices} />
         )}
 
         {/* El caption vive DENTRO de la caja de dictado: es lo que el
@@ -444,15 +405,20 @@ export default function PanelEntradaVoz({
             <label className="flex min-w-[11rem] flex-1 flex-col gap-1 sm:max-w-[16rem]">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Dueño</span>
               <span className="flex h-11 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5">
-                <input
-                  type="text"
-                  list="cub-duenos-datalist"
+                {/* Se ELIGE, no se escribe (Brandon 23-09): escribir acá guardaba
+                    cada letra como un dueño («w», «l», «lu»). Se crean en el
+                    modal del botón +, junto con los del Directorio. */}
+                <select
                   value={dueno}
                   onChange={(ev) => onDuenoChange(ev.target.value)}
-                  placeholder="Sin dueño"
                   aria-label="Dueño de lo que se va a cubicar"
-                  className="min-w-0 flex-1 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[var(--text-tertiary)]"
-                />
+                  className={`min-w-0 flex-1 bg-transparent text-sm font-bold outline-none ${dueno ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
+                >
+                  <option value="">Sin dueño</option>
+                  {opcionesDeDueno([dueno ? [dueno] : [], duenosConocidos]).map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
                 {duenoDelDirectorio && (
                   <span
                     title="Del Directorio: sus piezas toman su precio pactado"
@@ -475,9 +441,9 @@ export default function PanelEntradaVoz({
                 <button
                   type="button"
                   onClick={onAbrirDuenos}
-                  title="Elegir del Directorio, o crear y borrar dueños de la lista"
-                  aria-label="Elegir el dueño del Directorio o gestionar los guardados"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+                  title="Dueños: elegir del Directorio, crear uno nuevo o borrar de la lista"
+                  aria-label="Abrir Dueños: elegir del Directorio, crear o borrar"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/12 text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </button>
@@ -710,15 +676,6 @@ function CeldaCarga({ label, col, valor, onValor, onKeyDown, etiqueta, ancho, fi
   );
 }
 
-function CmdField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <label className="block">
-      <span className="text-xs font-bold text-[var(--text-secondary)]">{label}</span>
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 h-9 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
-    </label>
-  );
-}
-
 
 /**
  * Lo que antes eran cinco líneas de instrucciones permanentes en el panel de
@@ -743,7 +700,9 @@ function AyudaDeVoz() {
       </p>
       <p>
         Al leer la tabla en voz alta, cada tramo de una especie se anuncia una vez —{" "}
-        <Cmd>&ldquo;Continúa con panguana&rdquo;</Cmd>— y después sólo las medidas.
+        <Cmd>&ldquo;Continúa con panguana&rdquo;</Cmd>— y después sólo las medidas. Si el mismo
+        largo se repite 5 piezas o más, lo dice una vez —<Cmd>&ldquo;largo fijo 7 pies&rdquo;</Cmd>— y
+        lee sólo espesor y ancho (se apaga en Ajustes).
       </p>
       <div>
         <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
