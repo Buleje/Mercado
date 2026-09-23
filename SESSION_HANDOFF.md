@@ -1,28 +1,21 @@
-# SESSION HANDOFF — 2026-09-23 (madrugada, PAUSA pedida por Brandon): voz + dueños del cubicador SIN COMMITEAR
+# SESSION HANDOFF — 2026-09-23 (mañana): cubicador revisado y COMMITEADO · harness y PC
 
-**Estado:** construido y verificado, **falta revisor + commit**. Brandon pidió parar acá. Nada de esta ronda está commiteado.
+**Estado:** árbol limpio (sólo `main-data.json` y 4 `scripts/tmp-*` viejos, no son de esta sesión). 86 commits sin subir, 0 atrasados.
 
-| Pedido de Brandon (23-09) | Qué quedó | Evidencia |
-|---|---|---|
-| Voz más rápida | slider hasta 10 (Chrome/Windows: `SetRate(int(10·log10(rate)))`, chromium `tts_win.cc:297` → «3,0×» era el paso 4 de 10); la lectura encola la fila siguiente sin `cancel()` entre filas | 27 tests de la cola |
-| Más personalización | `cubicador-ajustes-voz.tsx` (tono, volumen, 2 interruptores, «Restablecer todo») | capturas claro/oscuro 1280/400 en `reports/visual-verify/` |
-| Largo fijo al leer | «Continúa con Panguana, largo fijo 7 pies. 2, 8»; arranca con **5** iguales (medido en 700 piezas de Blas: con 3 se leía más largo), 3 de otro largo lo sueltan | 16 tests |
-| Tip al guardar por voz con «Repite: no» | `lib/forestal/pitido.ts`, 70 ms; grave si la medida es rara; nada a mano | test con Web Audio falso |
-| Dueños: crear sólo en el modal | barra y celda = `<select>`; voz sólo elige (`duenoDictado`); `aplicarDueno` ya no guarda; relleno/pegado tampoco | navegador QA: opciones, «Quitar los 3» (w/l/lu), «Usar su ficha», pieza atada al Directorio |
-| Modal Dueños ancho | `variant="info"` 1024 px, 2 columnas, pie por prop `footer` (antes sin margen) | captura `duenos-modal-light.png` |
-| **Bug que ya existía** (lo halló el agente) | dictado de TROZAS partía diámetros («50 60 4.5» → 5, 6, 4.5; 6/6 frases mal) → `numerosDeTroza` en `cubicacion.ts` | 21 tests |
+| Commit | Qué |
+|---|---|
+| `d95ebd1c3` | harness: paralelismo contado por `message.id` (real 1,20, no 1,00) · el arranque lee este archivo, no los `nextActions` de abril · `allowScripts` para npm 12 |
+| `7fafafd3c` | fix trozas: `numerosDeTroza` + `DIAMETRO_MAX_CM = 200` (413 trozas reales, máx 115) |
+| `e12a5f1ec` | feat cubicador: voz hasta 10, largo fijo, pitido, dueños que se eligen + 4 fallos del revisor (corte ajeno → pausa, calla al desmontar, fichas por `claveDueno`, audio no crea dueños) |
 
-**Gates al pausar:** typecheck ✅ 6,8 s · eslint 0 errores · vitest 24 archivos 475/475 · 0 `pageerror`.
+**Gates:** tsc ✅ · eslint 0 errores · 41 archivos 774/774 · foto del fix compilada aparte · navegador QA ✅ (pausa probada con motor simulado; **el audio real sigue sin probar**).
+
+**PC (medido tras reiniciar):** BIOS 305 aplicada, pero la iGPU sigue con 512 MB; 26 congelamientos DWM desde el 15-09; al arrancar ya hay 242 MB de VRAM en uso contra un presupuesto de 190 (Chrome 101). Externa a 1920×1080 @ 240 Hz. Ubuntu: 0 fallos, apt al día, npm 12.1, vercel 59.25.4, `pam_lastlog` comentado (`/etc/pam.d/login.bak-2026-09-23`).
 
 **Para retomar (en orden):**
-1. Revisor con contexto fresco sobre el diff (se lanzó y se detuvo al pausar: sin resultado). Foco: cola de la lectura (repetir/saltar fila, eco con varias utterances encoladas), largo fijo hacia atrás/desde la mitad, que ningún camino cree un dueño.
-2. Commit de los 16 archivos (lista: `git status`, sin `main-data.json`, `scripts/tmp-*`, `SESSION_HANDOFF.md`). Sugerido: `feat(forestal): voz del cubicador más rápida, largo fijo al leer y dueños que se eligen` + un `fix(forestal): el dictado de trozas partía los diámetros` aparte (sólo `cubicacion.ts`, `CubicadorTrozas.tsx` l.18/228/393 y su test — ojo: `CubicadorTrozas.tsx` también tiene hunks de la voz).
-3. Sin verificar: el audio real (velocidad de Microsoft Pablo, el tip en Android junto al micrófono).
-
-**Pendiente de antes (no tocado):** WASACO en Blas: trato S/ 0,50 desde 14/09 y 6 corridas del 07/09 → **S/ 1 619,45 sin cobrar** (no cambié datos); 187 líneas de voseo en tienda/checkout; leyenda de venta en 5 renglones y «2671.2»; rama 81 commits sin push.
-
----
-
+1. Lo que Brandon elija del menú de cierre (congelamientos: Chrome sin aceleración / 120 Hz / UMA en F2 · WASACO S/ 1 619,45 · push · compactar el vhdx).
+2. Probar el audio real: velocidad 10 con Microsoft Pablo en Windows, y el pitido en Android junto al micrófono.
+3. El censo aceptó un DAP de 15 m (tenant de prueba `pizza-pucallpa`): falta un tope en el formulario.
 
 ---
 
