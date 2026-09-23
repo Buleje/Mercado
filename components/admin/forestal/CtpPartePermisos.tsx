@@ -476,7 +476,7 @@ export default function CtpPartePermisos({
                   key={c.id}
                   contrato={c}
                   accion={
-                    <Btn size="sm" variant="ghost" disabled={!parteId || atando === c.id} onClick={() => void atar(c)} title={parteId ? undefined : "Guardá la ficha primero"}>
+                    <Btn size="sm" variant="ghost" disabled={!parteId || atando === c.id} onClick={() => void atar(c)} title={parteId ? undefined : "Guarda la ficha primero"}>
                       {atando === c.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
                       Es de esta ficha
                     </Btn>

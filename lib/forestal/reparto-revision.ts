@@ -244,7 +244,7 @@ export function revisarDistribucion(
         bloqueId: null,
         donde: nombre,
         que: `Combina bloques de ${e.porPermiso.length} permisos distintos.`,
-        comoArreglar: "Emití un Anexo 04 por permiso: una hoja que mezcla títulos habilitantes no se puede presentar contra ninguno.",
+        comoArreglar: "Emite un Anexo 04 por permiso: una hoja que mezcla títulos habilitantes no se puede presentar contra ninguno.",
       });
     }
 

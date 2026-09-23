@@ -57,7 +57,7 @@ export default function LothPlanFormUbicacion({
           disabled={provincias.length === 0}
           onChange={(e) => onCambio({ provincia: e.target.value, distrito: "" })}
         >
-          <option value="">{provincias.length === 0 ? "Elegí la región primero" : "Elegir…"}</option>
+          <option value="">{provincias.length === 0 ? "Elige la región primero" : "Elegir…"}</option>
           {/* Una provincia guardada que no pertenece a esta región se muestra
               igual: borrarla en silencio sería perder lo que alguien cargó. */}
           {valores.provincia && !provincias.some((p) => p.nombre === valores.provincia) && (
@@ -77,7 +77,7 @@ export default function LothPlanFormUbicacion({
           disabled={distritos.length === 0}
           onChange={(e) => onCambio({ distrito: e.target.value })}
         >
-          <option value="">{distritos.length === 0 ? "Elegí la provincia primero" : "Elegir…"}</option>
+          <option value="">{distritos.length === 0 ? "Elige la provincia primero" : "Elegir…"}</option>
           {valores.distrito && !distritos.some((d) => d.nombre === valores.distrito) && (
             <option value={valores.distrito}>{valores.distrito}</option>
           )}

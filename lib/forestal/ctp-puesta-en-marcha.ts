@@ -188,7 +188,7 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
             ? `${d.stockDisponibleM3.toFixed(2)} m³ listos y ninguna guía emitida`
             : "todavía no hay producto que despachar"
           : `${conGtf} de ${plural(s.total, "despacho", "despachos")} con GTF`,
-      paso: s.total === 0 && d.stockDisponibleM3 > 0 ? "Emití la primera guía de salida." : conGtf >= s.total ? null : "Emití la GTF de los despachos que faltan.",
+      paso: s.total === 0 && d.stockDisponibleM3 > 0 ? "Emite la primera guía de salida." : conGtf >= s.total ? null : "Emite la GTF de los despachos que faltan.",
       vista: "despacho",
     },
     {
@@ -206,7 +206,7 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
       queDa: "La lista de productos transformados que acompaña a la guía de salida.",
       estado: porCobertura(s.conAnexo, s.total),
       medida: s.total === 0 ? "sin despachos todavía" : `${s.conAnexo} de ${plural(s.total, "despacho", "despachos")} con anexo`,
-      paso: s.conAnexo >= s.total ? null : "Emití el anexo de los despachos que faltan.",
+      paso: s.conAnexo >= s.total ? null : "Emite el anexo de los despachos que faltan.",
       vista: "despacho",
     },
     {

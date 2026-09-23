@@ -131,7 +131,7 @@ export default function SelectorContrato({
           className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base font-medium text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-60"
         >
           {!requerido && <option value="">Sin contrato</option>}
-          {requerido && value == null && <option value="">Elegí el contrato…</option>}
+          {requerido && value == null && <option value="">Elige el contrato…</option>}
           {contratos.map((c) => (
             <option key={c.id} value={c.id}>
               {c.codigo}

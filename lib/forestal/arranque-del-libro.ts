@@ -118,7 +118,7 @@ export function pasosDeArranque(e: EstadoDelLibro): PasoDeArranque[] {
     },
     {
       clave: "despacho",
-      titulo: "Emití la primera guía de salida",
+      titulo: "Emite la primera guía de salida",
       porque: "Con la GTF del centro la madera sale amparada, y ahí se cierra la cadena de custodia completa.",
       /* La serie del talonario se pide ACÁ y no en la Ficha: no está en
          `CTP_FICHA_REQUIRED` —que es el mínimo de identidad legal— pero sin
