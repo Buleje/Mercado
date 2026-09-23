@@ -4,7 +4,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
-import { revisarDueno } from "@/lib/forestal/dueno-de-la-madera";
+import { esDuenoMadera, etiquetaDeDueno, revisarDueno } from "@/lib/forestal/dueno-de-la-madera";
 import { motivoParteNoAceptable } from "@/lib/forestal/aserrio-cobro";
 import type { ProduccionSinLoteInput, ProduccionSinLoteRespuesta } from "@/lib/forestal/declarar-produccion";
 import type { ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
@@ -179,6 +179,8 @@ export const ForestCtpSinLoteDB = {
               speciesCommon: true,
               quantity: true,
               volumeInputM3: true,
+              duenoMadera: true,
+              titularNombre: true,
               _count: { select: { consumos: true } },
             },
             take: 500,
@@ -191,7 +193,13 @@ export const ForestCtpSinLoteDB = {
               speciesCommon: e.speciesCommon,
               quantity: num(e.quantity),
               sinLote: e._count.consumos === 0 && !(Number(e.volumeInputM3 ?? 0) > 0),
+              dueno: etiquetaDeDueno({
+                dueno: esDuenoMadera(e.duenoMadera) ? e.duenoMadera : null,
+                titularNombre: e.titularNombre,
+              }),
             })),
+            /* Otro dueño el mismo día no es un duplicado: es otro registro. */
+            etiquetaDeDueno(dueno),
           );
           if (dups.length > 0) {
             throw new ProduccionSinLoteError("POSIBLE_DUPLICADO", mensajeDuplicado(dups, input.fecha), {

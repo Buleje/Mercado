@@ -23,10 +23,11 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
-import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
+import { etiquetaCorta, etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { acercarAEscala } from "@/lib/forestal/escala-de-medida";
-import type { ResumenDeJornadas } from "@/lib/forestal/resumen-de-jornadas";
+import type { DuenosPorDia, ResumenDeJornadas } from "@/lib/forestal/resumen-de-jornadas";
+import { nombreCortoDeDueno } from "@/lib/forestal/dueno-de-la-madera";
 import {
   CELDA,
   CIFRA,
@@ -106,6 +107,7 @@ export function piezasDesdePaquetes(
 export default function CtpResumenDeJornadasModal({
   dias,
   corte: corteInicial = "especie",
+  duenos = {},
   onClose,
   onCopiarAlCubicado,
 }: {
@@ -117,6 +119,8 @@ export default function CtpResumenDeJornadasModal({
    * salen de la misma respuesta.
    */
   corte?: CorteResumen;
+  /** Días de los que entran sólo algunos dueños (elegidos en la barra de días marcados). */
+  duenos?: DuenosPorDia;
   onClose: () => void;
   /**
    * Traer las piezas de una corrida al lote cubicado (Brandon, 2026-09-11).
@@ -133,13 +137,16 @@ export default function CtpResumenDeJornadasModal({
   const [copiando, setCopiando] = useState<string | null>(null);
   const [avisoCopia, setAvisoCopia] = useState<string | null>(null);
   const clave = [...dias].sort().join(",");
+  /* Parte de la clave del pedido: elegir otro dueño es otro resumen. */
+  const filtro = Object.keys(duenos).length > 0 ? JSON.stringify(duenos) : "";
 
   useEffect(() => {
     let vivo = true;
     setDatos(null);
     setError(null);
     if (!clave) return;
-    ctpGet<ResumenDeJornadas>(`/api/admin/forestal/ctp?resumenJornadas=1&dias=${clave}`, {
+    const conDuenos = filtro ? `&duenos=${encodeURIComponent(filtro)}` : "";
+    ctpGet<ResumenDeJornadas>(`/api/admin/forestal/ctp?resumenJornadas=1&dias=${clave}${conDuenos}`, {
       ttlMs: 15_000,
     })
       .then((r) => {
@@ -151,7 +158,7 @@ export default function CtpResumenDeJornadasModal({
     return () => {
       vivo = false;
     };
-  }, [clave]);
+  }, [clave, filtro]);
 
   /**
    * Traer las piezas de UNA corrida al lote cubicado.
@@ -194,10 +201,15 @@ export default function CtpResumenDeJornadasModal({
     [onCopiarAlCubicado],
   );
 
+  /* Si se sacó algún dueño, el título lo dice: un resumen recortado que se
+     lee como el día entero es un número que miente. */
+  const soloDe = Object.entries(duenos)
+    .map(([d, ds]) => `${ds.map(nombreCortoDeDueno).join(" y ")} el ${etiquetaCorta(d)}`)
+    .join("; ");
   const titulo =
-    dias.length === 1
+    (dias.length === 1
       ? `Lo que salió el ${etiquetaLarga(dias[0]!)}`
-      : `Lo que salió en ${dias.length} jornadas`;
+      : `Lo que salió en ${dias.length} jornadas`) + (soloDe ? ` · sólo ${soloDe}` : "");
 
   return (
     <AdminModal

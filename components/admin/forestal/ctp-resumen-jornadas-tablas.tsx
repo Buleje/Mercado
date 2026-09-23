@@ -20,6 +20,8 @@ import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import { formatNumber } from "@/lib/format";
 import type { ResumenDeJornadas } from "@/lib/forestal/resumen-de-jornadas";
+import { SIN_DUENO } from "@/lib/forestal/detalle-de-jornada";
+import { nombreCortoDeDueno } from "@/lib/forestal/dueno-de-la-madera";
 
 export type CorteResumen = "especie" | "dia" | "diaEspecie";
 
@@ -52,6 +54,17 @@ function Marco({ titulo, cabecera, children }: { titulo: string; cabecera: React
         {children}
       </table>
     </div>
+  );
+}
+
+/** Los dueños de un día, en chico debajo del día. «Sin declarar» no se dice: es ruido. */
+function DuenosDelDia({ duenos }: { duenos: readonly string[] }) {
+  const conocidos = duenos.filter((x) => x !== SIN_DUENO);
+  if (conocidos.length === 0) return null;
+  return (
+    <span className="block text-xs font-normal text-[var(--text-tertiary)]">
+      {conocidos.map(nombreCortoDeDueno).join(" · ")}
+    </span>
   );
 }
 
@@ -134,6 +147,8 @@ export function TablaPorDia({ datos }: { datos: ResumenDeJornadas }) {
           <tr key={d.dia} className="border-t border-[var(--rule-soft)]">
             <td className={`${CELDA} font-bold text-[var(--text-primary)]`}>
               <Dia iso={d.dia} />
+              {/* De quién: con dos dueños el mismo día, lo que separa un registro del otro. */}
+              <DuenosDelDia duenos={d.duenos} />
             </td>
             <td className={CIFRA}>{d.corridas}</td>
             <td className={`${CELDA} text-[var(--text-secondary)]`}>
@@ -194,6 +209,8 @@ export function TablaPorDiaEspecieTipo({ datos }: { datos: ResumenDeJornadas }) 
               <Dia iso={d.dia} />{" "}
               <span className="font-normal text-[var(--text-tertiary)]">
                 · {d.corridas} corrida{d.corridas === 1 ? "" : "s"}
+                {d.duenos.some((x) => x !== SIN_DUENO) &&
+                  ` · ${d.duenos.filter((x) => x !== SIN_DUENO).map(nombreCortoDeDueno).join(" · ")}`}
               </span>
             </th>
             <td className={`${CIFRA} font-bold`}>{fmtPiezas(d.piezas)}</td>

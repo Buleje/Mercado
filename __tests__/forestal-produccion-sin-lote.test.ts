@@ -198,6 +198,19 @@ describe("posible duplicado", () => {
     expect(dups.map((d) => d.lineNo)).toEqual([12]);
     expect(dups[0]).toMatchObject({ sinLote: false, m3: 3.1455 });
   });
+  it("otro dueño el mismo día no es un duplicado: es otro registro (2026-09-23)", () => {
+    const pedidas = [{ clave: "tornillo", quantity: 1.303 }];
+    const delDia = [
+      { id: "a", lineNo: 20, speciesCommon: "Tornillo", quantity: 1.303, sinLote: true, dueno: "De tercero · WASACO" },
+      { id: "b", lineNo: 21, speciesCommon: "Tornillo", quantity: 1.303, sinLote: true, dueno: "Del centro" },
+      /* Una corrida vieja sin dueño declarado sigue avisando: no se sabe si es otra. */
+      { id: "c", lineNo: 22, speciesCommon: "Tornillo", quantity: 1.303, sinLote: true, dueno: null },
+    ];
+    expect(posiblesDuplicados(pedidas, delDia, "Del centro").map((d) => d.lineNo)).toEqual([21, 22]);
+    expect(posiblesDuplicados(pedidas, delDia, "DE TERCERO · wasaco").map((d) => d.lineNo)).toEqual([20, 22]);
+    /* Sin saber el dueño nuevo, avisan todas como antes. */
+    expect(posiblesDuplicados(pedidas, delDia).map((d) => d.lineNo)).toEqual([20, 21, 22]);
+  });
 });
 
 describe("lo que se responde sale de lo guardado", () => {

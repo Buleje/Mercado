@@ -10,6 +10,7 @@ import { logger } from "@/lib/logger";
 import {
   MOTIVO_TITULAR_DEL_CENTRO,
   esDuenoMadera,
+  etiquetaDeDueno,
   revisarDueno,
   titularQueQueda,
 } from "@/lib/forestal/dueno-de-la-madera";
@@ -48,8 +49,8 @@ import { RENDIMIENTO_TOPE_PCT, topeDeclarableM3 } from "@/lib/forestal/produccio
 import { estaDisponible, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { jornadasDesdeFilas, type JornadaDelLibro } from "@/lib/forestal/detalle-de-jornada";
-import { resumirJornadas, type ResumenDeJornadas } from "@/lib/forestal/resumen-de-jornadas";
+import { jornadasDesdeFilas, SIN_DUENO, type JornadaDelLibro } from "@/lib/forestal/detalle-de-jornada";
+import { resumirJornadas, type DuenosPorDia, type ResumenDeJornadas } from "@/lib/forestal/resumen-de-jornadas";
 import { agregarSinOrigen, type CorridaSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
 import { reservasVencidas, type ReservaVencida } from "@/lib/forestal/reservas-vencidas";
 import { limaDateKey } from "@/lib/utils";
@@ -1808,6 +1809,8 @@ export class ForestCtpDB {
   static async resumenDeJornadas(
     tenantId: string,
     dias: readonly string[],
+    /** Días de los que entran sólo algunos dueños (ver `DuenosPorDia`). */
+    soloDuenos: DuenosPorDia = {},
   ): Promise<ResumenDeJornadas> {
     if (!tenantId) throw new Error("tenantId is required");
     const formato = /^\d{4}-\d{2}-\d{2}$/;
@@ -1841,6 +1844,8 @@ export class ForestCtpDB {
         unit: true,
         pieces: true,
         materiaPrimaRef: true,
+        duenoMadera: true,
+        titularNombre: true,
         paquetes: {
           where: { deletedAt: null },
           select: { productType: true, cantidad: true, volumenM3: true },
@@ -1859,6 +1864,13 @@ export class ForestCtpDB {
         dia: f.entryDate.toISOString().slice(0, 10),
         especie: f.speciesCommon,
         linea: f.lineaProduccion,
+        /* La misma etiqueta que el detalle flotante del día: con ella se
+           eligen los dueños en la tira, y tiene que coincidir letra a letra. */
+        dueno:
+          etiquetaDeDueno({
+            dueno: esDuenoMadera(f.duenoMadera) ? f.duenoMadera : null,
+            titularNombre: f.titularNombre,
+          }) ?? SIN_DUENO,
         /* El volumen sólo se suma si está declarado en m³: convertir otra
            unidad a ojo inventaría la producción del día. */
         m3: !f.unit || f.unit === "m3" ? Number(f.quantity ?? 0) : 0,
@@ -1870,6 +1882,7 @@ export class ForestCtpDB {
           volumenM3: Number(q.volumenM3 ?? 0),
         })),
       })),
+      soloDuenos,
     );
   }
 

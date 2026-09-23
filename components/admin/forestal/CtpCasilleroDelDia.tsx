@@ -20,6 +20,8 @@ import { Info, Loader2, Trash2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { etiquetaCorta, etiquetaLarga, nombreDelDia } from "@/lib/forestal/semana-de-registro";
+import { SIN_DUENO } from "@/lib/forestal/detalle-de-jornada";
+import { nombreCortoDeDueno } from "@/lib/forestal/dueno-de-la-madera";
 import CtpDetalleDeJornada from "./CtpDetalleDeJornada";
 import type { useDetalleFlotante } from "./hooks/use-detalle-flotante";
 import type { JornadaDeProduccion } from "./hooks/use-jornadas-produccion";
@@ -73,6 +75,9 @@ export default function CtpCasilleroDelDia({
      y una respuesta vieja del caché tampoco lo tiene. */
   const detalle = esProduccion ? j?.detalle : undefined;
   const abiertoAca = !!detalle && flotante.abierto === iso;
+  const duenosDelDia = (detalle?.duenos ?? [])
+    .filter((d) => d.etiqueta !== SIN_DUENO)
+    .map((d) => nombreCortoDeDueno(d.etiqueta));
   const idPanel = `${idTira}-detalle-${iso}`;
   const puedeAnular = !!onAnular && !!j && esProduccion;
   /* Antes de preguntar se cierra el detalle: con el panel abierto, su Escape
@@ -174,6 +179,16 @@ export default function CtpCasilleroDelDia({
                 </>
               )}
             </span>
+            {/* De quién es lo del día, sutil (Brandon, 2026-09-23): con dos
+                dueños el mismo día, es lo que distingue un registro del otro. */}
+            {duenosDelDia.length > 0 && (
+              <span
+                className="max-w-full truncate text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]"
+                title={duenosDelDia.join(" · ")}
+              >
+                {duenosDelDia.join(" · ")}
+              </span>
+            )}
           </>
         ) : (
           /* El hueco se reserva igual: sin esto la tira baila de altura según

@@ -6,7 +6,8 @@
  * marcados, el resumen de todos juntos.
  */
 
-import { AlertTriangle, BarChart3, CalendarDays, Layers, Lock } from "@buleje/design-system/icons";
+import { AlertTriangle, BarChart3, CalendarDays, Check, Layers, Lock } from "@buleje/design-system/icons";
+import { nombreCortoDeDueno } from "@/lib/forestal/dueno-de-la-madera";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { etiquetaCorta, etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import type { JornadaDeProduccion } from "./hooks/use-jornadas-produccion";
@@ -62,12 +63,21 @@ export function DiasMarcados({
   marcados,
   onLimpiar,
   onResumen,
+  duenosDe = {},
+  excluidosDe = {},
+  onAlternarDueno,
 }: {
   marcados: readonly string[];
   onLimpiar: () => void;
+  /** Los dueños de cada día marcado (tomados al marcarlo). */
+  duenosDe?: Readonly<Record<string, readonly string[]>>;
+  /** Los que se sacaron del resumen, por día. */
+  excluidosDe?: Readonly<Record<string, readonly string[]>>;
+  onAlternarDueno?: (dia: string, dueno: string) => void;
   /** Abre el resumen de los días marcados con ese corte (el modal deja cambiarlo). */
   onResumen: (corte: CorteResumen) => void;
 }) {
+  const conVarios = [...marcados].sort().filter((d) => (duenosDe[d]?.length ?? 0) > 1);
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
       <span className="min-w-0 grow basis-[12rem] text-[var(--text-secondary)]">
@@ -86,6 +96,41 @@ export function DiasMarcados({
       >
         Limpiar
       </button>
+      {/* Un día con dos dueños o más (Brandon, 2026-09-23): se elige cuál entra
+          al resumen — uno, el otro o los dos. Van en su propio renglón, debajo:
+          son una decisión sobre QUÉ se resume, antes de tocar el botón. */}
+      {onAlternarDueno && conVarios.length > 0 && (
+        <div className="order-last flex basis-full flex-wrap items-center gap-x-4 gap-y-1.5">
+          {conVarios.map((dia) => {
+            const fuera = excluidosDe[dia] ?? [];
+            return (
+              <div key={dia} role="group" aria-label={`Dueños del ${etiquetaLarga(dia)} en el resumen`} className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-[var(--text-tertiary)]">{etiquetaCorta(dia)}:</span>
+                {(duenosDe[dia] ?? []).map((d) => {
+                  const dentro = !fuera.includes(d);
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      aria-pressed={dentro}
+                      onClick={() => onAlternarDueno(dia, d)}
+                      title={dentro ? `Sacar a ${d} del resumen de ese día` : `Sumar a ${d} al resumen de ese día`}
+                      className={
+                        dentro
+                          ? "inline-flex items-center gap-1 rounded-full border border-[var(--accent)] bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                          : "inline-flex items-center gap-1 rounded-full border border-dashed border-[var(--rule-base)] px-2 py-0.5 text-xs font-semibold text-[var(--text-tertiary)] line-through hover:text-[var(--text-secondary)]"
+                      }
+                    >
+                      {dentro && <Check className="h-3 w-3" aria-hidden />}
+                      {nombreCortoDeDueno(d)}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
       {/* Tres maneras de leer los mismos días (Brandon, 2026-09-23): todos
           juntos por especie, un renglón por día, o cada día abierto en una fila
           por especie y tipo. Van a la vista porque son EL uso de marcar días. */}

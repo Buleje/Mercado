@@ -345,6 +345,11 @@ export interface CorridaDelDia {
   quantity: number | null;
   /** Sin consumos ni volumen de entrada: todavía no se le vinculó su materia prima. */
   sinLote: boolean;
+  /**
+   * De quién es la madera, como la nombra el libro (`etiquetaDeDueno`): «Del
+   * centro», «De tercero · WASACO». `null` = la corrida no lo declaró.
+   */
+  dueno?: string | null;
 }
 
 export interface PosibleDuplicado {
@@ -368,10 +373,20 @@ export interface PosibleDuplicado {
 export function posiblesDuplicados(
   pedidas: readonly { clave: string; quantity: number }[],
   delDia: readonly CorridaDelDia[],
+  /**
+   * El dueño de lo que se declara ahora (Brandon, 2026-09-23: *«registrar en un
+   * día dos registros diferentes de dueños diferentes y guardarse»*). Dos
+   * dueños que el mismo día sacan la misma especie y el mismo m³ son dos
+   * registros, no uno repetido. Sólo se descarta cuando los DOS dueños se
+   * saben y difieren: una corrida vieja sin dueño declarado sigue avisando.
+   */
+  duenoNuevo?: string | null,
 ): PosibleDuplicado[] {
   const out: PosibleDuplicado[] = [];
+  const clave = (d: string | null | undefined) => (d ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
   for (const e of delDia) {
     if (e.quantity == null) continue;
+    if (clave(duenoNuevo) && clave(e.dueno) && clave(duenoNuevo) !== clave(e.dueno)) continue;
     const q = e.quantity;
     const choca = pedidas.some(
       (p) => p.clave === claveEspecie(e.speciesCommon) && Math.abs(p.quantity - q) <= TOLERANCIA_DUPLICADO_M3,

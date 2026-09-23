@@ -654,7 +654,21 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
         .split(",")
         .map((d) => d.trim())
         .filter(Boolean);
-      return NextResponse.json(await ForestCtpDB.resumenDeJornadas(auth.tenantId, dias));
+      /* Días de los que entran sólo algunos dueños (2026-09-23): JSON
+         `{ "AAAA-MM-DD": ["Del centro", …] }`. Mal formado = se ignora y el
+         resumen sale entero — es una vista, no un permiso. */
+      const duenos = z
+        .record(z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.array(z.string().max(200)).max(20))
+        .safeParse((() => {
+          try {
+            return JSON.parse(url.searchParams.get("duenos") ?? "{}");
+          } catch {
+            return {};
+          }
+        })());
+      return NextResponse.json(
+        await ForestCtpDB.resumenDeJornadas(auth.tenantId, dias, duenos.success ? duenos.data : {}),
+      );
     }
     /* Los códigos de paquete ya usados en la planta: con ellos la pantalla
        propone el siguiente LIBRE (el índice es único por tenant, no por

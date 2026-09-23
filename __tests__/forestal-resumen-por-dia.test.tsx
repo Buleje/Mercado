@@ -10,7 +10,7 @@ import { resumirJornadas, type CorridaParaResumen } from "@/lib/forestal/resumen
 const LUNES = "2026-09-21";
 const MARTES = "2026-09-22";
 const c = (id: string, dia: string, especie: string, tipo: string, piezas: number, m3: number): CorridaParaResumen => ({
-  id, lineNo: Number(id.slice(1)), dia, especie, linea: null, m3, piezasAsiento: 0, materiaPrimaRef: null,
+  id, lineNo: Number(id.slice(1)), dia, especie, linea: null, dueno: "Del centro", m3, piezasAsiento: 0, materiaPrimaRef: null,
   paquetes: [{ productType: tipo, cantidad: piezas, volumenM3: m3 }],
 });
 const DATOS = resumirJornadas([LUNES, MARTES], [
@@ -72,3 +72,31 @@ describe("el modal del resumen", () => {
     expect(ctpGet).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("un día con dos dueños", () => {
+  it("muestra un chip por dueño con el nombre corto, y tocarlo avisa cuál", () => {
+    const onAlternarDueno = vi.fn();
+    render(
+      <DiasMarcados
+        marcados={[LUNES]}
+        onLimpiar={vi.fn()}
+        onResumen={vi.fn()}
+        duenosDe={{ [LUNES]: ["Del centro", "De tercero · WASACO"] }}
+        excluidosDe={{ [LUNES]: ["De tercero · WASACO"] }}
+        onAlternarDueno={onAlternarDueno}
+      />,
+    );
+    const grupo = screen.getByRole("group", { name: /Dueños del lunes 21\/09/i });
+    expect(within(grupo).getByRole("button", { name: "Del centro" })).toHaveAttribute("aria-pressed", "true");
+    const wasaco = within(grupo).getByRole("button", { name: "WASACO" });
+    expect(wasaco).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(wasaco);
+    expect(onAlternarDueno).toHaveBeenCalledWith(LUNES, "De tercero · WASACO");
+  });
+
+  it("con un solo dueño no hay chips", () => {
+    render(<DiasMarcados marcados={[LUNES]} onLimpiar={vi.fn()} onResumen={vi.fn()} duenosDe={{ [LUNES]: ["Del centro"] }} onAlternarDueno={vi.fn()} />);
+    expect(screen.queryByRole("group", { name: /Dueños del/ })).toBeNull();
+  });
+});
+

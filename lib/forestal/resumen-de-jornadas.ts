@@ -45,6 +45,8 @@ export interface CorridaParaResumen {
   dia: string;
   especie: string | null;
   linea: string | null;
+  /** De quién es la madera, como la nombra el libro (`etiquetaDeDueno`, o `SIN_DUENO`). */
+  dueno: string;
   /** Volumen declarado, en m³ (0 si el asiento está en otra unidad). */
   m3: number;
   /** `pieces` del asiento. */
@@ -74,6 +76,8 @@ export interface DiaDeResumen extends CifrasDeResumen {
   corridas: number;
   /** Las líneas de producción distintas de ese día, no vacías. */
   lineas: string[];
+  /** Los dueños de ese día (de lo que entró al resumen), en orden de aparición. */
+  duenos: string[];
   especies: EspecieDeResumen[];
 }
 
@@ -85,6 +89,7 @@ export interface ResumenDeJornadas {
     dia: string;
     especie: string | null;
     linea: string | null;
+    dueno: string;
     m3: number;
     piezas: number;
     materiaPrimaRef: string | null;
@@ -105,7 +110,22 @@ interface Hoja {
   m3: number;
 }
 
-export function resumirJornadas(dias: readonly string[], corridas: readonly CorridaParaResumen[]): ResumenDeJornadas {
+/**
+ * Qué dueños entran de cada día, cuando no entran todos (Brandon, 2026-09-23:
+ * *«que se pueda elegir del día que tiene 2, sólo uno o los dos»*). Un día que
+ * no está en el mapa entra entero.
+ */
+export type DuenosPorDia = Readonly<Record<string, readonly string[]>>;
+
+export function resumirJornadas(
+  dias: readonly string[],
+  todas: readonly CorridaParaResumen[],
+  soloDuenos: DuenosPorDia = {},
+): ResumenDeJornadas {
+  const corridas = todas.filter((c) => {
+    const elegidos = soloDuenos[c.dia];
+    return !elegidos || elegidos.includes(c.dueno);
+  });
   /* día → claveEspecie → producto → piezas y m³. La hoja es la fila más chica. */
   const hojas = new Map<string, Map<string, Map<string, Hoja>>>();
   /* Cuántas corridas y piezas tiene cada día·especie: las piezas de la especie
@@ -114,6 +134,7 @@ export function resumirJornadas(dias: readonly string[], corridas: readonly Corr
   const porDiaEspecie = new Map<string, { corridas: number; piezas: number; m3: number }>();
   const nombreDe = new Map<string, string>();
   const lineasDe = new Map<string, Set<string>>();
+  const duenosDe = new Map<string, Set<string>>();
   const salida: ResumenDeJornadas["corridas"] = [];
 
   for (const c of corridas) {
@@ -129,6 +150,7 @@ export function resumirJornadas(dias: readonly string[], corridas: readonly Corr
       dia: c.dia,
       especie: c.especie,
       linea: c.linea,
+      dueno: c.dueno,
       m3: r4(c.m3),
       piezas,
       materiaPrimaRef: c.materiaPrimaRef,
@@ -137,6 +159,7 @@ export function resumirJornadas(dias: readonly string[], corridas: readonly Corr
 
     const linea = c.linea?.trim();
     if (linea) lineasDe.set(c.dia, (lineasDe.get(c.dia) ?? new Set()).add(linea));
+    duenosDe.set(c.dia, (duenosDe.get(c.dia) ?? new Set()).add(c.dueno));
 
     const kDe = `${c.dia}|${clave}`;
     const de = porDiaEspecie.get(kDe) ?? { corridas: 0, piezas: 0, m3: 0 };
@@ -202,6 +225,7 @@ export function resumirJornadas(dias: readonly string[], corridas: readonly Corr
         dia,
         corridas: lista.reduce((a, e) => a + e.corridas, 0),
         lineas: [...(lineasDe.get(dia) ?? [])].sort(),
+        duenos: [...(duenosDe.get(dia) ?? [])],
         especies: lista,
         piezas: lista.reduce((a, e) => a + e.piezas, 0),
         m3: r4(m3Dia),
@@ -249,4 +273,36 @@ export function resumirJornadas(dias: readonly string[], corridas: readonly Corr
       pt: sumaPt(porDia),
     },
   };
+}
+
+// ── Elegir dueños de los días marcados ──────────────────────────────────────
+
+/**
+ * Saca o devuelve un dueño de un día marcado. Nunca deja el día sin ninguno:
+ * un día marcado con cero dueños sumaría nada y parecería un día vacío — para
+ * eso está desmarcar el día.
+ */
+export function alternarDuenoExcluido(
+  excluidos: readonly string[],
+  todos: readonly string[],
+  dueno: string,
+): string[] {
+  if (excluidos.includes(dueno)) return excluidos.filter((d) => d !== dueno);
+  const next = [...excluidos, dueno];
+  return todos.every((d) => next.includes(d)) ? [...excluidos] : next;
+}
+
+/** El filtro para el resumen: sólo los días marcados a los que se les sacó algún dueño. */
+export function filtroDeDuenos(
+  marcados: readonly string[],
+  duenosDe: Readonly<Record<string, readonly string[]>>,
+  excluidosDe: Readonly<Record<string, readonly string[]>>,
+): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const dia of marcados) {
+    const fuera = excluidosDe[dia] ?? [];
+    if (fuera.length === 0) continue;
+    out[dia] = (duenosDe[dia] ?? []).filter((d) => !fuera.includes(d));
+  }
+  return out;
 }

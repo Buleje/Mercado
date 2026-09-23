@@ -24,13 +24,15 @@
  * un guard acá le impediría al aserradero anotar su segundo turno.
  */
 
-import { useId, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import CtpResumenDeJornadasModal from "./CtpResumenDeJornadasModal";
 import CtpCasilleroDelDia from "./CtpCasilleroDelDia";
 import CtpCabeceraDeLaTira from "./CtpCabeceraDeLaTira";
 import { AvisoDiaConRegistro, DiasMarcados } from "./CtpAvisosDeLaTira";
 import type { CorteResumen } from "./ctp-resumen-jornadas-tablas";
+import { useDiasMarcados } from "./hooks/use-dias-marcados";
+import type { DuenosPorDia } from "@/lib/forestal/resumen-de-jornadas";
 import { useDetalleFlotante } from "./hooks/use-detalle-flotante";
 import {
   correrSemanas,
@@ -147,10 +149,11 @@ export default function CtpSemanaDeRegistro({
    * Sobreviven al cambio de semana a propósito: marcar el lunes, irse a la
    * semana anterior y marcar otro es justo para lo que sirve.
    */
-  const [marcados, setMarcados] = useState<string[]>([]);
-  const [resumen, setResumen] = useState<{ dias: string[]; corte: CorteResumen } | null>(null);
-  const marcar = (iso: string) =>
-    setMarcados((prev) => (prev.includes(iso) ? prev.filter((d) => d !== iso) : [...prev, iso]));
+  const seleccion = useDiasMarcados(
+    useCallback((iso: string) => (porDia.get(iso)?.detalle?.duenos ?? []).map((d) => d.etiqueta), [porDia]),
+  );
+  const { marcados, marcar } = seleccion;
+  const [resumen, setResumen] = useState<{ dias: string[]; corte: CorteResumen; duenos?: DuenosPorDia } | null>(null);
 
   /* El detalle flotante de un día (Brandon, 2026-09-14): especies,
      clasificación, dueño… sin abrir el resumen. Sólo en producción y sólo si
@@ -261,8 +264,11 @@ export default function CtpSemanaDeRegistro({
           {marcados.length > 0 && (
             <DiasMarcados
               marcados={marcados}
-              onLimpiar={() => setMarcados([])}
-              onResumen={(corte) => setResumen({ dias: [...marcados], corte })}
+              onLimpiar={seleccion.limpiar}
+              duenosDe={seleccion.duenosDe}
+              excluidosDe={seleccion.excluidosDe}
+              onAlternarDueno={seleccion.alternarDueno}
+              onResumen={(corte) => setResumen({ dias: [...marcados], corte, duenos: seleccion.filtro })}
             />
           )}
 
@@ -296,6 +302,7 @@ export default function CtpSemanaDeRegistro({
         <CtpResumenDeJornadasModal
           dias={resumen.dias}
           corte={resumen.corte}
+          duenos={resumen.duenos}
           onClose={() => setResumen(null)}
           onCopiarAlCubicado={onCopiarAlCubicado}
         />

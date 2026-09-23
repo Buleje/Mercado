@@ -114,6 +114,19 @@ export function etiquetaDeDueno(d: DeclaracionDeDueno): string | null {
   return nombre ? `Titular: ${nombre}` : null;
 }
 
+/**
+ * El nombre para un lugar chico —el casillero del día, un chip—: «WASACO» en
+ * vez de «De tercero · WASACO», «Del centro» tal cual (Brandon, 2026-09-23:
+ * «que se ponga el nombre del dueño ahí sutilmente»).
+ */
+export function nombreCortoDeDueno(etiqueta: string): string {
+  const e = etiqueta.trim();
+  for (const prefijo of ["De tercero · ", "Titular: "]) {
+    if (e.startsWith(prefijo)) return e.slice(prefijo.length);
+  }
+  return e;
+}
+
 /** La frase corta para una tabla, sin el nombre. */
 export function etiquetaCortaDeDueno(d: DuenoMadera | null): string | null {
   return d === "tercero" ? "De tercero" : d === "propia" ? "Del centro" : null;

@@ -16,6 +16,7 @@ const corrida = (dia: string, especie: string | null, paquetes: [string | null, 
   dia,
   especie,
   linea: null,
+  dueno: "Del centro",
   m3: paquetes.reduce((a, [, , m3]) => a + m3, 0),
   piezasAsiento: 0,
   materiaPrimaRef: null,
@@ -114,5 +115,48 @@ describe("resumirJornadas — lo que el libro deja a medias", () => {
   it("sin corridas, todo vacío y en cero", () => {
     const r = resumirJornadas([LUNES], []);
     expect(r).toMatchObject({ porDia: [], porEspecie: [], totales: { corridas: 0, piezas: 0, m3: 0, pt: 0 } });
+  });
+});
+
+describe("resumirJornadas — elegir dueños de un día (2026-09-23)", () => {
+  const conDueno = (c: CorridaParaResumen, dueno: string) => ({ ...c, dueno });
+  const dia = [
+    conDueno(corrida(LUNES, "Tornillo", [["Comercial", 10, 0.2]]), "De tercero · WASACO"),
+    conDueno(corrida(LUNES, "Tornillo", [["Comercial", 5, 0.1]]), "Del centro"),
+    conDueno(corrida(MARTES, "Cumala", [["Tabla", 4, 0.05]]), "De tercero · WASACO"),
+  ];
+
+  it("sin filtro entran los dos dueños y el día los nombra", () => {
+    const r = resumirJornadas([LUNES, MARTES], dia);
+    expect(r.porDia[0]!.duenos).toEqual(["De tercero · WASACO", "Del centro"]);
+    expect(r.porDia[0]!.piezas).toBe(15);
+  });
+
+  it("con uno elegido, ese día sólo cuenta ése — los otros días entran enteros", () => {
+    const r = resumirJornadas([LUNES, MARTES], dia, { [LUNES]: ["Del centro"] });
+    expect(r.porDia.map((d) => [d.dia, d.piezas, d.duenos])).toEqual([
+      [LUNES, 5, ["Del centro"]],
+      [MARTES, 4, ["De tercero · WASACO"]],
+    ]);
+    expect(r.totales).toMatchObject({ corridas: 2, piezas: 9 });
+    expect(r.corridas.map((c) => c.dueno)).toEqual(["Del centro", "De tercero · WASACO"]);
+  });
+});
+
+describe("elegir dueños en la barra de días marcados", () => {
+  const A = "Del centro";
+  const B = "De tercero · WASACO";
+
+  it("sacar uno se puede; sacar el último no (para eso se desmarca el día)", async () => {
+    const { alternarDuenoExcluido } = await import("@/lib/forestal/resumen-de-jornadas");
+    expect(alternarDuenoExcluido([], [A, B], B)).toEqual([B]);
+    expect(alternarDuenoExcluido([B], [A, B], A)).toEqual([B]);
+    expect(alternarDuenoExcluido([B], [A, B], B)).toEqual([]);
+  });
+
+  it("el filtro sólo lleva los días recortados, con los que quedan", async () => {
+    const { filtroDeDuenos } = await import("@/lib/forestal/resumen-de-jornadas");
+    expect(filtroDeDuenos([LUNES, MARTES], { [LUNES]: [A, B], [MARTES]: [A, B] }, { [LUNES]: [B] })).toEqual({ [LUNES]: [A] });
+    expect(filtroDeDuenos([MARTES], { [LUNES]: [A, B] }, { [LUNES]: [B] })).toEqual({});
   });
 });
