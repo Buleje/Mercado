@@ -12,6 +12,7 @@
  * (no se importa) y avisos (se importa, pero se muestra). PURO y client-safe.
  */
 
+import { DAP_AVISO_M, DAP_MAX_M, mensajeDapFueraDeRango } from "./loth-constants";
 import { dmcParaEspecie, normEspecie } from "./loth-poa";
 import { parseUtmZone } from "./loth-utm";
 
@@ -201,10 +202,13 @@ export function parseCensoTabla(texto: string, ctx: CensoImportContext = {}): Ce
       if (ctx.codigosExistentes?.has(key)) errores.push("Ese código ya existe en el censo del plan");
     }
 
+    // Fuera de tope: NO se inventa ni se convierte sola — la fila queda con
+    // error y la sugerencia (casillero vacío > inventado, ver DAP_MAX_M).
     const { m: dapM, convertido } = dapAMetros(numero(get("dap")));
     if (dapM == null) avisos.push("Sin DAP: no entra al volumen aprovechable del POA");
-    else if (dapM > 3) errores.push(`DAP de ${(dapM * 100).toFixed(0)} cm: revisa la unidad`);
+    else if (dapM > DAP_MAX_M) errores.push(mensajeDapFueraDeRango(dapM));
     else if (convertido) avisos.push(`DAP leído en cm (${(dapM * 100).toFixed(0)}) → ${dapM.toFixed(2)} m`);
+    else if (dapM > DAP_AVISO_M) avisos.push(`DAP de ${dapM.toFixed(2)} m: revisa que esté en metros, no en centímetros.`);
 
     const alturaComercialM = numero(get("altura"));
     if (alturaComercialM != null && (alturaComercialM <= 0 || alturaComercialM > 80)) {

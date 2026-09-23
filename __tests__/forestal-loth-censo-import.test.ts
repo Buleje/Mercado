@@ -87,6 +87,23 @@ describe("validaciones que frenan la importación", () => {
     const r = parseCensoTabla("codigo,especie,dap,altura\nA1,Tornillo,0.8,120");
     expect(r.filas[0].errores.some((e) => e.includes("Altura"))).toBe(true);
   });
+
+  it("un DAP fuera de tope va a errores con la sugerencia, sin inventarse ni convertirse solo", () => {
+    // 500 > 5 ⇒ el heurístico de cm lo convierte a 5 m, y 5 m sigue fuera de
+    // tope (4 m): la fila queda BLOQUEADA, dapM no se limpia a la fuerza.
+    const r = parseCensoTabla("codigo,especie,dap\nA1,Tornillo,500");
+    expect(r.filas[0].errores.some((e) => e.includes("no existe"))).toBe(true);
+    expect(r.filas[0].dapM).toBeCloseTo(5, 3);
+    const filas = filasImportables(r);
+    expect(filas).toHaveLength(0); // no entra al censo con un DAP imposible
+  });
+
+  it("avisa (no bloquea) un DAP grueso pero físicamente posible, sin tocar el valor", () => {
+    const r = parseCensoTabla("codigo,especie,dap\nA1,Tornillo,3"); // 3 m: bajo el tope, sobre el aviso
+    expect(r.filas[0].errores).toHaveLength(0);
+    expect(r.filas[0].dapM).toBe(3);
+    expect(r.filas[0].avisos.some((a) => a.includes("revisa que esté en metros"))).toBe(true);
+  });
 });
 
 describe("avisos que no frenan pero se muestran", () => {

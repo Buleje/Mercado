@@ -10,6 +10,10 @@ import {
   detectAnomalias,
   projectSaldo,
   computeCosteo,
+  DAP_MAX_M,
+  DAP_AVISO_M,
+  sugerenciaDapM,
+  mensajeDapFueraDeRango,
   type BalanceSpeciesInput,
   type BalanceMovement,
 } from "@/lib/forestal/loth-constants";
@@ -52,6 +56,34 @@ describe("censusVolume — volumen comercial del árbol en pie (0.7854·DAP²·H
   it("retorna 0 con DAP o Hc inválidos", () => {
     expect(censusVolume(0, 16)).toBe(0);
     expect(censusVolume(0.8, 0)).toBe(0);
+  });
+});
+
+describe("DAP: tope físico + sugerencia de unidad (bug 15 m en pizza-pucallpa, 2026-09-23)", () => {
+  it("los árboles reales de Blas (0.55–0.96 m) quedan lejos del tope y del aviso", () => {
+    expect(0.65).toBeLessThan(DAP_AVISO_M);
+    expect(0.96).toBeLessThan(DAP_MAX_M);
+  });
+
+  it("sugiere ÷100 cuando el valor parece un centímetro tecleado en el campo de metros", () => {
+    expect(sugerenciaDapM(15)).toBeCloseTo(0.15, 3);
+    expect(sugerenciaDapM(80)).toBeCloseTo(0.8, 3);
+  });
+
+  it("no sugiere nada dentro del tope, ni con un disparate que ÷100 tampoco arregla", () => {
+    expect(sugerenciaDapM(3.5)).toBeNull(); // dentro del tope, no hace falta sugerir
+    expect(sugerenciaDapM(DAP_MAX_M * 100 + 1)).toBeNull(); // 401 m: ni ÷100 da algo razonable
+  });
+
+  it("el mensaje en español sugiere la unidad cuando hay sugerencia razonable", () => {
+    expect(mensajeDapFueraDeRango(15)).toBe("El DAP va en metros: 15 m no existe. ¿Quisiste decir 0.15 m?");
+  });
+
+  it("el mensaje cae a 'revisa el dato' cuando no hay una sugerencia razonable", () => {
+    const msg = mensajeDapFueraDeRango(5000);
+    expect(msg).toContain("5,000 m no existe");
+    expect(msg).toContain("Revisa el dato");
+    expect(msg).not.toContain("¿Quisiste decir");
   });
 });
 

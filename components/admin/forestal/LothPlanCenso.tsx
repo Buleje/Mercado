@@ -17,7 +17,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
-import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { DAP_AVISO_M, DAP_MAX_M, claveEspecie, fmtDapM, mensajeDapFueraDeRango, sugerenciaDapM } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { CATEGORIA_LABEL } from "@/lib/forestal/loth-poa";
 import LothCensoImportModal from "./LothCensoImportModal";
@@ -53,6 +53,15 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
   const [f, setF] = useState({ treeCode: "", speciesCommon: "", dapM: "", alturaComercialM: "", factorForma: "0.65", utmZona: "18L", utmX: "", utmY: "" });
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const auto = censusVol(Number(f.dapM), Number(f.alturaComercialM), Number(f.factorForma) || 0.65);
+  // El DAP va en metros: 15 (típicamente un centímetro tecleado de más) no
+  // existe. Bloquea con sugerencia de un clic; entre DAP_AVISO_M y DAP_MAX_M
+  // sólo avisa — hay árboles reales así de gruesos (lupunas, ceibas).
+  const dapNum = f.dapM.trim() ? Number(f.dapM) : null;
+  const dapFueraDeTope = dapNum != null && Number.isFinite(dapNum) && dapNum > DAP_MAX_M;
+  const dapAviso = dapNum != null && !dapFueraDeTope && dapNum > DAP_AVISO_M;
+  const dapMensaje = dapNum != null && dapFueraDeTope ? mensajeDapFueraDeRango(dapNum) : null;
+  const dapSugerido = dapNum != null && dapFueraDeTope ? sugerenciaDapM(dapNum) : null;
+  const dapAvisoTexto = dapNum != null && dapAviso ? `DAP de ${fmtDapM(dapNum)} m: es un árbol inusualmente grueso — revisa que esté en metros antes de guardar.` : null;
 
   // Buscador (código/especie) + filtro por estado, sobre el censo completo.
   const filtered = useMemo(() => {
@@ -70,7 +79,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
-    if (busy || !f.treeCode.trim() || !f.speciesCommon.trim()) return;
+    if (busy || !f.treeCode.trim() || !f.speciesCommon.trim() || dapFueraDeTope) return;
     setBusy(true);
     const matched = findSpeciesByCommonName(f.speciesCommon);
     try {
@@ -190,15 +199,44 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Código del árbol *"><input value={f.treeCode} onChange={(e) => set("treeCode", e.target.value)} placeholder="85-TOR" autoFocus className={cls} /></Field>
             <Field label="Especie *"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" className={cls} /></Field>
-            <Field label="DAP — diámetro a la altura del pecho (m)"><input type="number" step="0.001" value={f.dapM} onChange={(e) => set("dapM", e.target.value)} placeholder="0.850" className={cls} /></Field>
+            <Field label="DAP — diámetro a la altura del pecho (m)">
+              <input
+                type="number"
+                step="0.001"
+                value={f.dapM}
+                onChange={(e) => set("dapM", e.target.value)}
+                placeholder="0.850"
+                aria-invalid={dapFueraDeTope}
+                className={`${cls} ${dapFueraDeTope ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : ""}`}
+              />
+            </Field>
             <Field label="Altura comercial (m)"><input type="number" step="0.01" value={f.alturaComercialM} onChange={(e) => set("alturaComercialM", e.target.value)} placeholder="18.00" className={cls} /></Field>
             <Field label="Factor de forma"><input type="number" step="0.01" value={f.factorForma} onChange={(e) => set("factorForma", e.target.value)} placeholder="0.65" className={cls} /></Field>
             <Field label="Volumen estimado (m³)"><input disabled value={auto > 0 ? fmtM3(auto) : ""} placeholder="se calcula solo" className={`${cls} opacity-70`} /></Field>
           </div>
+          {dapFueraDeTope && (
+            <p className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-3 py-2 text-xs font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+              {dapMensaje}
+              {dapSugerido != null && (
+                <button
+                  type="button"
+                  onClick={() => set("dapM", String(dapSugerido))}
+                  className="rounded-md border border-[var(--data-error-500)]/50 bg-[var(--surface-raised)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] dark:text-[var(--data-error-500)]"
+                >
+                  Usar {fmtDapM(dapSugerido)} m
+                </button>
+              )}
+            </p>
+          )}
+          {dapAvisoTexto && (
+            <p className="text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              {dapAvisoTexto}
+            </p>
+          )}
           <p className="text-xs text-[var(--text-tertiary)]">El volumen sale de DAP² × π/4 × altura comercial × factor de forma. Si el árbol está por debajo del DMC de su especie, el libro va a bloquear su tala.</p>
           <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
             <button type="button" onClick={() => setOpen(false)} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-            <button type="submit" disabled={busy || !f.treeCode.trim() || !f.speciesCommon.trim()} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
+            <button type="submit" disabled={busy || !f.treeCode.trim() || !f.speciesCommon.trim() || dapFueraDeTope} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Agregar al censo
             </button>
           </div>

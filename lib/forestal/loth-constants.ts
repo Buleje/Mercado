@@ -3,6 +3,8 @@
  * NO importar nada de `lib/db/*` ni `@/lib/prisma` acá (server-only).
  */
 
+import { formatNumber } from "@/lib/format";
+
 export const LOTH_SECTIONS = [
   "tala",
   "trozado",
@@ -156,6 +158,57 @@ export function smalianVolume(diamMayorM: number, diamMenorM: number, lengthM: n
 export function censusVolume(dapM: number, hcM: number, ff = 0.65): number {
   if (!(dapM > 0) || !(hcM > 0)) return 0;
   return Math.round(0.7854 * dapM * dapM * hcM * ff * 10000) / 10000;
+}
+
+// ─── DAP: tope físico + sugerencia de unidad (single source) ──────────────
+
+/**
+ * Tope duro del DAP en metros — ✅ MEDIDO 2026-09-23: entró un árbol con
+ * `dapM = 15` en el tenant de prueba `pizza-pucallpa` (imposible; los árboles
+ * reales de Blas miden 0,55–0,65 m, el QA forestal llega a 0,96 m). Casi
+ * seguro un centímetro tecleado en un campo en metros (15 cm = 0,15 m).
+ *
+ * Referencia física: la lupuna/ceiba (Ceiba pentandra) es de los árboles de
+ * mayor diámetro registrados en la Amazonía, con DAP publicados de 3–3,5 m.
+ * 4 m deja margen sobre eso sin abrir la puerta al typo de unidad.
+ */
+export const DAP_MAX_M = 4;
+
+/**
+ * Umbral de AVISO (no bloquea): sobre esto hay ejemplares reales (ceibas,
+ * lupunas, shihuahuacos añejos) pero son infrecuentes — vale la pena mostrar
+ * el número antes de guardarlo, no impedirlo.
+ */
+export const DAP_AVISO_M = 2;
+
+/**
+ * El DAP como lo muestra el resto del panel (`lib/format`, es-PE: punto
+ * decimal — «0.15», igual que «4.58 PT» o «S/ 106.54»). El formulario usa la
+ * MISMA función en el botón «Usar…», así el mensaje y el botón coinciden, y
+ * lo que se escribe en el campo numérico también va con punto.
+ */
+export function fmtDapM(v: number): string {
+  return formatNumber(v, { min: 0, max: 3 });
+}
+
+/**
+ * Si el valor cae donde "parece centímetros escritos en el campo de metros"
+ * (más que el tope, pero no un disparate), sugiere la conversión ÷100. Fuera
+ * de ese rango (ej. 5000) no hay una lectura razonable como error de unidad:
+ * se devuelve `null` y el mensaje pide revisar el dato a mano en vez de
+ * inventar un valor (casillero vacío > inventado).
+ */
+export function sugerenciaDapM(valorM: number): number | null {
+  if (!(valorM > DAP_MAX_M) || valorM > DAP_MAX_M * 100) return null;
+  return Math.round((valorM / 100) * 1000) / 1000;
+}
+
+/** Mensaje en español — servidor, formulario e importador comparten el mismo texto. */
+export function mensajeDapFueraDeRango(valorM: number): string {
+  const sugerido = sugerenciaDapM(valorM);
+  return sugerido != null
+    ? `El DAP va en metros: ${fmtDapM(valorM)} m no existe. ¿Quisiste decir ${fmtDapM(sugerido)} m?`
+    : `El DAP va en metros: ${fmtDapM(valorM)} m no existe. Revisa el dato.`;
 }
 
 export interface BalanceSpeciesInput {
