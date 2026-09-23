@@ -24,24 +24,34 @@
  *    final del diálogo y el orden natural lo saltaría).
  * El `z-[56]` es local al diálogo (`Dialog.Content` y el fondo `z-[60]` abren
  * su propio contexto): queda encima del cuerpo, que usa hasta `z-50`.
+ *
+ * ## Sin scroll (Brandon, 2026-09-23: «que se vea todo sin necesidad de scrollear»)
+ *
+ * Medido con el día real más cargado de Blas (lunes 07/09: 6 especies, 3
+ * clasificaciones, dueño, permiso y línea): en 20 rem el contenido pedía 794 px
+ * en una caja de 558 y el pie «sin trozas vinculadas» quedaba debajo del
+ * scroll. Ahora pide 35 rem cuando hay más de tres renglones que mostrar y, si
+ * entran, Especies y Clasificación van lado a lado; dueño, permiso y línea van
+ * en UNA franja; las corridas, en dos columnas. A 400 px (una
+ * columna) entra igual: lo que se ahorró son títulos y renglones, no letra.
  */
 
-import { type KeyboardEvent, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { BarChart3, X } from "@buleje/design-system/icons";
-import { BlockTitle, Kicker } from "@buleje/design-system";
+import { BarChart3, Loader2, Trash2, X } from "@buleje/design-system/icons";
+import { BlockTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import {
   clasificacionCorta,
   SIN_CLASIFICACION,
-  SIN_DUENO,
   SIN_ESPECIE,
   type DetalleDeJornada,
 } from "@/lib/forestal/detalle-de-jornada";
 import type { JornadaDeProduccion } from "./hooks/use-jornadas-produccion";
 import { useUbicarFlotante } from "./hooks/use-ubicar-flotante";
+import { Bloque, FranjaDelDia, plural, Renglon } from "./CtpDetalleDeJornadaPartes";
 
 interface Props {
   id: string;
@@ -58,48 +68,20 @@ interface Props {
   /** Devuelve el foco al ícono sin cerrar (Shift+Tab en el primer control). */
   onVolverAlAncla: () => void;
   onVerResumen: () => void;
+  /** Anular lo declarado ese día. En táctil es la única puerta (no hay «pasar el mouse»). */
+  onAnular?: () => void;
+  anulando?: boolean;
 }
 
-/* 560 y no 448: a 1440 × 900 el botón «Ver qué salió ese día» quedaba debajo del scroll del panel con lugar de sobra. */
-const ALTO_MAXIMO = 560;
+/* El tope es una red, no el diseño: el contenido del día real más cargado mide
+   ~560 px en una columna, y el alto de verdad lo recorta el espacio visible. */
+const ALTO_MAXIMO = 720;
+/** 35 rem: lo que pide un día con muchas especies o clasificaciones. */
+const ANCHO_AMPLIO = 560;
+/** Desde acá entran dos columnas de renglones «Cachimbo · 480 PT · 1.133 m³». */
+const ANCHO_DOS_COLUMNAS = 480;
 
 const ENFOCABLES = 'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
-
-function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
-  return (
-    <section className="mt-2.5 border-t border-[var(--rule-soft)] pt-2">
-      <Kicker as="h5" className="block">
-        {titulo}
-      </Kicker>
-      <ul className="mt-1 flex flex-col gap-0.5">{children}</ul>
-    </section>
-  );
-}
-
-function Renglon({
-  nombre,
-  cifras,
-  titulo,
-  apagado = false,
-}: {
-  nombre: ReactNode;
-  cifras?: string;
-  titulo?: string;
-  apagado?: boolean;
-}) {
-  return (
-    <li className="flex items-baseline justify-between gap-2 text-sm" title={titulo}>
-      <span className={cn("min-w-0 truncate", apagado ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]")}>
-        {nombre}
-      </span>
-      {cifras && (
-        <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-secondary)]">{cifras}</span>
-      )}
-    </li>
-  );
-}
 
 export default function CtpDetalleDeJornada({
   id,
@@ -112,9 +94,25 @@ export default function CtpDetalleDeJornada({
   onCerrar,
   onVolverAlAncla,
   onVerResumen,
+  onAnular,
+  anulando = false,
 }: Props) {
-  const lugar = useUbicarFlotante(clave, columna, ALTO_MAXIMO);
+  const muchos = detalle.especies.length + detalle.clasificaciones.length > 3;
+  /* Lo que mide el contenido entero: con eso el panel sube si abajo no entra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  const [altoNecesario, setAltoNecesario] = useState<number>();
+  const lugar = useUbicarFlotante(clave, columna, ALTO_MAXIMO, muchos ? ANCHO_AMPLIO : undefined, altoNecesario);
+  const anchoActual = lugar?.ancho;
+  useLayoutEffect(() => {
+    const caja = cajaRef.current;
+    if (!caja?.scrollHeight) return;
+    /* `scrollHeight` no cuenta el borde y `maxHeight` sí (border-box): sin
+       sumarlo quedaban 2 px de scroll (medido a 400 px). */
+    const alto = caja.scrollHeight + (caja.offsetHeight - caja.clientHeight);
+    setAltoNecesario((prev) => (prev === alto ? prev : alto));
+  }, [detalle, anchoActual]);
   if (!lugar) return null;
+  const dosColumnas = lugar.ancho >= ANCHO_DOS_COLUMNAS;
 
   /* Tab en el borde del panel vuelve a la tira: Shift+Tab en el primero, al
      ícono; Tab en el último, cierra y deja el foco en el ícono. */
@@ -166,6 +164,7 @@ export default function CtpDetalleDeJornada({
       )}
     >
       <div
+        ref={cajaRef}
         style={{ maxHeight: lugar.maxAlto }}
         className="overflow-y-auto overscroll-contain rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]"
       >
@@ -184,56 +183,36 @@ export default function CtpDetalleDeJornada({
           </button>
         </div>
 
-        <Bloque titulo="Especies">
-          {detalle.especies.map((e) => (
-            <Renglon
-              key={e.especie}
-              nombre={e.especie}
-              apagado={e.especie === SIN_ESPECIE}
-              /* «0 PT» se lee como «nada»: la corrida chica se dice en m³. */
-              cifras={e.pt >= 1 ? `${fmtPt(e.pt)} PT · ${fmtM3(e.m3)} m³` : `${fmtM3(e.m3)} m³`}
-            />
-          ))}
-        </Bloque>
-
-        <Bloque titulo="Clasificación">
-          {detalle.clasificaciones.map((c) => (
-            <Renglon
-              key={c.producto}
-              nombre={clasificacionCorta(c.producto)}
-              titulo={c.producto}
-              apagado={c.producto === SIN_CLASIFICACION}
-              cifras={[c.piezas > 0 ? `${fmtPiezas(c.piezas)} pza` : null, `${fmtM3(c.m3)} m³`]
-                .filter(Boolean)
-                .join(" · ")}
-            />
-          ))}
-        </Bloque>
-
-        <Bloque titulo="Dueño de la madera">
-          {detalle.duenos.map((d) => (
-            <Renglon
-              key={d.etiqueta}
-              nombre={d.etiqueta}
-              apagado={d.etiqueta === SIN_DUENO}
-              cifras={plural(d.corridas, "corrida", "corridas")}
-            />
-          ))}
-        </Bloque>
-
-        {detalle.permisos.length > 0 && (
-          <Bloque titulo={detalle.permisos.length === 1 ? "Permiso" : "Permisos"}>
-            {detalle.permisos.map((p) => (
-              <Renglon key={p} nombre={<span className="font-mono text-xs">{p}</span>} titulo={p} />
+        {/* Especies | Clasificación: lado a lado si entran. */}
+        <div className={cn("grid gap-x-5", dosColumnas && "grid-cols-2")}>
+          <Bloque titulo="Especies">
+            {detalle.especies.map((e) => (
+              <Renglon
+                key={e.especie}
+                nombre={e.especie}
+                apagado={e.especie === SIN_ESPECIE}
+                /* «0 PT» se lee como «nada»: la corrida chica se dice en m³. */
+                cifras={e.pt >= 1 ? `${fmtPt(e.pt)} PT · ${fmtM3(e.m3)} m³` : `${fmtM3(e.m3)} m³`}
+              />
             ))}
           </Bloque>
-        )}
 
-        {detalle.lineas.length > 0 && (
-          <Bloque titulo={detalle.lineas.length === 1 ? "Línea" : "Líneas"}>
-            <Renglon nombre={detalle.lineas.join(" · ")} />
+          <Bloque titulo="Clasificación">
+            {detalle.clasificaciones.map((c) => (
+              <Renglon
+                key={c.producto}
+                nombre={clasificacionCorta(c.producto)}
+                titulo={c.producto}
+                apagado={c.producto === SIN_CLASIFICACION}
+                cifras={[c.piezas > 0 ? `${fmtPiezas(c.piezas)} pza` : null, `${fmtM3(c.m3)} m³`]
+                  .filter(Boolean)
+                  .join(" · ")}
+              />
+            ))}
           </Bloque>
-        )}
+        </div>
+
+        <FranjaDelDia detalle={detalle} />
 
         {detalle.sinMateriaPrima > 0 && (
           /* Neutro y no de aviso (decidido en el navegador el 09-14): con la
@@ -241,7 +220,7 @@ export default function CtpDetalleDeJornada({
              amarillo en todos los días enseña a no mirarlo. Pendientes ya lo
              reclama; acá es un dato del día. */
           <p
-            className="mt-2.5 rounded-lg bg-[var(--surface-sunken)] px-2 py-1.5 text-xs text-[var(--text-secondary)]"
+            className="mt-2 rounded-lg bg-[var(--surface-sunken)] px-2 py-1 text-xs text-[var(--text-secondary)]"
             title="No le llega consumo de trozas ni un reproceso: sin eso no se sabe de qué guía salió. Es la misma regla que «corridas sin origen» en Consumos."
           >
             <span>
@@ -251,18 +230,30 @@ export default function CtpDetalleDeJornada({
           </p>
         )}
 
-        <Bloque titulo={ocultas > 0 ? `Corridas (${detalle.corridas.length} de ${jornada.corridas})` : "Corridas"}>
+        <Bloque
+          titulo={ocultas > 0 ? `Corridas (${detalle.corridas.length} de ${jornada.corridas})` : "Corridas"}
+          /* En dos columnas si entran: una corrida es un renglón corto. Tres
+             columnas cortaban la especie («Pangu…», medido a 560 px). */
+          listaClassName={cn("grid gap-x-5", dosColumnas && "grid-cols-2")}
+        >
           {detalle.corridas.map((c) => (
             <Renglon
               key={c.lineNo}
-              titulo={c.materiaPrimaRef ? `Materia prima: ${c.materiaPrimaRef}` : undefined}
+              titulo={
+                [c.especie ?? "sin especie", c.materiaPrimaRef ? `materia prima: ${c.materiaPrimaRef}` : null]
+                  .filter(Boolean)
+                  .join(" · ")
+              }
               nombre={
                 <>
                   <b className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">N.º {c.lineNo}</b>{" "}
                   <span className={c.especie ? undefined : "text-[var(--text-tertiary)]"}>
                     {c.especie ?? "sin especie"}
                   </span>
-                  {c.materiaPrimaRef && (
+                  {/* Un código corto («17-2026») se ve; un texto largo («Sin lote —
+                      cubicado en el Libro») queda en el globo: a 560 px se
+                      cortaba en «Sin lote — cubicado en el L…». */}
+                  {c.materiaPrimaRef && c.materiaPrimaRef.length <= 14 && (
                     <span className="text-xs text-[var(--text-tertiary)]"> · {c.materiaPrimaRef}</span>
                   )}
                 </>
@@ -271,17 +262,38 @@ export default function CtpDetalleDeJornada({
             />
           ))}
           {ocultas > 0 && (
-            <li className="text-xs text-[var(--text-tertiary)]">y {plural(ocultas, "otra", "otras")} en el resumen</li>
+            <li className="col-span-full text-xs text-[var(--text-tertiary)]">
+              y {plural(ocultas, "otra", "otras")} en el resumen
+            </li>
           )}
         </Bloque>
 
-        <button
-          type="button"
-          onClick={onVerResumen}
-          className="mt-3 inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] hover:bg-primary/15 dark:text-[var(--accent)]"
-        >
-          <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Ver qué salió ese día
-        </button>
+        {/* «Ver qué salió» va ÚLTIMO: Tab en el último control del panel
+            cierra y vuelve al ícono, y es la acción de todos los días. */}
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          {onAnular && (
+            <button
+              type="button"
+              onClick={onAnular}
+              disabled={anulando}
+              className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[var(--data-error-500)]/50 px-2.5 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-60 dark:text-[var(--data-error-500)]"
+            >
+              {anulando ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" aria-hidden />
+              )}
+              Anular el día
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onVerResumen}
+            className="inline-flex min-h-9 grow items-center justify-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] hover:bg-primary/15 dark:text-[var(--accent)]"
+          >
+            <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Ver qué salió ese día
+          </button>
+        </div>
       </div>
     </div>,
     lugar.destino,

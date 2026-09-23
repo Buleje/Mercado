@@ -45,6 +45,7 @@ export default function ControlLecturaFlotante({
   onIrAFila,
   onCerrar,
   etiqueta = "Leyendo la tabla",
+  numerarDesdeAbajo = false,
 }: {
   /** `null` = el panel está cerrado. Sólo la X lo pone en `null`. */
   estado: EstadoLectura | null;
@@ -56,17 +57,28 @@ export default function ControlLecturaFlotante({
   /** Corta la voz y cierra el panel. */
   onCerrar: () => void;
   etiqueta?: string;
+  /**
+   * La tabla numera de abajo hacia arriba («más nuevas primero», 2026-09-23):
+   * la de arriba es la N.º `total`. El control dice el MISMO número que la
+   * columna N°, e «Ir a la fila 12» va a la que dice 12 — no a la duodécima de
+   * arriba.
+   */
+  numerarDesdeAbajo?: boolean;
 }) {
   if (!estado) return null;
-  /* Leyendo al revés se termina en la PRIMERA, no en la última: decir «fila
-     15 de 15» al final de una lectura que acabó en la 1 es mentir. */
-  const actual = estado.terminada
+  /* La posición en la lista que suena (1 = la de arriba). Leyendo al revés se
+     termina en la PRIMERA, no en la última: decir «fila 15 de 15» al final de
+     una lectura que acabó en la 1 es mentir. */
+  const posicion = estado.terminada
     ? (estado.haciaAtras ? 1 : estado.total)
     : Math.min(estado.idx + 1, estado.total);
+  /* El número que se ve: la posición, o contado desde abajo. */
+  const numerar = (pos: number) => (numerarDesdeAbajo ? estado.total - pos + 1 : pos);
+  const actual = numerar(posicion);
   /* La barra mide lo LEÍDO, no la posición en la tabla: al revés se arranca
      por la última, y una barra que empieza llena y se vacía se lee como si la
      lectura estuviera deshaciendo algo. */
-  const leidas = estado.haciaAtras ? estado.total - actual + 1 : actual;
+  const leidas = estado.haciaAtras ? estado.total - posicion + 1 : posicion;
   const pct = estado.total > 0 ? (leidas / estado.total) * 100 : 0;
   const titulo = estado.terminada ? "Terminó de leer" : estado.pausada ? "En pausa" : etiqueta;
 
@@ -114,7 +126,8 @@ export default function ControlLecturaFlotante({
           equivocado — y es justo lo que se pidió: cotejar la pila desde arriba. */}
       {estado.haciaAtras && (
         <p className="mb-2.5 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent-ink)] dark:text-[var(--accent)]">
-          <ArrowUp className="h-3 w-3 shrink-0" aria-hidden /> yendo hacia atrás — de la última a la primera
+          <ArrowUp className="h-3 w-3 shrink-0" aria-hidden />{" "}
+          {numerarDesdeAbajo ? "yendo hacia arriba — de la más vieja a la más nueva" : "yendo hacia atrás — de la última a la primera"}
         </p>
       )}
 
@@ -140,7 +153,8 @@ export default function ControlLecturaFlotante({
         )}
       </div>
 
-      <IrAFila total={estado.total} onIr={onIrAFila} />
+      {/* El número que se tipea es el de la columna N°: se traduce a posición. */}
+      <IrAFila total={estado.total} onIr={(n) => onIrAFila(numerar(n))} />
     </div>
   );
 }

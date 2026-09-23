@@ -56,6 +56,7 @@ export default function CtpProduccionPendiente({
   piezasLibres = 0,
   onListo,
   onError,
+  onCambioEnElLibro,
 }: {
   /** Las corridas con margen, ya filtradas por quien llama (lote o libro). */
   corridas: CorridaAMedioDeclarar[];
@@ -76,6 +77,11 @@ export default function CtpProduccionPendiente({
   /** Se amplió: hay que recargar la tabla del libro y contar qué pasó. */
   onListo: (mensaje: string, detalle: string) => void;
   onError: (mensaje: string) => void;
+  /**
+   * Se anuló un día desde la tira del modal (2026-09-23): el libro cambió sin
+   * declarar nada. Quien lo pasa relee su tabla; el modal sigue abierto.
+   */
+  onCambioEnElLibro?: () => void;
 }) {
   const [abierta, setAbierta] = useState<CorridaAMedioDeclarar | null>(null);
   /**
@@ -264,6 +270,7 @@ export default function CtpProduccionPendiente({
           ctaLabel="Agregar a la corrida"
           onConfirmar={(datos) => void ampliar(datos)}
           onClose={() => setAbierta(null)}
+          onCambioEnElLibro={onCambioEnElLibro}
         />
       )}
     </section>

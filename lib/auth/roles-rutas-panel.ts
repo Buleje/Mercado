@@ -31,6 +31,9 @@ export const RUTAS_PANEL = {
   "/api/admin/sse": ["admin", "cajero"],
   "/api/admin/platform-chat": ["admin", "owner", "manager"],
   "/api/ai-assistant/health": ["admin", "owner"],
+  /* Anular lo declarado un día de producción (2026-09-23): los mismos roles que
+     anular una fila del Libro. La tira sólo muestra la papelera a quien pasa. */
+  "/api/admin/forestal/ctp/anular-dia": ["admin", "owner"],
 } as const satisfies Record<string, readonly AdminRole[]>;
 
 export type RutaPanel = keyof typeof RUTAS_PANEL;

@@ -639,6 +639,7 @@ export default function CtpLotesView({
           }}
           onError={(texto) => setAviso({ tono: "aviso", texto })}
           onClose={() => setResolviendoId(null)}
+          onCambioEnElLibro={() => void recargar()}
         />
       )}
 
@@ -731,6 +732,8 @@ export default function CtpLotesView({
             setMaterialInventario(null);
             setErrorInventario(null);
           }}
+          /* Se anuló un día desde la tira: los lotes releen sin cerrar el modal. */
+          onCambioEnElLibro={() => void recargar()}
         />
       )}
 

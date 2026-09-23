@@ -12,7 +12,7 @@
  * ir y volver entre dos semanas no paga dos viajes.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { esIsoValido, rangoDeLaSemana } from "@/lib/forestal/semana-de-registro";
 import type { DetalleDeJornada } from "@/lib/forestal/detalle-de-jornada";
@@ -56,28 +56,46 @@ export function useJornadasDeProduccion(
   const [porDia, setPorDia] = useState<Map<string, JornadaDeProduccion>>(new Map());
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * De qué pedido es `porDia` (su url). Al cambiar de semana hay un render en
+   * que `porDia` todavía es la semana anterior y el efecto que carga aún no
+   * corrió: sin esto, la tira plegada afirmaba «sin corridas anotadas» del día
+   * nuevo en ese instante (revisión 23-09). Con esto, `cargando` quiere decir
+   * «lo que hay en `porDia` no es de esta semana».
+   */
+  const [urlLeida, setUrlLeida] = useState<string | null>(null);
+  /** El último pedido: una respuesta vieja que llega tarde no pisa la semana nueva. */
+  const ultimaRef = useRef<string | null>(null);
 
   const cargar = useCallback(
     async (iso: string, forzar = false) => {
       if (!esIsoValido(iso)) return;
       const url = urlDeLaSemana(iso, seccion);
+      ultimaRef.current = url;
       if (forzar) invalidarCtp("jornadas=1");
       setCargando(true);
       setError(null);
       try {
         const r = await ctpGet<{ jornadas?: JornadaDeProduccion[] }>(url, { ttlMs: 30_000 });
+        if (ultimaRef.current !== url) return;
         setPorDia(new Map((r.jornadas ?? []).map((j) => [j.dia, j])));
       } catch (e) {
+        if (ultimaRef.current !== url) return;
         /* Que la tira no sepa cuánto se produjo no puede impedir elegir el día:
            se muestra el aviso y los casilleros siguen andando. */
         setError(e instanceof Error ? e.message : String(e));
         setPorDia(new Map());
       } finally {
-        setCargando(false);
+        if (ultimaRef.current === url) {
+          setUrlLeida(url);
+          setCargando(false);
+        }
       }
     },
     [seccion],
   );
+  const urlPedida = esIsoValido(isoDeLaSemana) ? urlDeLaSemana(isoDeLaSemana, seccion) : null;
+  const deOtraSemana = activo && urlPedida !== null && urlLeida !== urlPedida;
 
   useEffect(() => {
     if (!activo) return;
@@ -86,7 +104,7 @@ export function useJornadasDeProduccion(
 
   return {
     porDia,
-    cargando,
+    cargando: cargando || deOtraSemana,
     error,
     recargar: () => cargar(isoDeLaSemana, true),
   };

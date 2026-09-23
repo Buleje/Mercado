@@ -34,7 +34,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Boxes, Calculator, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
-import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { fmtPiezas } from "@/lib/forestal/cubicacion-formato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import {
@@ -45,7 +45,7 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { paquetesDeLoCubicado } from "@/lib/forestal/declarar-produccion";
 import CubicadorMadera from "./CubicadorMadera";
 import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
-import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
+import CtpSemanaDeProduccion from "./CtpSemanaDeProduccion";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
 import { useTrozasParaCodigo } from "./hooks/use-trozas-para-codigo";
 import { ESPACIO_PRODUCCION } from "./hooks/libreta-produccion";
@@ -62,10 +62,17 @@ const hoyIso = () => hoyEnLima();
 export default function CtpProducirSinLoteModal({
   onCerrar,
   onListo,
+  onCambioEnElLibro,
 }: {
   onCerrar: () => void;
   /** Se llama con el resumen de lo registrado, para refrescar la vista. */
   onListo: (mensaje: string) => void;
+  /**
+   * El libro cambió SIN cerrar este modal (se anuló un día desde la tira):
+   * la tabla de producción de atrás tiene que releer, pero acá se sigue
+   * cubicando — lo normal es anular el día mal cargado y volver a declararlo.
+   */
+  onCambioEnElLibro?: () => void;
 }) {
   const [piezas, setPiezas] = useState<PiezaCubicada[]>([]);
   const [declarando, setDeclarando] = useState(false);
@@ -78,6 +85,7 @@ export default function CtpProducirSinLoteModal({
      sobre el mismo dato tienen que contarse lo que pasó. */
   const [semana, setSemana] = useState(fecha);
   const jornadas = useJornadasDeProduccion(semana);
+
   /* Las trozas del patio para el campo «Código» del cubicador: se leen UNA
      vez con el modal, y «Declarar» las reusa para proponer el permiso. */
   const trozasParaCodigo = useTrozasParaCodigo();
@@ -126,18 +134,6 @@ export default function CtpProducirSinLoteModal({
     () => paquetesDeLoCubicado(piezas, { codigosEnPlanta: codigosPlanta }),
     [piezas, codigosPlanta],
   );
-  const total = useMemo(
-    () =>
-      paquetes.reduce(
-        (a, p) => ({
-          piezas: a.piezas + p.cantidad,
-          m3: a.m3 + p.volumenM3,
-          pt: a.pt + p.pieTablar,
-        }),
-        { piezas: 0, m3: 0, pt: 0 },
-      ),
-    [paquetes],
-  );
   /* Se dice ANTES de abrir «Declarar»: lo que no tiene especie no se registra. */
   const piezasSinEspecie = useMemo(
     () => paquetes.filter((p) => !claveEspecie(p.especie)).reduce((a, p) => a + p.cantidad, 0),
@@ -165,45 +161,33 @@ export default function CtpProducirSinLoteModal({
         /* `relative`: el tirador de redimensión se ancla a esta esquina. */
         className="relative flex h-[96vh] w-full max-w-[98vw] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
-        {/* Cabecera — y asa para arrastrar la ventana. */}
+        {/* Cabecera — y asa para arrastrar la ventana. En UNA fila: sin las
+            pastillas de PT · m³ · piezas (Brandon, 2026-09-23: «quítalo porque
+            ya tengo KPIs» — son los indicadores del cubicador, justo abajo). */}
         <div
           {...ventana.asaProps}
-          className="flex shrink-0 flex-wrap items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
+          className="flex shrink-0 items-center gap-2.5 border-b border-[var(--rule-base)] px-4 py-2 sm:px-5"
         >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            <Calculator className="h-5 w-5" aria-hidden />
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-[var(--accent-ink)] max-sm:hidden dark:text-[var(--accent)]">
+            <Calculator className="h-4 w-4" aria-hidden />
           </span>
-          <div className="min-w-0">
-            <CardTitle as="h3" className="font-display text-lg text-[var(--text-primary)]">
+          <div className="min-w-0 flex-1">
+            <CardTitle as="h3" className="font-display text-lg leading-tight text-[var(--text-primary)]">
               Producir sin lote
             </CardTitle>
-            <p className="text-xs text-[var(--text-tertiary)]">
-              Cubica acá y decláralo en el Libro. La materia prima se vincula después —
-              <b> lo que cubiques acá no toca el lote del cubicador</b>.
+            <p className="text-xs leading-snug text-[var(--text-tertiary)]">
+              Cubica acá y decláralo en el Libro; la materia prima se vincula después.{" "}
+              <b>No toca el lote del cubicador.</b>
             </p>
           </div>
-          <span className="ml-auto flex flex-wrap items-center gap-2 font-mono text-sm tabular-nums">
-            <span className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5">
-              {fmtPt(total.pt)}{" "}
-              <span className="font-sans text-xs text-[var(--text-tertiary)]">PT</span>
-            </span>
-            <span className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5">
-              {fmtM3(total.m3)}{" "}
-              <span className="font-sans text-xs text-[var(--text-tertiary)]">m³</span>
-            </span>
-            <span className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5">
-              {fmtPiezas(total.piezas)}{" "}
-              <span className="font-sans text-xs text-[var(--text-tertiary)]">pzas</span>
-            </span>
-          </span>
           <ControlesDeVentana ventana={ventana} />
           <button
             type="button"
             onClick={onCerrar}
             aria-label="Cerrar"
-            className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
 
@@ -211,8 +195,10 @@ export default function CtpProducirSinLoteModal({
             fuera del cuerpo que scrollea, porque es una decisión del ASIENTO y
             no de lo cubicado: se ve y se cambia igual mientras se miden las
             piezas, y cada casillero dice lo que ese día ya tiene anotado. */}
-        <div className="shrink-0 border-b border-[var(--rule-base)] px-5 py-3 sm:px-6">
-          <CtpSemanaDeRegistro
+        <div className="shrink-0 border-b border-[var(--rule-base)] px-2 py-2 sm:px-5">
+          {/* Con «Anular el día» (2026-09-23): la papelera del casillero o el
+              detalle del día anulan lo declarado; se relee la tira y el libro. */}
+          <CtpSemanaDeProduccion
             valor={fecha}
             onElegir={(iso) => {
               setFecha(iso);
@@ -225,11 +211,13 @@ export default function CtpProducirSinLoteModal({
             error={jornadas.error}
             /* Traer una corrida al cubicado: acá SÍ hay dónde ponerla. */
             onCopiarAlCubicado={(copiadas) => setAImportar(copiadas)}
+            onReleer={() => void jornadas.recargar()}
+            onCambioEnElLibro={onCambioEnElLibro}
           />
         </div>
 
         {/* Cuerpo: el cubicador ENTERO, en su propia libreta */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3 sm:px-5 sm:py-4">
           <CubicadorMadera
             key={libreta}
             espacio={ESPACIO_PRODUCCION}
@@ -243,7 +231,7 @@ export default function CtpProducirSinLoteModal({
         </div>
 
         {/* Pie */}
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t border-[var(--rule-base)] px-5 py-3.5 sm:px-6">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t border-[var(--rule-base)] px-4 py-2.5 sm:px-5">
           <span
             className={`mr-auto text-xs ${
               piezasSinEspecie > 0

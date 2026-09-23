@@ -7,8 +7,14 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  acomodarAlOrden,
   agruparPorEspecie,
   claveDeDictado,
+  enOrdenDelPapel,
+  esOrdenFilas,
+  masNuevasPrimero,
+  numeroDeFila,
+  ultimaAnotada,
   empiezaBloque,
   especieAlInicio,
   FUERA_PARA_SOLTAR,
@@ -348,5 +354,71 @@ describe("leer con largo fijo", () => {
   it("una fila suelta de especie no cambia", () => {
     const lista = [...varias(5, "Panguana", 7), p("Tornillo", 1, 4, 7)];
     expect(leer(lista)[5]).toBe("1, 4, 7, Tornillo");
+  });
+});
+
+/* ── Más nuevas primero (Brandon, 2026-09-23: «tipo invertido») ─────────── */
+
+describe("más nuevas primero", () => {
+  const dictado = [f(100, 0, "Tornillo", "1"), f(100, 1, "Tornillo", "2"), f(200, 0, "Cumala", "3"), f(300, 0, "Tornillo", "4")];
+
+  it("es el orden de dictado dado vuelta, y se guarda como preferencia", () => {
+    expect(medidas(masNuevasPrimero(dictado))).toEqual(["4", "3", "2", "1"]);
+    expect(medidas(ordenarFilas(dictado, "recientes"))).toEqual(["4", "3", "2", "1"]);
+    expect(esOrdenFilas("recientes")).toBe(true);
+    expect(esOrdenFilas("invertido")).toBe(false);
+  });
+
+  it("la pieza que se dicta después cae ARRIBA, y acomodar dos veces no mueve nada", () => {
+    const tabla = acomodarAlOrden(dictado, "recientes");
+    const conNueva = acomodarAlOrden([...tabla, f(400, 0, "Cumala", "5")], "recientes");
+    expect(medidas(conNueva)).toEqual(["5", "4", "3", "2", "1"]);
+    expect(medidas(acomodarAlOrden(conNueva, "recientes"))).toEqual(medidas(conNueva));
+    /* Como se dictó no toca la tabla (una duplicada queda bajo su original). */
+    expect(acomodarAlOrden(dictado, "dictado")).toBe(dictado);
+  });
+
+  it("volver a «como se dictó» deja todo como estaba", () => {
+    const vuelta = ordenarFilas(ordenarFilas(dictado, "recientes"), "dictado");
+    expect(medidas(vuelta)).toEqual(medidas(dictado));
+  });
+
+  it("cada pieza conserva su N° de dictado: arriba el más alto", () => {
+    const tabla = masNuevasPrimero(dictado);
+    expect(tabla.map((_, i) => numeroDeFila(i, tabla.length, "recientes"))).toEqual([4, 3, 2, 1]);
+    /* La de arriba es la pieza «4», que es la cuarta que se dictó. */
+    expect(tabla[0]!.m).toBe("4");
+    /* En los otros órdenes el N° sigue siendo la posición. */
+    expect([0, 1, 2].map((i) => numeroDeFila(i, 3, "dictado"))).toEqual([1, 2, 3]);
+    expect([0, 1, 2].map((i) => numeroDeFila(i, 3, "especie"))).toEqual([1, 2, 3]);
+  });
+
+  it("el papel sale en el orden de dictado: su N° (la posición) es el N° de la pantalla", () => {
+    const tabla = masNuevasPrimero(dictado);
+    const papel = enOrdenDelPapel(tabla, "recientes");
+    for (const [i, fila] of tabla.entries()) {
+      expect(papel.indexOf(fila) + 1).toBe(numeroDeFila(i, tabla.length, "recientes"));
+    }
+    expect(enOrdenDelPapel(dictado, "dictado")).toBe(dictado);
+  });
+
+  it("«elimina el último» borra lo que se acaba de dictar, que está ARRIBA", () => {
+    const tabla = masNuevasPrimero(dictado);
+    expect(ultimaAnotada(tabla, "recientes")?.m).toBe("4");
+    expect(ultimaAnotada(dictado, "dictado")?.m).toBe("4");
+    expect(ultimaAnotada(agruparPorEspecie(dictado), "especie")?.m).toBe("4");
+  });
+
+  it("la lectura sigue la tabla que se ve: al derecho empieza por la más nueva, y los tramos se anuncian en ese orden", () => {
+    const tabla = masNuevasPrimero(dictado); // 4 Tornillo · 3 Cumala · 2 Tornillo · 1 Tornillo
+    const leer = (haciaAtras: boolean) => {
+      const orden = haciaAtras ? [3, 2, 1, 0] : [0, 1, 2, 3];
+      return orden.map((indice, k) =>
+        textoPorTramos(tabla[indice]!, { indice, lista: tabla, haciaAtras, primera: k === 0 }, (x) => x.m),
+      );
+    };
+    expect(leer(false)).toEqual(["4, Tornillo", "3, Cumala", "Continúa con Tornillo. 2", "1"]);
+    /* «Leer al revés» con las nuevas arriba = de la más vieja a la más nueva. */
+    expect(leer(true)).toEqual(["Continúa con Tornillo. 1", "2", "3, Cumala", "4, Tornillo"]);
   });
 });

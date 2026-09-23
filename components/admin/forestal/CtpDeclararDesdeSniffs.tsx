@@ -86,12 +86,18 @@ export default function CtpDeclararDesdeSniffs({
   onListo,
   onError,
   onClose,
+  onCambioEnElLibro,
 }: {
   lote: LoteAserrio;
   /** El patio: sólo alimenta el reparto entre títulos habilitantes. */
   trozas: readonly TrozaConsumible[];
   onListo: (mensaje: string) => void;
   onError: (mensaje: string) => void;
+  /**
+   * Se anuló un día desde la tira del modal (2026-09-23): el libro cambió sin
+   * declarar nada. Quien lo pasa relee su tabla; el modal sigue abierto.
+   */
+  onCambioEnElLibro?: () => void;
   onClose: () => void;
 }) {
   const corrida = useMemo(() => corridaAcompletar(lote), [lote]);
@@ -231,6 +237,7 @@ export default function CtpDeclararDesdeSniffs({
       onSniffsLeido={setDetalleNuevo}
       onConfirmar={(datos) => void guardar(datos)}
       onClose={onClose}
+      onCambioEnElLibro={onCambioEnElLibro}
     />
   );
 }

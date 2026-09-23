@@ -1804,6 +1804,8 @@ export function CtpEntriesView({
             setToProductMsg(msg);
             void load();
           }}
+          /* Se anuló un día desde la tira: la tabla de atrás relee sin cerrar el modal. */
+          onCambioEnElLibro={() => void load()}
         />
       )}
 
@@ -1857,6 +1859,8 @@ export function CtpEntriesView({
             pushToast({ tono: "warning", msg: "La producción no se pudo declarar", detail: msg });
             void load();
           }}
+          /* Se anuló un día desde la tira del modal: la tabla relee (2026-09-23). */
+          onCambioEnElLibro={() => void load()}
         />
       )}
 
@@ -1879,6 +1883,10 @@ export function CtpEntriesView({
           onError={(msg) =>
             pushToast({ tono: "warning", msg: "No se pudo ampliar la corrida", detail: msg })
           }
+          onCambioEnElLibro={() => {
+            void load();
+            void lotes.recargar();
+          }}
         />
       )}
 
@@ -1931,6 +1939,7 @@ export function CtpEntriesView({
             pushToast({ tono: "warning", msg: "La producción no se pudo declarar", detail: msg });
             void load();
           }}
+          onCambioEnElLibro={() => void load()}
         />
       )}
 

@@ -17,7 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Boxes, ChevronDown, Copy, Gauge, Loader2, Pencil, Plus, Trash2, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
+import CtpSemanaDeProduccion from "./CtpSemanaDeProduccion";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
 import { esIsoValido } from "@/lib/forestal/semana-de-registro";
 import {
@@ -220,6 +220,7 @@ export default function CtpRegistrarProduccionModal({
   fechaCorridaFija,
   onConfirmar,
   onClose,
+  onCambioEnElLibro,
 }: {
   /**
    * Opcional: una CORRIDA que ya consumió también declara acá (ADR-349), y su
@@ -296,6 +297,11 @@ export default function CtpRegistrarProduccionModal({
   fechaCorridaFija?: string;
   onConfirmar: (datos: ProduccionRegistrada) => void;
   onClose: () => void;
+  /**
+   * Se anuló un día desde la tira del modal (2026-09-23): el libro cambió sin
+   * declarar nada. Quien lo pasa relee su tabla; el modal sigue abierto.
+   */
+  onCambioEnElLibro?: () => void;
 }) {
   const [dia, setDia] = useState(fecha);
   /* La semana que se está MIRANDO en la tira de días: arranca en la del día
@@ -976,7 +982,9 @@ export default function CtpRegistrarProduccionModal({
          * ofrecer una tira que no cambia nada sería mentir.
          */}
         {previo === 0 && (
-          <CtpSemanaDeRegistro
+          /* Con «Anular el día» (2026-09-23), igual que en «Producir sin lote»:
+             la misma tira y la misma regla en los dos modales que declaran. */
+          <CtpSemanaDeProduccion
             valor={dia}
             onElegir={(iso) => {
               setDia(iso);
@@ -987,6 +995,8 @@ export default function CtpRegistrarProduccionModal({
             porDia={jornadas.porDia}
             cargando={jornadas.cargando}
             error={jornadas.error}
+            onReleer={() => void jornadas.recargar()}
+            onCambioEnElLibro={onCambioEnElLibro}
           />
         )}
 

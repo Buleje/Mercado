@@ -58,6 +58,7 @@ export default function CtpCorridaSinDeclarar({
   onListo,
   onError,
   onAviso,
+  onCambioEnElLibro,
   onSumarPiezas,
   onQuitarPiezas,
   onProducirResto,
@@ -72,6 +73,11 @@ export default function CtpCorridaSinDeclarar({
   cargando?: boolean;
   /** Declaró: recargar la tabla del libro y contar qué pasó. */
   onListo: (mensaje: string, detalle: string) => void;
+  /**
+   * Se anuló un día desde la tira del modal (2026-09-23): el libro cambió sin
+   * declarar nada. Quien lo pasa relee su tabla; el modal sigue abierto.
+   */
+  onCambioEnElLibro?: () => void;
   /**
    * El error sube. Al declarar, la corrida deja de estar pendiente y este panel
    * se desmonta: un aviso adentro se iría con él (misma lección que ADR-343).
@@ -468,6 +474,7 @@ export default function CtpCorridaSinDeclarar({
           }
           onConfirmar={(datos) => void declarar(datos)}
           onClose={() => setAbierto(false)}
+          onCambioEnElLibro={onCambioEnElLibro}
         />
       )}
     </section>

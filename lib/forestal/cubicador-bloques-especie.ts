@@ -21,11 +21,15 @@
  */
 import { claveEspecie } from "./loth-constants";
 
-/** Cómo se ordena la tabla: tal cual se dictó, o en bloques de especie. */
-export type OrdenFilas = "dictado" | "especie";
+/**
+ * Cómo se ordena la tabla: tal cual se dictó, en bloques de especie, o con lo
+ * último que se dictó ARRIBA (Brandon, 2026-09-23: «que los datos más
+ * actualizados estén primero y los antiguos últimos, tipo invertido»).
+ */
+export type OrdenFilas = "dictado" | "especie" | "recientes";
 
 export function esOrdenFilas(v: unknown): v is OrdenFilas {
-  return v === "dictado" || v === "especie";
+  return v === "dictado" || v === "especie" || v === "recientes";
 }
 
 /** Un tramo empieza a anunciarse desde dos filas seguidas de la misma especie. */
@@ -91,9 +95,65 @@ export function agruparPorEspecie<T extends { id: string; especie?: string }>(fi
     .map((x) => x.f);
 }
 
+/**
+ * «Más nuevas primero»: el orden de dictado dado vuelta.
+ *
+ * Es el MISMO orden que «como se dictó», leído de abajo hacia arriba: la pieza
+ * que se acaba de dictar aparece arriba, a la vista, sin bajar hasta el final
+ * de un lote de 300. Sale del id (como `ordenDeDictado`), así que es total y
+ * no depende de cómo estaba la tabla antes.
+ */
+export function masNuevasPrimero<T extends { id: string }>(filas: readonly T[]): T[] {
+  return ordenDeDictado(filas).reverse();
+}
+
 /** Aplica un orden a la tabla entera. */
 export function ordenarFilas<T extends { id: string; especie?: string }>(filas: readonly T[], orden: OrdenFilas): T[] {
-  return orden === "especie" ? agruparPorEspecie(filas) : ordenDeDictado(filas);
+  if (orden === "especie") return agruparPorEspecie(filas);
+  if (orden === "recientes") return masNuevasPrimero(filas);
+  return ordenDeDictado(filas);
+}
+
+/**
+ * Vuelve a acomodar la tabla después de un cambio (una pieza nueva, una
+ * importación, una edición de especie).
+ *
+ *  - Por especie: la pieza nueva cae al final de SU bloque.
+ *  - Más nuevas primero: la pieza nueva va ARRIBA.
+ *  - Como se dictó: no se toca — ahí manda el orden actual (una duplicada queda
+ *    debajo de su original), y es la misma lista que llegó.
+ *
+ * Idempotente en los tres: se puede llamar en cada cambio sin que la tabla tiemble.
+ */
+export function acomodarAlOrden<T extends { id: string; especie?: string }>(filas: T[], orden: OrdenFilas): T[] {
+  if (orden === "especie") return agruparPorEspecie(filas);
+  if (orden === "recientes") return masNuevasPrimero(filas);
+  return filas;
+}
+
+/**
+ * El N° que se muestra en la fila `indice` (0 = la de arriba).
+ *
+ * Con «más nuevas primero» cada pieza conserva el número con el que se dictó:
+ * arriba va el más alto y abajo el 1, como una planilla ordenada de mayor a
+ * menor. Si no, «la 12» nombraría otra pieza cada vez que se dicta una nueva, y
+ * la de arriba siempre diría 1 —que es justo lo contrario de «la última»—. En
+ * los otros dos órdenes el N° es la posición (lo que ya decía la tabla).
+ *
+ * `total` = filas de la tabla entera (no de lo filtrado).
+ */
+export function numeroDeFila(indice: number, total: number, orden: OrdenFilas): number {
+  return orden === "recientes" ? total - indice : indice + 1;
+}
+
+/**
+ * Lo que va al papel (PDF, Excel, CSV) y a quien pide el lote de afuera: con
+ * «más nuevas primero», en el orden en que se dictó. Así el N° del papel (su
+ * posición) es el MISMO que el N° de la pantalla, y el Anexo no sale dado
+ * vuelta. En los otros órdenes, la tabla tal cual (lo que ya pasaba).
+ */
+export function enOrdenDelPapel<T extends { id: string }>(filas: T[], orden: OrdenFilas): T[] {
+  return orden === "recientes" ? ordenDeDictado(filas) : filas;
 }
 
 /**
@@ -104,6 +164,16 @@ export function ordenarFilas<T extends { id: string; especie?: string }>(filas: 
 export function ultimaDictada<T extends { id: string }>(filas: readonly T[]): T | undefined {
   const orden = ordenDeDictado(filas);
   return orden[orden.length - 1];
+}
+
+/**
+ * La que se acaba de anotar, en cualquier orden: la de abajo si la tabla va
+ * como se dictó, la del id más nuevo si no (por especie queda al final de su
+ * bloque; más nuevas primero, ARRIBA — la última de la tabla sería la primera
+ * que se dictó, y «elimina el último» la borraría).
+ */
+export function ultimaAnotada<T extends { id: string }>(filas: readonly T[], orden: OrdenFilas): T | undefined {
+  return orden === "dictado" ? filas[filas.length - 1] : ultimaDictada(filas);
 }
 
 /** ¿Esta fila es la primera de su bloque, mirando la de arriba? */

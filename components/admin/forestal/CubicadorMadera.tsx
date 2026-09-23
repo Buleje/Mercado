@@ -53,7 +53,8 @@ import {
   type ColumnaSeleccionable,
 } from "./seleccion-celdas";
 import PanelEntradaVoz from "./cubicador-entrada-voz";
-import { resolverEspecie, sinCodigoDeTroza, type FuenteCodigoDeTroza, type TrozaParaCodigo } from "@/lib/forestal/codigo-de-troza";
+import { resolverEspecie, type FuenteCodigoDeTroza, type TrozaParaCodigo } from "@/lib/forestal/codigo-de-troza";
+import { piezasParaGuardar, piezasParaVincular } from "@/lib/forestal/cubicacion-para-guardar";
 import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import CubicadorKpis from "./cubicador-kpis";
@@ -64,8 +65,8 @@ import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-voz";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import {
-  agruparPorEspecie, empiezaBloque, esOrdenFilas, especieAlInicio, ordenarFilas, textoPorTramos, ultimaDictada,
-  unidadDeLargoEnVoz,
+  acomodarAlOrden, empiezaBloque, enOrdenDelPapel, esOrdenFilas, especieAlInicio, numeroDeFila, ordenarFilas,
+  textoPorTramos, ultimaAnotada, unidadDeLargoEnVoz,
   type LargoEnLectura, type OrdenFilas,
 } from "@/lib/forestal/cubicador-bloques-especie";
 import { claveDueno, duenoDictado, opcionesDeDueno, reclavearFichas } from "@/lib/forestal/duenos-cubicador";
@@ -199,9 +200,8 @@ const leerGuardado = (sufijo: string, espacio = ""): string | null => {
   try { return localStorage.getItem(`${storageKey(espacio)}${sufijo}`); } catch { return null; }
 };
 const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-/** Con el orden por especie, cada cambio vuelve a acomodar la tabla en sus bloques. */
-const acomodarFilas = (filas: PiezaCubicada[], orden: OrdenFilas): PiezaCubicada[] =>
-  orden === "especie" ? agruparPorEspecie(filas) : filas;
+/** Por especie o más nuevas primero, cada cambio vuelve a acomodar la tabla (`acomodarAlOrden`). */
+const acomodarFilas = (filas: PiezaCubicada[], orden: OrdenFilas): PiezaCubicada[] => acomodarAlOrden(filas, orden);
 /** Las tres medidas, sin especie: lo que se lee dentro de un tramo de la misma especie. */
 const medidaSinEspecie = (r: PiezaCubicada) => `${r.espesor}, ${r.ancho}, ${r.largo}`;
 /** El largo de una pieza al leer con «Largo fijo al leer» (ver `largoFijoEn`). */
@@ -316,7 +316,10 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   const { confirm } = useConfirm();
   /* Lo cubicado, hacia afuera: quien monta el cubicador dentro de otro flujo
      necesita saber qué hay sin volver a leer localStorage. */
-  useEffect(() => { onLote?.(rows); }, [rows, onLote]);
+  /* Con «más nuevas primero» sale en el orden en que se dictó (`enOrdenDelPapel`):
+     quien lo recibe arma paquetes y corridas, y no tiene por qué heredar la
+     tabla dada vuelta. `ordenRef` ya tiene el orden nuevo cuando `rows` cambia. */
+  useEffect(() => { onLote?.(enOrdenDelPapel(rows, ordenRef.current)); }, [rows, onLote]);
   const [listening, setListening] = useState(false);
   const [liveText, setLiveText] = useState("");        // caption en vivo (interim)
   const [lastAdded, setLastAdded] = useState<PiezaCubicada | null>(null);
@@ -466,8 +469,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
    * que marca no tiene que acordarse de un segundo botón.
    */
   const rowsParaPapel = useMemo(
-    () => (marcadas.size > 0 ? rows.filter((r) => marcadas.has(r.id)) : rows),
-    [rows, marcadas],
+    () => enOrdenDelPapel(marcadas.size > 0 ? rows.filter((r) => marcadas.has(r.id)) : rows, ordenFilas),
+    [rows, marcadas, ordenFilas],
   );
   /**
    * Apartados — función EXTRA: separar el lote en bloques (10, 14, los que
@@ -746,9 +749,10 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   const borrarUltimo = useCallback(() => {
     setRows((prev) => {
       if (!prev.length) return prev;
-      /* Agrupada por especie, la última fila de la tabla no es la última que
-         se dictó: «elimina el último» borra lo que se acaba de anotar. */
-      const victima = ordenRef.current === "especie" ? ultimaDictada(prev) : prev[prev.length - 1];
+      /* Agrupada por especie (o con las nuevas arriba), la última fila de la
+         tabla no es la última que se dictó: «elimina el último» borra lo que se
+         acaba de anotar. */
+      const victima = ultimaAnotada(prev, ordenRef.current);
       const next = prev.filter((r) => r.id !== victima?.id);
       saveLocal(next, espacio);
       return next;
@@ -1146,14 +1150,19 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
    * sentido en el aire; las dos cosas las resuelve `leer` según el sentido que
    * se le pide.
    */
-  const leerTabla = useCallback(
-    () => lecturaVoz.leer(() => rowsRef.current, medidaEnVoz),
-    [lecturaVoz, medidaEnVoz],
-  );
-  const leerTablaAlReves = useCallback(
-    () => lecturaVoz.leer(() => rowsRef.current, medidaEnVoz, undefined, { haciaAtras: true }),
-    [lecturaVoz, medidaEnVoz],
-  );
+  /* ¿Lo que suena es la tabla ENTERA? Entonces el control flotante numera
+     como la columna N° (con «más nuevas primero», de abajo hacia arriba). Un
+     apartado o lo pendiente es otra lista: ahí «fila 3 de 8» es la tercera que
+     se lee de esa lista, como siempre. */
+  const [lecturaDeLaTabla, setLecturaDeLaTabla] = useState(true);
+  const leerTabla = useCallback(() => {
+    setLecturaDeLaTabla(true);
+    lecturaVoz.leer(() => rowsRef.current, medidaEnVoz);
+  }, [lecturaVoz, medidaEnVoz]);
+  const leerTablaAlReves = useCallback(() => {
+    setLecturaDeLaTabla(true);
+    lecturaVoz.leer(() => rowsRef.current, medidaEnVoz, undefined, { haciaAtras: true });
+  }, [lecturaVoz, medidaEnVoz]);
   /* Qué sentido está sonando AHORA: manda cuál de los dos ítems se ofrece como
      «Detener». Terminada la tanda el panel sigue abierto pero ya no lee, por
      eso se mira `readingId` y no el estado. */
@@ -1164,10 +1173,10 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
    * Arranca la lectura DESDE una fila. Es lo que se pide en la práctica: se
    * cortó en la 120 de 300 y no hay por qué escuchar las 119 de antes.
    */
-  const leerDesdeFila = useCallback(
-    (id: string) => lecturaVoz.leerDesde(() => rowsRef.current, medidaEnVoz, id),
-    [lecturaVoz, medidaEnVoz],
-  );
+  const leerDesdeFila = useCallback((id: string) => {
+    setLecturaDeLaTabla(true);
+    lecturaVoz.leerDesde(() => rowsRef.current, medidaEnVoz, id);
+  }, [lecturaVoz, medidaEnVoz]);
 
   /**
    * Dicta SOLO espesor · ancho · largo de un grupo de filas (un apartado, o
@@ -1177,6 +1186,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
    */
   const leerMedidas = useCallback((ids: string[]) => {
     const idSet = new Set(ids);
+    setLecturaDeLaTabla(false);
     lecturaVoz.leer(
       () => rowsRef.current.filter((r) => idSet.has(r.id)),
       (r) => `${r.espesor}, ${r.ancho}, ${r.largo}`,
@@ -1718,7 +1728,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     if (!rows.length || enviando) return;
     const especies = [...new Set(rows.map((r) => r.especie).filter(Boolean))] as string[];
     const speciesCommon = especies.length === 1 ? especies[0] : (especie || null);
-    const porMedida = agruparPor(rows, "medida").grupos;
+    const porMedida = agruparPor(enOrdenDelPapel(rows, ordenFilas), "medida").grupos;
     const resumenTxt = porMedida.slice(0, 6).map((g) => `${g.cantidad}× ${g.label}`).join("; ");
     const cantidad = Math.round(totales.pt * 100) / 100;
     let codigoLote: string | null = null;
@@ -1787,7 +1797,9 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
             especie: speciesCommon || undefined,
             precioPt: precio,
             /* El código de la troza es interno del cubicado: no sale al servidor. */
-            piezas: rowsRef.current.map(sinCodigoDeTroza),
+            /* En el orden del papel, no el de la tabla: con «más nuevas
+               primero» el Anexo 04 saldría al revés (`piezasParaVincular`). */
+            piezas: piezasParaVincular(rowsRef.current, ordenRef.current),
             ctpEntryId: entryId,
           }),
         })
@@ -1832,10 +1844,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           especie: especie || null,
           notas: form.notas.trim() || null,
           precioPt: precio,
-          piezas: rows.map((p) => ({
-            id: p.id, cantidad: p.cantidad, espesor: p.espesor, ancho: p.ancho, largo: p.largo,
-            uEspesor: p.uEspesor, uAncho: p.uAncho, uLargo: p.uLargo, especie: p.especie ?? null,
-          })),
+          /* En el orden del papel: el Anexo 04 numera lo guardado tal cual llega. */
+          piezas: piezasParaGuardar(rows, ordenFilas),
         }),
       });
       if (!r.ok) {
@@ -1915,7 +1925,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
 
   const exportarCSV = () => {
     const head = ["Cantidad", "Espesor", "uEsp", "Ancho", "uAnc", "Largo", "uLar", "Especie", "PieTablar", "m3", "ValorS/"];
-    const lines = rows.map((r) => [r.cantidad, r.espesor, r.uEspesor, r.ancho, r.uAncho, r.largo, r.uLargo, r.especie ?? "", r.pieTablar, r.m3, (r.pieTablar * precioDe(r)).toFixed(2)].join(","));
+    const lines = enOrdenDelPapel(rows, ordenFilas).map((r) => [r.cantidad, r.espesor, r.uEspesor, r.ancho, r.uAncho, r.largo, r.uLargo, r.especie ?? "", r.pieTablar, r.m3, (r.pieTablar * precioDe(r)).toFixed(2)].join(","));
     const csv = "﻿" + [head.join(","), ...lines, ["TOTAL", "", "", "", "", "", "", "", totales.pt.toFixed(2), totales.m3.toFixed(3), valorLote.toFixed(2)].join(",")].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const a = document.createElement("a");
@@ -2462,19 +2472,23 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                 {especiesLote.map((e) => <option key={e} value={e}>{e}</option>)}
                 {haySinEspecie && <option value="__sin__">Sin especie</option>}
               </select>
-              {/* Orden (Brandon, 2026-09-22): no filtra, REORDENA — el N°, la
-                  lectura y el papel lo siguen. Con una sola especie no hay
-                  nada que agrupar, salvo para volver a como se dictó. */}
-              {(especiesLote.length + (haySinEspecie ? 1 : 0) > 1 || ordenFilas === "especie") && (
+              {/* Orden (Brandon, 2026-09-22): no filtra, REORDENA — la lectura
+                  y la tabla lo siguen. «Más nuevas primero» (2026-09-23) va con
+                  una sola especie también: es para ver arriba lo que se acaba
+                  de dictar. «Por especie» sólo se ofrece si hay qué agrupar. */}
+              {(rows.length > 1 || ordenFilas !== "dictado") && (
                 <select
                   value={ordenFilas}
                   onChange={(e) => { if (esOrdenFilas(e.target.value)) cambiarOrden(e.target.value); }}
                   aria-label="Orden de las filas"
-                  title="Como se dictó: en el orden en que entraron las piezas. Por especie: la tabla en bloques de especie, y lo que dictes después cae al final de su bloque."
+                  title="Como se dictó: en el orden en que entraron las piezas. Más nuevas primero: lo último que dictaste arriba, y cada pieza conserva su N°. Por especie: la tabla en bloques de especie, y lo que dictes después cae al final de su bloque."
                   className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
                 >
                   <option value="dictado">Orden: como se dictó</option>
-                  <option value="especie">Orden: por especie</option>
+                  <option value="recientes">Orden: más nuevas primero</option>
+                  {(especiesLote.length + (haySinEspecie ? 1 : 0) > 1 || ordenFilas === "especie") && (
+                    <option value="especie">Orden: por especie</option>
+                  )}
                 </select>
               )}
               {duenosLote.length > 0 && (
@@ -2675,7 +2689,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                         className="h-4 w-4 accent-[var(--accent)]"
                       />
                     </td>
-                    {colsVisibles.numero && <td className="px-2 py-2 text-center font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{indice + 1}</td>}
+                    {colsVisibles.numero && <td className="px-2 py-2 text-center font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{numeroDeFila(indice, rows.length, ordenFilas)}</td>}
                     {colsVisibles.cant && (
                       <td {...sel.props(pos, TCOL.cant)} className={`px-3 py-2 ${sel.seleccionada(pos, TCOL.cant) ? CELDA_SELECCIONADA : ""}`}><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} fila={pos} col={COL_CANT} onKeyDown={teclasTabla} /></td>
                     )}
@@ -2853,6 +2867,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         onReiniciar={lecturaVoz.reiniciar}
         onIrAFila={lecturaVoz.irAFila}
         onCerrar={lecturaVoz.detener}
+        numerarDesdeAbajo={lecturaDeLaTabla && ordenFilas === "recientes"}
       />
 
       {showImportar && (

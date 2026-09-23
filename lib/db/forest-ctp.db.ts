@@ -2157,6 +2157,42 @@ export class ForestCtpDB {
       }));
   }
 
+  /**
+   * Las escrituras de ANULAR una línea, con el cliente que se le pase: `prisma`
+   * desde `annul` (una línea suelta) o la transacción de `ForestCtpAnularDiaDB`
+   * (todas las de un día, todas o ninguna — 2026-09-23). Es UNA sola manera de
+   * anular: el día no reescribe la regla, la repite dentro de su transacción.
+   *
+   * Sin guard de período, auditoría ni caché: eso lo hace quien llama, una vez
+   * por pedido y no por línea.
+   */
+  static async anularLineaEn(
+    db: Pick<Prisma.TransactionClient, "forestCtpEntry" | "woodEntryTroza">,
+    tenantId: string,
+    id: string,
+    reason: string,
+  ) {
+    const e = await db.forestCtpEntry.update({
+      where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
+      data: { status: "anulado", annulledReason: reason.trim() },
+    });
+    // Las piezas vuelven al patio (ADR-326). Anular una corrida deshace el
+    // consumo: en la realidad esa madera está ahí y se va a asserar en otra. Sin
+    // esto quedaban marcadas "ya consumida" para siempre y nadie podía usarlas.
+    await db.woodEntryTroza.updateMany({
+      where: { tenantId, consumidaEnId: id },
+      data: { consumidaEnId: null, fechaConsumo: null },
+    });
+    /* Y las que salieron SIN ASERRAR (ADR-363): anular el despacho es decir que
+       ese camión no salió, así que la madera sigue en el patio. Sin esto la
+       pieza quedaba marcada "ya despachada" para siempre. */
+    await db.woodEntryTroza.updateMany({
+      where: { tenantId, despachadaEnId: id },
+      data: { despachadaEnId: null, fechaDespacho: null },
+    });
+    return e;
+  }
+
   static async annul(tenantId: string, id: string, reason: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("reason is required");
@@ -2175,24 +2211,7 @@ export class ForestCtpDB {
         { periodKey: cerradoAnnul.periodKey },
       );
     }
-    const e = await prisma.forestCtpEntry.update({
-      where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
-      data: { status: "anulado", annulledReason: reason.trim() },
-    });
-    // Las piezas vuelven al patio (ADR-326). Anular una corrida deshace el
-    // consumo: en la realidad esa madera está ahí y se va a asserar en otra. Sin
-    // esto quedaban marcadas "ya consumida" para siempre y nadie podía usarlas.
-    await prisma.woodEntryTroza.updateMany({
-      where: { tenantId, consumidaEnId: id },
-      data: { consumidaEnId: null, fechaConsumo: null },
-    });
-    /* Y las que salieron SIN ASERRAR (ADR-363): anular el despacho es decir que
-       ese camión no salió, así que la madera sigue en el patio. Sin esto la
-       pieza quedaba marcada "ya despachada" para siempre. */
-    await prisma.woodEntryTroza.updateMany({
-      where: { tenantId, despachadaEnId: id },
-      data: { despachadaEnId: null, fechaDespacho: null },
-    });
+    const e = await ForestCtpDB.anularLineaEn(prisma, tenantId, id, reason);
     /* Si a esta corrida se le cobraba el aserrío (ADR-412 §4), ese cargo deja
        de deberse. Awaited para que el saldo de la cuenta ya no lo muestre al
        volver, pero sin poder tumbar la anulación: el libro manda. */

@@ -25,7 +25,7 @@ import { pitido, prepararPitido } from "@/lib/forestal/pitido";
 import { useVozContinua } from "@/hooks/use-voz-continua";
 import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-voz";
 import {
-  agruparPorEspecie, empiezaBloque, esOrdenFilas, especieAlInicio, ordenarFilas, textoPorTramos, ultimaDictada,
+  acomodarAlOrden, empiezaBloque, enOrdenDelPapel, esOrdenFilas, especieAlInicio, numeroDeFila, ordenarFilas, textoPorTramos, ultimaAnotada,
   unidadDeLargoEnVoz,
   type LargoEnLectura, type OrdenFilas,
 } from "@/lib/forestal/cubicador-bloques-especie";
@@ -70,8 +70,8 @@ const COLS_OPCIONALES_TROZA: { key: ColOpcionalTroza; label: string }[] = [
   { key: "m3", label: "m³" },
 ];
 const COLS_DEFAULT_TROZA: Record<ColOpcionalTroza, boolean> = { especie: true, m3: true };
-/** Con el orden por especie, cada cambio vuelve a acomodar el patio en sus bloques. */
-const acomodarTrozas = (filas: Fila[], orden: OrdenFilas): Fila[] => (orden === "especie" ? agruparPorEspecie(filas) : filas);
+/** Por especie o más nuevas primero, cada cambio vuelve a acomodar el patio (`acomodarAlOrden`). */
+const acomodarTrozas = (filas: Fila[], orden: OrdenFilas): Fila[] => acomodarAlOrden(filas, orden);
 /** Alto del visor de la tabla del patio, en px. Constante mientras se scrollea. */
 const ALTO_VISOR_PATIO = 600;
 
@@ -193,7 +193,7 @@ export default function CubicadorTrozas() {
         /* Agrupado por especie, la última fila no es la última dictada. */
         setRows((prev) => {
           if (!prev.length) return prev;
-          const victima = ordenRef.current === "especie" ? ultimaDictada(prev) : prev[prev.length - 1];
+          const victima = ultimaAnotada(prev, ordenRef.current);
           const next = prev.filter((r) => r.id !== victima?.id);
           saveLocal(next);
           return next;
@@ -304,7 +304,9 @@ export default function CubicadorTrozas() {
     [rows],
   );
   /** Con una sola especie no hay nada que agrupar, salvo para volver a como se dictó. */
-  const hayQueOrdenar = especiesActuales.length + (rows.some((r) => !r.especie?.trim()) ? 1 : 0) > 1 || ordenFilas === "especie";
+  const hayQueAgrupar = especiesActuales.length + (rows.some((r) => !r.especie?.trim()) ? 1 : 0) > 1 || ordenFilas === "especie";
+  /* «Más nuevas primero» (2026-09-23) sirve con una sola especie también. */
+  const hayQueOrdenar = rows.length > 1 || ordenFilas !== "dictado";
   /** Cambia el orden y REORDENA el patio. Corta la lectura: seguir por el mismo
    *  índice en otro orden nombraría otra troza que la que se ve. */
   const cambiarOrden = (orden: OrdenFilas) => {
@@ -399,7 +401,7 @@ export default function CubicadorTrozas() {
 
   const exportarCSV = () => {
     const head = ["D1cm", "D2cm", "LargoM", "Especie", "m3"];
-    const lines = rows.map((r) => [r.d1, r.d2, r.largo, r.especie ?? "", r.m3].join(","));
+    const lines = enOrdenDelPapel(rows, ordenFilas).map((r) => [r.d1, r.d2, r.largo, r.especie ?? "", r.m3].join(","));
     const csv = "﻿" + [head.join(","), ...lines, ["TOTAL", "", "", "", Number(totales.m3).toFixed(4)].join(",")].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const a = document.createElement("a");
@@ -593,11 +595,12 @@ export default function CubicadorTrozas() {
                 value={ordenFilas}
                 onChange={(e) => { if (esOrdenFilas(e.target.value)) cambiarOrden(e.target.value); }}
                 aria-label="Orden de las trozas"
-                title="Como se dictó: en el orden en que entraron. Por especie: el patio en bloques, y lo que dictes después cae al final de su bloque."
+                title="Como se dictó: en el orden en que entraron. Más nuevas primero: la última que dictaste arriba, y cada troza conserva su número. Por especie: el patio en bloques, y lo que dictes después cae al final de su bloque."
                 className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] outline-none hover:border-[var(--accent)] focus:border-[var(--accent)]"
               >
                 <option value="dictado">Orden: como se dictó</option>
-                <option value="especie">Orden: por especie</option>
+                <option value="recientes">Orden: más nuevas primero</option>
+                {hayQueAgrupar && <option value="especie">Orden: por especie</option>}
               </select>
             )}
             {/* Columnas opcionales: ocultar/mostrar Especie y m³ — queda
@@ -695,6 +698,9 @@ export default function CubicadorTrozas() {
                      el rótulo de sus botones tienen que seguir siendo el número
                      de la troza en el patio. */
                   const i = ventana.inicioVentana + iVentana;
+                  /* Con «más nuevas primero» cada troza conserva el número con
+                     que se dictó: arriba va la más alta (`numeroDeFila`). */
+                  const n = numeroDeFila(i, rows.length, ordenFilas);
                   /* Agrupado por especie, una raya más marcada separa los bloques
                      (con `!`: `DataTable` pinta el borde de todas las filas con
                      un selector descendiente que le gana a la clase). */
@@ -714,10 +720,10 @@ export default function CubicadorTrozas() {
                             : ""
                     }`}
                   >
-                    <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{i + 1}</td>
-                    <td className="px-3 py-2"><CeldaNum value={r.d1} onChange={(v) => editar(r.id, "d1", v)} etiqueta={`Diámetro 1 de la troza ${i + 1}`} /></td>
-                    <td className="px-3 py-2"><CeldaNum value={r.d2} onChange={(v) => editar(r.id, "d2", v)} etiqueta={`Diámetro 2 de la troza ${i + 1}`} /></td>
-                    <td className="px-3 py-2"><CeldaNum value={r.largo} onChange={(v) => editar(r.id, "largo", v)} etiqueta={`Largo de la troza ${i + 1}`} /></td>
+                    <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{n}</td>
+                    <td className="px-3 py-2"><CeldaNum value={r.d1} onChange={(v) => editar(r.id, "d1", v)} etiqueta={`Diámetro 1 de la troza ${n}`} /></td>
+                    <td className="px-3 py-2"><CeldaNum value={r.d2} onChange={(v) => editar(r.id, "d2", v)} etiqueta={`Diámetro 2 de la troza ${n}`} /></td>
+                    <td className="px-3 py-2"><CeldaNum value={r.largo} onChange={(v) => editar(r.id, "largo", v)} etiqueta={`Largo de la troza ${n}`} /></td>
                     {colsVisibles.especie && <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie ?? "—"}</td>}
                     {colsVisibles.m3 && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(r.m3)}</td>}
                     <td className="px-3 py-2">
@@ -727,13 +733,13 @@ export default function CubicadorTrozas() {
                         <button
                           type="button"
                           onClick={() => lectura.leerDesde(() => rowsRef.current, textoTroza, r.id)}
-                          aria-label={`Leer en voz alta desde la troza ${i + 1}`}
+                          aria-label={`Leer en voz alta desde la troza ${n}`}
                           title="Leer en voz alta desde esta troza en adelante"
                           className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
                         >
                           <Volume2 className="h-3.5 w-3.5" />
                         </button>
-                        <button type="button" onClick={() => borrar(r.id)} aria-label={`Borrar troza ${i + 1}`} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]">
+                        <button type="button" onClick={() => borrar(r.id)} aria-label={`Borrar troza ${n}`} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -837,6 +843,8 @@ export default function CubicadorTrozas() {
         onIrAFila={lectura.irAFila}
         onCerrar={lectura.detener}
         etiqueta="Leyendo el patio"
+        /* Las dos lecturas del patio son de la tabla entera. */
+        numerarDesdeAbajo={ordenFilas === "recientes"}
       />
 
       {catalogoEspecies.modal}

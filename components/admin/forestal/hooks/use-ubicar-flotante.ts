@@ -33,7 +33,7 @@ export interface LugarDelFlotante {
 
 /** Aire contra el borde del diálogo o de la ventana. */
 const MARGEN = 8;
-/** 20 rem. */
+/** 20 rem: el ancho de siempre, si quien abre no pide otro. */
 const ANCHO = 320;
 /** El puente transparente entre casillero y caja (`pt-1.5`). */
 const PUENTE = 6;
@@ -53,8 +53,19 @@ const igual = (a: LugarDelFlotante | null, b: LugarDelFlotante) =>
 /**
  * @param clave  la del casillero (`data-casillero`), que es el ancla.
  * @param columna 0 = lunes … 6 = domingo: el lunes abre a la derecha, el domingo a la izquierda.
+ * @param anchoDeseado lo que pide el contenido; se achica a lo que entra en el diálogo.
+ * @param altoNecesario lo que mide el contenido entero (lo mide el panel). Si
+ *   abajo del casillero no entra, el panel SUBE lo justo —tapando la tira,
+ *   nunca el borde del diálogo— en vez de scrollear: medido a 400 px, el día
+ *   real más cargado pedía 604 px y abajo había 539 (2026-09-23).
  */
-export function useUbicarFlotante(clave: string, columna: number, altoMaximo: number): LugarDelFlotante | null {
+export function useUbicarFlotante(
+  clave: string,
+  columna: number,
+  altoMaximo: number,
+  anchoDeseado = ANCHO,
+  altoNecesario?: number,
+): LugarDelFlotante | null {
   const [lugar, setLugar] = useState<LugarDelFlotante | null>(null);
 
   const ubicar = useCallback(() => {
@@ -79,7 +90,7 @@ export function useUbicarFlotante(clave: string, columna: number, altoMaximo: nu
     const marco = marcoDeFixed(dialogo);
     const base = { left: marco?.left ?? 0, top: marco?.top ?? 0, height: marco?.height ?? window.innerHeight };
 
-    const ancho = Math.max(0, Math.min(ANCHO, vis.right - vis.left - MARGEN * 2));
+    const ancho = Math.max(0, Math.min(anchoDeseado, vis.right - vis.left - MARGEN * 2));
     const deseado =
       columna <= 2 ? a.left : columna >= 4 ? a.right - ancho : a.left + (a.width - ancho) / 2;
     const x = Math.max(vis.left + MARGEN, Math.min(deseado, vis.right - MARGEN - ancho));
@@ -87,20 +98,29 @@ export function useUbicarFlotante(clave: string, columna: number, altoMaximo: nu
     const abajo = vis.bottom - a.bottom - MARGEN - PUENTE;
     const arriba = a.top - vis.top - MARGEN - PUENTE;
     const haciaArriba = abajo < ALTO_MINIMO_ABAJO && arriba > abajo;
+    /* Abajo no entra entero: se sube el panel hasta que entre (o hasta el
+       borde de arriba de lo visible). El puente con el casillero se pierde,
+       pero el panel ya tiene su «×» y el mouse que entra lo mantiene abierto. */
+    const necesita = Math.min(altoNecesario ?? 0, altoMaximo);
+    const subir = !haciaArriba && necesita > abajo;
+    const topSubido = subir ? Math.max(vis.top + MARGEN, vis.bottom - MARGEN - PUENTE - necesita) : 0;
     const nuevo: LugarDelFlotante = {
       destino: dialogo ?? document.body,
       left: Math.round(x - base.left),
       ancho,
-      maxAlto: Math.max(0, Math.round(Math.min(altoMaximo, haciaArriba ? arriba : abajo))),
+      maxAlto: Math.max(
+        0,
+        Math.round(Math.min(altoMaximo, haciaArriba ? arriba : subir ? vis.bottom - MARGEN - PUENTE - topSubido : abajo)),
+      ),
       arriba: haciaArriba,
       ...(haciaArriba
         ? { bottom: Math.round(base.height - (a.top - base.top)) }
-        : { top: Math.round(a.bottom - base.top) }),
+        : { top: Math.round((subir ? topSubido : a.bottom) - base.top) }),
     };
     /* Scrollear adentro del panel también dispara `scroll`: sin esto, cada
        rueda sería un render con la misma posición. */
     setLugar((prev) => (igual(prev, nuevo) ? prev : nuevo));
-  }, [clave, columna, altoMaximo]);
+  }, [clave, columna, altoMaximo, anchoDeseado, altoNecesario]);
 
   /* Antes de pintar: si no, el panel aparece un frame en la esquina. */
   useLayoutEffect(() => {

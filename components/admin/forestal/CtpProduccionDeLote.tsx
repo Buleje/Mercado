@@ -83,6 +83,7 @@ export default function CtpProduccionDeLote({
   onListo,
   onAviso,
   onError,
+  onCambioEnElLibro,
   onCerrar,
   onCerrarLote,
   onIrALotes,
@@ -117,6 +118,11 @@ export default function CtpProduccionDeLote({
    * operador viene a seguir (ADR-365).
    */
   onAviso?: (mensaje: string, detalle: string) => void;
+  /**
+   * Se anuló un día desde la tira de un modal de producción (2026-09-23): el
+   * libro cambió sin cerrar nada. Este bloque relee lo suyo y avisa arriba.
+   */
+  onCambioEnElLibro?: () => void;
   /**
    * Un error que hay que mostrar ARRIBA. Al consumir, el lote deja de estar
    * abierto y este bloque se desmonta: un aviso adentro se iría con él y el
@@ -577,6 +583,10 @@ export default function CtpProduccionDeLote({
           (onAviso ?? onListo)(msg, detalle);
         }}
         onError={onError}
+        onCambioEnElLibro={() => {
+          void estado.recargar();
+          onCambioEnElLibro?.();
+        }}
       />
 
       {/* La regla, dicha antes de la tabla y no descubierta por accidente: el
@@ -694,6 +704,10 @@ export default function CtpProduccionDeLote({
           error={error}
           onConfirmar={(datos) => void registrar(datos)}
           onClose={() => setAbierto(false)}
+          onCambioEnElLibro={() => {
+            void estado.recargar();
+            onCambioEnElLibro?.();
+          }}
         />
       )}
     </section>

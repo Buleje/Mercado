@@ -19,6 +19,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import CtpSemanaDeRegistro from "@/components/admin/forestal/CtpSemanaDeRegistro";
+import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
 import type { JornadaDeProduccion } from "@/components/admin/forestal/hooks/use-jornadas-produccion";
 
 const jornadas = (...filas: JornadaDeProduccion[]) => new Map(filas.map((j) => [j.dia, j]));
@@ -160,14 +161,17 @@ describe("la tira en «Declarar producción» del lote", () => {
   it("aparece al declarar por primera vez", async () => {
     const { default: Modal } = await import("@/components/admin/forestal/CtpRegistrarProduccionModal");
     render(
-      <Modal
-        material={material}
-        fecha="2026-09-16"
-        guardando={false}
-        error={null}
-        onConfirmar={() => {}}
-        onClose={() => {}}
-      />,
+      /* La tira de producción pide confirmación (anular el día): como en el panel, va dentro del proveedor. */
+      <ConfirmDialogProvider>
+        <Modal
+          material={material}
+          fecha="2026-09-16"
+          guardando={false}
+          error={null}
+          onConfirmar={() => {}}
+          onClose={() => {}}
+        />
+      </ConfirmDialogProvider>,
     );
     expect(await screen.findByText("Día del registro")).toBeInTheDocument();
   });
@@ -175,15 +179,18 @@ describe("la tira en «Declarar producción» del lote", () => {
   it("NO aparece al ampliar: esa corrida ya tiene su fecha", async () => {
     const { default: Modal } = await import("@/components/admin/forestal/CtpRegistrarProduccionModal");
     render(
-      <Modal
-        material={material}
-        fecha="2026-09-16"
-        yaDeclaradoM3={4.2}
-        guardando={false}
-        error={null}
-        onConfirmar={() => {}}
-        onClose={() => {}}
-      />,
+      /* La tira de producción pide confirmación (anular el día): como en el panel, va dentro del proveedor. */
+      <ConfirmDialogProvider>
+        <Modal
+          material={material}
+          fecha="2026-09-16"
+          yaDeclaradoM3={4.2}
+          guardando={false}
+          error={null}
+          onConfirmar={() => {}}
+          onClose={() => {}}
+        />
+      </ConfirmDialogProvider>,
     );
     expect(screen.queryByText("Día del registro")).not.toBeInTheDocument();
   });
