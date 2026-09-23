@@ -340,11 +340,19 @@ describe("cobrar en tanda — el resumen sale de los resultados", () => {
     expect(resumirTanda(resultados)).toEqual({
       cobradas: 2,
       importeTotal: 12.75,
+      sinCambio: 0,
       sinCobrar: 1,
       dadasDeBaja: 0,
       importeDadoDeBaja: 0,
     });
-    expect(resumirTanda([])).toEqual({ cobradas: 0, importeTotal: 0, sinCobrar: 0, dadasDeBaja: 0, importeDadoDeBaja: 0 });
+    expect(resumirTanda([])).toEqual({
+      cobradas: 0,
+      importeTotal: 0,
+      sinCambio: 0,
+      sinCobrar: 0,
+      dadasDeBaja: 0,
+      importeDadoDeBaja: 0,
+    });
   });
 
   it("el renglón de auditoría dice cuánto, a quién y cuáles quedaron sin cobrar", () => {
@@ -363,11 +371,56 @@ describe("cobrar en tanda — el resumen sale de los resultados", () => {
       { id: "f", lineNo: 12, cobrado: false, importe: null, parteNombre: null, motivo: MOTIVO_SIN_DUENO, accion: "nada" as const, importeDadoDeBaja: null },
     ];
     const resumen = resumirTanda(conBajas);
-    expect(resumen).toEqual({ cobradas: 2, importeTotal: 12.75, sinCobrar: 4, dadasDeBaja: 2, importeDadoDeBaja: 83.61 });
+    expect(resumen).toEqual({ cobradas: 2, importeTotal: 12.75, sinCambio: 0, sinCobrar: 4, dadasDeBaja: 2, importeDadoDeBaja: 83.61 });
 
     const txt = detalleAuditTanda(conBajas, resumen);
     expect(txt).toContain("4 sin cobrar (N° 9, N° 10, N° 11, N° 12)");
     expect(txt).toContain("2 cargo(s) dado(s) de baja por S/ 83.61 (N° 10, N° 11)");
+  });
+});
+
+describe("#7 — una actualización al mismo importe no es un cobro (seguridad P3, 23-09)", () => {
+  /* Medido en QA: 8 POST del arreglo dejaron 8 renglones «1 cobrada(s) por
+     S/ 53.37» de UN solo cargo. */
+  const igual = {
+    id: "e",
+    lineNo: 30,
+    cobrado: true,
+    importe: 53.37,
+    parteNombre: "QA SECURITY RACE 0923 E",
+    motivo: null,
+    accion: "actualizar" as const,
+    importeAnterior: 53.37,
+    sinCambio: true,
+  };
+
+  it("no se cuenta como cobrada ni suma, y tampoco como «sin cobrar»", () => {
+    expect(resumirTanda([igual])).toEqual({
+      cobradas: 0,
+      importeTotal: 0,
+      sinCambio: 1,
+      sinCobrar: 0,
+      dadasDeBaja: 0,
+      importeDadoDeBaja: 0,
+    });
+  });
+
+  it("el renglón de la tanda lo dice como lo que es", () => {
+    const txt = detalleAuditTanda([igual], resumirTanda([igual]));
+    expect(txt).toContain("0 cobrada(s) por S/ 0.00");
+    expect(txt).toContain("1 ya cobrada(s) sin cambio (N° 30)");
+    expect(txt).not.toMatch(/ 1 cobrada\(s\)/);
+    expect(txt).not.toContain("a QA SECURITY RACE");
+  });
+
+  it("el renglón de la corrida dice «sin cambios», no «Recalculó de S/ X → S/ X»", () => {
+    const p = plan({ hayMovimientoVivo: true });
+    const monto = p.movimiento?.monto ?? 0;
+    const txt = detalleAuditCobro(p, "CC.NN. San Luis", 7, { parteNombre: "CC.NN. San Luis", monto }, true);
+    expect(txt).toBe(`Revisó el cargo de aserrío de la Corrida N° 7: sigue en S/ ${monto.toFixed(2)} a CC.NN. San Luis, sin cambios`);
+    /* Mismo nombre y monto pero el servidor NO dijo «sin cambio» (otra parte que
+       se llama igual): se nombra como recálculo, no se esconde. */
+    expect(detalleAuditCobro(p, "CC.NN. San Luis", 7, { parteNombre: "CC.NN. San Luis", monto })).toMatch(/^Recalculó/);
   });
 });
 

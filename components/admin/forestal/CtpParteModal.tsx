@@ -70,6 +70,7 @@ import CtpPartePrecios from "./CtpPartePrecios";
 import { guardarPreciosPendientes, type PrecioPendiente } from "@/lib/forestal/precio-cliente-borrador";
 import CtpParteVinculos from "./CtpParteVinculos";
 import CtpParteSaldo from "./CtpParteSaldo";
+import CtpTratoSinCobrar from "./CtpTratoSinCobrar";
 import { useTarifasCliente } from "@/hooks/use-tarifas-cliente";
 import { useSaldoParte } from "@/hooks/use-saldo-parte";
 import { crearVinculosPendientes, type VinculoPendiente } from "@/hooks/use-vinculos-parte";
@@ -527,6 +528,8 @@ export default function CtpParteModal({
         {parte && (
           <div className="mb-3">
             <CtpParteSaldo saldo={saldo.saldo} onVerCuenta={() => void verCuenta()} />
+            {/* Lo que su trato no cobró por la fecha (caso WASACO 23-09): explica el saldo. */}
+            <CtpTratoSinCobrar parteId={esCliente ? parte.id : null} onCobrado={() => void saldo.recargar()} />
           </div>
         )}
         {historial && historial.guias > 0 && (

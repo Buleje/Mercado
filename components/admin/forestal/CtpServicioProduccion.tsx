@@ -23,6 +23,7 @@ import { useState } from "react";
 import { Receipt, UserPlus, Warehouse } from "@buleje/design-system/icons";
 import { ETIQUETA_SERVICIO, type TipoServicio } from "@/lib/forestal/declarar-produccion";
 import type { GrupoEspecies } from "@/lib/forestal/precio-cliente";
+import type { BloqueACobrar } from "@/lib/forestal/tarifa-aserrio";
 import { formatCurrency } from "@/lib/format";
 import CtpCobroAserrio, { type DirectorioForestal } from "./CtpCobroAserrio";
 import CtpParteModal from "./CtpParteModal";
@@ -57,6 +58,7 @@ export default function CtpServicioProduccion({
   cargo,
   trato,
   grupos = [],
+  bloques = [],
   calculando = false,
 }: {
   servicio: TipoServicio | null;
@@ -75,6 +77,11 @@ export default function CtpServicioProduccion({
   trato?: TratoDelCliente;
   /** Los grupos de especies de la planta, para nombrar los precios «por grupo». */
   grupos?: readonly GrupoEspecies[];
+  /**
+   * Lo que se declara, como se cobraría: la línea del trato no ofrece
+   * adelantarlo si el trato no pone precio a ninguna de estas especies.
+   */
+  bloques?: readonly BloqueACobrar[];
   /**
    * Todavía se leen el trato, la tarifa o los grupos y hay especies sin precio
    * a mano: el cargo no se sabe. Decir «no se carga nada» mientras tanto es el
@@ -147,7 +154,14 @@ export default function CtpServicioProduccion({
             </Btn>
           </div>
           {comprador && trato && (
-            <CtpLineaDelTrato trato={trato} servicio="venta" fecha={fecha} grupos={grupos} nombre={comprador.nombre} />
+            <CtpLineaDelTrato
+              trato={trato}
+              servicio="venta"
+              fecha={fecha}
+              grupos={grupos}
+              nombre={comprador.nombre}
+              parteId={comprador.id}
+            />
           )}
         </div>
       )}
@@ -169,7 +183,15 @@ export default function CtpServicioProduccion({
             </Btn>
           </div>
           {cliente && trato && (
-            <CtpLineaDelTrato trato={trato} servicio="aserrio" fecha={fecha} grupos={grupos} nombre={cliente.nombre} />
+            <CtpLineaDelTrato
+              trato={trato}
+              servicio="aserrio"
+              fecha={fecha}
+              grupos={grupos}
+              nombre={cliente.nombre}
+              parteId={cliente.id}
+              bloques={bloques}
+            />
           )}
           {cliente && (
             <p

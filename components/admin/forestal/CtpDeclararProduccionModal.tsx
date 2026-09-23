@@ -43,6 +43,7 @@ import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { useRegistrarProduccionSinLote } from "./hooks/use-registrar-produccion-sin-lote";
 import {
   TEXTOS_VACIOS,
+  bloquesDeEspecie,
   faltaParaRegistrar,
   lineasDePrecio,
   mensajeDeRegistro,
@@ -187,6 +188,9 @@ function Dialogo({
     [resumen.especies, corridas, servicio, textos, recordados, version, trato.tarifas, catalogo.grupos, fecha],
   );
   const total = useMemo(() => totalDePrecios(lineas), [lineas]);
+  /* Lo que se cobraría, para que la línea del trato sepa si el trato le pone
+     precio a algo de esta madera (si no, no ofrece adelantarlo). */
+  const bloquesDelTrato = useMemo(() => corridas.flatMap(bloquesDeEspecie), [corridas]);
   const directorio = useDirectorioForestal({ activo: servicio != null });
   const nombreDe = (id: string | null) =>
     id ? (directorio.partes.find((p) => p.id === id)?.nombre ?? null) : null;
@@ -329,6 +333,7 @@ function Dialogo({
               cargo={total}
               trato={trato}
               grupos={catalogo.grupos}
+              bloques={bloquesDelTrato}
               calculando={calculandoCargo}
             />
           </div>

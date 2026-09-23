@@ -641,6 +641,10 @@ export interface ResultadoCobro {
    * «sin cobrar» se lee igual cuando nunca se debió nada y cuando se borró una deuda.
    */
   importeDadoDeBaja?: number | null;
+  /** El monto del cargo vivo ANTES de tocarlo (`null` = no había). */
+  importeAnterior?: number | null;
+  /** `accion: "actualizar"` al mismo importe y a la misma parte: ya estaba cobrada así. */
+  sinCambio?: boolean;
 }
 
 // ── Cómo se lee ──────────────────────────────────────────────────────────────

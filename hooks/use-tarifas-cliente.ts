@@ -28,6 +28,14 @@ export interface DetalleTratosCliente {
 }
 let siguienteOrigen = 0;
 
+/**
+ * Un cambio hecho FUERA de este hook (p. ej. adelantar el trato desde un
+ * aviso): todas las vistas abiertas de ese cliente releen, sin excepción.
+ */
+export function avisarCambioDeTratos(parteId: string): void {
+  avisarCambio(parteId, -1);
+}
+
 function avisarCambio(parteId: string, origen: number): void {
   try {
     window.dispatchEvent(new CustomEvent<DetalleTratosCliente>(EVENTO_TRATOS_CLIENTE, { detail: { parteId, origen } }));

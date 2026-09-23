@@ -180,6 +180,14 @@ export default function CtpCobrarEnTandaModal({
     () => corridas.reduce((max, c) => (c.entryDate > max ? c.entryDate : max), corridas[0]?.entryDate ?? "").slice(0, 10),
     [corridas],
   );
+  /** La línea del trato pregunta con la corrida MÁS VIEJA: si el trato empieza
+   *  en medio de la tanda, las de antes son las que quedarían sin precio. */
+  const referenciaDelTrato = useMemo(() => {
+    const vieja = corridas
+      .reduce((min, c) => (c.entryDate < min ? c.entryDate : min), corridas[0]?.entryDate ?? "")
+      .slice(0, 10);
+    return { fecha: vieja, queMadera: corridas.length > 1 ? "la corrida más vieja" : "esta madera" };
+  }, [corridas]);
 
   /** La cotización de CADA corrida con SU propia fecha — lo que el servidor va
    *  a calcular de verdad, no un total mezclado con tarifas de otros días. Sin
@@ -462,6 +470,7 @@ export default function CtpCobrarEnTandaModal({
 
             <CtpCobroAserrio
               fecha={fechaReferencia}
+              referenciaDelTrato={referenciaDelTrato}
               bloques={bloquesTotal}
               valor={valor}
               labelSinElegir="Elige a quién se le asierra"

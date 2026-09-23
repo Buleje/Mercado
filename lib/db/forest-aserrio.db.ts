@@ -284,7 +284,7 @@ export const ForestAserrioDB = {
            antes de actualizarlo o darlo de baja. */
         const vivo = await tx.forestCuentaMov.findFirst({
           where: { tenantId, ctpEntryId: entryId, deletedAt: null },
-          select: { id: true, monto: true, parteNombre: true },
+          select: { id: true, monto: true, parteNombre: true, parteId: true, contratoId: true, fecha: true, tipo: true, concepto: true },
         });
 
         const plan = planDeCobro({
@@ -318,6 +318,24 @@ export const ForestAserrioDB = {
 
         let movimientoId: string | null = null;
         const m = plan.movimiento;
+        const anterior = vivo ? { parteNombre: vivo.parteNombre, monto: Number(vivo.monto) } : null;
+        /* Se calcula ANTES de escribir: `vivo` es lo que había.
+           El cargo quedó EXACTO como estaba: la corrida ya estaba cobrada así
+           (un reintento, dos pedidos a la vez). Se escribió igual —la
+           cotización nueva queda en la corrida—, pero no es un cobro: la tanda
+           no lo cuenta. Permiso, fecha, tipo y concepto también entran
+           (security 23-09): un cargo que se mudó de permiso cambia el saldo de
+           ese permiso aunque el monto sea el mismo, y eso no es «sin cambios». */
+        const sinCambio =
+          plan.accion === "actualizar" &&
+          vivo != null &&
+          m != null &&
+          vivo.parteId === m.parteId &&
+          Math.abs(Number(vivo.monto) - m.monto) < 0.005 &&
+          (vivo.contratoId ?? null) === (actual.contratoId ?? null) &&
+          vivo.fecha.getTime() === new Date(corrida.entryDate).getTime() &&
+          vivo.tipo === "cargo" &&
+          vivo.concepto === "aserrio_prestado";
         if (m && plan.accion === "crear") {
           const creado = await tx.forestCuentaMov.create({
             data: {
@@ -360,8 +378,7 @@ export const ForestAserrioDB = {
         } else if (vivo && plan.accion === "baja") {
           await tx.forestCuentaMov.update({ where: { id: vivo.id }, data: { deletedAt: new Date() } });
         }
-        const anterior = vivo ? { parteNombre: vivo.parteNombre, monto: Number(vivo.monto) } : null;
-        return { plan, cotizacion, movimientoId, lineNo: actual.lineNo, anterior };
+        return { plan, cotizacion, movimientoId, lineNo: actual.lineNo, anterior, sinCambio };
       }, CTP_TX_OPTS);
 
     let hecho: Awaited<ReturnType<typeof escribir>>;
@@ -376,7 +393,7 @@ export const ForestAserrioDB = {
     }
     if (!hecho) return sinCobro(`La ${ref} ya no está registrada: no se le cobra.`);
 
-    const { plan, cotizacion, movimientoId, lineNo, anterior } = hecho;
+    const { plan, cotizacion, movimientoId, lineNo, anterior, sinCambio } = hecho;
     invalidarLibroYCuenta(tenantId);
     auditCtp({
       tenantId,
@@ -384,7 +401,8 @@ export const ForestAserrioDB = {
       entity: "ForestCtpEntry",
       entityId: entryId,
       detail:
-        detalleAuditCobro(plan, parte.nombre, lineNo, anterior) + (movimientoId ? ` · movimiento ${movimientoId}` : ""),
+        detalleAuditCobro(plan, parte.nombre, lineNo, anterior, sinCambio) +
+        (movimientoId ? ` · movimiento ${movimientoId}` : ""),
       user,
     });
 
@@ -397,6 +415,8 @@ export const ForestAserrioDB = {
       cotizacion,
       accion: plan.accion,
       importeDadoDeBaja: plan.accion === "baja" ? (anterior?.monto ?? null) : null,
+      importeAnterior: anterior?.monto ?? null,
+      sinCambio,
     };
   },
 
@@ -467,6 +487,8 @@ export const ForestAserrioDB = {
             motivo: r.motivo,
             accion: r.accion ?? "nada",
             importeDadoDeBaja: r.importeDadoDeBaja ?? null,
+            importeAnterior: r.importeAnterior ?? null,
+            sinCambio: r.sinCambio === true,
           };
         } catch (err) {
           logger.error("[forest-aserrio.tanda] no se pudo cobrar una corrida", {

@@ -101,6 +101,7 @@ export default function CtpCobroAserrio({
   etiqueta = "¿A quién se le asierra?",
   opcionSinDueno,
   trato: tratoExterno,
+  referenciaDelTrato,
 }: {
   fecha: string;
   bloques: BloqueACobrar[];
@@ -167,6 +168,13 @@ export default function CtpCobroAserrio({
    * lo necesita para su tabla): así no se pide dos veces.
    */
   trato?: TratoDelCliente;
+  /**
+   * Con qué fecha se pregunta si el trato «empieza después» (la línea del
+   * trato), si no es `fecha`. En una tanda es la corrida MÁS VIEJA: con la más
+   * nueva, un trato que empieza en el medio se leía «Precio pactado» y las
+   * corridas de antes quedaban sin precio sin aviso (revisión 23-09).
+   */
+  referenciaDelTrato?: { fecha: string; queMadera: string };
 }) {
   const directorioPropio = useDirectorioForestal({ activo: !directorioExterno });
   const directorio = directorioExterno ?? directorioPropio;
@@ -515,7 +523,16 @@ export default function CtpCobroAserrio({
         )}
         {elegido && (
           <div className="mt-1">
-            <CtpLineaDelTrato trato={trato} servicio="aserrio" fecha={fecha} grupos={catalogo.grupos} nombre={elegido.nombre} />
+            <CtpLineaDelTrato
+              trato={trato}
+              servicio="aserrio"
+              fecha={referenciaDelTrato?.fecha ?? fecha}
+              queMadera={referenciaDelTrato?.queMadera}
+              grupos={catalogo.grupos}
+              nombre={elegido.nombre}
+              parteId={elegido.id}
+              bloques={bloques}
+            />
           </div>
         )}
         {precioInvalido && (

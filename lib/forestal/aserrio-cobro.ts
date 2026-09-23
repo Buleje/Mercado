@@ -262,6 +262,12 @@ export function detalleAuditCobro(
   parteNombre: string,
   lineNo: number | null,
   anterior: CargoAnterior | null = null,
+  /**
+   * El servidor comparó el cargo vivo con el nuevo por `parteId` y monto: es
+   * el mismo. Se pasa, no se deduce del nombre — dos partes pueden llamarse
+   * igual, y el rastro escondería un cambio de dueño.
+   */
+  sinCambio = false,
 ): string {
   const ref = referenciaDeCorrida(lineNo);
   const m = plan.movimiento;
@@ -270,6 +276,10 @@ export function detalleAuditCobro(
     case "crear":
       return `Cargó S/ ${soles(m?.monto ?? 0)} de aserrío a ${parteNombre} por la ${ref} (${m?.notas ?? ""})`;
     case "actualizar":
+      if (sinCambio && m) {
+        /* Un reintento o dos pedidos a la vez: no se recalculó nada, se revisó. */
+        return `Revisó el cargo de aserrío de la ${ref}: sigue en S/ ${soles(m.monto)} a ${parteNombre}, sin cambios`;
+      }
       return (
         `Recalculó el cargo de aserrío de la ${ref}: ` +
         `${antes ? `de ${antes} → ` : ""}S/ ${soles(m?.monto ?? 0)} a ${parteNombre} (${m?.notas ?? ""})`
@@ -362,11 +372,25 @@ export interface ResultadoDeTanda {
   accion?: AccionMovimiento;
   /** El monto del cargo vivo que se dio de baja. */
   importeDadoDeBaja?: number | null;
+  /** El monto del cargo vivo ANTES de tocarlo (`null` = no había). */
+  importeAnterior?: number | null;
+  /**
+   * Se «actualizó» al mismo importe y a la misma parte: la corrida ya estaba
+   * cobrada así. Sigue `cobrado` (tiene su cargo), pero no es un cobro nuevo.
+   */
+  sinCambio?: boolean;
 }
 
 export interface ResumenDeTanda {
+  /** Cobros de verdad: cargos nuevos o que cambiaron. */
   cobradas: number;
   importeTotal: number;
+  /**
+   * Ya estaban cobradas al mismo importe (un reintento, dos pedidos a la vez):
+   * no se cuentan como cobradas ni suman — 8 POST del mismo arreglo dejaban 8
+   * renglones «1 cobrada(s) por S/ 53.37» de un solo cargo.
+   */
+  sinCambio: number;
   sinCobrar: number;
   /**
    * Cargos vivos que la tanda dio de baja, y cuánto sumaban. Van aparte de
@@ -384,12 +408,14 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** El resumen se suma de los resultados, nunca se lleva aparte: dos cuentas se desincronizan. */
 export function resumirTanda(resultados: readonly ResultadoDeTanda[]): ResumenDeTanda {
-  const cobradas = resultados.filter((r) => r.cobrado);
+  const cobradas = resultados.filter((r) => r.cobrado && !r.sinCambio);
+  const iguales = resultados.filter((r) => r.cobrado && r.sinCambio);
   const bajas = resultados.filter((r) => r.accion === "baja");
   return {
     cobradas: cobradas.length,
     importeTotal: r2(cobradas.reduce((a, r) => a + (r.importe ?? 0), 0)),
-    sinCobrar: resultados.length - cobradas.length,
+    sinCambio: iguales.length,
+    sinCobrar: resultados.length - cobradas.length - iguales.length,
     dadasDeBaja: bajas.length,
     importeDadoDeBaja: r2(bajas.reduce((a, r) => a + (r.importeDadoDeBaja ?? 0), 0)),
   };
@@ -408,12 +434,16 @@ const cuales = (rs: readonly ResultadoDeTanda[]) =>
  * cobrar» sin decir cuáles no se puede ir a revisar.
  */
 export function detalleAuditTanda(resultados: readonly ResultadoDeTanda[], resumen: ResumenDeTanda): string {
-  const partes = [...new Set(resultados.filter((r) => r.cobrado && r.parteNombre).map((r) => r.parteNombre as string))];
+  const partes = [
+    ...new Set(resultados.filter((r) => r.cobrado && !r.sinCambio && r.parteNombre).map((r) => r.parteNombre as string)),
+  ];
   const sinCobrar = resultados.filter((r) => !r.cobrado);
+  const iguales = resultados.filter((r) => r.cobrado && r.sinCambio);
   const bajas = resultados.filter((r) => r.accion === "baja");
   return (
     `Cobró el aserrío en tanda: ${resultados.length} corrida(s) · ${resumen.cobradas} cobrada(s) por S/ ${resumen.importeTotal.toFixed(2)}` +
     (partes.length > 0 ? ` a ${partes.join(", ")}` : "") +
+    (iguales.length > 0 ? ` · ${iguales.length} ya cobrada(s) sin cambio (${cuales(iguales)})` : "") +
     ` · ${resumen.sinCobrar} sin cobrar` +
     (sinCobrar.length > 0 ? ` (${cuales(sinCobrar)})` : "") +
     (resumen.dadasDeBaja > 0

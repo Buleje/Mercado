@@ -17,6 +17,7 @@
  * que nadie se entere (regla 4 de code-quality).
  */
 import { logActivity } from "@/lib/activity-logger";
+import { errorSinDatos } from "@/lib/error-sin-datos";
 import { logger } from "@/lib/logger";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
@@ -302,6 +303,8 @@ export type CtpAuditAction =
   // después decide un cobro, y con quién está atada cada parte.
   | "ctp_tarifa_cliente_guardar"
   | "ctp_tarifa_cliente_quitar"
+  /** Adelantó el inicio de un trato para cobrar corridas que quedaron antes (23-09). */
+  | "ctp_tarifa_cliente_adelantar"
   | "ctp_vinculo_parte_crear"
   | "ctp_vinculo_parte_quitar"
   | "ctp_cubicacion_update"
@@ -320,11 +323,8 @@ export type CtpAuditAction =
   | "ctp_anexo04_update"
   | "ctp_anexo04_delete";
 
-/**
- * Registra un evento del libro. No se await-ea a propósito: la auditoría no
- * debe agregar latencia ni romper el write si el log falla.
- */
-export function auditCtp(params: {
+/** Lo que describe un evento del libro. */
+export interface CtpAuditParams {
   tenantId: string;
   action: CtpAuditAction;
   entity: CtpAuditEntity;
@@ -333,21 +333,72 @@ export function auditCtp(params: {
   detail: string;
   /** Username del admin. Nunca inventes uno: si no se sabe, "unknown". */
   user: string;
-}): void {
-  void logActivity(
-    params.action,
-    params.entity,
-    params.detail,
-    params.entityId,
-    params.user || "unknown",
-    undefined,
-    params.tenantId,
-  ).catch((err) =>
-    // Si esto falla, el libro pierde trazabilidad: es un error, no un detalle.
+}
+
+/**
+ * Esperas entre intentos. Bajo carga el renglón se perdía en silencio (8 cobros
+ * a la vez sobre la misma corrida: 13 de 16 renglones, medido 23-09 en QA — y
+ * el que faltaba era el del cargo de verdad): la transacción del log no
+ * conseguía conexión mientras las otras esperaban el lock. Al segundo intento,
+ * con el lock ya liberado, entra.
+ */
+const ESPERAS_REINTENTO_MS = [300, 900] as const;
+/** Tope de tiempo para REINTENTAR (security 23-09): con el pool lleno cada
+ *  intento puede esperar ~2 s por una conexión, y `auditCtpEsperando` va antes
+ *  de responder. Pasado esto no se reintenta más: se loguea y se sigue. */
+const PLAZO_REINTENTOS_MS = 2_000;
+
+const esperar = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Escribe el renglón, reintentando. Nunca tira: el fallo final se loguea como error. */
+async function escribirEvento(params: CtpAuditParams): Promise<void> {
+  let ultimo: unknown = null;
+  let intentos = 0;
+  const t0 = Date.now();
+  for (let intento = 0; intento <= ESPERAS_REINTENTO_MS.length; intento++) {
+    if (intento > 0) {
+      const espera = ESPERAS_REINTENTO_MS[intento - 1];
+      if (Date.now() - t0 + espera > PLAZO_REINTENTOS_MS) break;
+      await esperar(espera);
+    }
+    intentos++;
+    try {
+      await logActivity(
+        params.action,
+        params.entity,
+        params.detail,
+        params.entityId,
+        params.user || "unknown",
+        undefined,
+        params.tenantId,
+        { tirar: true },
+      );
+      return;
+    } catch (err) {
+      ultimo = err;
+    }
+  }
+  // Si esto falla, el libro pierde trazabilidad: es un error, no un detalle.
+  logger.error("[ctp-audit] no se pudo registrar el evento", {
+    error: errorSinDatos(ultimo),
+    intentos,
+    action: params.action,
+    entity: params.entity,
+    entityId: params.entityId,
+    tenantId: params.tenantId,
+  });
+}
+
+/**
+ * Registra un evento del libro. No se await-ea a propósito: la auditoría no
+ * debe agregar latencia ni romper el write si el log falla. Reintenta igual
+ * que `auditCtpEsperando`.
+ */
+export function auditCtp(params: CtpAuditParams): void {
+  escribirEvento(params).catch((err) =>
     logger.error("[ctp-audit] no se pudo registrar el evento", {
-      error: String(err),
+      error: errorSinDatos(err),
       action: params.action,
-      entity: params.entity,
       entityId: params.entityId,
       tenantId: params.tenantId,
     }),
@@ -358,28 +409,12 @@ export function auditCtp(params: {
  * Igual que `auditCtp`, pero se espera. Para el renglón que tiene que quedar
  * escrito ANTES de responder: en Vercel lo que sigue corriendo después de la
  * respuesta puede no terminar, y el resumen de una tanda de cobros no puede
- * perderse así. Nunca tira: auditar no tumba la operación, pero el fallo se loguea.
+ * perderse así. Nunca tira: auditar no tumba la operación, pero el fallo se
+ * loguea — y antes se reintenta, porque «esperar» un renglón que se perdió en
+ * silencio no garantizaba nada.
  */
-export async function auditCtpEsperando(params: Parameters<typeof auditCtp>[0]): Promise<void> {
-  try {
-    await logActivity(
-      params.action,
-      params.entity,
-      params.detail,
-      params.entityId,
-      params.user || "unknown",
-      undefined,
-      params.tenantId,
-    );
-  } catch (err) {
-    logger.error("[ctp-audit] no se pudo registrar el evento", {
-      error: String(err),
-      action: params.action,
-      entity: params.entity,
-      entityId: params.entityId,
-      tenantId: params.tenantId,
-    });
-  }
+export async function auditCtpEsperando(params: CtpAuditParams): Promise<void> {
+  await escribirEvento(params);
 }
 
 /** m³ con la precisión forestal del módulo, para los detalles del log. */

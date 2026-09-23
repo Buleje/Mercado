@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
-import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { auditCtp, auditCtpEsperando } from "@/lib/forestal/ctp-audit";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { esTipoComercial } from "@/lib/forestal/tarifa-aserrio";
 import {
@@ -14,6 +14,7 @@ import {
   type TarifaCliente,
   type TarifaClienteInput,
 } from "@/lib/forestal/precio-cliente";
+import { revisarAdelanto, type MotivoNoAdelanta } from "@/lib/forestal/trato-sin-cobrar";
 import { ForestEspeciesDB } from "./forest-especies.db";
 
 /**
@@ -55,6 +56,20 @@ export class TarifaClienteError extends Error {
   constructor(motivo: string) {
     super(motivo);
     this.name = "TarifaClienteError";
+  }
+}
+
+/**
+ * No se adelanta el trato (ver `revisarAdelanto`). `motivo` decide el estado:
+ * `sin_trato` 404 · `otra_version` 409 · `no_es_antes` 422.
+ */
+export class AdelantoTratoError extends Error {
+  constructor(
+    readonly motivo: MotivoNoAdelanta,
+    mensaje: string,
+  ) {
+    super(mensaje);
+    this.name = "AdelantoTratoError";
   }
 }
 
@@ -254,6 +269,101 @@ export const ForestParteTarifaDB = {
       user,
     });
     return { tarifa, corrigio: Boolean(hecho.previa) };
+  },
+
+  /**
+   * Adelanta el inicio del trato de aserrío: la versión MÁS VIEJA (`tarifaId`)
+   * pasa a regir desde `desde`. Es el arreglo de «el trato empieza después de
+   * la corrida» (caso WASACO, 23-09). Sólo mueve la fecha — los precios de la
+   * versión no cambian — y nunca pisa otra versión: si ya hay una que empieza
+   * antes, `tarifaId` no es la más vieja y se responde 409.
+   *
+   * No cobra nada: cobrar lo que ahora cubre es de `ForestTratoSinCobrarDB`,
+   * por la vía de siempre (`cobrarCorrida`). Idempotente: si ya empieza ese
+   * día devuelve `movio: false` sin escribir.
+   *
+   * @throws ParteNoEncontradaError si la parte no es de este tenant o está
+   *   dada de baja (igual que `guardar`: a una parte de baja no se le pacta ni
+   *   se le mueve un precio).
+   * @throws AdelantoTratoError si no hay trato, cambió, o la fecha no es anterior.
+   */
+  async adelantar(
+    tenantId: string,
+    input: { parteId: string; tarifaId: string; desde: string },
+    user = "unknown",
+  ): Promise<{ tarifa: TarifaCliente; de: string; movio: boolean }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const parte = await prisma.forestParty.findFirst({
+      where: { id: input.parteId, tenantId, deletedAt: null },
+      select: { id: true, nombre: true },
+    });
+    if (!parte) throw new ParteNoEncontradaError();
+
+    const escribir = () => prisma.$transaction(async (tx) => {
+      /* Lock sobre las versiones de aserrío de ESTE cliente: dos adelantos a la
+         vez (doble clic, dos pestañas) o un adelanto y una baja se ordenan acá,
+         y la revisión de abajo lee lo que quedó. */
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestParteTarifa"
+        WHERE "tenantId" = ${tenantId} AND "parteId" = ${parte.id}
+          AND "servicio" = 'aserrio' AND "deletedAt" IS NULL
+        FOR UPDATE
+      `;
+      const rows = await tx.forestParteTarifa.findMany({
+        where: { tenantId, parteId: parte.id, servicio: "aserrio", deletedAt: null },
+        orderBy: [{ vigenteDesde: "asc" }, { createdAt: "asc" }],
+        take: 500,
+      });
+      const tratos = rows.map(aTarifa);
+      const revision = revisarAdelanto(tratos, input.tarifaId, input.desde);
+      if (revision.motivo) throw new AdelantoTratoError(revision.motivo, revision.mensaje);
+      const actual = tratos.find((t) => t.id === input.tarifaId);
+      if (!actual) throw new AdelantoTratoError("otra_version", "Esa versión del trato ya no existe: vuelve a mirar.");
+      if (revision.yaEmpieza) return { tarifa: actual, de: revision.de, movio: false };
+
+      /* La fecha vieja va en el WHERE: si otro pedido la movió entre el lock y
+         acá (no debería, pero es plata), no se escribe sobre lo que no se vio. */
+      const { count } = await tx.forestParteTarifa.updateMany({
+        where: {
+          id: actual.id,
+          tenantId,
+          deletedAt: null,
+          vigenteDesde: new Date(`${revision.de}T00:00:00.000Z`),
+        },
+        data: { vigenteDesde: new Date(`${input.desde}T00:00:00.000Z`) },
+      });
+      if (count === 0) throw new AdelantoTratoError("otra_version", "El trato cambió mientras tanto: vuelve a mirar.");
+      return { tarifa: { ...actual, vigenteDesde: input.desde }, de: revision.de, movio: true };
+    });
+
+    let hecho: Awaited<ReturnType<typeof escribir>>;
+    try {
+      hecho = await escribir();
+    } catch (err) {
+      if (!esChoqueUnico(err)) throw err;
+      /* Otra versión se guardó ESE día mientras tanto (el único parcial la
+         frenó): ya no es la más vieja la que se quería mover. 409, no 500. */
+      throw new AdelantoTratoError("otra_version", "Se guardó otra versión del trato ese día: vuelve a mirar.");
+    }
+
+    /* Sin caché que invalidar: los tratos se leen siempre frescos (ver arriba).
+       Las pantallas abiertas se enteran por `forestal:tratos-cliente`.
+       La auditoría se ESPERA: mueve el precio de un tercero y, en Vercel, lo
+       que corre después de responder puede no terminar (mismo criterio que la
+       tanda). No tira: un fallo de auditoría no deshace el adelanto. */
+    if (hecho.movio) {
+      await auditCtpEsperando({
+        tenantId,
+        action: "ctp_tarifa_cliente_adelantar",
+        entity: "ForestParteTarifa",
+        entityId: hecho.tarifa.id,
+        detail:
+          `Adelantó el precio de servicio de aserrío con ${parte.nombre}: rige desde ${input.desde} ` +
+          `(antes desde ${hecho.de}). Mismos precios: ${resumen(hecho.tarifa)}.`,
+        user,
+      });
+    }
+    return hecho;
   },
 
   /** Baja lógica de una versión. `false` si no existía en este tenant (404). */
