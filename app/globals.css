@@ -1476,6 +1476,19 @@ body {
 .dark .modal-backdrop {
   background: rgb(15 23 42 / 0.72); /* slate-900 72% para dark mode */
 }
+/* Modal FIJADO (ADR-420): el velo deja de tapar y de comerse los clics. Va
+   después de `.dark .modal-backdrop` —misma especificidad— para ganar también
+   en oscuro. `!important` en pointer-events porque Radix pinta el overlay con
+   `style="pointer-events:auto"` INLINE (para cazar el clic de afuera mientras
+   el body está apagado): sin esto el velo seguía comiéndose los clics.
+   Vivía en un `<style jsx global>` de AdminModal que se insertaba al montar el
+   primer modal y obligaba a recalcular el estilo de TODA la página (23-09). */
+.modal-backdrop.ventana-fijada {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  pointer-events: none !important;
+}
 }
 /* Admin shell: mantiene el whiteout blanco (override explicito del usuario). */
 /* NOTE: algunos modales ya aplican su propio `flex items-center` al

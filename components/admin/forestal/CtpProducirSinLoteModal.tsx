@@ -30,7 +30,7 @@
  * es: producción declarada sin materia prima atribuida. Declararle un origen
  * que nadie eligió sería fabricar trazabilidad.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Boxes, Calculator, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
@@ -93,6 +93,9 @@ export default function CtpProducirSinLoteModal({
      vuelven a `null` apenas entran: si no, cada re-render las agregaría otra
      vez. */
   const [aImportar, setAImportar] = useState<PiezaCubicada[] | null>(null);
+  /* Estable: el cubicador está memorizado y una función nueva en cada render lo
+     redibujaría entero al abrir «Declarar» (medido 23-09). */
+  const alImportar = useCallback(() => setAImportar(null), []);
   /* Foco adentro, Tab que no se escapa, Escape que cierra y foco devuelto. Con
      «Declarar» abierto encima, se calla solo (hay otro diálogo arriba). */
   const cajaRef = useRef<HTMLDivElement>(null);
@@ -223,7 +226,7 @@ export default function CtpProducirSinLoteModal({
             espacio={ESPACIO_PRODUCCION}
             onLote={setPiezas}
             piezasAImportar={aImportar}
-            onImportado={() => setAImportar(null)}
+            onImportado={alImportar}
             /* El código de la troza es interno (Brandon, 2026-09-14): no
                entra a `paquetesDeLoCubicado` ni a lo que se registra. */
             codigoDeTroza={trozasParaCodigo}

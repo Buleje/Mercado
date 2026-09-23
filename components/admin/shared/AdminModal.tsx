@@ -215,13 +215,12 @@ export default function AdminModal({
         <Dialog.Overlay
           className={cn(
             "modal-backdrop",
-            "data-[state=open]:animate-modal-overlay-in",
             /* Un peldaño por encima del modal que lo abrió (z-modal-2): velo y panel comparten
              * z-modal-3 y el panel gana por orden del DOM (va después). Para que el
                fondo se oscurezca sobre ÉL y no debajo. */
             aboveModals && "z-modal-3",
             /* Fijado = «lo dejo abierto y sigo trabajando atrás»: el velo no
-               puede seguir tapando ni comiéndose los clics (regla al pie). */
+               puede seguir tapando ni comiéndose los clics (regla en globals.css). */
             ventana.fijado && "ventana-fijada",
           )}
         />
@@ -233,7 +232,6 @@ export default function AdminModal({
             "fixed z-modal bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-[var(--shadow-xl)] outline-none",
             ventana.activa ? POSICION_VENTANA : VARIANT_POSITION[variant],
             VARIANT_CLASSES[variant],
-            "data-[state=open]:animate-modal-in",
             aboveModals && "z-modal-3",
             className,
           )}
@@ -362,52 +360,13 @@ export default function AdminModal({
         </Dialog.Content>
       </Dialog.Portal>
 
-      <style jsx global>{`
-        @keyframes modal-overlay-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-        @keyframes modal-in {
-          from {
-            opacity: 0;
-            transform: ${variant === "side" ? "translateX(16px)" : "translate(-50%, -48%) scale(0.96)"};
-          }
-          to {
-            opacity: 1;
-            transform: ${variant === "side" ? "translateX(0)" : "translate(-50%, -50%) scale(1)"};
-          }
-        }
-        [data-radix-dialog-overlay].animate-modal-overlay-in {
-          animation: modal-overlay-in 180ms ease-out;
-        }
-        [data-radix-dialog-content].animate-modal-in {
-          animation: modal-in 200ms ease-out;
-        }
-        /* Fijado: el velo deja de tapar y de comerse los clics. Va con dos
-           clases para ganarle en especificidad a \`.modal-backdrop\` de
-           globals.css, que trae el oscurecido y el blur. */
-        .modal-backdrop.ventana-fijada {
-          background: transparent;
-          backdrop-filter: none;
-          -webkit-backdrop-filter: none;
-          /* \`!important\` porque Radix pinta el overlay con
-             \`style="pointer-events:auto"\` INLINE (para cazar el clic de afuera
-             mientras el body está apagado). Sin esto, el velo sigue comiéndose
-             los clics aunque ya no se vea: medido, el elemento bajo el cursor
-             seguía siendo \`.modal-backdrop\`. */
-          pointer-events: none !important;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [data-radix-dialog-overlay].animate-modal-overlay-in,
-          [data-radix-dialog-content].animate-modal-in {
-            animation: none !important;
-          }
-        }
-      `}</style>
+      {/* Acá había un `<style jsx global>` con las animaciones `modal-in` y
+          `modal-overlay-in` y la regla del velo fijado. Las animaciones nunca
+          aplicaban (sus selectores pedían `[data-radix-dialog-content]`, que
+          esta versión de Radix no pone: medido 23-09, `animationName: none`)
+          y la hoja se insertaba al montar el primer modal, recalculando el
+          estilo de toda la página. El velo fijado vive en globals.css; la
+          entrada del velo es `modal-backdrop-in`, también de ahí. */}
     </Dialog.Root>
   );
 }

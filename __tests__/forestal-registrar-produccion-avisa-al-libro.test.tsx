@@ -5,6 +5,9 @@
  */
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+/* Import de nivel superior, no dentro del test: su costo va a la recolección y
+   no cuenta contra el límite de 5 s del test (los vi.mock se elevan igual). */
+import Modal from "@/components/admin/forestal/CtpRegistrarProduccionModal";
 
 const H = vi.hoisted(() => ({ props: null as null | { onCambioEnElLibro?: () => void } }));
 vi.mock("@/components/admin/forestal/CtpSemanaDeProduccion", () => ({
@@ -13,6 +16,13 @@ vi.mock("@/components/admin/forestal/CtpSemanaDeProduccion", () => ({
     return <div data-testid="tira">tira</div>;
   },
 }));
+
+/* Paneles hijos que este test no mira: sin simularlos, importar el modal
+   tardaba 2,9 s y en el hook de commit (cientos de tests a la vez) pasaba el
+   límite de 5 s (23-09). Lo que se prueba es el cable de `onCambioEnElLibro`. */
+vi.mock("@/components/admin/forestal/CtpMaterialPanel", () => ({ default: () => null }));
+vi.mock("@/components/admin/forestal/CtpPegarSniffs", () => ({ default: () => null }));
+vi.mock("@/components/admin/forestal/CtpCobroAserrio", () => ({ default: () => null }));
 
 afterEach(() => {
   cleanup();
@@ -27,8 +37,6 @@ it("lo que se anula desde la tira del modal llega a quien lo abrió", async () =
         new Response(JSON.stringify({ jornadas: [], codigos: [], medidas: [] }), { status: 200 }),
     ),
   );
-  const { default: Modal } =
-    await import("@/components/admin/forestal/CtpRegistrarProduccionModal");
   const onCambioEnElLibro = vi.fn();
   render(
     <Modal

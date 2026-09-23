@@ -8,7 +8,7 @@
  * que dictes. Pie tablar + m³, totales, conversiones y CSV. Persiste por tenant
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Columns3, ChevronDown, Maximize2, Minimize2, ArrowUp, UserCheck } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -75,6 +75,10 @@ import {
   leerObservacionGuardada, tomarObservacion, OBSERVACION_MAX, type ObservacionDeCarga,
 } from "@/lib/forestal/observacion-de-pieza";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
+import { AnfitrionDeModales, useModalAislado } from "./hooks/use-modal-aislado";
+
+/** Los modales del cubicador que se abren sin redibujar la tabla. */
+type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "anexo" | "enviar";
 import { formatNumber } from "@/lib/format";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -285,7 +289,7 @@ function IconoLeerAlReves({ className }: { className?: string }) {
   );
 }
 
-export default function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onImportado, codigoDeTroza }: {
+function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onImportado, codigoDeTroza }: {
   onPresent?: () => void;
   /**
    * Sufijo de la clave de almacenamiento. `""` = el lote de siempre (la pestaña
@@ -436,11 +440,12 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       return next;
     });
   }, []);
-  const [showDuenosModal, setShowDuenosModal] = useState(false);
+  /* Los modales del cubicador (Dueños, Especies, Importar, Liquidación, Anexo
+     04, Enviar): abrirlos o cerrarlos no redibuja la tabla (use-modal-aislado). */
+  const modales = useModalAislado<ModalDelCubicador>();
   /* El catálogo de especies de ESTA planta (ADR-410). Una sola lectura para el
      selector, la tabla y el dictado: si el dictado usara otra lista, reconocería
      especies que el selector no ofrece. */
-  const [showEspeciesModal, setShowEspeciesModal] = useState(false);
   const catalogoEspecies = useEspeciesCatalogo();
   const especiesOfrecidas = catalogoEspecies.nombres.length > 0 ? catalogoEspecies.nombres : ESPECIES;
   const [config, setConfig] = useState<CubicadorConfig>(CONFIG_DEFAULT);
@@ -532,10 +537,6 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   const [cubicacionActual, setCubicacionActual] = useState<{ id: string; nombre: string } | null>(null);
   const [showGuardar, setShowGuardar] = useState(false);
   const [showHistorial, setShowHistorial] = useState(false);
-  const [showImportar, setShowImportar] = useState(false);
-  const [showLiquidacion, setShowLiquidacion] = useState(false);
-  const [showPdf, setShowPdf] = useState(false); // vista previa del ANEXO N° 04
-  const [showEnviarModal, setShowEnviarModal] = useState(false);
   const [loteCreado, setLoteCreado] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [guardadoOk, setGuardadoOk] = useState<string | null>(null);
@@ -1840,7 +1841,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   const enviarAlLibro = () => {
     if (!rows.length || enviando) return;
     setLoteCreado(null);
-    setShowEnviarModal(true);
+    modales.abrir("enviar");
   };
 
   /**
@@ -1937,7 +1938,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       }
 
       setEnviado(true);
-      setShowEnviarModal(false);
+      modales.cerrar("enviar");
       pushToast({ tono: "success", msg: "Enviado al Libro CTP", detail: codigoLote ? `Lote ${codigoLote}` : undefined });
     } catch (e) {
       setErrMsg(`No se pudo registrar en el Libro: ${e instanceof Error ? e.message : String(e)}`);
@@ -2113,7 +2114,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         onPlegar={() => setPlegados((v) => ({ ...v, voz: true }))}
         grillaId={GRILLA_CARGA}
         onPresent={onPresent}
-        onImportar={() => setShowImportar(true)}
+        onImportar={() => modales.abrir("importar")}
         showAjustes={showAjustes}
         onToggleAjustes={() => setShowAjustes((v) => !v)}
         config={config}
@@ -2130,12 +2131,12 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         especie={especie}
         onEspecieChange={setEspecie}
         especies={especiesOfrecidas}
-        onAbrirEspecies={() => setShowEspeciesModal(true)}
+        onAbrirEspecies={() => modales.abrir("especies")}
         dueno={dueno}
         duenoDelDirectorio={Boolean(dueno && duenoParteId)}
         onDuenoChange={aplicarDueno}
         duenosConocidos={duenosParaElegir}
-        onAbrirDuenos={() => setShowDuenosModal(true)}
+        onAbrirDuenos={() => modales.abrir("duenos")}
         liveGroups={liveGroups}
         errMsg={errMsg}
         lastAdded={lastAdded}
@@ -2174,7 +2175,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           sinDirectorio={sinDirectorio}
           vinculables={vinculables}
           onVincular={vincularConFichas}
-          onAbrirDirectorio={() => setShowDuenosModal(true)}
+          onAbrirDirectorio={() => modales.abrir("duenos")}
           plegado={plegados.precio}
           onPlegado={(v) => setPlegados((prev) => ({ ...prev, precio: v }))}
         />
@@ -2296,7 +2297,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                       label: "Liquidación",
                       Icono: Receipt,
                       hint: "Comprobante de liquidación por especie para el comprador",
-                      onClick: () => setShowLiquidacion(true),
+                      onClick: () => modales.abrir("liquidacion"),
                     },
                     {
                       key: "leer",
@@ -2330,7 +2331,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                       Icono: FileText,
                       badge: marcadas.size > 0 ? `${marcadas.size} pza` : undefined,
                       hint: marcadas.size > 0 ? `Vista previa con las ${marcadas.size} piezas marcadas` : "Vista previa del ANEXO N° 04 antes de descargar",
-                      onClick: () => setShowPdf(true),
+                      onClick: () => modales.abrir("anexo"),
                     },
                     {
                       key: "excel",
@@ -3011,72 +3012,78 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         numerarDesdeAbajo={lecturaDeLaTabla && ordenFilas === "recientes"}
       />
 
-      {showImportar && (
-        <ImportarCubicacionModal
-          filasActuales={rows.length}
-          duenos={duenosParaElegir}
-          onAgregar={(piezas) => { agregarVarias(piezas); setEnviado(false); }}
-          onCerrar={() => setShowImportar(false)}
-        />
-      )}
+      <AnfitrionDeModales modales={modales}>
+        {(abiertos, cerrar) => (
+          <>
+            {abiertos.has("importar") && (
+              <ImportarCubicacionModal
+                filasActuales={rows.length}
+                duenos={duenosParaElegir}
+                onAgregar={(piezas) => { agregarVarias(piezas); setEnviado(false); }}
+                onCerrar={() => cerrar("importar")}
+              />
+            )}
 
-      {showEspeciesModal && (
-        <CtpEspeciesCatalogoModal
-          open={showEspeciesModal}
-          onClose={() => setShowEspeciesModal(false)}
-          onCambio={() => void catalogoEspecies.recargar()}
-        />
-      )}
+            {abiertos.has("especies") && (
+              <CtpEspeciesCatalogoModal
+                open
+                onClose={() => cerrar("especies")}
+                onCambio={() => void catalogoEspecies.recargar()}
+              />
+            )}
 
-      {showDuenosModal && (
-        <DuenosModal
-          duenos={duenosConocidos}
-          actual={dueno}
-          onAgregar={recordarDueno}
-          onQuitar={olvidarDueno}
-          onElegir={(d) => { aplicarDueno(d); setShowDuenosModal(false); }}
-          actualParteId={dueno ? duenoParteId : null}
-          onElegirParte={(p) => { elegirDuenoDelDirectorio(p); setShowDuenosModal(false); }}
-          fichaDe={fichaDe}
-          onAtar={atarFichaDueno}
-          onClose={() => setShowDuenosModal(false)}
-        />
-      )}
+            {abiertos.has("duenos") && (
+              <DuenosModal
+                duenos={duenosConocidos}
+                actual={dueno}
+                onAgregar={recordarDueno}
+                onQuitar={olvidarDueno}
+                onElegir={(d) => { aplicarDueno(d); cerrar("duenos"); }}
+                actualParteId={dueno ? duenoParteId : null}
+                onElegirParte={(p) => { elegirDuenoDelDirectorio(p); cerrar("duenos"); }}
+                fichaDe={fichaDe}
+                onAtar={atarFichaDueno}
+                onClose={() => cerrar("duenos")}
+              />
+            )}
 
-      {showLiquidacion && (
-        <LiquidacionModal
-          rows={rows}
-          precioDe={precioDe}
-          clienteInicial={form.cliente}
-          notaInicial={form.notas}
-          onCerrar={() => setShowLiquidacion(false)}
-        />
-      )}
+            {abiertos.has("liquidacion") && (
+              <LiquidacionModal
+                rows={rows}
+                precioDe={precioDe}
+                clienteInicial={form.cliente}
+                notaInicial={form.notas}
+                onCerrar={() => cerrar("liquidacion")}
+              />
+            )}
 
-      {showPdf && (
-        <Anexo04Modal
-          rows={rowsParaPapel}
-          especieGlobal={especie || undefined}
-          onPdfDetallado={() => descargarConAviso(
-            exportarPDF(rowsParaPapel, { precioPt: precio, especieGlobal: especie || undefined, precioDe: precioVariable ? precioDe : undefined, asignados, nombresApartado }),
-            "PDF detallado generado", "No se pudo generar el PDF.",
-          )}
-          onAviso={(msg, tono) => pushToast({ tono, msg })}
-          onCerrar={() => setShowPdf(false)}
-        />
-      )}
+            {abiertos.has("anexo") && (
+              <Anexo04Modal
+                rows={rowsParaPapel}
+                especieGlobal={especie || undefined}
+                onPdfDetallado={() => descargarConAviso(
+                  exportarPDF(rowsParaPapel, { precioPt: precio, especieGlobal: especie || undefined, precioDe: precioVariable ? precioDe : undefined, asignados, nombresApartado }),
+                  "PDF detallado generado", "No se pudo generar el PDF.",
+                )}
+                onAviso={(msg, tono) => pushToast({ tono, msg })}
+                onCerrar={() => cerrar("anexo")}
+              />
+            )}
 
-      {showEnviarModal && (
-        <EnviarLibroModal
-          piezas={totales.piezas}
-          pieTablar={totales.pt}
-          m3={totales.m3}
-          especie={(() => { const e = [...new Set(rows.map((r) => r.especie).filter(Boolean))] as string[]; return e.length === 1 ? e[0] : (especie || null); })()}
-          enviando={enviando}
-          onConfirmar={confirmarEnvio}
-          onCerrar={() => setShowEnviarModal(false)}
-        />
-      )}
+            {abiertos.has("enviar") && (
+              <EnviarLibroModal
+                piezas={totales.piezas}
+                pieTablar={totales.pt}
+                m3={totales.m3}
+                especie={(() => { const e = [...new Set(rows.map((r) => r.especie).filter(Boolean))] as string[]; return e.length === 1 ? e[0] : (especie || null); })()}
+                enviando={enviando}
+                onConfirmar={confirmarEnvio}
+                onCerrar={() => cerrar("enviar")}
+              />
+            )}
+          </>
+        )}
+      </AnfitrionDeModales>
 
       {/* La cuenta de lo marcado, fija al pie como en una planilla: la tabla
           puede tener trescientas filas y la selección quedar fuera de pantalla. */}
@@ -3304,3 +3311,11 @@ function Dim({ v, u, estandar, onEstandar, onV, etiqueta, fila, col, onKeyDown }
     </span>
   );
 }
+
+/**
+ * Memorizado: «Producir sin lote» se redibuja al abrir «Declarar» o al recibir
+ * cada pieza nueva (`onLote`), y sin esto arrastraba al cubicador entero con él
+ * (medido 23-09: ~0,9 s por apertura en desarrollo). Las props que le pasan son
+ * estables; si una deja de serlo, esto deja de ahorrar pero no rompe nada.
+ */
+export default memo(CubicadorMadera);
