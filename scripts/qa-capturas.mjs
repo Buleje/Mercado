@@ -31,7 +31,7 @@
  * Cada captura mide el fondo del centro de la pantalla (`fondoCentro`): el
  * tema se mide, no se mira en la miniatura.
  *
- * Sale un JSON: capturas, respuestas ≥400 (con ruta), nº de errores de consola,
+ * Sale un JSON: capturas, respuestas ≥400 (con ruta), errores de consola (nº y textos),
  * pageerror, evals y ms.
  * Código 1 si hubo `pageerror` o falló un paso.
  */
@@ -121,7 +121,33 @@ async function matriz(page, nombre, t) {
     await page.setViewportSize({ width: ancho, height: 900 });
     await page.waitForTimeout(200);
     const archivo = path.join(salida, `${nombre}-${t}-${ancho}.png`);
-    await page.screenshot({ path: archivo, fullPage: completa });
+    if (completa) {
+      /* `fullPage: true` estira la ventana EN el disparo: los gráficos de
+         recharts se re-miden, reinician la animación y salen con las barras en
+         cero (medido 23-09 en Reportes: 13 barras en el DOM, 0 en la foto). Se
+         agranda la ventana ANTES y se espera a que terminen de dibujarse. */
+      /* El fondo del CONTENIDO, no `scrollHeight`: volviendo de la ventana
+         alta de 1280, a 400 medía 8 900 px con 4 000 de contenido (el resto,
+         capturas en blanco). Lo `fixed` (barra de abajo, FAB) no cuenta. Se
+         espera a que el cambio de ancho se asiente: medido a los 200 ms, la
+         vista todavía tenía el largo de la ventana anterior. */
+      await page.waitForTimeout(1000);
+      const alto = await page.evaluate(() => {
+        const total = document.scrollingElement?.scrollHeight ?? document.body.scrollHeight;
+        const raiz = document.querySelector("main") ?? document.body;
+        let fondo = 0;
+        for (const e of raiz.querySelectorAll("*")) {
+          const r = e.getBoundingClientRect();
+          if (r.height > 0 && getComputedStyle(e).position !== "fixed") fondo = Math.max(fondo, r.bottom + scrollY);
+        }
+        return fondo > 0 ? Math.min(total, Math.ceil(fondo) + 32) : total;
+      });
+      await page.setViewportSize({ width: ancho, height: Math.min(Math.max(alto, 900), 12_000) });
+      await page.waitForTimeout(1500);
+      await page.screenshot({ path: archivo });
+    } else {
+      await page.screenshot({ path: archivo });
+    }
     capturas.push({ archivo, fondoCentro: await fondoCentro(page) });
   }
   await page.setViewportSize({ width: anchos[0] ?? 1280, height: 900 });
@@ -193,5 +219,5 @@ try {
 }
 
 const ok = !falla && pageerrors.length === 0;
-console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas, respuestas: [...new Set(respuestas)], consola: consola.length, pageerrors, evals, ms: Date.now() - t0 }, null, 1));
+console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas, respuestas: [...new Set(respuestas)], consola: consola.length, consolaTextos: [...new Set(consola)].slice(0, 8), pageerrors, evals, ms: Date.now() - t0 }, null, 1));
 process.exit(ok ? 0 : 1);
