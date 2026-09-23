@@ -16,7 +16,7 @@
 import { useId } from "react";
 import {
   Calculator, FileSpreadsheet, Settings, Mic, MicOff, Volume2, VolumeX,
-  Lock, Unlock, X, Check, RotateCcw, Plus, Settings2, Trees, Play, UserCheck,
+  Lock, Unlock, X, Check, RotateCcw, Plus, Settings2, Trees, Play, Pause, UserCheck,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -64,6 +64,12 @@ interface PanelEntradaVozProps {
   listening: boolean;
   onToggleListen: () => void;
   paused: boolean;
+  /**
+   * Alterna pausa/reanudar — mismo efecto exacto que la voz «pausa»/«continúa»
+   * (Brandon, 2026-09-23). El botón sólo se dibuja mientras escucha; la tecla
+   * Espacio pasa por acá desde `CubicadorMadera` (listener en window).
+   */
+  onTogglePausa: () => void;
   fijas: MedidasFijas;
   onAplicarFijas: (next: MedidasFijas) => void;
   especie: string;
@@ -114,7 +120,7 @@ interface PanelEntradaVozProps {
 export default function PanelEntradaVoz({
   grillaId, onPresent, onPlegar, onImportar, showAjustes, onToggleAjustes,
   config, onUpdateConfig, voices, onProbarVoz,
-  supported, listening, onToggleListen, paused,
+  supported, listening, onToggleListen, paused, onTogglePausa,
   fijas, onAplicarFijas, especie, onEspecieChange, especies = ESPECIES, onAbrirEspecies,
   dueno, duenoDelDirectorio = false, onDuenoChange, duenosConocidos, onAbrirDuenos,
   liveGroups, errMsg, lastAdded, addedFlash, onDeshacer, fmtPt,
@@ -219,7 +225,7 @@ export default function PanelEntradaVoz({
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-base font-extrabold text-[var(--text-primary)]">
                     {paused
-                      ? "En pausa — di «continúa» para seguir"
+                      ? "En pausa — Espacio o di «continúa» para seguir"
                       : listening
                         ? "Escuchando…"
                         : "Toca el micrófono y dicta"}
@@ -232,6 +238,27 @@ export default function PanelEntradaVoz({
                     ariaLabel="Cómo se dicta: comandos por voz y atajos"
                     body={<AyudaDeVoz />}
                   />
+                  {/* Mismo botón que la voz «pausa»/«continúa» — Brandon,
+                      2026-09-23: «quiero comando que entender para pausar y
+                      reanudar, que se cumpla siempre esa tecla al estar ese
+                      panel». Sólo mientras escucha: pausado no hay nada que
+                      pausar dos veces. */}
+                  {listening && (
+                    <button
+                      type="button"
+                      onClick={onTogglePausa}
+                      aria-pressed={paused}
+                      title={paused ? "Reanudar el dictado (Espacio)" : "Pausar el dictado (Espacio)"}
+                      className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition ${
+                        paused
+                          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      {paused ? <Play className="h-3.5 w-3.5" aria-hidden /> : <Pause className="h-3.5 w-3.5" aria-hidden />}
+                      {paused ? "Reanudar" : "Pausar"} · <Tecla>Espacio</Tecla>
+                    </button>
+                  )}
                 </div>
                 <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                   {numerosPorPieza(fijas) === 3 ? (
@@ -698,6 +725,7 @@ function AyudaDeVoz() {
         </p>
         <ul className="mt-1 space-y-1">
           <li><Cmd>&laquo;pausa&raquo;</Cmd> / <Cmd>&laquo;continúa&raquo;</Cmd> — el micrófono deja de anotar y retoma.</li>
+          <li><Tecla>Espacio</Tecla> hace lo mismo sin hablar — y <Tecla>Ctrl</Tecla>+<Tecla>Espacio</Tecla> alterna aunque el cursor esté escribiendo en Observación o Código.</li>
           <li><Cmd>&laquo;elimina el último&raquo;</Cmd> — borra la pieza recién dictada.</li>
           <li><Cmd>&laquo;especie tornillo&raquo;</Cmd> — de acá en adelante todo entra con esa especie.</li>
           <li>

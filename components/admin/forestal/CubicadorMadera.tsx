@@ -53,6 +53,7 @@ import {
   type ColumnaSeleccionable,
 } from "./seleccion-celdas";
 import PanelEntradaVoz from "./cubicador-entrada-voz";
+import { debeAlternarPausaCubicador, type ElementoConFoco } from "@/lib/forestal/cubicador-atajo-pausa";
 import { resolverEspecie, type FuenteCodigoDeTroza, type TrozaParaCodigo } from "@/lib/forestal/codigo-de-troza";
 import { piezasParaGuardar, piezasParaVincular } from "@/lib/forestal/cubicacion-para-guardar";
 import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
@@ -631,6 +632,9 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     return () => window.removeEventListener("click", cerrar);
   }, [colsMenuOpen]);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
+  /** El nodo raíz de TODO el cubicador — con qué comparar si un diálogo que
+   *  se abrió encima (Dueños, Especies, Declarar…) lo contiene o es ajeno. */
+  const cubicadorRootRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(0);
   const especieRef = useRef(especie);
   const duenoRef = useRef(dueno);
@@ -720,6 +724,27 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       ecoRef.current = { hasta, texto: dicho };
     });
   }, []);
+
+  /**
+   * Pausar/reanudar el dictado: MISMO efecto para la voz («pausa»/«continúa»)
+   * y para la tecla Espacio (Brandon, 2026-09-23) — ref al toque, carry
+   * vacío, caption apagado, aviso hablado. La voz manda un estado explícito
+   * (pausar SIEMPRE pausa, continuar SIEMPRE reanuda); `alternarPausa` es lo
+   * que usa la tecla, que no sabe en qué estado está y necesita invertirlo.
+   */
+  const pausarDictado = useCallback(() => {
+    pausedRef.current = true; setPaused(true);
+    carryRef.current = { nums: [], ts: 0 }; setLiveText("");
+    hablar("en pausa");
+  }, [hablar]);
+  const reanudarDictado = useCallback(() => {
+    pausedRef.current = false; setPaused(false);
+    carryRef.current = { nums: [], ts: 0 }; setLiveText("");
+    hablar("sigo");
+  }, [hablar]);
+  const alternarPausa = useCallback(() => {
+    if (pausedRef.current) reanudarDictado(); else pausarDictado();
+  }, [pausarDictado, reanudarDictado]);
 
   // Las filas sí se cargan por efecto: no hay ningún efecto que las persista
   // (se guardan a mano en `persist`), así que no compiten por el mismo lugar.
@@ -836,8 +861,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       // ── COMANDOS DE VOZ ──
       const cmd = detectarComando(texto, configRef.current.comandos);
       if (cmd) {
-        if (cmd.tipo === "pausar") { pausedRef.current = true; setPaused(true); carryRef.current = { nums: [], ts: 0 }; setLiveText(""); hablar("en pausa"); }
-        else if (cmd.tipo === "continuar") { pausedRef.current = false; setPaused(false); carryRef.current = { nums: [], ts: 0 }; setLiveText(""); hablar("sigo"); }
+        if (cmd.tipo === "pausar") { pausarDictado(); }
+        else if (cmd.tipo === "continuar") { reanudarDictado(); }
         else if (cmd.tipo === "borrar-ultimo") { borrarUltimo(); hablar("borrado"); }
         else if (cmd.tipo === "fijar") {
           // Fijar cambia cuántos números trae cada pieza: lo que quedó a medio
@@ -1050,7 +1075,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     };
     recRef.current = rec;
     return () => { wantListeningRef.current = false; try { rec.stop(); } catch { /* ignore */ } };
-  }, [addPieza, updateRow, borrarUltimo, hablar, aplicarFijas, aplicarDueno, tomarObservacionDeCarga]);
+  }, [addPieza, updateRow, borrarUltimo, hablar, aplicarFijas, aplicarDueno, tomarObservacionDeCarga, pausarDictado, reanudarDictado]);
 
   /**
    * La lectura en voz alta vive en `use-lectura-en-voz`, compartida con el
@@ -1149,6 +1174,49 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     void wakeLock(true);
     try { rec.start(); setListening(true); } catch { /* ya corriendo */ }
   }, [stopLeer, wakeLock]);
+
+  /**
+   * Espacio pausa/reanuda el dictado — la MISMA tecla, siempre, mientras este
+   * panel está escuchando (Brandon, 2026-09-23). Captura en window (fase de
+   * CAPTURA, antes que cualquier botón enfocado la interprete como "click" o
+   * como scroll) y decide con `debeAlternarPausaCubicador` (función pura en
+   * `lib/forestal/`, con sus propios tests): un campo de texto de verdad
+   * (Observación, Código) sigue escribiendo espacios, y un diálogo AJENO
+   * abierto encima (Dueños, Especies, Declarar…) se queda con la tecla. Sólo
+   * se engancha mientras `listening` es true — no hay nada que alternar si el
+   * micrófono está apagado.
+   */
+  useEffect(() => {
+    if (!listening) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const raw = e.target;
+      const el = raw instanceof Element ? raw : null;
+      const foco: ElementoConFoco | null = el
+        ? {
+            tagName: el.tagName,
+            type: el.getAttribute("type"),
+            inputMode: el.getAttribute("inputmode"),
+            isContentEditable: (el as HTMLElement).isContentEditable === true,
+          }
+        : null;
+      const root = cubicadorRootRef.current;
+      let dialogoAjenoAbierto = false;
+      if (root && el) {
+        const dialogo = el.closest('[role="dialog"], [role="alertdialog"], [aria-modal="true"]');
+        dialogoAjenoAbierto = !!dialogo && !dialogo.contains(root);
+      }
+      const alternar = debeAlternarPausaCubicador(
+        { key: e.key, ctrlKey: e.ctrlKey, metaKey: e.metaKey, repeat: e.repeat },
+        { listening, foco, dialogoAjenoAbierto },
+      );
+      if (!alternar) return;
+      e.preventDefault();
+      e.stopPropagation();
+      alternarPausa();
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [listening, alternarPausa]);
 
   // Editar una fila por voz: seleccionás la fila, dictás 3 números y la cambia.
   const startEdit = useCallback((rowId: string) => {
@@ -1997,7 +2065,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       .catch(() => { setErrMsg(err); pushToast({ tono: "error", msg: err }); });
 
   return (
-    <div className="group relative space-y-4">
+    <div ref={cubicadorRootRef} className="group relative space-y-4">
       {/* Lo que llevás medido, antes del micrófono: los tres números que decide
           el módulo (m³, pie tablar, piezas) estaban sólo abajo de la tabla o
           detrás del panel de Resumen, y se carga mirando acá arriba. */}
@@ -2056,6 +2124,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         listening={listening}
         onToggleListen={toggleListen}
         paused={paused}
+        onTogglePausa={alternarPausa}
         fijas={fijas}
         onAplicarFijas={aplicarFijas}
         especie={especie}

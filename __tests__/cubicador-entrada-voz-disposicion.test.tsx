@@ -30,6 +30,7 @@ const props = (extra: Partial<Props> = {}): Props => ({
   listening: false,
   onToggleListen: vi.fn(),
   paused: false,
+  onTogglePausa: vi.fn(),
   fijas: {},
   onAplicarFijas: vi.fn(),
   especie: "",
@@ -100,6 +101,24 @@ describe("PanelEntradaVoz — disposición de «Cargar piezas»", () => {
   it("los Ajustes se abren adentro de la caja", () => {
     render(<PanelEntradaVoz {...props({ showAjustes: true })} />);
     expect(within(caja()).getByText("Comandos de voz (separados por coma)")).toBeInTheDocument();
+  });
+
+  it("el botón de pausa (Espacio) sólo aparece mientras escucha, y llama a onTogglePausa", () => {
+    const onTogglePausa = vi.fn();
+    const { rerender } = render(<PanelEntradaVoz {...props({ listening: false, onTogglePausa })} />);
+    expect(screen.queryByRole("button", { name: /Pausar/ })).toBeNull();
+
+    rerender(<PanelEntradaVoz {...props({ listening: true, onTogglePausa })} />);
+    const boton = screen.getByRole("button", { name: /Pausar.*Espacio/ });
+    expect(boton).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(boton);
+    expect(onTogglePausa).toHaveBeenCalledTimes(1);
+  });
+
+  it("en pausa el botón dice Reanudar y el texto menciona Espacio", () => {
+    render(<PanelEntradaVoz {...props({ listening: true, paused: true, onTogglePausa: vi.fn() })} />);
+    expect(screen.getByRole("button", { name: /Reanudar.*Espacio/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("En pausa — Espacio o di «continúa» para seguir")).toBeInTheDocument();
   });
 
   it("el toggle de voz de la fila manual sigue estando", () => {
