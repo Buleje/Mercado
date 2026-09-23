@@ -40,6 +40,7 @@
 import { toFeet, toInches, type Unidad } from "./cubicacion";
 import { volumenDimensionado } from "./produccion-paquetes";
 import { avisosDeCifra, type AvisoDeCifra } from "./produccion-cifras-imposibles";
+import { acercarAEscala } from "./escala-de-medida";
 
 // ── Lo tipeado ↔ lo que guarda el libro ─────────────────────────────────────
 
@@ -114,11 +115,11 @@ export function aEscuadriaDelLibro(t: EscuadriaTipeada): EscuadriaDelLibro {
 }
 
 /**
- * Lo guardado, puesto en el formulario.
+ * Lo guardado, puesto en el formulario — en **cm y m**, tal cual está escrito.
  *
- * Se abre en **cm y m**, que es como está escrito: reconvertir 1.52 m a pies da
- * 4.99, y un operador que ve «4.99 pies» donde midió 5 desconfía de la pantalla
- * con razón. Para cargar de cero, la plaza tiene `ESCUADRIA_EN_BLANCO`.
+ * El modal de escuadría ya NO abre así (ver `aEscuadriaEnPulgadas`): esta
+ * queda para quien necesite mostrar la medida como la guarda el libro, sin
+ * pasarla por la plaza. Para cargar de cero, la plaza tiene `ESCUADRIA_EN_BLANCO`.
  */
 export function aEscuadriaTipeada(m: EscuadriaDelLibro): EscuadriaTipeada {
   const txt = (v: number | null) => (v != null && v > 0 ? String(v) : "");
@@ -129,6 +130,34 @@ export function aEscuadriaTipeada(m: EscuadriaDelLibro): EscuadriaTipeada {
     uEspesor: "cm",
     uAncho: "cm",
     uLargo: "m",
+  };
+}
+
+/**
+ * Lo guardado, puesto en el formulario — SIEMPRE en **pulgadas y pies**
+ * (Brandon, 2026-09-23: «en general el espesor y el ancho son en pulgadas y el
+ * largo en pies»). Medido contra el libro real de Blas: de 227 paquetes, 197
+ * tienen escuadría, y **los 197** miden una media pulgada exacta — se cantaron
+ * en pulgadas en la sierra, y el libro sólo guarda su conversión a cm/m con dos
+ * decimales.
+ *
+ * La vuelta usa `acercarAEscala` (el mismo criterio que `piezasDesdePaquetes`
+ * en `CtpResumenDeJornadasModal`, mismos pasos y tolerancias): 2.44 m son
+ * 8.0052 pies, y sin acercar la pantalla mostraría «8.01» donde se midió 8.
+ * Un paquete sin esa dimensión guardada queda vacío, no en 0.
+ */
+export function aEscuadriaEnPulgadas(m: EscuadriaDelLibro): EscuadriaTipeada {
+  const pulg = (v: number | null) =>
+    v != null && v > 0 ? String(acercarAEscala(v / CM_POR_PULGADA, 0.25, 0.02)) : "";
+  const pies = (v: number | null) =>
+    v != null && v > 0 ? String(acercarAEscala(v / M_POR_PIE, 0.5, 0.05)) : "";
+  return {
+    espesor: pulg(m.espesorCm),
+    ancho: pulg(m.anchoCm),
+    largo: pies(m.largoM),
+    uEspesor: "pulg",
+    uAncho: "pulg",
+    uLargo: "pies",
   };
 }
 

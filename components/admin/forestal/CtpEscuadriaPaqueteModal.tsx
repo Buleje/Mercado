@@ -19,8 +19,20 @@
  *
  * Es como habla la plaza («dos por ocho de cinco») y como lo pide el formato
  * LO-CTP, respectivamente. La conversión es la del cubicador, en
- * `escuadria-del-paquete.ts`. Un paquete que YA tiene medidas se abre en cm y m
- * —que es como está escrito— para no mostrar «4.99 pies» donde alguien midió 5.
+ * `escuadria-del-paquete.ts`. Un paquete que YA tiene medidas TAMBIÉN se abre
+ * en pulgadas y pies (Brandon, 2026-09-23): medido contra el libro real de
+ * Blas, los 197 paquetes con escuadría miden una media pulgada exacta — se
+ * cantaron en pulgadas, y el cm/m es sólo cómo lo guarda el libro. La vuelta
+ * usa `acercarAEscala` para no mostrar «8.01 pies» donde se midió 8.
+ *
+ * ## Lo que el usuario no toca, no se reescribe
+ *
+ * Convertir de vuelta y para adelante mete redondeo (2.44 m → 8 pies → si se
+ * recalculara, 2.4384 m: 1.6 mm menos que lo guardado). Guardar sin tocar un
+ * campo debe dejar el cm/m **original**, no el de ida y vuelta — si no, cada
+ * apertura del modal correría el libro en silencio. Por eso cada campo se
+ * gatea con su propio flag «tocado»: sólo se recalcula lo que el usuario
+ * escribió; lo demás viaja tal cual estaba.
  *
  * ## El volumen NO se pisa
  *
@@ -38,12 +50,12 @@ import { PanelDeCuadre } from "./ctp-celda-escuadria";
 import {
   ESCUADRIA_EN_BLANCO,
   aEscuadriaDelLibro,
-  aEscuadriaTipeada,
+  aEscuadriaEnPulgadas,
   cuadreDeEscuadria,
   escuadriaCompleta,
+  type EscuadriaDelLibro,
   type EscuadriaTipeada,
 } from "@/lib/forestal/escuadria-del-paquete";
-import type { Unidad } from "@/lib/forestal/cubicacion";
 import type { EscuadriaAGuardar } from "@/lib/forestal/escuadria-guardar";
 import { formatNumber } from "@/lib/format";
 
@@ -66,18 +78,12 @@ export interface PaqueteAMedir {
 
 type Dimension = "espesor" | "ancho" | "largo";
 
-/* El tipo va explícito: con `as const`, las tres `opciones` quedan tuplas
-   distintas y `.map()` sobre su unión no tiene una firma común. */
-const DIMS: readonly {
-  clave: Dimension;
-  unidad: "uEspesor" | "uAncho" | "uLargo";
-  label: string;
-  /** En qué se canta esta dimensión en la plaza, y su equivalente del libro. */
-  opciones: readonly Unidad[];
-}[] = [
-  { clave: "espesor", unidad: "uEspesor", label: "Espesor", opciones: ["pulg", "cm"] },
-  { clave: "ancho", unidad: "uAncho", label: "Ancho", opciones: ["pulg", "cm"] },
-  { clave: "largo", unidad: "uLargo", label: "Largo", opciones: ["pies", "m"] },
+/* Sin selector de unidad (ADR 2026-09-23): siempre se tipea en pulgadas —
+   salvo el largo, en pies. */
+const DIMS: readonly { clave: Dimension; label: string; placeholder: string }[] = [
+  { clave: "espesor", label: "Espesor (pulg)", placeholder: "2" },
+  { clave: "ancho", label: "Ancho (pulg)", placeholder: "8" },
+  { clave: "largo", label: "Largo (pies)", placeholder: "5" },
 ];
 
 /* Escritas a mano y no con una clave calculada: `{ ...t, [clave]: v }` con
@@ -88,13 +94,6 @@ const conMedida = (t: EscuadriaTipeada, clave: Dimension, valor: string): Escuad
     : clave === "ancho"
       ? { ...t, ancho: valor }
       : { ...t, largo: valor };
-
-const conUnidad = (t: EscuadriaTipeada, clave: Dimension, u: Unidad): EscuadriaTipeada =>
-  clave === "espesor"
-    ? { ...t, uEspesor: u }
-    : clave === "ancho"
-      ? { ...t, uAncho: u }
-      : { ...t, uLargo: u };
 
 export default function CtpEscuadriaPaqueteModal({
   paquete,
@@ -111,8 +110,18 @@ export default function CtpEscuadriaPaqueteModal({
 }) {
   const yaTiene = escuadriaCompleta(paquete);
   const [tipeada, setTipeada] = useState<EscuadriaTipeada>(() =>
-    yaTiene ? aEscuadriaTipeada(paquete) : ESCUADRIA_EN_BLANCO,
+    yaTiene ? aEscuadriaEnPulgadas(paquete) : ESCUADRIA_EN_BLANCO,
   );
+  /* Por dimensión: ¿el usuario la escribió en esta sesión? Si no, y el paquete
+     ya la tenía, se guarda el cm/m ORIGINAL — nunca el de ida y vuelta por
+     pulgadas, que mete hasta 1.6 mm de redondeo. Un flag propio, no comparar
+     valores: comparar dejaría pasar un valor retipeado igual al original y
+     rechazaría uno que cambia por redondeo sin que el usuario haya tocado nada. */
+  const [tocado, setTocado] = useState<Record<Dimension, boolean>>({
+    espesor: false,
+    ancho: false,
+    largo: false,
+  });
   /* Las piezas se piden SÓLO cuando el paquete no las tiene: 19 de los 33 de
      Blas entraron con `cantidad = 0`, y sin piezas las medidas no dan volumen. */
   const [piezas, setPiezas] = useState(() =>
@@ -121,7 +130,15 @@ export default function CtpEscuadriaPaqueteModal({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const delLibro = useMemo(() => aEscuadriaDelLibro(tipeada), [tipeada]);
+  const convertido = useMemo(() => aEscuadriaDelLibro(tipeada), [tipeada]);
+  const delLibro: EscuadriaDelLibro = useMemo(
+    () => ({
+      espesorCm: !tocado.espesor && yaTiene ? paquete.espesorCm : convertido.espesorCm,
+      anchoCm: !tocado.ancho && yaTiene ? paquete.anchoCm : convertido.anchoCm,
+      largoM: !tocado.largo && yaTiene ? paquete.largoM : convertido.largoM,
+    }),
+    [convertido, tocado, yaTiene, paquete.espesorCm, paquete.anchoCm, paquete.largoM],
+  );
   const piezasNum = Math.trunc(Number(piezas.replace(",", ".")) || 0);
   const cuadre = useMemo(
     () =>
@@ -179,7 +196,7 @@ export default function CtpEscuadriaPaqueteModal({
         <ModalFooter
           nota={
             completa
-              ? "Se guarda en cm y m, como lo pide el Libro. El volumen declarado no se toca."
+              ? "Se tipea en pulgadas y pies; el Libro lo guarda en cm y m. El volumen declarado no se toca."
               : "Carga las tres medidas para poder recalcular el volumen."
           }
         >
@@ -207,30 +224,17 @@ export default function CtpEscuadriaPaqueteModal({
               >
                 {d.label}
               </label>
-              <div className="flex items-center gap-1.5">
-                <input
-                  id={`escuadria-${d.clave}`}
-                  inputMode="decimal"
-                  value={tipeada[d.clave]}
-                  onChange={(e) => setTipeada((t) => conMedida(t, d.clave, e.target.value))}
-                  placeholder={d.clave === "largo" ? "5" : "2"}
-                  className={`${I} font-mono tabular-nums`}
-                />
-                <select
-                  aria-label={`Unidad de ${d.label.toLowerCase()}`}
-                  value={tipeada[d.unidad]}
-                  onChange={(e) =>
-                    setTipeada((t) => conUnidad(t, d.clave, e.target.value as Unidad))
-                  }
-                  className="h-11 shrink-0 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-secondary)]"
-                >
-                  {d.opciones.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <input
+                id={`escuadria-${d.clave}`}
+                inputMode="decimal"
+                value={tipeada[d.clave]}
+                onChange={(e) => {
+                  setTipeada((t) => conMedida(t, d.clave, e.target.value));
+                  setTocado((t) => ({ ...t, [d.clave]: true }));
+                }}
+                placeholder={d.placeholder}
+                className={`${I} font-mono tabular-nums`}
+              />
             </div>
           ))}
         </div>
