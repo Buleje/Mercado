@@ -42,6 +42,13 @@ export interface PiezaCubicada {
    */
   codigo?: string;
   /**
+   * Nota libre de la pieza («rajada», «para López»), puesta desde el campo
+   * Observación de la carga — con candado se pega a todas las que siguen
+   * (`lib/forestal/observacion-de-pieza.ts`). Como el código: no agrupa en
+   * `unificarPorMedida` ni cambia lo que se declara.
+   */
+  observacion?: string;
+  /**
    * Tipo comercial forzado a mano. `undefined` = lo decide la medida
    * (`clasificarTipo`). Se lee SIEMPRE por `tipoDePieza`, nunca directo: es lo
    * que mantiene la pantalla, el Excel y el Anexo 04 diciendo lo mismo.
@@ -209,8 +216,9 @@ export function unificarPorMedida(piezas: PiezaCubicada[]): PiezaCubicada[] {
     } else {
       /* El código de la troza NO va en la clave (es interno del cubicado,
          Brandon 2026-09-14) y tampoco sobrevive a la unión: una fila que junta
-         piezas de varias trozas no puede quedarse con el código de la primera. */
-      const { codigo: _codigo, ...sinCodigo } = p;
+         piezas de varias trozas no puede quedarse con el código de la primera.
+         Lo mismo la observación: es de UNA pieza, no de la fila unida. */
+      const { codigo: _codigo, observacion: _observacion, ...sinCodigo } = p;
       mapa.set(clave, { ...sinCodigo });
     }
   }

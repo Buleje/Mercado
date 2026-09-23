@@ -19,7 +19,7 @@
  * importe frente al cliente.
  */
 import { useState } from "react";
-import { AlertTriangle, UserCheck, ChevronDown, Coins, Link2 } from "@buleje/design-system/icons";
+import { AlertTriangle, UserCheck, ChevronDown, ChevronUp, Coins, Link2 } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { ETIQUETA_MODO_PRECIO, MODOS_PRECIO, type ModoPrecio } from "@/lib/forestal/precio-de-pieza";
@@ -47,6 +47,8 @@ export default function CubicadorPrecio({
   vinculables,
   onVincular,
   onAbrirDirectorio,
+  plegado = false,
+  onPlegado,
 }: {
   precios: PrecioCubicador;
   /** Las especies del lote, para el precio a mano de cada una. */
@@ -61,10 +63,44 @@ export default function CubicadorPrecio({
   vinculables: number;
   onVincular: () => void;
   onAbrirDirectorio: () => void;
+  /**
+   * Plegado (Brandon, 2026-09-23: «poder ocultar la sección de precio»). Queda
+   * UNA línea con el modo y el valor del lote: plegar no es esconder el dato.
+   * Sin `onPlegado`, no se ofrece.
+   */
+  plegado?: boolean;
+  onPlegado?: (plegado: boolean) => void;
 }) {
   const [verEspecies, setVerEspecies] = useState(false);
   const { modo } = precios;
   const hayPreciosEspecie = especiesLote.some((e) => Number(precios.preciosEspecie[e.toLowerCase()]) > 0);
+  const valorTxt = precios.calculando ? "…" : precios.conValor ? `S/ ${soles(precios.valorLote)}` : "—";
+
+  if (plegado && onPlegado) {
+    return (
+      <button
+        type="button"
+        onClick={() => onPlegado(false)}
+        aria-expanded={false}
+        aria-label={`Mostrar el precio del lote (valor ${valorTxt})`}
+        className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
+      >
+        <span className="inline-flex min-w-0 items-center gap-2 text-sm font-bold text-[var(--text-secondary)]">
+          <Coins className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden /> Precio
+          <span className="font-normal text-[var(--text-tertiary)]">· {ETIQUETA_MODO_PRECIO[modo]}</span>
+        </span>
+        <span className="ml-auto inline-flex items-center gap-3">
+          <span className="text-sm text-[var(--text-secondary)]">
+            Valor del lote{" "}
+            <b className="tabular-nums text-[var(--text-primary)]">{valorTxt}</b>
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            <ChevronDown className="h-3.5 w-3.5" aria-hidden /> Mostrar
+          </span>
+        </span>
+      </button>
+    );
+  }
 
   return (
     <section
@@ -112,9 +148,22 @@ export default function CubicadorPrecio({
         <div className="ml-auto text-right">
           <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Valor del lote</div>
           <div className="text-xl font-extrabold tabular-nums text-[var(--text-primary)]" aria-live="polite">
-            {precios.calculando ? "…" : precios.conValor ? `S/ ${soles(precios.valorLote)}` : "—"}
+            {valorTxt}
           </div>
         </div>
+        {/* El mismo «Ocultar» que «Cargar piezas», en el mismo lugar: arriba a la derecha. */}
+        {onPlegado && (
+          <button
+            type="button"
+            onClick={() => onPlegado(true)}
+            aria-expanded
+            title="Ocultar el precio: queda el valor del lote en una línea"
+            aria-label="Ocultar el precio del lote"
+            className="inline-flex h-8 items-center gap-1.5 self-start rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
+          >
+            <ChevronUp className="h-3.5 w-3.5" aria-hidden /> Ocultar
+          </button>
+        )}
       </div>
 
       <p className="mt-2 text-xs leading-snug text-[var(--text-secondary)]">

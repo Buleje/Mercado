@@ -14,7 +14,7 @@ import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
-  cubicarPieza, mejoresNumeros, detectarComando, ESPECIES_MADERA,
+  cubicarPieza, mejoresNumeros, detectarComando, ESPECIES_MADERA, toFeet, toInches,
   esEco, escuadriasFrecuentes, leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza, PT_POR_M3, recubicarPiezas, m3DesdePt,
   type PiezaCubicada, type Unidad, type MedidasFijas,
 } from "@/lib/forestal/cubicacion";
@@ -70,6 +70,9 @@ import {
   type LargoEnLectura, type OrdenFilas,
 } from "@/lib/forestal/cubicador-bloques-especie";
 import { claveDueno, duenoDictado, opcionesDeDueno, reclavearFichas } from "@/lib/forestal/duenos-cubicador";
+import {
+  leerObservacionGuardada, tomarObservacion, OBSERVACION_MAX, type ObservacionDeCarga,
+} from "@/lib/forestal/observacion-de-pieza";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import { formatNumber } from "@/lib/format";
 
@@ -84,9 +87,13 @@ interface SpeechRecognitionLike {
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-const UNIDADES: { v: Unidad; label: string }[] = [
-  { v: "pulg", label: "pulg" }, { v: "cm", label: "cm" }, { v: "pies", label: "pies" }, { v: "m", label: "m" },
-];
+/**
+ * La unidad de cada medida es FIJA (Brandon, 2026-09-23: «en general es así la
+ * regla: el ancho y el espesor en pulgadas, el largo en pies»). La tabla ya no
+ * ofrece cambiarla; sólo una pieza que llegó en otra (un Excel con columna de
+ * unidad) la muestra, para que un 5 cm no se lea como 5 pulgadas.
+ */
+const UNIDAD_ESTANDAR = { espesor: "pulg", ancho: "pulg", largo: "pies" } as const satisfies Record<string, Unidad>;
 // Rangos para los dropdowns de carga manual (rápida, sin tipear).
 /** Grillas con navegación de teclado (ver `celdas-excel.tsx`). */
 const GRILLA_CARGA = "cub-carga";
@@ -136,7 +143,7 @@ const TCOL = {
  * la TABLA (`tablaColumnasVisibles`, dentro del componente) — la fila de
  * carga de arriba (`TABLA_COLUMNAS_TODAS`) no se toca, sigue con las 4.
  */
-type ColOpcional = "numero" | "cant" | "espesor" | "ancho" | "largo" | "medida" | "tipo" | "codigo" | "especie" | "dueno" | "apartado" | "pt" | "m3";
+type ColOpcional = "numero" | "cant" | "espesor" | "ancho" | "largo" | "medida" | "tipo" | "codigo" | "especie" | "dueno" | "observacion" | "apartado" | "pt" | "m3";
 /* Las dos cuentas del cubicador, escritas una sola vez y mostradas al pasar el
    mouse por el encabezado: el pie tablar es la fórmula comercial y el m³ SALE
    de él (÷ 424), no del volumen geométrico. */
@@ -155,13 +162,14 @@ const COLS_OPCIONALES: { key: ColOpcional; label: string }[] = [
   { key: "codigo", label: "Código" },
   { key: "especie", label: "Especie" },
   { key: "dueno", label: "Dueño" },
+  { key: "observacion", label: "Observación" },
   { key: "apartado", label: "Apartado" },
   { key: "pt", label: "Pie tablar" },
   { key: "m3", label: "m³" },
 ];
 const COLS_DEFAULT: Record<ColOpcional, boolean> = {
   numero: true, cant: true, espesor: true, ancho: true, largo: true,
-  medida: true, tipo: true, codigo: true, especie: true, dueno: true, apartado: true, pt: true, m3: true,
+  medida: true, tipo: true, codigo: true, especie: true, dueno: true, observacion: true, apartado: true, pt: true, m3: true,
 };
 
 // Especies de madera comunes en la Selva Central peruana (single-source en cubicacion.ts).
@@ -355,6 +363,25 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   const codigoRef = useRef("");
   const cambiarCodigo = useCallback((v: string) => { codigoRef.current = v; setCodigoTroza(v); }, []);
   const conCodigo = Boolean(codigoDeTroza);
+  /** La observación que se le pega a lo que sigue (`observacion-de-pieza.ts`):
+   *  suelta va a la próxima pieza y se borra; fija, a todas y sobrevive a
+   *  recargar. Ref al día en el mismo evento, como `codigoRef`. */
+  const [observacion, setObservacion] = useState<ObservacionDeCarga>(() => leerObservacionGuardada(leerGuardado("-observacion", espacio)));
+  const observacionRef = useRef(observacion);
+  const ponerObservacion = useCallback((next: ObservacionDeCarga) => {
+    observacionRef.current = next;
+    setObservacion(next);
+    try {
+      if (next.fija) localStorage.setItem(`${storageKey(espacio)}-observacion`, JSON.stringify(next));
+      else localStorage.removeItem(`${storageKey(espacio)}-observacion`);
+    } catch { /* quota */ }
+  }, [espacio]);
+  /** Lo que lleva la pieza que entra AHORA — y la suelta se consume. */
+  const tomarObservacionDeCarga = useCallback(() => {
+    const { valor, siguiente } = tomarObservacion(observacionRef.current);
+    if (siguiente !== observacionRef.current) ponerObservacion(siguiente);
+    return valor;
+  }, [ponerObservacion]);
   /** Dueños guardados en este dispositivo (no sólo en el lote actual). Se
    *  CREAN sólo en el modal de Dueños o al elegir uno del Directorio; la
    *  barra, la tabla y la voz sólo eligen de acá (Brandon 23-09: la barra
@@ -551,13 +578,16 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
    * la sesión: quien revisa un lote ya medido no quiere el micrófono ocupando
    * media pantalla cada vez que entra. Se guarda por tenant, como las columnas.
    */
-  const [plegados, setPlegados] = useState<{ kpis: boolean; voz: boolean }>(() => {
+  /* `precio` (Brandon, 2026-09-23: «poder ocultar la sección de precio»):
+     plegado sigue diciendo el valor del lote en una línea. */
+  const [plegados, setPlegados] = useState<{ kpis: boolean; voz: boolean; precio: boolean }>(() => {
+    const base = { kpis: false, voz: false, precio: false };
     const raw = leerGuardado("-plegados", espacio);
-    if (!raw) return { kpis: false, voz: false };
+    if (!raw) return base;
     try {
-      return { kpis: false, voz: false, ...(JSON.parse(raw) as Partial<{ kpis: boolean; voz: boolean }>) };
+      return { ...base, ...(JSON.parse(raw) as Partial<typeof base>) };
     } catch {
-      return { kpis: false, voz: false };
+      return base;
     }
   });
   useEffect(() => {
@@ -716,6 +746,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   const addPieza = useCallback((p: {
     cantidad: number; espesor: number; ancho: number; largo: number;
     uEspesor: Unidad; uAncho: Unidad; uLargo: Unidad; especie?: string; dueno?: string; duenoParteId?: string; codigo?: string;
+    observacion?: string;
   }) => {
     const { pieTablar, m3 } = cubicarPieza(p);
     const row: PiezaCubicada = { id: nuevoId(), ...p, pieTablar, m3 };
@@ -943,6 +974,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           dueno: duenoRef.current || undefined,
           duenoParteId: (duenoRef.current && duenoParteIdRef.current) || undefined,
           codigo: codigoRef.current.trim() || undefined,
+          /* Suelta, la lleva sólo la primera pieza de la frase. */
+          observacion: tomarObservacionDeCarga(),
         });
         ultima = { espesor, ancho, largo }; added++;
       }
@@ -1017,7 +1050,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     };
     recRef.current = rec;
     return () => { wantListeningRef.current = false; try { rec.stop(); } catch { /* ignore */ } };
-  }, [addPieza, updateRow, borrarUltimo, hablar, aplicarFijas, aplicarDueno]);
+  }, [addPieza, updateRow, borrarUltimo, hablar, aplicarFijas, aplicarDueno, tomarObservacionDeCarga]);
 
   /**
    * La lectura en voz alta vive en `use-lectura-en-voz`, compartida con el
@@ -1223,7 +1256,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
       pushToast({ tono: "warning", msg: "Faltan medidas", detail: "Espesor, ancho y largo tienen que ser mayores a 0." });
       return false;
     }
-    addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined, dueno: duenoRef.current || undefined, duenoParteId: (duenoRef.current && duenoParteIdRef.current) || undefined, codigo: codigoRef.current.trim() || undefined });
+    addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined, dueno: duenoRef.current || undefined, duenoParteId: (duenoRef.current && duenoParteIdRef.current) || undefined, codigo: codigoRef.current.trim() || undefined, observacion: tomarObservacionDeCarga() });
     // Lo fijado se conserva; sólo se limpia lo que se vuelve a tipear en cada pieza.
     setManualSync({
       cantidad: "1",
@@ -1245,7 +1278,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     ].filter((v): v is number => v != null);
     if (variables.length > 0) hablar(`${c > 1 ? `${c} de ` : ""}${variables.join(", ")}`);
     return true;
-  }, [setManualSync, addPieza, pushToast, medidaTxt, hablar]);
+  }, [setManualSync, addPieza, pushToast, medidaTxt, hablar, tomarObservacionDeCarga]);
 
   /**
    * Enter cierra la pieza y devuelve el foco al espesor para encadenar la siguiente:
@@ -1308,6 +1341,26 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     persist(rowsRef.current.map((r) => (r.id === id ? { ...r, codigo: codigoNuevo.trim() || undefined } : r)));
   }, [persist]);
   /**
+   * Pasa una medida que vino en otra unidad (un Excel con columna de unidad) a
+   * la del cubicador: 5 cm → 1.969 pulg. CONVIERTE, no re-etiqueta: el volumen
+   * queda igual. Si la etiqueta del archivo estaba mal, después se corrige el
+   * número en la celda — lo que no se puede es dejar la pieza sin salida
+   * ahora que la tabla no ofrece elegir la unidad (revisión 23-09).
+   */
+  const aUnidadEstandar = useCallback((id: string, campo: "espesor" | "ancho" | "largo") => {
+    const clave = campo === "espesor" ? "uEspesor" : campo === "ancho" ? "uAncho" : "uLargo";
+    persist(rowsRef.current.map((r) => {
+      if (r.id !== id) return r;
+      const valor = campo === "largo" ? toFeet(r[campo], r[clave]) : toInches(r[campo], r[clave]);
+      const upd = { ...r, [campo]: Math.round(valor * 1000) / 1000, [clave]: UNIDAD_ESTANDAR[campo] };
+      const { pieTablar, m3 } = cubicarPieza(upd);
+      return { ...upd, pieTablar, m3 };
+    }));
+  }, [persist]);
+  const editarObservacion = useCallback((id: string, nueva: string) => {
+    persist(rowsRef.current.map((r) => (r.id === id ? { ...r, observacion: nueva.trim().slice(0, OBSERVACION_MAX) || undefined } : r)));
+  }, [persist]);
+  /**
    * Fuerza el tipo comercial de una pieza, o lo devuelve a automático.
    *
    * La medida no siempre decide: el aserradero vende por costumbre y por
@@ -1329,14 +1382,6 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     pushToast({ tono: "success", msg: "Fila duplicada", detail: medidaTxt(copia) });
   }, [persist, pushToast, medidaTxt]);
 
-  const cambiarUnidad = useCallback((id: string, campo: "uEspesor" | "uAncho" | "uLargo", u: Unidad) => {
-    persist(rowsRef.current.map((r) => {
-      if (r.id !== id) return r;
-      const upd = { ...r, [campo]: u };
-      const { pieTablar, m3 } = cubicarPieza(upd);
-      return { ...upd, pieTablar, m3 };
-    }));
-  }, [persist]);
   const borrar = useCallback((id: string) => {
     const rowsNow = rowsRef.current;
     const victima = rowsNow.find((r) => r.id === id);
@@ -1345,7 +1390,18 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     if (victima) pushToast({ tono: "warning", msg: "Fila eliminada", detail: medidaTxt(victima), undo: () => persist(ordenarFilas(rowsNow, ordenRef.current)) });
   }, [persist, pushToast, medidaTxt]);
   // Deshacer del flash de dictado: quita la última SIN toast (ya es una acción de deshacer).
-  const deshacer = () => { if (lastAdded) { persist(rows.filter((r) => r.id !== lastAdded.id)); setLastAdded(null); } };
+  const deshacer = () => {
+    if (!lastAdded) return;
+    persist(rows.filter((r) => r.id !== lastAdded.id));
+    setLastAdded(null);
+    /* Una observación SUELTA se consumió con esa pieza: si el campo quedó
+       vacío, vuelve, para que la pieza corregida la lleve de nuevo. La fija
+       nunca se fue. */
+    const obs = observacionRef.current;
+    if (lastAdded.observacion && !obs.fija && !obs.texto.trim()) {
+      ponerObservacion({ texto: lastAdded.observacion, fija: false });
+    }
+  };
   const limpiar = () => {
     if (rows.length === 0) return;
     const prev = rows;
@@ -1470,7 +1526,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         if (filtroTipo && tipoDePieza(r) !== filtroTipo) return false;
         if (filtroDueno && (r.dueno?.trim() || "__sin__") !== filtroDueno) return false;
         if (q) {
-          const hay = norm(`${r.espesor}x${r.ancho}x${r.largo} ${r.especie ?? ""} ${r.dueno ?? ""} ${r.codigo ?? ""} ${tipoDePieza(r)}`);
+          const hay = norm(`${r.espesor}x${r.ancho}x${r.largo} ${r.especie ?? ""} ${r.dueno ?? ""} ${r.codigo ?? ""} ${r.observacion ?? ""} ${tipoDePieza(r)}`);
           if (!hay.includes(q)) return false;
         }
         return true;
@@ -1589,7 +1645,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
     + (colsVisibles.numero ? 1 : 0) + (colsVisibles.cant ? 1 : 0)
     + (colsVisibles.espesor ? 1 : 0) + (colsVisibles.ancho ? 1 : 0) + (colsVisibles.largo ? 1 : 0)
     + (colsVisibles.medida ? 1 : 0) + (colsVisibles.tipo ? 1 : 0)
-    + (verCodigo ? 1 : 0) + (colsVisibles.especie ? 1 : 0) + (colsVisibles.dueno ? 1 : 0) + (colsVisibles.apartado ? 1 : 0);
+    + (verCodigo ? 1 : 0) + (colsVisibles.especie ? 1 : 0) + (colsVisibles.dueno ? 1 : 0)
+    + (colsVisibles.observacion ? 1 : 0) + (colsVisibles.apartado ? 1 : 0);
 
   /**
    * Arrastre de relleno: se toma el asa de una celda y se baja.
@@ -2027,6 +2084,12 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           cargando: codigoDeTroza.cargando,
           error: codigoDeTroza.error,
         } : undefined}
+        observacion={{
+          texto: observacion.texto,
+          fija: observacion.fija,
+          onTexto: (v) => ponerObservacion({ ...observacionRef.current, texto: v }),
+          onFijar: () => ponerObservacion({ ...observacionRef.current, fija: !observacionRef.current.fija }),
+        }}
       />
       )}
 
@@ -2043,6 +2106,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
           vinculables={vinculables}
           onVincular={vincularConFichas}
           onAbrirDirectorio={() => setShowDuenosModal(true)}
+          plegado={plegados.precio}
+          onPlegado={(v) => setPlegados((prev) => ({ ...prev, precio: v }))}
         />
       )}
 
@@ -2614,14 +2679,16 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                       planilla. Sólo en las que aportan una cuenta: marcar
                       "Medida" no suma nada y el gesto quedaría sin respuesta. */}
                   {colsVisibles.cant && <ThCol col={TCOL.cant} sel={sel} filas={filasVisibles.length}>Cant.</ThCol>}
-                  {colsVisibles.espesor && <th className="px-3 py-2">Espesor</th>}
-                  {colsVisibles.ancho && <th className="px-3 py-2">Ancho</th>}
-                  {colsVisibles.largo && <th className="px-3 py-2">Largo</th>}
+                  {/* La unidad va en el título, una vez, y no en cada fila (Brandon, 2026-09-23). */}
+                  {colsVisibles.espesor && <th className="px-3 py-2">Espesor <span className="font-normal normal-case">(pulg)</span></th>}
+                  {colsVisibles.ancho && <th className="px-3 py-2">Ancho <span className="font-normal normal-case">(pulg)</span></th>}
+                  {colsVisibles.largo && <th className="px-3 py-2">Largo <span className="font-normal normal-case">(pies)</span></th>}
                   {colsVisibles.medida && <th className="px-3 py-2">Medida</th>}
                   {colsVisibles.tipo && <th className="px-3 py-2">Tipo</th>}
                   {verCodigo && <th className="px-3 py-2">Código</th>}
                   {colsVisibles.especie && <th className="px-3 py-2">Especie</th>}
                   {colsVisibles.dueno && <th className="px-3 py-2">Dueño</th>}
+                  {colsVisibles.observacion && <th className="px-3 py-2">Observación</th>}
                   {colsVisibles.apartado && <th className="px-3 py-2">Apartado</th>}
                   {/* m³ antes que PT: Piezas · m³ · PT en todo el módulo (2026-09-09). */}
                   {colsVisibles.m3 && <ThCol col={TCOL.m3} sel={sel} filas={filasVisibles.length} className="text-right" hint={FORMULA_M3}>m³</ThCol>}
@@ -2632,7 +2699,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
               <tbody>
                 {filasVisibles.length === 0 && (
                   <tr>
-                    <td colSpan={14} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
+                    <td colSpan={16} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
                       Ninguna pieza coincide con el filtro.{" "}
                       <button type="button" onClick={limpiarFiltros} className="font-bold text-[var(--accent)] underline">Limpiar filtros</button>
                     </td>
@@ -2640,7 +2707,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                 )}
                 {virtualizarTabla && colchonSuperior > 0 && (
                   <tr aria-hidden="true">
-                    <td colSpan={14} style={{ height: colchonSuperior, padding: 0, border: 0 }} />
+                    <td colSpan={16} style={{ height: colchonSuperior, padding: 0, border: 0 }} />
                   </tr>
                 )}
                 {filasEnVentana.map(({ r, indice }, i) => {
@@ -2694,13 +2761,13 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                       <td {...sel.props(pos, TCOL.cant)} className={`px-3 py-2 ${sel.seleccionada(pos, TCOL.cant) ? CELDA_SELECCIONADA : ""}`}><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} fila={pos} col={COL_CANT} onKeyDown={teclasTabla} /></td>
                     )}
                     {colsVisibles.espesor && (
-                      <td className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} onU={(u) => cambiarUnidad(r.id, "uEspesor", u)} onV={(n) => editarCampo(r.id, "espesor", n)} etiqueta="Espesor" fila={pos} col={COL_ESPESOR} onKeyDown={teclasTabla} /></td>
+                      <td className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} estandar={UNIDAD_ESTANDAR.espesor} onEstandar={() => aUnidadEstandar(r.id, "espesor")} onV={(n) => editarCampo(r.id, "espesor", n)} etiqueta="Espesor" fila={pos} col={COL_ESPESOR} onKeyDown={teclasTabla} /></td>
                     )}
                     {colsVisibles.ancho && (
-                      <td className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} onU={(u) => cambiarUnidad(r.id, "uAncho", u)} onV={(n) => editarCampo(r.id, "ancho", n)} etiqueta="Ancho" fila={pos} col={COL_ANCHO} onKeyDown={teclasTabla} /></td>
+                      <td className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} estandar={UNIDAD_ESTANDAR.ancho} onEstandar={() => aUnidadEstandar(r.id, "ancho")} onV={(n) => editarCampo(r.id, "ancho", n)} etiqueta="Ancho" fila={pos} col={COL_ANCHO} onKeyDown={teclasTabla} /></td>
                     )}
                     {colsVisibles.largo && (
-                      <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} onU={(u) => cambiarUnidad(r.id, "uLargo", u)} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" fila={pos} col={COL_LARGO} onKeyDown={teclasTabla} /></td>
+                      <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} estandar={UNIDAD_ESTANDAR.largo} onEstandar={() => aUnidadEstandar(r.id, "largo")} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" fila={pos} col={COL_LARGO} onKeyDown={teclasTabla} /></td>
                     )}
                     {colsVisibles.medida && (
                       <td className="px-3 py-2 whitespace-nowrap font-mono text-sm font-bold tabular-nums text-[var(--text-secondary)]">
@@ -2761,6 +2828,11 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                         <AsaRelleno onTomar={() => rellenoDueno.iniciar(pos)} titulo="Arrastra hacia abajo para poner este dueño en las filas siguientes" />
                       </td>
                     )}
+                    {colsVisibles.observacion && (
+                      <td className="px-3 py-2">
+                        <ObservacionCell valor={r.observacion ?? ""} onCommit={(v) => editarObservacion(r.id, v)} />
+                      </td>
+                    )}
                     {/* Apartado: se asigna con "Cerrar apartado" (o arrastrando
                         el asa como especie/tipo) — acá sólo se ve y se copia. */}
                     {colsVisibles.apartado && (
@@ -2812,7 +2884,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
                 })}
                 {virtualizarTabla && colchonInferior > 0 && (
                   <tr aria-hidden="true">
-                    <td colSpan={14} style={{ height: colchonInferior, padding: 0, border: 0 }} />
+                    <td colSpan={16} style={{ height: colchonInferior, padding: 0, border: 0 }} />
                   </tr>
                 )}
               </tbody>
@@ -3063,6 +3135,28 @@ function CodigoCell({ valor, onCommit }: { valor: string; onCommit: (v: string) 
   );
 }
 
+/** La observación de una fila: texto libre, se guarda al salir de la celda. */
+function ObservacionCell({ valor, onCommit }: { valor: string; onCommit: (v: string) => void }) {
+  const [texto, setTexto] = useState(valor);
+  const enfocado = useRef(false);
+  useEffect(() => { if (!enfocado.current) setTexto(valor); }, [valor]);
+  return (
+    <input
+      value={texto}
+      maxLength={OBSERVACION_MAX}
+      autoComplete="off"
+      onFocus={() => { enfocado.current = true; }}
+      onChange={(e) => setTexto(e.target.value)}
+      onBlur={() => { enfocado.current = false; if (texto !== valor) onCommit(texto); }}
+      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+      aria-label="Observación de la pieza"
+      title={valor || undefined}
+      placeholder="—"
+      className="w-[140px] rounded-xl border border-[var(--rule-base)] bg-transparent px-1.5 py-0.5 text-xs font-semibold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+    />
+  );
+}
+
 /**
  * Número editable en la tabla: se corrige a mano sin volver a dictar.
  *
@@ -3111,18 +3205,33 @@ function Num({ v, onV, etiqueta, ancho = "w-14", fila, col, onKeyDown }: {
   );
 }
 
-function Dim({ v, u, onU, onV, etiqueta, fila, col, onKeyDown }: {
-  v: number; u: Unidad; onU: (u: Unidad) => void; onV?: (n: number) => void; etiqueta?: string;
+/**
+ * Una medida de la tabla. La unidad ya no se elige (va en el título de la
+ * columna); sólo se dibuja cuando la pieza vino en OTRA —un Excel con columna
+ * de unidad—, en ámbar, para que no se lea como pulgadas o pies, y con un
+ * toque la pasa a la estándar.
+ */
+function Dim({ v, u, estandar, onEstandar, onV, etiqueta, fila, col, onKeyDown }: {
+  v: number; u: Unidad; estandar: Unidad; onEstandar: () => void; onV?: (n: number) => void; etiqueta?: string;
   fila?: number; col?: number; onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }) {
+  const otra = u !== estandar;
   return (
     <span className="inline-flex items-center gap-1">
       {onV
         ? <Num v={v} onV={onV} etiqueta={`${etiqueta ?? "Medida"} (${u})`} fila={fila} col={col} onKeyDown={onKeyDown} />
         : <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{v}</span>}
-      <select value={u} onChange={(e) => onU(e.target.value as Unidad)} aria-label={`Unidad de ${etiqueta ?? "la medida"}`} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none">
-        {UNIDADES.map((x) => <option key={x.v} value={x.v}>{x.label}</option>)}
-      </select>
+      {otra && (
+        <button
+          type="button"
+          onClick={onEstandar}
+          title={`Esta pieza vino en ${u}. Toca para pasarla a ${estandar} (el volumen no cambia)`}
+          aria-label={`${etiqueta ?? "Medida"} en ${u}: pasar a ${estandar}`}
+          className="rounded-md bg-[var(--data-warning-50)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] transition hover:brightness-95 dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+        >
+          {u} → {estandar}
+        </button>
+      )}
     </span>
   );
 }

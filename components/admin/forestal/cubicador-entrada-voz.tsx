@@ -32,6 +32,7 @@ import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 import CampoCodigoDeTroza from "./cubicador-codigo-troza";
 import type { TrozaParaCodigo } from "@/lib/forestal/codigo-de-troza";
 import { opcionesDeDueno } from "@/lib/forestal/duenos-cubicador";
+import CampoObservacion, { type CampoObservacionProps } from "./cubicador-observacion";
 
 const ESPECIES = ESPECIES_MADERA;
 const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
@@ -106,6 +107,8 @@ interface PanelEntradaVozProps {
     cargando: boolean;
     error: string | null;
   };
+  /** La observación que se le pega a lo que sigue: con candado, a todas; sin él, a la próxima. */
+  observacion: CampoObservacionProps;
 }
 
 export default function PanelEntradaVoz({
@@ -115,7 +118,7 @@ export default function PanelEntradaVoz({
   fijas, onAplicarFijas, especie, onEspecieChange, especies = ESPECIES, onAbrirEspecies,
   dueno, duenoDelDirectorio = false, onDuenoChange, duenosConocidos, onAbrirDuenos,
   liveGroups, errMsg, lastAdded, addedFlash, onDeshacer, fmtPt,
-  manual, onManualChange, onConfirmarCarga, codigoTroza,
+  manual, onManualChange, onConfirmarCarga, codigoTroza, observacion,
 }: PanelEntradaVozProps) {
   const speakOn = config.speak;
   const ajustesId = useId();
@@ -484,25 +487,10 @@ export default function PanelEntradaVoz({
             <p className="mt-2 text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{codigoTroza.error}</p>
           )}
 
-          {duenosConocidos.length > 0 && (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              {duenosConocidos.slice(0, 6).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => onDuenoChange(d)}
-                  aria-pressed={dueno === d}
-                  className={`rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition ${
-                    dueno === d
-                      ? "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  }`}
-                >
-                  {d}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Los chips de dueños recientes salieron de acá (Brandon, 2026-09-23:
+              «quita las opciones de nombre de dueño»): repetían el selector de
+              arriba en otra forma. En su lugar, la observación. */}
+          <CampoObservacion {...observacion} />
         </section>
 
 
@@ -607,7 +595,7 @@ export default function PanelEntradaVoz({
           <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)]">
             <Check className="h-4 w-4" />
             {addedFlash > 1 ? `${addedFlash} piezas · última: ` : "Agregada: "}
-            {lastAdded.espesor}&Prime; × {lastAdded.ancho}&Prime; × {lastAdded.largo} pies{lastAdded.especie ? ` · ${lastAdded.especie}` : ""}{lastAdded.codigo ? ` · cód. ${lastAdded.codigo}` : ""}
+            {lastAdded.espesor}&Prime; × {lastAdded.ancho}&Prime; × {lastAdded.largo} pies{lastAdded.especie ? ` · ${lastAdded.especie}` : ""}{lastAdded.codigo ? ` · cód. ${lastAdded.codigo}` : ""}{lastAdded.observacion ? ` · «${lastAdded.observacion}»` : ""}
             <span className="font-mono">= {fmtPt(lastAdded.pieTablar)} PT</span>
           </span>
           <button type="button" onClick={onDeshacer} className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95">

@@ -9,7 +9,7 @@
  * El panel es el mismo en el Cubicador principal y en «Producir sin lote»: el
  * campo «Código» sólo aparece cuando quien lo monta lo pide.
  */
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import PanelEntradaVoz from "@/components/admin/forestal/cubicador-entrada-voz";
 import { CONFIG_DEFAULT } from "@/lib/forestal/cubicador-config";
@@ -49,6 +49,7 @@ const props = (extra: Partial<Props> = {}): Props => ({
   manual: { cantidad: "1", espesor: "", ancho: "", largo: "" },
   onManualChange: vi.fn(),
   onConfirmarCarga: vi.fn(),
+  observacion: { texto: "", fija: false, onTexto: vi.fn(), onFijar: vi.fn() },
   ...extra,
 });
 
@@ -139,5 +140,34 @@ describe("PanelEntradaVoz — disposición de «Cargar piezas»", () => {
     render(<PanelEntradaVoz {...props({ especie: "Moena" })} />);
     const select = screen.getByDisplayValue("Moena");
     expect(select.tagName).toBe("SELECT");
+  });
+
+  it("debajo de lo que se pega ya no están los chips de dueños (Brandon, 2026-09-23)", () => {
+    render(<PanelEntradaVoz {...props({ duenosConocidos: ["wasaco", "LUCHO"], dueno: "LUCHO" })} />);
+    /* El dueño se elige en su selector, y nada más: ni un botón con su nombre. */
+    expect(screen.queryByRole("button", { name: "wasaco" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "LUCHO" })).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Dueño de lo que se va a cubicar" })).toHaveValue("LUCHO");
+  });
+
+  it("la observación está en «Lo que se le pega» con su candado, apagado si está vacía", () => {
+    const onTexto = vi.fn();
+    render(<PanelEntradaVoz {...props({ observacion: { texto: "", fija: false, onTexto, onFijar: vi.fn() } })} />);
+    const campo = screen.getByRole("textbox", { name: "Observación" });
+    expect(antes(screen.getByText("Lo que se le pega a cada pieza"), campo)).toBe(true);
+    expect(screen.getByRole("button", { name: "Fijar la observación" })).toBeDisabled();
+    fireEvent.change(campo, { target: { value: "rajada" } });
+    expect(onTexto).toHaveBeenCalledWith("rajada");
+  });
+
+  it("suelta dice que va a la próxima pieza; fija, que va a todas", () => {
+    const onFijar = vi.fn();
+    const { rerender } = render(<PanelEntradaVoz {...props({ observacion: { texto: "rajada", fija: false, onTexto: vi.fn(), onFijar } })} />);
+    expect(screen.getByText(/próxima pieza/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Fijar la observación" }));
+    expect(onFijar).toHaveBeenCalledTimes(1);
+    rerender(<PanelEntradaVoz {...props({ observacion: { texto: "rajada", fija: true, onTexto: vi.fn(), onFijar } })} />);
+    expect(screen.getByRole("button", { name: "Soltar la observación" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(/todas las piezas que sigan/)).toBeInTheDocument();
   });
 });

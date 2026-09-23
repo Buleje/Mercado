@@ -404,6 +404,8 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
   const conPrecio = tieneValor(rows, opts);
   const conAp = conApartados(opts);
   const conDue = conDueno(rows);
+  /* La observación de cada pieza (2026-09-23), como el dueño: sólo si alguna la tiene. */
+  const conObs = rows.some((r) => r.observacion?.trim());
   const { grupos, total } = agruparDetallePorTipo(rows, opts);
   const precio = precioResolver(opts);
 
@@ -418,6 +420,7 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
     { header: "Tipo", key: "tipo", width: 18 },
     { header: "Especie", key: "especie", width: 16 },
     ...(conDue ? [{ header: "Dueño", key: "dueno", width: 18 }] : []),
+    ...(conObs ? [{ header: "Observación", key: "obs", width: 24 }] : []),
     ...(conAp ? [{ header: "Apartado", key: "apartado", width: 14 }] : []),
     { header: "Pie tablar", key: "pt", width: 12 },
     { header: "m³", key: "m3", width: 11 },
@@ -433,6 +436,7 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
         esp: espPulg(r.espesor, r.uEspesor), anc: espPulg(r.ancho, r.uAncho), lar: larPies(r.largo, r.uLargo),
         tipo: g.tipo, especie: r.especie ?? "",
         ...(conDue ? { dueno: r.dueno ?? "" } : {}),
+        ...(conObs ? { obs: r.observacion ?? "" } : {}),
         ...(conAp ? { apartado: apartadoTxt(r, opts) } : {}),
         pt: r.pieTablar, m3: r.m3,
         ...(conPrecio ? { val: r.pieTablar * precioPieza(r, opts) } : {}),

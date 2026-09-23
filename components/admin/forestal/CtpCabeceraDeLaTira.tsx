@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Loader2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,11 @@ import { cuantos, type NombreDeLaTira } from "./tira-de-dias-copy";
 
 const BOTON_FLECHA =
   "grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
+/* El «Ocultar» de «Cargar piezas» y del precio, con su palabra: un chevrón
+   solo no se leía como «esconder la sección» (Brandon lo volvió a pedir el
+   mismo día que ya existía). */
+const BOTON_PLEGAR =
+  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 
 export default function CtpCabeceraDeLaTira({
   nombre,
@@ -157,12 +163,17 @@ export default function CtpCabeceraDeLaTira({
               ? "Mostrar la semana para cambiar el día"
               : "Ocultar la semana: queda el día elegido en una línea"
           }
-          className={BOTON_FLECHA}
+          className={cn(
+            BOTON_PLEGAR,
+            plegada && "text-[var(--accent-ink)] dark:text-[var(--accent)]",
+          )}
         >
-          <ChevronDown
-            className={cn("h-4 w-4 transition-transform", !plegada && "rotate-180")}
-            aria-hidden
-          />
+          {plegada ? (
+            <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+          ) : (
+            <ChevronUp className="h-3.5 w-3.5" aria-hidden />
+          )}
+          {plegada ? "Mostrar" : "Ocultar"}
         </button>
       </div>
     </div>
