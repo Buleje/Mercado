@@ -421,14 +421,18 @@ export default function CTPLibroOperaciones() {
   /** Un pendiente que se resuelve en una pestaña se anuncia EN esa pestaña:
    *  el número aparece en el grupo y el punto en la vista. Misma fuente que la
    *  tira de abajo — no puede decir "3" arriba y listar dos. */
-  const alertasPorVista = useMemo(
-    () =>
-      pendientes.lista.reduce<Record<string, number>>((acc, p) => {
-        acc[p.vista] = (acc[p.vista] ?? 0) + p.cantidad;
-        return acc;
-      }, {}),
-    [pendientes.lista],
-  );
+  const alertasPorVista = useMemo(() => {
+    const acc = pendientes.lista.reduce<Record<string, number>>((a, p) => {
+      a[p.vista] = (a[p.vista] ?? 0) + p.cantidad;
+      return a;
+    }, {});
+    /* Las reservas vencidas se resuelven en la campana, pero la madera es de
+       Productos disponibles: el contador va en SU pestaña, a la vista sin abrir
+       Herramientas (la campana queda a dos clics). */
+    const vencidas = pendientes.reservasVencidas.length;
+    if (vencidas > 0) acc.disponibles = (acc.disponibles ?? 0) + vencidas;
+    return acc;
+  }, [pendientes.lista, pendientes.reservasVencidas]);
 
   /** Importar/exportar/informar se usan una vez por mes: van plegadas en el
    *  menú, no ocupando dos filas de la cabecera todo el tiempo. */

@@ -34,6 +34,11 @@ export const RUTAS_PANEL = {
   /* Anular lo declarado un día de producción (2026-09-23): los mismos roles que
      anular una fila del Libro. La tira sólo muestra la papelera a quien pasa. */
   "/api/admin/forestal/ctp/anular-dia": ["admin", "owner"],
+  /* Las escrituras por PATCH del Libro CTP —entre ellas apartar, cambiar y
+     liberar una reserva— (2026-09-23). El GET de la misma ruta deja pasar al
+     almacenero; el PATCH no: la campana y el modal esconden Liberar/Extender
+     a quien recibiría un 403 «Requires: admin, owner». */
+  "PATCH /api/admin/forestal/ctp": ["admin", "owner"],
 } as const satisfies Record<string, readonly AdminRole[]>;
 
 export type RutaPanel = keyof typeof RUTAS_PANEL;

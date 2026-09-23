@@ -57,6 +57,11 @@ describe("puedePedir", () => {
     ["/api/admin/platform-chat", "almacenero", false],
     ["/api/ai-assistant/health", "cajero", false],
     ["/api/ai-assistant/health", "almacenero", false],
+    /* Escribir en el Libro CTP (apartar, cambiar, liberar): el GET deja al
+       almacenero, el PATCH no. */
+    ["PATCH /api/admin/forestal/ctp", "almacenero", false],
+    ["PATCH /api/admin/forestal/ctp", "cajero", false],
+    ["PATCH /api/admin/forestal/ctp", "manager", true],
   ] as const)("%s + rol %s → %s", (ruta, rol, esperado) => {
     expect(puedePedir(ruta, rol)).toBe(esperado);
   });

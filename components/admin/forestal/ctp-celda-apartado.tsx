@@ -25,7 +25,7 @@
  */
 
 import { AlertTriangle, Bookmark, BookmarkPlus } from "@buleje/design-system/icons";
-import { limaDateKey } from "@/lib/utils";
+import { diaConNombre, plazoDeApartado, type EstadoApartado } from "@/lib/forestal/plazo-de-apartado";
 
 /** El apartado tal como viaja en cada fila (corrida y paquete) desde la API. */
 export interface ApartadoDeFila {
@@ -37,60 +37,17 @@ export interface ApartadoDeFila {
   creadoAt?: string | null;
 }
 
-export type EstadoApartado = "vencido" | "vence-hoy" | "por-vencer" | "vigente" | "sin-plazo";
-
-export interface PlazoDeApartado {
-  estado: EstadoApartado;
-  /** Días de hoy al plazo: negativo = ya venció. `null` cuando no hay plazo. */
-  dias: number | null;
-  /** Cómo se lee el plazo en la pastilla. */
-  texto: string;
-}
-
-const DIA_MS = 86_400_000;
-const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
-
-/** Medianoche UTC de una fecha date-only del libro (aritmética sin off-by-one Lima). */
-const aUtc = (clave: string): number => Date.parse(`${clave.slice(0, 10)}T00:00:00.000Z`);
-
-/** El plazo que proponen los atajos del modal: hoy + N días, en clave del libro. */
-export const sumarDias = (clave: string, dias: number): string =>
-  new Date(Date.parse(`${clave}T00:00:00.000Z`) + dias * DIA_MS).toISOString().slice(0, 10);
-
-/** «10/09» — lo que entra en una pastilla de tabla. La fecha completa va en el title. */
-export const fechaCorta = (iso: string): string => {
-  const [a, m, d] = iso.slice(0, 10).split("-");
-  return a && m && d ? `${d}/${m}` : iso;
-};
-
-/** «jueves 10/09» — el formato en el que se habla de un plazo en el patio. */
-export const diaConNombre = (iso: string): string => {
-  const t = aUtc(iso);
-  if (!Number.isFinite(t)) return iso;
-  return `${DIAS_SEMANA[new Date(t).getUTCDay()]} ${fechaCorta(iso)}`;
-};
-
-/**
- * En qué anda el plazo de una reserva.
- *
- * Exportada aparte del componente porque la misma cuenta la necesita el modal
- * (para avisar que el plazo que se está por poner ya pasó) y cualquier KPI que
- * quiera contar el stock congelado: una sola fórmula, no tres parecidas.
- */
-export function plazoDeApartado(hasta: string | null, ahora: Date = new Date()): PlazoDeApartado {
-  if (!hasta) return { estado: "sin-plazo", dias: null, texto: "sin plazo" };
-  const fin = aUtc(hasta);
-  if (!Number.isFinite(fin)) return { estado: "sin-plazo", dias: null, texto: "sin plazo" };
-  const dias = Math.round((fin - aUtc(limaDateKey(ahora))) / DIA_MS);
-  if (dias < 0) {
-    const n = -dias;
-    return { estado: "vencido", dias, texto: `venció hace ${n} día${n === 1 ? "" : "s"}` };
-  }
-  if (dias === 0) return { estado: "vence-hoy", dias, texto: "vence hoy" };
-  if (dias === 1) return { estado: "por-vencer", dias, texto: "vence mañana" };
-  if (dias <= 3) return { estado: "por-vencer", dias, texto: `vence en ${dias} días` };
-  return { estado: "vigente", dias, texto: `hasta ${fechaCorta(hasta)}` };
-}
+/* La regla del plazo vive en `lib/` (2026-09-23): los pendientes del libro la
+   usan en el servidor, y este archivo es `"use client"`. Se re-exporta para que
+   nada que la importaba desde acá cambie. */
+export {
+  diaConNombre,
+  fechaCorta,
+  plazoDeApartado,
+  sumarDias,
+  type EstadoApartado,
+  type PlazoDeApartado,
+} from "@/lib/forestal/plazo-de-apartado";
 
 /**
  * Un tono por estado: sólo el vencido y el que está por vencer piden mirar la fila.

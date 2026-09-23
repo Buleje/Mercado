@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { ForestCtpDB, CTP_SECTIONS } from "@/lib/db/forest-ctp.db";
@@ -157,6 +158,27 @@ const aserrioPedidoSchema = z.object({
   precioManualPt: z.number().positive().max(1000).nullable().optional(),
 });
 type AserrioPedido = z.infer<typeof aserrioPedidoSchema>;
+
+/**
+ * El plazo de una reserva (ADR-418), el mismo al apartar y al cambiarla.
+ *
+ * Es opcional, pero si se pone no puede estar vencido: una reserva que nace
+ * muerta no reserva nada, y extender una vencida a otra fecha pasada tampoco.
+ * Se comparan DÍAS, no instantes, y por el lado que no puede equivocarse: el
+ * día de `hasta` se lee en UTC (un `<input type="date">` manda "2026-09-15",
+ * que `coerce.date()` vuelve medianoche UTC) contra el día de HOY en Lima. Al
+ * revés —hoy en UTC contra el día Lima del valor— después de las 19:00 de
+ * Pucallpa el operador elegía "hoy" y el server lo rechazaba por vencido (el
+ * off-by-one de `fecha sin hora`). Este lado falla como mucho por un día de
+ * más, que no rompe nada.
+ */
+const plazoDeReserva = z.coerce
+  .date()
+  .refine((d) => d.toISOString().slice(0, 10) >= limaDateKey(), {
+    message: "El plazo no puede ser anterior a hoy.",
+  })
+  .nullable()
+  .optional();
 
 const patchSchema = z.discriminatedUnion("action", [
   z.object({
@@ -395,22 +417,7 @@ const patchSchema = z.discriminatedUnion("action", [
     /* Sin nombre no hay reserva: «apartado para nadie» es madera bloqueada que
        después nadie sabe soltar. 120 = lo que entra en la etiqueta de la pila. */
     para: z.string().trim().min(1, "Pon para quién se aparta el producto.").max(120),
-    /* El plazo es opcional, pero si se pone no puede estar vencido: una reserva
-       que nace muerta no reserva nada.
-       Se comparan DÍAS, no instantes, y por el lado que no puede equivocarse:
-       el día de `hasta` se lee en UTC (un `<input type="date">` manda
-       "2026-09-15", que `coerce.date()` vuelve medianoche UTC) contra el día de
-       HOY en Lima. Al revés —hoy en UTC contra el día Lima del valor— después
-       de las 19:00 de Pucallpa el operador elegía "hoy" y el server lo
-       rechazaba por vencido (el off-by-one de `fecha sin hora`). Este lado
-       falla como mucho por un día de más, que no rompe nada. */
-    hasta: z.coerce
-      .date()
-      .refine((d) => d.toISOString().slice(0, 10) >= limaDateKey(), {
-        message: "El plazo no puede ser anterior a hoy.",
-      })
-      .nullable()
-      .optional(),
+    hasta: plazoDeReserva,
     nota: z.string().trim().max(300).nullable().optional(),
   }),
   /** Soltar la reserva: el producto vuelve a Productos disponibles (ADR-418). */
@@ -419,6 +426,23 @@ const patchSchema = z.discriminatedUnion("action", [
     apartadoId: z.cuid(),
     motivo: z.string().trim().max(200).nullable().optional(),
   }),
+  /**
+   * CAMBIAR una reserva viva: a quién, hasta cuándo o la nota (2026-09-23).
+   * «Extender» desde los pendientes del libro manda sólo `hasta`; «Guardar
+   * cambios» del modal, los tres. Ausente = no se toca; `hasta: null` = sin plazo.
+   * El plazo pasa por el MISMO esquema que al apartar: tampoco puede estar vencido.
+   */
+  z
+    .object({
+      action: z.literal("cambiar_apartado"),
+      apartadoId: z.cuid(),
+      para: z.string().trim().min(1, "Pon para quién es el apartado.").max(120).optional(),
+      hasta: plazoDeReserva,
+      nota: z.string().trim().max(300).nullable().optional(),
+    })
+    .refine((v) => v.para !== undefined || v.hasta !== undefined || v.nota !== undefined, {
+      message: "No hay nada que cambiar en la reserva.",
+    }),
 ]);
 
 /** `?from`/`?to` = instantes ISO del período (lib/forestal/ctp-period.ts). Inválido → sin límite. */
@@ -599,6 +623,13 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
           especies: catalogo.agregadas.length,
           ...conteos,
         },
+      });
+    }
+    /* Las reservas vivas con el plazo vencido (pendientes del libro). Sin
+       período: una reserva vencida en agosto sigue congelando madera hoy. */
+    if (url.searchParams.get("reservasVencidas") === "1") {
+      return NextResponse.json({
+        reservasVencidas: await ForestCtpDB.reservasVencidas(auth.tenantId, new Date()),
       });
     }
     if (url.searchParams.get("avisosEstado") === "1") {
@@ -872,7 +903,8 @@ export const POST = withApiHandler("forestal-ctp-post", async (req: NextRequest)
 });
 
 export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextRequest) => {
-  const auth = await requireAdmin(req, ["admin", "owner"]);
+  /* El MISMO array con el que la pantalla decide si muestra Liberar/Extender. */
+  const auth = await requireAdmin(req, RUTAS_PANEL["PATCH /api/admin/forestal/ctp"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "ctp");
   if (rl) return rl;
@@ -1121,6 +1153,16 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         auth.tenantId,
         parsed.data.apartadoId,
         parsed.data.motivo ?? null,
+        auth.username ?? "unknown",
+      );
+      return NextResponse.json({ apartado });
+    }
+    if (parsed.data.action === "cambiar_apartado") {
+      const { para, hasta, nota } = parsed.data;
+      const apartado = await ForestCtpDB.cambiarApartado(
+        auth.tenantId,
+        parsed.data.apartadoId,
+        { para, hasta, nota },
         auth.username ?? "unknown",
       );
       return NextResponse.json({ apartado });

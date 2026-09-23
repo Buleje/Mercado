@@ -51,6 +51,8 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { jornadasDesdeFilas, type JornadaDelLibro } from "@/lib/forestal/detalle-de-jornada";
 import { agregarSinOrigen, type CorridaSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
+import { reservasVencidas, type ReservaVencida } from "@/lib/forestal/reservas-vencidas";
+import { limaDateKey } from "@/lib/utils";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
@@ -86,6 +88,54 @@ function apartadoDto(a: {
     creadoAt: a.creadoAt.toISOString(),
   };
 }
+
+/**
+ * Qué corrida tiene producto EN EL PATIO: la misma respuesta para Productos
+ * disponibles y para la campana de reservas vencidas (2026-09-23).
+ *
+ * Antes la campana sólo descartaba lo anulado/borrado, y una reserva sobre
+ * madera ya marcada como usada —o ya despachada entera— salía «congelada»,
+ * sumaba en la pestaña y «Ver en Productos disponibles» llevaba a una fila que
+ * la tabla no dibuja. Dos lecturas del mismo patio con dos criterios mienten
+ * en una de las dos: por eso el criterio vive acá, una vez.
+ *
+ * Es la mitad del criterio que se puede decir en el WHERE; la otra mitad es el
+ * saldo (`tieneDisponible`), que sale de `saldosDeCorridas`.
+ */
+function whereCorridaEnElPatio(
+  tenantId: string,
+  opts: { incluirUsados?: boolean } = {},
+): Prisma.ForestCtpEntryWhereInput {
+  return {
+    tenantId,
+    section: "produccion",
+    deletedAt: null,
+    status: "registrado",
+    /* Sin cantidad declarada no hay producto: es una corrida que consumió y
+       todavía no dijo qué salió (ADR-340). */
+    quantity: { not: null },
+    /**
+     * Y sin ORIGEN tampoco hay producto disponible (Brandon, 2026-09-10).
+     *
+     * Las corridas de «Producir sin lote» declaran producto antes de que
+     * exista el lote: el hecho físico ocurrió y el libro lo registra, pero
+     * esa madera **no se puede despachar ni vender** hasta que diga de qué
+     * trozas salió. Ofrecerla en Productos disponibles sería ofrecer madera
+     * sin cadena de custodia, que es exactamente lo que una GTF no puede
+     * amparar.
+     *
+     * Origen = volumen de entrada declarado, o consumos atribuidos. (El lote
+     * vinculado escribe las dos cosas, así que no hace falta mirarlo aparte.)
+     * En cuanto se vincula, la corrida aparece sola: no hay nada que tocar
+     * después.
+     */
+    OR: [{ volumeInputM3: { gt: 0 } }, { consumos: { some: {} } }],
+    ...(opts.incluirUsados ? {} : { usadoAt: null }),
+  };
+}
+
+/** Un producto agotado no es un producto disponible con cero: es uno que ya no está. */
+const tieneDisponible = (s: { disponible: number } | undefined): boolean => (s?.disponible ?? 0) > 0;
 
 /** Filtro de rango de fechas compartido por `list` y `saldos` (undefined = sin límite). */
 function dateRange(opts: { fromDate?: Date; toDate?: Date }): Prisma.DateTimeFilter | undefined {
@@ -2523,6 +2573,173 @@ export class ForestCtpDB {
   }
 
   /**
+   * CAMBIAR una reserva viva (ADR-418): a quién, hasta cuándo o su nota.
+   *
+   * Hasta el 2026-09-23 no existía: «Guardar cambios» del modal volvía a llamar
+   * a `apartarProducto`, que rechaza —con razón— una fila que ya tiene reserva
+   * viva, así que editar un apartado respondía 422 «ya está apartada». Y los
+   * pendientes del libro necesitan EXTENDER una reserva vencida sin soltarla y
+   * volver a tomarla (eso pierde la fecha original y deja un hueco en el que
+   * otro puede apartarla).
+   *
+   * Sólo toca los campos que vienen (`undefined` = no cambia; `hasta: null` =
+   * sin plazo). Que el plazo nuevo no esté vencido lo valida el endpoint con el
+   * MISMO esquema que al apartar. Igual que apartar, no mueve stock ni lleva el
+   * guard de período: es una etiqueta de visibilidad (ver `apartarProducto`).
+   *
+   * Carrera con «Liberar» en otra pestaña: el `updateMany` lleva
+   * `liberadoAt: null` en el WHERE — si otro la soltó entre la lectura y la
+   * escritura, no se revive una reserva muerta (0 filas → se dice).
+   *
+   * Y la madera tiene que seguir en el libro: la corrida registrada y sin
+   * borrar, y el paquete (si lo hay) sin borrar. Desde una pestaña vieja se
+   * podía extender la reserva de una corrida ya anulada. Va en el WHERE de la
+   * lectura Y de la escritura, porque la corrida también se puede anular entre
+   * las dos.
+   */
+  static async cambiarApartado(
+    tenantId: string,
+    apartadoId: string,
+    cambios: { para?: string; hasta?: Date | null; nota?: string | null },
+    user: string,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const maderaViva: Prisma.ForestCtpApartadoWhereInput = {
+      ctpEntry: { deletedAt: null, status: "registrado" },
+      OR: [{ paqueteId: null }, { paquete: { deletedAt: null } }],
+    };
+    const apartado = await prisma.forestCtpApartado.findFirst({
+      where: { id: apartadoId, tenantId, ...maderaViva },
+      include: {
+        ctpEntry: { select: { lineNo: true } },
+        paquete: { select: { codigo: true } },
+      },
+    });
+    if (!apartado) {
+      throw new CtpInvariantError(
+        "Esa reserva no existe o su madera ya no está en el libro (la corrida se anuló o se borró).",
+        "LOTE_NO_ENCONTRADO",
+      );
+    }
+    const { ctpEntry, paquete, ...fila } = apartado;
+    const yaLiberada = new CtpInvariantError(
+      "Esa reserva ya se liberó y la madera está libre. Apártala de nuevo si todavía va.",
+      "VALIDACION",
+    );
+    if (fila.liberadoAt) throw yaLiberada;
+
+    const dia = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
+    const data: { para?: string; hasta?: Date | null; nota?: string | null } = {};
+    if (cambios.para !== undefined) {
+      const para = cambios.para.trim();
+      if (!para) throw new CtpInvariantError("Pon para quién es el apartado.", "VALIDACION");
+      if (para !== fila.para) data.para = para;
+    }
+    if (cambios.hasta !== undefined && dia(cambios.hasta) !== dia(fila.hasta)) {
+      data.hasta = cambios.hasta;
+    }
+    if (cambios.nota !== undefined) {
+      const nota = (cambios.nota ?? "").trim() || null;
+      if (nota !== fila.nota) data.nota = nota;
+    }
+    /* Nada cambió: se devuelve tal cual, sin escribir ni auditar un renglón vacío. */
+    if (Object.keys(data).length === 0) return fila;
+
+    const { count } = await prisma.forestCtpApartado.updateMany({
+      where: { id: apartadoId, tenantId, liberadoAt: null, ...maderaViva },
+      data,
+    });
+    /* 0 filas: otra pestaña la liberó, o anuló la corrida, entre la lectura y
+       la escritura. Las dos se resuelven igual: recargar y mirar. */
+    if (count === 0) {
+      throw new CtpInvariantError(
+        "Esa reserva cambió mientras tanto (se liberó o su corrida se anuló). Recarga la lista.",
+        "VALIDACION",
+      );
+    }
+
+    /* «del paquete», no «de el paquete»: la línea la lee una persona en el historial. */
+    const deQue = paquete?.codigo
+      ? `del paquete ${paquete.codigo}`
+      : `de la corrida N° ${ctpEntry.lineNo}`;
+    const plazo = (d: Date | null) => (d ? `el ${dia(d)}` : "sin plazo");
+    auditCtp({
+      tenantId,
+      action: "ctp_cambiar_apartado",
+      entity: "ForestCtpApartado",
+      entityId: apartadoId,
+      detail:
+        `Cambió la reserva ${deQue}` +
+        (data.para !== undefined ? ` · para: ${fila.para} → ${data.para}` : ` · para ${fila.para}`) +
+        (data.hasta !== undefined ? ` · plazo: ${plazo(fila.hasta)} → ${plazo(data.hasta)}` : "") +
+        (data.nota !== undefined ? ` · nota: ${data.nota ?? "(sin nota)"}` : ""),
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
+    return { ...fila, ...data };
+  }
+
+  /**
+   * Las reservas VIVAS con el plazo vencido, para los pendientes del libro.
+   *
+   * «Vencida» la decide `reservasVencidas` (la misma cuenta que pinta la celda);
+   * el WHERE sólo recorta a las candidatas: `hasta` antes de la medianoche UTC
+   * del día de hoy en Lima. Como `hasta` es date-only, eso equivale exactamente
+   * a «el día del plazo es anterior a hoy» y no trae ninguna de más.
+   *
+   * Sólo las de madera que Productos disponibles MUESTRA — el mismo criterio,
+   * no uno parecido: corrida en el patio (`whereCorridaEnElPatio`: registrada,
+   * con cantidad y origen, sin «ya usado») y con saldo (`tieneDisponible`), y
+   * paquete no borrado. Una reserva sobre madera que ya salió no congela nada:
+   * contarla sumaba en la pestaña y «Ver en Productos disponibles» llevaba a
+   * una fila que no está. Sin período a propósito: una reserva vencida en
+   * agosto sigue frenando madera hoy.
+   */
+  static async reservasVencidas(tenantId: string, ahora: Date): Promise<ReservaVencida[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const hoyUtc = new Date(`${limaDateKey(ahora)}T00:00:00.000Z`);
+    const filas = await prisma.forestCtpApartado.findMany({
+      where: {
+        tenantId,
+        liberadoAt: null,
+        hasta: { lt: hoyUtc },
+        ctpEntry: whereCorridaEnElPatio(tenantId),
+        OR: [{ paqueteId: null }, { paquete: { deletedAt: null } }],
+      },
+      orderBy: { hasta: "asc" },
+      take: 200,
+      include: {
+        ctpEntry: { select: { lineNo: true, speciesCommon: true, productType: true } },
+        paquete: { select: { codigo: true, volumenM3: true } },
+      },
+    });
+    if (filas.length === 0) return [];
+    const saldos = await saldosDeCorridas(
+      prisma,
+      tenantId,
+      filas.map((a) => a.ctpEntryId),
+    );
+    return reservasVencidas(
+      filas
+        .filter((a) => tieneDisponible(saldos.get(a.ctpEntryId)))
+        .map((a) => ({
+        id: a.id,
+        para: a.para,
+        hasta: a.hasta ? a.hasta.toISOString().slice(0, 10) : null,
+        liberadoAt: a.liberadoAt,
+        lineNo: a.ctpEntry.lineNo,
+        especie: a.ctpEntry.speciesCommon,
+        producto: a.ctpEntry.productType,
+        paqueteCodigo: a.paquete?.codigo ?? null,
+        volumenM3: a.paquete?.volumenM3 != null ? Number(a.paquete.volumenM3) : null,
+      })),
+      ahora,
+    );
+  }
+
+  /**
    * Completar los campos VACÍOS de una corrida (ADR-401 §1.2).
    *
    * No es «editar»: es llenar un hueco. Un asiento que decía `presentacion:
@@ -3223,32 +3440,9 @@ export class ForestCtpDB {
     } = {},
   ) {
     if (!tenantId) throw new Error("tenantId is required");
-    const where: Prisma.ForestCtpEntryWhereInput = {
-      tenantId,
-      section: "produccion",
-      deletedAt: null,
-      status: "registrado",
-      /* Sin cantidad declarada no hay producto: es una corrida que consumió y
-         todavía no dijo qué salió (ADR-340). */
-      quantity: { not: null },
-      /**
-       * Y sin ORIGEN tampoco hay producto disponible (Brandon, 2026-09-10).
-       *
-       * Las corridas de «Producir sin lote» declaran producto antes de que
-       * exista el lote: el hecho físico ocurrió y el libro lo registra, pero
-       * esa madera **no se puede despachar ni vender** hasta que diga de qué
-       * trozas salió. Ofrecerla en Productos disponibles sería ofrecer madera
-       * sin cadena de custodia, que es exactamente lo que una GTF no puede
-       * amparar.
-       *
-       * Origen = volumen de entrada declarado, o consumos atribuidos. (El lote
-       * vinculado escribe las dos cosas, así que no hace falta mirarlo aparte.)
-       * En cuanto se vincula, la corrida aparece sola: no hay nada que tocar
-       * después.
-       */
-      OR: [{ volumeInputM3: { gt: 0 } }, { consumos: { some: {} } }],
-      ...(opts.incluirUsados ? {} : { usadoAt: null }),
-    };
+    /* El criterio de «está en el patio» es compartido con la campana de
+       reservas vencidas: ver `whereCorridaEnElPatio`. */
+    const where = whereCorridaEnElPatio(tenantId, { incluirUsados: opts.incluirUsados });
     if (opts.soloDelPeriodo && (opts.fromDate || opts.toDate)) {
       where.entryDate = {
         ...(opts.fromDate ? { gte: opts.fromDate } : {}),
@@ -3422,7 +3616,7 @@ export class ForestCtpDB {
           })),
         };
       })
-      .filter((c) => c.disponible > 0);
+      .filter((c) => tieneDisponible(c));
 
     /**
      * El costo de la materia prima por GUÍA, para las corridas SIN consumos

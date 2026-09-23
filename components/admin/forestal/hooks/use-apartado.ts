@@ -10,15 +10,18 @@
  *
  * Vive fuera del modal porque la misma operación la va a querer la ficha del
  * paquete y cualquier acción masiva de la tabla — y porque así la cuenta de
- * «entraron 2 de 3» se prueba sin montar un diálogo. El hook NO avisa a la
- * pantalla: devuelve cuántas entraron y el que llama decide qué decir, porque
- * el mensaje («3 paquetes apartados para X») depende de lo que se apartó.
+ * «entraron 2 de 3» se prueba sin montar un diálogo. El hook no escribe el
+ * mensaje: devuelve cuántas entraron y el que llama decide qué decir, porque
+ * el mensaje («3 paquetes apartados para X») depende de lo que se apartó. Lo
+ * que sí hace tras cada escritura exitosa es emitir `EVENTO_APARTADOS`, para
+ * que la tabla y la campana de avisos —montadas a la vez— vuelvan a leer.
  */
 
 import { useCallback, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { avisarApartadosCambiaron } from "@/lib/forestal/apartados-evento";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Una fila del stock: el paquete si lo hay, la corrida entera si no. */
@@ -78,6 +81,21 @@ export function resumirFilas(filas: readonly FilaAApartar[]): string {
 
 const comoTexto = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
+/**
+ * Qué se borra del caché de GET tras escribir. Todo `/forestal/`, no sólo
+ * `/forestal/ctp`: una reserva se ve en Productos disponibles, en la ficha del
+ * paquete y en la campana de avisos, y cualquiera que quede fuera sigue
+ * mostrando la reserva vieja 8 s (el TTL de `ctpGet`).
+ */
+const TODO_EL_LIBRO = "/forestal/";
+
+/** Lo que se cambia de una reserva viva. Ausente = no se toca; `hasta: null` = sin plazo. */
+export interface CambiosDelApartado {
+  para?: string;
+  hasta?: string | null;
+  nota?: string | null;
+}
+
 async function pedir(body: Record<string, unknown>): Promise<void> {
   const r = await fetch("/api/admin/forestal/ctp", {
     /* PATCH, como `marcar_usado`: las dos acciones cambian el estado de una
@@ -92,7 +110,7 @@ async function pedir(body: Record<string, unknown>): Promise<void> {
 }
 
 export function useApartado() {
-  const [enviando, setEnviando] = useState<"apartar" | "liberar" | null>(null);
+  const [enviando, setEnviando] = useState<"apartar" | "liberar" | "cambiar" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fallos, setFallos] = useState<FallaDeApartado[]>([]);
 
@@ -119,7 +137,8 @@ export function useApartado() {
           rechazadas.push({ etiqueta: f.etiqueta, motivo: comoTexto(e) });
         }
       }
-      invalidarCtp("/forestal/ctp");
+      invalidarCtp(TODO_EL_LIBRO);
+      if (entraron > 0) avisarApartadosCambiaron();
       setEnviando(null);
       if (rechazadas.length === 0) return entraron;
       setFallos(rechazadas);
@@ -139,7 +158,8 @@ export function useApartado() {
       setError(null);
       try {
         await pedir({ action: "liberar_apartado", apartadoId, motivo });
-        invalidarCtp("/forestal/ctp");
+        invalidarCtp(TODO_EL_LIBRO);
+        avisarApartadosCambiaron();
         return true;
       } catch (e) {
         setError(`No se pudo liberar: ${comoTexto(e)}`);
@@ -151,5 +171,29 @@ export function useApartado() {
     [],
   );
 
-  return { enviando, error, setError, fallos, apartar, liberar };
+  /**
+   * Cambiar una reserva viva sin soltarla (a quién, hasta cuándo, la nota).
+   * Soltar y volver a apartar perdía la fecha original y abría un hueco en el
+   * que otro podía quedarse con la madera.
+   */
+  const cambiar = useCallback(
+    async (apartadoId: string, cambios: CambiosDelApartado): Promise<boolean> => {
+      setEnviando("cambiar");
+      setError(null);
+      try {
+        await pedir({ action: "cambiar_apartado", apartadoId, ...cambios });
+        invalidarCtp(TODO_EL_LIBRO);
+        avisarApartadosCambiaron();
+        return true;
+      } catch (e) {
+        setError(`No se pudo cambiar la reserva: ${comoTexto(e)}`);
+        return false;
+      } finally {
+        setEnviando(null);
+      }
+    },
+    [],
+  );
+
+  return { enviando, error, setError, fallos, apartar, liberar, cambiar };
 }

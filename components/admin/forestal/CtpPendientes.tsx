@@ -36,6 +36,8 @@ import {
   type EstadoCanal,
 } from "@/lib/forestal/estado-de-avisos";
 import { formatDateTimeShort } from "@/lib/format";
+import { resumenReservasVencidas } from "@/lib/forestal/reservas-vencidas";
+import CtpReservasVencidas from "./CtpReservasVencidas";
 
 const TONO: Record<Pendiente["urgencia"], string> = {
   bloquea:
@@ -66,15 +68,17 @@ export default function CtpPendientes({
   /** Salta a la pestaña donde se resuelve ese pendiente, con su filtro puesto. */
   onIr: (vista: string, filtro?: Pendiente["filtro"]) => void;
 }) {
-  const { lista, seViene, cargando, falló, recargar } = estado;
+  const { lista, seViene, reservasVencidas, reservaResuelta, cargando, falló, recargar } = estado;
   const [abierto, setAbierto] = useState(false);
 
-  const total = lista.reduce((a, p) => a + p.cantidad, 0) + seViene.length;
+  const total = lista.reduce((a, p) => a + p.cantidad, 0) + seViene.length + reservasVencidas.length;
   const traba = lista.some((p) => p.urgencia === "bloquea");
   /* Un plazo que vence mañana no traba el cierre pero es igual de urgente que
      uno que ya venció — y a diferencia de ése, todavía se puede evitar. */
   const urge = seViene.some((a) => a.gravedad === "urgente");
-  const hayAlgo = lista.length > 0 || seViene.length > 0;
+  /* Una reserva vencida no traba el cierre (tono ámbar, no rojo), pero es
+     madera congelada: cuenta en el badge y en el resumen como cualquier aviso. */
+  const hayAlgo = lista.length > 0 || seViene.length > 0 || reservasVencidas.length > 0;
   /* `resumenPendientes` sólo sabe de lo pendiente: solo, diría «el libro está
      al día» con dos plazos venciéndose en pantalla. */
   const resumen = !hayAlgo
@@ -84,6 +88,7 @@ export default function CtpPendientes({
         seViene.length > 0
           ? `${seViene.length} ${seViene.length === 1 ? "aviso" : "avisos"} de lo que se viene`
           : null,
+        reservasVencidas.length > 0 ? resumenReservasVencidas(reservasVencidas.length) : null,
       ]
         .filter(Boolean)
         .join(" · ");
@@ -207,6 +212,14 @@ export default function CtpPendientes({
               )}
             </div>
           )}
+          {/* Fuera del «hay algo / al día»: al resolver la última, la fila se va
+              pero el «listo» tiene que seguir a la vista junto al «al día». */}
+          <CtpReservasVencidas
+            reservas={reservasVencidas}
+            onResuelta={reservaResuelta}
+            onVer={() => { setAbierto(false); onIr("disponibles"); }}
+            className={lista.length > 0 || seViene.length > 0 || cargando || falló || !hayAlgo ? "mt-4" : ""}
+          />
         </div>
       </AdminModal>
     </>

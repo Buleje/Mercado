@@ -13,6 +13,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+
+/* El rol de quien abre el modal: admin salvo en el test de permisos. */
+const R = vi.hoisted(() => ({ rol: "admin" as string | null }));
+vi.mock("@/hooks/use-mi-rol", () => ({ useMiRol: () => R.rol }));
+
 import CtpApartarModal from "@/components/admin/forestal/CtpApartarModal";
 import { CeldaApartado, plazoDeApartado } from "@/components/admin/forestal/ctp-celda-apartado";
 
@@ -33,6 +38,7 @@ const falla = (message: string) => new Response(JSON.stringify({ message }), { s
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
+  R.rol = "admin";
   fetchMock = vi.fn().mockResolvedValue(ok());
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -224,6 +230,41 @@ describe("CtpApartarModal — un apartado vivo se puede cambiar o liberar", () =
       apartadoId: "ap-1",
       motivo: "el cliente no vino",
     });
+  });
+
+  /* Hasta el 2026-09-23 esto mandaba `apartar_producto` otra vez y el servidor
+     contestaba 422 «ya está apartada»: editar una reserva nunca funcionó. */
+  it("«Guardar cambios» cambia la MISMA reserva, no intenta apartar la fila de nuevo", async () => {
+    const { onCerrar, onListo } = abrir({ apartadoActual });
+    fireEvent.change(screen.getByLabelText(/Hasta/i), { target: { value: "2026-09-22" } });
+    fireEvent.click(screen.getByRole("button", { name: /Guardar cambios/i }));
+
+    await waitFor(() => expect(onCerrar).toHaveBeenCalled());
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toEqual({
+      action: "cambiar_apartado",
+      apartadoId: "ap-1",
+      para: "Maderera Shambo",
+      hasta: "2026-09-22",
+      nota: "adelantó el 50 %",
+    });
+    expect(onListo).toHaveBeenCalledWith(
+      "Apartado actualizado: ahora es de Maderera Shambo, hasta el martes 22/09.",
+    );
+  });
+
+  /* Revisión 23-09: el PATCH sólo deja a admin/dueño; el almacenero abre la
+     reserva desde la tabla para VERLA, no para chocar con un 403. */
+  it("sin permiso: se lee la reserva, pero no hay «Guardar cambios» ni «Liberar» y los campos no se tocan", () => {
+    R.rol = "almacenero";
+    abrir({ apartadoActual });
+    expect(screen.getByText(/Maderera Shambo/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Guardar cambios/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Liberar apartado/i })).toBeNull();
+    expect(campoPara()).toBeDisabled();
+    expect(screen.getByText(/lo hace el dueño o el administrador/)).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("si el servidor rechaza la liberación, el modal se queda abierto con el motivo real", async () => {

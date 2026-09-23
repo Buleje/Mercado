@@ -35,6 +35,8 @@ import {
 } from "./ctp-celda-apartado";
 import { contarFilas, resumirFilas, useApartado, type FilaAApartar } from "./hooks/use-apartado";
 import { formatNumber } from "@/lib/format";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 
 /* Los pedidos al API, la cuenta de «entraron 2 de 3» y el resumen de lo elegido
    viven con el tipo de la fila, en el hook. */
@@ -116,7 +118,7 @@ function Contenido({
   const [hasta, setHasta] = useState(apartadoActual?.hasta?.slice(0, 10) ?? "");
   const [nota, setNota] = useState(apartadoActual?.nota ?? "");
   const [motivo, setMotivo] = useState("");
-  const { enviando, error, setError, fallos, apartar, liberar } = useApartado();
+  const { enviando, error, setError, fallos, apartar, liberar, cambiar } = useApartado();
   /* Lo que entró mientras otra fila rebotaba: la tabla tiene que enterarse, pero
      no con un «listo» —falló algo— ni mientras el modal sigue mostrando cuál. */
   const pendiente = useRef<string | null>(null);
@@ -133,7 +135,12 @@ function Contenido({
   const resumen = useMemo(() => resumirFilas(filas), [filas]);
   const plazo = hasta ? plazoDeApartado(hasta, ahora) : null;
   const vencido = plazo?.estado === "vencido";
-  const puedeGuardar = para.trim().length > 0 && !vencido && filas.length > 0 && !enviando;
+  /* El servidor sólo deja escribir a admin/dueño (el MISMO array del PATCH): el
+     almacenero abre la reserva para verla, no para recibir un 403 al guardar. */
+  const rol = useMiRol();
+  const puedeEscribir = puedePedir("PATCH /api/admin/forestal/ctp", rol);
+  const puedeGuardar =
+    puedeEscribir && para.trim().length > 0 && !vencido && filas.length > 0 && !enviando;
 
   /** Al cerrar se avisa lo que quedó a medias, para que la tabla no mienta. */
   function cerrar() {
@@ -153,6 +160,22 @@ function Contenido({
       return setError("El plazo ya pasó. Elige una fecha de hoy en adelante o déjalo sin plazo.");
     const quien = para.trim();
     const plazoTexto = hasta ? `hasta el ${diaConNombre(hasta)}` : "sin plazo";
+    /* Una reserva viva se CAMBIA, no se vuelve a apartar: el servidor rechaza
+       apartar una fila que ya tiene dueño, y hasta el 2026-09-23 «Guardar
+       cambios» respondía «ya está apartada» sin cambiar nada. */
+    if (apartadoActual) {
+      const cambio = await cambiar(apartadoActual.id, {
+        para: quien,
+        hasta: hasta || null,
+        nota: nota.trim() || null,
+      });
+      if (cambio) {
+        pendiente.current = null;
+        onListo(`Apartado actualizado: ahora es de ${quien}, ${plazoTexto}.`);
+        onCerrar();
+      }
+      return;
+    }
     const entraron = await apartar(filas, {
       para: quien,
       hasta: hasta || null,
@@ -162,9 +185,7 @@ function Contenido({
       const c = contarFilas(filas);
       pendiente.current = null;
       onListo(
-        apartadoActual
-          ? `Apartado actualizado: ahora es de ${quien}, ${plazoTexto}.`
-          : `${c.texto} apartad${c.genero}${filas.length === 1 ? "" : "s"} para ${quien}, ${plazoTexto}.`,
+        `${c.texto} apartad${c.genero}${filas.length === 1 ? "" : "s"} para ${quien}, ${plazoTexto}.`,
       );
       onCerrar();
       return;
@@ -200,21 +221,29 @@ function Contenido({
            veces empuja los botones fuera de la vista. */
         <ModalFooter
           error={error}
-          nota={apartadoActual ? "Guardar cambia a quién y hasta cuándo." : null}
+          nota={
+            rol != null && !puedeEscribir
+              ? "Apartar, cambiar o liberar lo hace el dueño o el administrador."
+              : apartadoActual
+                ? "Guardar cambia a quién y hasta cuándo."
+                : null
+          }
         >
           <Btn onClick={cerrar} disabled={enviando !== null}>
             Cancelar
           </Btn>
-          <Btn variant="primary" disabled={!puedeGuardar} onClick={() => void guardar()}>
-            {enviando === "apartar" ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            ) : (
-              <BookmarkPlus className="h-4 w-4" aria-hidden />
-            )}
-            {apartadoActual
-              ? "Guardar cambios"
-              : `Apartar${filas.length > 1 ? ` ${nf(filas.length)}` : ""}`}
-          </Btn>
+          {puedeEscribir && (
+            <Btn variant="primary" disabled={!puedeGuardar} onClick={() => void guardar()}>
+              {enviando === "apartar" || enviando === "cambiar" ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <BookmarkPlus className="h-4 w-4" aria-hidden />
+              )}
+              {apartadoActual
+                ? "Guardar cambios"
+                : `Apartar${filas.length > 1 ? ` ${nf(filas.length)}` : ""}`}
+            </Btn>
+          )}
         </ModalFooter>
       }
     >
@@ -244,6 +273,9 @@ function Contenido({
           </p>
         )}
 
+        {/* Sin permiso de escritura los campos se leen pero no se tocan: el
+            `fieldset` apaga inputs y atajos de una vez. */}
+        <fieldset disabled={!puedeEscribir} className="min-w-0 space-y-4">
         <Campo
           id="apartar-para"
           label="Para quién"
@@ -315,6 +347,7 @@ function Contenido({
             className="w-full rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
           />
         </Campo>
+        </fieldset>
 
         {fallos.length > 0 && (
           <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 p-3">
@@ -335,7 +368,7 @@ function Contenido({
           </div>
         )}
 
-        {apartadoActual && (
+        {apartadoActual && puedeEscribir && (
           /* Liberar vive acá abajo y no en el pie: en 400 px tres botones al pie
              se apilan y el destructivo termina pegado al de guardar. */
           <div className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/8 p-3">

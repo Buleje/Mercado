@@ -115,6 +115,9 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { esInventarioDeApertura } from "@/lib/forestal/lotes-aserrio";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
+import { alCambiarApartados } from "@/lib/forestal/apartados-evento";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 
 interface PaqueteDisponible {
   id: string;
@@ -369,6 +372,9 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   /** El aviso tildado, que acota la tabla. `null` = se ve todo. */
   const [aviso, setAviso] = useState<ClaveAviso | null>(null);
   /** Filas que se están apartando: una sola o toda la selección (ADR-418). */
+  /* Apartar escribe por PATCH, que sólo deja a admin/dueño: al almacenero no se
+     le ofrece la puerta (recibiría un 403). La reserva ya puesta la sigue viendo. */
+  const puedeApartar = puedePedir("PATCH /api/admin/forestal/ctp", useMiRol());
   const [apartando, setApartando] = useState<{
     filas: { ctpEntryId: string; paqueteId: string | null; etiqueta: string; volumenM3: number; piezas: number | null }[];
     apartadoActual: Apartado | null;
@@ -424,6 +430,9 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   useEffect(() => {
     void recargar();
   }, [recargar]);
+  /* Una reserva liberada o extendida desde la campana de avisos: sin esto la
+     tabla, montada detrás del modal, seguía mostrando la reserva vieja. */
+  useEffect(() => alCambiarApartados(() => void recargar()), [recargar]);
 
   /** Desmarcar no pide motivo (sólo marcar lo pide): volver a mostrar algo que
    *  se sacó por error no necesita justificarse igual que sacarlo. */
@@ -1633,7 +1642,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                     onClick={() => setCubicar({ corrida: c, paquete: p })}
                     label="Cubicar: medir pieza por pieza, cuadrar contra el libro y guardar (sale el ANEXO N° 04)"
                   />
-                  {!apartado && (
+                  {!apartado && puedeApartar && (
                     <IconAction
                       icon={BookmarkPlus}
                       tone="info"
@@ -1819,7 +1828,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             /* Apartar lo tildado (ADR-418): el paso que faltaba entre elegir y
                emitir. Hasta ahora, entre las dos cosas no había ningún estado y
                nada impedía que otro despachara los mismos paquetes. */
-            {
+            ...(puedeApartar ? [{
               label: "Apartar para un cliente",
               icon: BookmarkPlus,
               onClick: () =>
@@ -1835,7 +1844,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                     })),
                   apartadoActual: null,
                 }),
-            },
+            }] : []),
           ]}
         />
       )}

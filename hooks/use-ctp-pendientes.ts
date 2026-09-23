@@ -22,6 +22,8 @@ import { documentosDeFicha } from "@/lib/forestal/ctp-ficha-types";
 import {
   avisosDeVigencia, hoyDelLibro, vencidos, type PapelConVigencia,
 } from "@/lib/forestal/vigencia-avisos";
+import type { ReservaVencida } from "@/lib/forestal/reservas-vencidas";
+import { alCambiarApartados } from "@/lib/forestal/apartados-evento";
 
 const VACIO: DatosPendientes = {
   ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
@@ -63,6 +65,8 @@ type Respuesta = {
   sinOrigen?: { corridas?: number; producidoM3?: number; detalle?: CorridaSinOrigen[] };
   /** Los permisos propios, para avisar antes de que venza la vigencia. */
   contratos?: unknown;
+  /** `ctp?reservasVencidas=1`: reservas vivas con el plazo pasado. */
+  reservasVencidas?: unknown;
 };
 
 /** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
@@ -72,6 +76,14 @@ export interface CtpPendientesState {
   lista: Pendiente[];
   /** Lo que TODAVÍA no pasó pero se viene (ADR-385). */
   seViene: AvisoAnticipado[];
+  /**
+   * Reservas del patio con el plazo vencido que nadie soltó (2026-09-23): stock
+   * congelado por error. Van aparte de `lista` porque se resuelven AHÍ MISMO
+   * —«Liberar» / «Extender»— y no llevando a otra pestaña.
+   */
+  reservasVencidas: ReservaVencida[];
+  /** Saca la reserva de la lista al instante y vuelve a leer las vencidas. */
+  reservaResuelta: (id: string) => void;
   cargando: boolean;
   falló: boolean;
   recargar: () => void;
@@ -106,8 +118,30 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
    */
   const cargaRef = useRef(0);
 
+  /* Las reservas vencidas se leen aparte de la tanda grande: después de liberar
+     o extender una desde la campana se vuelve a pedir SÓLO esto, no los once
+     endpoints. Con su propia guarda: una lectura vieja que vuelve tarde no
+     puede resucitar la fila que se acaba de resolver. */
+  const [reservasVencidas, setReservasVencidas] = useState<ReservaVencida[]>([]);
+  const reservasRef = useRef(0);
+  const recargarReservas = useCallback(() => {
+    const miCarga = ++reservasRef.current;
+    void json("/api/admin/forestal/ctp?reservasVencidas=1").then((r) => {
+      if (miCarga !== reservasRef.current) return;
+      setReservasVencidas(Array.isArray(r?.reservasVencidas) ? (r.reservasVencidas as ReservaVencida[]) : []);
+    });
+  }, []);
+  const reservaResuelta = useCallback(
+    (id: string) => {
+      setReservasVencidas((prev) => prev.filter((r) => r.id !== id));
+      recargarReservas();
+    },
+    [recargarReservas],
+  );
+
   const recargar = useCallback(() => {
     const miCarga = ++cargaRef.current;
+    recargarReservas();
     setCargando(true);
     setFalló(false);
     const p = new URLSearchParams();
@@ -224,9 +258,20 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
       })
       .catch(() => { if (miCarga === cargaRef.current) { setFalló(true); setSeViene([]); } })
       .finally(() => { if (miCarga === cargaRef.current) setCargando(false); });
-  }, [period]);
+  }, [period, recargarReservas]);
 
   useEffect(recargar, [recargar]);
+  /* Una reserva liberada o extendida desde la TABLA también sale de la campana. */
+  useEffect(() => alCambiarApartados(recargarReservas), [recargarReservas]);
 
-  return { datos, lista: pendientesDelLibro(datos), seViene, cargando, falló, recargar };
+  return {
+    datos,
+    lista: pendientesDelLibro(datos),
+    seViene,
+    reservasVencidas,
+    reservaResuelta,
+    cargando,
+    falló,
+    recargar,
+  };
 }

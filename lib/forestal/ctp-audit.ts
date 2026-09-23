@@ -204,6 +204,9 @@ export type CtpAuditAction =
    *  consulta es quién lo apartó primero y quién lo liberó. */
   | "ctp_apartar"
   | "ctp_liberar_apartado"
+  /** A quién, hasta cuándo o la nota de una reserva viva; «Extender» desde los
+   *  pendientes del libro es esto con sólo el plazo (2026-09-23). */
+  | "ctp_cambiar_apartado"
   /** Existencia de apertura declarada / deshecha (ADR-394). */
   | "ctp_apertura_declarar"
   | "ctp_apertura_deshacer"
