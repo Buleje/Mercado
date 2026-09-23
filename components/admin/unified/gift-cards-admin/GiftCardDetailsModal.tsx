@@ -11,6 +11,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 export interface GiftCardDetails {
   id: string;
@@ -43,16 +44,12 @@ const STATUS_STYLES: Record<GiftCardDetails["status"], string> = {
 };
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -90,7 +87,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
       description="Detalles de la tarjeta regalo"
     >
         {/* Body */}
-        <div className="space-y-5 px-5 py-5 sm:px-6">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <div className="flex items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0">
               <Gift className="h-5 w-5" />

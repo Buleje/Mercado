@@ -478,7 +478,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
   const sections: BannerSection[] = ["hero", "featured", "promo"];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {sections.map((section) => (
         <div key={section}>
           <div className="flex items-center justify-between mb-3">

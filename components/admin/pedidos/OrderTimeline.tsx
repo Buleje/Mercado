@@ -3,6 +3,7 @@
 import { m } from "@/components/admin/providers";
 import { Check, X, Clock, Package, Truck, CheckCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatDateShort, formatTime } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ const STATUS_ORDER: Record<string, number> = {
 
 function fmtTime(iso: string) {
   try {
-    return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+    return formatTime(iso);
   } catch {
     return "";
   }
@@ -44,7 +45,7 @@ function fmtTime(iso: string) {
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+    return formatDateShort(iso);
   } catch {
     return "";
   }

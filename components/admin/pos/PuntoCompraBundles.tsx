@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Package, Boxes, Plus } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 interface BundleItemData {
   productId: number;
@@ -126,7 +127,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
               </div>
               <div className="text-right shrink-0">
                 <p className="text-xs font-bold font-mono text-primary">
-                  S/{Number(bundle.price).toFixed(2)}
+                  {formatCurrency(Number(bundle.price))}
                 </p>
                 {savings > 0 && (
                   <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">

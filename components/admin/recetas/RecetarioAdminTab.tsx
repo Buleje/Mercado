@@ -12,6 +12,7 @@ import {
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────
 type Ingrediente = {
@@ -49,8 +50,6 @@ type ProductSearch = {
 const CATEGORIAS = ["Entradas", "Platos de fondo", "Sopas", "Postres", "Bebidas"];
 const UNIDADES = ["unidad", "kg", "litro", "atado", "botella", "bolsa", "sobre", "lata", "paquete", "pack"];
 const DIFICULTADES: ("Fácil" | "Media" | "Dificil")[] = ["Fácil", "Media", "Dificil"];
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
 // ── Main Component ───────────────────────────────────────────
 export default function RecetarioAdminTab() {
@@ -520,7 +519,7 @@ export default function RecetarioAdminTab() {
                                             onClick={() => selectProduct(idx, p)}
                                             className="text-[length:var(--ts-2xs)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-lg hover:bg-primary/10 transition-colors"
                                           >
-                                            {p.name} — S/{Number(p.price).toFixed(2)}
+                                            {p.name} — {formatCurrency(Number(p.price))}
                                           </button>
                                         ))}
                                     </div>

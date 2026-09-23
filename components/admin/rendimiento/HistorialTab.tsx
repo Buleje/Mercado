@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { BarChart3, Store, Users } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 interface DayAgg {
   sum: number;
@@ -37,7 +38,7 @@ function lcpGradeColor(avgMs: number): string {
 
 function fmtDay(iso: string): string {
   const d = new Date(`${iso}T12:00:00`);
-  return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(d);
 }
 
 export default function HistorialTab() {
@@ -93,7 +94,7 @@ export default function HistorialTab() {
 
   if (last14.length === 0) {
     return (
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
         <Store className="mx-auto mb-3 h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
         <p className="text-base font-bold text-[var(--text-primary)]">
           Todavía no hay visitas medidas
@@ -110,7 +111,7 @@ export default function HistorialTab() {
   const maxAvg = Math.max(...last14.map(([, d]) => (d.lcp!.sum / d.lcp!.n)), 1);
 
   const stats = [
-    { icon: Users, label: "Visitas medidas (30 d)", value: totalVisits.toLocaleString("es-PE") },
+    { icon: Users, label: "Visitas medidas (30 d)", value: formatNumber(totalVisits) },
     { icon: BarChart3, label: "Experiencias rápidas", value: `${goodPct}%` },
     { icon: Store, label: "Carga promedio (7 d)", value: `${(lcp7Avg / 1000).toFixed(1)} s` },
   ];

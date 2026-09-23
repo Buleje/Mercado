@@ -21,6 +21,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { getKeepAlive, setKeepAlive } from "@/lib/session-keepalive";
+import { formatCurrency } from "@/lib/format";
 
 // Brandon mayo 14 2026 v3: layout editorial con dashboard preview.
 //   - Lado izquierdo: form de login dentro de una card flotante, brand
@@ -912,7 +913,7 @@ function DashboardPreview() {
                     </div>
                   </div>
                   <p className="text-sm font-black tabular-nums text-[var(--text-primary)] shrink-0">
-                    S/ {o.amount.toFixed(2)}
+                    {formatCurrency(o.amount)}
                   </p>
                 </li>
               ))}

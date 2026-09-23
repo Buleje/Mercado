@@ -87,6 +87,45 @@ describe("useMobileTableCards — tfoot con colSpan", () => {
     expect(celdaVaciaConSpan.dataset.label).toBeUndefined();
   });
 
+  it("un <th> con autofiltro de cabecera rotula la card sólo con el título, no con la lista del popover (400px, 2026-09-22)", async () => {
+    render(
+      <Harness>
+        <table>
+          <thead>
+            <tr>
+              <th>
+                <span className="block">Proveedor</span>
+                <details>
+                  <summary>Todos</summary>
+                  <div role="group"><label>ZZ Prov Backfill (borrar) 3</label><label>Distribuidora Ucayali 2</label></div>
+                </details>
+              </th>
+              <th data-label="Estado">
+                <span className="block">Estado de la recepción</span>
+                <select><option>Todos</option><option>En proceso</option></select>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Distribuidora Ucayali</td>
+              <td>En proceso</td>
+            </tr>
+          </tbody>
+        </table>
+      </Harness>,
+    );
+
+    const proveedorCell = (await screen.findByText("Distribuidora Ucayali")).closest("td") as HTMLElement;
+    const estadoCell = screen.getByText("En proceso", { selector: "td" }).closest("td") as HTMLElement;
+
+    await waitFor(() => expect(proveedorCell.dataset.label).toBeDefined());
+
+    expect(proveedorCell.dataset.label).toBe("Proveedor");
+    // `data-label` explícito manda sobre el texto del <th>.
+    expect(estadoCell.dataset.label).toBe("Estado");
+  });
+
   it("una fila de tbody sin colSpan sigue rotulando cada celda por su columna (sin regresión)", async () => {
     render(
       <Harness>

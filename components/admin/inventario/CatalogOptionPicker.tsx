@@ -127,10 +127,14 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
   return (
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[8800] bg-black/60 backdrop-blur-sm" />
+        {/* Overlay y content comparten z-system (mismo nombre a propósito):
+            Dialog.Content va DESPUÉS en el DOM dentro del mismo Dialog.Portal,
+            así que con z-index igual queda arriba por orden de pintado — no
+            hace falta un peldaño propio. Ver gate ds-no-z-arbitrary-admin. */}
+        <Dialog.Overlay className="fixed inset-0 z-system bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-[8801] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl max-h-[88vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-system -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl max-h-[88vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
         >
           {/* Header */}
           <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">

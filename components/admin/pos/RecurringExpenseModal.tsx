@@ -244,7 +244,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
       role="dialog"
       aria-modal="true"
       aria-labelledby="recurring-expense-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-modal flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape" && !submitting) onClose(); }}
     >

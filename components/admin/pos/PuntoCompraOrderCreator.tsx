@@ -6,6 +6,7 @@ import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import { X, Search, Loader2, CheckCircle2, User, ShoppingCart } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
 
 interface CartItemInput {
   /** `price` = precio de VENTA; `costPrice` = lo que te cuesta a vos. */
@@ -296,7 +297,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                             : "text-[var(--data-error-500)]",
                         )}>
                           {precioDeVenta(item.product) > 0
-                            ? `S/${(precioDeVenta(item.product) * item.quantity).toFixed(2)}`
+                            ? `${formatCurrency(precioDeVenta(item.product) * item.quantity)}`
                             : "sin precio"}
                         </span>
                       </button>
@@ -311,13 +312,13 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                   Total seleccionado
                 </span>
                 <span className="text-sm font-bold font-mono text-primary">
-                  S/{selectedTotal.toFixed(2)}
+                  {formatCurrency(selectedTotal)}
                 </span>
               </div>
 
               {/* Un pedido en cero no se reclama después: mejor frenarlo acá. */}
               {sinPrecio.length > 0 && (
-                <div role="alert" className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-2.5">
+                <div role="alert" className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-3">
                   <p className="text-xs font-bold text-[var(--data-warning-500)]">
                     {sinPrecio.length === 1
                       ? "Un producto no tiene precio de venta cargado"

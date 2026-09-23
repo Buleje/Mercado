@@ -219,7 +219,7 @@ describe("CtpCobrarEnTandaModal — la vista previa lee la unidad de la corrida 
     // 5.000 PT × S/ 0.30 = S/ 1.500,00. Sin `unit`, 5.000 se leería como m³
     // (÷ 424 al revés): 2.120.000 PT y un importe absurdo. Sale en la fila Y
     // en el total (una sola corrida) — `getAllByText` por eso, no `getByText`.
-    expect(screen.getAllByText("S/ 1500.00").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("S/ 1,500.00").length).toBeGreaterThan(0);
   });
 
   it("una corrida en kg sin paquetes no se puede cobrar por PT: muestra el motivo, no un número", async () => {

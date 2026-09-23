@@ -5,6 +5,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import { X, Package } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 const LOT_OPTIONS = [
   { label: "Unidad", units: 1, icon: "1" },
@@ -56,7 +57,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
         {/* Unit price reference */}
         <div className="px-3 pt-2 pb-1">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            Precio unitario: <span className="font-mono font-medium text-[var(--text-secondary)]">S/{unitPrice.toFixed(2)}</span>
+            Precio unitario: <span className="font-mono font-medium text-[var(--text-secondary)]">{formatCurrency(unitPrice)}</span>
           </p>
         </div>
 
@@ -95,7 +96,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                 {/* Price */}
                 <div className="text-right shrink-0">
                   <p className="text-xs font-bold font-mono text-primary">
-                    S/{totalPrice.toFixed(2)}
+                    {formatCurrency(totalPrice)}
                   </p>
                   {savingsPct > 0 && (
                     <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">

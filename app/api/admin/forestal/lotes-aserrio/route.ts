@@ -437,6 +437,12 @@ export async function PATCH(req: NextRequest) {
         speciesScientific: d.speciesScientific,
         ordenProduccion: d.ordenProduccion,
         tipoProductoConsumir: d.tipoProductoConsumir,
+        /* ⛔ Faltaba, y `update()` SÍ lo sabe escribir: el título habilitante
+           llegaba validado desde el body y se caía acá en silencio, así que
+           corregir el permiso de un lote no hacía nada. Desde que el permiso
+           del lote decide qué trozas entran (`agregarTrozas`, ADR-393), no
+           poder corregirlo deja el lote trabado sin decir por qué. */
+        permiso: d.permiso,
         inicioProceso: d.inicioProceso,
         finProceso: d.finProceso,
         notes: d.notes,

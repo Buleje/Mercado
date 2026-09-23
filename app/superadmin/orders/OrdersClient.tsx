@@ -15,6 +15,7 @@
  *  - Tonos rose-700/dark:rose-300 correctos (sustituye var(--data-error-700))
  */
 
+import { StatCard } from "@buleje/design-system";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -499,12 +500,12 @@ export function OrdersClient() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-5">
-        <KpiCard label="Pendientes" value={loading ? "—" : kpis.grouped.pendiente} tone="#0d9488" icon={Clock} />
-        <KpiCard label="Confirmados" value={loading ? "—" : kpis.grouped.confirmado} tone="var(--data-info-500)" icon={CheckCircle2} />
-        <KpiCard label="Preparando" value={loading ? "—" : kpis.grouped.preparando} tone="var(--accent)" icon={Sparkles} />
-        <KpiCard label="En camino" value={loading ? "—" : kpis.grouped.en_camino} tone="var(--accent)" icon={Truck} />
-        <KpiCard label="Entregados" value={loading ? "—" : kpis.grouped.entregado} tone="var(--data-success-500)" icon={CheckCircle2} />
-        <KpiCard label="GMV total" value={loading ? "—" : `S/${Number(kpis.totalRev).toFixed(0)}`} tone="var(--accent)" icon={CreditCard} />
+        <StatCard label="Pendientes" value={loading ? "—" : kpis.grouped.pendiente} icon={Clock} emphasis="warning" iconEmphasis density="compact" />
+        <StatCard label="Confirmados" value={loading ? "—" : kpis.grouped.confirmado} icon={CheckCircle2} density="compact" />
+        <StatCard label="Preparando" value={loading ? "—" : kpis.grouped.preparando} icon={Sparkles} density="compact" />
+        <StatCard label="En camino" value={loading ? "—" : kpis.grouped.en_camino} icon={Truck} density="compact" />
+        <StatCard label="Entregados" value={loading ? "—" : kpis.grouped.entregado} icon={CheckCircle2} emphasis="success" iconEmphasis density="compact" />
+        <StatCard label="GMV total" value={loading ? "—" : `S/${Number(kpis.totalRev).toFixed(0)}`} icon={CreditCard} highlight density="compact" />
  </div>
 
  {/* Action bar */}
@@ -749,40 +750,6 @@ export function OrdersClient() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-
-function KpiCard({
- label,
- value,
- tone,
- icon: Icon,
-}: {
- label: string;
- value: string | number;
- tone: string;
- icon: typeof Clock;
-}) {
- return (
- <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 transition hover:-translate-y-0.5 hover:shadow-md">
- <div className="flex items-center gap-2.5">
- <span
- className="inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0"
- style={{
- background: `color-mix(in oklch, ${tone} 12%, transparent)`,
-            color: tone,
-          }}
-        >
-          <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-        </span>
-        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
-          {label}
-        </p>
-      </div>
-      <p className="mt-2.5 font-display text-2xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
-        {value}
-      </p>
-    </div>
-  );
-}
 
 function OrderCard({ order, onOpen, onCopy }: { order: OrderRow; onOpen: () => void; onCopy: (text: string, label: string) => void }) {
   const meta = STATUS_META[order.status];

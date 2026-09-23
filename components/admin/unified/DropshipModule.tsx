@@ -5,6 +5,7 @@ import { Truck, Package, MapPin, ExternalLink } from "@buleje/design-system/icon
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import { formatCurrency } from "@/lib/format";
 
 // Dropshipping (ADR-298) — lista de envíos al proveedor generados automáticamente
 // cuando entra un pedido pagado en una tienda con dropshipEnabled.
@@ -94,12 +95,12 @@ export default function DropshipModule() {
                     <li key={i} className="text-sm text-[var(--text-secondary)] flex items-center gap-2">
                       <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
                       <span className="flex-1 truncate">{it.qty}× {it.name}{it.supplierSku ? ` (SKU ${it.supplierSku})` : ""}</span>
-                      <span className="text-xs text-[var(--text-tertiary)]">costo S/ {Number(it.unitCost).toFixed(2)}</span>
+                      <span className="text-xs text-[var(--text-tertiary)]">costo {formatCurrency(Number(it.unitCost))}</span>
                     </li>
                   ))}
                 </ul>
                 <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
-                  <span>Costo al proveedor: <strong className="text-[var(--text-primary)]">S/ {Number(f.costTotal ?? 0).toFixed(2)}</strong></span>
+                  <span>Costo al proveedor: <strong className="text-[var(--text-primary)]">{formatCurrency(Number(f.costTotal ?? 0))}</strong></span>
                   {f.trackingUrl ? (
                     <a href={f.trackingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[var(--accent)] hover:underline">
                       Tracking {f.trackingNumber ?? ""} <ExternalLink className="h-3 w-3" />

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { RotateCw, TrendingUp, Package } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 interface FrequentItem {
   productId: number;
@@ -111,7 +112,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
               {item.name}
             </p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-              ~{item.avgQuantity} uds · S/{Number(item.avgCost).toFixed(2)} c/u
+              ~{item.avgQuantity} uds · {formatCurrency(Number(item.avgCost))} c/u
             </p>
           </div>
 

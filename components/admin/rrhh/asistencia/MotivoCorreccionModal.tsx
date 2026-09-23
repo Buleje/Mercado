@@ -111,7 +111,7 @@ export default function MotivoCorreccionModal() {
           e.preventDefault();
           confirmar(texto);
         }}
-        className={cn(MODAL_BODY, "space-y-5")}
+        className={cn(MODAL_BODY, "space-y-4")}
       >
         <ul className="space-y-1.5 rounded-xl bg-[var(--surface-sunken)] p-3">
           {visibles.map((c) => (

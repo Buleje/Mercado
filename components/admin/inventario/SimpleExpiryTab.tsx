@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { cn, exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatDate } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ type Urgency = "vencido" | "critico" | "pronto" | "bien";
 const fmtMoney = (n: number) => new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 function daysUntil(iso: string): number { return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000); }
 function getUrgency(days: number): Urgency { if (days < 0) return "vencido"; if (days <= 7) return "critico"; if (days <= 30) return "pronto"; return "bien"; }
-function fmtDate(iso: string): string { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); } catch { return iso; } }
+function fmtDate(iso: string): string { try { return formatDate(iso); } catch { return iso; } }
 
 // Paleta de marca, sin saturar: vencido=coral, pronto/crítico=ámbar, vigente=turquesa.
 const URGENCY_CFG: Record<Urgency, { label: string; chip: string; Icon: typeof AlertTriangle }> = {
@@ -132,10 +133,10 @@ export default function SimpleExpiryTab() {
     <div className="space-y-5">
       {/* KPIs — filtros clickeables + valor en riesgo */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <StatCard label="Vencidos" count={stats.vencidos} tone="error" active={filter === "vencido"} onClick={() => setFilter(filter === "vencido" ? "todos" : "vencido")} />
-        <StatCard label="Esta semana" count={stats.criticos} tone="warning" active={filter === "critico"} onClick={() => setFilter(filter === "critico" ? "todos" : "critico")} />
-        <StatCard label="Próximos 30d" count={stats.prontos} tone="warning" active={filter === "pronto"} onClick={() => setFilter(filter === "pronto" ? "todos" : "pronto")} />
-        <StatCard label="Vigentes" count={stats.bien} tone="primary" active={filter === "bien"} onClick={() => setFilter(filter === "bien" ? "todos" : "bien")} />
+        <FiltroDeVencimiento label="Vencidos" count={stats.vencidos} tone="error" active={filter === "vencido"} onClick={() => setFilter(filter === "vencido" ? "todos" : "vencido")} />
+        <FiltroDeVencimiento label="Esta semana" count={stats.criticos} tone="warning" active={filter === "critico"} onClick={() => setFilter(filter === "critico" ? "todos" : "critico")} />
+        <FiltroDeVencimiento label="Próximos 30d" count={stats.prontos} tone="warning" active={filter === "pronto"} onClick={() => setFilter(filter === "pronto" ? "todos" : "pronto")} />
+        <FiltroDeVencimiento label="Vigentes" count={stats.bien} tone="primary" active={filter === "bien"} onClick={() => setFilter(filter === "bien" ? "todos" : "bien")} />
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 ring-1 ring-[var(--data-error-500)]/15">
           <p className="flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)] "><TrendingDown className="h-3.5 w-3.5" /> Valor en riesgo</p>
           <p className={cn("mt-1 font-mono text-2xl font-bold tabular-nums", stats.valorRiesgo > 0 ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>{fmtMoney(stats.valorRiesgo)}</p>
@@ -219,7 +220,12 @@ export default function SimpleExpiryTab() {
   );
 }
 
-function StatCard({ label, count, tone, active, onClick }: { label: string; count: number; tone: "error" | "warning" | "primary"; active: boolean; onClick: () => void }) {
+// NO es un KPI (canon 2026-09-22, ver memoria `deuda-no-es-indicador`): cuenta
+// trabajo pendiente y su `onClick` FILTRA la tabla de abajo — el patrón
+// "señalar/filtrar" de una pastilla de deuda, no una tarjeta de estado. Se
+// deja tal cual, sólo renombrada (antes se llamaba también `StatCard`, lo que
+// colisionaba con el canon del DS y hacía pensar que era el mismo componente).
+function FiltroDeVencimiento({ label, count, tone, active, onClick }: { label: string; count: number; tone: "error" | "warning" | "primary"; active: boolean; onClick: () => void }) {
   const text = tone === "error" ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : tone === "warning" ? "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" : "text-primary";
   const bar = tone === "error" ? "bg-[var(--data-error-500)]/50" : tone === "warning" ? "bg-[var(--data-warning-500)]" : "bg-primary";
   return (
@@ -268,7 +274,7 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div><SectionTitle id={titleId} as="h2" className="text-lg font-bold leading-tight text-[var(--text-primary)]">Registrar lote</SectionTitle><p className="text-xs text-[var(--text-tertiary)]">Mercadería con fecha de vencimiento</p></div>

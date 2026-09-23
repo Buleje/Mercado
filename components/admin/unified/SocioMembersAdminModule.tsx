@@ -9,7 +9,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
-import { DataTable } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 import {
   HeartHandshake,
   Users,
@@ -25,12 +25,12 @@ import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import KPICard from "@/components/admin/shared/KPICard";
 import {
   MemberProfileDrawer,
   type SocioMember,
 } from "./socio-admin/MemberProfileDrawer";
 import { ExclusiveOffersTab } from "./socio-admin/ExclusiveOffersTab";
+import { formatDate, formatNumber } from "@/lib/format";
 
 // ── Mock data ───────────────────────────────────────────────────────────────
 
@@ -147,16 +147,12 @@ const STATUS_LABELS: Record<SocioMember["status"], string> = {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `S/ ${formatNumber(n, 2)}`;
 }
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -499,28 +495,26 @@ export default function SocioMembersAdminModule() {
 
       {/* KPIs — prefiere stats de server (ADR-078), fallback a cálculo local */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
+        <StatCard
           label="Miembros activos"
           value={serverStats?.activeMembers ?? activos.length}
           icon={Users}
-          color="var(--accent)"
-          subtitle="Membresía vigente"
+          subValue="Membresía vigente"
         />
-        <KPICard
+        <StatCard
           label="MRR"
           value={fmt(serverStats?.mrrSoles ?? mrr)}
           icon={DollarSign}
-          color="#10B981"
-          subtitle="Ingreso recurrente 30d"
+          emphasis="success"
+          subValue="Ingreso recurrente 30d"
         />
-        <KPICard
+        <StatCard
           label="Nuevos este mes"
           value={nuevosEsteMes}
           icon={TrendingUp}
-          color="#3B82F6"
-          subtitle="Altas del periodo"
+          subValue="Altas del periodo"
         />
-        <KPICard
+        <StatCard
           label={serverStats ? "Churn 30d" : "Churn este mes"}
           value={
             serverStats
@@ -528,9 +522,8 @@ export default function SocioMembersAdminModule() {
               : churnEsteMes
           }
           icon={TrendingDown}
-          color="#ff6b5b"
-          subtitle="Bajas del periodo"
-          alert={(serverStats?.churnRate30d ?? 0) > 0.08 || churnEsteMes > 3}
+          emphasis={(serverStats?.churnRate30d ?? 0) > 0.08 || churnEsteMes > 3 ? "error" : "warning"}
+          subValue="Bajas del periodo"
         />
       </div>
 

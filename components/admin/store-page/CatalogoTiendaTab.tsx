@@ -603,7 +603,7 @@ export default function CatalogoTiendaTab() {
 
       {/* ── 3. PRODUCTOS — agrupados por categoría ─────────────────── */}
       {filtered.length > 0 && (
-        <div className="space-y-5 pb-24">
+        <div className="space-y-4 pb-24">
           {grouped.map(([cat, prods]) => (
             <section key={cat} className="space-y-2.5">
               <header className="flex items-center justify-between gap-2 px-1">

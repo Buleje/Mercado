@@ -25,7 +25,16 @@ const H = vi.hoisted(() => {
     descarte: false,
     _count: { retrozos: 0 },
     despachadaEn: null,
-    entry: { status: "registrado", deletedAt: null },
+    /* Una guía RECIBIDA: `validado` es el estado de un ingreso que llegó al
+       patio (antes decía `registrado`, que es el estado de una línea del libro
+       y no de un ingreso — la pieza ni siquiera existía como disponible). */
+    fechaRecepcion: null,
+    entry: {
+      status: "validado",
+      deletedAt: null,
+      fechaRecepcion: null,
+      gtfNumber: "010-001-0000013",
+    },
   });
   const estado = {
     updates: [] as { where: unknown; data: Record<string, unknown> }[],

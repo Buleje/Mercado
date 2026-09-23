@@ -66,7 +66,7 @@ export default function FichaContratos({ colaboradorId, contratos, sugeridos, on
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {contratos.length === 0 ? (
         <AvisoRrhh tono="neutro" icono={FileSignature}>
           Sin contratos vinculados. Se crean en Documentos › Contratos.

@@ -44,7 +44,7 @@ export default function POSOfflineBar({
     <div className="flex flex-col gap-2 mb-4">
       {/* Error Banner */}
       {errorCount > 0 && (
-        <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
+        <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
           <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
           <p className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex-1">
             {errorCount} {errorCount === 1 ? "venta" : "ventas"} con error. No se pudo sincronizar.
@@ -76,7 +76,7 @@ export default function POSOfflineBar({
 
       {/* Syncing state */}
       {isSyncing && (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           <Loader2 className="h-4 w-4 text-[var(--data-success-500)] animate-spin shrink-0" />
           <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             Sincronizando {pendingCount} {pendingCount === 1 ? "venta" : "ventas"}...
@@ -86,7 +86,7 @@ export default function POSOfflineBar({
 
       {/* Just synced success */}
       {showSyncSuccess && !isSyncing && (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
           <p className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             {lastSyncCount} {lastSyncCount === 1 ? "venta sincronizada" : "ventas sincronizadas"}
@@ -96,7 +96,7 @@ export default function POSOfflineBar({
 
       {/* Offline state */}
       {!isOnline && (
-        <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
+        <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
           <WifiOff className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
           <p className="text-xs font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex-1">
             Sin conexion — Las ventas se guardan localmente
@@ -111,7 +111,7 @@ export default function POSOfflineBar({
 
       {/* Online but still has pending */}
       {isOnline && pendingCount > 0 && !isSyncing && !showSyncSuccess && (
-        <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+        <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           <Loader2 className="h-4 w-4 text-[var(--data-success-500)] animate-spin shrink-0" />
           <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex-1">
             {pendingCount} {pendingCount === 1 ? "venta" : "ventas"} pendientes de sincronizar

@@ -6,6 +6,7 @@ import { describe, it, expect } from "vitest";
 import {
   pendientesDeFicha,
   completitud,
+  tituloCubiertoPorPermisos,
   motivoCciInvalido,
   formatearCci,
   estadoTitulo,
@@ -84,6 +85,61 @@ describe("completitud", () => {
     const c = completitud({ roles: ["proveedor"], docNumero: "20156698963", tituloHabilitante: "PER-001" });
     expect(b).toBeGreaterThan(a);
     expect(c).toBeGreaterThan(b);
+  });
+});
+
+describe("el origen legal puede estar en los permisos, no en el campo viejo", () => {
+  // La misma ficha en los dos escenarios: lo único que cambia es el contexto.
+  const proveedor = { roles: ["proveedor"], docNumero: "20156698963", telefono: "961000111" };
+
+  it("sin permisos se sigue reclamando el título, como siempre", () => {
+    const campos = pendientesDeFicha(proveedor).map((x) => x.campo);
+    expect(campos).toContain("Título habilitante");
+    // Y sin segundo argumento se comporta igual que con `{ permisos: 0 }`.
+    expect(pendientesDeFicha(proveedor, { permisos: 0 })).toEqual(pendientesDeFicha(proveedor));
+  });
+
+  it("con un permiso cargado deja de pedirlo, y NADA más cambia", () => {
+    const antes = pendientesDeFicha(proveedor);
+    const despues = pendientesDeFicha(proveedor, { permisos: 1 });
+    expect(despues.map((x) => x.campo)).not.toContain("Título habilitante");
+    // El resto de la lista —campos, motivos, niveles y orden— es idéntico.
+    expect(despues).toEqual(antes.filter((x) => x.campo !== "Título habilitante"));
+  });
+
+  it("sólo le toca al proveedor: al destinatario y al conductor no les mueve nada", () => {
+    const otros = { roles: ["destinatario", "conductor"], docNumero: "45871236" };
+    expect(pendientesDeFicha(otros, { permisos: 3 })).toEqual(pendientesDeFicha(otros));
+  });
+
+  it("un título escrito a mano sigue alcanzando aunque no haya permisos", () => {
+    const conTitulo = { ...proveedor, tituloHabilitante: "PER-FMC-001" };
+    expect(pendientesDeFicha(conTitulo).map((x) => x.campo)).not.toContain("Título habilitante");
+  });
+
+  it("la barra SUBE al atar el permiso: el denominador no encoge", () => {
+    // Una ficha de proveedor pide 5 cosas; ésta tiene documento y teléfono.
+    expect(pendientesDeFicha({ roles: ["proveedor"] })).toHaveLength(5);
+    const sin = completitud(proveedor);
+    const con = completitud(proveedor, { permisos: 2 });
+    expect(sin).toBe(40); // 2 de 5
+    expect(con).toBe(60); // 3 de 5 — el permiso cuenta como el origen legal
+    expect(con).toBeGreaterThan(sin);
+  });
+
+  it("dice por qué dejó de pedirlo, en vez de borrarlo en silencio", () => {
+    expect(tituloCubiertoPorPermisos(proveedor)).toBeNull();
+    const motivo = tituloCubiertoPorPermisos(proveedor, { permisos: 2 });
+    expect(motivo).toContain("origen legal");
+    expect(motivo).toContain("2 cargados");
+    // Si el campo viejo está escrito, no hay nada que explicar.
+    expect(tituloCubiertoPorPermisos({ ...proveedor, tituloHabilitante: "PER-001" }, { permisos: 2 })).toBeNull();
+    // Y a quien no es proveedor, tampoco.
+    expect(tituloCubiertoPorPermisos({ roles: ["conductor"] }, { permisos: 2 })).toBeNull();
+  });
+
+  it("con un permiso, un solo cargado se dice en singular", () => {
+    expect(tituloCubiertoPorPermisos(proveedor, { permisos: 1 })).toContain("1 cargado ");
   });
 });
 

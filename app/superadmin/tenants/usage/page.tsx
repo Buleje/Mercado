@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { StatCard } from "@buleje/design-system";
 import {
   Gauge, ArrowLeft, TrendingUp, MessageSquare, RefreshCw, Search, X,
   Download, Building2, AlertTriangle, Activity,
@@ -55,25 +56,6 @@ function exportCSV(rows: UsageRow[]) {
   const a = document.createElement("a");
   a.href = url; a.download = `uso-limites-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click(); URL.revokeObjectURL(url);
-}
-
-function KpiCard({ icon: Icon, label, value, sub, tone = "default" }: {
-  icon: typeof Gauge; label: string; value: string; sub?: string; tone?: "default" | "good" | "warn" | "bad";
-}) {
-  const color =
-    tone === "good" ? "text-[var(--data-success-600,#16a34a)]" :
-    tone === "warn" ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" :
-    tone === "bad" ? "text-[var(--data-error-600,#dc2626)]" : "text-[var(--text-primary)]";
-  return (
-    <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
-      <div className="flex items-center gap-1.5 mb-2 text-[var(--text-tertiary)]">
-        <Icon className="h-4 w-4" />
-        <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">{label}</span>
-      </div>
-      <p className={`font-display text-2xl font-extrabold tabular-nums ${color}`}>{value}</p>
-      {sub && <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
-    </div>
-  );
 }
 
 export default function TenantsUsagePage() {
@@ -172,12 +154,12 @@ export default function TenantsUsagePage() {
       >
         {/* KPIs ejecutivos */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-          <KpiCard icon={Building2} label="Tiendas" value={String(kpis.total)} sub="con plan asignado" />
-          <KpiCard icon={AlertTriangle} label="Cerca del límite" value={String(kpis.near)} sub="candidatas a upsell" tone={kpis.near > 0 ? "warn" : "good"} />
-          <KpiCard icon={Gauge} label="Saturadas" value={String(kpis.saturated)} sub="≥100% del límite" tone={kpis.saturated > 0 ? "bad" : "good"} />
-          <KpiCard icon={Activity} label="Uso promedio" value={`${kpis.avgUsage}%`} sub="planes con límite" />
-          <KpiCard icon={TrendingUp} label="MRR potencial" value={fmtPEN(kpis.upside)} sub="/mes si convertís" tone={kpis.upside > 0 ? "warn" : "default"} />
-          <KpiCard icon={AlertTriangle} label="Doble riesgo" value={String(kpis.doubleRisk)} sub="al límite + trial" tone={kpis.doubleRisk > 0 ? "bad" : "good"} />
+          <StatCard icon={Building2} label="Tiendas" value={String(kpis.total)} subValue="con plan asignado" density="compact" />
+          <StatCard icon={AlertTriangle} label="Cerca del límite" value={String(kpis.near)} subValue="candidatas a upsell" emphasis={kpis.near > 0 ? "warning" : "success"} density="compact" />
+          <StatCard icon={Gauge} label="Saturadas" value={String(kpis.saturated)} subValue="≥100% del límite" emphasis={kpis.saturated > 0 ? "error" : "success"} density="compact" />
+          <StatCard icon={Activity} label="Uso promedio" value={`${kpis.avgUsage}%`} subValue="planes con límite" density="compact" />
+          <StatCard icon={TrendingUp} label="MRR potencial" value={fmtPEN(kpis.upside)} subValue="/mes si convertís" emphasis={kpis.upside > 0 ? "warning" : "neutral"} density="compact" />
+          <StatCard icon={AlertTriangle} label="Doble riesgo" value={String(kpis.doubleRisk)} subValue="al límite + trial" emphasis={kpis.doubleRisk > 0 ? "error" : "success"} density="compact" />
         </div>
 
         {/* Resumen upsell */}

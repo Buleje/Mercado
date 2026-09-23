@@ -15,6 +15,7 @@ import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
 import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import { formatCurrency } from "@/lib/format";
 
 // ── Existing tabs ──
 const InventoryTab = dynamic(() => import("@/components/admin/InventoryTab"), { loading: S });
@@ -98,7 +99,7 @@ export default function InventarioAlmacenesModule() {
     const labelsHtml = selected.map(p => `
       <div class="label">
         <div class="label-name">${p.name}</div>
-        <div class="label-price">S/ ${Number(p.price).toFixed(2)}</div>
+        <div class="label-price">${formatCurrency(Number(p.price))}</div>
         ${p.barcode ? `<div class="label-barcode">${p.barcode}</div>` : ""}
       </div>
     `).join("");
@@ -204,7 +205,7 @@ export default function InventarioAlmacenesModule() {
 
       {/* ── Modal: Conteo Físico ── */}
       {showConteoModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowConteoModal(false)}>
+        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowConteoModal(false)}>
           <div className="bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] sticky top-0 bg-[var(--surface-raised)] z-10">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Conteo Físico</CardTitle>
@@ -230,7 +231,7 @@ export default function InventarioAlmacenesModule() {
 
       {/* ── Modal: Declaración de Inventario ── */}
       {showDeclaracionModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowDeclaracionModal(false)}>
+        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowDeclaracionModal(false)}>
           <div className="bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] sticky top-0 bg-[var(--surface-raised)] z-10">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Declaración de Inventario</CardTitle>
@@ -307,7 +308,7 @@ export default function InventarioAlmacenesModule() {
                     className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                   />
                   <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{p.name}</span>
-                  <span className="text-sm font-bold text-primary">S/{Number(p.price).toFixed(2)}</span>
+                  <span className="text-sm font-bold text-primary">{formatCurrency(Number(p.price))}</span>
                 </label>
               ))}
             </div>

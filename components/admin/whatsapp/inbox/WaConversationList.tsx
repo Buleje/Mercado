@@ -6,16 +6,22 @@ import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { WA_LABELS, WaLabelChips } from "./WaLabels";
 import type { WaConversation } from "./useWhatsAppInbox";
+import { formatTime, formatWeekday } from "@/lib/format";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatTime(iso: string): string {
+/**
+ * Hora relativa de la lista de chats (hoy → hora, ayer → "Ayer", esta semana →
+ * día corto, si no dd/mm). No es un formato del canon (mezcla 3 salidas según
+ * antigüedad), pero delega en `lib/format` lo que sí tiene equivalente exacto.
+ */
+function formatConversationTime(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - d.getTime()) / 86_400_000);
-  if (diffDays === 0) return d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  if (diffDays === 0) return formatTime(d);
   if (diffDays === 1) return "Ayer";
-  if (diffDays < 7) return d.toLocaleDateString("es-PE", { weekday: "short" });
+  if (diffDays < 7) return formatWeekday(d);
   return d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" });
 }
 
@@ -252,7 +258,7 @@ export default function WaConversationList({
                           unread ? "font-bold text-primary" : "text-[var(--text-tertiary)]",
                         )}
                       >
-                        {formatTime(c.lastAt)}
+                        {formatConversationTime(c.lastAt)}
                       </span>
                     </span>
                     <span className="mt-0.5 flex items-center justify-between gap-2">

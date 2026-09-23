@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { StatCard } from "@buleje/design-system";
 
 // ---------- tipos ----------
 
@@ -43,43 +44,15 @@ function Skeleton({ className = "" }: { className?: string }) {
 }
 
 // ---------- KPI card ----------
-
-function KpiCard({
-  label,
-  value,
-  sub,
-  loading,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  loading: boolean;
-}) {
+// `KpiCard` (con `background: rgba(0,160,160,...)` a mano) migró a StatCard del
+// DS. Su prop `loading` no tiene equivalente en StatCard: acá se resuelve
+// afuera, mostrando el mismo `Skeleton` que ya usa el resto del dashboard en
+// vez de la etiqueta + valor.
+function KpiSkeleton() {
   return (
-    <div
-      className="rounded-2xl p-5 transition-shadow hover:shadow-lg"
-      style={{
-        background: "rgba(0, 160, 160,0.06)",
-        border: "1px solid rgba(0, 160, 160,0.15)",
-      }}
-    >
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        {label}
-      </p>
-      {loading ? (
-        <Skeleton className="mt-2 h-8 w-28" />
-      ) : (
-        <>
-          <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
-            {value}
-          </p>
-          {sub && (
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              {sub}
-            </p>
-          )}
-        </>
-      )}
+    <div className="h-full w-full border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <Skeleton className="h-3 w-24" />
+      <Skeleton className="mt-3 h-7 w-20" />
     </div>
   );
 }
@@ -292,27 +265,26 @@ export default function SupplierDashboard({
             Resumen
           </h1>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <KpiCard
-              label="Productos publicados"
-              value={String(totalPublished)}
-              sub={`de ${products.length} totales`}
-              loading={loadingProducts}
-            />
-            <KpiCard
-              label="Órdenes mayoristas"
-              value={String(totalOrders)}
-              loading={loadingOrders}
-            />
-            <KpiCard
-              label="Ingresos del mes"
-              value={fmt(totalRevenue)}
-              loading={loadingOrders}
-            />
-            <KpiCard
-              label="Rating promedio"
-              value={`${avgRating} ★`}
-              loading={false}
-            />
+            {loadingProducts ? (
+              <KpiSkeleton />
+            ) : (
+              <StatCard
+                label="Productos publicados"
+                value={String(totalPublished)}
+                subValue={`de ${products.length} totales`}
+              />
+            )}
+            {loadingOrders ? (
+              <KpiSkeleton />
+            ) : (
+              <StatCard label="Órdenes mayoristas" value={String(totalOrders)} />
+            )}
+            {loadingOrders ? (
+              <KpiSkeleton />
+            ) : (
+              <StatCard label="Ingresos del mes" value={fmt(totalRevenue)} />
+            )}
+            <StatCard label="Rating promedio" value={`${avgRating} ★`} />
           </div>
         </section>
 

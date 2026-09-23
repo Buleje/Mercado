@@ -26,7 +26,7 @@ const MODULOS: Record<string, { archivo: string; extraer: (src: string) => strin
   recetas: { archivo: "components/admin/RecetasModule.tsx", extraer: idsDeRecetas },
   // Mi Plata es de dos niveles: las vistas direccionables son las HOJAS (la
   // sección dentro de la pestaña), no las pestañas.
-  plata: { archivo: "components/admin/unified/FinanzasModule.tsx", extraer: idsDeFinanzas },
+  plata: { archivo: "components/admin/unified/finanzas/estructura.ts", extraer: idsDeFinanzas },
 };
 
 /** Los `id: "..."` del bloque `const TABS = [...]`. */
@@ -43,12 +43,18 @@ function idsDeRecetas(src: string): string[] {
 }
 
 /**
- * Las hojas de Mi Plata: la sub-vista de cada pestaña, o la pestaña misma
- * cuando no se divide. Es la misma cuenta que hace `VISTAS` en el componente.
+ * Las hojas de Mi Plata: la sección de cada pestaña, o la pestaña misma cuando
+ * no se divide. Es la misma cuenta que hace `VISTAS` en la estructura.
+ *
+ * La estructura se mudó de `FinanzasModule.tsx` a `finanzas/estructura.ts` y el
+ * bloque pasó de llamarse `SUBS` a `SECCIONES` cuando Mi Plata se unificó de
+ * 6 pestañas + 14 sub-vistas a 5 (ADR de la ronda de «Plata compacta»). Este
+ * test fue el que lo cazó: el buscador global seguía ofreciendo sub-vistas que
+ * ya no existían.
  */
 function idsDeFinanzas(src: string): string[] {
   const tabs = idsDeTABS(src);
-  const bloque = src.match(/const SUBS[^=]*=\s*\{([\s\S]*?)\n\};/);
+  const bloque = src.match(/const SECCIONES[^=]*=\s*\{([\s\S]*?)\n\};/);
   const subsPorTab = new Map<string, string[]>();
   if (bloque) {
     // Cada entrada cierra con `\n  ],` — incluida la última. Un lookahead por

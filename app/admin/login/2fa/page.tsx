@@ -106,7 +106,7 @@ export default function TwoFactorPage() {
         className={[
           "w-full max-w-sm bg-[var(--surface-base)] ",
           "rounded-2xl shadow-lg border border-[var(--rule-soft)]",
-          "p-7 space-y-5",
+          "p-7 space-y-4",
           shaking ? "animate-[shake_0.45s_ease-out]" : "",
         ]
           .filter(Boolean)

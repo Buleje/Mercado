@@ -17,6 +17,7 @@ import {
 import AdminTabShell from "../../_components/_shared/AdminTabShell";
 import AdminEmptyState from "../../_components/_shared/AdminEmptyState";
 import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
+import { formatCurrency } from "@/lib/format";
 
 type Override = {
   id: string;
@@ -194,7 +195,7 @@ export default function ProductsTab() {
                     {p.name}
                   </p>
                   <p className={ADMIN_TOKENS.hint}>
-                    S/ {Number(p.price).toFixed(2)} · {p.category}
+                    {formatCurrency(Number(p.price))} · {p.category}
                   </p>
                 </div>
                 <Plus
@@ -276,7 +277,7 @@ function OverrideRow({
       <div className="min-w-0 flex-1">
         <p className="font-semibold text-sm truncate">{override.productName}</p>
         <p className="text-xs text-[var(--text-secondary)]">
-          Precio base: <span className="font-mono">S/{Number(override.productBasePrice).toFixed(2)}</span>
+          Precio base: <span className="font-mono">{formatCurrency(Number(override.productBasePrice))}</span>
           {override.savingsPercent != null && override.savingsPercent > 0 && (
             <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold">
               -{override.savingsPercent}%

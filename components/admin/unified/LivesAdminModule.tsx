@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, StatCard } from "@buleje/design-system";
 /**
  * LivesAdminModule — Gestión de transmisiones en vivo.
  *
@@ -24,10 +24,10 @@ import {
   AlertCircle,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import KPICard from "@/components/admin/shared/KPICard";
 import { ScheduleLiveModal, type ScheduledLiveData } from "./lives-admin/ScheduleLiveModal";
 import { StartLiveModal } from "./lives-admin/StartLiveModal";
 import { LivePerformanceCard, type PastLive } from "./lives-admin/LivePerformanceCard";
+import { formatDateTimeShort } from "@/lib/format";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -109,12 +109,7 @@ const MOCK_PAST: PastLive[] = [
 
 function fmtDateTime(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTimeShort(iso);
   } catch {
     return iso;
   }
@@ -202,33 +197,35 @@ export default function LivesAdminModule() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
+        <StatCard
           label="Transmisiones este mes"
           value={transmisionesEsteMes}
           icon={Radio}
-          color="var(--accent)"
-          subtitle="En el periodo actual"
+          subValue="En el periodo actual"
         />
-        <KPICard
+        <StatCard
           label="Viewers promedio"
           value={viewersPromedio}
           icon={Eye}
-          color="#3B82F6"
-          subtitle="Por transmisión"
+          subValue="Por transmisión"
         />
-        <KPICard
+        <StatCard
           label="Pedidos generados"
           value={pedidosTotales}
           icon={ShoppingBag}
-          color="#10B981"
-          subtitle="Total histórico"
+          emphasis="success"
+          subValue="Total histórico"
         />
-        <KPICard
+        {/* Engagement no es un estado que necesite atención (más alto = mejor):
+            el coral original era el mismo color de posición que "por cobrar"/
+            "saldo pendiente" en otros dashboards, pegado sin releer qué decía
+            ESTA tarjeta. Se pierde a propósito — StatCard sólo colorea con
+            significado (memoria deuda-no-es-indicador). */}
+        <StatCard
           label="Engagement"
           value={`${engagementPromedio}%`}
           icon={DollarSign}
-          color="#ff6b5b"
-          subtitle="Promedio viewers activos"
+          subValue="Promedio viewers activos"
         />
       </div>
 

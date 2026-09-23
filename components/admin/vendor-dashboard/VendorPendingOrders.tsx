@@ -4,6 +4,7 @@ import { CardTitle } from "@buleje/design-system";
 import type { VendorOrder } from "./vendor-dashboard.types";
 import { Package, Clock, CheckCircle2 } from "@buleje/design-system/icons";
 import Link from "next/link";
+import { formatCurrency } from "@/lib/format";
 
 type Props = {
   orders: VendorOrder[];
@@ -94,7 +95,7 @@ export function VendorPendingOrders({ orders }: Props) {
             </div>
             <div className="shrink-0 text-right">
               <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                S/ {Number(order.total).toFixed(2)}
+                {formatCurrency(Number(order.total))}
               </p>
             </div>
           </li>

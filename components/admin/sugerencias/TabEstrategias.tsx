@@ -122,7 +122,7 @@ export default function TabEstrategias() {
   const next = seasons[0];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div>
         <p className="text-base font-extrabold text-[var(--text-primary)]">Calendario comercial</p>
         <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">

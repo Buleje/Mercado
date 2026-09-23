@@ -26,6 +26,7 @@ import { ChartsVisibilityProvider, ChartsVisibilityButton } from "@/lib/admin/ch
 import dynamic from "next/dynamic";
 import { BulejeLoader } from "@/components/admin/inicio/_shared";
 import EmptyDateRangeState from "@/components/admin/inicio/EmptyDateRangeState";
+import { formatTime } from "@/lib/format";
 
 // ── Lazy-loaded components (tab-gated, not immediately visible) ─────────────
 const DashboardLoading = () => <BulejeLoader variant="card" size={48} label="Cargando dashboard..." />;
@@ -211,7 +212,7 @@ export default function VendorDashboardModule() {
     compras: `Compras ${rangeTxt}: proveedores, deudas y órdenes.`,
     clientes: `Clientes ${rangeTxt}: nuevos, recurrentes y ticket promedio.`,
     marketplace: lastUpdated
-      ? `Marketplace actualizado a las ${lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`
+      ? `Marketplace actualizado a las ${formatTime(lastUpdated)}`
       : "Panel consolidado del canal marketplace.",
   };
 

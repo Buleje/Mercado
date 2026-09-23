@@ -32,6 +32,7 @@ import {
   ExternalLink,
   ArrowRight,
   Store,
+  Star,
 } from "@buleje/design-system/icons";
 import {
   BarChart, Bar, LabelList,
@@ -43,6 +44,7 @@ import {
   CHART_TOKENS,
   MicroList,
 } from "@/components/admin/inicio/_shared";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 const T = CHART_TOKENS;
 
@@ -65,7 +67,7 @@ interface MarketplaceDashboardProps {
 }
 
 const fmtMoney = (n: number) =>
-  `S/ ${n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toFixed(2)}`;
+  `${formatCurrency(n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n)}`;
 
 export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashboardProps) {
   const [data, setData] = useState<VendorAnalytics | null>(null);
@@ -115,7 +117,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
 
   // ── Datos reales del negocio ──────────────────────────────────────────────
   const daily = data.dailySales.map((d) => ({
-    dia: new Date(d.date).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }),
+    dia: formatDateShort(d.date),
     gmv: d.revenue,
     orders: d.orders,
   }));
@@ -175,7 +177,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{data.today.orders} pedido{data.today.orders === 1 ? "" : "s"}</p>
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-          <p className="text-xl font-extrabold text-[var(--data-warning-500)] tabular-nums">★ {Number(data.store.rating).toFixed(1)}</p>
+          <p className="flex items-center gap-1 text-xl font-extrabold text-[var(--data-warning-500)] tabular-nums"><Star className="h-4 w-4 shrink-0" fill="currentColor" aria-hidden /> {Number(data.store.rating).toFixed(1)}</p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Calificación</p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{data.store.reviewCount} reseña{data.store.reviewCount === 1 ? "" : "s"}</p>
         </div>
@@ -292,7 +294,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{o.customerName || "Cliente"}</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                      {new Date(o.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short" })}
+                      {formatDateShort(o.createdAt)}
                     </p>
                   </div>
                   <span className="text-xs font-bold text-[var(--data-success-500)] shrink-0 tabular-nums">{fmtMoney(o.total)}</span>

@@ -29,9 +29,10 @@ import {
 import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
 import { Flame, TrendingUp, TrendingDown, Sparkles } from "@buleje/design-system/icons";
+import { formatNumber } from "@/lib/format";
 
 function fmtS(v: number) {
-  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(v, { max: 0 })}`;
 }
 
 export default function VentasCharts({ data }: { data: VentasData }) {

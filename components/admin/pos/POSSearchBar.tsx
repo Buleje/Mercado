@@ -5,6 +5,7 @@ import { Search, Package } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { estaAgotado } from "@/lib/pos/stock-vendible";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -273,11 +274,11 @@ export default function POSSearchBar({
                     </p>
                     <div className="flex items-center gap-1.5">
                       <p className="text-xs font-bold text-primary">
-                        S/ {Number(p.price).toFixed(2)}
+                        {formatCurrency(Number(p.price))}
                       </p>
                       {p.previousPrice && p.previousPrice !== p.price && (
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] line-through">
-                          S/{Number(p.previousPrice).toFixed(2)}
+                          {formatCurrency(Number(p.previousPrice))}
                         </span>
                       )}
                       {p.updatedAt && (nowTs - new Date(p.updatedAt).getTime()) < 7 * 86400000 && p.previousPrice && p.previousPrice !== p.price && (

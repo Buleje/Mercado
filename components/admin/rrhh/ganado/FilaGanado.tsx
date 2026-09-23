@@ -21,6 +21,7 @@ import { CLASE_CHIP } from "../rrhh-form";
 import { CLASE_FOCUS_FILA, etiquetaModalidad, filaClicableProps, formatearPEN, pluralizar } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
 import type { GanadoDTO } from "@/lib/rrhh/tipos";
+import { formatNumber } from "@/lib/format";
 
 export default function FilaGanado({ persona }: { persona: GanadoDTO["personas"][number] }) {
   const [abierto, setAbierto] = useState(false);
@@ -67,7 +68,7 @@ export default function FilaGanado({ persona }: { persona: GanadoDTO["personas"]
             </span>
           </span>
         </td>
-        <td className="text-right tabular-nums">{dias.toLocaleString("es-PE", { maximumFractionDigits: 2 })}</td>
+        <td className="text-right tabular-nums">{formatNumber(dias, { max: 2 })}</td>
         <td className="text-right tabular-nums">{horas > 0 ? horas.toFixed(1) : "—"}</td>
         <td>{tarifaTexto}</td>
         <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">{formatearPEN(persona.total)}</td>

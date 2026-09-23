@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, Tag, Megaphone, RefreshCw } from "@buleje/des
 import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
 import { normalizeProducts, aggregateSalesByProduct, isoDaysAgo } from "./normalize";
+import { formatCurrency } from "@/lib/format";
 
 interface Product {
   id: string | number;
@@ -51,7 +52,7 @@ const MOCK_SALES: SaleData[] = [
 ];
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 export default function TabVentas() {
@@ -105,7 +106,7 @@ export default function TabVentas() {
   );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-base font-extrabold text-[var(--text-primary)]">Estrategia de venta</p>

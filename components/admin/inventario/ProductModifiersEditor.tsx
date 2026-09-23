@@ -176,7 +176,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             )}
 
             {!loading && groups.length === 0 && (
-              <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center bg-[var(--surface-raised)] ">
+              <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center bg-[var(--surface-raised)] ">
                 <Sliders className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-3" />
                 <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] mb-1">Aún no hay adicionales</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] max-w-md mx-auto leading-snug">

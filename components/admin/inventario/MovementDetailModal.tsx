@@ -19,6 +19,7 @@ import { AlertTriangle, Loader2, Undo2, X, type LucideIcon } from "@buleje/desig
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatDate, formatDateLong, formatTime } from "@/lib/format";
 
 export type MovementDetail = {
   id: string;
@@ -114,7 +115,7 @@ export default function MovementDetailModal({
           type: INVERSO[m.type],
           quantity: m.quantity,
           reference: m.id,
-          notes: `Revierte el ${m.label.toLowerCase()} de ${m.quantity} del ${fecha.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}${m.createdBy ? ` (lo había registrado ${m.createdBy})` : ""}`,
+          notes: `Revierte el ${m.label.toLowerCase()} de ${m.quantity} del ${formatDate(fecha)}${m.createdBy ? ` (lo había registrado ${m.createdBy})` : ""}`,
         }),
       });
       if (!res.ok) {
@@ -134,17 +135,17 @@ export default function MovementDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4"
+      className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4"
       onClick={(e) => e.target === e.currentTarget && !revirtiendo && onClose()}
     >
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
+        <div className="sticky top-0 z-dropdown flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div className="min-w-0">
             <SectionTitle id={titleId} as="h2" className="truncate text-lg font-bold leading-tight text-[var(--text-primary)]">{m.productName}</SectionTitle>
             <p className="text-sm text-[var(--text-secondary)]">
-              {fecha.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
+              {formatDateLong(fecha)}
               {" · "}
-              {fecha.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
+              {formatTime(fecha)}
             </p>
           </div>
           <button onClick={onClose} aria-label="Cerrar" className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">

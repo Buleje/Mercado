@@ -17,6 +17,7 @@ import {
   aggregatePurchasesByProduct,
   isoDaysAgo,
 } from "./normalize";
+import { formatCurrency } from "@/lib/format";
 
 interface Product {
   id: string | number;
@@ -82,7 +83,7 @@ const URGENCY = {
 } as const;
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function getMockProducts(): Product[] {
@@ -211,7 +212,7 @@ export default function TabCompras() {
   }, [advised]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Header con KPIs */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="flex items-center justify-between gap-3 mb-4">

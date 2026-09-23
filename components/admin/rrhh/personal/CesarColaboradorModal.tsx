@@ -171,7 +171,7 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
         </ModalFooter>
       }
     >
-      <form id={FORM_ID} onSubmit={enviar} noValidate className={cn(MODAL_BODY, "space-y-5")}>
+      <form id={FORM_ID} onSubmit={enviar} noValidate className={cn(MODAL_BODY, "space-y-4")}>
         <div className="flex items-center gap-3 rounded-xl bg-[var(--surface-sunken)] p-3">
           <span
             aria-hidden

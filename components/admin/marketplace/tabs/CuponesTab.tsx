@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useMarketplaceCoupons } from "@/components/admin/marketplace/hooks/use-marketplace-coupons";
 import { TableSkeleton } from "@/components/admin/marketplace/shared";
 import { CheckCircle, Clock, DollarSign, Eye, EyeOff, Star, Ticket, X } from "@buleje/design-system/icons";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 export function MarketplaceCuponesTab() {
   const {
@@ -125,7 +126,7 @@ export function MarketplaceCuponesTab() {
 
                     {/* Descuento principal grande */}
                     <p className="mt-2 text-2xl font-extrabold text-primary tabular-nums leading-none">
-                      {c.discountType === "percent" ? `${c.discountValue}%` : `S/${c.discountValue.toFixed(2)}`}
+                      {c.discountType === "percent" ? `${c.discountValue}%` : `${formatCurrency(c.discountValue)}`}
                       <span className="text-xs font-semibold text-[var(--text-tertiary)] ml-1.5">de descuento</span>
                     </p>
 
@@ -138,12 +139,12 @@ export function MarketplaceCuponesTab() {
                     <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                       {c.minPurchase ? (
                         <span className="inline-flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" /> Mín S/{c.minPurchase.toFixed(2)}
+                          <DollarSign className="h-3 w-3" /> Mín {formatCurrency(c.minPurchase)}
                         </span>
                       ) : null}
                       {c.expiresAt ? (
                         <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {new Date(c.expiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                          <Clock className="h-3 w-3" /> {formatDateShort(c.expiresAt)}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1">
@@ -230,7 +231,7 @@ function NewCouponModal({
   const previewValue = form.discountValue
     ? isPercent
       ? `${form.discountValue}%`
-      : `S/${parseFloat(form.discountValue).toFixed(2)}`
+      : `${formatCurrency(parseFloat(form.discountValue))}`
     : isPercent
     ? "10%"
     : "S/10";
@@ -243,7 +244,7 @@ function NewCouponModal({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
@@ -281,7 +282,7 @@ function NewCouponModal({
                 <p className="text-2xl font-extrabold text-primary tabular-nums leading-none mt-0.5">{previewValue}</p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
                   {form.minPurchase ? `Mín S/${form.minPurchase}` : "Sin compra mínima"}
-                  {form.expiresAt ? ` · Vence ${new Date(form.expiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}` : ""}
+                  {form.expiresAt ? ` · Vence ${formatDateShort(form.expiresAt)}` : ""}
                 </p>
               </div>
             </div>

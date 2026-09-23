@@ -26,6 +26,7 @@ const CommissionCalculator   = dynamic(() => import("@/components/admin/Commissi
 
 import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
 
 
 // ── Tabs reordenados en flujo lógico del día ──────────────────────────────────
@@ -149,7 +150,7 @@ function ShiftCloseModal({
     onConfirm();
   };
 
-  const fmt = (n: number) => `S/${n.toFixed(2)}`;
+  const fmt = (n: number) => `${formatCurrency(n)}`;
 
   return (
     <div className="modal-backdrop flex items-center justify-center p-4">
@@ -168,7 +169,7 @@ function ShiftCloseModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />

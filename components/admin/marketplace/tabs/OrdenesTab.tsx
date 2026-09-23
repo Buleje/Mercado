@@ -8,6 +8,7 @@ import { useMarketplaceOrders, type MarketplaceOrderDetail, type OrderTargetStat
 import { OrderDetailModal } from "@/components/admin/marketplace/OrderDetailModal";
 import { ORDER_STATUS_CONFIG, SortIcon, TableSkeleton, CounterChip } from "@/components/admin/marketplace/shared";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { formatCurrency, formatDateNumeric, formatDateShort, formatTime } from "@/lib/format";
 
 // ─────────────────────────────────────────────
 // Sub-tab: Órdenes
@@ -155,7 +156,7 @@ export function MarketplaceOrdenesTab() {
     const message =
       `Hola ${o.customerName}, te escribo de la tienda. ` +
       `Tu pedido #${idShort} está actualmente *${statusLabel}*. ` +
-      `Total: S/ ${o.total.toFixed(2)}. ¿Te confirmamos los detalles?`;
+      `Total: ${formatCurrency(o.total)}. ¿Te confirmamos los detalles?`;
     return { message, encoded: encodeURIComponent(message) };
   }
 
@@ -181,8 +182,8 @@ export function MarketplaceOrdenesTab() {
       const d = new Date(o.createdAt);
       return [
         `#${o.id.slice(-8).toUpperCase()}`,
-        d.toLocaleDateString("es-PE"),
-        d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false }),
+        formatDateNumeric(d),
+        formatTime(d),
         o.customerName,
         o.customerPhone ?? "",
         o.customerLocation ?? "",
@@ -298,7 +299,7 @@ export function MarketplaceOrdenesTab() {
             const message =
               `Hola ${o.customerName}, te escribo de la tienda. ` +
               `Tu pedido #${idShort} está actualmente *${statusLabel}*. ` +
-              `Total: S/ ${o.total.toFixed(2)}. ¿Te confirmamos los detalles?`;
+              `Total: ${formatCurrency(o.total)}. ¿Te confirmamos los detalles?`;
             window.open(
               `https://wa.me/${intl}?text=${encodeURIComponent(message)}`,
               "_blank",
@@ -610,7 +611,7 @@ export function MarketplaceOrdenesTab() {
                         </p>
                       </td>
                       <td className="px-3 py-2.5 text-right font-extrabold text-[var(--text-primary)] tabular-nums">
-                        S/ {o.total.toFixed(2)}
+                        {formatCurrency(o.total)}
                       </td>
                       <td className="px-3 py-2.5 text-center">
                         <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-extrabold", statusConfig.className)}>
@@ -619,10 +620,10 @@ export function MarketplaceOrdenesTab() {
                       </td>
                       <td className="px-3 py-2.5 text-right text-xs">
                         <p className="font-semibold text-[var(--text-primary)] tabular-nums">
-                          {created.toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                          {formatDateShort(created)}
                         </p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
-                          {created.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                          {formatTime(created)}
                         </p>
                       </td>
                       <td className="px-3 py-2.5 text-right" data-no-row-click>

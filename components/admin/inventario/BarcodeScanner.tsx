@@ -21,11 +21,11 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
   }, []);
 
   return (
-    <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Escáner de código de barras" tabIndex={-1} className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
+    <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Escáner de código de barras" tabIndex={-1} className="fixed inset-0 z-modal bg-black flex flex-col items-center justify-center">
       {/* Close button */}
       <button
         onClick={() => { stopScan(); onClose(); }}
-        className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+        className="absolute top-4 right-4 z-modal w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
         aria-label="Cerrar escáner"
       >
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

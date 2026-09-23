@@ -5,6 +5,7 @@ import { Monitor, Smartphone, MapPin, Clock, ShieldCheck, KeyRound, X } from "@b
 import { CardTitle, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import { formatDate } from "@/lib/format";
 
 type TrustedDevice = {
   id: string;
@@ -57,7 +58,7 @@ function relative(iso: string): string {
   if (h < 24) return `hace ${h} h`;
   const d = Math.round(h / 24);
   if (d < 30) return `hace ${d} día${d === 1 ? "" : "s"}`;
-  return new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" });
+  return formatDate(iso);
 }
 
 export default function LoginDevicesCard() {

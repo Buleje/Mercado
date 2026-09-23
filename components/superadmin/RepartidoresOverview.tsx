@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { StatCard } from "@buleje/design-system";
 import {
   Users, Star, Truck, Clock, MapPin, ChevronDown, AlertTriangle, TrendingUp,
   Activity, RefreshCw, Trophy,
@@ -22,24 +23,6 @@ type TopPerformer = { id: string; name: string; zone: string; rating: number; ac
 type AtRisk = { id: string; name: string; zone: string; rating: number; acceptanceRate: number; lastPingAt: string | null; tenant: string | null; reasons: string[] };
 type Zone = { zone: string; count: number; online: number; avgRating: number };
 type Overview = { fleet: Fleet; sos: Sos[]; topPerformers: TopPerformer[]; atRisk: AtRisk[]; byZone: Zone[] };
-
-function KpiCard({ icon: Icon, label, value, sub, tone = "default" }: {
-  icon: typeof Users; label: string; value: string; sub?: string; tone?: "default" | "good" | "warn";
-}) {
-  const valueColor =
-    tone === "good" ? "text-[var(--data-success-600,#16a34a)]" :
-    tone === "warn" ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-primary)]";
-  return (
-    <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
-      <div className="flex items-center gap-1.5 mb-2 text-[var(--text-tertiary)]">
-        <Icon className="h-4 w-4" />
-        <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">{label}</span>
-      </div>
-      <p className={`font-display text-2xl font-extrabold tabular-nums ${valueColor}`}>{value}</p>
-      {sub && <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
-    </div>
-  );
-}
 
 export default function RepartidoresOverview() {
   const [data, setData] = useState<Overview | null>(null);
@@ -101,12 +84,12 @@ export default function RepartidoresOverview() {
               {/* KPIs de flota */}
               {f && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                  <KpiCard icon={Activity} label="Online ahora" value={`${f.online}/${f.active}`} sub={`${f.onlinePct}% de activos`} tone={f.onlinePct >= 30 ? "good" : "warn"} />
-                  <KpiCard icon={Star} label="Rating prom" value={f.avgRating != null ? Number(f.avgRating).toFixed(2) : "—"} sub="sobre 5.0" tone={f.avgRating != null && f.avgRating >= 4.5 ? "good" : "warn"} />
-                  <KpiCard icon={TrendingUp} label="Aceptación" value={f.avgAcceptance != null ? `${Math.round(f.avgAcceptance * 100)}%` : "—"} sub="promedio flota" tone={f.avgAcceptance != null && f.avgAcceptance >= 0.7 ? "good" : "warn"} />
-                  <KpiCard icon={Truck} label="Entregas 7d" value={f.deliveries7d.toLocaleString()} sub={`${f.deliveries24h} en 24h`} />
-                  <KpiCard icon={Clock} label="Tiempo medio" value={f.avgDeliveryMin != null ? `${f.avgDeliveryMin}m` : "—"} sub="pedido → entregado" />
-                  <KpiCard icon={Users} label="Total flota" value={f.total.toLocaleString()} sub={`${f.pending} por aprobar`} tone={f.pending > 0 ? "warn" : "default"} />
+                  <StatCard icon={Activity} label="Online ahora" value={`${f.online}/${f.active}`} subValue={`${f.onlinePct}% de activos`} emphasis={f.onlinePct >= 30 ? "success" : "warning"} density="compact" />
+                  <StatCard icon={Star} label="Rating prom" value={f.avgRating != null ? Number(f.avgRating).toFixed(2) : "—"} subValue="sobre 5.0" emphasis={f.avgRating != null && f.avgRating >= 4.5 ? "success" : "warning"} density="compact" />
+                  <StatCard icon={TrendingUp} label="Aceptación" value={f.avgAcceptance != null ? `${Math.round(f.avgAcceptance * 100)}%` : "—"} subValue="promedio flota" emphasis={f.avgAcceptance != null && f.avgAcceptance >= 0.7 ? "success" : "warning"} density="compact" />
+                  <StatCard icon={Truck} label="Entregas 7d" value={f.deliveries7d.toLocaleString()} subValue={`${f.deliveries24h} en 24h`} density="compact" />
+                  <StatCard icon={Clock} label="Tiempo medio" value={f.avgDeliveryMin != null ? `${f.avgDeliveryMin}m` : "—"} subValue="pedido → entregado" density="compact" />
+                  <StatCard icon={Users} label="Total flota" value={f.total.toLocaleString()} subValue={`${f.pending} por aprobar`} emphasis={f.pending > 0 ? "warning" : "neutral"} density="compact" />
                 </div>
               )}
 

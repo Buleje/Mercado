@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Zap, X, HelpCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { estaAgotado } from "@/lib/pos/stock-vendible";
+import { formatCurrency } from "@/lib/format";
 
 interface Product {
   id: number;
@@ -19,7 +20,7 @@ interface POSExpressModeProps {
 }
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 export default function POSExpressMode({

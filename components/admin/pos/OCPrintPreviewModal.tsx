@@ -4,6 +4,7 @@ import { DataTable, SectionTitle } from "@buleje/design-system";
 import { AlertTriangle } from "@buleje/design-system/icons";
 import { useCallback, useId, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency, formatDateNumeric } from "@/lib/format";
 
 interface OCPrintPreviewModalProps {
   cart: Array<{
@@ -62,9 +63,9 @@ export default function OCPrintPreviewModal({
     doc.setFont("helvetica", "bold");
     doc.text(ocNum, RIGHT, 20, { align: "right" });
     doc.setFont("helvetica", "normal");
-    doc.text(`Fecha: ${new Date().toLocaleDateString("es-PE")}`, RIGHT, 27, { align: "right" });
+    doc.text(`Fecha: ${formatDateNumeric(new Date())}`, RIGHT, 27, { align: "right" });
     if (deliveryDate) {
-      doc.text(`Entrega: ${new Date(deliveryDate).toLocaleDateString("es-PE")}`, RIGHT, 34, { align: "right" });
+      doc.text(`Entrega: ${formatDateNumeric(deliveryDate)}`, RIGHT, 34, { align: "right" });
     }
 
     // Divider
@@ -103,8 +104,8 @@ export default function OCPrintPreviewModal({
       const lineTotal = unitPrice * item.quantity;
       doc.text(`${item.product.name}`, LEFT + 1, y);
       doc.text(`${item.quantity} ${item.product.unit}`, 130, y, { align: "right" });
-      doc.text(`S/${unitPrice.toFixed(2)}`, 160, y, { align: "right" });
-      doc.text(`S/${lineTotal.toFixed(2)}`, RIGHT, y, { align: "right" });
+      doc.text(`${formatCurrency(unitPrice)}`, 160, y, { align: "right" });
+      doc.text(`${formatCurrency(lineTotal)}`, RIGHT, y, { align: "right" });
       y += 6;
       if (y > 260) { doc.addPage(); y = 20; }
     }
@@ -115,12 +116,12 @@ export default function OCPrintPreviewModal({
     y += 5;
     doc.setFontSize(9);
     doc.text("Subtotal:", 155, y);
-    doc.text(`S/${subtotal.toFixed(2)}`, RIGHT, y, { align: "right" });
+    doc.text(`${formatCurrency(subtotal)}`, RIGHT, y, { align: "right" });
     if (discount > 0) {
       y += 5;
       doc.setTextColor(200, 0, 0);
       doc.text(`Descuento ${discount}%:`, 155, y);
-      doc.text(`-S/${discountAmount.toFixed(2)}`, RIGHT, y, { align: "right" });
+      doc.text(`-${formatCurrency(discountAmount)}`, RIGHT, y, { align: "right" });
       doc.setTextColor(0, 0, 0);
     }
     y += 6;
@@ -128,7 +129,7 @@ export default function OCPrintPreviewModal({
     doc.setFontSize(11);
     doc.text("TOTAL:", 150, y);
     doc.setTextColor(45, 106, 79);
-    doc.text(`S/${total.toFixed(2)}`, RIGHT, y, { align: "right" });
+    doc.text(`${formatCurrency(total)}`, RIGHT, y, { align: "right" });
     doc.setTextColor(0, 0, 0);
 
     // Conditions
@@ -155,7 +156,7 @@ export default function OCPrintPreviewModal({
   useModalAccesible(modalRef, { onCerrar: onClose });
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-modal flex items-center justify-center p-4">
       <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 space-y-4" id="oc-print-area">
           {/* Header */}
@@ -166,8 +167,8 @@ export default function OCPrintPreviewModal({
             </div>
             <div className="text-right text-sm text-[var(--text-tertiary)]">
               <p className="font-bold text-[var(--text-primary)]">N° {lastOCId || "---"}</p>
-              <p>Fecha: {new Date().toLocaleDateString("es-PE")}</p>
-              {deliveryDate && <p>Entrega: {new Date(deliveryDate).toLocaleDateString("es-PE")}</p>}
+              <p>Fecha: {formatDateNumeric(new Date())}</p>
+              {deliveryDate && <p>Entrega: {formatDateNumeric(deliveryDate)}</p>}
             </div>
           </div>
 
@@ -202,10 +203,10 @@ export default function OCPrintPreviewModal({
                     {item.quantity} {item.product.unit}
                   </td>
                   <td className="py-2 text-right font-mono text-[var(--text-secondary)]">
-                    S/{(item.product.costPrice ?? item.product.price).toFixed(2)}
+                    {formatCurrency(item.product.costPrice ?? item.product.price)}
                   </td>
                   <td className="py-2 text-right font-mono font-bold text-[var(--text-primary)]">
-                    S/{((item.product.costPrice ?? item.product.price) * item.quantity).toFixed(2)}
+                    {formatCurrency((item.product.costPrice ?? item.product.price) * item.quantity)}
                   </td>
                 </tr>
               ))}
@@ -216,17 +217,17 @@ export default function OCPrintPreviewModal({
           <div className="border-t-2 border-[var(--rule-base)] pt-3 space-y-1">
             <div className="flex justify-between text-sm">
               <span className="text-[var(--text-tertiary)]">Subtotal</span>
-              <span className="font-mono dark:text-gray-200">S/{subtotal.toFixed(2)}</span>
+              <span className="font-mono dark:text-gray-200">{formatCurrency(subtotal)}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-sm text-[var(--data-error-500)]">
                 <span>Descuento {discount}%</span>
-                <span className="font-mono">-S/{discountAmount.toFixed(2)}</span>
+                <span className="font-mono">-{formatCurrency(discountAmount)}</span>
               </div>
             )}
             <div className="flex justify-between text-lg font-bold border-t dark:border-[var(--rule-base)] pt-2 dark:text-white">
               <span>TOTAL</span>
-              <span className="font-mono text-primary">S/{total.toFixed(2)}</span>
+              <span className="font-mono text-primary">{formatCurrency(total)}</span>
             </div>
           </div>
 

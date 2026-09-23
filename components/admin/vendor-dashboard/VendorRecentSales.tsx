@@ -3,13 +3,14 @@
 import { CardTitle } from "@buleje/design-system";
 import type { VendorOrder } from "./vendor-dashboard.types";
 import { Receipt, ShoppingCart } from "@buleje/design-system/icons";
+import { formatCurrency, formatTime } from "@/lib/format";
 
 type Props = {
   sales: VendorOrder[];
 };
 
 function formatHour(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return formatTime(iso);
 }
 
 function paymentLabel(method?: string): string {
@@ -67,7 +68,7 @@ export function VendorRecentSales({ sales }: Props) {
             </div>
             <div className="shrink-0">
               <p className="font-bold text-sm text-primary">
-                S/ {Number(sale.total).toFixed(2)}
+                {formatCurrency(Number(sale.total))}
               </p>
             </div>
           </li>

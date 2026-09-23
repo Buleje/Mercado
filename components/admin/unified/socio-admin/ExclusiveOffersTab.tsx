@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
+import { formatCurrency } from "@/lib/format";
 
 interface ExclusiveOffer {
   id: string;
@@ -76,7 +77,7 @@ const MOCK_OFFERS: ExclusiveOffer[] = [
 ];
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function OfferModal({

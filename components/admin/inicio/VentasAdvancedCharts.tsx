@@ -12,6 +12,7 @@ import {
 } from "@/components/ui-system/charts";
 import { DashboardSection } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 type Product = {
   id: number | string;
@@ -212,7 +213,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
     const days = Array.from(byDate.keys()).sort();
     const rows = days.map((k) => {
       const inner = byDate.get(k)!;
-      const row: Record<string, string | number> = { day: new Date(k + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) };
+      const row: Record<string, string | number> = { day: formatDateShort(k + "T12:00:00") };
       topCats.forEach((cat) => {
         row[cat] = Math.round(inner.get(cat) ?? 0);
       });
@@ -284,7 +285,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
   }, [orders, sales]);
 
   const fmtPEN = (v: number) =>
-    `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+    `S/ ${formatNumber(v, { max: 0 })}`;
 
   const sections: DraggableItem[] = [
     {
@@ -319,7 +320,7 @@ kicker="Análisis Pareto · rango activo"
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("acumulado")
                 ? `${Number(v).toFixed(1)}%`
-                : `S/ ${Number(v).toLocaleString("es-PE")}`
+                : `S/ ${formatNumber(Number(v))}`
             }
             height={320}
             minDataPoints={1}
@@ -345,7 +346,7 @@ kicker="Densidad de ventas · rango activo"
         >
           <BulejeHeatmap
             data={heatmap.cells}
-            valueFormat={(v) => `S/ ${v.toLocaleString("es-PE")}`}
+            valueFormat={(v) => `S/ ${formatNumber(v)}`}
           />
         </DashboardSection>
       ),
@@ -404,11 +405,11 @@ kicker="Mix de categorías · rango activo"
               xKey="day"
               stacks={mix.stacks}
               yAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-              tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
+              tooltipFormat={(v) => `S/ ${formatNumber(Number(v))}`}
               height={300}
             />
           ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
               Sin datos en los rango activo.
             </div>
           )}
@@ -432,8 +433,8 @@ kicker="Comparativa · semana a semana"
             previousKey="previous"
             currentLabel="Esta semana"
             previousLabel="Semana pasada"
-            yAxisFormat={(v) => `S/${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
-            tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
+            yAxisFormat={(v) => `S/${formatNumber(v, { max: 0 })}`}
+            tooltipFormat={(v) => `S/ ${formatNumber(Number(v))}`}
             height={280}
           />
         </DashboardSection>

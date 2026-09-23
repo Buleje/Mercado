@@ -118,7 +118,7 @@ export default function MarketplaceBrandingTab() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-8 flex items-center gap-3 text-sm text-[var(--text-secondary)]">
+      <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 flex items-center gap-3 text-sm text-[var(--text-secondary)]">
         <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
         Cargando branding…
       </div>

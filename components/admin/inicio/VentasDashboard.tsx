@@ -18,8 +18,9 @@ const VentasAdvancedCharts = dynamic(
   { ssr: false },
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision en render body.
-import { BulejeDashboardSkeleton } from "./_shared";
+import { BulejeDashboardSkeleton, KPI_GRID_6 } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -80,9 +81,9 @@ export interface VentasData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 function dateKey(iso: string) { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
+function dayLabel(dk: string) { return formatDateShort(dk + "T12:00:00"); }
 const PAY_COLORS: Record<string, string> = { efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4", tarjeta: "#3b82f6", transferencia: "#ff6b5b" };
 const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape", plin: "Plin", tarjeta: "Tarjeta", transferencia: "Transferencia" };
 
@@ -274,7 +275,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     // o "1 may – 31 may". Se inyecta en VentasData para que los charts lo
     // muestren en su header.
     const fmtDay = (d: Date) =>
-      d.toLocaleDateString("es-PE", { day: "numeric", month: "short" }).replace(/\./g, "");
+      formatDateShort(d).replace(/\./g, "");
     const dateRangeLabel = `${fmtDay(monthStart)} – ${fmtDay(monthEnd)}`;
 
     // 7-day forecast (linear regression)
@@ -344,7 +345,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
           eyebrow + titulo + subtitulo descriptivos arriba. */}
 
       {/* ── KPI Hero Row · ADR-068 UnifiedKPITile (armonía estricta) — con sparklines ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className={KPI_GRID_6}>
         <StatCard label="Ventas Netas" value={fmt(data.ventasNetas)} icon={DollarSign} delta={data.dVentas} sparkline={data.sparkVentas.length >= 2 ? { data: data.sparkVentas } : undefined} />
         <StatCard label="Utilidad Bruta" value={fmt(data.utilidadBruta)} icon={TrendingUp} delta={data.dUtilidad} sparkline={data.sparkUtilidad.length >= 2 ? { data: data.sparkUtilidad } : undefined} />
         <StatCard label="Margen" value={`${Number(data.margen).toFixed(1)}%`} subValue={data.margenIncompleto ? "carga costos: dato parcial" : "a costo real"} icon={Percent} delta={data.dMargen} emphasis={data.margen >= 25 ? "success" : data.margen >= 15 ? "warning" : "error"} />

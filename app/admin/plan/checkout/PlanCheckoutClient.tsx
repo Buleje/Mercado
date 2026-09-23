@@ -317,7 +317,7 @@ export default function PlanCheckoutClient() {
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,_1fr)_360px] lg:gap-8">
           {/* ── Form ───────────────────────────────────────────────── */}
-          <div className="order-2 lg:order-1 space-y-5">
+          <div className="order-2 lg:order-1 space-y-4">
             {step === "select" && (
               <>
                 {/* Selector de método */}
@@ -546,7 +546,7 @@ function PayInstructions({
 
       {/* ── Yape / Plin ──────────────────────────────────────── */}
       {(method === "yape" || method === "plin") && (
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 text-center">
             <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
               Escanea este QR desde {method === "yape" ? "Yape" : "Plin"}
@@ -591,7 +591,7 @@ function PayInstructions({
 
       {/* ── Stripe ──────────────────────────────────────────── */}
       {method === "stripe" && (
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5">
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
               Te llevamos a la pasarela segura de{" "}
@@ -609,7 +609,7 @@ function PayInstructions({
 
       {/* ── Transferencia ───────────────────────────────────── */}
       {method === "transfer" && (
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 space-y-3">
             <div>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -655,7 +655,7 @@ function PayInstructions({
 
       {/* ── Efectivo ────────────────────────────────────────── */}
       {method === "cash" && (
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 flex items-start gap-3">
             <Phone className="h-5 w-5 mt-0.5 shrink-0 text-[var(--accent)]" strokeWidth={2.5} />
             <div className="text-sm leading-relaxed text-[var(--text-primary)]">

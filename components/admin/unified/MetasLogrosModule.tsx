@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency } from "@/lib/currency";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { formatDateNumeric, formatDateShort, formatNumber, formatTime } from "@/lib/format";
 
 // ─── Dynamic imports (sin SSR) ────────────────────────────────────────────────
 
@@ -116,7 +117,7 @@ const ACHIEVEMENTS_DEF: AchievementDef[] = [
     computeProgress: (c) => ({ current: c.streak, target: 100 }) },
   { id: "500-clientes",      Icon: Users,       name: "Imperio Vecinal",   desc: "Llegar a 500 clientes registrados",     category: "clientes", threshold: 500,  unit: "clientes",
     computeProgress: (c) => ({ current: c.totalCustomers, target: 500 }) },
-  { id: "5-resenas-buenas",  Icon: Star,        name: "Reseñas Buenas",    desc: "Recibir 25 reseñas (4★ o 5★)",          category: "clientes", threshold: 25,   unit: "reseñas",
+  { id: "5-resenas-buenas",  Icon: Star,        name: "Reseñas Buenas",    desc: "Recibir 25 reseñas de 4 o 5 estrellas", category: "clientes", threshold: 25,   unit: "reseñas",
     computeProgress: (c) => ({ current: c.goodReviews, target: 25 }) },
 ];
 
@@ -376,7 +377,7 @@ function SemaMesTab() {
       return;
     }
     if (val > MAX_MONTHLY_GOAL) {
-      setEditError(`Máximo: S/${MAX_MONTHLY_GOAL.toLocaleString("es-PE")}`);
+      setEditError(`Máximo: S/${formatNumber(MAX_MONTHLY_GOAL)}`);
       return;
     }
     setEditError(null);
@@ -392,7 +393,7 @@ function SemaMesTab() {
   }, [stats.year, stats.month]);
 
   const bestDayLabel = stats.bestDayKey
-    ? new Date(stats.bestDayKey).toLocaleDateString("es-PE", { day: "numeric", month: "short" })
+    ? formatDateShort(stats.bestDayKey)
     : "—";
 
   return (
@@ -401,11 +402,11 @@ function SemaMesTab() {
       <div className="flex items-center justify-end gap-2 text-xs text-[var(--text-tertiary)]">
         {error && (
           <span className="text-[var(--data-error-500)] font-semibold flex items-center gap-1">
-            ⚠ {error}
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> {error}
           </span>
         )}
         {lastUpdated && !error && (
-          <span>Actualizado {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
+          <span>Actualizado {formatTime(lastUpdated)}</span>
         )}
         <button
           type="button"
@@ -786,7 +787,7 @@ function LogrosTab() {
         try { return JSON.parse(localStorage.getItem(tenantKey) ?? "{}") as Record<string, string>; }
         catch { return {}; }
       })();
-      const now = new Date().toLocaleDateString("es-PE");
+      const now = formatDateNumeric(new Date());
       let changed = false;
       const next = { ...current };
 
@@ -878,9 +879,9 @@ function LogrosTab() {
     <div className="space-y-4">
       {/* Header de estado: error + last updated + refresh manual */}
       <div className="flex items-center justify-end gap-2 text-xs text-[var(--text-tertiary)]">
-        {error && <span className="text-[var(--data-error-500)] font-semibold">⚠ {error}</span>}
+        {error && <span className="inline-flex items-center gap-1 text-[var(--data-error-500)] font-semibold"><AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> {error}</span>}
         {lastUpdated && !error && (
-          <span>Actualizado {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
+          <span>Actualizado {formatTime(lastUpdated)}</span>
         )}
         <button
           type="button"
@@ -943,7 +944,7 @@ function LogrosTab() {
                 />
               </div>
               <p className="text-xs text-[var(--text-secondary)] mt-1.5 font-semibold">
-                {Math.round(nextAchievement.current).toLocaleString("es-PE")} / {nextAchievement.target.toLocaleString("es-PE")} {nextAchievement.def.unit}
+                {formatNumber(Math.round(nextAchievement.current))} / {formatNumber(nextAchievement.target)} {nextAchievement.def.unit}
                 {" — "}
                 {Math.round(nextAchievement.pct)}%
               </p>
@@ -1063,7 +1064,7 @@ function LogrosTab() {
                         <div className="h-full bg-primary transition-all duration-[var(--dur-slow)]" style={{ width: `${pct}%` }} />
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] mt-1 tabular-nums">
-                        {Math.round(progress.current).toLocaleString("es-PE")} / {progress.target.toLocaleString("es-PE")}
+                        {formatNumber(Math.round(progress.current))} / {formatNumber(progress.target)}
                       </p>
                     </div>
                   ) : (

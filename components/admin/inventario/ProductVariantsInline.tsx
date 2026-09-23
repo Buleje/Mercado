@@ -20,6 +20,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { Plus, Trash2, Camera, Check, X, Loader2, AlertTriangle, GripVertical, Sparkles, ChevronDown } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Plantillas — sets pre-armados de variantes comunes ──────────────────────
 // Formato: { name } se usa como label; { attr } se guarda en attributesJson.
@@ -445,7 +446,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
             </button>
             {showTemplates && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowTemplates(false)} />
+                <div className="fixed inset-0 z-dropdown" onClick={() => setShowTemplates(false)} />
                 <div className="absolute right-0 top-full mt-1 z-20 w-72 max-h-80 overflow-y-auto rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl">
                   <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Elige una plantilla</p>
@@ -605,10 +606,10 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
 
         {/* Resumen precio final */}
         <p className="sm:col-span-4 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
-          Precio final: <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{finalPrice.toFixed(2)}</strong>
+          Precio final: <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(finalPrice)}</strong>
           {row.priceModifier !== 0 && (
             <span className="ml-1.5">
-              ({row.priceModifier > 0 ? "+" : ""}{Number(row.priceModifier).toFixed(2)} sobre el base S/{basePrice.toFixed(2)})
+              ({row.priceModifier > 0 ? "+" : ""}{Number(row.priceModifier).toFixed(2)} sobre el base {formatCurrency(basePrice)})
             </span>
           )}
         </p>

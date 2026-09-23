@@ -140,7 +140,7 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
 
   const panel = open && pos && (
     <>
-      <div className="fixed inset-0 z-[60]" onClick={() => cerrar()} aria-hidden="true" />
+      <div className="fixed inset-0 z-modal-2" onClick={() => cerrar()} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"

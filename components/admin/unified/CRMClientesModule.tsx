@@ -39,7 +39,7 @@ function ExpandableMapSection() {
   const [maximized, setMaximized] = useState(false);
 
   return (
-    <div className={cn("space-y-4", maximized && "fixed inset-0 z-50 bg-[var(--surface-raised)] p-4 overflow-auto")}>
+    <div className={cn("space-y-4", maximized && "fixed inset-0 z-modal bg-[var(--surface-raised)] p-4 overflow-auto")}>
       <div className="flex items-center justify-between">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
           <MapPin className="h-4 w-4 text-primary" /> Ubicación de clientes

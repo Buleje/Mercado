@@ -21,6 +21,7 @@ import { AvisoRrhh, BOTON, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
 import { etiquetaModalidad, formatearFecha, formatearPEN } from "../rrhh-ui";
 import type { Modalidad, TarifaDTO } from "@/lib/rrhh/tipos";
 import type { RrhhApiError } from "@/hooks/use-rrhh-puestos";
+import { formatNumber } from "@/lib/format";
 
 interface Props {
   tarifas: TarifaDTO[];
@@ -37,7 +38,7 @@ function textoTarifa(t: Pick<TarifaDTO, "modalidad" | "monto">): string {
 }
 
 function textoHoras(h: number): string {
-  return `${h.toLocaleString("es-PE", { maximumFractionDigits: 2 })} h`;
+  return `${formatNumber(h, { max: 2 })} h`;
 }
 
 export default function FichaTarifas({ tarifas, guardando, onGuardar, onQuitar, onCambio }: Props) {

@@ -23,6 +23,7 @@ import {
   diagnosticsToText,
   type DeviceDiagnostics,
 } from "@/hooks/use-device-diagnostics";
+import { formatDateTime } from "@/lib/format";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -312,7 +313,7 @@ export default function SoporteTab() {
   const allOk = health.every((h) => h.health === "ok");
 
   const handleCopy = () => {
-    const stamp = new Date().toLocaleString("es-PE");
+    const stamp = formatDateTime(new Date());
     copy(diagnosticsToText(d, stamp));
   };
 

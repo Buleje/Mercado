@@ -16,6 +16,7 @@ import {
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -477,7 +478,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                           />
                         </td>
                         <td className="px-3 py-1.5 text-right text-sm text-[var(--text-secondary)] tabular-nums">
-                          S/{(item.cantidad * item.precioUnitario).toFixed(2)}
+                          {formatCurrency(item.cantidad * item.precioUnitario)}
                         </td>
                         <td className="pr-2 py-1.5">
                           <button
@@ -500,7 +501,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                     Total ({editItems.length} items)
                   </span>
                   <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
-                    S/{editTotal.toFixed(2)}
+                    {formatCurrency(editTotal)}
                   </span>
                 </div>
               </div>

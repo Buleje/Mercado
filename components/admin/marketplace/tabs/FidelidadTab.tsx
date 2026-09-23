@@ -10,12 +10,17 @@ import {
   Gift,
   Star,
   TrendingUp,
+  Award,
+  Medal,
+  Trophy,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 // Extraído de MarketplaceModule.tsx (refactor 2026-05-25) — sin cambios de comportamiento.
-// TODO(follow-up): los emojis 🥉🥈🥇 violan la regla "no emojis genéricos en UI" — reemplazar por iconos/SVG.
+// 2026-09-22: los emojis 🥉🥈🥇 se reemplazaron por Award/Medal/Trophy (barrido emojis→íconos).
 
 interface LoyaltyTransaction {
   id: string;
@@ -80,10 +85,10 @@ export function MarketplaceFidelidadTab() {
   };
 
   // Datos visuales por tier (rediseño 2026-05-09)
-  const tierVisuals: Record<string, { label: string; emoji: string; gradient: string; ring: string; benefit: string; minPts: number; maxPts: number | null }> = {
-    bronce: { label: "Bronce", emoji: "🥉", gradient: "from-orange-100 to-orange-50",  ring: "ring-orange-300/40", benefit: "Acumula puntos en cada compra", minPts: 0, maxPts: 499 },
-    plata:  { label: "Plata",  emoji: "🥈", gradient: "from-slate-100 to-slate-50",    ring: "ring-slate-300/50",  benefit: "5% de descuento en pedidos",      minPts: 500, maxPts: 999 },
-    oro:    { label: "Oro",    emoji: "🥇", gradient: "from-amber-100 to-yellow-50",   ring: "ring-amber-300/50",  benefit: "10% de descuento + envío prioritario", minPts: 1000, maxPts: null },
+  const tierVisuals: Record<string, { label: string; icon: LucideIcon; gradient: string; ring: string; benefit: string; minPts: number; maxPts: number | null }> = {
+    bronce: { label: "Bronce", icon: Award,  gradient: "from-orange-100 to-orange-50",  ring: "ring-orange-300/40", benefit: "Acumula puntos en cada compra", minPts: 0, maxPts: 499 },
+    plata:  { label: "Plata",  icon: Medal,  gradient: "from-slate-100 to-slate-50",    ring: "ring-slate-300/50",  benefit: "5% de descuento en pedidos",      minPts: 500, maxPts: 999 },
+    oro:    { label: "Oro",    icon: Trophy, gradient: "from-amber-100 to-yellow-50",   ring: "ring-amber-300/50",  benefit: "10% de descuento + envío prioritario", minPts: 1000, maxPts: null },
   };
 
   // Cliente actual: barra de progreso al siguiente tier
@@ -118,7 +123,7 @@ export function MarketplaceFidelidadTab() {
                 </span>
               )}
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{tv.emoji}</span>
+                <tv.icon className="h-8 w-8 text-[var(--text-primary)]" aria-hidden />
                 <div className="min-w-0">
                   <p className="text-base font-extrabold text-[var(--text-primary)] tracking-tight">{tv.label}</p>
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums">
@@ -180,8 +185,8 @@ export function MarketplaceFidelidadTab() {
           )}>
             <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-raised)] shadow-lg text-4xl shrink-0">
-                  {currentTier.emoji}
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-raised)] shadow-lg shrink-0">
+                  <currentTier.icon className="h-9 w-9 text-[var(--text-primary)]" aria-hidden />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -192,7 +197,7 @@ export function MarketplaceFidelidadTab() {
                   </div>
                   <p className="text-xs font-semibold text-[var(--text-secondary)] tabular-nums mt-0.5">{data.phone}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
-                    Gasto total · <span className="font-bold text-[var(--text-secondary)] tabular-nums">S/ {data.totalSpent.toFixed(2)}</span>
+                    Gasto total · <span className="font-bold text-[var(--text-secondary)] tabular-nums">{formatCurrency(data.totalSpent)}</span>
                   </p>
                 </div>
               </div>
@@ -200,7 +205,7 @@ export function MarketplaceFidelidadTab() {
               <div className="text-right">
                 <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Puntos disponibles</p>
                 <p className="text-4xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">{data.points}</p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 tabular-nums">≈ S/ {(data.points / 100).toFixed(2)} canjeable</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 tabular-nums">≈ {formatCurrency(data.points / 100)} canjeable</p>
               </div>
             </div>
 
@@ -285,7 +290,7 @@ export function MarketplaceFidelidadTab() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tx.description}</p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
-                          {new Date(tx.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+                          {formatDate(tx.createdAt)}
                         </p>
                       </div>
                       <span className={cn(

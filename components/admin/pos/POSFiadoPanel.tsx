@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, CheckCircle, HandCoins, Loader2, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
 
 interface FiadoResumen {
   montoPendiente: number;
@@ -17,7 +18,7 @@ interface POSFiadoPanelProps {
 }
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 export default function POSFiadoPanel({
@@ -107,7 +108,7 @@ export default function POSFiadoPanel({
   // Loading
   if (loading) {
     return (
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
         <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-tertiary)]" />
         <span className="text-xs text-[var(--text-tertiary)]">Consultando fiados...</span>
       </div>
@@ -117,7 +118,7 @@ export default function POSFiadoPanel({
   // No data or no fiados
   if (!data || data.cantidadFiados === 0) {
     return (
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
         <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
         <span className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           Sin deudas pendientes
@@ -129,7 +130,7 @@ export default function POSFiadoPanel({
   // Has active fiados
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
+      <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
         <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
         <div className="flex-1 min-w-0">
           <span className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
@@ -214,7 +215,7 @@ export default function POSFiadoPanel({
             <div role="status" className="flex items-center gap-1.5 p-2 rounded-md bg-primary/10 border border-[var(--data-success-500)]/40">
               <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)] shrink-0" />
               <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-success-500)]">
-                Cobrado {fmt(cobroResult.cobrado)} ✓
+                Cobrado {fmt(cobroResult.cobrado)}
               </p>
             </div>
           )}

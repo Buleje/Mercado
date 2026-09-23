@@ -15,6 +15,7 @@ import { etiquetaModalidad, formatearPEN, pluralizar } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
 import PuestoFormModal from "./PuestoFormModal";
 import type { NivelRrhh, PuestoDTO } from "@/lib/rrhh/tipos";
+import { formatNumber } from "@/lib/format";
 
 const CHIPS = ["Motosierrista", "Ayudante de sierra", "Estibador", "Chofer", "Vigilante", "Cajero", "Almacenero"];
 
@@ -99,7 +100,7 @@ export default function PuestosView({ nivel }: { nivel: NivelRrhh }) {
               <div className="flex flex-wrap gap-1.5">
                 <span className={cn(CLASE_CHIP, "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>{pluralizar(p.personas, "persona", "personas")}</span>
                 <span className={cn(CLASE_CHIP, "bg-[var(--surface-sunken)] font-semibold tabular-nums text-[var(--text-secondary)]")}>
-                  Jornada de {p.horasJornada.toLocaleString("es-PE", { maximumFractionDigits: 2 })} h
+                  Jornada de {formatNumber(p.horasJornada, { max: 2 })} h
                 </span>
                 {/* El horario se ve en la lista (ADR-417): de un vistazo se sabe a quién se le juzga sola la tardanza y a quién no. */}
                 <span

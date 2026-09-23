@@ -7,6 +7,7 @@ import {
   RefreshCw, AlertCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatDateTimeShort } from "@/lib/format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -55,10 +56,7 @@ function statusIndex(s: OrderStatus) {
 }
 
 function fmtDateTime(iso: string) {
-  return new Date(iso).toLocaleString("es-PE", {
-    day: "2-digit", month: "short",
-    hour: "2-digit", minute: "2-digit",
-  });
+  return formatDateTimeShort(iso);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────

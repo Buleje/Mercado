@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, UserPlus, X, User, ShoppingBag, RotateCcw, Loader2, Star } from "@buleje/design-system/icons";
+import { Search, UserPlus, X, User, ShoppingBag, RotateCcw, Loader2, Star, StarOff, ShoppingCart } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
 
 const ClienteFormModal = dynamic(
   () => import("@/components/admin/clientes/ClienteFormModal"),
@@ -68,7 +69,7 @@ export default function POSCustomerSearch({
   const POINTS_RATE = 0.05; // 1 punto = S/0.05
 
   // Mejora 11: Score de confiabilidad del cliente
-  const [reliabilityScore, setReliabilityScore] = useState<{ score: number; label: string } | null>(null);
+  const [reliabilityScore, setReliabilityScore] = useState<{ score: number } | null>(null);
 
   // Mejora M-3: Abono rápido de fiado desde POS
   const [showAbonoRapido, setShowAbonoRapido] = useState(false);
@@ -181,7 +182,7 @@ export default function POSCustomerSearch({
         else if (pct > 50 && avgDias < 30) sc = 3;
         else if (pct > 25) sc = 2;
         else sc = 1;
-        setReliabilityScore({ score: sc, label: `${"★".repeat(sc)}${"☆".repeat(5 - sc)} (${sc}/5)` });
+        setReliabilityScore({ score: sc });
       })
       .catch(() => setReliabilityScore(null));
     // Mejora 10R2: Fetch customer details for observaciones + Mejora 15: loyalty points
@@ -269,14 +270,21 @@ export default function POSCustomerSearch({
         {/* Mejora 11: Reliability score badge */}
         {reliabilityScore && (
           <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg">
-            <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
             <span className={cn(
-              "text-sm font-bold",
+              "text-sm font-bold flex items-center gap-1.5",
               reliabilityScore.score >= 4 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
               reliabilityScore.score >= 3 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
               "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}>
-              Confiabilidad: {reliabilityScore.label}
+              Confiabilidad:
+              <span className="inline-flex items-center gap-0.5" aria-hidden>
+                {Array.from({ length: 5 }, (_, i) =>
+                  i < reliabilityScore.score
+                    ? <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                    : <StarOff key={i} className="h-3.5 w-3.5 opacity-40" />,
+                )}
+              </span>
+              ({reliabilityScore.score}/5)
             </span>
           </div>
         )}
@@ -285,7 +293,7 @@ export default function POSCustomerSearch({
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-lg">
               <span className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex-1">
-                Fiado pendiente: S/{fiadoSaldo.toFixed(2)}
+                Fiado pendiente: {formatCurrency(fiadoSaldo)}
               </span>
               <button
                 onClick={() => { setShowAbonoRapido(!showAbonoRapido); setAbonoMonto(fiadoSaldo.toFixed(2)); }}
@@ -356,7 +364,7 @@ export default function POSCustomerSearch({
             <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg">
               <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
               <span className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold">
-                {loyaltyPoints} puntos (= S/{(loyaltyPoints * POINTS_RATE).toFixed(2)} en descuento)
+                {loyaltyPoints} puntos (= {formatCurrency(loyaltyPoints * POINTS_RATE)} en descuento)
               </span>
               {loyaltyPoints >= 100 && (
                 <span className="ml-auto text-sm font-bold px-1.5 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">Canjeable</span>
@@ -373,7 +381,7 @@ export default function POSCustomerSearch({
             {showRedeemSlider && (
               <div className="px-3 py-2 bg-primary/10 dark:bg-primary/15 rounded-lg space-y-1">
                 <p className="text-sm text-[var(--text-secondary)] font-medium">
-                  Canjear {redeemAmount} pts = S/{(redeemAmount * POINTS_RATE).toFixed(2)} de descuento
+                  Canjear {redeemAmount} pts = {formatCurrency(redeemAmount * POINTS_RATE)} de descuento
                 </p>
                 <input
                   type="range"
@@ -406,8 +414,8 @@ export default function POSCustomerSearch({
         {/* Mejora 17: Producto que suele comprar */}
         {lastPurchase && Array.isArray(lastPurchase.items) && lastPurchase.items.length > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1">
-            <span className="text-sm text-[var(--text-tertiary)] dark:text-muted">
-              🛒 Suele comprar: <span className="font-bold text-[var(--text-secondary)]">{lastPurchase.items[0]?.name ?? "—"}</span>
+            <span className="inline-flex items-center gap-1 text-sm text-[var(--text-tertiary)] dark:text-muted">
+              <ShoppingCart className="h-4 w-4 shrink-0" aria-hidden /> Suele comprar: <span className="font-bold text-[var(--text-secondary)]">{lastPurchase.items[0]?.name ?? "—"}</span>
               {lastPurchase.items.length > 1 && lastPurchase.items[1]?.name && <span>, {lastPurchase.items[1].name}</span>}
             </span>
           </div>
@@ -447,7 +455,7 @@ export default function POSCustomerSearch({
           <div className="bg-[var(--surface-sunken)] rounded-lg px-3 py-2">
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               Última compra: {getRelativeTime(lastPurchase.date)} — {lastPurchase.items.map(i => i.name).slice(0, 3).join(", ")}
-              {lastPurchase.items.length > 3 && "..."} (S/{Number(lastPurchase.total).toFixed(2)})
+              {lastPurchase.items.length > 3 && "..."} ({formatCurrency(Number(lastPurchase.total))})
             </p>
             {onRepeatOrder && lastPurchase.items.some(i => i.active) && (
               <button
@@ -523,7 +531,7 @@ export default function POSCustomerSearch({
                 </div>
                 {c.creditBalance != null && c.creditBalance > 0 ? (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] shrink-0">
-                    Fiado S/{Number(c.creditBalance).toFixed(2)}
+                    Fiado {formatCurrency(Number(c.creditBalance))}
                   </span>
                 ) : (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] shrink-0">

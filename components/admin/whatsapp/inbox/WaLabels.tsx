@@ -48,7 +48,7 @@ export const WA_LABELS: WaLabelDef[] = [
   },
   {
     id: "vip",
-    nombre: "VIP ⭐",
+    nombre: "VIP",
     chip: "bg-slate-900 text-white dark:bg-white dark:text-slate-900",
     dot: "bg-slate-900 dark:bg-white",
   },

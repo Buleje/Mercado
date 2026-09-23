@@ -10,6 +10,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
 
 import { SectionTitle } from "@buleje/design-system";
+import { formatNumber } from "@/lib/format";
 export interface ReorderCandidate {
   id: string | number;
   name: string;
@@ -139,7 +140,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
             exit={{ opacity: 0, y: 20, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
             className={cn(
-              "fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none",
+              "fixed inset-0 z-modal flex items-center justify-center p-4 pointer-events-none",
             )}
           >
             <div ref={cajaRef} tabIndex={-1}
@@ -274,7 +275,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                   </span>
                   <span className="text-[var(--text-tertiary)]"> · </span>
                   <span className="font-semibold text-[var(--text-primary)]">
-                    {totalItems.toLocaleString("es-PE")} u
+                    {formatNumber(totalItems)} u
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

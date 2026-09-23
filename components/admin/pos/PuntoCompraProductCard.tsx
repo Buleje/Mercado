@@ -8,6 +8,7 @@ import {
   calculateSuggestedQty,
   needsReorder,
 } from "@/lib/types/purchases";
+import { formatCurrency } from "@/lib/format";
 
 interface PuntoCompraProductCardProps {
   product: PurchaseProduct;
@@ -113,9 +114,9 @@ export default memo(function PuntoCompraProductCard({
       <div className="flex items-baseline justify-between gap-1 mb-0.5">
         <span
           className="text-sm font-bold text-[var(--text-primary)]"
-          title={`Costo: S/${displayPrice.toFixed(2)} | Venta: S/${Number(product.price).toFixed(2)} | Margen: ${product.costPrice ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : "—"}%`}
+          title={`Costo: ${formatCurrency(displayPrice)} | Venta: ${formatCurrency(Number(product.price))} | Margen: ${product.costPrice ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : "—"}%`}
         >
-          S/{displayPrice.toFixed(2)}
+          {formatCurrency(displayPrice)}
         </span>
         <span
           className="text-xs text-[var(--text-tertiary)]"

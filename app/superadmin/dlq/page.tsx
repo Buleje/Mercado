@@ -2,6 +2,7 @@ import "server-only";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Suspense } from "react";
 import Link from "next/link";
+import { StatCard } from "@buleje/design-system";
 import { CheckCircle2 } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { getDeadLetterDashboard } from "@/lib/db/dlq.db";
@@ -121,20 +122,17 @@ async function DLQBody() {
         <StatCard
           label="Eventos sin resolver"
           value={events.length}
-          warn={events.length > 10}
-          critical={events.length > 50}
+          emphasis={events.length > 50 ? "error" : events.length > 10 ? "warning" : "neutral"}
         />
         <StatCard
           label="Crons fallidos"
           value={crons.length}
-          warn={crons.length > 5}
-          critical={crons.length > 20}
+          emphasis={crons.length > 20 ? "error" : crons.length > 5 ? "warning" : "neutral"}
         />
         <StatCard
           label="MP Webhooks pendientes"
           value={mpWebhooks.length}
-          warn={mpWebhooks.length > 10}
-          critical={mpWebhooks.length > 50}
+          emphasis={mpWebhooks.length > 50 ? "error" : mpWebhooks.length > 10 ? "warning" : "neutral"}
         />
       </div>
 
@@ -258,35 +256,6 @@ function DLQSkeleton() {
           className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] h-48"
         />
       ))}
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  warn,
-  critical,
-}: {
-  label: string;
-  value: number;
-  warn: boolean;
-  critical: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border-2 p-4 ${
-        critical
-          ? "border-[var(--data-error-500)] bg-[var(--data-error-50,#fef2f2)]/30"
-          : warn
-            ? "border-[var(--accent)] bg-primary/30"
-            : "border-[var(--rule-soft)] bg-[var(--surface-raised)]"
-      }`}
-    >
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        {label}
-      </p>
-      <p className="mt-1 text-3xl font-black tabular-nums text-[var(--text-primary)]">{value}</p>
     </div>
   );
 }

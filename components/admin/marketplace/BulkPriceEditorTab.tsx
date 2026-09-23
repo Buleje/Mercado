@@ -10,6 +10,7 @@ import {
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -406,7 +407,7 @@ export default function BulkPriceEditorTab() {
                     </td>
                     <td className="px-4 py-3 font-medium text-[var(--text-primary)] max-w-[200px] truncate">{p.name}</td>
                     <td className="px-4 py-3 text-[var(--text-secondary)]">{p.category}</td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">S/ {p.price.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">{formatCurrency(p.price)}</td>
                     <td className="px-4 py-3">
                       <input
                         type="number"

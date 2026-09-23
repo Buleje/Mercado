@@ -29,6 +29,7 @@ import {
 import { SectionTitle, CardTitle } from "@buleje/design-system";
 import type { MarketplaceOrderDetail } from "./hooks/use-marketplace-orders";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/format";
 
 interface Props {
   order: MarketplaceOrderDetail | null;
@@ -94,7 +95,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
 
   return (
     <div ref={cajaRef} tabIndex={-1}
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md p-0 sm:p-4"
+      className="fixed inset-0 z-system flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md p-0 sm:p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -135,14 +136,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
               {order && (
                 <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)]">
                   <Calendar className="h-3.5 w-3.5" />
-                  {new Date(order.createdAt).toLocaleString("es-PE", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                  })}
+                  {formatDateTime(order.createdAt)}
                 </p>
               )}
             </div>
@@ -180,7 +174,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
         </header>
 
         {/* ── Body (scrollable) ──────────────────────────── */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 bg-[var(--surface-raised)]">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-[var(--surface-raised)]">
           {loading ? (
             <div className="py-12 text-center">
               <div className="inline-block h-8 w-8 border-4 border-[var(--rule-base)] border-t-[var(--accent)] rounded-full animate-spin" />
@@ -331,7 +325,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                   </p>
                   {order.cancelledAt && (
                     <p className="mt-1 text-xs font-bold text-[var(--data-error)]">
-                      {new Date(order.cancelledAt).toLocaleString("es-PE")}
+                      {formatDateTime(order.cancelledAt)}
                     </p>
                   )}
                 </section>

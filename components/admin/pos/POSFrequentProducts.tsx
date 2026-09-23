@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { estaAgotado } from "@/lib/pos/stock-vendible";
+import { formatCurrency } from "@/lib/format";
 
 interface FrequentProduct {
   id: number;
@@ -19,7 +20,7 @@ interface POSFrequentProductsProps {
 }
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 export default function POSFrequentProducts({

@@ -18,9 +18,10 @@ const ProductosAdvancedCharts = dynamic(
   { ssr: false },
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
-import { BulejeDashboardSkeleton } from "./_shared";
+import { BulejeDashboardSkeleton, KPI_GRID_6 } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
 import { Tag } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ export interface ProductosData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 
 const CAT_LABELS: Record<string, string> = { "frutas-verduras": "Frutas y Verduras", abarrotes: "Abarrotes", carnes: "Carnes", lacteos: "Lácteos", bebidas: "Bebidas", limpieza: "Limpieza" };
 const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarrotes: "#ff6b5b", carnes: "#ef4444", lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4" };
@@ -256,7 +257,7 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
       {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className={KPI_GRID_6}>
         <StatCard label="Productos Activos" value={String(data.productosActivos)} icon={Package} />
         <StatCard label="Uds. Vendidas" value={String(data.unidadesVendidas)} icon={ShoppingCart} delta={data.dUnidades} />
         <StatCard label="Sin Movimiento" value={String(data.sinMovimiento)} icon={Timer} emphasis={data.sinMovimiento > 5 ? "warning" : "neutral"} />

@@ -11,13 +11,14 @@ import type { ProductosData } from "./ProductosDashboard";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
 import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
-import { Link2 } from "@buleje/design-system/icons";
+import { Link2, CheckCircle2 } from "@buleje/design-system/icons";
+import { formatNumber } from "@/lib/format";
 
 function fmtS(v: number) {
-  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(v, { max: 0 })}`;
 }
 function fmtU(v: number) {
-  return `${v.toLocaleString("es-PE")} u`;
+  return `${formatNumber(v)} u`;
 }
 
 export default function ProductosCharts({ data }: { data: ProductosData }) {
@@ -247,8 +248,9 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
           {sinMovRows.length > 0 ? (
             <MicroList items={sinMovRows} barColor="var(--data-warning)" showRank />
           ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin productos zombies — todo rota ✓
+            <div className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" aria-hidden />
+              Sin productos zombies — todo rota
             </div>
           )}
         </DashboardSection>

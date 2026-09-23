@@ -246,7 +246,7 @@ function CustomCategoryEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6">
+    <div className="fixed inset-0 z-modal-3 flex items-center justify-center px-4 py-6">
       <button
         type="button"
         aria-label="Cerrar"
@@ -254,7 +254,7 @@ function CustomCategoryEditor({
         className="absolute inset-0 bg-black/55 backdrop-blur-sm"
       />
       <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)]">
-        <header className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-base)] sticky top-0 bg-[var(--surface-canvas)] z-10">
+        <header className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-base)] sticky top-0 bg-[var(--surface-canvas)] z-dropdown">
           <CardTitle as="h3" className="text-lg font-extrabold text-[var(--text-primary)]">
             {initial ? "Editar categoría propia" : "Nueva categoría propia"}
           </CardTitle>
@@ -267,7 +267,7 @@ function CustomCategoryEditor({
             <X className="h-4 w-4" />
           </button>
         </header>
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-4">
           <Field label="Nombre de la categoría" labelClassName="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]" className="space-y-2">
             <input
               type="text"

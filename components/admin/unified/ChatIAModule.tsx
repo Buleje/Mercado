@@ -18,6 +18,7 @@ import {
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import { formatDateShort } from "@/lib/format";
 
 const MODULE_ID = "chat-ia";
 
@@ -227,10 +228,7 @@ export default function ChatIAModule() {
       </div>
       <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
         Reinicia el{" "}
-        {new Date(usage.resetAt).toLocaleDateString("es-PE", {
-          day: "numeric",
-          month: "short",
-        })}
+        {formatDateShort(usage.resetAt)}
       </p>
     </div>
   );
@@ -240,7 +238,7 @@ export default function ChatIAModule() {
       className={cn(
         "flex flex-col overflow-hidden bg-[var(--surface-raised)]",
         maximized
-          ? "fixed inset-0 z-[9999]"
+          ? "fixed inset-0 z-tour"
           // Brandon 2026-05-27: en móvil descontamos el bottom nav fijo
           // (~96px) para que el composer no quede tapado; min-h menor para no
           // desbordar en pantallas chicas. En desktop (sin bottom nav) queda igual.

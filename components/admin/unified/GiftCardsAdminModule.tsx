@@ -24,15 +24,15 @@ import {
   Calendar,
   Trash2,
 } from "@buleje/design-system/icons";
-import { DataTable } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import KPICard from "@/components/admin/shared/KPICard";
 import {
   GiftCardDetailsModal,
   type GiftCardDetails,
 } from "./gift-cards-admin/GiftCardDetailsModal";
 import { CreateManualGiftCardModal } from "./gift-cards-admin/CreateManualGiftCardModal";
+import { formatDate, formatNumber } from "@/lib/format";
 
 // ADR-077: cargar data real desde el backend.
 type AdminStats = {
@@ -155,16 +155,12 @@ const MOCK_CARDS: GiftCardDetails[] = [
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `S/ ${formatNumber(n, 2)}`;
 }
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -388,34 +384,31 @@ export default function GiftCardsAdminModule() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
+        <StatCard
           label="Vendidas (30d)"
           value={vendidasEsteMes}
           icon={Gift}
-          color="var(--accent)"
-          subtitle="Tarjetas emitidas"
+          subValue="Tarjetas emitidas"
         />
-        <KPICard
+        <StatCard
           label="Ingreso (30d)"
           value={fmt(ingresoEsteMes)}
           icon={DollarSign}
-          color="#10B981"
-          subtitle="Monto vendido"
+          emphasis="success"
+          subValue="Monto vendido"
         />
-        <KPICard
+        <StatCard
           label="Canjeadas (30d)"
           value={canjeadasEsteMes}
           icon={CheckCircle}
-          color="#3B82F6"
-          subtitle="Tarjetas redimidas"
+          subValue="Tarjetas redimidas"
         />
-        <KPICard
+        <StatCard
           label="Saldo pendiente"
           value={fmt(saldoPendiente)}
           icon={Wallet}
-          color="#ff6b5b"
-          subtitle="Pasivo por canjear"
-          alert={saldoPendiente > 2000}
+          emphasis={saldoPendiente > 2000 ? "error" : "warning"}
+          subValue="Pasivo por canjear"
         />
       </div>
 

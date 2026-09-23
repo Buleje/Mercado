@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Clock, TrendingUp, Receipt, DollarSign, HandCoins } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 interface PaymentBreakdownEntry {
   metodo: string;
@@ -163,7 +164,7 @@ export default function POSMetricsStrip({ refreshKey }: POSMetricsStripProps = {
     items.push({
       icon: HandCoins,
       label: "Mi comision",
-      value: `S/ ${(data.comisionEstimada ?? 0).toFixed(2)}`,
+      value: `${formatCurrency(data.comisionEstimada ?? 0)}`,
       color: "text-primary",
       title: `Estimada al ${data.comisionRate ?? 2.5}% sobre ventas`,
     });

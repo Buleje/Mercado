@@ -119,7 +119,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
       {/* Mobile nav overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 sm:hidden"
+          className="fixed inset-0 z-modal bg-black/50 sm:hidden"
           onClick={onClose}
         />
       )}
@@ -133,7 +133,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
         aria-label="Menú de navegación"
         tabIndex={-1}
         className={cn(
-          "fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-50 bg-[var(--surface-raised)] flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden outline-none",
+          "fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-modal bg-[var(--surface-raised)] flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden outline-none",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >

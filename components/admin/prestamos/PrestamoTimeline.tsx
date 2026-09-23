@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { CheckCircle2, XCircle, Clock, Circle } from "@buleje/design-system/icons";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -22,10 +23,6 @@ type Props = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 function diffDays(from: Date, to: Date): number {
   return Math.floor((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));

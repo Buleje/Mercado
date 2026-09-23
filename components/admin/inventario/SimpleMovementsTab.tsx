@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { DataTable, SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle, StatCard } from "@buleje/design-system";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   ArrowDownCircle, ArrowUpCircle, Download, Loader2, Package,
@@ -15,6 +15,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
 import MovementDetailModal, { type MovementDetail } from "./MovementDetailModal";
 import { inicioDeHoy } from "@/lib/fechas/dia-local";
+import { formatDateShort, formatTime } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -82,8 +83,8 @@ const LABEL = "block text-xs font-semibold text-[var(--text-secondary)] mb-1.5";
 function fmtDate(iso: string): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) +
-      " " + d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+    return formatDateShort(d) +
+      " " + formatTime(d);
   } catch { return iso; }
 }
 function fmtRelative(iso: string): string {
@@ -240,17 +241,17 @@ export default function SimpleMovementsTab() {
     <div className="space-y-5">
       {/* KPIs — paleta de marca, font-mono, barra fina */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard
+        <StatCard
           label={`Movimientos ${periodoLabel[period]}`}
           value={String(stats.count)}
-          bar="muted"
-          detalle={stats.neutrales > 0
+          accentBar
+          subValue={stats.neutrales > 0
             ? `${stats.neutrales} ${stats.neutrales === 1 ? "es de costo" : "son de costo"}, sin cambio de stock`
             : undefined}
         />
-        <KpiCard label={`Entradas ${periodoLabel[period]}`} value={`+${stats.entries}`} tone="primary" bar="primary" />
-        <KpiCard label={`Salidas ${periodoLabel[period]}`} value={`−${stats.exits}`} tone="warning" bar="warning" />
-        <KpiCard label={`Neto ${periodoLabel[period]}`} value={`${stats.net >= 0 ? "+" : "−"}${Math.abs(stats.net)}`} tone={stats.net >= 0 ? "primary" : "error"} bar={stats.net >= 0 ? "primary" : "error"} highlight />
+        <StatCard label={`Entradas ${periodoLabel[period]}`} value={`+${stats.entries}`} emphasis="success" accentBar />
+        <StatCard label={`Salidas ${periodoLabel[period]}`} value={`−${stats.exits}`} emphasis="warning" accentBar />
+        <StatCard label={`Neto ${periodoLabel[period]}`} value={`${stats.net >= 0 ? "+" : "−"}${Math.abs(stats.net)}`} emphasis={stats.net >= 0 ? "success" : "error"} accentBar highlight />
       </div>
 
       {/* Toolbar — todo en una fila */}
@@ -398,22 +399,8 @@ export default function SimpleMovementsTab() {
   );
 }
 
-function KpiCard({ label, value, tone = "neutral", bar = "muted", highlight, detalle }: {
-  label: string; value: string; tone?: "neutral" | "primary" | "warning" | "error"; bar?: "primary" | "muted" | "warning" | "error"; highlight?: boolean;
-  /** Una línea de contexto: qué queda afuera del número, si algo queda. */
-  detalle?: string;
-}) {
-  const valueColor = tone === "primary" ? "text-primary" : tone === "warning" ? "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" : tone === "error" ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]";
-  const barColor = bar === "primary" ? "bg-primary" : bar === "warning" ? "bg-[var(--data-warning-500)]" : bar === "error" ? "bg-[var(--data-error-500)]/50" : "bg-[var(--rule-soft)]";
-  return (
-    <div className={cn("rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4", highlight && "ring-1 ring-[var(--accent)]/25")}>
-      <p className="text-sm font-medium text-[var(--text-secondary)]">{label}</p>
-      <p className={cn("mt-1 font-mono text-2xl font-bold tabular-nums", valueColor)}>{value}</p>
-      <div className={cn("mt-2 h-1 rounded-full", barColor)} />
-      {detalle && <p className="mt-1.5 text-sm text-[var(--text-secondary)]">{detalle}</p>}
-    </div>
-  );
-}
+// `KpiCard` migró a `StatCard` (canon KPI 2026-09-22) — mismo mapeo que
+// ActivosModule (tono+bar → emphasis+accentBar). `detalle` → `subValue`.
 
 // ── Modal: registrar entrada/salida ──────────────────────────────────────────
 function RegisterMovementModal({ products, onClose, onSaved }: { products: Product[]; onClose: () => void; onSaved: () => void }) {
@@ -456,7 +443,7 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div>

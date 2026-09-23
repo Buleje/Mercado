@@ -135,7 +135,7 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
         )
       }
     >
-      <div className={cn(MODAL_BODY, "space-y-5")}>
+      <div className={cn(MODAL_BODY, "space-y-4")}>
         {resultado ? (
           <>
             <div className="flex items-center gap-3">

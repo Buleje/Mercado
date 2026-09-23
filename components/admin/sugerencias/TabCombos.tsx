@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { GitMerge, Plus, RefreshCw, ArrowRight, TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
+import { formatCurrency } from "@/lib/format";
 
 interface SaleItem {
   name?: string;
@@ -76,7 +77,7 @@ function buildCombos(sales: SaleRecord[]): ComboPair[] {
 }
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 export default function TabCombos() {

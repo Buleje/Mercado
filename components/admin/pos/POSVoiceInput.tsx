@@ -25,6 +25,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { comandoDe, resolverDictado, separarPedidos, type LineaDictada } from "@/lib/pos/voz-parser";
+import { formatCurrency } from "@/lib/format";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -337,7 +338,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
       >
         {isListening ? (
           <>
-            <Mic className="h-4 w-4 relative z-10" />
+            <Mic className="h-4 w-4 relative z-dropdown" />
             <span
               aria-hidden
               className="absolute inset-0 rounded-full bg-[var(--data-error-500)]/60 animate-ping"
@@ -351,7 +352,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
       {/* ── Panel estilo Google Assistant ─────────────────────────────── */}
       {showPanel && (
         <div
-          className="fixed inset-0 z-[100] bg-black/45 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-system bg-black/45 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-4"
           onClick={cerrarPanel}
         >
           <div
@@ -574,7 +575,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                             <p className="text-xs text-[var(--text-secondary)]">
                               {l.estado === "listo" && p && (
                                 <>
-                                  S/ {(p.price * l.pedido.cantidad).toFixed(2)}
+                                  {formatCurrency(p.price * l.pedido.cantidad)}
                                   {p.stock != null && ` · quedan ${p.stock}`}
                                 </>
                               )}

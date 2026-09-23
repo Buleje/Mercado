@@ -220,7 +220,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
 
   return (
     <div
-      className="fixed inset-0 z-[8200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4"
+      className="fixed inset-0 z-system bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && onOpenChange(false)}
     >
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-[var(--shadow-xl)]">
@@ -499,8 +499,8 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
         {/* Footer */}
         <footer className="shrink-0 px-4 sm:px-6 py-3 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center justify-between gap-3">
           <div className="flex sm:hidden items-center gap-2 text-xs">
-            <span className="px-2 py-1 rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] font-bold">
-              {totalAssigned} ✓
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] font-bold">
+              {totalAssigned} <Check className="h-3.5 w-3.5" aria-hidden />
             </span>
             <span className="px-2 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] font-bold">
               {totalPending} pendientes

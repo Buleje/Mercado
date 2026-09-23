@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { DbProduct, DbInventoryMovement } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -226,13 +227,13 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     {/* Costo */}
                     <td className="px-4 py-3">
                       {p.costPrice != null && p.costPrice > 0
-                        ? <span className="font-mono text-xs text-[var(--text-secondary)]">S/{Number(p.costPrice).toFixed(2)}</span>
+                        ? <span className="font-mono text-xs text-[var(--text-secondary)]">{formatCurrency(Number(p.costPrice))}</span>
                         : <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>
                       }
                     </td>
 
                     {/* Precio venta */}
-                    <td className="px-4 py-3 font-bold text-primary text-xs">S/{Number(p.price).toFixed(2)}</td>
+                    <td className="px-4 py-3 font-bold text-primary text-xs">{formatCurrency(Number(p.price))}</td>
 
                     {/* Margen */}
                     <td className="px-4 py-3">
@@ -246,7 +247,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                             {Number(p.margin.pct).toFixed(0)}%
                           </span>
                           <span className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                            S/{Number(p.margin.soles).toFixed(2)}
+                            {formatCurrency(Number(p.margin.soles))}
                           </span>
                         </div>
                       ) : (

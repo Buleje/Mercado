@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { useMarketplaceReviews } from "@/components/admin/marketplace/hooks/use-marketplace-reviews";
 import { TableSkeleton, REVIEW_STATUS_CONFIG } from "@/components/admin/marketplace/shared";
 import { CheckCircle, MessageSquare, Star, XCircle } from "@buleje/design-system/icons";
+import { formatDate } from "@/lib/format";
 
 export function MarketplaceResenasTab() {
   const {
@@ -226,7 +227,7 @@ export function MarketplaceResenasTab() {
                           </div>
                           <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">·</span>
                           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
-                            {new Date(review.date).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}
+                            {formatDate(review.date)}
                           </span>
                         </div>
                       </div>

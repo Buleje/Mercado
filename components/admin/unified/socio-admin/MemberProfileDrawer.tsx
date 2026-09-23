@@ -22,6 +22,7 @@ import {
 } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 export interface SocioMember {
   id: string;
@@ -58,16 +59,12 @@ const STATUS_LABELS: Record<SocioMember["status"], string> = {
 };
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -102,7 +99,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/40"
+      className="fixed inset-0 z-modal flex items-stretch justify-end bg-black/40"
       onClick={onClose}
     >
       <div
@@ -134,7 +131,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
         </div>
 
         {/* Estado */}
-        <div className="p-5 space-y-5">
+        <div className="p-5 space-y-4">
           <div className="flex items-center justify-between p-3 bg-[var(--surface-sunken)] rounded-xl">
             <span className="text-sm font-semibold text-[var(--text-secondary)]">Estado</span>
             <span className={cn("inline-flex px-3 py-1 rounded-full text-xs font-bold", STATUS_STYLES[member.status])}>

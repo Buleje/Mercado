@@ -10,6 +10,7 @@ import {
   LayoutDashboard, DollarSign,
   Target, Clock, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/format";
 import type { Sale, Customer } from "@/types/erp";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import ChartManager, { type ChartDefinition, useReportChartEmpty } from "@/components/admin/shared/ChartManager";
@@ -371,7 +372,6 @@ function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: number;
   }
 
   const medals = ["\u{1F947}", "\u{1F948}", "\u{1F949}"];
-  const formatCurrency = (n: number) => `S/${n.toFixed(2)}`;
 
   return (
     <div className="overflow-x-auto">
@@ -510,7 +510,7 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
           <p className="text-lg font-extrabold text-[var(--text-primary)] truncate">{star.name}</p>
           <div className="flex items-center gap-3 mt-1 flex-wrap">
             <span className="text-sm text-[var(--text-secondary)]">{star.qty} unidades esta semana</span>
-            <span className="text-sm font-bold text-primary">S/{Number(star.revenue).toFixed(0)}</span>
+            <span className="text-sm font-bold text-primary">S/{formatNumber(Number(star.revenue), { max: 0 })}</span>
             {star.trend !== 0 && (
               <span className={`text-xs font-bold ${star.trend > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
                 {star.trend > 0 ? "\u2191" : "\u2193"} {star.trend > 0 ? "+" : ""}{Number(star.trend).toFixed(0)}% vs sem. pasada

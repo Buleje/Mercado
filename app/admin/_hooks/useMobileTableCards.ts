@@ -28,7 +28,16 @@ export function useMobileTableCards(authReady: boolean, tab: string): void {
     // interactivo. Si NADA da texto, devolvemos "" y el CSS oculta el
     // ::before (antes ponía "Campo N" — labels inútiles en mobile).
     const headerLabel = (cell: Element): string => {
-      const text = (cell.textContent ?? "").replace(/\s+/g, " ").trim();
+      // Un <th> puede decir cómo se llama con `data-label` propio. Y si lleva
+      // un autofiltro de cabecera (Filtros tipo Excel, 2026-09-22: `<details>`
+      // con la lista de casillas, o un `<select>`), el texto de ESOS controles
+      // no es el nombre de la columna: sin sacarlos, la card mobile rotulaba
+      // «PROVEEDORTODOSZZ PROV BACKFILL (BORRAR)3…» (medido a 400px).
+      const propio = cell.getAttribute("data-label");
+      if (propio?.trim()) return propio.trim();
+      const clon = cell.cloneNode(true) as Element;
+      clon.querySelectorAll("details, select, input, textarea").forEach((n) => n.remove());
+      const text = (clon.textContent ?? "").replace(/\s+/g, " ").trim();
       if (text) return text;
       const aria = cell.getAttribute("aria-label");
       if (aria) return aria.trim();

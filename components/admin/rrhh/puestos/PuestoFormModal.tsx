@@ -123,7 +123,7 @@ export default function PuestoFormModal({ open, onClose, puesto, nivel, onGuarda
         </ModalFooter>
       }
     >
-      <form id={FORM_ID} onSubmit={guardar} noValidate className={cn(MODAL_BODY, "space-y-5")}>
+      <form id={FORM_ID} onSubmit={guardar} noValidate className={cn(MODAL_BODY, "space-y-4")}>
         <Field label="Nombre del puesto" required>
           {(id) => (
             <input id={id} value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={80} autoComplete="off" className={CLASE_CAMPO} placeholder="Ej. Motosierrista" />

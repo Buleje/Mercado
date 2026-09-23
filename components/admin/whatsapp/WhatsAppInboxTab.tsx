@@ -19,6 +19,11 @@ import {
   Timer,
   ScrollText,
   Loader2,
+  Inbox,
+  Users,
+  User,
+  Lightbulb,
+  FileText,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
@@ -29,12 +34,13 @@ import WaCustomerCard from "./inbox/WaCustomerCard";
 import WaNoteBar from "./inbox/WaNoteBar";
 import { WaLabelPicker } from "./inbox/WaLabels";
 import { useWhatsAppInbox, type WaMessage } from "./inbox/useWhatsAppInbox";
+import { formatDateTime } from "@/lib/format";
 
 /** Exporta el hilo como .txt (respaldo/reclamos) — client-side, sin server. */
 function exportThreadTxt(customerName: string, phone: string, messages: WaMessage[]) {
   const lines = messages.map((m) => {
     const who = m.direction === "in" ? customerName : m.sentBy === "ai" ? "Bot IA" : "Negocio";
-    const ts = new Date(m.createdAt).toLocaleString("es-PE");
+    const ts = formatDateTime(m.createdAt);
     return `[${ts}] ${who}: ${m.body}${m.status === "failed" ? " (no se envió)" : ""}`;
   });
   const blob = new Blob(
@@ -339,10 +345,10 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
       {stats && (stats.recibidos > 0 || stats.porBot + stats.porHumano > 0) && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-tertiary)]">
           <span className="font-bold text-[var(--text-secondary)]">Hoy:</span>
-          <span>📥 {stats.recibidos} recibidos</span>
-          <span>💬 {stats.respondidos} respondidos</span>
-          <span>🤖 {stats.porBot} bot · 🙋 {stats.porHumano} tú</span>
-          <span>👥 {stats.chatsActivos} chats</span>
+          <span className="inline-flex items-center gap-1"><Inbox className="h-3.5 w-3.5" aria-hidden /> {stats.recibidos} recibidos</span>
+          <span className="inline-flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" aria-hidden /> {stats.respondidos} respondidos</span>
+          <span className="inline-flex items-center gap-1"><Bot className="h-3.5 w-3.5" aria-hidden /> {stats.porBot} bot · <User className="h-3.5 w-3.5" aria-hidden /> {stats.porHumano} tú</span>
+          <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" aria-hidden /> {stats.chatsActivos} chats</span>
           {stats.respPromedioMin !== null && (
             <span className="inline-flex items-center gap-1">
               <Timer className="h-3.5 w-3.5" aria-hidden />
@@ -408,8 +414,9 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           >
             <X className="h-5 w-5" />
           </button>
-          <p className="w-full text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-            💡 Si esta persona nunca te escribió, WhatsApp exige iniciar con una <strong>plantilla</strong> (botón 📄 del chat). Con el número de prueba de Meta solo puedes escribir a tus contactos registrados.
+          <p className="flex w-full items-start gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+            <Lightbulb className="h-4 w-4 shrink-0 mt-0.5 text-[var(--accent)]" aria-hidden />
+            Si esta persona nunca te escribió, WhatsApp exige iniciar con una <strong>plantilla</strong> (botón <FileText className="inline h-3.5 w-3.5 align-[-2px]" aria-hidden /> del chat). Con el número de prueba de Meta solo puedes escribir a tus contactos registrados.
           </p>
         </div>
       )}
@@ -617,8 +624,9 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                 })()}
               </div>
               {pausedPhones.includes(selected.customerPhone) && (
-                <div className="border-b border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-4 py-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10">
-                  🤖💤 Bot pausado en este hilo — los mensajes llegan pero respondes tú
+                <div className="flex items-center gap-1.5 border-b border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-4 py-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10">
+                  <Bot className="h-4 w-4 shrink-0" aria-hidden />
+                  Bot pausado en este hilo — los mensajes llegan pero respondes tú
                 </div>
               )}
               {/* Resumen IA (dismissible) */}

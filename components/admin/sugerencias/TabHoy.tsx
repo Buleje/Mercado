@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
 import { normalizeProducts } from "./normalize";
+import { formatCurrency } from "@/lib/format";
 
 interface SaleItem {
   productId?: string | number;
@@ -54,7 +55,7 @@ const MOCK: DailySnapshot = {
 };
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function buildSnapshot(sales: SaleRecord[]): DailySnapshot {
@@ -280,7 +281,7 @@ export default function TabHoy({ onTabChange }: Props) {
   ] as const;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Hero */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--surface-sunken)] dark:from-[var(--surface-raised)] dark:to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="flex items-start gap-3">

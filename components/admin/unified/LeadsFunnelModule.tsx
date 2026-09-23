@@ -24,11 +24,12 @@ import {
   Filter,
   RefreshCw,
   Phone,
+  X,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import KPICard from "@/components/admin/shared/KPICard";
-import { DataTable, SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle, StatCard } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { formatDateNumeric, formatDateShort } from "@/lib/format";
 
 interface FunnelStats {
   total: number;
@@ -200,33 +201,33 @@ export default function LeadsFunnelModule() {
         <>
           {/* KPIs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPICard
+            <StatCard
               label="Total leads (90d)"
               value={stats.total}
               icon={UserPlus}
-              subtitle={
+              subValue={
                 stats.newestLeadAt
-                  ? `Último: ${new Date(stats.newestLeadAt).toLocaleDateString("es-PE")}`
+                  ? `Último: ${formatDateNumeric(stats.newestLeadAt)}`
                   : "—"
               }
             />
-            <KPICard
+            <StatCard
               label="Últimos 7 días"
               value={stats.last7d}
               icon={Activity}
-              subtitle="Velocidad reciente"
+              subValue="Velocidad reciente"
             />
-            <KPICard
+            <StatCard
               label="Últimos 30 días"
               value={stats.last30d}
               icon={TrendingUp}
-              subtitle="Tendencia mensual"
+              subValue="Tendencia mensual"
             />
-            <KPICard
+            <StatCard
               label="Conversión"
               value={`${stats.conversionRate}%`}
               icon={CheckCircle}
-              subtitle="demo_done + signed_up + won"
+              subValue="demo_done + signed_up + won"
             />
           </div>
 
@@ -296,9 +297,9 @@ export default function LeadsFunnelModule() {
             {sourceFilter && (
               <button
                 onClick={() => setSourceFilter("")}
-                className="h-12 px-4 rounded-2xl border-2 border-[var(--accent)] text-[var(--accent)] text-base font-medium hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)] transition-colors"
+                className="h-12 px-4 rounded-2xl border-2 border-[var(--accent)] text-[var(--accent)] text-base font-medium hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)] transition-colors inline-flex items-center gap-1.5"
               >
-                Source: {sourceFilter} ✕
+                Source: {sourceFilter} <X className="h-4 w-4" aria-hidden />
               </button>
             )}
           </div>
@@ -367,10 +368,7 @@ export default function LeadsFunnelModule() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-[var(--text-secondary)]">
-                          {new Date(lead.createdAt).toLocaleDateString("es-PE", {
-                            day: "2-digit",
-                            month: "short",
-                          })}
+                          {formatDateShort(lead.createdAt)}
                         </td>
                         <td className="px-4 py-3">
                           {next ? (

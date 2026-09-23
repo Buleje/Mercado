@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useMarketplaceCommissions } from "@/components/admin/marketplace/hooks/use-marketplace-commissions";
 import { TableSkeleton, COMMISSION_STATUS_CONFIG } from "@/components/admin/marketplace/shared";
 import { AlertCircle, CheckCircle, Clock, DollarSign } from "@buleje/design-system/icons";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 export function MarketplaceComisionesTab() {
   const {
@@ -36,7 +37,7 @@ export function MarketplaceComisionesTab() {
           <div>
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Comisiones marketplace</p>
             <CardTitle className="mt-1 text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] tracking-tight tabular-nums">
-              S/ {total.toFixed(2)}
+              {formatCurrency(total)}
             </CardTitle>
             <p className="text-xs text-[var(--text-secondary)] mt-1">Suma de todos los estados · {filtered.length} {filtered.length === 1 ? "comisión" : "comisiones"} listadas</p>
           </div>
@@ -47,7 +48,7 @@ export function MarketplaceComisionesTab() {
               className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
             >
               <DollarSign className="h-4 w-4" />
-              {markingPaid === "bulk" ? "Procesando..." : `Pagar liquidado · S/${summary.liquidado.toFixed(2)}`}
+              {markingPaid === "bulk" ? "Procesando..." : `Pagar liquidado · ${formatCurrency(summary.liquidado)}`}
             </button>
           )}
         </div>
@@ -76,7 +77,7 @@ export function MarketplaceComisionesTab() {
               <span className={cn("mt-1.5 h-2 w-2 rounded-full shrink-0", dot)} />
               <div className="min-w-0">
                 <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
-                <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tabular-nums">S/ {(value || 0).toFixed(2)}</p>
+                <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(value || 0)}</p>
               </div>
               <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)] ml-auto mt-1 shrink-0" />
             </div>
@@ -152,8 +153,8 @@ export function MarketplaceComisionesTab() {
                           #{e.orderId.slice(-8).toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right text-sm text-[var(--text-secondary)] tabular-nums">S/{e.orderTotal.toFixed(2)}</td>
-                      <td className="px-5 py-3 text-right text-sm font-extrabold text-[var(--text-primary)] tabular-nums">S/{e.amount.toFixed(2)}</td>
+                      <td className="px-5 py-3 text-right text-sm text-[var(--text-secondary)] tabular-nums">{formatCurrency(e.orderTotal)}</td>
+                      <td className="px-5 py-3 text-right text-sm font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(e.amount)}</td>
                       <td className="px-5 py-3 text-center">
                         <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider", sc.className)}>
                           <StatusIcon className="h-3 w-3" />
@@ -161,7 +162,7 @@ export function MarketplaceComisionesTab() {
                         </span>
                       </td>
                       <td className="px-5 py-3 text-right text-xs text-[var(--text-secondary)] tabular-nums">
-                        {new Date(e.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" })}
+                        {formatDate(e.createdAt)}
                       </td>
                       <td className="px-5 py-3 text-center">
                         {e.status !== "pagado" ? (

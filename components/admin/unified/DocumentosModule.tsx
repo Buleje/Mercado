@@ -55,6 +55,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { formatDate, formatDateShort } from "@/lib/format";
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -281,7 +282,7 @@ export default function DocumentosModule() {
     >
       {/* Drag overlay */}
       {dragOver && (
-        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
+        <div className="fixed inset-0 z-modal pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
           <div className="bg-[var(--surface-raised)] border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
             <Upload className="h-12 w-12 mx-auto text-primary mb-3" />
             <p className="text-xl font-extrabold text-[var(--text-primary)]">Suelta los archivos para subir</p>
@@ -346,7 +347,7 @@ export default function DocumentosModule() {
         />
         <StatBlock
           label="Último upload"
-          value={lastUpload ? new Date(lastUpload).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) : "—"}
+          value={lastUpload ? formatDateShort(lastUpload) : "—"}
           icon={Clock}
           tint="text-[var(--text-secondary)]"
         />
@@ -472,7 +473,7 @@ export default function DocumentosModule() {
                         </td>
                         <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-secondary)]">{formatBytes(doc.size)}</td>
                         <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-tertiary)]">
-                          {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                          {formatDateShort(doc.uploadedAt)}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="inline-flex items-center gap-1">
@@ -646,7 +647,7 @@ function PreviewModal({
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         ref={panelRef}
         role="dialog"
@@ -665,7 +666,7 @@ function PreviewModal({
             <div className="min-w-0">
               <p id={tituloId} className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
               <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
-                {formatBytes(doc.size)} · {doc.type || "Desconocido"} · {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+                {formatBytes(doc.size)} · {doc.type || "Desconocido"} · {formatDate(doc.uploadedAt)}
               </p>
             </div>
           </div>
@@ -721,7 +722,7 @@ function PreviewModal({
           </div>
 
           {/* Sidebar info */}
-          <aside className="border-l border-[var(--rule-base)] overflow-y-auto p-5 space-y-5 bg-[var(--surface-raised)]">
+          <aside className="border-l border-[var(--rule-base)] overflow-y-auto p-5 space-y-4 bg-[var(--surface-raised)]">
             {/* Categoría */}
             <div>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Carpeta</p>
@@ -810,7 +811,7 @@ function PreviewModal({
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <dt className="text-[var(--text-tertiary)]">Subido</dt>
-                  <dd className="font-bold text-[var(--text-primary)] tabular-nums">{new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</dd>
+                  <dd className="font-bold text-[var(--text-primary)] tabular-nums">{formatDate(doc.uploadedAt)}</dd>
                 </div>
               </dl>
             </div>

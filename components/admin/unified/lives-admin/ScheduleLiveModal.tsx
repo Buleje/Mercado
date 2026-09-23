@@ -11,6 +11,7 @@ import { Save, AlertCircle, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
+import { formatCurrency } from "@/lib/format";
 
 export interface ScheduledLiveData {
   title: string;
@@ -36,7 +37,7 @@ const MOCK_PRODUCTS: AvailableProduct[] = [
 ];
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 interface Props {

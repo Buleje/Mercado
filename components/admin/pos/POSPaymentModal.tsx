@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import POSCustomerSearch from "./POSCustomerSearch";
 import POSSplitPayment from "./POSSplitPayment";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ interface POSPaymentModalProps {
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 function isValidRuc(ruc: string): boolean {
@@ -260,7 +261,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                   )}
                   {c.creditBalance != null && c.creditBalance > 0 ? (
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)]">
-                      Fiado S/{Number(c.creditBalance).toFixed(2)}
+                      Fiado {formatCurrency(Number(c.creditBalance))}
                     </span>
                   ) : (
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-success-500)]/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
@@ -920,7 +921,7 @@ export default function POSPaymentModal({
                   {paymentLines.map((line, idx) => (
                     <div
                       key={idx}
-                      className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
+                      className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
                     >
                       {!isSinglePayment && (
                         <select

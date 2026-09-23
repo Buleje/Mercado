@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { Users, Banknote, Smartphone, CreditCard } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { PaymentLine, PaymentLineMethod } from "./POSPaymentModal";
+import { formatCurrency } from "@/lib/format";
 
 interface POSSplitPaymentProps {
   total: number;
@@ -12,7 +13,7 @@ interface POSSplitPaymentProps {
 }
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 const METHODS: {
@@ -141,7 +142,7 @@ export default function POSSplitPayment({
         {payments.map((line, idx) => (
           <div
             key={idx}
-            className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
+            className="flex items-center gap-2 p-3 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
           >
             <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-20 shrink-0">
               Persona {idx + 1}

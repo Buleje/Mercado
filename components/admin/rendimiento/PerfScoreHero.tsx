@@ -23,6 +23,7 @@ import {
 } from "@/hooks/use-web-vitals";
 import { useCustomerPerf } from "@/hooks/use-customer-perf";
 import { pickAdvice } from "./perf-advice";
+import { formatNumber } from "@/lib/format";
 
 // ── Gauge helpers (semicírculo 180° — receta SocioCalculadora) ───────────────
 const CX = 120;
@@ -211,7 +212,7 @@ export default function PerfScoreHero() {
                   <Monitor className="h-3.5 w-3.5" aria-hidden />
                   En tu equipo ahora:{" "}
                   <strong className="text-[var(--text-secondary)]">{secondaryScore ?? "—"}</strong>
-                  <span>· {customer.visits.toLocaleString("es-PE")} visitas medidas</span>
+                  <span>· {formatNumber(customer.visits)} visitas medidas</span>
                 </>
               ) : (
                 <>

@@ -92,7 +92,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
       description="Verifica todo antes de salir al aire"
       variant="default"
     >
-      <div className="space-y-5 px-5 py-5 sm:px-6">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {/* Título */}
         <Field label="Título de la transmisión *" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
           <input

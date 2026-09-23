@@ -1,7 +1,11 @@
 # WIRING.md — Guía de migración LazyChart
 
-> Generado por performance-engineer — 2026-04-10
-> Este documento NO debe modificarse manualmente. Se regenera en cada oleada de migración.
+> Generado por performance-engineer — 2026-04-10 · **estado recontado 2026-09-22**
+> La lista de abajo es de abril y quedó vieja: mandaba a `SmartDashboardTab.tsx` y
+> `SalesOrdersTab.tsx`, **borrados en `5a1026f78`**, y a 5 archivos que mientras tanto se
+> resolvieron por otra vía (delegan el chart a un sub-componente con `next/dynamic`, que logra
+> el mismo split sin pasar por `LazyChart`). No la leas como plan: corré
+> **`node scripts/charts-wiring-census.mjs`**, que la calcula del árbol real.
 
 ## Objetivo
 
@@ -16,10 +20,10 @@ El wrapper ya existe en `components/charts/LazyChart.tsx`. Solo falta wiring en 
 
 | Métrica | Valor |
 |---------|-------|
-| Archivos con import estático de recharts | **36** (excluyendo el propio LazyChart.tsx) |
+| Archivos con import estático de recharts | **58** al 22-09 (eran 36 en abril) — 56 traen un contenedor pesado, **55 pendientes** |
 | Bundle estimado recharts (gzip) | ~120-180 KB |
 | Bundle eliminado del initial load con esta migración | ~120-180 KB |
-| Archivos en dirty tree (no tocar en oleada actual) | ~36 (todos en working tree dirty) |
+| Trampa al contar | **38 de los 58 importan en varias líneas**; un grep anclado en `^import {…} from "recharts"` cuenta 19 y miente |
 | Estado de los wrappers | LISTOS — `components/charts/` completo |
 
 ---
@@ -88,7 +92,7 @@ export function SalesChart({ data }: Props) {
 
 ---
 
-## Lista completa de archivos a migrar (36)
+## Lista completa de archivos a migrar (36) — OBSOLETA, ver `scripts/charts-wiring-census.mjs`
 
 Todos estos archivos tienen imports estáticos de `recharts` y deben ser migrados
 cuando el working tree dirty se limpie (post-merge de PRs pendientes).

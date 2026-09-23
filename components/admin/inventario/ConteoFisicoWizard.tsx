@@ -7,6 +7,7 @@ import { Field } from '@/components/admin/shared/Field';
 import Image from "next/image";
 import dynamic from 'next/dynamic';
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatDateNumeric } from "@/lib/format";
 
 const BarcodeScannerDynamic = dynamic(() => import('./BarcodeScanner'), { ssr: false });
 
@@ -301,7 +302,7 @@ export default function ConteoFisicoWizard() {
                     <div>
                       <span className="text-sm font-medium text-[var(--text-primary)] capitalize">{c.tipo}</span>
                       <span className="text-xs text-[var(--text-secondary)] ml-2">
-                        {new Date(c.fechaInicio).toLocaleDateString('es-PE')}
+                        {formatDateNumeric(c.fechaInicio)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">

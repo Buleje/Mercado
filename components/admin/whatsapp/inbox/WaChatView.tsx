@@ -13,11 +13,12 @@ import {
   renderQuickReply,
 } from "./quick-replies";
 import type { WaMessage } from "./useWhatsAppInbox";
+import { formatTime } from "@/lib/format";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function timeOf(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  return formatTime(iso);
 }
 
 function dayOf(iso: string): string {
@@ -205,9 +206,9 @@ export default function WaChatView({
                         href={`/api/admin/whatsapp/media/${m.mediaId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mb-1 inline-block rounded-xl bg-[var(--rule-soft)] px-3 py-2 text-sm font-bold text-primary underline underline-offset-2 "
+                        className="mb-1 inline-flex items-center gap-1.5 rounded-xl bg-[var(--rule-soft)] px-3 py-2 text-sm font-bold text-primary underline underline-offset-2 "
                       >
-                        📄 Abrir documento
+                        <FileText className="h-4 w-4" aria-hidden /> Abrir documento
                       </a>
                     )}
                   <p className="whitespace-pre-wrap break-words text-sm text-[var(--text-primary)] ">

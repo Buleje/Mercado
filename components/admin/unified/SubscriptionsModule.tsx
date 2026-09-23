@@ -1,6 +1,6 @@
 "use client";
 
-import { DataTable, LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState, StatCard } from "@buleje/design-system";
 /**
  * SubscriptionsModule — Bodega al Mes (suscripciones recurrentes).
  *
@@ -41,7 +41,7 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import KPICard from "@/components/admin/shared/KPICard";
+import { formatDate, formatNumber } from "@/lib/format";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -91,12 +91,12 @@ const STATUS_LABELS: Record<SubStatus, string> = {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `S/ ${formatNumber(n, 2)}`;
 }
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -379,33 +379,31 @@ export default function SubscriptionsModule() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
+        <StatCard
           label="Suscripciones activas"
           value={stats?.active ?? activas.length}
           icon={Users}
-          color="var(--accent)"
-          subtitle="Vigentes hoy"
+          subValue="Vigentes hoy"
         />
-        <KPICard
+        <StatCard
           label="MRR estimado"
           value={fmt(stats?.mrrEstimated ?? 0)}
           icon={DollarSign}
-          color="#10B981"
-          subtitle="Ingreso recurrente mensual"
+          emphasis="success"
+          subValue="Ingreso recurrente mensual"
         />
-        <KPICard
+        <StatCard
           label="Nuevas este mes"
           value={nuevosEsteMes}
           icon={TrendingUp}
-          color="#3B82F6"
-          subtitle="Altas del periodo actual"
+          subValue="Altas del periodo actual"
         />
-        <KPICard
+        <StatCard
           label="Pausadas / canceladas"
           value={(stats?.paused ?? pausadas.length) + (stats?.cancelled ?? canceladas.length)}
           icon={Calendar}
-          color="#ff6b5b"
-          subtitle="Requieren seguimiento"
+          emphasis="warning"
+          subValue="Requieren seguimiento"
         />
       </div>
 

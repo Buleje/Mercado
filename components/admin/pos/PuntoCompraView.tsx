@@ -61,6 +61,7 @@ const RecurringExpenseModal = dynamic(() => import("./RecurringExpenseModal"), {
 import { agruparDuplicados, decodeExpenseDescription, proximoVencimiento, summarizeMeta, yaPagadoEnPeriodo } from "@/lib/expense-meta";
 import { findCategory, CATEGORY_COLOR_CLASSES } from "@/lib/expense-categories";
 import { getCategoryIcon } from "@/lib/expense-icons";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 const DRAFT_KEY = "poc-draft";
 
@@ -428,7 +429,7 @@ export default function PuntoCompraView() {
       });
       if (res.ok) {
         playDing();
-        setToastMsg(`Gasto registrado: ${template.description || template.category} · S/${template.amount.toFixed(2)}`);
+        setToastMsg(`Gasto registrado: ${template.description || template.category} · ${formatCurrency(template.amount)}`);
         setTimeout(() => setToastMsg(null), 3000);
       } else {
         const err = await res.json().catch(() => ({}));
@@ -1214,7 +1215,7 @@ export default function PuntoCompraView() {
                       type="button"
                       onClick={() => executeExpenseFromTemplate(tpl)}
                       disabled={isExecuting || isDeleting}
-                      aria-label={`Registrar gasto ${humanDesc || tpl.category} por S/${tpl.amount.toFixed(2)}`}
+                      aria-label={`Registrar gasto ${humanDesc || tpl.category} por ${formatCurrency(tpl.amount)}`}
                       className="w-full text-left p-4 rounded-2xl disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >
                       <div className="flex items-start gap-3 mb-3">
@@ -1233,7 +1234,7 @@ export default function PuntoCompraView() {
                       <div className="flex items-end justify-between gap-2">
                         <div>
                           <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
-                            S/{tpl.amount.toFixed(2)}
+                            {formatCurrency(tpl.amount)}
                           </p>
                           {metaSummary && (
                             <p className="text-xs text-[var(--text-secondary)] mt-1 font-medium">
@@ -1478,13 +1479,13 @@ export default function PuntoCompraView() {
             ))}
           </div>
           {appliedPromo && promoActive && (
-            <p className="text-xs text-[var(--data-warning-500)] mt-1.5">
-              ✓ Aplicando: <strong>{appliedPromo.nombre}</strong>
+            <p className="flex items-center gap-1 text-xs text-[var(--data-warning-500)] mt-1.5">
+              <CheckIcon className="h-3.5 w-3.5 shrink-0" aria-hidden /> Aplicando: <strong>{appliedPromo.nombre}</strong>
               {appliedPromo.tipo === "porcentaje" && ` — ${appliedPromo.valor}% de descuento en esta OC`}
               {appliedPromo.tipo === "2x1" && " — compra 2, paga 1 (por cada 2 unidades, 1 es gratis)"}
               {appliedPromo.tipo === "3x2" && " — compra 3, paga 2 (por cada 3 unidades, 1 es gratis)"}
               {appliedPromo.tipo === "monto_fijo" && ` — S/ ${appliedPromo.valor} de descuento en esta OC`}
-              {appliedPromo.tipo === "combo" && ` — precio combo S/ ${appliedPromo.valor} (ahorro S/ ${Math.max(0, subtotal - appliedPromo.valor).toFixed(2)})`}
+              {appliedPromo.tipo === "combo" && ` — precio combo S/ ${appliedPromo.valor} (ahorro ${formatCurrency(Math.max(0, subtotal - appliedPromo.valor))})`}
             </p>
           )}
           {appliedPromo && !promoActive && (() => {
@@ -1494,7 +1495,7 @@ export default function PuntoCompraView() {
             return (
               <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
                 <strong>{appliedPromo.nombre}</strong> requiere{" "}
-                {faltaMonto > 0 && `S/ ${faltaMonto.toFixed(2)} más`}
+                {faltaMonto > 0 && `${formatCurrency(faltaMonto)} más`}
                 {faltaMonto > 0 && faltaQty > 0 && " y "}
                 {faltaQty > 0 && `${faltaQty} unidad${faltaQty === 1 ? "" : "es"} más`}
                 {" "}para activarse — aún no descuenta.
@@ -1620,8 +1621,8 @@ export default function PuntoCompraView() {
                           </div>
                         </td>
                         <td className="p-3 text-right font-mono text-[var(--text-primary)]">
-                          <span title={`Costo: S/${(p.costPrice || p.price).toFixed(2)} | Venta: S/${Number(p.price).toFixed(2)} | Margen: ${p.costPrice ? ((1 - p.costPrice / p.price) * 100).toFixed(0) : "—"}%`}>
-                            S/{(p.costPrice ?? p.price).toFixed(2)}
+                          <span title={`Costo: ${formatCurrency(p.costPrice || p.price)} | Venta: ${formatCurrency(Number(p.price))} | Margen: ${p.costPrice ? ((1 - p.costPrice / p.price) * 100).toFixed(0) : "—"}%`}>
+                            {formatCurrency(p.costPrice ?? p.price)}
                           </span>
                         </td>
                         <td className="p-3 text-right text-[var(--text-secondary)]">
@@ -1706,7 +1707,7 @@ export default function PuntoCompraView() {
           >
             <ShoppingBasket className="h-4 w-4" />
             <span className="text-sm font-bold">{cartTotalQty}</span>
-            <span className="text-xs opacity-80">S/{displayTotal.toFixed(2)}</span>
+            <span className="text-xs opacity-80">{formatCurrency(displayTotal)}</span>
           </button>
         )}
 
@@ -1800,8 +1801,8 @@ export default function PuntoCompraView() {
                   {supplierHistory.map(h => (
                     <div key={h.id} className="flex items-center justify-between text-xs">
                       <span className="text-[var(--text-secondary)] truncate">{h.id.slice(0, 15)}...</span>
-                      <span className="font-mono font-medium text-[var(--text-primary)]">S/{Number(h.total).toFixed(2)}</span>
-                      <span className="text-[var(--text-tertiary)]">{h.date ? new Date(h.date).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) : ""}</span>
+                      <span className="font-mono font-medium text-[var(--text-primary)]">{formatCurrency(Number(h.total))}</span>
+                      <span className="text-[var(--text-tertiary)]">{h.date ? formatDateShort(h.date) : ""}</span>
                     </div>
                   ))}
                 </div>
@@ -1850,10 +1851,7 @@ export default function PuntoCompraView() {
                         {item.product.name}
                       </p>
                       <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1 flex-wrap">
-                        S/
-                        {(
-                          item.product.costPrice ?? item.product.price
-                        ).toFixed(2)}{" "}
+                        {formatCurrency(item.product.costPrice ?? item.product.price)}{" "}
                         / {item.product.unit}
                         {priceHistory[item.product.id] !== undefined && priceHistory[item.product.id] !== (item.product.costPrice ?? item.product.price) && (
                           <span className={cn(
@@ -1911,14 +1909,14 @@ export default function PuntoCompraView() {
                        freeUnits(item.quantity, appliedPromo.tipo) > 0 ? (
                         <span className="flex flex-col items-end">
                           <span className="line-through text-[var(--text-tertiary)] text-xs font-normal">
-                            S/{((item.product.costPrice ?? item.product.price) * item.quantity).toFixed(2)}
+                            {formatCurrency((item.product.costPrice ?? item.product.price) * item.quantity)}
                           </span>
                           <span className="text-[var(--data-warning-500)]">
-                            S/{((item.product.costPrice ?? item.product.price) * computeEffectiveQty(item.quantity, appliedPromo.tipo)).toFixed(2)}
+                            {formatCurrency((item.product.costPrice ?? item.product.price) * computeEffectiveQty(item.quantity, appliedPromo.tipo))}
                           </span>
                         </span>
                       ) : (
-                        <>S/{((item.product.costPrice ?? item.product.price) * item.quantity).toFixed(2)}</>
+                        <>{formatCurrency((item.product.costPrice ?? item.product.price) * item.quantity)}</>
                       )}
                     </div>
 
@@ -1930,7 +1928,7 @@ export default function PuntoCompraView() {
                       aria-label={`Eliminar ${item.product.name} de la canasta`}
                       className="h-5 w-5 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      ✕
+                      <XIcon className="h-4 w-4" aria-hidden />
                     </button>
                   </div>
                 ))
@@ -1969,13 +1967,13 @@ export default function PuntoCompraView() {
                 <div className="space-y-1 text-xs">
                   <div className="flex justify-between text-[var(--text-secondary)]">
                     <span>Subtotal</span>
-                    <span className="font-mono">S/{subtotal.toFixed(2)}</span>
+                    <span className="font-mono">{formatCurrency(subtotal)}</span>
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between text-[var(--data-error-500)]">
                       <span>Descuento {discount}%</span>
                       <span className="font-mono">
-                        -S/{discountAmount.toFixed(2)}
+                        -{formatCurrency(discountAmount)}
                       </span>
                     </div>
                   )}
@@ -1990,14 +1988,14 @@ export default function PuntoCompraView() {
                     </button>
                     {showIGV && (
                       <span className="font-mono ml-auto">
-                        S/{igvAmount.toFixed(2)}
+                        {formatCurrency(igvAmount)}
                       </span>
                     )}
                   </div>
                   <div className="flex justify-between font-bold text-base text-[var(--text-primary)] pt-1 border-t border-[var(--rule-soft)]">
                     <span>TOTAL</span>
                     <span className="font-mono text-primary">
-                      S/{displayTotal.toFixed(2)}
+                      {formatCurrency(displayTotal)}
                     </span>
                   </div>
                 </div>
@@ -2049,9 +2047,9 @@ export default function PuntoCompraView() {
 
                 {lastOC && (
                   <div className="bg-primary/10 rounded-xl p-3 space-y-2">
-                    <p className="text-xs font-bold text-[var(--data-success-500)]">✓ OC Creada</p>
+                    <p className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)]"><CheckIcon className="h-3.5 w-3.5 shrink-0" aria-hidden /> OC Creada</p>
                     <p className="text-xs text-[var(--data-success-500)]">ID: {lastOC.id}</p>
-                    <p className="text-xs text-[var(--data-success-500)]">{lastOC.items} productos — S/{Number(lastOC.total).toFixed(2)}</p>
+                    <p className="text-xs text-[var(--data-success-500)]">{lastOC.items} productos — {formatCurrency(Number(lastOC.total))}</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -2082,7 +2080,7 @@ export default function PuntoCompraView() {
                           <button type="button" onClick={() => loadTemplate(tpl)} className="text-xs font-medium text-[var(--text-primary)] hover:text-primary">
                             {tpl.name}
                           </button>
-                          <button type="button" onClick={() => deleteTemplate(idx)} aria-label={`Eliminar plantilla ${tpl.name}`} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] ml-0.5">✕</button>
+                          <button type="button" onClick={() => deleteTemplate(idx)} aria-label={`Eliminar plantilla ${tpl.name}`} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] ml-0.5"><XIcon className="h-3.5 w-3.5" aria-hidden /></button>
                         </div>
                       ))}
                     </div>
@@ -2259,7 +2257,7 @@ export default function PuntoCompraView() {
       {/* Modal crear nuevo proveedor — mini-form vinculado a /api/suppliers */}
       {showNewSupplier && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4"
           onClick={cerrarNuevoProveedor}
           role="dialog"
           aria-modal="true"

@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { Search, Users, MessageCircle, ArrowRight } from "@buleje/design-system/icons";
 import ProductImage from "./ProductImage";
+import { formatCurrency } from "@/lib/format";
 
 interface Customer {
   id: string | number;
@@ -21,7 +22,7 @@ interface Recommendation {
 }
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function buildWhatsAppText(customerName: string, recs: Recommendation[]): string {
@@ -93,7 +94,7 @@ export default function TabClientes() {
   }, [selected, recs]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div>
         <p className="text-base font-extrabold text-[var(--text-primary)]">Recomendaciones por cliente</p>
         <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">

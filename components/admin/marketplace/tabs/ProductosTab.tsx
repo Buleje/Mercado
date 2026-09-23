@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useMarketplaceProducts, type MarketplaceProduct } from "@/components/admin/marketplace/hooks/use-marketplace-products";
 import { useMarketplaceTienda } from "@/components/admin/marketplace/hooks/use-marketplace-tienda";
 import { KpiTile, SortIcon, TableSkeleton, CounterChip } from "@/components/admin/marketplace/shared";
+import { formatCurrency, formatDateLong, formatNumber } from "@/lib/format";
 
 // ─────────────────────────────────────────────
 // Sub-tab: Productos
@@ -543,7 +544,7 @@ export function MarketplaceProductosTab() {
                           <button
                             type="button"
                             onClick={() => setBoostingProduct(p)}
-                            title={`Boost activo · S/${p.boost.bidAmount}/día · Gastado S/${p.boost.totalSpentPen.toFixed(2)} / S/${p.boost.maxBudgetPen.toFixed(0)}`}
+                            title={`Boost activo · S/${p.boost.bidAmount}/día · Gastado ${formatCurrency(p.boost.totalSpentPen)} / S/${p.boost.maxBudgetPen.toFixed(0)}`}
                             className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] text-xs font-extrabold hover:bg-[var(--brand-secondary)]/25 transition-colors"
                           >
                             <Sparkles className="h-3.5 w-3.5" />
@@ -645,7 +646,7 @@ function CompetitionChip({
   if (Math.abs(diff) < 3) {
     return (
       <span
-        title={`En precio (promedio S/${avg.toFixed(2)} en ${count} tienda${count === 1 ? "" : "s"})`}
+        title={`En precio (promedio ${formatCurrency(avg)} en ${count} tienda${count === 1 ? "" : "s"})`}
         className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums"
       >
         <Minus className="h-3 w-3" />
@@ -656,7 +657,7 @@ function CompetitionChip({
   if (diff > 0) {
     return (
       <span
-        title={`Caro · ${diff.toFixed(0)}% sobre el promedio S/${avg.toFixed(2)} (${count} tienda${count === 1 ? "" : "s"})`}
+        title={`Caro · ${diff.toFixed(0)}% sobre el promedio ${formatCurrency(avg)} (${count} tienda${count === 1 ? "" : "s"})`}
         className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] tabular-nums"
       >
         <TrendingUp className="h-3 w-3" />
@@ -666,7 +667,7 @@ function CompetitionChip({
   }
   return (
     <span
-      title={`Barato · ${Math.abs(diff).toFixed(0)}% bajo el promedio S/${avg.toFixed(2)} (${count} tienda${count === 1 ? "" : "s"})`}
+      title={`Barato · ${Math.abs(diff).toFixed(0)}% bajo el promedio ${formatCurrency(avg)} (${count} tienda${count === 1 ? "" : "s"})`}
       className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] tabular-nums"
     >
       <TrendingDown className="h-3 w-3" />
@@ -736,7 +737,7 @@ function BoostModal({
       role="dialog"
       aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
+      className="fixed inset-0 z-system flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -770,15 +771,15 @@ function BoostModal({
         {existing ? (
           <div className="px-6 py-5 space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <KpiTile label="Puja diaria" value={`S/ ${existing.bidAmount.toFixed(2)}`} />
-              <KpiTile label="Gastado" value={`S/ ${existing.totalSpentPen.toFixed(2)}`} sub={`de S/ ${existing.maxBudgetPen.toFixed(0)}`} />
-              <KpiTile label="Impresiones" value={existing.impressionsCount.toLocaleString("es-PE")} />
-              <KpiTile label="Clicks" value={existing.clicksCount.toLocaleString("es-PE")} />
+              <KpiTile label="Puja diaria" value={`${formatCurrency(existing.bidAmount)}`} />
+              <KpiTile label="Gastado" value={`${formatCurrency(existing.totalSpentPen)}`} sub={`de S/ ${existing.maxBudgetPen.toFixed(0)}`} />
+              <KpiTile label="Impresiones" value={formatNumber(existing.impressionsCount)} />
+              <KpiTile label="Clicks" value={formatNumber(existing.clicksCount)} />
             </div>
             <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-3 text-xs text-[var(--text-secondary)]">
               Termina el{" "}
               <strong className="text-[var(--text-primary)]">
-                {new Date(existing.endDate).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
+                {formatDateLong(existing.endDate)}
               </strong>
             </div>
           </div>
@@ -797,7 +798,7 @@ function BoostModal({
                 Gasto estimado
               </span>
               <span className="text-xl font-extrabold tabular-nums text-[var(--accent)]">
-                S/ {estimated.toFixed(2)}
+                {formatCurrency(estimated)}
               </span>
             </div>
           </div>
@@ -992,7 +993,7 @@ function OfertaCell({
           className="group inline-flex items-center gap-1.5 tabular-nums font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
         >
           <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
-          S/ {oferta.toFixed(2)}
+          {formatCurrency(oferta)}
         </button>
         <button
           type="button"
@@ -1088,7 +1089,7 @@ function PriceCell({
       )}
     >
       <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
-      S/ {value.toFixed(2)}
+      {formatCurrency(value)}
     </button>
   );
 }

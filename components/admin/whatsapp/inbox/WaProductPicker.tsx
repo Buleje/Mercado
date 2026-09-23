@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ShoppingBag, X, Search, Loader2 } from "@buleje/design-system/icons";
 import { tenantFetch } from "@/lib/tenant-fetch";
+import { formatCurrency } from "@/lib/format";
 
 interface WaProduct {
   id: number;
@@ -54,7 +55,7 @@ export default function WaProductPicker({ sending, onSendImage, onInsertText, on
   }, [q]);
 
   async function share(p: WaProduct) {
-    const caption = `${p.name} — S/ ${Number(p.price).toFixed(2)}${p.unit ? ` x ${p.unit}` : ""}`;
+    const caption = `${p.name} — ${formatCurrency(Number(p.price))}${p.unit ? ` x ${p.unit}` : ""}`;
     if (p.imageUrl) {
       const ok = await onSendImage(p.imageUrl, caption);
       if (ok) onClose();
@@ -129,7 +130,7 @@ export default function WaProductPicker({ sending, onSendImage, onInsertText, on
                 </span>
               </span>
               <span className="shrink-0 text-sm font-black tabular-nums text-primary">
-                S/ {Number(p.price).toFixed(2)}
+                {formatCurrency(Number(p.price))}
               </span>
             </button>
           ))}

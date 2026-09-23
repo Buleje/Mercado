@@ -3,13 +3,14 @@
 import { ShoppingBag, Wallet, UserCircle, ReceiptText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { WaCustomerContext } from "./useWhatsAppInbox";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 function fmtSoles(n: number): string {
-  return `S/ ${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(iso);
 }
 
 /**
@@ -59,7 +60,7 @@ export default function WaCustomerCard({ context }: { context: WaCustomerContext
                 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
                 : "bg-[var(--data-success-100)] text-[var(--data-success-700)]",
             )}
-            title={fiadoSaldo > 0 ? "Tiene fiado pendiente — usá la respuesta rápida Cobrar fiado ⚡" : "Sin fiado pendiente"}
+            title={fiadoSaldo > 0 ? "Tiene fiado pendiente — usá la respuesta rápida Cobrar fiado" : "Sin fiado pendiente"}
           >
             <Wallet className="h-3.5 w-3.5" />
             {fiadoSaldo > 0 ? `Fiado ${fmtSoles(fiadoSaldo)}` : "Sin fiado"}

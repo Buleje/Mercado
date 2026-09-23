@@ -18,6 +18,7 @@ import CeldaMarcaPopover from "./CeldaMarcaPopover";
 import { formatearDias, nombreCortoDelDia, type HorarioDelPuesto } from "./semana";
 import type { FilaSemana } from "./semana-pdf";
 import type { ColaboradorMinDTO, EstadoAsistencia, FechaKey } from "@/lib/rrhh/tipos";
+import { formatNumber } from "@/lib/format";
 
 interface Props {
   filas: FilaSemana[];
@@ -96,7 +97,7 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
                       />
                       {conPlata && (
                         <span className={cn("text-xs tabular-nums", importe ? "text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]")}>
-                          {importe == null ? "·" : importe.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {importe == null ? "·" : formatNumber(importe, 2)}
                         </span>
                       )}
                     </div>

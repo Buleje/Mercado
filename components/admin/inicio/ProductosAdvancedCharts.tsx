@@ -12,6 +12,7 @@
  */
 
 import React, { memo, useMemo } from "react";
+import { Star, PiggyBank, CircleHelp, Dog } from "@buleje/design-system/icons";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import {
   BulejeComposedChart,
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui-system/charts";
 import { DashboardSection } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 type Product = {
   id: number | string;
@@ -62,7 +64,7 @@ function dayKey(iso: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 function dayLabel(dk: string) {
-  return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(dk + "T12:00:00");
 }
 
 export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
@@ -387,8 +389,8 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
     return top;
   }, [rotMargen]);
 
-  const fmtU = (v: number) => `${v.toLocaleString("es-PE")} u`;
-  const fmtS = (v: number) => `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  const fmtU = (v: number) => `${formatNumber(v)} u`;
+  const fmtS = (v: number) => `S/ ${formatNumber(v, { max: 0 })}`;
 
   const sections: DraggableItem[] = [
     {
@@ -402,22 +404,26 @@ kicker="Matriz BCG · margen × volumen · 30d"
           title="Clasificación estratégica de productos"
           kpis={[
             {
-              label: "⭐ Estrellas (alto-alto)",
+              label: "Estrellas (alto-alto)",
+              icon: Star,
               value: String(quadrant.counts.stars),
               tone: "success",
             },
             {
-              label: "🐄 Vacas (bajo-alto)",
+              label: "Vacas lecheras (bajo-alto)",
+              icon: PiggyBank,
               value: String(quadrant.counts.cows),
               tone: "primary",
             },
             {
-              label: "❓ Incógnitas",
+              label: "Incógnitas",
+              icon: CircleHelp,
               value: String(quadrant.counts.questionMarks),
               tone: "neutral",
             },
             {
-              label: "🐶 Perros (bajo-bajo)",
+              label: "Perros (bajo-bajo)",
+              icon: Dog,
               value: String(quadrant.counts.dogs),
               tone: "warning",
             },
@@ -439,17 +445,17 @@ kicker="Matriz BCG · margen × volumen · 30d"
                 style={{ top: "50%" }}
               />
               {/* Quadrant labels */}
-              <span className="absolute top-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-500)]">
-                ❓ Incógnita
+              <span className="absolute top-2 left-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-500)]">
+                <CircleHelp className="h-4 w-4" aria-hidden /> Incógnita
               </span>
-              <span className="absolute top-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)]">
-                ⭐ Estrella
+              <span className="absolute top-2 right-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)]">
+                <Star className="h-4 w-4" aria-hidden /> Estrella
               </span>
-              <span className="absolute bottom-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                🐶 Perro
+              <span className="absolute bottom-2 left-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                <Dog className="h-4 w-4" aria-hidden /> Perro
               </span>
-              <span className="absolute bottom-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
-                🐄 Vaca
+              <span className="absolute bottom-2 right-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
+                <PiggyBank className="h-4 w-4" aria-hidden /> Vaca lechera
               </span>
               {/* Axis labels */}
               <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] -rotate-90">

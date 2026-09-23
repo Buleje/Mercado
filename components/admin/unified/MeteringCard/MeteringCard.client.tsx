@@ -18,6 +18,7 @@ import {
 import type { MeteredEvent } from "@/lib/billing/metering";
 import type { MeteringSnapshot, TrafficLight } from "./types";
 import { EVENT_LABELS, PLAN_LABELS, computePercentage, computeTrafficLight } from "./types";
+import { formatDate, formatDateShort, formatNumber } from "@/lib/format";
 
 // ─── Sparkline por métrica ────────────────────────────────────────────────────
 
@@ -103,7 +104,7 @@ function QuotaBar({ used, limit, light, event }: QuotaBarProps) {
         />
       </div>
       <p className={`text-xs mt-0.5 text-right ${LIGHT_TEXT[light]}`}>
-        {limit === Infinity ? "Sin límite" : `${used.toLocaleString("es-PE")} / ${limit.toLocaleString("es-PE")}`}
+        {limit === Infinity ? "Sin límite" : `${formatNumber(used)} / ${formatNumber(limit)}`}
       </p>
     </div>
   );
@@ -146,7 +147,7 @@ function MetricCell({ event, snapshot }: MetricCellProps) {
       </div>
 
       <p className="text-2xl font-bold text-[var(--text-primary)] leading-tight">
-        {used.toLocaleString("es-PE")}
+        {formatNumber(used)}
       </p>
 
       <QuotaBar used={used} limit={limit} light={light} event={event} />
@@ -284,9 +285,9 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
       {/* Período */}
       <p className="text-xs text-[var(--text-tertiary)] mt-auto">
         Período:{" "}
-        {new Date(snapshot.period.from).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+        {formatDateShort(snapshot.period.from)}
         {" – "}
-        {new Date(snapshot.period.to).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+        {formatDate(snapshot.period.to)}
       </p>
     </section>
   );

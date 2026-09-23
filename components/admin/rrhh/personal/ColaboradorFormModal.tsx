@@ -250,7 +250,7 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
         </ModalFooter>
       }
     >
-      <form id={FORM_ID} onSubmit={guardar} noValidate className={cn(MODAL_BODY, "space-y-8")}>
+      <form id={FORM_ID} onSubmit={guardar} noValidate className={cn(MODAL_BODY, "space-y-6")}>
         <SeccionForm titulo="Quién es">
           <Field
             label="Documento"
