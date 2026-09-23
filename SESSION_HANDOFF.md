@@ -16,11 +16,14 @@
 
 **Noche (misma sesión), COMMITEADO:** `622a7c12e` aviso + arreglo de un clic «el trato empieza después» (ADR-430; reviewer + security sin veto; auditoría que perdía 3/16 renglones bajo carga) · `3ed8de960` «Producir sin lote»: anular el día (anula, no borra), detalle sin scroll, «Más nuevas primero», sin pastillas, tira plegable, más compacto (reviewer 5 + security sin veto). Incidente: un agente dejó `SET SESSION READ ONLY` pegado en el pooler 3 min (reparado, producción sin errores) → regla en memoria `pooler-set-session-se-pega` y en el contexto de subagentes.
 
+**Cierre (misma sesión):** WASACO COBRADO (15:44 UTC: trato 14/09 → 07/09, 6 cargos N° 30–35 = S/ 1 619,60, SELECT antes 0 · después 6) · `2c334edcd` reservas vencidas en la campana del libro con Liberar/Extender (+ editar apartado, que daba 422) · el tenant QA forestal NO se activó (los 3 QA de Blas están inactivos a propósito: crons + tienda pública sobre la base de producción) · todo subido · se lanzó la compactación del vhdx (APAGA WSL; resultado en `C:\Users\Usuario\.claude-tune\2026-09-23\compactar.log`).
+
 **Para retomar (en orden):**
-1. **WASACO en Blas NO cobrado:** la app redondea por paquete → S/ 1 619,60 (exacto 1 619,45). Brandon todavía no eligió (cobrar 1 619,60 / redondear por corrida / no cobrar). Con el arreglo commiteado, se cobra desde la ficha de WASACO en el Directorio con un clic, o con `scratchpad/probe/tmp-backend-wasaco-arreglo.mts aplicar`.
-2. Compactar el vhdx al final del día: `C:\Users\Usuario\.claude-tune\2026-09-23\compactar-wsl.ps1` (APAGA WSL; deja `compactar.log`).
-3. Brandon: reiniciar Chrome (política sin aceleración) y mirar F2 → UMA; contar DWM id 500 desde el 23-09.
-4. Probar el audio real del cubicador (velocidad 10, pitido en Android).
+1. Leer `compactar.log` (esperado: ~79,8 → ~55 GB) y confirmar `wsl.exe --version` + dev server arriba.
+2. **Avisos de plazos caídos desde el 12/09** (memoria `avisos-plazos-canal-caido`): WhatsApp 401 (token Meta) + `buleje.pe` sin verificar en Resend, y 10 días sin intentos. Necesita a Brandon; después, disparar el cron y mirar `NotificationLog`.
+3. Reserva de Juancho (N° 29 Cachimbo, vencida 22/09) visible en la campana: la decide Brandon (liberar/extender).
+4. Brandon: reiniciar Chrome (política sin aceleración) + F2 → UMA; contar DWM id 500 desde el 23-09.
+5. Probar el audio real del cubicador; el panel admin podría dejar de usar `/api/tenants/resolve` público (403 en QA inactivo).
 
 ---
 
