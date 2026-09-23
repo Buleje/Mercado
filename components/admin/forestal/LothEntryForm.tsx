@@ -46,6 +46,7 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import LothGpsField from "./LothGpsField";
 import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
+import { formatNumber } from "@/lib/format";
 
 interface Props {
   section: LothSection;
@@ -546,13 +547,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const highlight = useMemo(() => {
     if (fields.has("volume")) {
       const vol = Number(volumeM3) > 0 ? Number(volumeM3) : autoVolume;
-      return { label: "Volumen (Smalian)", value: vol > 0 ? vol.toLocaleString("es-PE", { maximumFractionDigits: 4 }) : "0", unit: "m³" };
+      return { label: "Volumen (Smalian)", value: vol > 0 ? formatNumber(vol, { max: 4 }) : "0", unit: "m³" };
     }
     if (fields.has("volumeManual")) {
-      return { label: "Volumen consumido", value: volumeM3 ? Number(volumeM3).toLocaleString("es-PE", { maximumFractionDigits: 4 }) : "0", unit: "m³" };
+      return { label: "Volumen consumido", value: volumeM3 ? formatNumber(Number(volumeM3), { max: 4 }) : "0", unit: "m³" };
     }
     if (fields.has("quantity")) {
-      return { label: section === "despacho_producto" ? "A despachar" : "Producido", value: quantity ? Number(quantity).toLocaleString("es-PE", { maximumFractionDigits: 4 }) : "0", unit: unit === "m3" ? "m³" : unit === "kg" ? "Kg" : "Unidad" };
+      return { label: section === "despacho_producto" ? "A despachar" : "Producido", value: quantity ? formatNumber(Number(quantity), { max: 4 }) : "0", unit: unit === "m3" ? "m³" : unit === "kg" ? "Kg" : "Unidad" };
     }
     return { label: "N° de GTF", value: gtfNumber.trim() || "—", unit: "" };
   }, [fields, volumeM3, autoVolume, quantity, unit, section, gtfNumber]);
@@ -1271,7 +1272,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               {fields.has("despachoCode") && <PreviewRow label="Despacho" value={despachoCode.trim() || "—"} mono />}
               {fields.has("species") && <PreviewRow label="Especie" value={speciesName || "—"} />}
               {fields.has("gtf") && <PreviewRow label="GTF" value={gtfNumber.trim() || "—"} mono />}
-              {fields.has("pieces") && <PreviewRow label="Piezas" value={pieces ? Number(pieces).toLocaleString("es-PE") : "—"} />}
+              {fields.has("pieces") && <PreviewRow label="Piezas" value={pieces ? formatNumber(Number(pieces)) : "—"} />}
               {fields.has("discarded") && <PreviewRow label="Estado" value={discarded ? "Descartado" : "Aprovechable"} />}
               {fields.has("consumoInterno") && <PreviewRow label="Consumo interno" value={consumoInterno ? "Sí" : "No"} />}
             </dl>

@@ -74,7 +74,7 @@ export default function PlantacionPasoPredio({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <Seccion numero={5} titulo="Datos del predio" hint="Dónde está la plantación">
         <CampoGrid>
           <Field label="Nombre del predio" span={6}>

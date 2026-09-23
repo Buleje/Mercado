@@ -24,6 +24,7 @@ import {
 } from "@/lib/forestal/loth-constants";
 import { totalRelevante, totalesDe, type OrdenCampo, type OrdenDir } from "@/lib/forestal/loth-seccion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDate } from "@/lib/format";
 
 export interface ColDef {
   key: string;
@@ -38,7 +39,7 @@ const TH = "px-4 py-2.5 text-left font-bold text-[var(--text-primary)]";
 const TD = "px-4 py-2.5 align-top";
 
 const fmtFecha = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+  formatDate(iso, { soloFecha: true });
 
 export default function LothSeccionTabla({
   section,

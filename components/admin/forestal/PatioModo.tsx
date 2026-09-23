@@ -33,6 +33,7 @@ import CtpPatioBandeja from "./CtpPatioBandeja";
 import CtpRecepcionTrozas, { type TrozaEditable } from "./CtpRecepcionTrozas";
 import PatioBuscador from "./PatioBuscador";
 import PatioConsumo from "./PatioConsumo";
+import { formatDateShort } from "@/lib/format";
 
 interface GuiaPatio {
   id: string;
@@ -48,7 +49,7 @@ const GUIAS_VISIBLES = 6;
 
 const fmtFecha = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+    return formatDateShort(iso, { soloFecha: true });
   } catch {
     return iso;
   }

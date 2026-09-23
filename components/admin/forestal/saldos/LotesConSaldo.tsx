@@ -39,6 +39,7 @@ import {
 } from "@/lib/forestal/lotes-aserrio";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { Th } from "../ctp-section-shared";
+import { formatDate } from "@/lib/format";
 
 /**
  * Días que faltan para `finProceso`. Negativo = ya se pasó. `null` = sin fecha.
@@ -78,12 +79,7 @@ const r4 = (v: number) => Math.round(v * 10000) / 10000;
 
 const fecha = (v: string | Date | null | undefined): string =>
   v
-    ? new Date(v).toLocaleDateString("es-PE", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        timeZone: "UTC",
-      })
+    ? formatDate(v, { soloFecha: true })
     : "—";
 
 function TextoPlazo({ dias, vencido }: { dias: number | null; vencido: boolean }) {

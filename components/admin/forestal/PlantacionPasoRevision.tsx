@@ -16,6 +16,7 @@ import { AlertTriangle, CheckCircle2, FileCheck, MinusCircle, ScrollText, type L
 import { calcularResumen, nombreTitular, validarPlantacion, type PlantacionInput } from "@/lib/forestal/plantacion-tramite";
 import { AUTORIDADES } from "@/lib/forestal/tramites-catalogo";
 import { MesaPartesBanner } from "./ctp-shared";
+import { formatNumber } from "@/lib/format";
 
 const DECLARACION_1 =
   "Declaro bajo juramento que toda la información antes consignada en la presente solicitud es veraz y ha sido debidamente verificada. En caso que se compruebe fraude o falsedad en la declaración, información o documentación presentada, me someto a las consecuencias y responsabilidades administrativas y penales que correspondan, conforme a lo previsto en el artículo 34 del TUO de la Ley N° 27444, Ley del Procedimiento Administrativo General, aprobado por Decreto Supremo N° 004-2019-JUS, y el Código Penal respecto a los delitos contra la fe pública. Asimismo, declaro que no existe otro derecho de propiedad, registrado o no, sobre el área correspondiente a la plantación forestal.";
@@ -69,14 +70,14 @@ function construirSecciones(d: PlantacionInput): Seccion[] {
       key: "area",
       label: "Área",
       estado: areaOk ? "ok" : "warn",
-      detalle: `${resumen.areaBloquesHa.toLocaleString("es-PE")} ha en bloques / ${resumen.areaDeclaradaHa.toLocaleString("es-PE")} ha declaradas`,
+      detalle: `${formatNumber(resumen.areaBloquesHa)} ha en bloques / ${formatNumber(resumen.areaDeclaradaHa)} ha declaradas`,
     },
     { key: "bloques", label: "Bloques", estado: hayBloques && bloquesOk ? "ok" : "warn", detalle: `${resumen.numBloques} bloque(s)` },
     {
       key: "especies",
       label: "Especies",
       estado: !especiesAplica ? "na" : especiesOk ? "ok" : "warn",
-      detalle: `${resumen.numEspecies} especie(s) · ${resumen.totalPlantas.toLocaleString("es-PE")} plantas`,
+      detalle: `${resumen.numEspecies} especie(s) · ${formatNumber(resumen.totalPlantas)} plantas`,
     },
     { key: "coordenadas", label: "Coordenadas", estado: !coordenadasAplica ? "na" : coordenadasOk ? "ok" : "warn" },
     {
@@ -108,8 +109,8 @@ export default function PlantacionPasoRevision({
   return (
     <div className="space-y-4">
       <p className="text-sm text-[var(--text-secondary)]">
-        <b className="text-[var(--text-primary)]">{nombreTitular(datos)}</b> · {resumen.areaBloquesHa.toLocaleString("es-PE")} ha · {resumen.numBloques} bloque(s) ·{" "}
-        {resumen.numEspecies} especie(s) · {resumen.totalPlantas.toLocaleString("es-PE")} plantas
+        <b className="text-[var(--text-primary)]">{nombreTitular(datos)}</b> · {formatNumber(resumen.areaBloquesHa)} ha · {resumen.numBloques} bloque(s) ·{" "}
+        {resumen.numEspecies} especie(s) · {formatNumber(resumen.totalPlantas)} plantas
       </p>
 
       <ul className="divide-y divide-[var(--rule-soft)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">

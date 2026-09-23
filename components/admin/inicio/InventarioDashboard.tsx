@@ -20,6 +20,7 @@ const InventarioAdvancedCharts = dynamic(
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
 import { BulejeDashboardSkeleton } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,9 +60,9 @@ export interface InventarioData {
 // Brandon 2026-06-04: valor headline con separador de miles es-PE, redondeado
 // al sol (sin centavos) para que el KPI no rompa en 2 líneas. Antes daba
 // "S/ 10984.80" (sin separador, partía feo) — ahora "S/ 10,985".
-function fmt(n: number) { return `S/ ${Math.round(n).toLocaleString("es-PE")}`; }
+function fmt(n: number) { return `S/ ${formatNumber(Math.round(n))}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
+function dayLabel(dk: string) { return formatDateShort(dk + "T12:00:00"); }
 
 const CAT_LABELS: Record<string, string> = { "frutas-verduras": "Frutas y Verduras", abarrotes: "Abarrotes", carnes: "Carnes", lacteos: "Lácteos", bebidas: "Bebidas", limpieza: "Limpieza" };
 const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarrotes: "#ff6b5b", carnes: "#ef4444", lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4" };
@@ -269,7 +270,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
           subValue={
             data.productosSinCosto > 0
               ? `${data.productosSinCosto} sin costo · valor parcial`
-              : `${totalUnidades.toLocaleString("es-PE")} uds · a costo real`
+              : `${formatNumber(totalUnidades)} uds · a costo real`
           }
           icon={DollarSign}
         />

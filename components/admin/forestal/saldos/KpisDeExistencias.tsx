@@ -40,9 +40,10 @@ import {
   type ProductoStock,
 } from "@/lib/forestal/ctp-saldos-analisis";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
+import { formatNumber } from "@/lib/format";
 
 const n2 = (v: number) => v.toFixed(2);
-const nf = (v: number) => v.toLocaleString("es-PE");
+const nf = (v: number) => formatNumber(v);
 
 /** Cuántos días de patio se consideran cómodos antes de encender el aviso. */
 const COBERTURA_JUSTA = 7;

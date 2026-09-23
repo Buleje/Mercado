@@ -26,12 +26,13 @@ import { DraggableSections, type DraggableItem } from "./DraggableSections";
 import { ReorderModal, type ReorderCandidate } from "./ReorderModal";
 import { Package, Bell } from "@buleje/design-system/icons";
 import { toast } from "sonner";
+import { formatNumber } from "@/lib/format";
 
 function fmtS(v: number) {
-  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(v, { max: 0 })}`;
 }
 function fmtU(v: number) {
-  return `${v.toLocaleString("es-PE")} u`;
+  return `${formatNumber(v)} u`;
 }
 
 export default function InventarioCharts({ data }: { data: InventarioData }) {

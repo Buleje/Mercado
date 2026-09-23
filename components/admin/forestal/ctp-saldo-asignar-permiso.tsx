@@ -25,6 +25,7 @@ import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { declaraEnM3, type CorridaSinOrigen } from "@/lib/forestal/saldo-por-permiso";
 import { Btn } from "./ctp-shared";
+import { formatDate } from "@/lib/format";
 
 interface Resultado {
   permiso: string;
@@ -33,12 +34,7 @@ interface Resultado {
 }
 
 const fmtFecha = (f: string) =>
-  new Date(f.length <= 10 ? `${f}T12:00:00Z` : f).toLocaleDateString("es-PE", {
-    day: "2-digit",
-    month: "short",
-    year: "2-digit",
-    timeZone: "UTC",
-  });
+  formatDate(f.length <= 10 ? `${f}T12:00:00Z` : f, { soloFecha: true });
 
 export default function AsignarPermisoMasivo({
   corridas,

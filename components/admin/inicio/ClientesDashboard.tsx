@@ -16,8 +16,9 @@ const ClientesAdvancedCharts = dynamic(
   { ssr: false },
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
-import { BulejeDashboardSkeleton } from "./_shared";
+import { BulejeDashboardSkeleton, KPI_GRID_6 } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { formatDateShort, formatMonth, formatMonthYear } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,7 +64,7 @@ export interface ClientesData {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
+function dayLabel(dk: string) { return formatDateShort(dk + "T12:00:00"); }
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -152,7 +153,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
     for (let i = 5; i >= 0; i--) {
       const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
-      const label = mStart.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
+      const label = formatMonthYear(mStart);
       const mPhones = new Set<string>();
       orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= mStart && new Date(o.createdAt) <= mEnd).forEach(o => { if (o.customer?.phone) mPhones.add(o.customer.phone); });
       sales.filter(s => new Date(s.createdAt) >= mStart && new Date(s.createdAt) <= mEnd).forEach(s => { if (s.customerPhone) mPhones.add(s.customerPhone); });
@@ -170,7 +171,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
     for (let c = 3; c >= 0; c--) {
       const cStart = new Date(now.getFullYear(), now.getMonth() - c, 1);
       const cEnd = new Date(now.getFullYear(), now.getMonth() - c + 1, 0, 23, 59, 59);
-      const label = cStart.toLocaleDateString("es-PE", { month: "short" });
+      const label = formatMonth(cStart);
       // Phones that first purchased in this month
       const firstPurchase = new Set<string>();
       const allPhonesBefore = new Set<string>();
@@ -295,7 +296,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
       {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className={KPI_GRID_6}>
         <StatCard label="Total Clientes" value={String(data.totalClientes)} icon={Users} />
         <StatCard label="Activos" value={String(data.clientesActivos)} icon={UserCheck} delta={data.dActivos} />
         <StatCard label="Nuevos" value={String(data.nuevos)} icon={UserPlus} delta={data.dNuevos} />

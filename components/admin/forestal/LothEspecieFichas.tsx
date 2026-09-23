@@ -20,6 +20,7 @@
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, Pencil, Printer, ShieldAlert, Trash2 } from "@buleje/design-system/icons";
 import { BloquePlan } from "./loth-plan-ui";
+import { formatCurrency } from "@/lib/format";
 
 export interface FichaEspecie {
   species: string;
@@ -69,7 +70,7 @@ const TONO = {
 } as const;
 
 const m3 = (n: number) => n.toFixed(2);
-const soles = (n: number) => `S/ ${n.toFixed(2)}`;
+const soles = (n: number) => `${formatCurrency(n)}`;
 
 /** Un eslabón de la cadena: rótulo arriba, número abajo, tabular para alinear. */
 function Paso({ label, valor, sub, apagado }: { label: string; valor: string; sub?: string; apagado?: boolean }) {

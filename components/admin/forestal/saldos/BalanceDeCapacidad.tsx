@@ -40,6 +40,7 @@ import {
   type OpcionFiltro,
 } from "@/lib/forestal/capacidad-de-planta";
 import FiltroMulti from "./FiltroMulti";
+import { formatNumber } from "@/lib/format";
 
 /** Los tres recortes, con el nombre de su lista de opciones. */
 const FILTROS: {
@@ -158,7 +159,7 @@ export default function BalanceDeCapacidad({
             {/* El pie tablar es la unidad con la que se vende y se cotiza; el m³
                 es la del libro. Las dos juntas evitan la calculadora al lado. */}
             <span className="w-28 shrink-0 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
-              {pieTablarDe(f.enProducto).toLocaleString("es-PE")} pt
+              {formatNumber(pieTablarDe(f.enProducto))} pt
             </span>
             {/* El botón sólo aparece si hay filas que abrir: un «Ver detalle»
                 que abre una tabla vacía enseña a no tocarlo. */}
@@ -192,7 +193,7 @@ export default function BalanceDeCapacidad({
             {fmtM3(totalProducto)} m³
           </span>
           <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-secondary)]">
-            {pieTablarDe(totalProducto).toLocaleString("es-PE")} pt
+            {formatNumber(pieTablarDe(totalProducto))} pt
           </span>
         </span>
       </div>

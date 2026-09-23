@@ -22,6 +22,7 @@ import {
   type CorridaSinOrigen,
   type ResumenOrigen,
 } from "@/lib/forestal/origen-incompleto";
+import { formatNumber } from "@/lib/format";
 
 export default function OrigenIncompleto({
   resumen,
@@ -107,7 +108,7 @@ export default function OrigenIncompleto({
               {c.unidad === "m3" ? `${fmtM3(c.disponible)} m³` : `${c.disponible} ${c.unidad}`}
             </span>
             <span className="w-24 shrink-0 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
-              {c.pt == null ? "—" : `${c.pt.toLocaleString("es-PE")} pt`}
+              {c.pt == null ? "—" : `${formatNumber(c.pt)} pt`}
             </span>
             <button
               type="button"

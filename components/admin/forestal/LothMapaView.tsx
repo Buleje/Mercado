@@ -37,6 +37,7 @@ import { useLothMapaDibujo } from "./hooks/use-loth-mapa-dibujo";
 import { useLothMapaHerramientas } from "./hooks/use-loth-mapa-herramientas";
 import { useLothMapaDerivados } from "./hooks/use-loth-mapa-derivados";
 import { useLothMapaExportes } from "./hooks/use-loth-mapa-exportes";
+import { formatNumber } from "@/lib/format";
 
 /** Claves de los bloques plegables. Exportadas: la prueba en navegador las lee. */
 export const CLAVES_BLOQUES_MAPA = {
@@ -56,7 +57,7 @@ const PASTILLA = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-x
 const BTN_BLOQUE =
   "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
 
-const plural = (n: number, uno: string, varios: string) => `${n.toLocaleString("es-PE")} ${n === 1 ? uno : varios}`;
+const plural = (n: number, uno: string, varios: string) => `${formatNumber(n)} ${n === 1 ? uno : varios}`;
 
 export default function LothMapaView({
   focusTree,

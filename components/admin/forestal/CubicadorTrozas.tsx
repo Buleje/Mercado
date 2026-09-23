@@ -33,6 +33,7 @@ import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import { Kpi } from "./cubicador-kpis";
 import ImportarTrozasModal from "./ImportarTrozasModal";
 import { CtpEspeciesBoton, useEspeciesConCatalogo } from "./ctp-especie-campo";
+import { formatNumber } from "@/lib/format";
 
 interface Fila extends TrozaCubicada {
   sospechosa?: boolean;
@@ -49,7 +50,7 @@ interface GuiaLibro {
   trozasCount?: number | null;
 }
 
-const fmtM3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+const fmtM3 = (v: number) => formatNumber(v, 3);
 const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const storageKey = () => {
   let slug = "main";
@@ -404,12 +405,12 @@ export default function CubicadorTrozas() {
               valor={fmtM3(totales.m3)}
               unidad="m³"
               destacado
-              sub={`${Math.round(totales.m3 * PT_POR_M3).toLocaleString("es-PE")} PT equivalentes`}
+              sub={`${formatNumber(Math.round(totales.m3 * PT_POR_M3))} PT equivalentes`}
             />
             <Kpi
               Icono={Layers}
               rotulo="Trozas"
-              valor={totales.trozas.toLocaleString("es-PE")}
+              valor={formatNumber(totales.trozas)}
               unidad={totales.trozas === 1 ? "troza" : "trozas"}
               sub={`${fmtM3(totales.trozas > 0 ? totales.m3 / totales.trozas : 0)} m³ cada una`}
             />
@@ -796,7 +797,7 @@ export default function CubicadorTrozas() {
         {/* Referencias */}
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
           <Ref label="Total rolliza" value={`${fmtM3(totales.m3)} m³`} />
-          <Ref label="Equivalente volumétrico" value={`${(totales.m3 * PT_POR_M3).toLocaleString("es-PE", { maximumFractionDigits: 0 })} PT`} hint={`1 m³ = ${PT_POR_M3} PT — el factor con el que se compra y se vende`} />
+          <Ref label="Equivalente volumétrico" value={`${formatNumber(totales.m3 * PT_POR_M3, { max: 0 })} PT`} hint={`1 m³ = ${PT_POR_M3} PT — el factor con el que se compra y se vende`} />
           <Ref label="Fórmula" value="Smalian" hint="promedio de áreas × largo" />
         </div>
       </div>

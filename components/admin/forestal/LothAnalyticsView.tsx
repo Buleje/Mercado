@@ -31,6 +31,7 @@ import {
 } from "@/lib/forestal/loth-analitica";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { FlujoPanel, Kpi, RankingPanel, VeredictoBanner, fm } from "./loth-analitica-piezas";
+import { formatDateLong } from "@/lib/format";
 
 interface Funnel {
   taladoM3: number; trozadoM3: number; despachoTrozaM3: number;
@@ -48,7 +49,7 @@ interface Analytics {
   especiesNoAutorizadas?: string[];
 }
 
-const fdate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" }) : "—");
+const fdate = (iso: string | null) => (iso ? formatDateLong(iso, { soloFecha: true }) : "—");
 
 // ─── Export CSV (BOM UTF-8 para Excel es-PE) ────────────────────────────────
 function buildAnalyticsCsv(d: Analytics): string {
@@ -203,7 +204,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
     }).sort((a, b) => b.movilizado - a.movilizado || b.taladoM3 - a.taladoM3);
   }, [data]);
 
-  if (loading && !data) return <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Calculando…</p></div>;
+  if (loading && !data) return <div className="p-6 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Calculando…</p></div>;
   if (error && !data) return <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>;
   if (!data || !flujo || !veredicto) return null;
 

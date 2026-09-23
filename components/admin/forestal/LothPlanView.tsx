@@ -20,7 +20,9 @@
  */
 
 import { useState, type ReactNode } from "react";
-import { AlertCircle, FileText, Loader2, Plus, Printer, Upload } from "@buleje/design-system/icons";
+import { AlertCircle, FileText, Loader2, Pencil, Plus, Printer, Trash2, Upload } from "@buleje/design-system/icons";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { printLothPoa } from "@/lib/forestal/loth-poa-print";
 import { mismaEspecie } from "@/lib/forestal/loth-constants";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -56,9 +58,75 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const pestana: PestanaPlan = PESTANAS_PLAN.includes(pestanaGuardada) ? pestanaGuardada : "avance";
   const [pedidoEspecie, setPedidoEspecie] = useState<PedidoEspecie | null>(null);
   const [importarSignal, setImportarSignal] = useState(0);
+  /** El plan abierto para corregir sus datos (ADR-426). */
+  const [editandoPlan, setEditandoPlan] = useState(false);
+  const [borrandoPlan, setBorrandoPlan] = useState(false);
+  const [errorPlan, setErrorPlan] = useState<string | null>(null);
+  const { confirm } = useConfirm();
 
   const pedirEspecie = (id: string, accion: PedidoEspecie["accion"]) =>
     setPedidoEspecie((p) => ({ id, accion, n: (p?.n ?? 0) + 1 }));
+
+  /**
+   * Eliminar un plan cargado por error — diciendo ANTES qué se lleva puesto.
+   *
+   * Brandon (2026-09-21): «en el menú también tiene que tener los detalles de
+   * datos que alojó ese plan de manejo, para saber qué estoy eliminando». Un
+   * plan con 600 árboles censados y 12 asientos del libro no es lo mismo que
+   * uno cargado hace un minuto, y el diálogo tiene que decir la diferencia con
+   * el número real, no con una advertencia genérica.
+   *
+   * La baja es lógica: los asientos y las guías que lo citan son lo que se
+   * declara ante la ARFFS y no se tocan.
+   */
+  async function eliminarPlan(p: NonNullable<typeof plan>) {
+    setBorrandoPlan(true);
+    try {
+      const r = await fetch(`/api/admin/forestal/plan?planId=${encodeURIComponent(p.id)}&usos=1`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const j = (await r.json().catch(() => ({}))) as { usos?: Record<string, number | null> };
+      const u = j.usos ?? {};
+      const partes = [
+        u.especies ? `${u.especies} ${u.especies === 1 ? "especie autorizada" : "especies autorizadas"}` : null,
+        u.censo ? `${u.censo} ${u.censo === 1 ? "árbol censado" : "árboles censados"}` : null,
+        u.asientos ? `${u.asientos} ${u.asientos === 1 ? "asiento del libro" : "asientos del libro"}` : null,
+        u.guias ? `${u.guias} ${u.guias === 1 ? "guía emitida" : "guías emitidas"}` : null,
+        u.contratos ? `${u.contratos} ${u.contratos === 1 ? "permiso atado" : "permisos atados"}` : null,
+      ].filter(Boolean);
+      /* El volumen autorizado va aparte: es la cifra que dice de qué tamaño era
+         el plan. `null` (sin especies cargadas) NO es 0 m³ y no se muestra. */
+      const vol = typeof u.volumenAutorizadoM3 === "number" ? ` Autorizaba ${Number(u.volumenAutorizadoM3).toFixed(2)} m³.` : "";
+      const detalle = partes.length
+        ? `Tiene ${partes.join(", ")}.${vol} Nada de eso se borra: el plan deja de aparecer en el selector y lo que ya se declaró sigue igual.`
+        : `No tiene especies, censo, asientos ni guías: se puede sacar sin dejar nada suelto.${vol}`;
+      const ok = await confirm({
+        title: `¿Eliminar ${p.planType} ${p.planNumber ?? ""}?`.replace(/\s+\?/, "?"),
+        description: `${p.titularName}. ${detalle}`,
+        intent: "danger",
+        confirmLabel: "Sí, eliminar",
+      });
+      if (!ok) return;
+      const del = await fetch(`/api/admin/forestal/plan?id=${encodeURIComponent(p.id)}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+        credentials: "include",
+      });
+      if (!del.ok) {
+        const e = (await del.json().catch(() => ({}))) as { message?: string; error?: string };
+        setErrorPlan(e.message ?? e.error ?? `No se pudo eliminar (HTTP ${del.status})`);
+        return;
+      }
+      setErrorPlan(null);
+      d.setPlanId(null);
+      d.loadPlans();
+    } catch (e) {
+      setErrorPlan(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBorrandoPlan(false);
+    }
+  }
 
   /* Lo que se hace de vez en cuando —imprimir, importar, crear otro plan— va
      en «Opciones»; a la vista queda el selector del plan y el detalle. */
@@ -101,6 +169,23 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
       onSelect: () => { setPestana("censo"); setImportarSignal((n) => n + 1); },
     },
     {
+      id: "editar-plan",
+      label: "Editar este plan",
+      hint: "Corregir sus datos: resolución, área, vigencia, propietario",
+      icon: Pencil,
+      disabled: !plan,
+      onSelect: () => setEditandoPlan(true),
+    },
+    {
+      id: "eliminar-plan",
+      label: "Eliminar este plan",
+      hint: "Dice antes qué cuelga de él: especies, censo, asientos y guías",
+      icon: Trash2,
+      tone: "danger",
+      disabled: !plan || borrandoPlan,
+      onSelect: () => { if (plan) void eliminarPlan(plan); },
+    },
+    {
       id: "nuevo-plan",
       label: "Nuevo plan de manejo",
       hint: "Otro permiso: su resolución, titular y vigencia",
@@ -132,6 +217,11 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
 
   return (
     <div data-vista-plan className="space-y-4">
+      {errorPlan && (
+        <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+          {errorPlan}
+        </p>
+      )}
       <LothPlanCabecera
         plans={d.plans}
         planId={d.planId}
@@ -172,9 +262,43 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
         title="Nuevo plan de manejo"
         description="El permiso aprobado que autoriza el aprovechamiento. De acá cuelgan las especies y el censo."
         icon={FileText}
-        variant="wide"
+        /* `info` (64 rem) y no `wide` (42 rem): el formulario reparte sus campos
+           en cuatro columnas —`lg:grid-cols-4` mira la VENTANA, no el modal—, y
+           en 42 rem cada uno quedaba en ~150 px, con «RDF N° 001-2026…»
+           cortado. Es el mismo ancho que la ficha del Directorio, que es el
+           modal hermano que se abre desde acá. */
+        variant="info"
       >
-        {d.showPlanForm && <LothPlanForm onClose={() => d.setShowPlanForm(false)} onSaved={() => { d.setShowPlanForm(false); d.loadPlans(); }} />}
+        {d.showPlanForm && (
+          <LothPlanForm
+            onClose={() => d.setShowPlanForm(false)}
+            onSaved={() => { d.setShowPlanForm(false); d.loadPlans(); }}
+            /* Los planes que ya existen: de ellos sale lo que se repite entre
+               un documento y el siguiente (ARFFS, región, regente, UIT,
+               costos) y las autoridades ya escritas. */
+            planesPrevios={d.plans}
+          />
+        )}
+      </AdminModal>
+
+      {/* Corregir un plan ya cargado: el mismo formulario del alta, con sus
+          valores adentro. Un plan mal cargado se arregla, no se duplica. */}
+      <AdminModal
+        open={editandoPlan && plan != null}
+        onClose={() => setEditandoPlan(false)}
+        title="Editar plan de manejo"
+        description={plan ? `${plan.planType} ${plan.planNumber ?? ""} — ${plan.titularName}` : ""}
+        icon={FileText}
+        variant="info"
+      >
+        {editandoPlan && plan && (
+          <LothPlanForm
+            plan={plan}
+            onClose={() => setEditandoPlan(false)}
+            onSaved={() => { setEditandoPlan(false); d.loadPlans(); }}
+            planesPrevios={d.plans}
+          />
+        )}
       </AdminModal>
 
       {cargando && (
@@ -189,6 +313,10 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
             rows={d.controlRows}
             onResolver={d.setEspecieFuera}
             truncado={d.censoTruncado ? { total: d.censoTotal, cargados: trees.length } : null}
+            /* La vigencia del plan también obliga a hacer algo: renovarlo ante
+               la ARFFS lleva meses, y la guía que se emita con el papel vencido
+               queda observada. */
+            plan={plan ? { codigo: plan.planNumber ?? plan.tituloHabilitante, vigenciaHasta: plan.vigenciaHasta, estado: plan.estado } : null}
           />
 
           <LothPlanPestanas pestanas={pestanas} activa={pestana} onCambiar={setPestana} />

@@ -98,7 +98,7 @@ export default function LlevarAlCubicadorModal({
 
   return (
     <div
-      className="modal-backdrop fixed inset-0 z-[9990] flex items-center justify-center bg-black/50 p-4"
+      className="modal-backdrop fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onCerrar();
       }}

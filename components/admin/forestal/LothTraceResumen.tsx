@@ -24,11 +24,12 @@ import { BarChart3, ChevronDown, ChevronRight } from "@buleje/design-system/icon
 import type { ResumenTrace } from "@/lib/forestal/loth-trace-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { fmtDias } from "./loth-trace-ui";
+import { formatNumber } from "@/lib/format";
 
 /* Tres decimales, como el libro: con dos, «32,20 = 19,89 + 11,12 + 1,20» suma
    32,21 y la cuenta que existe para demostrar que cierra parece no cerrar. */
 const fm = fmtM3;
-const cuenta = (n: number, uno: string, varios: string) => `${n.toLocaleString("es-PE")} ${n === 1 ? uno : varios}`;
+const cuenta = (n: number, uno: string, varios: string) => `${formatNumber(n)} ${n === 1 ? uno : varios}`;
 const AVISO = "font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]";
 const ERROR = "font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 
@@ -61,11 +62,11 @@ export default function LothTraceResumen({
             <span aria-hidden="true">→</span>
             <span>{cuenta(r.trozados, "trozado", "trozados")}</span>
             <span aria-hidden="true">→</span>
-            <span>{r.conSalida.toLocaleString("es-PE")} salieron del patio</span>
+            <span>{formatNumber(r.conSalida)} salieron del patio</span>
             <span aria-hidden="true">·</span>
             <span>{fm(m.talado)} m³ talados</span>
             <span aria-hidden="true">·</span>
-            <span>merma {r.mermaPct != null ? `${r.mermaPct.toLocaleString("es-PE")} %` : "—"}</span>
+            <span>merma {r.mermaPct != null ? `${formatNumber(r.mermaPct)} %` : "—"}</span>
           </p>
         )}
         <button
@@ -91,7 +92,7 @@ export default function LothTraceResumen({
           <PasoDelEmbudo n={1} label="En el censo" valor={hayCenso ? r.censados : null} m3={hayCenso ? m.censo : null} dato="censo">
             {hayCenso ? (
               <>
-                {cuenta(r.taladosDelCenso, "talado", "talados")} · {r.enPie.toLocaleString("es-PE")} en pie
+                {cuenta(r.taladosDelCenso, "talado", "talados")} · {formatNumber(r.enPie)} en pie
               </>
             ) : (
               "sin censo cargado: el plan de manejo no tiene árboles"
@@ -99,7 +100,7 @@ export default function LothTraceResumen({
           </PasoDelEmbudo>
           <PasoDelEmbudo n={2} label="Talados" valor={r.talados} m3={m.talado} dato="talados">
             {r.taladosSinCenso > 0 ? (
-              <span className={hayCenso ? ERROR : undefined}>{r.taladosSinCenso.toLocaleString("es-PE")} fuera del censo</span>
+              <span className={hayCenso ? ERROR : undefined}>{formatNumber(r.taladosSinCenso)} fuera del censo</span>
             ) : (
               "todos figuran en el censo"
             )}
@@ -108,12 +109,12 @@ export default function LothTraceResumen({
           <PasoDelEmbudo n={3} label="Trozados" valor={r.trozados} m3={m.trozado} dato="trozados">
             {r.sinTrozar > 0 ? (
               <span className={AVISO}>
-                {r.sinTrozar.toLocaleString("es-PE")} sin trozar ({fm(m.sinTrozar)} m³)
+                {formatNumber(r.sinTrozar)} sin trozar ({fm(m.sinTrozar)} m³)
               </span>
             ) : (
               "todos trozados"
             )}
-            {" · "}merma {fm(m.merma)} m³{r.mermaPct != null && ` (${r.mermaPct.toLocaleString("es-PE")} %)`}
+            {" · "}merma {fm(m.merma)} m³{r.mermaPct != null && ` (${formatNumber(r.mermaPct)} %)`}
           </PasoDelEmbudo>
           <PasoDelEmbudo n={4} label="Salieron del patio" valor={r.conSalida} m3={m.movilizado} dato="salida" ultima>
             {cuenta(r.completas, "con guía", "con guía")}
@@ -135,11 +136,11 @@ export default function LothTraceResumen({
         </dl>
 
         <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-[var(--text-tertiary)]">
-          <span className={r.conGps === 0 && r.talados > 0 ? AVISO : undefined}>{r.conGps.toLocaleString("es-PE")} con GPS</span>
+          <span className={r.conGps === 0 && r.talados > 0 ? AVISO : undefined}>{formatNumber(r.conGps)} con GPS</span>
           <span className={r.mermaGrave > 0 ? ERROR : undefined}>{cuenta(r.mermaGrave, "merma grave", "mermas graves")}</span>
-          <span className={r.mermaAviso > 0 ? AVISO : undefined}>{r.mermaAviso.toLocaleString("es-PE")} sobre el aviso</span>
-          <span className={r.conTardias > 0 ? AVISO : undefined}>{r.conTardias.toLocaleString("es-PE")} con registro fuera de plazo</span>
-          {r.cites > 0 && <span>{r.cites.toLocaleString("es-PE")} CITES</span>}
+          <span className={r.mermaAviso > 0 ? AVISO : undefined}>{formatNumber(r.mermaAviso)} sobre el aviso</span>
+          <span className={r.conTardias > 0 ? AVISO : undefined}>{formatNumber(r.conTardias)} con registro fuera de plazo</span>
+          {r.cites > 0 && <span>{formatNumber(r.cites)} CITES</span>}
           <span>
             tala → salida:{" "}
             {r.medianaTalaSalida == null
@@ -184,7 +185,7 @@ function PasoDelEmbudo({
       </Kicker>
       <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
         <span className="text-2xl font-bold leading-none tabular-nums text-[var(--text-primary)]" data-valor>
-          {valor != null ? valor.toLocaleString("es-PE") : "—"}
+          {valor != null ? formatNumber(valor) : "—"}
         </span>
         <span className="text-sm tabular-nums text-[var(--text-secondary)]" data-m3>
           {m3 != null ? `${fm(m3)} m³` : ""}

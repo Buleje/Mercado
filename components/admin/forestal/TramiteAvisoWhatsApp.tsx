@@ -85,7 +85,7 @@ export default function TramiteAvisoWhatsApp({
   }
 
   return (
-    <div className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+    <div className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
       <input
         type="text"
         value={telefono}

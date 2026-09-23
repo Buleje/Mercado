@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * ChartCard — wrapper unificado para todos los charts del admin Inicio.
  *

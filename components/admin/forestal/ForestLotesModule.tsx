@@ -22,6 +22,7 @@ import LoteDetailModal from "./LoteDetailModal";
 import LotesTabla from "./LotesTabla";
 import LoteCard, { type LoteRow, type LoteStatus } from "./LoteCard";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 interface Stats { total: number; abiertos: number; cerrados: number; despachados: number; cantidadTotal: number }
 
@@ -115,7 +116,7 @@ export default function ForestLotesModule() {
           density="compact"
           label="Armado"
           value={`${fmtM3(resumen.armadoM3)} m³`}
-          subValue={`${resumen.armadoPt.toLocaleString("es-PE")} pt`}
+          subValue={`${formatNumber(resumen.armadoPt)} pt`}
           icon={Boxes}
           emphasis="neutral"
         />
@@ -133,8 +134,8 @@ export default function ForestLotesModule() {
           value={`${fmtM3(resumen.disponibleM3)} m³`}
           subValue={
             resumen.lotesOtraUnidad > 0
-              ? `${resumen.disponiblePt.toLocaleString("es-PE")} pt · +${resumen.lotesOtraUnidad} en otra unidad`
-              : `${resumen.disponiblePt.toLocaleString("es-PE")} pt · listo para salir`
+              ? `${formatNumber(resumen.disponiblePt)} pt · +${resumen.lotesOtraUnidad} en otra unidad`
+              : `${formatNumber(resumen.disponiblePt)} pt · listo para salir`
           }
           icon={PackageCheck}
           emphasis="success"

@@ -97,7 +97,7 @@ export default function LothTableroTrozas({
   const m3Visibles = visibles.reduce((a, f) => a + (f.volumenM3 ?? 0), 0);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* El riel de arriba ya dice cómo se llama la vista; el título de la
           pantalla suma lo que contesta, en vez de repetir el nombre. */}
       <header className="space-y-0.5">

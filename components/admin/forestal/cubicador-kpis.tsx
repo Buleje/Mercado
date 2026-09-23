@@ -27,6 +27,7 @@ import { useMemo } from "react";
 import { Boxes, Ruler, Layers, Coins, Sigma, AlertTriangle, ChevronUp, ChevronDown } from "@buleje/design-system/icons";
 import { ORDEN_TIPO, tipoDePieza, tonoTipo, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { medidaSospechosa, type PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { formatNumber } from "@/lib/format";
 
 export interface TotalesLote {
   piezas: number;
@@ -112,8 +113,8 @@ export default function CubicadorKpis({
 
   if (rows.length === 0) return null;
 
-  const nf = (v: number) => v.toLocaleString("es-PE");
-  const soles = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const nf = (v: number) => formatNumber(v);
+  const soles = (v: number) => formatNumber(v, 2);
   const ptPorPieza = totales.piezas > 0 ? totales.pt / totales.piezas : 0;
 
   /* Plegado se lleva los tres números con él: esconder el resumen no puede

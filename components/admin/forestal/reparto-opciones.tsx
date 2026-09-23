@@ -40,7 +40,7 @@ const ROTULO_CAUSA: Record<HuecoBloque["causa"], string> = {
 function HuecoFila({ h }: { h: HuecoBloque }) {
   const cerrable = h.sugeridoM3 > 0;
   return (
-    <li className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-2.5">
+    <li className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-md border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)]">
           {ROTULO_CAUSA[h.causa]}

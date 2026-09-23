@@ -35,7 +35,8 @@ import {
 } from "@/lib/forestal/anexo-por-permiso";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
-import { FiltroColumna } from "./ctp-filtros-panel";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { formatNumber } from "@/lib/format";
 
 const TH =
   "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
@@ -376,7 +377,7 @@ export default function AnexoPorPermiso({
                         </td>
                       )}
                       <td className={`${NUM} text-[var(--text-tertiary)]`}>
-                        {r.pctM3.toLocaleString("es-PE", { maximumFractionDigits: 1 })} %
+                        {formatNumber(r.pctM3, { max: 1 })} %
                       </td>
                     </tr>
                   ))}
@@ -420,7 +421,7 @@ export default function AnexoPorPermiso({
                 <tr className="border-b border-[var(--rule-soft)]">
                   <th className={TH}>
                     <span className="block">Especie</span>
-                    <FiltroColumna
+                    <FiltroColumnaMulti
                       label="Especie"
                       value={fEspecie}
                       options={opciones.especies}
@@ -430,11 +431,11 @@ export default function AnexoPorPermiso({
                   </th>
                   <th className={TH}>
                     <span className="block">Tipo</span>
-                    <FiltroColumna label="Tipo" value={fTipo} options={opciones.tipos} onChange={setFTipo} />
+                    <FiltroColumnaMulti label="Tipo" value={fTipo} options={opciones.tipos} onChange={setFTipo} />
                   </th>
                   <th className={TH}>
                     <span className="block">Medida</span>
-                    <FiltroColumna
+                    <FiltroColumnaMulti
                       label="Medida"
                       value={fMedida}
                       options={opciones.medidas}

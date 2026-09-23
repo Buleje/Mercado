@@ -40,14 +40,15 @@ import {
   type LothSection,
 } from "@/lib/forestal/loth-constants";
 import { SECTION_META } from "./LothEntryForm";
+import { formatNumber } from "@/lib/format";
 
 /** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
 export const CLAVE_KPIS_SECCION = "loth:secciones:kpis-abiertos";
 
 const fm = (n: number) =>
-  n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  formatNumber(n, 2);
 const plural = (n: number, uno: string, varios: string) =>
-  `${n.toLocaleString("es-PE")} ${n === 1 ? uno : varios}`;
+  `${formatNumber(n)} ${n === 1 ? uno : varios}`;
 
 export default function LothSeccionKpis({
   section,
@@ -98,7 +99,7 @@ export default function LothSeccionKpis({
         }
       : {
           label: "Guías (GTF)",
-          value: guias.toLocaleString("es-PE"),
+          value: formatNumber(guias),
           corto: plural(guias, "guía", "guías"),
           icon: Truck,
         };
@@ -125,7 +126,7 @@ export default function LothSeccionKpis({
                   : undefined
               }
             >
-              {tardias.toLocaleString("es-PE")} fuera de plazo
+              {formatNumber(tardias)} fuera de plazo
             </span>
           </p>
         )}
@@ -162,8 +163,8 @@ export default function LothSeccionKpis({
         <StatCard
           density="compact"
           label={`Líneas · ${meta.short}`}
-          value={count.toLocaleString("es-PE")}
-          subValue={`${totalLibro.toLocaleString("es-PE")} en el libro`}
+          value={formatNumber(count)}
+          subValue={`${formatNumber(totalLibro)} en el libro`}
           icon={Boxes}
           emphasis="neutral"
         />
@@ -184,10 +185,10 @@ export default function LothSeccionKpis({
         <StatCard
           density="compact"
           label="Fuera de plazo"
-          value={tardias.toLocaleString("es-PE")}
+          value={formatNumber(tardias)}
           subValue={
             tardias > 0
-              ? `de ${vigentes.length.toLocaleString("es-PE")} ${alcance} · plazo ${PLAZO_REGISTRO_DIAS} días`
+              ? `de ${formatNumber(vigentes.length)} ${alcance} · plazo ${PLAZO_REGISTRO_DIAS} días`
               : cites > 0
                 ? `${plural(cites, "línea", "líneas")} con especie CITES`
                 : "todo asentado en plazo"

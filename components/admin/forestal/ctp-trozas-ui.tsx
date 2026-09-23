@@ -12,11 +12,12 @@
 
 import type { ComponentType, ReactNode } from "react";
 import { Kicker } from "@buleje/design-system";
+import { formatNumber } from "@/lib/format";
 
 /** Un icono de Lucide tal como lo re-exporta el DS. */
 type IconoDS = ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
 
-export const n2 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 2 });
+export const n2 = (v: number) => formatNumber(v, { max: 2 });
 
 /** Color por tono, con los tokens del DS (siguen el tema). */
 const TONO = {

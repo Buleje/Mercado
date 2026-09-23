@@ -35,6 +35,7 @@
 import { useEffect, useId, useState } from "react";
 import { ArrowRight, ArrowUp, Pause, Play, RotateCcw, Volume2, X } from "@buleje/design-system/icons";
 import type { EstadoLectura } from "@/hooks/use-lectura-en-voz";
+import { formatNumber } from "@/lib/format";
 
 export default function ControlLecturaFlotante({
   estado,
@@ -89,7 +90,7 @@ export default function ControlLecturaFlotante({
         </p>
         <div className="flex shrink-0 items-center gap-2">
           <p className="font-mono text-xs font-bold tabular-nums text-[var(--text-tertiary)]">
-            fila {actual.toLocaleString("es-PE")} de {estado.total.toLocaleString("es-PE")}
+            fila {formatNumber(actual)} de {formatNumber(estado.total)}
           </p>
           {/* La única salida: cerrar es una decisión, no algo que pase solo. */}
           <button

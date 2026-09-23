@@ -79,7 +79,7 @@ export default function LothLineaDetalleModal({
 
   return (
     <div
-      className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={(e) => {
         /* Fijado quiere decir «lo dejo abierto para leer la tabla de atrás»:
            el clic afuera deja de cerrar. La X y Escape siguen cerrando. */

@@ -736,7 +736,7 @@ function AgregarLineaBloque({
   // que no explica por qué no tiene opciones.
   if (opciones.length === 0) {
     return (
-      <div className="m-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2.5 text-sm text-[var(--text-tertiary)] print:hidden">
+      <div className="m-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-sm text-[var(--text-tertiary)] print:hidden">
         <span>
           Nada de esta especie sin asignar todavía: todo lo que existe ya está en algún bloque o en «Falta por
           distribuir». Un tipo nuevo tiene que aserrarse primero para poder agregarlo acá.
@@ -752,7 +752,7 @@ function AgregarLineaBloque({
   const overrideActual = clave ? (overridesLinea?.[claveOverrideLinea(dim, clave)] ?? null) : null;
 
   return (
-    <div className="m-2 flex flex-wrap items-end gap-2 rounded-xl border-2 border-dashed border-[var(--accent)] bg-primary/5 p-2.5 print:hidden">
+    <div className="m-2 flex flex-wrap items-end gap-2 rounded-xl border-2 border-dashed border-[var(--accent)] bg-primary/5 p-3 print:hidden">
       <label className="text-sm">
         <span className="mb-0.5 block text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Tipo</span>
         <select

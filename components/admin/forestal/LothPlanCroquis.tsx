@@ -41,7 +41,7 @@ export default function LothPlanCroquis({ trees, authorizedSpecies }: { trees: T
       sub={<><span className="font-mono tabular-nums">{pts.length}</span> de <span className="font-mono tabular-nums">{trees.length}</span> árboles georreferenciados (UTM)</>}
     >
       <div className="p-4">
-      <div className="overflow-x-auto rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-2">
+      <div className="overflow-x-auto rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 340 }}>
           <text x={pad} y={16} fontSize="10" fill="var(--text-tertiary)">N ↑</text>
           {pts.map((p, i) => {

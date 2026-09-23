@@ -23,6 +23,7 @@ import {
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDate } from "@/lib/format";
 
 interface ChainStep {
   section: string;
@@ -68,7 +69,7 @@ const SECTION_LABEL: Record<string, string> = {
 const unitLabel = (u: string | null) => (u === "m3" ? "m³" : u === "kg" ? "Kg" : u === "unidad" ? "Unidad" : u ?? "");
 const fmtDate = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+    return formatDate(iso, { soloFecha: true });
   } catch {
     return iso;
   }
@@ -136,7 +137,7 @@ export default function LothCadenaModal({ code, onClose }: { code: string; onClo
             </div>
           )}
           {trace && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {/* Hero: especie + CITES */}
               <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
                 <div className="flex flex-wrap items-center gap-2">

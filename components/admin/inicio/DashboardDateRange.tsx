@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { Calendar, CalendarDays, ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatDate, formatDateShort } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ export interface DateRange {
 /** Etiqueta humana legible de un rango — para empty-states y headers. */
 export function describeRange(r: DateRange): string {
   const fmtDay = (d: Date) =>
-    d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+    formatDateShort(d);
   switch (r.preset) {
     case "diario":
       return "hoy";
@@ -165,9 +166,9 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
 
   const summaryLabel =
     value.preset === "especifica"
-      ? value.from.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })
+      ? formatDate(value.from)
       : value.preset === "personalizado"
-        ? `${value.from.toLocaleDateString("es-PE", { day: "2-digit", month: "short" })} — ${value.to.toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}`
+        ? `${formatDateShort(value.from)} — ${formatDateShort(value.to)}`
         : null;
 
   return (

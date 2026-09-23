@@ -25,6 +25,7 @@ import { AlertCircle, AlertTriangle, BarChart3, Check, CheckCircle2, ChevronDown
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDate as formatDateCanon, formatDateTime as formatDateTimeCanon } from "@/lib/format";
 
 // Re-exportados: single source vive en lib/forestal/ctp-compliance.ts (lo
 // consume también lib/forestal/ctp-export.ts, que no puede importar de acá).
@@ -332,38 +333,20 @@ export const productLabel = (type: string): string => {
  * `Date` además de string: el listado agrupado por guía (ADR-346) arma su
  * resumen con lo que devuelve Prisma, y en el servidor eso es un `Date`. La
  * misma función para los dos lados o la fecha se formatea de dos maneras.
+ *
+ * Wrapper sobre el canon `lib/format` — decenas de vistas del libro CTP
+ * importan `formatDate`/`formatDateTime` de ACÁ por nombre, así que la firma
+ * y el "—" en null se mantienen iguales; sólo delega el formateo real.
+ * Fechas DATE-ONLY (entryDate/gtfDate) se guardan como medianoche UTC:
+ * renderizarlas en hora Lima (UTC-5) las corría un día hacia atrás — por eso
+ * `{ soloFecha: true }` (bug off-by-one fiscalizable, ver forestal-serfor.md).
  */
 export function formatDate(iso: string | Date | null): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      // Fechas DATE-ONLY (entryDate/gtfDate) se guardan como medianoche UTC:
-      // renderizarlas en hora Lima (UTC-5) las corría un día hacia atrás. El
-      // operador registró "29" y el libro decía "28" — off-by-one en un
-      // registro fiscalizable. Para fecha+hora usá formatDateTime (local).
-      timeZone: "UTC",
-    });
-  } catch {
-    return String(iso);
-  }
+  return formatDateCanon(iso, { soloFecha: true });
 }
 
 export function formatDateTime(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
+  return formatDateTimeCanon(iso);
 }
 
 // ── Primitivos de formulario de los modales del Libro ───────────────────────

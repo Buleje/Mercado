@@ -22,6 +22,7 @@ import {
   ChartCard, ChartTooltip, CHART_TOKENS,
   MicroDonut, MicroList, MicroGauge,
 } from "./_shared";
+import { formatCurrency } from "@/lib/format";
 
 const T = CHART_TOKENS;
 
@@ -137,7 +138,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
             data={metodoData}
             centerLabel={data.ventasPorMetodoPago[0]?.metodo ?? ""}
             centerSubLabel={data.ventasPorMetodoPago.length > 0 ? "principal" : ""}
-            tooltipFormatter={(v) => `S/ ${v.toFixed(2)}`}
+            tooltipFormatter={(v) => `${formatCurrency(v)}`}
           />
         </ChartCard>
 

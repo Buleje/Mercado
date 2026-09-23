@@ -23,6 +23,7 @@ import type { CATEGORIA_LABEL } from "@/lib/forestal/loth-poa";
 import LothCensoImportModal from "./LothCensoImportModal";
 import { censusVol, n, type Tree } from "./loth-plan-shared";
 import { AddBtn, BloquePlan, CategoriaTag, Cell, CitesPill, EstadoTag, Field, Mono, Table, cls } from "./loth-plan-ui";
+import { formatNumber } from "@/lib/format";
 
 export default function LothPlanCenso({ planId, trees, total, truncado, authorizedSpecies, categorias, dmcOverrides, onChange, importarSignal = 0 }: {
   planId: string; trees: Tree[]; total: number; truncado: boolean; authorizedSpecies: Set<string>;
@@ -151,8 +152,8 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
       titulo="Censo forestal"
       sub={
         <>
-          <span className="font-mono tabular-nums">{total.toLocaleString("es-PE")}</span> {total === 1 ? "árbol" : "árboles"} en el censo
-          {truncado && <> · se cargaron <span className="font-mono tabular-nums">{trees.length.toLocaleString("es-PE")}</span></>}
+          <span className="font-mono tabular-nums">{formatNumber(total)}</span> {total === 1 ? "árbol" : "árboles"} en el censo
+          {truncado && <> · se cargaron <span className="font-mono tabular-nums">{formatNumber(trees.length)}</span></>}
         </>
       }
       acciones={
@@ -233,7 +234,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
                 pasa el filtro y lo que hay. Con uno solo, 200 filas de 3.000
                 parecen el censo entero. */}
             {Math.min(visibles, filtered.length)} de {filtered.length}
-            {filtered.length !== total && <> · {total.toLocaleString("es-PE")} en el censo</>}
+            {filtered.length !== total && <> · {formatNumber(total)} en el censo</>}
           </span>
         </div>
       )}
@@ -263,11 +264,11 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
             onClick={() => setVisibles((v) => v + 200)}
             className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
-            Ver 200 más ({(filtered.length - visibles).toLocaleString("es-PE")} restantes)
+            Ver 200 más ({formatNumber(filtered.length - visibles)} restantes)
           </button>
           {truncado && (
             <p className="text-center text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-              Además hay {(total - trees.length).toLocaleString("es-PE")} árboles que no se cargaron: filtra por estado para alcanzarlos.
+              Además hay {formatNumber(total - trees.length)} árboles que no se cargaron: filtra por estado para alcanzarlos.
             </p>
           )}
         </div>

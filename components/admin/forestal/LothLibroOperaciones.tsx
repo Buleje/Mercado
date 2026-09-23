@@ -83,6 +83,7 @@ import type { LothNavTarget } from "@/lib/forestal/loth-compliance";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { LOTH_VISTAS } from "@/lib/admin/subvistas-modulos";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { formatNumber } from "@/lib/format";
 
 type LothEntry = LothEntryDTO;
 
@@ -833,7 +834,7 @@ export default function LothLibroOperaciones() {
 
       {libroTruncado && (
         <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-4 py-3 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-          Se leyeron {libroTruncado.leidas.toLocaleString("es-PE")} de {libroTruncado.total.toLocaleString("es-PE")} líneas del libro. La
+          Se leyeron {formatNumber(libroTruncado.leidas)} de {formatNumber(libroTruncado.total)} líneas del libro. La
           trazabilidad por árbol y el cuadro de censo se calculan sobre lo leído: para un libro de este tamaño, filtra por período antes
           de sacar conclusiones.
         </div>
@@ -976,7 +977,7 @@ export default function LothLibroOperaciones() {
         </div>
       )}
       {loading && (
-        <div className="rounded-2xl border border-[var(--rule-base)] p-8 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-[var(--rule-base)] p-6 text-center text-[var(--text-tertiary)]">
           <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
           <p className="mt-2 text-sm">Cargando registros...</p>
         </div>
@@ -989,7 +990,7 @@ export default function LothLibroOperaciones() {
           <p className="text-sm font-semibold text-[var(--text-tertiary)]">
             {totalSeccion <= POR_PAGINA
               ? `${totalSeccion} línea${totalSeccion === 1 ? "" : "s"} en ${SECTION_META[section].label.toLowerCase()}`
-              : `Mostrando ${page * POR_PAGINA + 1}–${Math.min((page + 1) * POR_PAGINA, totalSeccion)} de ${totalSeccion.toLocaleString("es-PE")}`}
+              : `Mostrando ${page * POR_PAGINA + 1}–${Math.min((page + 1) * POR_PAGINA, totalSeccion)} de ${formatNumber(totalSeccion)}`}
           </p>
           {totalSeccion > POR_PAGINA && (
             <div className="flex items-center gap-2">

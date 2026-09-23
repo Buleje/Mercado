@@ -219,14 +219,14 @@ export default function TramiteRelacionGuias({
       )}
 
       {avisoTraer && (
-        <p className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-2.5 text-xs font-medium text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+        <p className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-xs font-medium text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {avisoTraer}
         </p>
       )}
 
       {repetidos.length > 0 && (
-        <p className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-2.5 text-xs font-medium text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+        <p className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-xs font-medium text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           N° repetido entre las vigentes: {repetidos.join(", ")}. Revísalo antes de presentar.
         </p>
@@ -236,7 +236,7 @@ export default function TramiteRelacionGuias({
           tipeo repetido, o la misma guía declarada dos veces sin querer
           (ADR-364 ronda 4). Distinto de `repetidos`, que sólo mira ADENTRO. */}
       {duplicadosCruzados && duplicadosCruzados.length > 0 && (
-        <p className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] p-2.5 text-xs font-medium text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+        <p className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] p-3 text-xs font-medium text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {duplicadosCruzados.length === 1 ? "Esta guía" : "Estas guías"} ya {duplicadosCruzados.length === 1 ? "está" : "están"} en otra relación guardada:{" "}
           {duplicadosCruzados.map((d) => `${d.numero} (${d.otraRelacion})`).join(", ")}. Puede ser un tipeo repetido — revísalo antes de presentar.

@@ -23,6 +23,7 @@ import { AlertTriangle, CheckCircle2, ChevronRight, Clock, MapPin, TreePine, War
 import { Kicker } from "@buleje/design-system";
 import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import { etapasDe, fmtDias, fmtFecha, fmtPct, fmtRecorrido, tonoDe } from "./loth-trace-ui";
+import { formatNumber } from "@/lib/format";
 
 export const CHAIN_META: Record<"completa" | "parcial" | "iniciada", { label: string; cls: string }> = {
   completa: { label: "Cadena completa", cls: "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
@@ -33,7 +34,7 @@ export const CHAIN_META: Record<"completa" | "parcial" | "iniciada", { label: st
 export const PILL = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold";
 const ERROR_PILL = `${PILL} border-[var(--data-error-500)] bg-[var(--data-error-500)]/10 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]`;
 const AVISO_PILL = `${PILL} border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`;
-const m2 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const m2 = (v: number) => formatNumber(v, 2);
 const fmtM = (v: number, dp: number) => v.toLocaleString("es-PE", { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
 export default function LothTraceCard({

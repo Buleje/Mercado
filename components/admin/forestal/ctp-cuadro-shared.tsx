@@ -11,9 +11,10 @@
 
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 export const n4 = (n: number) =>
-  n.toLocaleString("es-PE", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  formatNumber(n, 4);
 
 /** Un casillero sin dato se muestra vacío, nunca "0": el 0 afirma que no hubo. */
 export function Celda({ v, negativo }: { v: number | null; negativo?: boolean }) {
@@ -32,7 +33,7 @@ export function Celda({ v, negativo }: { v: number | null; negativo?: boolean })
 
 export function Entero({ v }: { v: number | null }) {
   if (v == null) return <td className="px-3 py-2 text-center text-[var(--text-tertiary)]">—</td>;
-  return <td className="px-3 py-2 text-right font-mono tabular-nums">{v.toLocaleString("es-PE")}</td>;
+  return <td className="px-3 py-2 text-right font-mono tabular-nums">{formatNumber(v)}</td>;
 }
 
 /** Texto de un casillero: vacío se dibuja como raya, no como celda en blanco. */

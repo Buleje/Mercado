@@ -291,7 +291,7 @@ export function ChartPresentationModal({
       role="dialog"
       aria-modal="true"
       aria-label={`Presentación: ${activeItem.title}`}
-      className="fixed inset-0 z-[9999] bg-[var(--surface-canvas)] flex flex-col animate-in fade-in duration-200"
+      className="fixed inset-0 z-tour bg-[var(--surface-canvas)] flex flex-col animate-in fade-in duration-200"
     >
       {/* Header barra — titulo + indicador + acciones */}
       <header

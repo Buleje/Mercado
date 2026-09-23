@@ -15,6 +15,7 @@ import { LABEL_OPERATIVO, estadoOperativo } from "@/lib/forestal/lote-ventana";
 import { avanceDeLote, enPieTablar, type MetaLote } from "@/lib/forestal/lote-metricas";
 import { RENDIMIENTO_REF_ASERRADA } from "@/lib/forestal/ctp-rendimiento";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDate, formatNumber } from "@/lib/format";
 
 export type LoteStatus = "abierto" | "cerrado" | "despachado" | "anulado";
 
@@ -48,7 +49,7 @@ const n4 = (v: number | string | null | undefined) => (Number(v) || 0).toFixed(4
 /** `timeZone: "UTC"` NO es cosmético: las fechas del libro son date-only y sin
  *  esto, a las 19:00 de Lima, un 20-jul se dibuja como 19-jul. Mismo criterio
  *  que CtpEntriesView y el resto del módulo. */
-const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
+const fmtDate = (iso: string) => { try { return formatDate(iso, { soloFecha: true }); } catch { return iso; } };
 
 /**
  * En qué anda el lote según su VENTANA — distinto del estado comercial.
@@ -189,7 +190,7 @@ export default function LoteCard({ lote: l, onAbrir }: { lote: LoteRow; onAbrir:
                       convertir de cabeza en el teléfono. */}
                   {l.unit === "m3" && (
                     <span className="font-mono text-sm tabular-nums text-[var(--text-tertiary)]">
-                      {enPieTablar(l.totalCantidad).toLocaleString("es-PE")} pt
+                      {formatNumber(enPieTablar(l.totalCantidad))} pt
                     </span>
                   )}
                 </div>

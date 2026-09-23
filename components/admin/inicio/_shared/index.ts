@@ -20,3 +20,4 @@ export {
   ChartPresentationModal,
   type ChartPresentationItem,
 } from "./ChartPresentationModal";
+export { KPI_GRID_6, KPI_GRID_5 } from "./kpi-grid";

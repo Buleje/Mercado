@@ -17,6 +17,7 @@ import { documentoGtfLoth, type LothGtfCaratula, type LothGtfDoc } from "@/lib/f
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { esc } from "@/lib/forestal/ctp-documento-print";
 import VerificarGtfSerfor from "./VerificarGtfSerfor";
+import { formatDateNumeric } from "@/lib/format";
 
 interface GtfItem {
   code?: string | null; species?: string | null; scientific?: string | null; cites?: boolean;
@@ -34,7 +35,7 @@ interface Gtf {
 const smalian = (dM: number, dm: number, L: number) =>
   dM > 0 && dm > 0 && L > 0 ? Math.round(0.7854 * Math.pow((dM + dm) / 2, 2) * L * 10000) / 10000 : 0;
 const fmtDate = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }) : "—";
+  iso ? formatDateNumeric(iso, { soloFecha: true }) : "—";
 
 export default function LothGtfView({
   focusGtf,

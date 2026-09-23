@@ -27,8 +27,9 @@ import {
   trozaDeCodigoExacto,
   type TrozaParaCodigo,
 } from "@/lib/forestal/codigo-de-troza";
+import { formatNumber } from "@/lib/format";
 
-const num1 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 1 });
+const num1 = (v: number) => formatNumber(v, { max: 1 });
 
 /** Lo que distingue a dos trozas con el mismo código: diámetros, largo y guía. */
 function detalleDeTroza(t: TrozaParaCodigo): string {

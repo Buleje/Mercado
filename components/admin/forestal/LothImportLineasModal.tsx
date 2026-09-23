@@ -99,7 +99,7 @@ export default function LothImportLineasModal({
 
   return (
     <div
-      className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       /* El velo es decorativo: el diálogo es la caja de adentro. Cerrar tocando
          afuera es un atajo —Escape y la X hacen lo mismo con teclado. */
       role="presentation"

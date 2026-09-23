@@ -22,8 +22,9 @@ import {
   type SaldoEspecie,
 } from "@/lib/forestal/loth-plan-tala";
 import { BloquePlan } from "./loth-plan-ui";
+import { formatNumber } from "@/lib/format";
 
-const n3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+const n3 = (v: number) => formatNumber(v, 3);
 
 export interface LothPlanTalaPanelProps {
   arboles: readonly ArbolParaTalar[];

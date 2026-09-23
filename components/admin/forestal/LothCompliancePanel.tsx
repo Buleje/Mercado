@@ -38,6 +38,7 @@ import {
 } from "@/lib/forestal/loth-compliance";
 import { printLothCumplimiento } from "@/lib/forestal/loth-cumplimiento-print";
 import { permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
+import { formatNumber } from "@/lib/format";
 
 interface FullCaratula {
   titularName?: string | null;
@@ -188,7 +189,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
     <div className="space-y-4">
       <VistaHeader
         titulo="Chequeo del libro"
-        meta={`${totalLineas.toLocaleString("es-PE")} ${plural(totalLineas, "línea registrada", "líneas registradas")}`}
+        meta={`${formatNumber(totalLineas)} ${plural(totalLineas, "línea registrada", "líneas registradas")}`}
         hint="Los mismos números que la Analítica."
       >
         <Btn variant="dark" size="md" onClick={handleReport}>

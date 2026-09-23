@@ -45,8 +45,9 @@ import {
   type Celda,
 } from "@/lib/forestal/capacidad-detalle-filas";
 import { printCapacidadDetalle } from "@/lib/forestal/capacidad-detalle-print";
+import { formatNumber } from "@/lib/format";
 
-const pt = (v: number) => pieTablarDe(v).toLocaleString("es-PE");
+const pt = (v: number) => formatNumber(pieTablarDe(v));
 
 /**
  * Cómo se lee un recorte de varios valores. Hasta tres se nombran —es lo que
@@ -82,7 +83,7 @@ export function textoDeFiltros(f: FiltrosCapacidad): string {
 
 function Valor({ col, v }: { col: string; v: Celda }) {
   if (typeof v !== "number") return <>{v}</>;
-  return <>{esColumnaM3(col) ? fmtM3(v) : v.toLocaleString("es-PE")}</>;
+  return <>{esColumnaM3(col) ? fmtM3(v) : formatNumber(v)}</>;
 }
 
 export default function DetalleDeFuente({

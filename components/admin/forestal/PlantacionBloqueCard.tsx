@@ -12,6 +12,7 @@ import type { AdvertenciaPlantacion, BloqueInput, EspecieBloqueInput } from "@/l
 import { geometriaBloque, type VerticeBloque } from "@/lib/forestal/plantacion-cartografia";
 import PlantacionVerticesTabla from "./PlantacionVerticesTabla";
 import PlantacionEspecieForm from "./PlantacionEspecieForm";
+import { formatNumber } from "@/lib/format";
 
 const inputCls =
   "h-9 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20";
@@ -140,7 +141,7 @@ export default function PlantacionBloqueCard({
             />
             {geometria.areaCalculadaHa != null && (
               <p className="mt-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-                <Ruler className="h-3 w-3" /> Área calculada desde vértices: {geometria.areaCalculadaHa.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha
+                <Ruler className="h-3 w-3" /> Área calculada desde vértices: {formatNumber(geometria.areaCalculadaHa, { max: 2 })} ha
               </p>
             )}
           </div>

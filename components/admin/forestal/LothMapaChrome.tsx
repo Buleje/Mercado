@@ -12,6 +12,7 @@
 import { Compass } from "@buleje/design-system/icons";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { formatDistance, formatDms, formatMeters, niceBarLength, toUtm } from "@/lib/forestal/loth-utm";
+import { formatNumber } from "@/lib/format";
 
 export interface LegendItem {
   label: string;
@@ -108,7 +109,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
             <i className="flex-1" />
           </div>
           <p className="mt-0.5 text-xs font-bold tabular-nums text-[var(--text-secondary)]">
-            0 — {formatDistance(barM)} <span className="font-semibold text-[var(--text-tertiary)]">· ≈ 1:{denom.toLocaleString("es-PE")}</span>
+            0 — {formatDistance(barM)} <span className="font-semibold text-[var(--text-tertiary)]">· ≈ 1:{formatNumber(denom)}</span>
           </p>
         </div>
       </div>

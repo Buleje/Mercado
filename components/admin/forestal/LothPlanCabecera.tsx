@@ -11,39 +11,45 @@
  *   · un `SectionTitle` («Plan de manejo») con el selector del plan al lado;
  *   · los botones de uso ocasional (informe, anexo, importar, nuevo plan)
  *     dentro de «Opciones»;
- *   · los indicadores se pliegan y la preferencia se RECUERDA en el navegador,
- *     con el mismo patrón que las secciones del libro (`LothSeccionKpis`).
- *     Arrancan plegados y, plegados, dicen sus cifras en una línea: las
- *     mismas cuentas que las tarjetas, nunca otras.
+ *   · los indicadores se muestran como tarjetas, como una línea de cifras o no
+ *     se muestran, y la preferencia se RECUERDA en el navegador.
+ *
+ * El control de los indicadores vivía acá arriba, en la esquina opuesta y
+ * llamándose «Indicadores» al lado de «Opciones»: había que adivinar que ese
+ * botón mandaba sobre unos números que estaban dos bloques más abajo. Ahora va
+ * pegado a ellos (`LothPlanIndicadores`), que es donde se lo busca.
  */
 
-import { SectionTitle, StatCard } from "@buleje/design-system";
-import { BarChart3, FileText, Scale, ShieldAlert, ShieldCheck, TreePine, TrendingUp } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { type Plan } from "./loth-plan-shared";
 import LothPlanIdentidad from "./LothPlanIdentidad";
-import { BotonPlegar, CifraLinea } from "./loth-plan-ui";
+import { CifraLinea } from "./loth-plan-ui";
+import {
+  ControlIndicadores,
+  PREF_INDICADORES_DEFAULT,
+  TarjetasIndicadores,
+  ent,
+  fx,
+  normalizarPref,
+  pctTxt,
+  tonoPct,
+  vistaDe,
+  type KpisPlan,
+  type PrefIndicadores,
+} from "./LothPlanIndicadores";
 
-/** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
-export const CLAVE_INDICADORES_PLAN = "loth:plan:indicadores-abiertos";
+/**
+ * Clave de la preferencia. Exportada: la prueba en navegador la lee.
+ *
+ * `-v2` porque lo guardado cambió de forma: antes era un booleano (abierto /
+ * plegado) y ahora son dos cosas —qué forma y si está oculto—. Leer el valor
+ * viejo con el tipo nuevo daría un estado sin sentido en el primer render.
+ */
+export const CLAVE_INDICADORES_PLAN = "loth:plan:indicadores-v2";
 
-export interface KpisPlan {
-  autorizadoTotal: number;
-  especies: number;
-  /** `null` sin volumen autorizado: un porcentaje de cero no se puede calcular. */
-  aprovechamientoPct: number | null;
-  movilizadoTotal: number;
-  saldoTotal: number;
-  censoTotal: number;
-  censoTruncado: boolean;
-  /** Árboles que se trajeron del censo (menos que el total si vino cortado). */
-  cargados: number;
-  georrefPct: number;
-  okCount: number;
-  controlCount: number;
-  fueraDelPlan: number;
-}
+export type { KpisPlan };
 
 const PANEL_ID = "loth-plan-indicadores";
 
@@ -55,7 +61,9 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, op
   kpis: KpisPlan | null;
   opciones: MenuAccion[];
 }) {
-  const [abierto, setAbierto] = useLocalStorage<boolean>(CLAVE_INDICADORES_PLAN, false);
+  const [guardada, setPref] = useLocalStorage<PrefIndicadores>(CLAVE_INDICADORES_PLAN, PREF_INDICADORES_DEFAULT);
+  const pref = normalizarPref(guardada);
+  const vista = vistaDe(pref);
 
   return (
     <section aria-labelledby="loth-plan-titulo" className="space-y-3">
@@ -75,17 +83,6 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, op
           ))}
         </select>
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          {kpis && (
-            <BotonPlegar
-              abierto={abierto}
-              onClick={() => setAbierto(!abierto)}
-              controla={PANEL_ID}
-              label="Indicadores"
-              icon={BarChart3}
-              compacto
-              titulo={abierto ? "Oculta los indicadores. Se recuerda en este navegador." : "Muestra los indicadores del plan"}
-            />
-          )}
           <ActionMenu
             label="Opciones"
             title="Informe de ejecución, anexo del POA, importar censo y nuevo plan"
@@ -100,29 +97,26 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, op
           una línea había que leerla entera para encontrar uno. */}
       {plan && <LothPlanIdentidad plan={plan} />}
 
-      {kpis && !abierto && <ResumenEnLinea k={kpis} />}
       {kpis && (
-        <div id={PANEL_ID} hidden={!abierto} className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <Tarjetas k={kpis} />
+        <div className="space-y-2">
+          <ControlIndicadores pref={pref} onPref={setPref} panel={PANEL_ID} />
+          {/* Oculto sigue existiendo en el DOM —`hidden`, no desmontado—: así
+              el `aria-controls` de los botones apunta a algo que existe. */}
+          <div id={PANEL_ID} hidden={vista === "oculto"}>
+            {vista === "detalle"
+              ? <TarjetasIndicadores k={kpis} plan={plan} />
+              : <ResumenEnLinea k={kpis} />}
+          </div>
         </div>
       )}
     </section>
   );
 }
 
-const pctTxt = (p: number | null) => (p == null ? "—" : `${p.toFixed(0)}%`);
-/** Número con `dp` decimales (mismo formato que las tarjetas de antes). */
-const fx = (v: number, dp: number) => v.toFixed(dp);
-const tonoPct = (p: number | null) => (p == null ? undefined : p > 100 ? "danger" : p >= 85 ? "warn" : undefined);
-
 /**
- * Plegado: las mismas cinco cifras de las tarjetas, en el mismo orden.
- *
- * Antes iban en un párrafo separadas por puntos medios: «320 m³ autorizados · 1
- * especie · 1% aprovechado (4.1 m³ movilizados) · 315.9 m³ de saldo · …». Una
- * fila de texto donde ninguna cifra se podía encontrar sin leerlas todas.
- * Ahora cada una tiene su casilla, con la etiqueta arriba y el número abajo:
- * ocupa lo mismo y se lee de un vistazo.
+ * Estado `cifras`: las mismas cinco de las tarjetas, en el mismo orden y con
+ * las mismas cuentas. Cada una en su casilla —etiqueta arriba, número abajo—:
+ * ocupa una línea y se encuentra sin leer las otras cuatro.
  */
 function ResumenEnLinea({ k }: { k: KpisPlan }) {
   const pct = k.aprovechamientoPct;
@@ -133,8 +127,8 @@ function ResumenEnLinea({ k }: { k: KpisPlan }) {
       <Casilla etiqueta="Saldo" valor={`${fx(k.saldoTotal, 1)} m³`} nota={pct == null ? "sin volumen autorizado" : `${Math.max(0, 100 - pct).toFixed(0)}% del POA`} />
       <Casilla
         etiqueta="Censo"
-        valor={k.censoTotal.toLocaleString("es-PE")}
-        nota={k.censoTruncado ? `calculando sobre ${k.cargados}` : `${k.georrefPct}% con GPS`}
+        valor={ent(k.censoTotal)}
+        nota={k.censoTruncado ? `calculando sobre ${ent(k.cargados)}` : `${k.georrefPct}% con GPS`}
         tono={k.censoTruncado ? "warn" : undefined}
       />
       <Casilla
@@ -161,18 +155,5 @@ function Casilla({ etiqueta, valor, nota, tono }: { etiqueta: string; valor: str
       <CifraLinea valor={valor} tono={tono} />
       {nota && <span className="mt-0.5 block truncate text-xs text-[var(--text-tertiary)]" title={nota}>{nota}</span>}
     </div>
-  );
-}
-
-function Tarjetas({ k }: { k: KpisPlan }) {
-  const pct = k.aprovechamientoPct;
-  return (
-    <>
-      <StatCard density="compact" label="Vol. autorizado" value={`${fx(k.autorizadoTotal, 0)} m³`} subValue={`${k.especies} especie${k.especies === 1 ? "" : "s"}`} icon={FileText} emphasis="neutral" />
-      <StatCard density="compact" label="Aprovechamiento POA" value={pctTxt(pct)} subValue={`${fx(k.movilizadoTotal, 1)} m³ movilizados`} icon={TrendingUp} emphasis={pct == null ? "neutral" : pct > 100 ? "error" : pct >= 85 ? "warning" : "success"} />
-      <StatCard density="compact" label="Saldo disponible" value={`${fx(k.saldoTotal, 1)} m³`} subValue={pct == null ? "sin volumen autorizado" : `${Math.max(0, 100 - pct).toFixed(0)}% del POA`} icon={Scale} emphasis="success" />
-      <StatCard density="compact" label="Árboles censados" value={k.censoTotal.toString()} subValue={k.censoTruncado ? `calculando sobre ${k.cargados}` : `${k.georrefPct}% con GPS`} icon={TreePine} emphasis={k.censoTruncado ? "warning" : "neutral"} />
-      <StatCard density="compact" label="Control de especies" value={`${k.okCount}/${k.controlCount}`} subValue={k.fueraDelPlan > 0 ? `${k.fueraDelPlan} fuera del plan` : "todo autorizado"} icon={k.fueraDelPlan > 0 ? ShieldAlert : ShieldCheck} emphasis={k.fueraDelPlan > 0 ? "error" : "success"} />
-    </>
   );
 }

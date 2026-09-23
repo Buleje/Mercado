@@ -33,6 +33,7 @@ import PlantacionPasoMapa from "./PlantacionPasoMapa";
 import PlantacionPasoDocumentos from "./PlantacionPasoDocumentos";
 import PlantacionPasoRevision from "./PlantacionPasoRevision";
 import PlantacionDocumentoModal from "./PlantacionDocumentoModal";
+import { formatNumber } from "@/lib/format";
 
 type PasoId = "titular" | "predio" | "plantacion" | "mapa" | "documentos" | "revision";
 const PASOS: { id: PasoId; numero: number; label: string }[] = [
@@ -260,7 +261,7 @@ export default function PlantacionWizard({
         </div>
 
         <p className="mt-2 text-sm text-[var(--text-secondary)]">
-          {resumen.areaBloquesHa.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha | {resumen.numBloques} bloques | {resumen.numEspecies} especies | {resumen.totalPlantas.toLocaleString("es-PE")} plantas
+          {formatNumber(resumen.areaBloquesHa, 2)} ha | {resumen.numBloques} bloques | {resumen.numEspecies} especies | {formatNumber(resumen.totalPlantas)} plantas
         </p>
 
         <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">

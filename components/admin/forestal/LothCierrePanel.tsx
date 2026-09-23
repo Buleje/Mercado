@@ -24,6 +24,7 @@ import { Btn } from "./ctp-shared";
 import { estaFueraDePlazo, type LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { resumirPeriodo } from "@/lib/forestal/loth-cierre-resumen";
 import { printActaCierre, type ActaCaratula } from "@/lib/forestal/loth-acta-cierre-print";
+import { formatDate, formatNumber } from "@/lib/format";
 
 interface Cierre {
   periodKey: string;
@@ -34,10 +35,10 @@ interface Cierre {
   reabierto?: { at: string; by: string; motivo: string } | null;
 }
 
-const fm = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fm = (n: number) => formatNumber(n, 2);
 const fdate = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -226,7 +227,7 @@ export default function LothCierrePanel({
               </div>
 
               {resumen.hayPendientes && (
-                <div className="mt-3 space-y-1.5 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 p-2.5">
+                <div className="mt-3 space-y-1.5 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 p-3">
                   <p className="text-xs font-black uppercase tracking-wide text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                     Se cerraría con esto adentro
                   </p>
@@ -262,7 +263,7 @@ export default function LothCierrePanel({
           </CardTitle>
         </div>
         {(cierres ?? []).length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
             Ningún período cerrado todavía. Cierra un mes cuando termines de registrar sus operaciones.
           </div>
         ) : (

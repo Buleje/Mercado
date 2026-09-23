@@ -20,6 +20,7 @@ import { useMemo } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "@buleje/design-system/icons";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
+import { formatDateShort, formatMonthYear } from "@/lib/format";
 
 export interface PuntoCurva {
   fecha: string;
@@ -50,8 +51,8 @@ function etiqueta(iso: string, paso: CurvaSaldoData["paso"]): string {
   const d = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return iso;
   if (paso === "mes")
-    return d.toLocaleDateString("es-PE", { month: "short", year: "2-digit", timeZone: "UTC" });
-  const dia = d.toLocaleDateString("es-PE", { day: "numeric", month: "short", timeZone: "UTC" });
+    return formatMonthYear(d, { soloFecha: true });
+  const dia = formatDateShort(d, { soloFecha: true });
   return paso === "semana" ? `sem ${dia}` : dia;
 }
 

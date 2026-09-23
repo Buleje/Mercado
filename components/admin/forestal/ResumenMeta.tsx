@@ -19,6 +19,7 @@ import {
 } from "@/lib/forestal/cubicacion-meta";
 import { fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 /* La clave sale de `slugKey`, la misma que usa la distribución para leer la
    meta en su apartado de reprocesos: dos definiciones del mismo nombre es como
@@ -30,9 +31,9 @@ const claveMeta = () => slugKey("-meta");
  * («Cumple: 95% de Comercial» se lee mejor que «95.0%»). El pie tablar de esta
  * pantalla sí va por `fmtPt` — entero, como en las tablas.
  */
-const n1 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 1 });
+const n1 = (v: number) => formatNumber(v, { max: 1 });
 const fecha = (iso: string) => {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" }); }
+  try { return formatDateShort(iso, { soloFecha: true }); }
   catch { return iso.slice(5); }
 };
 

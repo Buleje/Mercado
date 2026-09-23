@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import CtpTrozasPicker from "./CtpTrozasPicker";
+import { formatDateShort } from "@/lib/format";
 
 export interface CorridaPatio {
   id: string;
@@ -36,7 +37,7 @@ export interface CorridaPatio {
 
 const fmtFecha = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+    return formatDateShort(iso, { soloFecha: true });
   } catch {
     return iso;
   }

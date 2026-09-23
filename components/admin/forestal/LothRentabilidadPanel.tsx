@@ -17,6 +17,7 @@ import { Btn } from "./ctp-shared";
 import type { CosteoRow, LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { buildTraceOperations } from "@/lib/forestal/loth-trace";
 import { margenPorArbol, resumirMargenArbol } from "@/lib/forestal/loth-margen-arbol";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 // El tipo vive en el motor (`computeCosteo`): duplicarlo acá fue lo que dejó el
 // desglose del costo fuera de la pantalla durante todo este tiempo.
@@ -29,8 +30,8 @@ interface Costeo {
   costoOperativoM3: number;
 }
 
-const soles = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const pct = (n: number) => `${n.toLocaleString("es-PE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+const soles = (n: number) => `${formatCurrency(n)}`;
+const pct = (n: number) => `${formatNumber(n, 1)}%`;
 
 export default function LothRentabilidadPanel({
   reloadSignal,
@@ -140,7 +141,7 @@ export default function LothRentabilidadPanel({
             <Award className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-success-700)]" />
             <div>
               <p className="text-sm font-bold text-[var(--data-success-700)]">La que más deja: {mejor.species}</p>
-              <p className="text-xs text-[var(--text-secondary)]">{soles(mejor.margen)} de margen ({pct(mejor.margenPct)}) sobre {mejor.movilizadoM3.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³ movilizados.</p>
+              <p className="text-xs text-[var(--text-secondary)]">{soles(mejor.margen)} de margen ({pct(mejor.margenPct)}) sobre {formatNumber(mejor.movilizadoM3, { max: 2 })} m³ movilizados.</p>
             </div>
           </div>
         )}
@@ -195,7 +196,7 @@ export default function LothRentabilidadPanel({
                     {r.cites && <span className="rounded bg-[var(--data-error-100)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
                   </span>
                 </Td>
-                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.movilizadoM3.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³</Td>
+                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(r.movilizadoM3, { max: 2 })} m³</Td>
                 <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{soles(r.precioVentaM3)}</Td>
                 <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{soles(r.costoTotalM3)}</Td>
                 <Td className={`text-right font-mono tabular-nums font-bold ${r.margenM3 >= 0 ? "text-[var(--data-success-700)]" : "text-[var(--data-error-700)]"}`}>{soles(r.margenM3)}</Td>
@@ -275,7 +276,7 @@ function ArbolesTabla({
 }) {
   if (filas.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
         Todavía no hay árboles talados para valorizar.
       </div>
     );

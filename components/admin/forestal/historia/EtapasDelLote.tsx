@@ -15,13 +15,14 @@ import { useState } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { ChevronDown, ChevronRight } from "@buleje/design-system/icons";
 import type { HistoriaLote } from "@/lib/forestal/historia-lote";
+import { formatDate, formatNumber } from "@/lib/format";
 
 const n4 = (v: number | null | undefined) => (v == null ? "—" : v.toFixed(4));
 const n2 = (v: number | null | undefined) => (v == null ? "—" : v.toFixed(2));
-const nf = (v: number) => v.toLocaleString("es-PE");
+const nf = (v: number) => formatNumber(v);
 /** Las fechas del libro son date-only a medianoche UTC: leerlas en Lima las corre un día. */
 const fecha = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
+  iso ? formatDate(iso, { soloFecha: true }) : "—";
 /** El schema guarda `m3`; el papel y la pantalla dicen `m³`. */
 const unidad = (u: string | null | undefined) => (!u || u === "m3" ? "m³" : u);
 

@@ -16,8 +16,9 @@ import {
   type DatosLiquidacion,
 } from "@/lib/forestal/cubicacion-liquidacion";
 import { exportarLiquidacionPDF } from "@/lib/forestal/cubicador-export";
+import { formatNumber } from "@/lib/format";
 
-const soles = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const soles = (n: number) => formatNumber(n, 2);
 
 /** Imprime un HTML independiente vía iframe oculto (sin popup, sin dejar rastro). */
 function imprimirHtml(html: string) {

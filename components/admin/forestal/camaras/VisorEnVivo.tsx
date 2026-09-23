@@ -27,6 +27,7 @@ import {
   AlertTriangle, Camera, Image as ImageIcon, Loader2, Maximize2, Minimize2, Pause, Play, RefreshCw, Video,
 } from "@buleje/design-system/icons";
 import { useDisponibilidadDeVideo, useFotosEncadenadas, useReproductorHls } from "./use-visor-camara";
+import { formatTime } from "@/lib/format";
 
 /** Cada cuánto se pide el cuadro siguiente. `0` = pausado por quien mira. */
 const RITMOS = [
@@ -37,7 +38,7 @@ const RITMOS = [
 ] as const;
 
 const hora = (t: number) =>
-  new Date(t).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  formatTime(t, { segundos: true });
 
 const BOTON_CHICO =
   "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50";

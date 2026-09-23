@@ -338,7 +338,7 @@ export default function PlantacionEspecieForm({
       </div>
 
       {mostrarAvisoCites && (
-        <div className="mt-2 rounded-lg border-l-4 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-2.5 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+        <div className="mt-2 rounded-lg border-l-4 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
           <p className="flex items-start gap-1.5 font-semibold">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             Esta especie puede requerir información adicional.

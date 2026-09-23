@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, Boxes, Check, Loader2, Send } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn, Field, I, ModalBody, ModalFooter } from "./ctp-shared";
+import { formatNumber } from "@/lib/format";
 
 const GRADES = ["", "Exportación", "Grado A", "Grado B", "Grado C", "Primera", "Segunda"];
 
@@ -26,7 +27,7 @@ export default function EnviarLibroModal({
 }) {
   const [grade, setGrade] = useState("");
   const [crearLote, setCrearLote] = useState(true);
-  const fmt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (v: number) => formatNumber(v, 2);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !enviando) onCerrar(); };

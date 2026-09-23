@@ -34,6 +34,7 @@ import { ESTADOS_PLANTACION, type EstadoPlantacion } from "@/lib/forestal/planta
 import type { PlantacionListItem } from "@/lib/forestal/plantacion-tramite";
 import { Btn, IconAction, TablaSkeleton } from "./ctp-shared";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { formatNumber } from "@/lib/format";
 
 const TONO_BADGE: Record<string, string> = {
   muted: "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
@@ -54,7 +55,7 @@ function EstadoBadge({ estado }: { estado: string }) {
   );
 }
 
-const fmtArea = (ha: number | null): string => (ha != null ? `${ha.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha` : "—");
+const fmtArea = (ha: number | null): string => (ha != null ? `${formatNumber(ha, 2)} ha` : "—");
 
 const fmtFecha = (iso: string): string => {
   const d = new Date(iso);
@@ -267,7 +268,7 @@ function ResumenTira({
     { label: "pendientes de documentos", value: String(pendientesDocs), tono: "warning" },
     {
       label: "hectáreas registradas",
-      value: areaTotalHa.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      value: formatNumber(areaTotalHa, 2),
       tono: "neutral",
     },
   ];

@@ -21,6 +21,7 @@ import { CardTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import type { OpcionEspecie } from "./hooks/use-loth-trace-vista";
 import { FILTROS_ESTADO, ORDEN_LABEL, type TraceFiltro, type TraceModo, type TraceOrden } from "./loth-trace-ui";
+import { formatNumber } from "@/lib/format";
 
 const CAMPO =
   "flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]";
@@ -55,7 +56,7 @@ export function LothTraceListaCabecera({
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
         <CardTitle id={tituloId}>Árboles</CardTitle>
         <span className="text-sm tabular-nums text-[var(--text-tertiary)]" data-contador>
-          {visibles === total ? `${total.toLocaleString("es-PE")}` : `${visibles.toLocaleString("es-PE")} de ${total.toLocaleString("es-PE")}`}
+          {visibles === total ? `${formatNumber(total)}` : `${formatNumber(visibles)} de ${formatNumber(total)}`}
           {totalPaginas > 1 && ` · página ${pagina + 1} de ${totalPaginas}`}
         </span>
       </div>
@@ -133,7 +134,7 @@ export default function LothTraceFiltros({
           <select value={filtro} onChange={(e) => onFiltro(e.target.value as TraceFiltro)} className={`${SELECT} max-w-[12rem]`}>
             {FILTROS_ESTADO.map((e) => (
               <option key={e.key} value={e.key}>
-                {e.label} ({conteos[e.key].toLocaleString("es-PE")})
+                {e.label} ({formatNumber(conteos[e.key])})
               </option>
             ))}
           </select>
@@ -146,7 +147,7 @@ export default function LothTraceFiltros({
               <option value="">Todas</option>
               {especies.map((e) => (
                 <option key={e.clave} value={e.clave}>
-                  {e.label} ({e.count.toLocaleString("es-PE")})
+                  {e.label} ({formatNumber(e.count)})
                 </option>
               ))}
             </select>
@@ -198,7 +199,7 @@ export default function LothTraceFiltros({
                   aria-hidden="true"
                 />
                 {e.label}
-                <span className="tabular-nums text-[var(--text-secondary)]">{conteos[e.key].toLocaleString("es-PE")}</span>
+                <span className="tabular-nums text-[var(--text-secondary)]">{formatNumber(conteos[e.key])}</span>
               </button>
             );
           })}
@@ -238,7 +239,7 @@ export function opcionesDeLaLista({
     {
       id: "csv",
       label: "Descargar CSV (Excel)",
-      hint: `Los ${visibles.toLocaleString("es-PE")} árboles que se ven, con censo, operación y observaciones`,
+      hint: `Los ${formatNumber(visibles)} árboles que se ven, con censo, operación y observaciones`,
       icon: Download,
       onSelect: onExportar,
       disabled: visibles === 0,

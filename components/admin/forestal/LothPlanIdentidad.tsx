@@ -43,6 +43,9 @@ export default function LothPlanIdentidad({ plan }: { plan: Plan }) {
   return (
     <div className="grid gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 lg:grid-cols-3">
       <Grupo titulo="Documento" icon={FileText}>
+        {/* Los datos de identidad (ADR-426) aparecen SÓLO si se cargaron: una
+            ficha llena de «—» hace buscar el dato entre huecos. */}
+        <Campo k="Apodo" v={plan.alias} omitirSiVacio />
         <Campo k="Tipo" v={plan.planType} />
         <Campo k="N° de plan" v={plan.planNumber} mono />
         <Campo k="Título habilitante" v={plan.tituloHabilitante} mono />
@@ -56,8 +59,17 @@ export default function LothPlanIdentidad({ plan }: { plan: Plan }) {
 
       <Grupo titulo="Dónde" icon={MapPin}>
         <Campo k="Titular" v={plan.titularName} />
+        {/* El dueño del predio cuando no es el titular: en un PMFI son distintos. */}
+        <Campo
+          k="Propietario"
+          v={plan.propietarioNombre}
+          nota={plan.propietarioDoc ? `${plan.propietarioDocTipo ?? "Doc"} ${plan.propietarioDoc}` : null}
+          omitirSiVacio
+        />
         <Campo k="Parcela de corta" v={plan.parcelaCorta} mono />
-        <Campo k="Región" v={plan.region} />
+        <Campo k="Región" v={[plan.region, plan.provincia, plan.distrito].filter(Boolean).join(" · ") || plan.region} />
+        <Campo k="Sector" v={plan.sector} omitirSiVacio />
+        <Campo k="Cuenca" v={plan.cuenca} omitirSiVacio />
         <Campo k="Área" v={plan.areaHa ? `${Number(plan.areaHa).toFixed(2)} ha` : null} mono />
       </Grupo>
 
@@ -97,8 +109,22 @@ function Grupo({
   );
 }
 
-function Campo({ k, v, mono, nota }: { k: string; v?: string | null; mono?: boolean; nota?: string | null }) {
+function Campo({
+  k,
+  v,
+  mono,
+  nota,
+  omitirSiVacio,
+}: {
+  k: string;
+  v?: string | null;
+  mono?: boolean;
+  nota?: string | null;
+  /** Los datos opcionales no dejan un «—» ocupando lugar: no se pintan. */
+  omitirSiVacio?: boolean;
+}) {
   const vacio = !v || !v.trim();
+  if (vacio && omitirSiVacio) return null;
   return (
     <div className="flex items-baseline justify-between gap-3">
       <dt className="shrink-0 text-xs text-[var(--text-tertiary)]">{k}</dt>

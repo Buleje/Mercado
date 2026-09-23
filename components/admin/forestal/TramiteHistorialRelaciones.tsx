@@ -10,13 +10,14 @@
 import { DataTable, BlockTitle } from "@buleje/design-system";
 import { History } from "@buleje/design-system/icons";
 import { ESTADOS_TRAMITE, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
+import { formatDate } from "@/lib/format";
 
 const fmtFecha = (iso: string | null): string => {
   if (!iso) return "—";
   const d = new Date(`${iso}T00:00:00.000Z`);
   return Number.isNaN(d.getTime())
     ? iso
-    : d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+    : formatDate(d, { soloFecha: true });
 };
 
 export default function TramiteHistorialRelaciones({

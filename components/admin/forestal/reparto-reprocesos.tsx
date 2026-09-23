@@ -212,7 +212,7 @@ function TablaSalidas({
         <thead>
           <tr className="border-b border-[var(--rule-soft)]">
             <th className={`${TH} w-8 text-center`} title="Marca lo que ya repasaste: la fila queda subrayada">
-              <span aria-hidden>✓</span>
+              <Check className="inline h-4 w-4" aria-hidden />
               <span className="sr-only">Marcar como repasado</span>
             </th>
             <th className={TH}>Reproceso · tipo</th>

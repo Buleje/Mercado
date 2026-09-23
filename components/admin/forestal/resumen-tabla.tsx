@@ -18,7 +18,7 @@ import type { GrupoResumen, ResumenLote } from "@/lib/forestal/cubicacion-resume
 import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge } from "./tipo-badge";
-import { FiltroColumna } from "./ctp-filtros-panel";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 
 /**
  * Tarjeta de sección: misma caja para las siete lecturas del lote.
@@ -235,10 +235,15 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
             <th scope="col" className={TH}>
               <span className="block">{primeraCol}</span>
               {grupos.length > 2 && (
-                <FiltroColumna
+                <FiltroColumnaMulti
                   label={primeraCol}
                   value={elegidos}
                   options={opcionesCol}
+                  // El primitivo compartido no tiene un `label` por opción (es
+                  // genérico): acá la clave y el rótulo del grupo son cosas
+                  // distintas («ROLLIZA» vs «Rolliza comercial»), así que se
+                  // traduce con `etiqueta` en vez de perder el texto legible.
+                  etiqueta={(v) => opcionesCol.find((o) => o.value === v)?.label ?? v}
                   onChange={setElegidos}
                   placeholder="Todos"
                 />

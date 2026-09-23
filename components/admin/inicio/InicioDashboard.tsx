@@ -12,7 +12,9 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
 import { MultiMetricCard } from "@/components/admin/shared/MultiMetricCard";
 import { DraggableWidgetGrid } from "@/components/admin/shared/DraggableWidgetGrid";
+import { formatTime } from "@/lib/format";
 
+import { KPI_GRID_6 } from "./_shared/kpi-grid";
 // Lazy load recharts for bundle optimization
 const RechartsCharts = dynamic(() => import("./InicioCharts"), { ssr: false });
 
@@ -376,7 +378,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
           </PageTitle>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
             {lastUpdated
-              ? `Última actualización: ${new Date(lastUpdated).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`
+              ? `Última actualización: ${formatTime(lastUpdated)}`
               : "Cargando datos en tiempo real…"}
           </p>
         </div>
@@ -486,8 +488,8 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="space-y-4 animate-pulse">
+      <div className={KPI_GRID_6}>
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-32" />
         ))}

@@ -188,6 +188,16 @@ const fmtDate = (iso: string): string => {
   }
 };
 
+// SVG estático de circle-check/circle-x (lucide-react) — mismo ícono que el
+// resto del panel, sin importar React: este módulo es puro (sin React, sin
+// DOM, sin fetch — ver cabecera). Antes eran ✓/✗ de texto.
+function circleCheckSvg(size: number, color: string): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>`;
+}
+function circleXSvg(size: number, color: string): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`;
+}
+
 /** Popup de una operación del libro (incluye su coordenada UTM y la bandera EUDR). */
 export function operacionPopupHtml(g: GeoEntry, dentro: boolean, declarada: boolean): string {
   const medida =
@@ -197,8 +207,8 @@ export function operacionPopupHtml(g: GeoEntry, dentro: boolean, declarada: bool
     : "";
   const flag = declarada
     ? dentro
-      ? '<div style="color:#15803d;font-weight:700">✓ dentro de la parcela</div>'
-      : '<div style="color:#b91c1c;font-weight:700">✗ FUERA de la parcela</div>'
+      ? `<div style="display:flex;align-items:center;gap:4px;color:#15803d;font-weight:700">${circleCheckSvg(14, "#15803d")}dentro de la parcela</div>`
+      : `<div style="display:flex;align-items:center;gap:4px;color:#b91c1c;font-weight:700">${circleXSvg(14, "#b91c1c")}FUERA de la parcela</div>`
     : "";
   const utm = formatUtmFull(toUtm(g.lat, g.lng), 1);
   return `<div style="font:600 12px/1.5 system-ui;min-width:170px">
@@ -222,8 +232,8 @@ export function censoColor(t: CensoTree): string {
 export function arbolPopupHtml(t: CensoTree, dentro: boolean, declarada: boolean): string {
   const flag = declarada
     ? dentro
-      ? '<div style="color:#15803d;font-weight:700">✓ dentro de la parcela</div>'
-      : '<div style="color:#b91c1c;font-weight:700">✗ fuera del polígono declarado</div>'
+      ? `<div style="display:flex;align-items:center;gap:4px;color:#15803d;font-weight:700">${circleCheckSvg(14, "#15803d")}dentro de la parcela</div>`
+      : `<div style="display:flex;align-items:center;gap:4px;color:#b91c1c;font-weight:700">${circleXSvg(14, "#b91c1c")}fuera del polígono declarado</div>`
     : "";
   return `<div style="font:600 12px/1.5 system-ui;min-width:170px">
     <div style="font-weight:800;font-size:13px">${esc(t.code)}${t.cites ? ' <span style="color:#e11d48">CITES</span>' : ""}</div>

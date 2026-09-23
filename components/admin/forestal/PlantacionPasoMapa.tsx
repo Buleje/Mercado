@@ -27,6 +27,7 @@ import { BRAND_GEO } from "@/lib/geo";
 import { vertexCode } from "@/lib/forestal/loth-utm";
 import { centroideConjunto, geometriaBloque, puntoAVertice, type BloqueGeometria } from "@/lib/forestal/plantacion-cartografia";
 import type { BloqueInput } from "@/lib/forestal/plantacion-tramite";
+import { formatNumber } from "@/lib/format";
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -247,7 +248,7 @@ export default function PlantacionPasoMapa({
                 <span className="h-3 w-3 shrink-0 rounded-full border border-white" style={{ background: PALETA[i % PALETA.length] }} aria-hidden="true" />
                 {nombreBloque(b, i)} —{" "}
                 {g.areaCalculadaHa != null ? (
-                  <b className="font-mono tabular-nums text-[var(--text-primary)]">{g.areaCalculadaHa.toLocaleString("es-PE", { maximumFractionDigits: 4 })} ha calculada</b>
+                  <b className="font-mono tabular-nums text-[var(--text-primary)]">{formatNumber(g.areaCalculadaHa, { max: 4 })} ha calculada</b>
                 ) : b.vertices.length > 0 ? (
                   `${b.vertices.length} punto(s), faltan vértices`
                 ) : (

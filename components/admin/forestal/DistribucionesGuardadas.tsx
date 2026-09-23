@@ -18,10 +18,11 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { filtrarDistribuciones, type DistribucionRegistro } from "@/lib/forestal/distribucion-registro";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDate } from "@/lib/format";
 
 // date-only con timeZone UTC: sin eso, en Lima la fecha se corre un día.
 const fmtFecha = (f: string) =>
-  new Date(`${f}T12:00:00Z`).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+  formatDate(`${f}T12:00:00Z`, { soloFecha: true });
 
 export default function DistribucionesGuardadas({
   onAbrir, onCerrar, recargarToken,

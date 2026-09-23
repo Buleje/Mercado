@@ -115,7 +115,7 @@ export default function LothContextoPanel({
               {referencias.map((r) => {
                 const u = toUtm(r.lat, r.lng);
                 return (
-                  <li key={r.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-2.5">
+                  <li key={r.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
                     {/* Grilla y no flex-wrap: `min-w-*` no hace nada en este panel
                         (hay un `* { min-width: 0 }` sin capa) y cada campo caía en
                         su propio renglón. */}
@@ -173,7 +173,7 @@ export default function LothContextoPanel({
           ) : (
             <ul className="space-y-2">
               {cartografia.vias.map((v) => (
-                <li key={v.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-2.5">
+                <li key={v.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_11rem_auto]">
                     <input
                       value={v.nombre}
@@ -228,7 +228,7 @@ export default function LothContextoPanel({
               {accesos.map((a) => (
                 <li
                   key={a.id}
-                  className="grid grid-cols-[6rem_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-2.5 sm:grid-cols-[minmax(0,1fr)_6rem_11rem_auto]"
+                  className="grid grid-cols-[6rem_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 sm:grid-cols-[minmax(0,1fr)_6rem_11rem_auto]"
                 >
                   <input
                     value={a.lugar}

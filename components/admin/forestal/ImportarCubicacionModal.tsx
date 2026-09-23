@@ -18,8 +18,9 @@ import { parsearFilasImportadas, interpretarOcrPiezas, interpretarDictadoAudio, 
 import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { descargarPlantillaImport } from "@/lib/forestal/cubicador-export";
 import { loadConfig } from "@/lib/forestal/cubicador-config";
+import { formatNumber } from "@/lib/format";
 
-const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtPt = (v: number) => formatNumber(v, 2);
 
 function leerComoDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -280,7 +281,7 @@ export default function ImportarCubicacionModal({
             fuera de vista justo cuando la vista previa empujaba el scroll. */}
 
         {modo === "foto" && fotoUrl && !cargando && (
-          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2">
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- data URL local, no vale la pena Next/Image */}
             <img src={fotoUrl} alt="Foto de la planilla escaneada" className="h-28 w-28 shrink-0 rounded-lg border border-[var(--rule-base)] object-cover" />
             <p className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">

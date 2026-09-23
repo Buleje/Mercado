@@ -17,8 +17,9 @@ const ComprasAdvancedCharts = dynamic(
   { ssr: false },
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
-import { BulejeDashboardSkeleton } from "./_shared";
+import { BulejeDashboardSkeleton, KPI_GRID_5 } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { formatCurrency, formatDateShort, formatMonthYear } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,9 +56,9 @@ export interface ComprasData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
+function dayLabel(dk: string) { return formatDateShort(dk + "T12:00:00"); }
 const PROV_COLORS = ["var(--accent)", "#3b82f6", "#8b5cf6", "#ff6b5b", "#ef4444", "#06b6d4", "#ec4899", "#10b981", "#ff6b5b", "#6366f1"];
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -164,7 +165,7 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
     for (let i = 5; i >= 0; i--) {
       const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
-      const label = mStart.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
+      const label = formatMonthYear(mStart);
       const total = purchases.filter(p => p.createdAt && new Date(p.createdAt) >= mStart && new Date(p.createdAt) <= mEnd).reduce((a, p) => a + p.total, 0);
       comprasMensuales.push({ mes: label, total });
     }
@@ -201,7 +202,7 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
       {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className={KPI_GRID_5}>
         <StatCard label="Total Compras" value={fmt(data.totalCompras)} icon={DollarSign} delta={data.dCompras} />
         <StatCard label="Órdenes" value={String(data.cantidadOrdenes)} icon={ShoppingCart} />
         <StatCard label="Proveedores" value={String(data.totalProveedores)} icon={Truck} />

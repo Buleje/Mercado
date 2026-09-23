@@ -34,9 +34,10 @@ import {
   type SaldoEspecie,
   type SaldoProducto,
 } from "@/lib/forestal/ctp-saldos-vista";
+import { formatNumber } from "@/lib/format";
 
-const n3 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 3 });
-const nf = (v: number) => v.toLocaleString("es-PE");
+const n3 = (v: number) => formatNumber(v, { max: 3 });
+const nf = (v: number) => formatNumber(v);
 
 export default function DisponiblePorTipo({
   especies,

@@ -20,9 +20,10 @@ import {
   type CuadreDeEscuadria,
   type EstadoCuadre,
 } from "@/lib/forestal/escuadria-del-paquete";
+import { formatNumber } from "@/lib/format";
 
 const m3_4 = (v: number) =>
-  v.toLocaleString("es-PE", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  formatNumber(v, 4);
 
 export interface PaqueteConEscuadria {
   codigo: string;

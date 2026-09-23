@@ -18,8 +18,9 @@ import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { parsearFilasTrozas, interpretarOcrTrozas, type TrozaImportada, type ResultadoImportTrozas } from "@/lib/forestal/cubicacion-trozas-import";
 import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { descargarPlantillaTrozas } from "@/lib/forestal/cubicacion-trozas-excel";
+import { formatNumber } from "@/lib/format";
 
-const fmtM3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+const fmtM3 = (v: number) => formatNumber(v, 3);
 
 function leerComoDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -197,7 +198,7 @@ export default function ImportarTrozasModal({
         )}
 
         {modo === "foto" && fotoUrl && !cargando && (
-          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2">
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- data URL local, no vale la pena Next/Image */}
             <img src={fotoUrl} alt="Foto de la planilla escaneada" className="h-28 w-28 shrink-0 rounded-lg border border-[var(--rule-base)] object-cover" />
             <p className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">

@@ -29,6 +29,7 @@ import {
 import { mensajeAvisoSinRespuesta } from "@/lib/forestal/tramites-aviso-mensaje";
 import { Btn } from "./ctp-shared";
 import TramiteAvisoWhatsApp from "./TramiteAvisoWhatsApp";
+import { formatDateLong, formatMonth } from "@/lib/format";
 
 const TONO: Record<string, { chip: string; activo: string; barra: string }> = {
   muted: {
@@ -68,7 +69,7 @@ const sello = (iso: string | null): { dia: string; mes: string } => {
   if (Number.isNaN(d.getTime())) return { dia: "—", mes: "" };
   return {
     dia: d.toLocaleDateString("es-PE", { day: "2-digit", timeZone: "UTC" }),
-    mes: d.toLocaleDateString("es-PE", { month: "short", timeZone: "UTC" }).replace(".", ""),
+    mes: formatMonth(d, { soloFecha: true }).replace(".", ""),
   };
 };
 
@@ -77,7 +78,7 @@ const fechaLarga = (iso: string | null): string => {
   const d = new Date(`${iso}T00:00:00.000Z`);
   return Number.isNaN(d.getTime())
     ? iso
-    : d.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
+    : formatDateLong(d, { soloFecha: true });
 };
 
 export default function TramitesExpediente({

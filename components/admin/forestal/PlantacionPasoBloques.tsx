@@ -14,6 +14,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { validarPlantacion, type BloqueInput, type PlantacionInput } from "@/lib/forestal/plantacion-tramite";
 import PlantacionBloqueCard from "./PlantacionBloqueCard";
+import { formatNumber } from "@/lib/format";
 
 export default function PlantacionPasoBloques({
   bloques,
@@ -92,8 +93,8 @@ export default function PlantacionPasoBloques({
             <CardTitle as="h3" className="font-display text-xl leading-tight text-[var(--text-primary)]">Bloques de plantación</CardTitle>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               {bloques.length} {bloques.length === 1 ? "bloque" : "bloques"} · {numEspecies} {numEspecies === 1 ? "especie" : "especies"} ·{" "}
-              {superficieBloques.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha declaradas en bloques
-              {predioAreaTotalHa ? ` de ${predioAreaTotalHa.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha del predio` : ""}
+              {formatNumber(superficieBloques, { max: 2 })} ha declaradas en bloques
+              {predioAreaTotalHa ? ` de ${formatNumber(predioAreaTotalHa, { max: 2 })} ha del predio` : ""}
             </p>
           </div>
           {!soloLectura && (
@@ -111,15 +112,15 @@ export default function PlantacionPasoBloques({
           <p className="mt-3 flex items-start gap-2 rounded-xl border-l-4 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
-              La suma de superficie de los bloques ({superficieBloques.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha) supera el
-              área declarada del predio ({(predioAreaTotalHa ?? 0).toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha).
+              La suma de superficie de los bloques ({formatNumber(superficieBloques, { max: 2 })} ha) supera el
+              área declarada del predio ({formatNumber(predioAreaTotalHa ?? 0, { max: 2 })} ha).
             </span>
           </p>
         )}
       </div>
 
       {bloques.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center">
           <p className="text-sm text-[var(--text-tertiary)]">Todavía no hay bloques cargados.</p>
           {!soloLectura && (
             <button

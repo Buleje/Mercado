@@ -12,6 +12,7 @@ import { useChartRegistration } from "@/lib/admin/charts-visibility";
 import { SkeletonEditorial } from "@/components/ui-system";
 import { InicioMultiCharts } from "./InicioMultiCharts";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { formatNumber } from "@/lib/format";
 
 /**
  * InicioDashboardV2 — redesign denso (ADR-066 Ola M).
@@ -307,9 +308,9 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
                 {presetKey === "mensual" && ` · día ${dayOfMonth}`}
               </p>
               <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tabular-nums leading-tight">
-                S/ {Math.round(acumRango).toLocaleString("es-PE")}
+                S/ {formatNumber(Math.round(acumRango))}
                 <span className="text-[var(--text-tertiary)] font-semibold"> / </span>
-                S/ {Math.round(metaRango).toLocaleString("es-PE")}
+                S/ {formatNumber(Math.round(metaRango))}
               </p>
               <p className="mt-1 text-sm text-[var(--text-secondary)] font-semibold">
                 {metaPct}% avanzado
@@ -426,9 +427,9 @@ function ResumenVentasSection({ weeklyData, rangeTxt }: ResumenVentasSectionProp
         rightAxisFormat={(v) => v.toString()}
         tooltipFormat={(v, name) => {
           if (name?.toLowerCase().includes("ventas")) {
-            return `S/ ${Number(v).toLocaleString("es-PE")}`;
+            return `S/ ${formatNumber(Number(v))}`;
           }
-          return Number(v).toLocaleString("es-PE");
+          return formatNumber(Number(v));
         }}
         height={300}
         minDataPoints={3}

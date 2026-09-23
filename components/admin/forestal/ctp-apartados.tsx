@@ -110,7 +110,7 @@ export default function CtpApartados({
   return (
     <nav
       aria-label="Apartados de la vista"
-      className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2"
+      className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3"
     >
       <button
         type="button"

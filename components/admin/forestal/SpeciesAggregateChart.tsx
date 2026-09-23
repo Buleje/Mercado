@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart3, RefreshCw, AlertCircle } from "@buleje/design-system/icons";
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { formatNumber } from "@/lib/format";
 
 interface Aggregate {
   species: string;
@@ -103,7 +104,7 @@ export default function SpeciesAggregateChart({ period }: { period: CtpPeriod })
             label="Volumen total"
             value={`${data.grandTotal.volume.toFixed(2)} m³`}
           />
-          <Kpi label="Piezas" value={data.grandTotal.pieces.toLocaleString("es-PE")} />
+          <Kpi label="Piezas" value={formatNumber(data.grandTotal.pieces)} />
           <Kpi
             label="Especies"
             value={data.species_count.toString()}
@@ -119,7 +120,7 @@ export default function SpeciesAggregateChart({ period }: { period: CtpPeriod })
         )}
 
         {!loading && top.length === 0 && (
-          <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+          <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
             Sin datos en este período. Prueba un rango más amplio o registra
             ingresos validados.
           </div>

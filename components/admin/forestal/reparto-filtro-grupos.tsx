@@ -87,9 +87,9 @@ export function FiltroGruposCelda({
             type="button"
             aria-label="Cerrar la lista de tipos"
             onClick={() => setAbierto(false)}
-            className="fixed inset-0 z-40 cursor-default"
+            className="fixed inset-0 z-dropdown cursor-default"
           />
-          <div className="absolute right-0 z-50 mt-1 max-h-64 w-64 overflow-auto rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-2 shadow-lg">
+          <div className="absolute right-0 z-modal mt-1 max-h-64 w-64 overflow-auto rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-2 shadow-lg">
             <p className="mb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
               Este bloque lleva sólo…
             </p>

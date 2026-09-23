@@ -14,10 +14,11 @@ import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { Btn } from "./ctp-shared";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import { formatDate } from "@/lib/format";
 
 // date-only con timeZone UTC: sin eso, en Lima la fecha se corre un día.
 const fmtFecha = (f: string) =>
-  new Date(`${f}T12:00:00Z`).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+  formatDate(`${f}T12:00:00Z`, { soloFecha: true });
 
 export function SeccionResumenPermiso({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (

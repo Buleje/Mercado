@@ -101,7 +101,7 @@ export default function PlantacionPasoTitular({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <Seccion numero={3} titulo="Titular de la plantación" hint="Quién inscribe la plantación ante el RNPF">
         <CampoGrid>
           <Field label="Tipo de persona" span={4}>
