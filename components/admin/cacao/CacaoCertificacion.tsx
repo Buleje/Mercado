@@ -12,6 +12,7 @@ import {
   ShieldCheck, Leaf, Globe, Award, FileCheck, Search, RefreshCw, AlertCircle, CheckCircle2, AlertTriangle, MapPin,
 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
+import { formatNumber } from "@/lib/format";
 
 interface PStats { kg: number; pagado: number; lotes: number }
 interface Producer {
@@ -20,7 +21,7 @@ interface Producer {
   status: string; stats: PStats;
 }
 
-const n2 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const n2 = (v: number) => formatNumber(v, 2);
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 const hasGeo = (p: Producer) => {
   const la = Number(p.latitud), lo = Number(p.longitud);
@@ -80,7 +81,7 @@ export default function CacaoCertificacion() {
   const sinGeo = view.filter((p) => !hasGeo(p));
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Contexto EUDR para el dueño */}
       <div className="flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-sm text-[var(--text-secondary)]">
         <Globe className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />

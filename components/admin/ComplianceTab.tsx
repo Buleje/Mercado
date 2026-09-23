@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Scale, FileText, AlertTriangle, CheckCircle, Clock, Calendar, Download, Search, Building2, RefreshCw, Bell } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { ComplianceItem } from "@/app/api/compliance/route";
+import { formatDate } from "@/lib/format";
 
 const STATUS_CONFIG = {
   "vigente":     { label: "Vigente",           icon: CheckCircle,    color: "bg-primary/10 text-[var(--data-success)] dark:bg-primary/15 dark:text-[var(--data-success)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
@@ -23,7 +24,7 @@ function daysUntil(iso: string): number {
 
 function fmtDate(iso: string | null) {
   return iso && iso !== "—"
-    ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })
+    ? formatDate(iso)
     : "—";
 }
 

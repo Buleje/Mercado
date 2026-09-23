@@ -95,7 +95,7 @@ export default function CategoryBannersTab({
   const enabledCount = Object.values(banners).filter((b) => b?.enabled !== false && b?.image).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Banner explicativo */}
       <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
         <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -121,13 +121,13 @@ export default function CategoryBannersTab({
           <p className="text-sm text-muted mt-3">Cargando categorías…</p>
         </div>
       ) : categories.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 text-center">
           <Tag className="h-10 w-10 text-muted mx-auto mb-2" />
           <p className="text-base font-bold text-[var(--text-primary)]">Aún no hay categorías</p>
           <p className="text-sm text-muted mt-1">Agrega productos primero — las categorías se generan automáticamente.</p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {categories.map((cat) => {
             const banner = banners[cat.id] ?? {};
             const isEnabled = banner.enabled !== false; // default ON cuando hay imagen

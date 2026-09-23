@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, Database, Cpu, Zap } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { HealthPayload, HealthService } from "@/app/api/admin/health/route";
+import { formatTime } from "@/lib/format";
 
 // ── Status config ─────────────────────────────────────────────────────────────
 
@@ -21,7 +22,7 @@ const SERVICE_ICONS: Record<string, React.ElementType> = {
 };
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return formatTime(iso, { segundos: true });
 }
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────

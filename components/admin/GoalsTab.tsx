@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Field } from "@/components/admin/shared/Field";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
+import { formatNumber, formatMonth } from "@/lib/format";
 
 type GoalPeriod = "diario" | "semanal" | "mensual";
 // FIX 2026-05-07 (C): nuevas categorías auto-trackeables.
@@ -171,9 +172,9 @@ function computeForecast(goal: Goal): { projected: number; willHit: boolean; pct
   return { projected, willHit: projected >= goal.target, pctOfTarget };
 }
 
-function formatNumber(n: number, unit: string): string {
-  if (unit === "S/") return `S/${n.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
-  return `${n.toLocaleString("es-PE")} ${unit}`;
+function formatGoalValue(n: number, unit: string): string {
+  if (unit === "S/") return `S/${formatNumber(n, { max: 0 })}`;
+  return `${formatNumber(n)} ${unit}`;
 }
 
 function getStatusBorder(status: GoalStatus): string {
@@ -198,7 +199,7 @@ function ProgressBar({ current, target }: { current: number; target: number }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs font-semibold">
-        <span className="text-[var(--text-primary)]">{current.toLocaleString("es-PE")} / {target.toLocaleString("es-PE")}</span>
+        <span className="text-[var(--text-primary)]">{formatNumber(current)} / {formatNumber(target)}</span>
         <span className={cn(pct >= 100 ? "text-[var(--data-success-500)]" : pct >= 70 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>{pct}%</span>
       </div>
       <div className="h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
@@ -237,9 +238,7 @@ function HistoryCard({ goals }: { goals: Goal[] }) {
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
-    const lastMonthName = new Date(now.getFullYear(), now.getMonth() - 1, 1).toLocaleString("es-PE", {
-      month: "long",
-    });
+    const lastMonthName = formatMonth(new Date(now.getFullYear(), now.getMonth() - 1, 1), { largo: true });
 
     let lastMonthCompleted = 0;
     let lastMonthTotal = 0;
@@ -538,7 +537,7 @@ export default function GoalsTab() {
       // Celebración si meta recién alcanzada
       if (currentNum >= targetNum && !wasCompleted) {
         toast.success(`Meta alcanzada: ${body.name}`, {
-          description: `Llegaste a ${formatNumber(currentNum, body.unit)} de ${formatNumber(targetNum, body.unit)}.`,
+          description: `Llegaste a ${formatGoalValue(currentNum, body.unit)} de ${formatGoalValue(targetNum, body.unit)}.`,
           duration: 4000,
         });
       } else if (editId) {
@@ -591,7 +590,7 @@ export default function GoalsTab() {
       }
       if (current >= goal.target && !wasCompleted) {
         toast.success(`Meta alcanzada: ${goal.name}`, {
-          description: `Llegaste a ${formatNumber(current, goal.unit)} de ${formatNumber(goal.target, goal.unit)}.`,
+          description: `Llegaste a ${formatGoalValue(current, goal.unit)} de ${formatGoalValue(goal.target, goal.unit)}.`,
           duration: 4000,
         });
       }
@@ -609,7 +608,7 @@ export default function GoalsTab() {
     const value = Math.round(auto);
     await updateProgress(g.id, value);
     toast.success("Sincronizado con datos reales", {
-      description: `${g.name}: ${formatNumber(value, g.unit)}.`,
+      description: `${g.name}: ${formatGoalValue(value, g.unit)}.`,
       duration: 2500,
     });
   };
@@ -770,7 +769,7 @@ export default function GoalsTab() {
                     <span className="text-[var(--text-secondary)]">
                       A este ritmo:{" "}
                       <strong className={forecast.willHit ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]"}>
-                        {formatNumber(forecast.projected, g.unit)}
+                        {formatGoalValue(forecast.projected, g.unit)}
                       </strong>
                       {forecast.willHit ? " — vas a superar" : ` (${Math.round(forecast.pctOfTarget)}% de la meta)`}
                     </span>
@@ -802,7 +801,7 @@ export default function GoalsTab() {
                   {showSync && (
                     <button
                       onClick={() => void syncFromData(g)}
-                      title={`Auto-actualizar a ${formatNumber(Math.round(autoValue ?? 0), g.unit)}`}
+                      title={`Auto-actualizar a ${formatGoalValue(Math.round(autoValue ?? 0), g.unit)}`}
                       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold hover:bg-primary/20 transition-colors"
                     >
                       <RefreshCw className="h-3 w-3" />
@@ -849,7 +848,7 @@ export default function GoalsTab() {
                     <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t.description}</p>
                     {auto != null && auto > 0 && (
                       <p className="text-xs text-[var(--data-success-500)] mt-1.5 font-semibold">
-                        Hoy llevas {formatNumber(Math.round(auto), t.unit)}
+                        Hoy llevas {formatGoalValue(Math.round(auto), t.unit)}
                       </p>
                     )}
                   </div>
@@ -936,7 +935,7 @@ export default function GoalsTab() {
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 transition-colors"
                       >
                         <Sparkles className="h-3 w-3" />
-                        {s.label}: {formatNumber(s.value, form.unit || "S/")}
+                        {s.label}: {formatGoalValue(s.value, form.unit || "S/")}
                       </button>
                     ))}
                   </div>
@@ -986,7 +985,7 @@ export default function GoalsTab() {
 
 function EmptyStateWithTemplates({ onPick, autoStats }: { onPick: (t: Template) => void; autoStats: AutoStats }) {
   return (
-    <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-xl p-8 space-y-6">
+    <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-xl p-6 space-y-6">
       <div className="text-center">
         <Target className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
         <p className="text-[var(--text-primary)] font-bold mb-1">Empieza con una plantilla</p>
@@ -1010,7 +1009,7 @@ function EmptyStateWithTemplates({ onPick, autoStats }: { onPick: (t: Template) 
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t.description}</p>
                 {auto != null && auto > 0 && (
                   <p className="text-xs text-[var(--data-success-500)] mt-1.5 font-semibold">
-                    Hoy llevas {formatNumber(Math.round(auto), t.unit)}
+                    Hoy llevas {formatGoalValue(Math.round(auto), t.unit)}
                   </p>
                 )}
               </div>

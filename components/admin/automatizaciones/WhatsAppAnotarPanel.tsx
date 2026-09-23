@@ -19,6 +19,7 @@ import { CardTitle, InfoAlert, WarningAlert, BadgeStatus, PrimaryButton } from "
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useCopiar } from "./shared";
+import { formatDateShort } from "@/lib/format";
 
 interface Dueno {
   telefono: string;
@@ -38,7 +39,7 @@ interface Estado {
 const API = "/api/admin/whatsapp-anotar";
 
 const fecha = (iso?: string | null) =>
-  iso ? new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short" }) : "—";
+  iso ? formatDateShort(iso) : "—";
 
 /**
  * Un teléfono se muestra agrupado, no como un chorro de dígitos: la lista se

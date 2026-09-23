@@ -2,6 +2,7 @@
 
 import type { DbPurchaseOrder, DbSupplier } from "@/lib/jsondb";
 import { totalesOC } from "@/lib/compras/totales-oc";
+import { formatCurrency, formatDateLong } from "@/lib/format";
 
 interface PurchaseOrderPDFProps {
   order: DbPurchaseOrder;
@@ -17,11 +18,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
 
   const orderDate = (() => {
     try {
-      return new Date(order.createdAt).toLocaleDateString("es-PE", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
+      return formatDateLong(order.createdAt);
     } catch {
       return order.createdAt;
     }
@@ -33,8 +30,8 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
       <tr style="background:${i % 2 === 0 ? "#f9fafb" : "#ffffff"}">
         <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#111827">${item.name}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:center;color:#374151">${item.quantity} ${item.unit}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;color:#374151">S/${Number(item.unitCost).toFixed(2)}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;font-weight:600;color:#111827">S/${(item.quantity * item.unitCost).toFixed(2)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;color:#374151">${formatCurrency(Number(item.unitCost))}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;font-weight:600;color:#111827">${formatCurrency(item.quantity * item.unitCost)}</td>
       </tr>`
     )
     .join("");
@@ -165,23 +162,23 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
       ${descuentoPct > 0 ? `
       <div class="totals-row">
         <span>Subtotal</span>
-        <span>S/${subtotalBruto.toFixed(2)}</span>
+        <span>${formatCurrency(subtotalBruto)}</span>
       </div>
       <div class="totals-row">
         <span>Descuento (${descuentoPct}%)</span>
-        <span>-S/${descuentoMonto.toFixed(2)}</span>
+        <span>-${formatCurrency(descuentoMonto)}</span>
       </div>` : ""}
       <div class="totals-row">
         <span>Valor de venta</span>
-        <span>S/${baseImponible.toFixed(2)}</span>
+        <span>${formatCurrency(baseImponible)}</span>
       </div>
       <div class="totals-row">
         <span>IGV (18%) incluido</span>
-        <span>S/${igvContenido.toFixed(2)}</span>
+        <span>${formatCurrency(igvContenido)}</span>
       </div>
       <div class="totals-row total">
         <span>TOTAL</span>
-        <span>S/${total.toFixed(2)}</span>
+        <span>${formatCurrency(total)}</span>
       </div>
     </div>
   </div>

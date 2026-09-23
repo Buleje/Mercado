@@ -18,6 +18,7 @@ import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { diaLocal, ultimosDiasLocales } from "@/lib/fechas/dia-local";
+import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, formatDateTimeShort, formatTime, formatWeekday } from "@/lib/format";
 
 const CashRegisterChart = dynamic(
   () => import("./cash-register/CashRegisterChart"),
@@ -48,7 +49,7 @@ interface CashRegister {
 type View = "current" | "history" | "reconcile" | "auditoria";
 type MethodFilter = "all" | "efectivo" | "yape" | "plin" | "tarjeta";
 
-function fmt(n: number) { return `S/${n.toFixed(2)}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 
 function ModuleTooltip() {
   const [open, setOpen] = useState(false);
@@ -78,11 +79,11 @@ function ModuleTooltip() {
   );
 }
 function fmtDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
+  try { return formatDateTimeShort(iso); }
   catch { return iso; }
 }
 function fmtDateShort(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
+  try { return formatDateShort(iso); }
   catch { return iso; }
 }
 
@@ -147,10 +148,10 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
       {concilAmount && (
         <div className={cn("rounded-lg p-3 mb-3 text-center", cuadra ? "bg-primary/10 dark:bg-primary/15" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20")}>
           {cuadra ? (
-            <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Cuadra perfecto{diferencia !== 0 ? ` (dif. S/${diferencia.toFixed(2)})` : ""}</p>
+            <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Cuadra perfecto{diferencia !== 0 ? ` (dif. ${formatCurrency(diferencia)})` : ""}</p>
           ) : (
             <p className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
-              Diferencia de S/{Math.abs(diferencia).toFixed(2)} — {diferencia > 0 ? "sobrante" : "revisa si hay transferencias personales"}
+              Diferencia de {formatCurrency(Math.abs(diferencia))} — {diferencia > 0 ? "sobrante" : "revisa si hay transferencias personales"}
             </p>
           )}
           <button onClick={guardarConciliacion} className="mt-2 px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">
@@ -163,7 +164,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
           <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase mb-1.5">Ultimas conciliaciones</p>
           <div className="space-y-1">
             {concilHistory.slice(0, 3).map((h, i) => {
-              const dateStr = (() => { try { return new Date(h.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); } catch { return ""; } })();
+              const dateStr = (() => { try { return formatDateShort(h.fecha); } catch { return ""; } })();
               return (
                 <div key={i} className="flex items-center justify-between text-xs">
                   <span className="text-[var(--text-secondary)]">{dateStr} · <span className="capitalize font-medium">{h.metodo}</span></span>
@@ -490,12 +491,7 @@ export default function CashRegisterTab() {
       const counted = Number(arqueoAmount);
       const expected = stats?.expectedCash ?? 0;
       const diff = counted - expected;
-      const timestamp = new Date().toLocaleString("es-PE", {
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
+      const timestamp = formatDateTimeShort(new Date());
 
       // El endpoint correcto es /api/cash-registers/[id] con action "arqueo"
       // (mismo contrato que CashAuditTab). La ruta arma el prefijo y dispara la
@@ -506,7 +502,7 @@ export default function CashRegisterTab() {
         body: JSON.stringify({
           action: "arqueo",
           closingAmount: counted,
-          notes: `${timestamp} | Esperado: S/${expected.toFixed(2)} | Contado: S/${counted.toFixed(2)} | Diferencia: ${diff >= 0 ? "+" : ""}S/${diff.toFixed(2)}`,
+          notes: `${timestamp} | Esperado: ${formatCurrency(expected)} | Contado: ${formatCurrency(counted)} | Diferencia: ${diff >= 0 ? "+" : ""}${formatCurrency(diff)}`,
         }),
       });
 
@@ -547,8 +543,8 @@ export default function CashRegisterTab() {
     const ok = await confirm({
       title: "¿Cerrar la caja del día?",
       description:
-        `Esto CIERRA la caja del día con S/${guiadoTotal.toFixed(2)} contados en efectivo. ` +
-        `Esperado: S/${guiadoExpected.toFixed(2)} · Diferencia: ${guiadoDiff >= 0 ? "+" : "−"}S/${Math.abs(guiadoDiff).toFixed(2)}. ` +
+        `Esto CIERRA la caja del día con ${formatCurrency(guiadoTotal)} contados en efectivo. ` +
+        `Esperado: ${formatCurrency(guiadoExpected)} · Diferencia: ${guiadoDiff >= 0 ? "+" : "−"}${formatCurrency(Math.abs(guiadoDiff))}. ` +
         "Después de cerrar hay que abrir una caja nueva para seguir vendiendo.",
       intent: "warning",
       confirmLabel: "Sí, cerrar",
@@ -557,16 +553,11 @@ export default function CashRegisterTab() {
     setAddingArqueoGuiado(true);
     setArqueoError(null);
     try {
-      const timestamp = new Date().toLocaleString("es-PE", {
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const timestamp = formatDateTimeShort(new Date());
 
       const digitalTotal = (Number(arqueoYape) || 0) + (Number(arqueoPlin) || 0) + (Number(arqueoTarjeta) || 0);
       const grandTotal = guiadoTotal + digitalTotal;
-      const digitalNote = digitalTotal > 0 ? ` | Yape: S/${(Number(arqueoYape) || 0).toFixed(2)} | Plin: S/${(Number(arqueoPlin) || 0).toFixed(2)} | Tarjeta: S/${(Number(arqueoTarjeta) || 0).toFixed(2)}` : "";
+      const digitalNote = digitalTotal > 0 ? ` | Yape: ${formatCurrency(Number(arqueoYape) || 0)} | Plin: ${formatCurrency(Number(arqueoPlin) || 0)} | Tarjeta: ${formatCurrency(Number(arqueoTarjeta) || 0)}` : "";
       // Brandon 2026-06-17: persiste la foto del arqueo SERVER-SIDE (antes solo
       // quedaba en localStorage + flag de texto "adjunta", se perdía al limpiar).
       // Sube a /api/upload (Supabase + Sharp) y guarda la URL real en notes.
@@ -595,7 +586,7 @@ export default function CashRegisterTab() {
         body: JSON.stringify({
           action: "close",
           closingAmount: guiadoTotal,
-          notes: `Arqueo Guiado - ${timestamp} | Billetes: S/${guiadoTotalBilletes.toFixed(2)} | Monedas: S/${guiadoTotalMonedas.toFixed(2)} | Total efectivo: S/${guiadoTotal.toFixed(2)}${digitalNote} | Total general: S/${grandTotal.toFixed(2)} | Diferencia: ${guiadoDiff >= 0 ? "+" : ""}S/${guiadoDiff.toFixed(2)}${fotoNote}`,
+          notes: `Arqueo Guiado - ${timestamp} | Billetes: ${formatCurrency(guiadoTotalBilletes)} | Monedas: ${formatCurrency(guiadoTotalMonedas)} | Total efectivo: ${formatCurrency(guiadoTotal)}${digitalNote} | Total general: ${formatCurrency(grandTotal)} | Diferencia: ${guiadoDiff >= 0 ? "+" : ""}${formatCurrency(guiadoDiff)}${fotoNote}`,
         }),
       });
       // Antes se limpiaba la pantalla pasara lo que pasara: si el cierre
@@ -900,11 +891,11 @@ export default function CashRegisterTab() {
                     const retiros = currentRegister.movements.filter(m => m.type === "egreso").reduce((s, m) => s + m.amount, 0);
                     const retirosCount = currentRegister.movements.filter(m => m.type === "egreso").length;
                     const ingresosExtra = currentRegister.movements.filter(m => m.type === "ingreso").reduce((s, m) => s + m.amount, 0);
-                    const fecha = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
-                    const hora = new Date(currentRegister.openedAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+                    const fecha = formatDateLong(new Date());
+                    const hora = formatTime(currentRegister.openedAt);
                     const methodLines = Object.entries(byMethod).map(([m, t]) => {
                       const pct = totalVentas > 0 ? ((t / totalVentas) * 100).toFixed(0) : "0";
-                      return `  ${m.charAt(0).toUpperCase() + m.slice(1)}: S/ ${t.toFixed(2)} (${pct}%)`;
+                      return `  ${m.charAt(0).toUpperCase() + m.slice(1)}: ${formatCurrency(t)} (${pct}%)`;
                     }).join("\n");
                     const content = `
 <html><head><title>Reporte de Caja</title>
@@ -915,20 +906,20 @@ export default function CashRegisterTab() {
 <p class="center">Fecha: ${fecha}</p>
 <div class="sep"></div>
 <p class="bold">APERTURA</p>
-<p>Efectivo inicial: S/ ${Number(currentRegister.openingAmount).toFixed(2)}</p>
+<p>Efectivo inicial: ${formatCurrency(Number(currentRegister.openingAmount))}</p>
 <p>Hora: ${hora}</p>
 <div class="sep"></div>
 <p class="bold">VENTAS DEL DIA</p>
-<p>Total ventas: S/ ${totalVentas.toFixed(2)} (${salesMvs.length} transacciones)</p>
+<p>Total ventas: ${formatCurrency(totalVentas)} (${salesMvs.length} transacciones)</p>
 <p>Por metodo:</p>
 <pre>${methodLines}</pre>
 <div class="sep"></div>
 <p class="bold">MOVIMIENTOS</p>
-<p>Retiros: S/ ${retiros.toFixed(2)} (${retirosCount})</p>
-<p>Ingresos extra: S/ ${ingresosExtra.toFixed(2)}</p>
+<p>Retiros: ${formatCurrency(retiros)} (${retirosCount})</p>
+<p>Ingresos extra: ${formatCurrency(ingresosExtra)}</p>
 <div class="sep"></div>
 <p class="bold">CIERRE</p>
-<p>Efectivo esperado: S/ ${(stats?.expectedCash ?? 0).toFixed(2)}</p>
+<p>Efectivo esperado: ${formatCurrency(stats?.expectedCash ?? 0)}</p>
 <div class="sep"></div>
 <p style="margin-top:30px">Firma cajero: ___________________</p>
 <p>Firma supervisor: _______________</p>
@@ -1027,8 +1018,8 @@ export default function CashRegisterTab() {
                   <div className="max-h-96 overflow-y-auto space-y-0">
                     {computedTimeline.map((item, idx) => {
                       const isLast = idx === computedTimeline.length - 1;
-                      const timeStr = (() => { try { return new Date(item.time).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }); } catch { return ""; } })();
-                      const fullTimeStr = (() => { try { return new Date(item.time).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return ""; } })();
+                      const timeStr = (() => { try { return formatTime(item.time); } catch { return ""; } })();
+                      const fullTimeStr = (() => { try { return formatTime(item.time, { segundos: true }); } catch { return ""; } })();
                       const isPositive = ["venta", "ingreso", "apertura"].includes(item.type);
                       const badgeColor = item.type === "apertura" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" :
                         item.type === "venta" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
@@ -1234,7 +1225,7 @@ export default function CashRegisterTab() {
               icon={History}
               title="Sin historial de cajas"
               description="Los cierres de caja aparecerán aquí."
-              className="bg-[var(--surface-raised)] rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8"
+              className="bg-[var(--surface-raised)] rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6"
             />
           ) : (
             filteredHistory.map(r => {
@@ -1320,13 +1311,7 @@ export default function CashRegisterTab() {
                       <p className="text-sm text-[var(--text-primary)]">{t.detail}</p>
                       <p className="text-xs text-[var(--text-secondary)]">
                         <span className="font-semibold">{t.user}</span> ·{" "}
-                        {new Date(t.createdAt).toLocaleString("es-PE", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatDateTime(t.createdAt)}
                       </p>
                     </div>
                   </li>
@@ -1417,7 +1402,7 @@ export default function CashRegisterTab() {
                 {weekData.map((day, idx) => {
                   const incomeH = maxBar > 0 ? (day.income / maxBar) * 80 : 0;
                   const expenseH = maxBar > 0 ? (day.expenses / maxBar) * 80 : 0;
-                  const dayName = new Date(day.date + "T12:00:00").toLocaleDateString("es-PE", { weekday: "short" });
+                  const dayName = formatWeekday(day.date + "T12:00:00");
                   return (
                     <div key={idx} className="flex flex-col items-center">
                       <div className="relative w-full h-20 flex flex-wrap items-end justify-center gap-0.5 mb-1">
@@ -1469,7 +1454,7 @@ export default function CashRegisterTab() {
                 icon={History}
                 title="Sin cajas cerradas"
                 description="No hay cierres en el rango seleccionado."
-                className="bg-[var(--surface-raised)] rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8"
+                className="bg-[var(--surface-raised)] rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6"
               />
             ) : (
               <DataTable className="min-w-[600px] text-xs">
@@ -1538,7 +1523,7 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
               <Field label="Monto de apertura" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                 {(id) => (
                   <>
@@ -1736,7 +1721,7 @@ export default function CashRegisterTab() {
                       onClick={() => handleDenomClick(d)}
                       className="relative px-2 py-2 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                     >
-                      S/{d.toFixed(2)}
+                      {formatCurrency(d)}
                       {(denominations[String(d)] ?? 0) > 0 && (
                         <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-white text-xs flex items-center justify-center">
                           {denominations[String(d)]}
@@ -1845,7 +1830,7 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
               <Field label="Monto" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                 {(id) => (
                   <div className="relative">
@@ -1974,7 +1959,7 @@ export default function CashRegisterTab() {
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
                 {/* Summary card */}
                 <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-2">
                   <div className="flex justify-between items-center text-base">
@@ -2305,7 +2290,7 @@ export default function CashRegisterTab() {
                       <div key={r.method} className="flex items-center justify-between text-xs">
                         <span className="capitalize text-[var(--text-secondary)] dark:text-muted">{r.method}</span>
                         <span className={cn("font-bold", ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
-                          {ok ? "OK" : `${diff >= 0 ? "+" : ""}S/${diff.toFixed(2)}`} {ok ? "\u2713" : "\u26A0"}
+                          {ok ? "OK" : `${diff >= 0 ? "+" : ""}${formatCurrency(diff)}`} {ok ? "\u2713" : "\u26A0"}
                         </span>
                       </div>
                     );

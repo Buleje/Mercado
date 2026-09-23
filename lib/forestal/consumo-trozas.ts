@@ -135,6 +135,37 @@ export function estaDisponible(t: TrozaConsumible): boolean {
   return motivoBloqueo(t) === null;
 }
 
+/**
+ * ¿La GUÍA de esa troza llegó al patio? (ADR-325/ADR-339)
+ *
+ * Es la derivación que `TrozaConsumible.guiaRecepcionada` publica, escrita UNA
+ * vez: la leen la lectura del patio (`trozasComoConsumibles`) y el escritor que
+ * arma y consume lotes (`motivoNoElegible`). Estaban copiadas, y una copia que
+ * se queda corta del lado que ESCRIBE es la que deja pasar madera que nunca
+ * bajó del camión.
+ *
+ * Tres señales, cualquiera alcanza: la guía quedó **validada** (o `procesado`,
+ * que es una validada que ya se trabajó — el mismo par que usa el resto del
+ * módulo), la guía tiene fecha de recepción, o la pieza tiene la suya (una guía
+ * de sesenta trozas se descarga en dos viajes, ADR-336).
+ *
+ * `pendiente` ⇒ **false**: la madera está declarada, no recibida. De ahí no
+ * sale una tabla.
+ */
+const GUIA_VALIDADA = ["validado", "procesado"];
+
+export function guiaRecibida(g: {
+  estado: string | null | undefined;
+  fechaRecepcionGuia: Date | string | null | undefined;
+  fechaRecepcionTroza: Date | string | null | undefined;
+}): boolean {
+  return (
+    (g.estado != null && GUIA_VALIDADA.includes(g.estado)) ||
+    Boolean(g.fechaRecepcionGuia) ||
+    Boolean(g.fechaRecepcionTroza)
+  );
+}
+
 /** Filtros de la tabla — los mismos que usa el operador en el patio. */
 export interface FiltroTrozas {
   texto?: string;

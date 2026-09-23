@@ -7,6 +7,7 @@ import {
   Download, RefreshCw, Target, Save,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 /* ── Types ──────────────────────────────────────────────────── */
 type ExpenseItem = {
@@ -41,7 +42,7 @@ type BudgetConfig = {
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${formatCurrency(n)}`;
 const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
 
 const MONTH_LABELS: Record<string, string> = {

@@ -42,7 +42,7 @@ import {
   tituloDoc,
   type FichaResumen,
 } from "@/lib/forestal/ctp-documento-print";
-import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
+import type { CtpFicha, PermisoDeGuia } from "@/lib/forestal/ctp-ficha-types";
 import { COPIAS_GTF, faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf, type LineaProducto } from "@/lib/forestal/ctp-gtf-formato";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -95,6 +95,14 @@ export async function documentoGtfSalida(
    * para una guía de un solo producto y una mentira para una de cinco.
    */
   lineasDeLaGuia?: readonly LineaProducto[],
+  /**
+   * Los permisos cargados del tenant (`ForestContrato`, ADR-421/425). El select
+   * de la guía ofrece títulos de la Ficha **y** permisos; sin esta lista, un
+   * despacho declarado con un permiso que no está en la Ficha imprimía el
+   * código (6) y los casilleros (5)(8)(9) en blanco. Sin pasarla, el papel sale
+   * como salía: se completa lo que hay, nunca se inventa lo que falta.
+   */
+  permisos?: readonly PermisoDeGuia[] | null,
 ): Promise<DocumentoGtfSalida> {
   if (!despacho.gtfNumber) {
     throw new Error("El despacho todavía no tiene GTF emitida. Emite la GTF antes de imprimirla.");
@@ -183,6 +191,7 @@ export async function documentoGtfSalida(
     // Buleje no registra ante la ARFFS: mientras el operador no cargue el N°
     // que devuelve el SNIFFS, el recuadro va en blanco para llenarlo a mano.
     registroSerfor: "",
+    permisos: permisos ?? undefined,
   });
 
   const fichas: FichaResumen[] = [

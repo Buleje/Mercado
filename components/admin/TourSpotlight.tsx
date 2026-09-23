@@ -110,7 +110,7 @@ export function TourSpotlight({
   if (!rect) return null;
 
   return (
-    <div className="fixed inset-0 z-[60]" style={{ pointerEvents: "none" }}>
+    <div className="fixed inset-0 z-modal-2" style={{ pointerEvents: "none" }}>
       {/* SVG overlay with cutout */}
       <svg
         className="absolute inset-0 w-full h-full"

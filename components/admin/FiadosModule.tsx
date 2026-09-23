@@ -23,6 +23,7 @@ import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import { waLink } from "@/lib/whatsapp-link";
+import { formatCurrency, formatDate, formatDateLong, formatDateNumeric, formatNumber, formatTime } from "@/lib/format";
 import { tenantCacheKey } from "@/lib/tenant-cache";
 import { computeReliabilityScore, type ReliabilityScore } from "@/lib/fiados/reliability";
 import ClienteFormModal from "./clientes/ClienteFormModal";
@@ -77,14 +78,6 @@ const STATUS_META: Record<FiadoStatus, { label: string; color: string; bg: strin
   VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle,     variant: "error" },
   CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-[var(--surface-sunken)]",     icon: Ban,         variant: "neutral" },
 };
-
-function formatCurrency(n: number) {
-  return `S/${n.toFixed(2)}`;
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 const PER_PAGE = 10;
 
@@ -564,7 +557,7 @@ export default function FiadosModule() {
         montoPagado: monto,
         saldoAnterior: selected.saldo,
         saldoActual: updated.saldo,
-        fecha: new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" }),
+        fecha: formatDateLong(new Date()),
         clientePhone: selected.customerId,
       });
       setShowRecibo(true);
@@ -819,7 +812,7 @@ export default function FiadosModule() {
       const diasPasados = Math.floor((Date.now() - new Date(f.createdAt).getTime()) / 86400000);
       const phone = f.customerId || "";
       const displayPhone = phone.length > 3 ? phone.slice(0, 3) + "XXXXXX" : phone;
-      return `${i + 1}. ${f.customerName || f.customerId} · ${displayPhone} · S/ ${Number(f.saldo).toFixed(2)} · ${diasPasados} dias [ ]`;
+      return `${i + 1}. ${f.customerName || f.customerId} · ${displayPhone} · ${formatCurrency(Number(f.saldo))} · ${diasPasados} dias [ ]`;
     });
 
     const content = [
@@ -831,7 +824,7 @@ export default function FiadosModule() {
       ...lines,
       "",
       "───────────────────────────────────────",
-      `Total por cobrar: S/ ${totalCobrar.toFixed(2)} (${deudores.length} clientes)`,
+      `Total por cobrar: ${formatCurrency(totalCobrar)} (${deudores.length} clientes)`,
       "[ ] = marcar cuando se cobre",
       "───────────────────────────────────────",
     ].join("\n");
@@ -857,7 +850,7 @@ export default function FiadosModule() {
         "Teléfono": f.customerId,
         "Monto original (S/)": Number(Number(f.total ?? 0).toFixed(2)),
         "Saldo pendiente (S/)": Number(Number(f.saldo ?? 0).toFixed(2)),
-        "Fecha inicio": new Date(f.createdAt).toLocaleDateString("es-PE"),
+        "Fecha inicio": formatDateNumeric(f.createdAt),
         "Días": diasPasados,
         Estado: f.status === "VENCIDO" ? "Vencido" : "Activo",
       };
@@ -1148,7 +1141,7 @@ export default function FiadosModule() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const nombre = f.customerName || f.customerId;
-                                const saldo = Number(f.saldo).toFixed(2);
+                                const saldo = formatNumber(f.saldo, 2);
                                 const fecha = f.fechaVence ? formatDate(f.fechaVence) : "";
                                 const msg = f.status === "VENCIDO"
                                   ? `Hola ${nombre}, tienes un pendiente de S/${saldo}${fecha ? ` vencido desde el ${fecha}` : ""} en Buleje. Cuando puedas pasa a regularizarlo?`
@@ -1225,7 +1218,7 @@ export default function FiadosModule() {
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className={cn("fixed inset-y-0 right-0 z-50 w-full bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto transition-all duration-[var(--dur-base)]", isPanelWide ? "max-w-[500px]" : "max-w-md")}
             >
-              <div className="p-4 sm:p-6 space-y-5">
+              <div className="p-4 sm:p-6 space-y-4">
                 {/* Sheet header — UX Mejora 16: Width toggle */}
                 <div className="flex items-center justify-between">
                   <CardTitle id={sheetTitleId} className="text-lg font-bold text-[var(--text-primary)]">Detalle del fiado</CardTitle>
@@ -1326,9 +1319,9 @@ export default function FiadosModule() {
                                 <StatusBadge variant="success" label="Pagado" size="sm" />
                               </div>
                               <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                                {new Date(c.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                                {formatDateNumeric(c.createdAt)}
                                 {" "}
-                                {new Date(c.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
+                                {formatTime(c.createdAt)}
                               </p>
                               {c.notas && (
                                 <p className="text-xs text-[var(--text-secondary)] mt-1 italic">{c.notas}</p>
@@ -1368,7 +1361,7 @@ export default function FiadosModule() {
                           Compromiso de Pago
                         </button>
                         <a
-                          href={waLink(selected.customerId, `Hola ${selected.customerName || selected.customerId}, te recordamos que tienes un pendiente de S/${Number(selected.saldo).toFixed(2)} en Buleje.`) ?? "#"}
+                          href={waLink(selected.customerId, `Hola ${selected.customerName || selected.customerId}, te recordamos que tienes un pendiente de ${formatCurrency(Number(selected.saldo))} en Buleje.`) ?? "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"

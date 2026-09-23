@@ -28,6 +28,9 @@ import { exportToExcel } from "@/lib/export-excel";
 import Customer360Tab from "./Customer360Tab";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatDateNumeric, formatNumber } from "@/lib/format";
+import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
+import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -58,7 +61,7 @@ type Segment = "frecuente" | "ocasional" | "nuevo" | "perdido";
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `S/ ${formatNumber(n, 2)}`;
 }
 
 function fmtRelative(iso: string) {
@@ -108,8 +111,18 @@ export default function CRMTab() {
   const [error, setError]         = useState(false);
 
   const [search, setSearch]           = useState("");
-  const [filterSegment, setFilterSegment] = useState<Segment | "todos">("todos");
-  const [quickFilter, setQuickFilter] = useState<QuickFilter>("todos");
+  // Filtros en la cabecera, estilo Excel (Brandon, 2026-09-03/22): un solo
+  // estado por columna — las pastillas de abajo y el autofiltro del `<th>`
+  // escriben lo mismo, no dos filtros distintos.
+  //
+  // `quickFilter` era UN estado excluyente para tres preguntas de DOS columnas
+  // distintas (actividad de "Último pedido" y deuda de "Crédito"): se separa
+  // en dos, y las pastillas de abajo pasan a ser un atajo que escribe ambos a
+  // la vez (mismo look excluyente de siempre) en vez de la fuente de verdad.
+  const [actividadFiltro, setActividadFiltro] = useState<string[]>([]);
+  const [creditoRango, setCreditoRango] = useState<Rango<number>>({ min: null, max: null });
+  // Segmento: multi (antes un solo valor a la vez).
+  const [filterSegment, setFilterSegment] = useState<Segment[]>([]);
   const [page, setPage]               = useState(1);
 
   const [filterTag, setFilterTag] = useState<string>("todos");
@@ -293,21 +306,18 @@ export default function CRMTab() {
   const filtered = useMemo(() => {
     let list = [...customers];
 
-    // Quick filter (activity / debt)
-    if (quickFilter !== "todos") {
-      const now = Date.now();
-      const thirtyDaysAgo = now - 30 * 86400000;
-      if (quickFilter === "activos") {
-        list = list.filter(c => c._lastOrder && new Date(c._lastOrder).getTime() > thirtyDaysAgo);
-      } else if (quickFilter === "inactivos") {
-        list = list.filter(c => !c._lastOrder || new Date(c._lastOrder).getTime() <= thirtyDaysAgo);
-      } else if (quickFilter === "con-deuda") {
-        list = list.filter(c => (c.creditBalance ?? 0) > 0);
-      }
+    // Actividad — columna "Último pedido" (antes parte de quickFilter).
+    if (actividadFiltro.length > 0) {
+      const thirtyDaysAgo = Date.now() - 30 * 86400000;
+      const esActivo = (c: Customer) => Boolean(c._lastOrder && new Date(c._lastOrder).getTime() > thirtyDaysAgo);
+      list = list.filter(c => actividadFiltro.includes(esActivo(c) ? "Activo" : "Inactivo"));
     }
 
+    // Deuda — columna "Crédito" (antes "con-deuda" de quickFilter).
+    list = list.filter(c => enRango(c.creditBalance ?? 0, creditoRango));
+
     // Segment filter
-    if (filterSegment !== "todos") list = list.filter(c => c._segment === filterSegment);
+    if (filterSegment.length > 0) list = list.filter(c => filterSegment.includes(c._segment ?? "nuevo"));
 
     // Tag filter
     if (filterTag !== "todos") list = list.filter(c => (c._tags ?? []).includes(filterTag));
@@ -333,7 +343,7 @@ export default function CRMTab() {
       list = list.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q));
     }
     return list;
-  }, [customers, quickFilter, filterSegment, filterTag, freqFilter, search]);
+  }, [customers, actividadFiltro, creditoRango, filterSegment, filterTag, freqFilter, search]);
 
   const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   // Clamp page dentro del rango válido — evita setState derivado en useEffect
@@ -463,7 +473,7 @@ export default function CRMTab() {
               "Categoría": c.loyaltyTier ?? "—",
               Tags: (c._tags ?? []).join(", ") || "—",
               "Total gastado (S/)": Number((c.totalSpent ?? 0).toFixed(2)),
-              "Última compra": c._lastOrder ? new Date(c._lastOrder).toLocaleDateString("es-PE") : "Sin compras",
+              "Última compra": c._lastOrder ? formatDateNumeric(c._lastOrder) : "Sin compras",
               Estado: c._segment === "frecuente" ? "Frecuente" : c._segment === "ocasional" ? "Ocasional" : c._segment === "perdido" ? "Perdido" : "Nuevo",
             }));
             const fecha = new Date().toISOString().slice(0, 10);
@@ -571,13 +581,23 @@ export default function CRMTab() {
           { key: "ocasional" as const, label: "Ocasional", count: segmentCounts.ocasional },
           { key: "nuevo" as const, label: "Nuevo", count: segmentCounts.nuevo },
           { key: "perdido" as const, label: "Perdido", count: segmentCounts.perdido },
-        ] as const).map(f => (
+        ] as const).map(f => {
+          // "Todos" activo con la selección vacía; el resto se puede combinar
+          // (multi, 2026-09-22) — mismo estado que el autofiltro de la
+          // columna Segmento: clic para sumar, clic de nuevo para sacar.
+          const active = f.key === "todos" ? filterSegment.length === 0 : filterSegment.includes(f.key as Segment);
+          return (
           <button
             key={f.key}
-            onClick={() => setFilterSegment(f.key)}
+            onClick={() => {
+              if (f.key === "todos") { setFilterSegment([]); return; }
+              const seg = f.key as Segment;
+              setFilterSegment(prev => prev.includes(seg) ? prev.filter(s => s !== seg) : [...prev, seg]);
+            }}
+            aria-pressed={active}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
-              filterSegment === f.key
+              active
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
                 : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
@@ -586,13 +606,14 @@ export default function CRMTab() {
             {f.count > 0 && (
               <span className={cn(
                 "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-                filterSegment === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
+                active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
               )}>
                 {f.count > 99 ? "99+" : f.count}
               </span>
             )}
           </button>
-        ))}
+          );
+        })}
 
         {/* Spacer */}
         <div className="flex-1" />
@@ -617,18 +638,38 @@ export default function CRMTab() {
         <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           Estado
         </span>
+        {/* Atajo excluyente de siempre (mismo look) — ahora escribe DOS
+            estados de columna en vez de ser la fuente de verdad: Activos/
+            Inactivos van a `actividadFiltro` ("Último pedido"), Con deuda va
+            a `creditoRango` ("Crédito"). Elegir uno limpia el otro, como
+            antes; el autofiltro de cada `<th>` puede combinarlos si hace
+            falta más precisión que el atajo. */}
         {([
           { key: "todos" as QuickFilter,     label: "Todos" },
           { key: "activos" as QuickFilter,   label: "Activos" },
           { key: "inactivos" as QuickFilter, label: "Inactivos 30d" },
           { key: "con-deuda" as QuickFilter, label: "Con deuda" },
-        ]).map(f => (
+        ]).map(f => {
+          const active =
+            f.key === "todos"
+              ? actividadFiltro.length === 0 && creditoRango.min == null && creditoRango.max == null
+              : f.key === "con-deuda"
+                ? creditoRango.min === 0.01 && creditoRango.max == null
+                : actividadFiltro.length === 1 && actividadFiltro[0] === (f.key === "activos" ? "Activo" : "Inactivo");
+          const aplicar = () => {
+            if (f.key === "todos") { setActividadFiltro([]); setCreditoRango({ min: null, max: null }); return; }
+            if (f.key === "con-deuda") { setActividadFiltro([]); setCreditoRango({ min: 0.01, max: null }); return; }
+            setActividadFiltro([f.key === "activos" ? "Activo" : "Inactivo"]);
+            setCreditoRango({ min: null, max: null });
+          };
+          return (
           <button
             key={f.key}
-            onClick={() => setQuickFilter(f.key)}
+            onClick={aplicar}
+            aria-pressed={active}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
-              quickFilter === f.key
+              active
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
                 : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
@@ -636,12 +677,13 @@ export default function CRMTab() {
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              quickFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
+              active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
             )}>
               {quickFilterCounts[f.key] > 99 ? "99+" : quickFilterCounts[f.key]}
             </span>
           </button>
-        ))}
+          );
+        })}
 
         <span aria-hidden className="mx-1 h-5 w-px bg-[var(--rule-base)]" />
         <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -721,19 +763,75 @@ export default function CRMTab() {
         </div>
       )}
 
+      {/* Filtros de columna puestos, con su cruz — arriba de la tabla. Crédito
+          y Último pedido se ESCONDEN en pantallas chicas (`hidden lg/sm:
+          table-cell`): sin esto un rango puesto en desktop quedaría acotando
+          en el celular sin ningún control a la vista. */}
+      <ChipsDeFiltros
+        className="mb-2"
+        chips={[
+          ...(filterSegment.length > 0
+            ? [{ id: "segmento", label: "Segmento", texto: filterSegment.length === 1 ? SEGMENT_CONFIG[filterSegment[0]].label : `Segmento: ${filterSegment.length} elegidos` }]
+            : []),
+          ...(actividadFiltro.length > 0
+            ? [{ id: "actividad", label: "Último pedido", texto: actividadFiltro.length === 1 ? `${actividadFiltro[0]} (30 d)` : "Activos e inactivos" }]
+            : []),
+          ...(rangoActivo(creditoRango)
+            ? [{ id: "credito", label: "Crédito", texto: textoDeRango("Crédito", creditoRango, { unidad: "S/" }) }]
+            : []),
+        ] satisfies ChipFiltro[]}
+        onQuitar={(id) => {
+          if (id === "segmento") setFilterSegment([]);
+          else if (id === "actividad") setActividadFiltro([]);
+          else if (id === "credito") setCreditoRango({ min: null, max: null });
+        }}
+        onLimpiarTodo={() => { setFilterSegment([]); setActividadFiltro([]); setCreditoRango({ min: null, max: null }); }}
+      />
+
       {/* Table — UX Mejora 18: Sticky header */}
       <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
-        <DataTable stickyHeader className="min-w-[600px]">
+        <DataTable stickyHeader filtrable className="min-w-[600px]">
           <thead>
             <tr>
               {compareMode && <th className="w-10"><span className="sr-only">Seleccionar</span></th>}
               <th className="text-center w-14">Rank</th>
               <th>Cliente</th>
               <th>Teléfono</th>
-              <th className="hidden sm:table-cell">Último pedido</th>
+              <th className="hidden sm:table-cell">
+                <span className="block">Último pedido</span>
+                <FiltroColumnaMulti
+                  label="Último pedido"
+                  value={actividadFiltro}
+                  options={[
+                    { value: "Activo", count: quickFilterCounts.activos },
+                    { value: "Inactivo", count: quickFilterCounts.inactivos },
+                  ]}
+                  onChange={setActividadFiltro}
+                  placeholder="Todos"
+                />
+              </th>
               <th className="text-right hidden md:table-cell">Total gastado</th>
-              <th className="hidden lg:table-cell">Crédito</th>
-              <th>Segmento</th>
+              <th className="hidden lg:table-cell">
+                <span className="block">Crédito</span>
+                <FiltroColumnaRango
+                  label="Crédito"
+                  unidad="S/"
+                  paso={0.5}
+                  valor={creditoRango}
+                  onChange={(r) => setCreditoRango(r as Rango<number>)}
+                />
+              </th>
+              <th>
+                <span className="block">Segmento</span>
+                <FiltroColumnaMulti
+                  label="Segmento"
+                  value={filterSegment}
+                  options={(Object.keys(SEGMENT_CONFIG) as Segment[]).map((s): FacetaOpcion => ({ value: s, count: segmentCounts[s] }))}
+                  etiqueta={(v) => SEGMENT_CONFIG[v as Segment]?.label ?? v}
+                  onChange={(v) => setFilterSegment(v as Segment[])}
+                  placeholder="Todos"
+                />
+              </th>
               <th className="hidden md:table-cell">Contacto</th>
               <th className="text-center">Ver</th>
             </tr>
@@ -745,8 +843,8 @@ export default function CRMTab() {
                     <div className="flex flex-col items-center gap-2 text-[var(--text-tertiary)] dark:text-muted">
                       <Users className="h-8 w-8 opacity-30" />
                       <p className="text-sm">No se encontraron clientes</p>
-                      {(search || filterSegment !== "todos" || quickFilter !== "todos" || filterTag !== "todos") && (
-                        <button onClick={() => { setSearch(""); setFilterSegment("todos"); setQuickFilter("todos"); setFilterTag("todos"); }} className="text-xs text-primary hover:underline">
+                      {(search || filterSegment.length > 0 || actividadFiltro.length > 0 || creditoRango.min != null || creditoRango.max != null || filterTag !== "todos") && (
+                        <button onClick={() => { setSearch(""); setFilterSegment([]); setActividadFiltro([]); setCreditoRango({ min: null, max: null }); setFilterTag("todos"); }} className="text-xs text-primary hover:underline">
                           Limpiar filtros
                         </button>
                       )}

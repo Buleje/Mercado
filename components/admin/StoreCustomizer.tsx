@@ -1384,7 +1384,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
       style={{ fontFamily: fontMap[theme.fontFamily] ?? fontMap.sistema }}
     >
       {/* Badge */}
-      <div className="absolute top-3 right-3 z-10 bg-black/40 text-white text-xs font-bold px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">
+      <div className="absolute top-3 right-3 z-dropdown bg-black/40 text-white text-xs font-bold px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">
         Vista previa
       </div>
 
@@ -1784,7 +1784,7 @@ export default function StoreCustomizer() {
     <div className="flex flex-col h-full">
       {/* Toast de éxito — patrón estándar admin (mismo estilo que plantilla/notificaciones) */}
       {toastMsg && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-bold shadow-[var(--shadow-xl)] animate-[fadeDown_0.35s_ease-out_both] pointer-events-none">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-modal flex items-center gap-2.5 px-5 py-3 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-bold shadow-[var(--shadow-xl)] animate-[fadeDown_0.35s_ease-out_both] pointer-events-none">
           <Check className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" />
           {toastMsg}
         </div>
@@ -3418,11 +3418,11 @@ export default function StoreCustomizer() {
                             <span>Google Analytics (GA4)</span>
                             {theme.analyticsId?.trim().startsWith("G-") ? (
                               <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
-                                <Check className="h-3 w-3" /> Configurado
+                                <Check className="h-3.5 w-3.5" /> Configurado
                               </span>
                             ) : theme.analyticsId?.trim() ? (
                               <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
-                                ⚠ Formato inválido
+                                <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Formato inválido
                               </span>
                             ) : (
                               <span className="text-xs font-medium text-muted">Sin configurar</span>
@@ -3455,11 +3455,11 @@ export default function StoreCustomizer() {
                             <span>Meta Pixel (Facebook / Instagram)</span>
                             {theme.pixelId && /^\d{14,17}$/.test(theme.pixelId.trim()) ? (
                               <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
-                                <Check className="h-3 w-3" /> Configurado
+                                <Check className="h-3.5 w-3.5" /> Configurado
                               </span>
                             ) : theme.pixelId?.trim() ? (
                               <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
-                                ⚠ Formato inválido
+                                <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Formato inválido
                               </span>
                             ) : (
                               <span className="text-xs font-medium text-muted">Sin configurar</span>
@@ -3607,7 +3607,7 @@ export default function StoreCustomizer() {
       {/* ── Modal fullscreen de preview ──────────────────────────── */}
       {showPreview && (
         <div ref={previewPanelRef} role="dialog" aria-modal="true" aria-labelledby={previewTitleId} tabIndex={-1}
-          className="fixed inset-0 z-50 bg-black/80 flex flex-col">
+          className="fixed inset-0 z-modal bg-black/80 flex flex-col">
           {/* Header del modal */}
           <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 shrink-0">
             <div className="flex items-center gap-3">

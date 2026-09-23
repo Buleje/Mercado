@@ -11,6 +11,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import {
   categoryOf, actionLabel, CATEGORY_UI, CATEGORY_ORDER, type AuditCategory,
 } from "@/components/admin/tabs/audit-categories";
+import { formatDateShort, formatNumber, formatTime } from "@/lib/format";
 
 interface AuditEntry {
   id: string;
@@ -50,8 +51,8 @@ const FILTER_CLS =
 function fmtDate(iso: string) {
   const d = new Date(iso);
   return {
-    day: d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }),
-    time: d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }),
+    day: formatDateShort(d),
+    time: formatTime(d),
   };
 }
 
@@ -127,7 +128,7 @@ export default function AuditTrailModule() {
   }, [summary]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Auditoría"
         description="Quién hizo qué y cuándo — el registro completo de tu tienda"
@@ -141,7 +142,7 @@ export default function AuditTrailModule() {
             Total de acciones
           </p>
           <p className="mt-1 font-display text-3xl font-extrabold tabular-nums text-[var(--text-primary)]">
-            {summary ? summary.total.toLocaleString("es-PE") : "—"}
+            {summary ? formatNumber(summary.total) : "—"}
           </p>
         </div>
         {CATEGORY_ORDER.filter((c) => c !== "otro" || catCounts.otro > 0).map((cat) => {
@@ -159,7 +160,7 @@ export default function AuditTrailModule() {
                 <p className="text-sm font-semibold text-[var(--text-secondary)]">{ui.label}</p>
               </div>
               <p className="mt-1.5 font-display text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">
-                {summary ? catCounts[cat].toLocaleString("es-PE") : "—"}
+                {summary ? formatNumber(catCounts[cat]) : "—"}
               </p>
             </div>
           );
@@ -347,7 +348,7 @@ export default function AuditTrailModule() {
         {/* Paginación */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40 px-4 py-3">
-            <span className="text-sm text-[var(--text-secondary)]">{total.toLocaleString("es-PE")} registros</span>
+            <span className="text-sm text-[var(--text-secondary)]">{formatNumber(total)} registros</span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}

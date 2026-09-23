@@ -8,6 +8,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Anomalia } from "@/app/api/analytics/anomalias/route";
+import { formatNumber } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ type Predictions = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
+const fmt = (n: number) => "S/ " + formatNumber(n, { min: 2 });
 
 function kpisATarjetas(k: KpisResponse): KpiCard[] {
   return [

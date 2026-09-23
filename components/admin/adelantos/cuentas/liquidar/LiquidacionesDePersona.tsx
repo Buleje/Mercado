@@ -17,14 +17,10 @@ import type { CuentaPersona } from "@/lib/adelantos/cuenta-unificada";
 import { ORIGENES_CAJA } from "../../crear-adelanto/campos";
 import { fmtMon, inputCls } from "../../shared";
 import { textoResultadoCaja } from "./caja-texto";
+import { formatDate } from "@/lib/format";
 
 const fechaUtc = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", {
-    day: "2-digit",
-    month: "short",
-    year: "2-digit",
-    timeZone: "UTC",
-  });
+  formatDate(iso, { soloFecha: true });
 
 const METODOS = ORIGENES_CAJA.filter((o) => o.id);
 

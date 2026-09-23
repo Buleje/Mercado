@@ -57,6 +57,7 @@ function labelHtml(p: Parcela, colorBy: ColorBy): string {
   return `<div style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${meta.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)">${header}${lines.join("")}</div>`;
 }
 import type { Parcela } from "./CacaoCampo";
+import { formatNumber } from "@/lib/format";
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -443,11 +444,11 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
     : (["al_dia", "pendiente", "vencido", "sin_labores"] as const).map((s) => ({ c: PARCELA_STATUS[s].ring, l: PARCELA_STATUS[s].label }));
 
   return (
-    <div className={fullscreen ? "fixed inset-0 z-[45] flex flex-col gap-3 bg-[var(--surface-canvas)] p-3 sm:p-4" : "space-y-3"}>
+    <div className={fullscreen ? "fixed inset-0 z-dropdown flex flex-col gap-3 bg-[var(--surface-canvas)] p-3 sm:p-4" : "space-y-3"}>
       <div className="flex flex-wrap items-center gap-2">
         {drawing ? (
           <>
-            <span className="inline-flex h-11 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-700)]">Toca el mapa para marcar los vértices ({nVerts}){drawPerim > 0 ? ` · ${formatDist(drawPerim)}` : ""}{drawArea > 0 ? ` · ${drawArea.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>
+            <span className="inline-flex h-11 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-700)]">Toca el mapa para marcar los vértices ({nVerts}){drawPerim > 0 ? ` · ${formatDist(drawPerim)}` : ""}{drawArea > 0 ? ` · ${formatNumber(drawArea, { max: 2 })} ha` : ""}</span>
             <button type="button" onClick={addGpsPoint} disabled={locating} title="Agregar un vértice en mi ubicación GPS (caminar el terreno)" className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Punto GPS</span></button>
             <button type="button" onClick={undo} disabled={nVerts === 0} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
             <button type="button" onClick={finishDraw} disabled={nVerts < 3} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Terminar ({nVerts})</button>
@@ -456,7 +457,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
         ) : editing ? (
           editSel ? (
             <>
-              <span className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)]"><Edit3 className="h-4 w-4" />Editando {editSel.codigo} · {editArea.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha</span>
+              <span className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)]"><Edit3 className="h-4 w-4" />Editando {editSel.codigo} · {formatNumber(editArea, { max: 2 })} ha</span>
               <button type="button" onClick={saveEdit} disabled={savingEdit} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar</button>
               {!confirmDel ? (
                 <button type="button" onClick={() => setConfirmDel(true)} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--data-error-500)] px-3 text-sm font-semibold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" />Borrar</button>
@@ -473,7 +474,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
           )
         ) : measuring ? (
           <>
-            <span className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-primary)]"><Route className="h-4 w-4 text-[var(--accent)]" />{measurePts < 2 ? "Toca el mapa para medir" : formatDist(measureDist)}{measureArea > 0 ? ` · ${measureArea.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>
+            <span className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-primary)]"><Route className="h-4 w-4 text-[var(--accent)]" />{measurePts < 2 ? "Toca el mapa para medir" : formatDist(measureDist)}{measureArea > 0 ? ` · ${formatNumber(measureArea, { max: 2 })} ha` : ""}</span>
             <button type="button" onClick={undoMeasure} disabled={measurePts === 0} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
             <button type="button" onClick={clearMeasure} disabled={measurePts === 0} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><X className="h-4 w-4" />Limpiar</button>
             <button type="button" onClick={exitMeasure} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Check className="h-4 w-4" />Listo</button>
@@ -567,13 +568,13 @@ function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; 
   const I = "h-11 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <AdminModal open onClose={onClose} variant="wide" icon={Navigation} title="Mapeo por coordenadas" description="Crea una sección desde tu levantamiento GPS o ve a una coordenada exacta.">
-      <div className="space-y-5 px-5 py-5 sm:px-6">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         <div>
           <p className="mb-1 text-sm font-bold text-[var(--text-primary)]">Crear sección por coordenadas</p>
           <p className="mb-2 text-xs text-[var(--text-tertiary)]">Pega los vértices del terreno, una coordenada por línea: <span className="font-mono">latitud, longitud</span> (ej. de tu GPS). Se cierra el polígono solo.</p>
           <textarea value={text} onChange={(e) => { setText(e.target.value); setError(null); }} rows={6} placeholder={"-8.38200, -74.53100\n-8.38150, -74.52950\n-8.38300, -74.52980"} className={`${I} h-auto py-2 font-mono`} />
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="inline-flex h-9 items-center rounded-lg bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)]">{pts.length} puntos válidos{area > 0 ? ` · ${area.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>
+            <span className="inline-flex h-9 items-center rounded-lg bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)]">{pts.length} puntos válidos{area > 0 ? ` · ${formatNumber(area, { max: 2 })} ha` : ""}</span>
             <button type="button" onClick={crear} disabled={pts.length < 3} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Continuar</button>
           </div>
         </div>
@@ -620,7 +621,7 @@ function AsignarSeccionModal({ poligono, suggestedCodigo, onClose, onSaved }: { 
 
   const I = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
-    <AdminModal open onClose={onClose} variant="default" icon={Pencil} title="Nueva sección dibujada" description={`${poligono.length} puntos · ${areaCalc.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha · ${formatDist(perimCalc)} de perímetro`}>
+    <AdminModal open onClose={onClose} variant="default" icon={Pencil} title="Nueva sección dibujada" description={`${poligono.length} puntos · ${formatNumber(areaCalc, { max: 2 })} ha · ${formatDist(perimCalc)} de perímetro`}>
       <form onSubmit={submit} className="space-y-4 px-5 py-5 sm:px-6">
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-bold text-[var(--text-primary)]">Código *<input value={f.codigo} onChange={set("codigo")} placeholder="A-01" className={`mt-1 ${I}`} autoFocus /></label>

@@ -26,13 +26,14 @@ import { X, Send, Loader2, ChevronRight, MessageCircle } from "@buleje/design-sy
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import type { ChatThreadView, ChatMessageView } from "@/components/admin/ChatTab/types";
+import { formatTime } from "@/lib/format";
 
 const POLL_IDLE_MS = 20_000;
 const POLL_CHAT_MS = 5_000;
 const DISMISS_KEY = "bsm-admin-chat-heads-dismissed";
 
 function hhmm(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  return formatTime(iso);
 }
 
 function shortAgo(iso: string | null): string {

@@ -4,6 +4,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { RefreshCw, TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -163,11 +164,11 @@ export default function ConversionFunnel() {
                       {deltaSign === "up" && <TrendingUp className="h-3 w-3 text-[var(--data-success-500)]" />}
                       {deltaSign === "down" && <TrendingDown className="h-3 w-3 text-[var(--data-error-500)]" />}
                       {deltaSign === "same" && <Minus className="h-3 w-3 text-[var(--text-tertiary)]" />}
-                      ant: {prevStage.value.toLocaleString("es-PE")}
+                      ant: {formatNumber(prevStage.value)}
                     </span>
                   )}
                   <span className={cn("font-semibold", STAGE_TEXT[i])}>
-                    {stage.value.toLocaleString("es-PE")}
+                    {formatNumber(stage.value)}
                   </span>
                 </div>
               </div>

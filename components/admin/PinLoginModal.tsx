@@ -256,7 +256,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          "relative w-full max-w-sm rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] p-8",
+          "relative w-full max-w-sm rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] p-6",
           shake && "animate-shake"
         )}
         style={

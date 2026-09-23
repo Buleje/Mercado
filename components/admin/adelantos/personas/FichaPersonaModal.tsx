@@ -33,8 +33,9 @@ import { movimientosDePersona, saldoDeLaCuenta, textoEstadoDeCuenta } from "@/li
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { MODALIDAD_LABEL, ModalShell, STATUS_BADGE, fmtMon, fmtMonedas } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
+import { formatDate } from "@/lib/format";
 
-const dia = (iso: string) => new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" });
+const dia = (iso: string) => formatDate(iso);
 
 type Pestana = "cuenta" | "adelantos";
 

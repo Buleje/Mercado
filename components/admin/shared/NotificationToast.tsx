@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { ShoppingBag, X, Bell, AlertTriangle } from "@buleje/design-system/icons";
 import { useAdminNotifications } from "@/hooks/use-admin-notifications";
+import { formatCurrency } from "@/lib/format";
 
 interface NotificationToastProps {
   onNavigate?: (tab: string) => void;
@@ -62,7 +63,7 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-[var(--text-primary)]">Nuevo pedido</p>
             <p className="text-xs text-muted truncate">
-              {order.customer} — S/{Number(order.total).toFixed(2)}
+              {order.customer} — {formatCurrency(Number(order.total))}
             </p>
           </div>
           <button

@@ -9,6 +9,7 @@ import {
   Wallet, Award, Download, Plus, Trash2,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,7 +59,7 @@ const DEFAULT_RATES: CommissionRule[] = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtCompact(n: number) {
@@ -316,7 +317,7 @@ export default function ComisionesTab() {
 
       {/* Rate config panel */}
       {showConfig && (
-        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-xl p-3 sm:p-5 space-y-5">
+        <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-xl p-3 sm:p-5 space-y-4">
           <CardTitle className="font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex flex-wrap items-center gap-2">
             <Settings className="h-4 w-4" /> Reglas de comisión por tramos
           </CardTitle>
@@ -330,7 +331,7 @@ export default function ComisionesTab() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.cashierId} <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-normal">{r.label && `— ${r.label}`}</span></p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                      Desde S/ {r.minSales.toLocaleString("es-PE")}{r.maxSales ? ` hasta S/ ${r.maxSales.toLocaleString("es-PE")}` : " en adelante"} → <strong>{r.rate}%</strong>
+                      Desde S/ {formatNumber(r.minSales)}{r.maxSales ? ` hasta S/ ${formatNumber(r.maxSales)}` : " en adelante"} → <strong>{r.rate}%</strong>
                     </p>
                   </div>
                   <button aria-label="Eliminar" onClick={() => handleDeleteTier(r.id)} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] dark:hover:text-[var(--data-error-500)] transition-colors">

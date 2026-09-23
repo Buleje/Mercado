@@ -13,6 +13,8 @@ import {
   MessageCircle, ExternalLink, Send, Calendar, TrendingUp,
   Percent, Users, User, Phone, Target, Play, Pause, Clock,
   Pencil, Zap, Gift, Eye, EyeOff, Flame, Sparkles, BadgePercent,
+  TreePine, Flag, Flower2, GraduationCap, Tag, Sun, Heart, Ghost,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
 import type { DbPromotion, DbCustomer } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
@@ -20,11 +22,7 @@ import { escapeHtml } from "@/lib/safe-html";
 import { CardTitle, LoadingState, PrimaryButton, SectionTitle } from "@buleje/design-system";
 import { useSettingsSafe } from "@/contexts/settings-context";
 import { Field } from "@/components/admin/shared/Field";
-
-function formatDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
-  catch { return iso; }
-}
+import { formatCurrency, formatDate, formatDateTime, formatNumber } from "@/lib/format";
 
 function safeMdToHtml(md: string): string {
   return md.split("\n").map(line => {
@@ -109,6 +107,7 @@ export default function PromotionsTab() {
   // AI suggestions
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string | null>(null);
+  const [aiError, setAiError] = useState(false);
   const [loadingAi, setLoadingAi] = useState(false);
   const [aiContext, setAiContext] = useState("");
 
@@ -151,22 +150,25 @@ export default function PromotionsTab() {
   const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
   const [campaignFeedback, setCampaignFeedback] = useState<{ id: string; text: string; ok: boolean } | null>(null);
 
-  const campaignTemplates: { name: string; icon: string; description: string; form: PromoForm }[] = [
-    { name: "🎄 Navidad & Año Nuevo", icon: "🎄", description: "Descuento navideño para fiestas de fin de año",
+  // Brandon: iconos del DS, no emoji (se ven distinto por SO/navegador). El
+  // emoji SÍ se conserva dentro de `form.message` — eso es el mensaje de
+  // WhatsApp que recibe el cliente, contenido, no cromo de nuestra UI.
+  const campaignTemplates: { name: string; icon: LucideIcon; description: string; form: PromoForm }[] = [
+    { name: "Navidad & Año Nuevo", icon: TreePine, description: "Descuento navideño para fiestas de fin de año",
       form: { name: "Fiestas de Fin de Año", description: "¡Celebra con precios especiales! Descuento en toda tu compra navideña.", discountPercent: 15, minPurchase: "50", imageUrl: "", message: "🎄 {TIENDA} te desea ¡Felices Fiestas! 🎉\nLleva un *15% de descuento* en compras mayores a S/50.\n¡Haz tu pedido ahora!", targetType: "all", expiresAt: "" }},
-    { name: "🇵🇪 Fiestas Patrias", icon: "🇵🇪", description: "Celebración patria con ofertas en canasta de productos peruanos",
+    { name: "Fiestas Patrias", icon: Flag, description: "Celebración patria con ofertas en canasta de productos peruanos",
       form: { name: "Fiestas Patrias", description: "¡Viva el Perú! Descuentos especiales en tu canasta patriota.", discountPercent: 12, minPurchase: "40", imageUrl: "", message: "🇵🇪 ¡Felices Fiestas Patrias! 🎉\n{TIENDA} tiene *12% de descuento* en compras mayores a S/40.\n¡Arma tu canasta patriota!", targetType: "all", expiresAt: "" }},
-    { name: "💖 Día de la Madre", icon: "💖", description: "Sorprende a mamá con la mejor canasta de productos",
+    { name: "Día de la Madre", icon: Flower2, description: "Sorprende a mamá con la mejor canasta de productos",
       form: { name: "Día de la Madre", description: "Un detalle especial para mamá con descuento exclusivo.", discountPercent: 10, minPurchase: "30", imageUrl: "", message: "💖 ¡Feliz Día de la Madre! 🌸\n*10% de descuento* en compras mayores a S/30.\n¡Sorpréndela con la mejor canasta de {TIENDA}!", targetType: "all", expiresAt: "" }},
-    { name: "🎒 Vuelta a Clases", icon: "🎒", description: "Ofertas en lonchera saludable y snacks para el colegio",
+    { name: "Vuelta a Clases", icon: GraduationCap, description: "Ofertas en lonchera saludable y snacks para el colegio",
       form: { name: "Vuelta a Clases", description: "Lonchera saludable con descuento. ¡La mejor nutrición para tus hijos!", discountPercent: 8, minPurchase: "25", imageUrl: "", message: "🎒 *Vuelta a Clases* con {TIENDA} 📚\n*8% de descuento* en tu compra de lonchera mayor a S/25.\n¡Nutrición y ahorro!", targetType: "all", expiresAt: "" }},
-    { name: "🖤 Black Friday / Cyber", icon: "🖤", description: "Super descuento por tiempo limitado",
+    { name: "Black Friday / Cyber", icon: Tag, description: "Super descuento por tiempo limitado",
       form: { name: "Black Friday", description: "¡El descuento más grande del año! Solo por tiempo limitado.", discountPercent: 20, minPurchase: "60", imageUrl: "", message: "🖤 *BLACK FRIDAY* en {TIENDA} 🔥\n¡*20% de descuento* en compras mayores a S/60!\n⏰ Solo por tiempo limitado. ¡No te lo pierdas!", targetType: "all", expiresAt: "" }},
-    { name: "🌞 Verano", icon: "🌞", description: "Refrescos, frutas y ofertas de temporada calurosa",
+    { name: "Verano", icon: Sun, description: "Refrescos, frutas y ofertas de temporada calurosa",
       form: { name: "Ofertas de Verano", description: "¡Combate el calor! Descuentos en refrescos, frutas y más.", discountPercent: 10, minPurchase: "30", imageUrl: "", message: "🌞 *¡Ofertas de Verano!* 🍉\n*10% de descuento* en compras mayores a S/30.\n¡Refréscate con {TIENDA}!", targetType: "all", expiresAt: "" }},
-    { name: "❤️ San Valentín", icon: "❤️", description: "Ofertas para parejas y celebraciones románticas",
+    { name: "San Valentín", icon: Heart, description: "Ofertas para parejas y celebraciones románticas",
       form: { name: "San Valentín", description: "¡Celebra el amor! Descuento especial para este día.", discountPercent: 10, minPurchase: "35", imageUrl: "", message: "❤️ *¡Feliz San Valentín!* 🌹\n*10% de descuento* en compras mayores a S/35.\n¡Sorprende a esa persona especial con {TIENDA}!", targetType: "all", expiresAt: "" }},
-    { name: "🎃 Halloween", icon: "🎃", description: "Dulces, snacks y decoración con descuento",
+    { name: "Halloween", icon: Ghost, description: "Dulces, snacks y decoración con descuento",
       form: { name: "Halloween", description: "¡Truco o trato! Descuento en dulces y snacks para la noche de brujas.", discountPercent: 8, minPurchase: "20", imageUrl: "", message: "🎃 *¡Halloween en {TIENDA}!* 👻\n*8% de descuento* en compras mayores a S/20.\n¡Prepárate para la noche más divertida!", targetType: "all", expiresAt: "" }},
   ];
 
@@ -507,6 +509,7 @@ export default function PromotionsTab() {
   const requestAiSuggestions = async () => {
     setLoadingAi(true);
     setAiSuggestions(null);
+    setAiError(false);
     setShowAiModal(true);
     try {
       const r = await fetch("/api/promotions/ai-suggest", {
@@ -515,9 +518,9 @@ export default function PromotionsTab() {
         body: JSON.stringify({ context: aiContext }),
       });
       const data = await r.json();
-      if (data.error) setAiSuggestions(`⚠️ ${data.error}`);
+      if (data.error) { setAiError(true); setAiSuggestions(data.error); }
       else setAiSuggestions(data.suggestions);
-    } catch { setAiSuggestions("Error al conectar con el servicio de IA."); }
+    } catch { setAiError(true); setAiSuggestions("Error al conectar con el servicio de IA."); }
     setLoadingAi(false);
   };
 
@@ -543,7 +546,7 @@ export default function PromotionsTab() {
 
   const sendToAll = async () => {
     if (!sendPromo) return;
-    const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
+    const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: ${formatCurrency(sendPromo.minPurchase)}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
     const msg = applyStoreName(rawMsg, storeName);
     const phones = Array.from(sendPhones);
     if (phones.length === 0) return;
@@ -634,7 +637,7 @@ export default function PromotionsTab() {
           {[
             { label: "Activas", value: active.length, icon: Zap, tint: "var(--data-success-500)" },
             { label: "Usos estimados", value: totalUses, icon: TrendingUp, tint: "var(--accent)" },
-            { label: "Ingreso estimado", value: `S/${totalRevenue.toFixed(0)}`, icon: BadgePercent, tint: "var(--data-info-500)" },
+            { label: "Ingreso estimado", value: `S/${formatNumber(totalRevenue, { max: 0 })}`, icon: BadgePercent, tint: "var(--data-info-500)" },
             { label: "Más usada", value: topPromo?.name || "—", sub: topPromo ? `~${topPromo.estimatedUses} usos` : "", icon: Flame, tint: "var(--data-warning-500)" },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
@@ -707,10 +710,10 @@ export default function PromotionsTab() {
                       </div>
                       <p className="text-sm text-[var(--text-secondary)] dark:text-muted mb-2">{c.description || "Sin descripción"}</p>
                       <div className="flex flex-wrap gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted">
-                        <span>Inicio: {new Date(c.startDate).toLocaleString("es-PE")}</span>
-                        {c.endDate && <span>Fin: {new Date(c.endDate).toLocaleString("es-PE")}</span>}
+                        <span>Inicio: {formatDateTime(c.startDate)}</span>
+                        {c.endDate && <span>Fin: {formatDateTime(c.endDate)}</span>}
                         {c.discountCode && <span className="font-mono font-bold text-[var(--data-success-500)]">Código: {c.discountCode}</span>}
-                        {c.autoSend && <span className="text-[var(--data-success-500)]">📤 Auto-envío</span>}
+                        {c.autoSend && <span className="inline-flex items-center gap-1 text-[var(--data-success-500)]"><Send className="h-3.5 w-3.5" aria-hidden /> Auto-envío</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -842,7 +845,7 @@ export default function PromotionsTab() {
                             <TrendingUp className="h-3.5 w-3.5" /> ~{p.estimatedUses} usos
                           </span>
                           <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-secondary)]">
-                            <BadgePercent className="h-3.5 w-3.5" /> ~S/{p.estimatedRevenue.toFixed(0)} est.
+                            <BadgePercent className="h-3.5 w-3.5" /> ~S/{formatNumber(p.estimatedRevenue, { max: 0 })} est.
                           </span>
                         </div>
                       </div>
@@ -1044,7 +1047,7 @@ export default function PromotionsTab() {
               {detailPromo.minPurchase && (
                 <div>
                   <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Compra mínima</p>
-                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">S/{detailPromo.minPurchase}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">{formatCurrency(detailPromo.minPurchase)}</p>
                 </div>
               )}
               {detailPromo.message && (
@@ -1109,7 +1112,7 @@ export default function PromotionsTab() {
             <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-1">Vista previa del mensaje</p>
               <div className="bg-primary/10 rounded-xl p-3 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap border border-[var(--data-success-500)]/30 max-h-24 overflow-y-auto">
-                {applyStoreName(sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`, storeName)}
+                {applyStoreName(sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: ${formatCurrency(sendPromo.minPurchase)}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`, storeName)}
               </div>
             </div>
             {/* Customer selection */}
@@ -1145,7 +1148,7 @@ export default function PromotionsTab() {
                     </div>
                     <button
                       onClick={() => {
-                        const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
+                        const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: ${formatCurrency(sendPromo.minPurchase)}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
                         sendWhatsApp(c.phone, applyStoreName(rawMsg, storeName));
                       }}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 transition-colors flex items-center gap-1"
@@ -1188,6 +1191,11 @@ export default function PromotionsTab() {
             <div className="overflow-y-auto flex-1 px-5 py-4">
               {loadingAi ? (
                 <LoadingState message="Analizando datos de clientes y ventas..." />
+              ) : aiSuggestions && aiError ? (
+                <div className="flex items-start gap-2 text-sm text-[var(--data-error-500)]">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />
+                  <p>{aiSuggestions}</p>
+                </div>
               ) : aiSuggestions ? (
                 <div className="space-y-0.5" dangerouslySetInnerHTML={{ __html: safeMdToHtml(aiSuggestions) }} />
               ) : (
@@ -1239,11 +1247,13 @@ export default function PromotionsTab() {
                   onClick={() => applyTemplate(tpl)}
                   className="w-full flex flex-wrap items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:bg-[var(--data-warning-50)] dark:hover:bg-[var(--data-warning-500)]/10 hover:border-[var(--data-warning-500)] dark:hover:border-[var(--data-warning-500)] transition-all text-left"
                 >
-                  <span className="text-xl sm:text-2xl shrink-0">{tpl.icon}</span>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--data-warning-500)]/12 text-[var(--data-warning-500)]">
+                    <tpl.icon className="h-5 w-5" aria-hidden />
+                  </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{tpl.name}</p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{tpl.description}</p>
-                    <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. S/{tpl.form.minPurchase}</p>
+                    <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. {formatCurrency(tpl.form.minPurchase)}</p>
                   </div>
                 </button>
               ))}

@@ -8,6 +8,7 @@ import {
 } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateNumeric } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,12 +77,12 @@ type Props = {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+    return formatDate(iso);
   } catch { return iso; }
 }
 
@@ -97,7 +98,7 @@ function fmtRelative(iso: string | null) {
 function buildWhatsAppText(data: EstadoCuentaData): string {
   const lines: string[] = [];
   lines.push(`*Estado de Cuenta — ${data.cliente.name}*`);
-  lines.push(`Fecha: ${new Date().toLocaleDateString("es-PE")}`);
+  lines.push(`Fecha: ${formatDateNumeric(new Date())}`);
   lines.push("═══════════════════");
 
   if (data.fiados.length > 0) {

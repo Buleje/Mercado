@@ -42,6 +42,9 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import type { DbProduct, DbInventoryMovement } from "@/lib/jsondb";
 import dynamic from "next/dynamic";
 import { usePagination, Paginator } from "@/hooks/use-pagination";
+import { formatCurrency } from "@/lib/format";
+import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
+import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 const ExpandedStockModal = dynamic(() => import("@/components/admin/inventario/ExpandedStockModal"), { ssr: false });
@@ -53,9 +56,19 @@ type View = "productos" | "kanban";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/${n.toFixed(2)}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 
 const realCategories = categories.filter(c => c.id !== "todos");
+
+/**
+ * La clave con la que se cuenta Y se filtra una categoría — la MISMA función
+ * en los dos lados. Medido en el navegador (2026-09-22, tenant main): el
+ * producto guarda «Abarrotes» y las pastillas/el autofiltro guardaban
+ * «abarrotes» (el id que arma `dynamicCategories`), así que
+ * `p.category !== catFilter` nunca matcheaba y elegir cualquier categoría
+ * dejaba «Mostrando 0 de 57». Ya pasaba antes de los filtros de cabecera.
+ */
+const claveCategoria = (c: string | null | undefined) => (c || "otros").toLowerCase().trim();
 
 // ── Estilos compartidos de los modales de producto (minimalista 2026-06-06) ──
 // Borde 1px, fondo blanco, foco con ring sutil — limpio y profesional, sin la
@@ -86,7 +99,12 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     const t = setInterval(() => setPhIndex(i => (i + 1) % len), 3000);
     return () => clearInterval(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const [catFilter, setCatFilter] = useState("todos");
+  // Filtros en la cabecera, estilo Excel (Brandon, 2026-09-03/22): un solo
+  // estado por columna, y las pastillas de arriba escriben el MISMO estado
+  // que el autofiltro del `<th>` — no son dos filtros, son dos lugares desde
+  // donde tocar uno. `[]` = todas las categorías (antes era el sentinela
+  // "todos"); ahora admite VARIAS a la vez.
+  const [catFilter, setCatFilter] = useState<string[]>([]);
   // Categorías que el comerciante creó en Promociones → Categorías
   // (settings.categoryOrder). El form de productos las usa en vez del
   // catálogo demo estático. Vacío para negocios sin categorías propias.
@@ -106,7 +124,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     return () => { cancelled = true; };
   }, []);
   const [lowOnly, setLowOnly] = useState(false);
-  const [showInactive, setShowInactive] = useState(false);
+  // Estado, en su columna (autofiltro de Excel): reemplaza al botón
+  // "Inactivos" suelto — mismo estado que el `<th>Estado`, no dos controles
+  // para lo mismo. Default `["Activo"]` para no cambiar el comportamiento de
+  // siempre (los inactivos estaban ocultos salvo que se pidieran).
+  const [estadoFiltro, setEstadoFiltro] = useState<string[]>(["Activo"]);
+  const showInactive = estadoFiltro.length === 0 || estadoFiltro.includes("Inactivo");
+  // Volumen de stock, en su columna: "entre X e Y" además del atajo "Bajo
+  // stock" (que sigue existiendo — son dos preguntas distintas: un umbral fijo
+  // de negocio vs. un rango que el que mira la tabla arma al vuelo).
+  const [stockRango, setStockRango] = useState<Rango<number>>({ min: null, max: null });
+  // Vencimiento, en su columna: "vence entre estas fechas" — antes sólo había
+  // un conteo en el KPI ("vencen pronto"), sin forma de acotar la tabla a esas
+  // filas.
+  const [vencRango, setVencRango] = useState<Rango<string>>({ min: null, max: null });
   // Mejora 8R2: Filtro sin imagen
   const [noImageOnly, setNoImageOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -1175,7 +1206,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     let total = 0;
     products.forEach(p => {
       if (!showInactive && !p.active) return;
-      const cat = (p.category || "otros").toLowerCase().trim();
+      const cat = claveCategoria(p.category);
       counts.set(cat, (counts.get(cat) ?? 0) + 1);
       total++;
     });
@@ -1234,22 +1265,31 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     }
   }, [showAdd, formCategories]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Si el filtro activo ya no existe en el inventario (p.ej. eliminaron
-  // todos los productos de esa categoría), reseteamos a "todos".
+  // Si alguna categoría elegida ya no existe en el inventario (p.ej.
+  // eliminaron todos sus productos), se saca del filtro — no se resetea TODO
+  // el filtro por una sola categoría muerta (antes con sentinela "todos" no
+  // había otra opción).
   useEffect(() => {
-    if (catFilter !== "todos" && !dynamicCategories.some(c => c.id === catFilter)) {
-      setCatFilter("todos");
-    }
+    if (catFilter.length === 0) return;
+    const validos = new Set(dynamicCategories.map(c => c.id));
+    const limpio = catFilter.filter(id => validos.has(id));
+    if (limpio.length !== catFilter.length) setCatFilter(limpio);
   }, [dynamicCategories, catFilter]);
 
   // ── Filtered ───────────────────────────────────────────────────────────────
 
   const noImageCount = products.filter(p => !p.image || p.image === "").length;
+  const expiryOf = (p: DbProduct) => (p as DbProduct & { expiryDate?: string }).expiryDate ?? null;
 
   const filteredProducts = products.filter(p => {
-    if (!showInactive && !p.active) return false;
-    if (catFilter !== "todos" && p.category !== catFilter) return false;
+    // Único filtro de Estado (antes: booleano `showInactive` + este mismo
+    // chequeo por separado). `estadoFiltro` vacío = todos, como cualquier
+    // otro autofiltro de columna.
+    if (estadoFiltro.length > 0 && !estadoFiltro.includes(p.active ? "Activo" : "Inactivo")) return false;
+    if (catFilter.length > 0 && !catFilter.includes(claveCategoria(p.category))) return false;
     if (lowOnly && !isLowStock(p)) return false;
+    if (!enRango(p.stock ?? null, stockRango)) return false;
+    if (!enRango(expiryOf(p), vencRango)) return false;
     // Mejora 8R2: Filtro sin imagen
     if (noImageOnly && p.image && p.image !== "") return false;
     if (search) {
@@ -1267,11 +1307,43 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     return true;
   });
 
+  /**
+   * Los filtros de columna puestos, como chips con cruz ARRIBA de la tabla.
+   * Es el control que rescata al filtro huérfano: «Vence» sólo se ve con
+   * «Más columnas», y si se apaga con un rango puesto la tabla quedaría
+   * acotada sin nada visible que lo saque. El Estado por defecto («Activo»)
+   * no se lista: es lo de siempre, no un acotamiento que puso el operador.
+   */
+  const fechaCorta = (v: number | string) =>
+    new Date(`${v}T00:00:00Z`).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+  const chipsDeColumna: ChipFiltro[] = [
+    ...(catFilter.length > 0
+      ? [{
+          id: "categoria",
+          label: "Categoría",
+          texto: catFilter.length === 1
+            ? (dynamicCategories.find(c => c.id === catFilter[0])?.label ?? catFilter[0])
+            : `Categoría: ${catFilter.length} elegidas`,
+        }]
+      : []),
+    ...(estadoFiltro.length > 0 && !(estadoFiltro.length === 1 && estadoFiltro[0] === "Activo")
+      ? [{ id: "estado", label: "Estado", texto: estadoFiltro.length === 1 ? estadoFiltro[0] : "Estado: activos e inactivos" }]
+      : []),
+    ...(rangoActivo(stockRango) ? [{ id: "stock", label: "Stock", texto: textoDeRango("Stock", stockRango) }] : []),
+    ...(rangoActivo(vencRango) ? [{ id: "vence", label: "Vence", texto: textoDeRango("Vence", vencRango, { formatear: fechaCorta }) }] : []),
+  ];
+  const quitarChip = (id: string) => {
+    if (id === "categoria") setCatFilter([]);
+    else if (id === "estado") setEstadoFiltro(["Activo"]);
+    else if (id === "stock") setStockRango({ min: null, max: null });
+    else if (id === "vence") setVencRango({ min: null, max: null });
+  };
+
   const pgProducts = usePagination(filteredProducts, 50);
   const pgMovements = usePagination(filteredMovements, 50);
 
   // Reset pagination when filters change
-  useEffect(() => { pgProducts.reset(); }, [search, catFilter, lowOnly, noImageOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { pgProducts.reset(); }, [search, catFilter, estadoFiltro, stockRango, vencRango, lowOnly, noImageOnly]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { pgMovements.reset(); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -1350,7 +1422,9 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <AlertTriangle className="h-3.5 w-3.5" /> Bajo stock
         </button>
         <button
-          onClick={() => setShowInactive(!showInactive)}
+          // El botón sigue siendo el atajo rápido; escribe el MISMO estado
+          // que el autofiltro de la columna Estado — no un segundo filtro.
+          onClick={() => setEstadoFiltro(showInactive ? ["Activo"] : [])}
           className={cn(
             "flex items-center gap-1 px-3 h-10 rounded-xl text-xs font-bold border transition-colors whitespace-nowrap",
             showInactive ? "border-gray-400 bg-[var(--surface-sunken)] text-[var(--text-secondary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] "
@@ -1368,9 +1442,16 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         >
           <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
         </button>
-        {(lowOnly || showInactive || noImageOnly) && (
+        {(lowOnly || showInactive || noImageOnly || catFilter.length > 0 || stockRango.min != null || stockRango.max != null || vencRango.min != null || vencRango.max != null) && (
           <button
-            onClick={() => { setLowOnly(false); setShowInactive(false); setNoImageOnly(false); }}
+            onClick={() => {
+              setLowOnly(false);
+              setEstadoFiltro(["Activo"]);
+              setNoImageOnly(false);
+              setCatFilter([]);
+              setStockRango({ min: null, max: null });
+              setVencRango({ min: null, max: null });
+            }}
             className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors whitespace-nowrap"
           >
             <X className="h-3.5 w-3.5" /> Limpiar
@@ -1462,12 +1543,19 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <div className="-mx-2 px-2 overflow-x-auto scrollbar-hide">
           <div className="flex items-center gap-2 min-w-fit">
             {dynamicCategories.map(c => {
-              const active = catFilter === c.id;
+              // "Todos" está activo con la selección vacía; cualquier otra
+              // pastilla se puede combinar con otras (multi, 2026-09-22):
+              // clic para sumarla, clic de nuevo para sacarla — el mismo
+              // estado que el autofiltro de la columna Categoría.
+              const active = c.id === "todos" ? catFilter.length === 0 : catFilter.includes(c.id);
               return (
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => setCatFilter(c.id)}
+                  onClick={() => {
+                    if (c.id === "todos") { setCatFilter([]); return; }
+                    setCatFilter(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]);
+                  }}
                   aria-pressed={active}
                   className={cn(
                     "shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border-2 text-sm font-bold transition-all whitespace-nowrap",
@@ -1675,6 +1763,36 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {/* Expanded options panel (Vista + Import/Export) — collapsible from toolbar "Mas" button */}
       {showFilters && (
         <div className="bg-[var(--surface-alt)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-3">
+          {/* Grupo: Filtros de columna — SÓLO mobile (<640px no hay tabla, es
+              cards; ahí el autofiltro de la cabecera no tiene dónde vivir). En
+              desktop estos mismos controles ya están en su `<th>`: repetirlos
+              acá enseñaría a dudar de cuál manda. */}
+          <div className="sm:hidden">
+            <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Filtros</p>
+            <div className="flex flex-wrap gap-2">
+              <FiltroColumnaMulti
+                label="Categoría"
+                value={catFilter}
+                options={dynamicCategories.filter(c => c.id !== "todos").map((c): FacetaOpcion => ({ value: c.id, count: c.count }))}
+                etiqueta={(id) => dynamicCategories.find(c => c.id === id)?.label ?? id}
+                onChange={setCatFilter}
+                placeholder="Todas"
+              />
+              <FiltroColumnaMulti
+                label="Estado"
+                value={estadoFiltro}
+                options={[
+                  { value: "Activo", count: activeProducts },
+                  { value: "Inactivo", count: totalProducts - activeProducts },
+                ]}
+                onChange={setEstadoFiltro}
+                placeholder="Todos"
+              />
+              <FiltroColumnaRango label="Stock" paso={1} valor={stockRango} onChange={(r) => setStockRango(r as Rango<number>)} />
+              <FiltroColumnaRango label="Vence" esFecha valor={vencRango} onChange={(r) => setVencRango(r as Rango<string>)} />
+            </div>
+          </div>
+
           {/* Grupo: Vista */}
           <div>
             <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Vista</p>
@@ -1730,7 +1848,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               <button
                 onClick={() => {
                   const filtered = products.filter(p => {
-                    if (catFilter !== "todos" && p.category !== catFilter) return false;
+                    if (catFilter.length > 0 && !catFilter.includes(claveCategoria(p.category))) return false;
                     if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
                     return true;
                   });
@@ -1748,7 +1866,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               <button
                 onClick={() => {
                   const filtered = products.filter(p => {
-                    if (catFilter !== "todos" && p.category !== catFilter) return false;
+                    if (catFilter.length > 0 && !catFilter.includes(claveCategoria(p.category))) return false;
                     if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
                     return true;
                   });
@@ -1798,7 +1916,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <ul className="space-y-0.5 mb-2">
             {inconsistentes.slice(0, 5).map(p => (
               <li key={p.id} className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                {p.name}: costo S/{p.costPrice!.toFixed(2)} &gt; precio S/{Number(p.price).toFixed(2)} (perdida S/{(p.costPrice! - p.price).toFixed(2)}/unid)
+                {p.name}: costo {formatCurrency(p.costPrice!)} &gt; precio {formatCurrency(Number(p.price))} (perdida {formatCurrency(p.costPrice! - p.price)}/unid)
               </li>
             ))}
             {inconsistentes.length > 5 && <li className="text-xs text-[var(--data-error-500)]">...y {inconsistentes.length - 5} mas</li>}
@@ -1815,6 +1933,11 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       ) : view === "productos" ? (
         /* ── Products View ──────────────────────────────────────── */
         <>
+          <ChipsDeFiltros
+            chips={chipsDeColumna}
+            onQuitar={quitarChip}
+            onLimpiarTodo={() => { setCatFilter([]); setEstadoFiltro(["Activo"]); setStockRango({ min: null, max: null }); setVencRango({ min: null, max: null }); }}
+          />
           {/* Cards view — siempre en mobile, opcional en desktop via viewMode */}
           <div className={cn(
             "grid grid-cols-1 gap-3",
@@ -1873,8 +1996,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                       </div>
                       <p className="mt-0.5 truncate text-xs text-[var(--text-tertiary)] dark:text-muted">{cat?.label ?? p.category} · {p.unit}</p>
                       <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                        <span className="text-base font-extrabold text-primary">S/{Number(p.price).toFixed(2)}</span>
-                        {p.costPrice && <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">costo S/{Number(p.costPrice).toFixed(2)}</span>}
+                        <span className="text-base font-extrabold text-primary">{formatCurrency(Number(p.price))}</span>
+                        {p.costPrice && <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">costo {formatCurrency(Number(p.costPrice))}</span>}
                         {p.badge && <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">{p.badge}</span>}
                       </div>
                     </div>
@@ -1932,7 +2055,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             viewMode === "cards" ? "hidden" : "hidden sm:block"
           )}>
             <div className="max-h-[65vh] overflow-y-auto">
-              <DataTable stickyHeader className="min-w-[600px]">
+              <DataTable stickyHeader filtrable className="min-w-[600px]">
                 <thead>
                   <tr>
                     <th className="w-10">
@@ -1940,15 +2063,44 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     </th>
                     <th className="w-12">Img</th>
                     <th>Producto</th>
-                    <th>Categoría</th>
+                    <th>
+                      <span className="block">Categoría</span>
+                      <FiltroColumnaMulti
+                        label="Categoría"
+                        value={catFilter}
+                        options={dynamicCategories.filter(c => c.id !== "todos").map((c): FacetaOpcion => ({ value: c.id, count: c.count }))}
+                        etiqueta={(id) => dynamicCategories.find(c => c.id === id)?.label ?? id}
+                        onChange={setCatFilter}
+                        placeholder="Todas"
+                      />
+                    </th>
                     <th>Precio</th>
                     <th className={cn(!showExtendedCols && "hidden")}>Historial</th>
                     <th className={cn(!showExtendedCols && "hidden")}>Badge</th>
-                    <th>Stock</th>
+                    <th>
+                      <span className="block">Stock</span>
+                      <FiltroColumnaRango label="Stock" paso={1} valor={stockRango} onChange={(r) => setStockRango(r as Rango<number>)} />
+                    </th>
                     <th className={cn(!showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>
                     <th className={cn(!showExtendedCols && "hidden")}>Rotacion</th>
                     <th className={cn(!showExtendedCols && "hidden")}>Cambio 30d</th>
-                    <th>Estado</th>
+                    <th className={cn(!showExtendedCols && "hidden")}>
+                      <span className="block">Vence</span>
+                      <FiltroColumnaRango label="Vence" esFecha valor={vencRango} onChange={(r) => setVencRango(r as Rango<string>)} />
+                    </th>
+                    <th>
+                      <span className="block">Estado</span>
+                      <FiltroColumnaMulti
+                        label="Estado"
+                        value={estadoFiltro}
+                        options={[
+                          { value: "Activo", count: activeProducts },
+                          { value: "Inactivo", count: totalProducts - activeProducts },
+                        ]}
+                        onChange={setEstadoFiltro}
+                        placeholder="Todos"
+                      />
+                    </th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -2024,7 +2176,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         <td className="text-[var(--text-secondary)] dark:text-muted">
                           {catLabelOf(p.category)}
                         </td>
-                        <td className="font-bold text-primary">S/{Number(p.price).toFixed(2)}</td>
+                        <td className="font-bold text-primary">{formatCurrency(Number(p.price))}</td>
                         <td className={cn(!showExtendedCols && "hidden")}>
                           <PriceSparkline productId={p.id} />
                         </td>
@@ -2045,7 +2197,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         {/* Mejora 6R2: Costo promedio ponderado */}
                         <td className={cn(!showExtendedCols && "hidden")}>
                           {p.costPrice != null && p.costPrice > 0
-                            ? <span className="font-mono text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)]" title="Basado en las ultimas compras">S/{Number(p.costPrice).toFixed(2)}</span>
+                            ? <span className="font-mono text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)]" title="Basado en las ultimas compras">{formatCurrency(Number(p.costPrice))}</span>
                             : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>
                           }
                         </td>
@@ -2070,6 +2222,19 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                             if (delta > 0) return <span className="text-xs font-bold text-[var(--data-success-500)]"><ArrowUp className="h-3 w-3 inline" /> +{delta}</span>;
                             if (delta < 0) return <span className="text-xs font-bold text-[var(--data-error-500)]"><ArrowDown className="h-3 w-3 inline" /> {delta}</span>;
                             return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">&#8594; 0</span>;
+                          })()}
+                        </td>
+                        {/* Vencimiento (2026-09-22): antes sólo un conteo en el
+                            KPI, sin columna ni forma de acotar la tabla. */}
+                        <td className={cn(!showExtendedCols && "hidden")}>
+                          {(() => {
+                            const v = expiryOf(p);
+                            if (!v) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
+                            return (
+                              <span className={cn("text-xs tabular-nums", isExpiringSoon(p) && "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]")}>
+                                {new Date(`${v}T00:00:00Z`).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })}
+                              </span>
+                            );
                           })()}
                         </td>
                         <td>
@@ -3742,7 +3907,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <div className="mx-auto h-[200px] w-[200px] animate-pulse rounded-lg bg-[var(--surface-sunken)]" />
               )}
               <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{showQRProduct.name}</p>
-              <p className="text-lg font-extrabold text-primary">S/{Number(showQRProduct.price).toFixed(2)}</p>
+              <p className="text-lg font-extrabold text-primary">{formatCurrency(Number(showQRProduct.price))}</p>
               {showQRProduct.barcode && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">SKU: {showQRProduct.barcode}</p>}
               <div className="flex gap-2">
                 <button
@@ -3750,7 +3915,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     if (!qrDataUrl) return;
                     const w = window.open("", "_blank");
                     if (w) {
-                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto;width:300px;height:300px}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="${qrDataUrl}" alt="QR" /><p style="font-size:24px;font-weight:bold;color:var(--color-primary)">S/${Number(showQRProduct.price).toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
+                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto;width:300px;height:300px}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="${qrDataUrl}" alt="QR" /><p style="font-size:24px;font-weight:bold;color:var(--color-primary)">${formatCurrency(Number(showQRProduct.price))}</p><button onclick="window.print()">Imprimir</button></body></html>`);
                       w.document.close();
                     }
                   }}

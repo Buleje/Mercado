@@ -9,6 +9,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { BCGProduct } from "@/app/api/analytics/bcg/route";
+import { formatNumber } from "@/lib/format";
 
 /* ── Types ── */
 type Quadrant = "estrella" | "vaca" | "interrogante" | "perro";
@@ -25,7 +26,7 @@ const Q_CONFIG: Record<Quadrant, { label: string; Icon: LucideIcon; color: strin
   perro: { label: "Perros", Icon: TrendingDown, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-canvas)]/20 border-[var(--rule-base)]", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
 };
 
-const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+const fmt = (n: number) => `S/ ${formatNumber(n, { min: 2 })}`;
 
 export default function BCGMatrixTab() {
   const [PRODUCTS, setProducts] = useState<Product[]>([]);
@@ -73,7 +74,7 @@ export default function BCGMatrixTab() {
 
   if (PRODUCTS.length === 0) {
     return (
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
         <Star className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" />
         <p className="mt-3 text-sm font-semibold text-[var(--text-secondary)]">Todavía no hay ventas suficientes para armar la matriz</p>
         <p className="mt-1 text-xs text-[var(--text-tertiary)]">Compara los últimos 30 días contra los 30 anteriores — vuelve cuando tengas ventas registradas en ambos períodos.</p>

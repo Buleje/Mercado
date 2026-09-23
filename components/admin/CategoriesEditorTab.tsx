@@ -314,7 +314,7 @@ export default function CategoriesEditorTab() {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Resumen (solo con categorías) */}
       {cats.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
@@ -387,7 +387,7 @@ export default function CategoriesEditorTab() {
       {/* Modal nueva categoría — overlay centrado con backdrop */}
       {showNewForm && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
+          className="fixed inset-0 z-system flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
           onClick={cerrarNewForm}
         >
           <div

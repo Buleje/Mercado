@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { Sale } from "@/types/erp";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface TrendForecasterProps {
@@ -33,12 +34,12 @@ function linearRegression(values: number[]): { slope: number; intercept: number 
 
 function fmt(n: number) {
   if (n >= 1_000) return `S/${(n / 1_000).toFixed(1)}k`;
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(n, 0)}`;
 }
 
 function dayLabel(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(d);
 }
 
 function addDays(dateStr: string, n: number): string {

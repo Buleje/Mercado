@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { RefreshCw } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -61,7 +62,7 @@ function WaterfallTooltip({ active, payload }: { active?: boolean; payload?: Arr
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{d.name}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Monto</span>
-        <span className="font-mono font-medium" style={{ color: d.fill }}>S/ {Number(d.displayValue).toFixed(2)}</span>
+        <span className="font-mono font-medium" style={{ color: d.fill }}>{formatCurrency(Number(d.displayValue))}</span>
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>% del total</span>

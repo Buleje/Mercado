@@ -70,7 +70,7 @@ export default function ModoLlamada({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--surface-canvas)]">
+    <div className="fixed inset-0 z-modal flex flex-col bg-[var(--surface-canvas)]">
       {/* Barra: dónde estoy y cuánto falta. */}
       <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-4">
         <p className="text-base font-bold text-[var(--text-secondary)]">

@@ -42,6 +42,7 @@ import type { DbContract, EstadoVisible } from "@/lib/types/contracts";
 import PanelFirmantes from "@/components/admin/contratos/PanelFirmantes";
 import PanelRevision from "@/components/admin/contratos/PanelRevision";
 import VinculoContraparte from "@/components/admin/contratos/VinculoContraparte";
+import { formatDateNumeric, formatDateTime, formatNumber } from "@/lib/format";
 
 const ContratosChart = dynamic(() => import("./ContratosChart"), {
   ssr: false,
@@ -81,14 +82,14 @@ function TemplateIcon({ icon, className }: { icon: string; className?: string })
 /** Respeta la moneda del contrato: un contrato en dólares se mostraba en soles. */
 function formatMoney(n: number, moneda: "PEN" | "USD" = "PEN") {
   const simbolo = moneda === "USD" ? "US$" : "S/";
-  return `${simbolo} ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${simbolo} ${formatNumber(n, 2)}`;
 }
 
 function formatDatePeru(iso: string | null | undefined) {
   if (!iso) return "---";
   try {
     const d = new Date(iso.includes("T") ? iso : iso + "T00:00:00");
-    return d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
+    return formatDateNumeric(d);
   } catch { return iso; }
 }
 
@@ -1497,7 +1498,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto"
             >
-              <div className="p-4 sm:p-6 space-y-5">
+              <div className="p-4 sm:p-6 space-y-4">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
@@ -1602,7 +1603,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <p className="font-semibold text-[var(--text-primary)]">{EVENTO_LABELS[ev.tipo] ?? ev.tipo}</p>
                           {ev.detalle && <p className="text-[var(--text-secondary)]">{ev.detalle}</p>}
                           <p className="text-[var(--text-tertiary)]">
-                            {new Date(ev.createdAt).toLocaleString("es-PE")}{ev.actor ? ` · ${ev.actor}` : ""}
+                            {formatDateTime(ev.createdAt)}{ev.actor ? ` · ${ev.actor}` : ""}
                           </p>
                         </li>
                       ))}

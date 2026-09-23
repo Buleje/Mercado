@@ -7,6 +7,7 @@ import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Packag
 import { cn, exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { ActivityEntry } from "@/app/api/activity-log/route";
+import { formatDate } from "@/lib/format";
 
 type ExportModule = { id: string; label: string; icon: React.ElementType };
 type ImportRecord = { id: string; module: string; filename: string; records: number; status: "success" | "partial" | "error"; date: string; errors: number };
@@ -21,7 +22,7 @@ const EXPORT_MODULES: ExportModule[] = [
   { id: "gastos", label: "Gastos", icon: FileText },
 ];
 
-function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
+function fmtDate(iso: string) { return formatDate(iso); }
 
 /** El historial no tiene tabla propia — se reconstruye del audit log real
  *  (`logActivity("Importar", ...)` en cada endpoint de importación, hoy sólo

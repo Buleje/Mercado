@@ -4,6 +4,7 @@ import { LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { TrendingUp, TrendingDown, Minus, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -21,7 +22,7 @@ type MonthStats = {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function getDaysInMonth(year: number, month: number) {
@@ -154,7 +155,7 @@ export default function MonthProjectionCard() {
         ) : error ? (
           <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-center py-6">{error}</p>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Mes actual */}
             <div>
               <p className="text-xs text-[var(--text-tertiary)] mb-1">

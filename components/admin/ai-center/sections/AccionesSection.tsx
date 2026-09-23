@@ -15,6 +15,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "../ai-center.types";
+import { formatNumber } from "@/lib/format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ function saveDone(ids: string[]) {
 }
 
 function formatSoles(n: number): string {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(n, 0)}`;
 }
 
 // ─── Task generation ──────────────────────────────────────────────────────────

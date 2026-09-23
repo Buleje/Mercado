@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDate, formatTime } from "@/lib/format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,7 +63,7 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
 };
 
 const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${formatCurrency(n)}`;
 
 function daysSince(dateStr: string | null | undefined): number {
   if (!dateStr) return 9999;
@@ -71,11 +72,7 @@ function daysSince(dateStr: string | null | undefined): number {
 
 function applyTemplate(template: string, customer: Customer): string {
   const lastOrder = customer.lastOrderDate
-    ? new Date(customer.lastOrderDate).toLocaleDateString("es-PE", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
+    ? formatDate(customer.lastOrderDate)
     : "una fecha anterior";
 
   return template
@@ -359,7 +356,7 @@ export default function MassMessageSender({
                 {previewCustomer ? previewText : template}
               </p>
               <p className="mt-1 text-right text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                {new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
+                {formatTime(new Date())}
               </p>
             </div>
           </div>

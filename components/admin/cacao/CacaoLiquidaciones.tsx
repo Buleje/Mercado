@@ -15,6 +15,7 @@ import { DataTable, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { openPrintable } from "@/lib/cacao/cacao-print";
+import { formatDate, formatDateLong, formatNumber } from "@/lib/format";
 
 interface LoteRow { id: string; loteCode: string | null; fecha: string; kg: number; total: number; abonado: number; saldo: number; estadoPago: string }
 interface Grupo {
@@ -23,8 +24,8 @@ interface Grupo {
 }
 interface Resp { groups: Grupo[]; totals: { productores: number; lotes: number; saldo: number } }
 
-const n2 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
+const n2 = (v: number) => formatNumber(v, 2);
+const fdate = (iso: string | null) => { if (!iso) return "—"; try { return formatDate(iso, { soloFecha: true }); } catch { return iso; } };
 const diasDesde = (iso: string | null) => { if (!iso) return null; const ms = Date.now() - new Date(iso).getTime(); return Math.max(0, Math.floor(ms / 86_400_000)); };
 const waLink = (tel: string, nombre: string, saldo: number) => {
   const num = tel.replace(/\D/g, "");
@@ -83,7 +84,7 @@ export default function CacaoLiquidaciones() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Total a pagar" value={`S/ ${n2(totals?.saldo ?? 0)}`} subValue={(totals?.saldo ?? 0) > 0 ? "saldo pendiente" : "al día"} icon={Coins} emphasis={(totals?.saldo ?? 0) > 0 ? "warning" : "success"} />
         <StatCard label="Productores por pagar" value={String(totals?.productores ?? 0)} icon={Users} emphasis="neutral" />
@@ -213,7 +214,7 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
       const data = await r.json().catch(() => ({}));
       const aplicado = Number(data.aplicado ?? parsed);
       const saldoRestante = Number(data.saldoRestante ?? Math.max(0, grupo.totalSaldo - parsed));
-      const fecha = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+      const fecha = formatDateLong(new Date());
       setDone({ aplicado, saldoRestante, fecha });
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); setSubmitting(false); }
   }

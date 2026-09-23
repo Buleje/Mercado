@@ -13,7 +13,7 @@ import {
   Phone, Map as MapIcon, ToggleLeft, ToggleRight,
   Zap, TrendingUp, Star, Clock, Heart, Store, AlertTriangle,
   Navigation, ChefHat, Award, Mail, History, Globe,
-  X, Search, Plus, ChevronUp, ChevronDown, Pencil,
+  X, Search, Plus, ChevronUp, ChevronDown, Pencil, Lightbulb,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -34,6 +34,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { formatCurrency } from "@/lib/format";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -455,7 +456,7 @@ function SectionEditorModal({
         {/* Tip contextual */}
         {sectionTip && (
           <div className="px-6 py-3 bg-primary/5 dark:bg-primary/10 border-b border-primary/10 shrink-0">
-            <p className="text-sm text-[var(--text-primary)]"><span className="font-bold">💡 </span>{sectionTip}</p>
+            <p className="flex items-start gap-1.5 text-sm text-[var(--text-primary)]"><Lightbulb className="h-4 w-4 shrink-0 mt-0.5 text-[var(--accent)]" aria-hidden />{sectionTip}</p>
           </div>
         )}
 
@@ -518,7 +519,7 @@ function SectionEditorModal({
                 </div>
                 {assignedProducts.length > 0 && (
                   <span className="text-xs font-mono tabular-nums text-muted">
-                    Total: <span className="font-bold text-[var(--text-primary)]">S/{assignedTotal.toFixed(2)}</span>
+                    Total: <span className="font-bold text-[var(--text-primary)]">{formatCurrency(assignedTotal)}</span>
                   </span>
                 )}
               </div>
@@ -548,7 +549,7 @@ function SectionEditorModal({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-[var(--text-primary)] truncate leading-tight">{p.name}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-sm font-bold text-primary tabular-nums">S/{Number(p.price).toFixed(2)}</span>
+                          <span className="text-sm font-bold text-primary tabular-nums">{formatCurrency(Number(p.price))}</span>
                           {p.category && (
                             <>
                               <span className="text-xs text-muted">·</span>
@@ -691,7 +692,7 @@ function SectionEditorModal({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-[var(--text-primary)] truncate leading-tight">{p.name}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-sm font-bold text-primary tabular-nums">S/{Number(p.price).toFixed(2)}</span>
+                          <span className="text-sm font-bold text-primary tabular-nums">{formatCurrency(Number(p.price))}</span>
                           {p.category && (
                             <>
                               <span className="text-xs text-muted">·</span>
@@ -799,7 +800,7 @@ function SectionThumbnail({ sectionKey }: { sectionKey: string }) {
                 <div className="absolute top-0.5 left-0.5 h-1 w-1 rounded-full bg-[var(--data-error-500)]" />
               )}
               {sectionKey === "favorites" && (
-                <div className="absolute top-0.5 right-0.5 text-[length:var(--ts-2xs)]">♥</div>
+                <Heart className="absolute top-0.5 right-0.5 h-4 w-4 text-[var(--data-error-500)]" fill="currentColor" aria-hidden />
               )}
             </div>
           ))}

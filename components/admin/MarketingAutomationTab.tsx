@@ -10,6 +10,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatDateTimeShort, formatNumber } from "@/lib/format";
 
 // ── Types (alineados con /api/campaigns + CampaignsDB) ──────────────────────────
 
@@ -59,7 +60,7 @@ const STATUS_META: Record<Status, { label: string; color: string; bg: string }> 
 };
 
 const fmtDate = (s: string | null) =>
-  s ? new Date(s).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
+  s ? formatDateTimeShort(s) : "—";
 
 // datetime-local con la hora local actual (sin segundos)
 const nowLocalInput = () => {
@@ -253,7 +254,7 @@ export default function MarketingAutomationTab({
           { label: "Campañas", value: String(stats.total), color: "text-[var(--text-primary)]" },
           { label: "Programadas", value: String(stats.programadas), color: "text-[var(--data-info-500)]" },
           { label: "Completadas", value: String(stats.completadas), color: "text-[var(--data-success-500)]" },
-          { label: "Clientes alcanzados", value: stats.alcance.toLocaleString("es-PE"), color: "text-[var(--text-primary)]" },
+          { label: "Clientes alcanzados", value: formatNumber(stats.alcance), color: "text-[var(--text-primary)]" },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <p className="text-xs font-bold text-[var(--text-tertiary)]">{label}</p>

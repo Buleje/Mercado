@@ -15,6 +15,7 @@ import { TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown, Activity } from "@
 import { CardTitle } from "@buleje/design-system";
 import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
 import CacaoChartPresent from "./CacaoChartPresent";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 interface PricePoint { t: number; c: number }
 const RANGES = [
@@ -52,7 +53,7 @@ export default function CacaoPriceChart({
   const suffix = isSol ? "/kg" : "/t";
 
   const dayLabel = (t: number) =>
-    new Date(t).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+    formatDateShort(t, { soloFecha: true });
 
   const view = useMemo(() => {
     const days = RANGES.find((r) => r.key === range)?.days ?? 90;
@@ -213,7 +214,7 @@ export default function CacaoPriceChart({
               {up ? "+" : ""}{view.variacion.toFixed(1)}% en {range}
             </span>
             <span className="text-xs text-[var(--text-tertiary)]">de {money(view.first)} a {money(view.last)}{suffix}</span>
-            {isSol && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">compra local ≈ {COMPRA_LOCAL_PCT}% del oficial en soles (FX {usdPen != null ? `S/ ${usdPen.toFixed(2)}` : "—"}/USD)</span>}
+            {isSol && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">compra local ≈ {COMPRA_LOCAL_PCT}% del oficial en soles (FX {usdPen != null ? `${formatCurrency(usdPen)}` : "—"}/USD)</span>}
           </div>
 
           {onPointSelect && (

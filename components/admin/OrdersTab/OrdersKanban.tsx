@@ -37,6 +37,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
+import { formatCurrency } from "@/lib/format";
 
 interface OrdersKanbanProps {
   activeOrders: DbOrder[];
@@ -290,7 +291,7 @@ const OrderCard = memo(function OrderCard({
             </div>
             <div className="text-right shrink-0">
               <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
-                S/{Number(order.total).toFixed(2)}
+                {formatCurrency(Number(order.total))}
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 {order.items.length} {order.items.length === 1 ? "ítem" : "ítems"}
@@ -535,7 +536,7 @@ const KanbanColumn = memo(function KanbanColumn({
         </span>
         <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--rule-base)]" />
         <span className="text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)] leading-none">
-          S/{total.toFixed(2)}
+          {formatCurrency(total)}
         </span>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, SectionTitle, StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useMemo, useState, useRef, useId, useCallback } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
@@ -18,6 +18,7 @@ import {
   Loader2,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { formatDateNumeric, formatDateTime, formatNumber } from "@/lib/format";
 
 // La API (/api/mermas) soporta 4 lossType. Mantenemos 4 causas con mapeo 1:1.
 type ShrinkageCause = "vencimiento" | "rotura" | "robo" | "deterioro";
@@ -85,7 +86,7 @@ type ShrinkageRecord = {
   reportedBy: string;
 };
 
-const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+const fmt = (n: number) => `S/ ${formatNumber(n, { min: 2 })}`;
 
 const CAUSE_META: Record<ShrinkageCause, { label: string; color: string; bg: string }> = {
   vencimiento: { label: "Vencimiento", color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
@@ -238,8 +239,8 @@ export default function ShrinkageTab() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-          <MetricCard title="Perdida total" value={fmt(stats.totalLoss)} icon={DollarSign} tone="text-[var(--data-error-600)]" bg="bg-red-50 dark:bg-red-950/20" />
-          <MetricCard title="Registros" value={String(stats.count)} icon={TrendingDown} tone="text-[var(--data-warning-600)]" bg="bg-amber-50 dark:bg-amber-950/20" />
+          <StatCard label="Perdida total" value={fmt(stats.totalLoss)} icon={DollarSign} emphasis="error" iconEmphasis />
+          <StatCard label="Registros" value={String(stats.count)} icon={TrendingDown} emphasis="warning" iconEmphasis />
           <div className="col-span-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-5 dark:border-[var(--rule-base)] ">
             <p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Motivo principal</p>
             <p className="mt-2 text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{stats.topCause ? CAUSE_META[stats.topCause[0] as ShrinkageCause]?.label : "Sin datos"}</p>
@@ -284,7 +285,7 @@ export default function ShrinkageTab() {
               )}
               {filtered.map((record) => (
                 <tr key={record.id}>
-                  <td className="text-[var(--text-secondary)] dark:text-muted">{new Date(record.date).toLocaleDateString("es-PE")}</td>
+                  <td className="text-[var(--text-secondary)] dark:text-muted">{formatDateNumeric(record.date)}</td>
                   <td>
                     <div>
                       <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{record.product}</p>
@@ -317,7 +318,7 @@ export default function ShrinkageTab() {
               <button aria-label="Cerrar" onClick={() => setDetail(null)} className="rounded-xl p-2 text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-sm">
-              <p><strong>Fecha:</strong> {new Date(detail.date).toLocaleString("es-PE")}</p>
+              <p><strong>Fecha:</strong> {formatDateTime(detail.date)}</p>
               <p><strong>Motivo:</strong> {CAUSE_META[detail.cause].label}</p>
               <p><strong>Cantidad:</strong> {detail.quantity}</p>
               <p><strong>Perdida:</strong> {fmt(detail.totalLoss)}</p>
@@ -343,12 +344,7 @@ export default function ShrinkageTab() {
   );
 }
 
-function MetricCard({ title, value, icon: Icon, tone, bg }: { title: string; value: string; icon: typeof DollarSign; tone: string; bg: string }) {
-  return (
-    <div className={cn("rounded-xl p-3 sm:p-5", bg)}>
-      <Icon className={cn("mb-2 h-5 w-5", tone)} />
-      <p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">{title}</p>
-      <p className={cn("mt-2 text-xl font-extrabold", tone)}>{value}</p>
-    </div>
-  );
-}
+// `MetricCard` migró a `StatCard` (canon KPI 2026-09-22). Perdía a propósito:
+// el fondo de color completo (`bg-red-50 dark:bg-red-950/20`) — que además era
+// un hex-lite fuera de los tokens del DS (ni `--data-error` ni ninguna otra
+// variable), un hallazgo de la migración, no algo que este cambio introduce.

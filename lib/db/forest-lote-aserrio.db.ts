@@ -4,7 +4,7 @@ import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { CtpInvariantError, ForestCtpConsumoDB } from "./forest-ctp-consumo.db";
 import { ForestCtpDB } from "./forest-ctp.db";
-import { agruparPorGuia } from "@/lib/forestal/consumo-trozas";
+import { agruparPorGuia, guiaRecibida } from "@/lib/forestal/consumo-trozas";
 import { invalidateByPrefix } from "@/lib/cache";
 import { vivaLinea } from "./wood-entries.db";
 import { Prisma } from "@/lib/generated/prisma/client";
@@ -137,15 +137,33 @@ export interface LoteInventarioInput {
  * o cuya guía de ingreso se anuló/rechazó, no es materia prima disponible
  * aunque nadie la haya marcado "consumida" todavía (auditoría 2026-08-25 —
  * espejo del mismo chequeo que ya hace T2 al despachar).
+ *
+ * ## La GUÍA que todavía no llegó (ADR-325, agregado 2026-09-19)
+ *
+ * L-A2 dice «recepcionada» desde el día uno, pero acá sólo se miraba la marca
+ * de la PIEZA (`noRecepcionada`). Eso deja afuera el caso que manda en el libro
+ * real: la guía entera sigue en `pendiente`. Medido en
+ * `inversiones-agroforestales-blas-sociedad-anonima` (2026-09-19): de las 156
+ * trozas libres del patio, **119 (160,4 m³ en 9 guías) vienen de guías
+ * `pendiente`** y sólo 3 de una guía validada. La pantalla nunca las ofrece
+ * —todas sus listas filtran `guiaRecepcionada !== false`— pero el escritor las
+ * aceptaba: un POST armaba el lote igual, y de ahí salía una corrida que
+ * declara haber aserrado madera que nunca bajó del camión.
  */
 function motivoNoElegible(t: {
   consumidaEnId: string | null;
   noRecepcionada: boolean;
   descarte: boolean;
   volumenM3: unknown;
+  fechaRecepcion?: Date | null;
   _count?: { retrozos: number };
   despachadaEn?: { status: string; deletedAt: Date | null } | null;
-  entry?: { status: string; deletedAt: Date | null } | null;
+  entry?: {
+    status: string;
+    deletedAt: Date | null;
+    fechaRecepcion?: Date | null;
+    gtfNumber?: string | null;
+  } | null;
 }): string | null {
   if (t.consumidaEnId) return "ya entró a una corrida";
   if (vivaLinea(t.despachadaEn ?? null)) return "ya se despachó sin aserrar";
@@ -156,6 +174,18 @@ function motivoNoElegible(t: {
     return "la guía de ingreso está anulada o rechazada";
   }
   if (t.noRecepcionada) return "no llegó al patio";
+  /* El motivo dice el CAMINO, no un «no se puede» pelado: la guía se recibe en
+     Ingresos y la madera queda disponible el mismo día. */
+  if (
+    t.entry &&
+    !guiaRecibida({
+      estado: t.entry.status,
+      fechaRecepcionGuia: t.entry.fechaRecepcion,
+      fechaRecepcionTroza: t.fechaRecepcion,
+    })
+  ) {
+    return `la guía ${t.entry.gtfNumber ?? "de ingreso"} todavía no se recibió en el patio: recepciónala en Ingresos`;
+  }
   if (t.descarte) return "es descarte del retrozado";
   if ((t._count?.retrozos ?? 0) > 0) return "se cortó en pedazos: agrega los pedazos";
   if (!(Number(t.volumenM3) > 0)) return "no tiene volumen registrado";
@@ -936,7 +966,19 @@ export class ForestLoteAserrioDB {
         include: {
           _count: { select: { retrozos: true } },
           despachadaEn: { select: { status: true, deletedAt: true } },
-          entry: { select: { status: true, deletedAt: true } },
+          entry: {
+            select: {
+              status: true,
+              deletedAt: true,
+              /* La guía que todavía no llegó al patio bloquea la pieza (ADR-325):
+                 sin estos dos campos `motivoNoElegible` no puede verla. */
+              fechaRecepcion: true,
+              gtfNumber: true,
+              /* El título habilitante vive en el INGRESO, no en la troza — la
+                 misma fuente que `TrozaConsumible.permiso`. */
+              originCode: true,
+            },
+          },
         },
       });
 
@@ -956,6 +998,25 @@ export class ForestLoteAserrioDB {
           });
           continue;
         }
+        /* ADR-393 · un lote, un título habilitante — del lado que ESCRIBE.
+           El filtro existía sólo en la pantalla (`lote-programacion.ts`), y una
+           regla que vive sólo en la pantalla la saltea cualquier POST. En el
+           patio real esto no es hipotético: el Tornillo libre de Blas viene de
+           DOS permisos (65 trozas de `19-SEC/REG-PLT-2021-017` y 49 de
+           `19-SEC/REG-PLT-2018-020`, medido 2026-09-19), así que un lote de
+           Tornillo se llenaba mezclado y la corrida que saliera de ahí no podía
+           decir de qué título salió su madera.
+           `permiso` nulo en el lote sigue queriendo decir «todos» (así nacieron
+           los lotes anteriores al ADR): filtrar de más rompería lo viejo. */
+        const permisoTroza = t.entry?.originCode?.trim() || null;
+        if (lote.permiso && permisoTroza && permisoTroza !== lote.permiso.trim()) {
+          rechazadas.push({
+            id: t.id,
+            codigo,
+            motivo: `es del permiso ${permisoTroza} y el lote ${lote.code} es del ${lote.permiso}`,
+          });
+          continue;
+        }
         if (t.loteAserrioId && t.loteAserrioId !== loteId) {
           rechazadas.push({ id: t.id, codigo, motivo: "ya está en otro lote" });
           continue;
@@ -967,6 +1028,17 @@ export class ForestLoteAserrioDB {
         }
         if (t.loteAserrioId === loteId) continue; // ya estaba: no es un error
         aceptadas.push(t.id);
+      }
+
+      /* La pieza que el query NO devolvió también se dice.
+         `findMany` filtra por `tenantId`, así que un id de otro centro —o uno
+         ya borrado— desaparecía sin dejar rastro: la respuesta decía «0
+         rechazadas» y quien mandó veinte ids creía que entraron veinte. Es el
+         mismo silencio que descartó 51 trozas en el importador CTP. */
+      const halladas = new Set(trozas.map((t) => t.id));
+      for (const id of new Set(trozaIds)) {
+        if (halladas.has(id)) continue;
+        rechazadas.push({ id, codigo: null, motivo: "no existe en este centro" });
       }
 
       if (aceptadas.length > 0) {
@@ -1039,6 +1111,7 @@ export class ForestLoteAserrioDB {
             volumenM3: true,
             consumidaEnId: true,
             noRecepcionada: true,
+            fechaRecepcion: true,
             descarte: true,
             _count: { select: { retrozos: true } },
             // Auditoría 2026-08-25: una troza reservada en el lote pudo salir
@@ -1046,7 +1119,16 @@ export class ForestLoteAserrioDB {
             // de que este lote entrara a la sierra — sin esto quedaba con
             // despachadaEnId Y consumidaEnId vivos a la vez, doble-contada.
             despachadaEn: { select: { status: true, deletedAt: true } },
-            entry: { select: { status: true, deletedAt: true } },
+            entry: {
+              select: {
+                status: true,
+                deletedAt: true,
+                /* La guía que todavía no llegó al patio bloquea la pieza (ADR-325):
+                   sin estos dos campos `motivoNoElegible` no puede verla. */
+                fechaRecepcion: true,
+                gtfNumber: true,
+              },
+            },
           },
         },
       },
@@ -1193,10 +1275,20 @@ export class ForestLoteAserrioDB {
             consumidaEnId: true,
             especieCientifica: true,
             noRecepcionada: true,
+            fechaRecepcion: true,
             descarte: true,
             _count: { select: { retrozos: true } },
             despachadaEn: { select: { status: true, deletedAt: true } },
-            entry: { select: { status: true, deletedAt: true } },
+            entry: {
+              select: {
+                status: true,
+                deletedAt: true,
+                /* La guía que todavía no llegó al patio bloquea la pieza (ADR-325):
+                   sin estos dos campos `motivoNoElegible` no puede verla. */
+                fechaRecepcion: true,
+                gtfNumber: true,
+              },
+            },
           },
         },
       },
@@ -1386,10 +1478,20 @@ export class ForestLoteAserrioDB {
                 volumenM3: true,
                 consumidaEnId: true,
                 noRecepcionada: true,
+                fechaRecepcion: true,
                 descarte: true,
                 _count: { select: { retrozos: true } },
                 despachadaEn: { select: { status: true, deletedAt: true } },
-                entry: { select: { status: true, deletedAt: true } },
+                entry: {
+                  select: {
+                    status: true,
+                    deletedAt: true,
+                    /* La guía que todavía no llegó al patio bloquea la pieza (ADR-325):
+                       sin estos dos campos `motivoNoElegible` no puede verla. */
+                    fechaRecepcion: true,
+                    gtfNumber: true,
+                  },
+                },
               },
             },
           },

@@ -17,6 +17,7 @@ import { CardTitle, InfoAlert, WarningAlert, BadgeStatus, PrimaryButton } from "
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useCopiar } from "./shared";
+import { formatDateShort } from "@/lib/format";
 
 interface Chat { chatId: number; nombre: string; vinculadoEn: string; ultimoUso?: string | null }
 interface Estado {
@@ -30,7 +31,7 @@ interface Estado {
 
 const API = "/api/admin/telegram";
 const fecha = (iso?: string | null) =>
-  iso ? new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short" }) : "—";
+  iso ? formatDateShort(iso) : "—";
 
 export default function TelegramPanel() {
   const { confirm } = useConfirm();

@@ -66,6 +66,7 @@ import type {
   DbRecurrente,
   RecurrenteFrecuencia,
 } from "@/lib/db/adelantos.db";
+import { formatDateNumeric, formatDateShort } from "@/lib/format";
 
 /** Single source: la misma forma que consume el alta (ver crear-adelanto/tipos). */
 type BeneficiarioConSaldo = BeneficiarioConSaldoBase;
@@ -245,8 +246,8 @@ function ResumenView({
 
   if (sinActividad) {
     return (
-      <div className="space-y-5">
-        <div className="mx-auto max-w-2xl rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+      <div className="space-y-4">
+        <div className="mx-auto max-w-2xl rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <Coins className="h-8 w-8 text-primary" />
           </div>
@@ -324,7 +325,7 @@ function ResumenView({
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Hero saldo + dona de recuperación */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
@@ -1045,7 +1046,7 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
     autoTable(doc, {
       startY: 31,
       head: [["Fecha", "Tipo", "Persona", "Detalle", "Monto"]],
-      body: filtrados.map((e) => [new Date(e.fecha).toLocaleDateString("es-PE"), e.tipo === "adelanto" ? "Adelanto" : "Entrega", e.persona, e.desc ?? "", `${e.tipo === "adelanto" ? "+" : "-"}${fmtMon(e.monto, e.moneda)}`]),
+      body: filtrados.map((e) => [formatDateNumeric(e.fecha), e.tipo === "adelanto" ? "Adelanto" : "Entrega", e.persona, e.desc ?? "", `${e.tipo === "adelanto" ? "+" : "-"}${fmtMon(e.monto, e.moneda)}`]),
     });
     doc.save(`actividad-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
@@ -1180,7 +1181,7 @@ function RecurrentesView({ beneficiarios, onChange }: { beneficiarios: Beneficia
               <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{fmtMon(r.monto, r.moneda)}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"><Repeat className="h-3.5 w-3.5" /> {FREC_LABEL[r.frecuencia]}</span>
-                {r.proximaEjecucion && <span className="text-[var(--text-tertiary)]">Próx.: {new Date(r.proximaEjecucion).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>}
+                {r.proximaEjecucion && <span className="text-[var(--text-tertiary)]">Próx.: {formatDateShort(r.proximaEjecucion)}</span>}
               </div>
               <button onClick={() => toggle(r)} className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${r.activo ? "bg-[var(--data-success)]/15 text-[var(--data-success)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
                 {r.activo ? <><CheckCircle className="h-4 w-4" /> Activo</> : <><Ban className="h-4 w-4" /> Pausado</>}

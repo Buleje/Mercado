@@ -6,6 +6,7 @@ import { Heart, Loader2, Search, Gift, Award, ArrowUpRight, NotebookPen, Save, D
 import { cn } from "@/lib/utils";
 import type { Customer } from "@/types/erp";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency, formatDateNumeric, formatNumber } from "@/lib/format";
 
 type Tier = { name: string; minSpent: number; pointsMultiplier: number; color: string };
 
@@ -206,7 +207,7 @@ export default function LoyaltyTab() {
   };
 
   if (loading) return (
-    <div className="space-y-5 animate-pulse">
+    <div className="space-y-4 animate-pulse">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="h-7 w-56 bg-[var(--rule-soft)] rounded-lg" />
@@ -265,7 +266,7 @@ export default function LoyaltyTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
           { label: "Clientes", value: customers.length },
-          { label: "Puntos Totales", value: totalPoints.toLocaleString() },
+          { label: "Puntos Totales", value: formatNumber(totalPoints) },
           { label: "Gasto Promedio", value: `S/${avgSpent.toFixed(0)}` },
           { label: "Diamante", value: customers.filter(c => c.loyaltyTier === "diamante").length },
         ].map(s => (
@@ -307,7 +308,7 @@ export default function LoyaltyTab() {
         {/* Detail Panel */}
         <div className="space-y-6">
           {!selected ? (
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-8 text-center">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 text-center">
               <Award className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
               <p className="text-sm text-[var(--text-tertiary)]">Selecciona un cliente para ver detalles</p>
             </div>
@@ -340,7 +341,7 @@ export default function LoyaltyTab() {
                   </button>
                 </div>
                 {redeemPts && Number(redeemPts) > 0 && (
-                  <p className="text-xs text-[var(--data-success-500)] flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />Descuento: S/{(Number(redeemPts) * 0.1).toFixed(2)}</p>
+                  <p className="text-xs text-[var(--data-success-500)] flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />Descuento: {formatCurrency(Number(redeemPts) * 0.1)}</p>
                 )}
               </div>
 
@@ -367,7 +368,7 @@ export default function LoyaltyTab() {
               {/* Credit Balance */}
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <BlockTitle className="flex flex-wrap items-center gap-2"><DollarSign className="h-4 w-4 text-primary" />Saldo a Favor</BlockTitle>
-                <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">S/{(selected.creditBalance ?? 0).toFixed(2)}</p>
+                <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">{formatCurrency(selected.creditBalance ?? 0)}</p>
                 <div className="flex flex-wrap gap-2">
                   <input
                     type="number"
@@ -407,7 +408,7 @@ export default function LoyaltyTab() {
                     )}
                     <div>
                       <p className="text-sm text-[var(--text-secondary)] dark:text-muted mb-2">
-                        Tus puntos vencen el <span className="font-bold">{expirationDate.toLocaleDateString('es-PE')}</span>
+                        Tus puntos vencen el <span className="font-bold">{formatDateNumeric(expirationDate)}</span>
                       </p>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-[var(--text-secondary)]">
@@ -452,7 +453,7 @@ export default function LoyaltyTab() {
                     <div key={c.phone} className="flex items-center justify-between p-2 bg-[var(--surface-alt)] rounded-lg">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{c.name}</p>
-                        <p className="text-xs text-[var(--text-tertiary)]">{c.loyaltyPoints} pts · S/{(c.loyaltyPoints * 0.1).toFixed(2)}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">{c.loyaltyPoints} pts · {formatCurrency(c.loyaltyPoints * 0.1)}</p>
                       </div>
                       <button
                         onClick={() => c.phone && openWhatsApp(c.phone, generateWhatsAppMessage(c))}

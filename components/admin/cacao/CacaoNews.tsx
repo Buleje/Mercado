@@ -260,7 +260,7 @@ export default function CacaoNews() {
 
           {/* Lista: Recientes agrupadas + Histórico colapsable */}
           {vista.total === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+            <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
               <Newspaper className="mx-auto h-7 w-7 text-[var(--text-tertiary)]" />
               <p className="mt-2 text-sm text-[var(--text-tertiary)]">
                 {items.length === 0 ? "Sin noticias disponibles ahora. Prueba actualizar en un rato." : "Ninguna noticia coincide con los filtros."}

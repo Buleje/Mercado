@@ -11,6 +11,7 @@ import {
 import { cn, exportToCSV } from "@/lib/utils";
 import { resumirArqueos, veredictoArqueo, type ArqueoEstado } from "@/lib/caja/arqueo-veredicto";
 import { leerNotasArqueo } from "@/lib/caja/leer-notas-arqueo";
+import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -39,7 +40,7 @@ type CashAudit = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
+const fmt = (n: number) => "S/ " + formatNumber(n, { min: 2 });
 
 const STATUS_MAP: Record<AuditStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
   pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", icon: AlertTriangle },
@@ -68,7 +69,7 @@ type CashRegisterRaw = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); } catch { return iso; }
+  try { return formatDate(iso); } catch { return iso; }
 }
 function shiftLabel(iso: string): string {
   try { const h = new Date(iso).getHours(); if (h >= 6 && h < 14) return "mañana"; if (h >= 14 && h < 20) return "tarde"; return "noche"; } catch { return "—"; }
@@ -194,14 +195,14 @@ function CashCounter({
         body: JSON.stringify({
           action: "arqueo",
           closingAmount: counted,
-          notes: `Conteo manual: contado S/${counted.toFixed(2)}, esperado S/${expectedAmount.toFixed(2)}, diferencia S/${difference.toFixed(2)}`,
+          notes: `Conteo manual: contado ${formatCurrency(counted)}, esperado ${formatCurrency(expectedAmount)}, diferencia ${formatCurrency(difference)}`,
         }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
         throw new Error(body?.error ?? `HTTP ${res.status}`);
       }
-      setFeedback({ kind: "ok", msg: `Arqueo guardado · diferencia ${difference >= 0 ? "+" : ""}S/${difference.toFixed(2)}` });
+      setFeedback({ kind: "ok", msg: `Arqueo guardado · diferencia ${difference >= 0 ? "+" : ""}${formatCurrency(difference)}` });
       onSaved?.();
     } catch (err) {
       setFeedback({ kind: "err", msg: err instanceof Error ? err.message : String(err) });

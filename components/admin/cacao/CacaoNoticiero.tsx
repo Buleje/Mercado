@@ -25,6 +25,7 @@ import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT, ANCLA_CC_LABEL } fro
 // Modal de presentación compartido (mismo del dashboard inicio): navega entre
 // los 3 charts de esta vista con ← →, modo TV y export PNG.
 import { ChartPresentationModal } from "@/components/admin/inicio/_shared/ChartPresentationModal";
+import { formatCurrency, formatDate, formatTime } from "@/lib/format";
 
 // recharts fuera del bundle inicial del admin
 const CacaoPriceChart = dynamic(() => import("./CacaoPriceChart"), {
@@ -141,7 +142,7 @@ export default function CacaoNoticiero() {
   const insights: string[] = [];
   if (p) {
     if (p.changePct != null) insights.push(`Hoy ${up ? "subió" : down ? "bajó" : "sin cambio"} ${Math.abs(p.changePct).toFixed(1)}% vs cierre anterior (USD ${fmt(p.prevClose)}/t).`);
-    if (data?.pricePenPerKg != null) insights.push(`Compra local ≈ S/ ${(data.pricePenPerKg * CHACRA_CC_COMPRA_OFICIAL_FACTOR).toFixed(2)}/kg seco — ${COMPRA_LOCAL_PCT}% del oficial (S/ ${data.pricePenPerKg.toFixed(2)}/kg, FX S/ ${data?.usdPen?.toFixed(2)}/USD).`);
+    if (data?.pricePenPerKg != null) insights.push(`Compra local ≈ ${formatCurrency(data.pricePenPerKg * CHACRA_CC_COMPRA_OFICIAL_FACTOR)}/kg seco — ${COMPRA_LOCAL_PCT}% del oficial (${formatCurrency(data.pricePenPerKg)}/kg, FX ${formatCurrency(data?.usdPen)}/USD).`);
     if (stats) insights.push(...buildLecturas(stats, data?.pricePenPerKg ?? null));
   }
 
@@ -155,7 +156,7 @@ export default function CacaoNoticiero() {
   // Lo que se paga acá por el grano seco: 88% del oficial (dato real de la zona).
   const compraLocalPen = effPen != null ? effPen * CHACRA_CC_COMPRA_OFICIAL_FACTOR : null;
   const mercadoLocalRef = data?.pricePenPerKg != null ? Math.round(data.pricePenPerKg * CHACRA_CC_COMPRA_OFICIAL_FACTOR * 100) / 100 : null;
-  const selDate = sel ? new Date(sel.t).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : null;
+  const selDate = sel ? formatDate(sel.t, { soloFecha: true }) : null;
 
   // Mercado LOCAL mensual (ICE→S//kg × 88% oficial) desde la serie de 1 año que
   // ya trae getCacaoMarket. Permite comparar cada compra contra lo que se pagaba
@@ -293,7 +294,7 @@ export default function CacaoNoticiero() {
             <CardTitle className="mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-[var(--accent)]" /> Lectura de mercado</CardTitle>
             {insights.length ? <ul className="space-y-2.5 text-sm text-[var(--text-secondary)]">{insights.map((s, i) => <li key={i} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />{s}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">Sin datos de precio para analizar.</p>}
             <p className="mt-3 border-t border-[var(--rule-soft)] pt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-              Lectura de las {data?.generatedAt ? new Date(data.generatedAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : "—"} · se renueva sola cada 5 min{auto ? "" : " (auto en pausa)"}.
+              Lectura de las {data?.generatedAt ? formatTime(data.generatedAt) : "—"} · se renueva sola cada 5 min{auto ? "" : " (auto en pausa)"}.
             </p>
           </div>
         </div>

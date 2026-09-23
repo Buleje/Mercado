@@ -16,6 +16,7 @@ import SupplierScorecard from "./compras/SupplierScorecard";
 import SupplierTimeline from "./compras/SupplierTimeline";
 import ProveedorFormModal from "./proveedores/ProveedorFormModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency, formatDateNumeric, formatMonth, formatNumber } from "@/lib/format";
 
 type Payable = {
   id: string;
@@ -224,7 +225,7 @@ export default function SuppliersTab() {
           );
         })
         .reduce((s, p) => s + p.amount, 0);
-      return { label: d.toLocaleDateString("es-PE", { month: "short" }), total };
+      return { label: formatMonth(d), total };
     });
   };
 
@@ -272,7 +273,7 @@ export default function SuppliersTab() {
                       {overduePayables.length} vencido{overduePayables.length > 1 ? 's' : ''}
                     </span>
                     <span className="text-[var(--text-secondary)] dark:text-muted">
-                      S/ {totalOverdueAmount.toFixed(2)}
+                      {formatCurrency(totalOverdueAmount)}
                     </span>
                   </div>
                 )}
@@ -283,7 +284,7 @@ export default function SuppliersTab() {
                       {approachingPayables.length} próximo{approachingPayables.length > 1 ? 's' : ''}
                     </span>
                     <span className="text-[var(--text-secondary)] dark:text-muted">
-                      S/ {totalApproachingAmount.toFixed(2)}
+                      {formatCurrency(totalApproachingAmount)}
                     </span>
                   </div>
                 )}
@@ -331,11 +332,11 @@ export default function SuppliersTab() {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                        S/ {(p.amount - p.paidAmount).toFixed(2)}
+                        {formatCurrency(p.amount - p.paidAmount)}
                       </div>
                       {p.dueDate && (
                         <div className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                          {new Date(p.dueDate).toLocaleDateString('es-PE')}
+                          {formatDateNumeric(p.dueDate)}
                         </div>
                       )}
                     </div>
@@ -381,7 +382,7 @@ export default function SuppliersTab() {
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Deuda total</p>
-                <p className={cn("text-xl font-extrabold tabular-nums leading-none mt-1.5", totalDebt > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>S/{totalDebt.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
+                <p className={cn("text-xl font-extrabold tabular-nums leading-none mt-1.5", totalDebt > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>S/{formatNumber(totalDebt, { max: 0 })}</p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">{overduePayables.length > 0 ? `${overduePayables.length} vencida${overduePayables.length === 1 ? "" : "s"}` : "al día"}</p>
               </div>
               <DollarSign className={cn("h-5 w-5 shrink-0", totalDebt > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
@@ -552,7 +553,7 @@ export default function SuppliersTab() {
                         return (
                           <span className="flex items-center gap-1 font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                             <DollarSign className="h-3.5 w-3.5" />
-                            Deuda: S/ {Number(debt.totalDebt).toFixed(2)} ({debt.count} {debt.count === 1 ? 'factura' : 'facturas'})
+                            Deuda: {formatCurrency(Number(debt.totalDebt))} ({debt.count} {debt.count === 1 ? 'factura' : 'facturas'})
                           </span>
                         );
                       })()}
@@ -686,7 +687,7 @@ export default function SuppliersTab() {
       />
 
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
+        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
           <div className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nuevo proveedor</CardTitle>

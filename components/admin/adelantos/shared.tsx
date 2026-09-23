@@ -11,6 +11,7 @@ import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { CardTitle } from "@buleje/design-system";
 import { X } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
+import { formatNumber } from "@/lib/format";
 
 /**
  * Los cuatro estados de un adelanto, con su color.
@@ -47,7 +48,7 @@ export const PT_TIPO_LABEL: Record<string, string> = {
 
 /** Pies tablares — dato de referencia, nunca plata: sin símbolo monetario. */
 export function fmtPt(n: number): string {
-  return `${n.toLocaleString("es-PE", { maximumFractionDigits: 2 })} pt`;
+  return `${formatNumber(n, { max: 2 })} pt`;
 }
 
 /**
@@ -193,7 +194,7 @@ export function ModalShell({
 
   const ancho = ANCHOS[size ?? (wide ? "md" : "sm")];
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         role="dialog"

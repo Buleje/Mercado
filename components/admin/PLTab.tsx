@@ -59,6 +59,26 @@ function pct(n: number) {
   return `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
 }
 
+/**
+ * Cuánto cambió contra el mes pasado, o `undefined` cuando no hay con qué
+ * comparar.
+ *
+ * Con el mes anterior en 0 la cuenta es una división por cero y la tarjeta
+ * mostraba **«NaN% vs mes anterior»** (visto en el tenant QA, que arranca sin
+ * ingresos). Un «+∞%» tampoco diría nada: sin base no hay variación, así que la
+ * línea no se pinta. Mismo criterio que el resto de los KPI del panel —un
+ * delta se calcula con la MISMA fórmula sobre la otra ventana, o no se muestra.
+ *
+ * `Math.abs` en el divisor: con una base negativa (una utilidad en rojo el mes
+ * pasado) dividir por el signo invertiría la flecha.
+ */
+function variacionMensual(actual?: number, base?: number): number | undefined {
+  if (actual == null || base == null) return undefined;
+  if (!Number.isFinite(actual) || !Number.isFinite(base) || base === 0) return undefined;
+  const v = ((actual - base) / Math.abs(base)) * 100;
+  return Number.isFinite(v) ? v : undefined;
+}
+
 function buildMonthLabel(year: number, month: number) {
   return `${SHORT_MONTHS[month]} ${year}`;
 }
@@ -188,8 +208,8 @@ export default function PLTab() {
   // Previous month delta
   const prevMonth = months.length >= 2 ? months[months.length - 2] : null;
   const currMonth = months.length >= 1 ? months[months.length - 1] : null;
-  const revDelta = prevMonth && currMonth ? ((currMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100 : 0;
-  const profitDelta = prevMonth && currMonth ? ((currMonth.netProfit - prevMonth.netProfit) / Math.abs(prevMonth.netProfit)) * 100 : 0;
+  const revDelta = variacionMensual(currMonth?.revenue, prevMonth?.revenue);
+  const profitDelta = variacionMensual(currMonth?.netProfit, prevMonth?.netProfit);
 
   // Chart bar max
   const maxRevenue = useMemo(() => Math.max(...months.map(m => m.revenue), 1), [months]);

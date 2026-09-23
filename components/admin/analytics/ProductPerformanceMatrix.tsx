@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Product, Sale, SaleItem } from "@/types/erp";
+import { formatNumber } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface ProductPerformanceMatrixProps {
@@ -38,7 +39,7 @@ const QUADRANT_META: Record<BCGQuadrant, {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function fmt(n: number) {
   if (n >= 1_000) return `S/${(n / 1_000).toFixed(1)}k`;
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(n, 0)}`;
 }
 
 function fmtPct(n: number) {

@@ -14,6 +14,7 @@ import { mesNombre, type AdvisorResult } from "@/lib/cacao/cacao-advisor";
 import { printCacaoAsesor, asesorTexto } from "@/lib/cacao/cacao-asesor-informe";
 import { downloadCacaoAsesorPDF } from "@/lib/cacao/cacao-asesor-pdf";
 import { shareCacaoText } from "@/lib/cacao/cacao-print";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 type Advisor = AdvisorResult;
 interface Local { miPrecioKg: number | null; kg: number; lotes: number; refKg: number | null; spreadPct: number | null; stockKg: number }
@@ -66,7 +67,7 @@ export default function CacaoAsesor() {
   const trendIcon = (v: number | null) => (v == null ? Minus : v > 0 ? TrendingUp : v < 0 ? TrendingDown : Minus);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm text-[var(--text-tertiary)]">Analiza precio, tendencia, velocidad, indicadores técnicos (RSI, Bollinger, soporte/resistencia), estacionalidad, proyección y noticias para decir cuándo vender o aguantar. Se calcula todo; el resumen lo redacta la IA.</p>
@@ -203,8 +204,8 @@ export default function CacaoAsesor() {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
               <MetricChip label="RSI (14)" value={a.tecnico.rsi != null ? String(a.tecnico.rsi) : "—"} tone={a.tecnico.rsi == null ? null : a.tecnico.rsi >= 70 ? -1 : a.tecnico.rsi <= 30 ? 1 : 0} title="Fuerza del movimiento (0-100). Arriba de 70 = sobrecompra (subió muy rápido, puede corregir); abajo de 30 = sobreventa (cayó fuerte, puede rebotar)." />
               <MetricChip label="Bollinger %B" value={a.tecnico.bollingerPctB != null ? `${a.tecnico.bollingerPctB}%` : "—"} title="Posición del precio dentro de sus bandas de volatilidad (media ± 2 desvíos). Cerca de 100% = pegado al techo de la banda; cerca de 0% = pegado al piso." />
-              <MetricChip label="Soporte" value={a.tecnico.soporte != null ? a.tecnico.soporte.toLocaleString("es-PE") : "—"} title="Piso reciente del precio (USD/t): nivel donde suele frenar las caídas — buena zona para acopiar." />
-              <MetricChip label="Resistencia" value={a.tecnico.resistencia != null ? a.tecnico.resistencia.toLocaleString("es-PE") : "—"} title="Techo reciente del precio (USD/t): nivel donde suele frenar las subas — buena zona para vender." />
+              <MetricChip label="Soporte" value={a.tecnico.soporte != null ? formatNumber(a.tecnico.soporte) : "—"} title="Piso reciente del precio (USD/t): nivel donde suele frenar las caídas — buena zona para acopiar." />
+              <MetricChip label="Resistencia" value={a.tecnico.resistencia != null ? formatNumber(a.tecnico.resistencia) : "—"} title="Techo reciente del precio (USD/t): nivel donde suele frenar las subas — buena zona para vender." />
               <MetricChip label="Drawdown 52s" value={a.tecnico.drawdownPct != null ? `${a.tecnico.drawdownPct}%` : "—"} tone={a.tecnico.drawdownPct} title="Cuánto está el precio por debajo de su máximo del último año." />
             </div>
             <ul className="mt-3 space-y-1.5 text-xs text-[var(--text-secondary)]">
@@ -214,7 +215,7 @@ export default function CacaoAsesor() {
                 </Reading>
               )}
               {a.tecnico.soporte != null && a.tecnico.resistencia != null && (
-                <Reading>Vende cerca del techo (<b>USD {a.tecnico.resistencia.toLocaleString("es-PE")}</b>) y acopia cerca del piso (<b>USD {a.tecnico.soporte.toLocaleString("es-PE")}</b>).</Reading>
+                <Reading>Vende cerca del techo (<b>USD {formatNumber(a.tecnico.resistencia)}</b>) y acopia cerca del piso (<b>USD {formatNumber(a.tecnico.soporte)}</b>).</Reading>
               )}
               {a.tecnico.trendR2 != null && (
                 <Reading>Tendencia {a.tecnico.trendR2 >= 0.6 ? "limpia y sostenida" : "ruidosa / poco definida"} (R² {a.tecnico.trendR2}).</Reading>
@@ -284,12 +285,12 @@ export default function CacaoAsesor() {
                   {a.forecast.map((f) => (
                     <div key={f.dias} className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
                       <span className="w-20 shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">En {f.dias} días</span>
-                      <span className="font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">USD {f.mid.toLocaleString("es-PE")}<span className="text-xs font-normal text-[var(--text-tertiary)]">/t</span></span>
+                      <span className="font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">USD {formatNumber(f.mid)}<span className="text-xs font-normal text-[var(--text-tertiary)]">/t</span></span>
                       {data?.local?.refKg != null && (
-                        <span className="font-mono text-xs text-[var(--text-secondary)]">≈ S/ {(data.local.refKg * (1 + f.pct / 100)).toFixed(2)}/kg</span>
+                        <span className="font-mono text-xs text-[var(--text-secondary)]">≈ {formatCurrency(data.local.refKg * (1 + f.pct / 100))}/kg</span>
                       )}
                       <span className={`text-sm font-bold ${f.pct > 0 ? "text-[var(--data-success-700)]" : f.pct < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-tertiary)]"}`}>{f.pct > 0 ? "+" : ""}{f.pct}%</span>
-                      <span className="ml-auto text-xs text-[var(--text-tertiary)]">rango {f.low.toLocaleString("es-PE")}–{f.high.toLocaleString("es-PE")}</span>
+                      <span className="ml-auto text-xs text-[var(--text-tertiary)]">rango {formatNumber(f.low)}–{formatNumber(f.high)}</span>
                     </div>
                   ))}
                 </div>
@@ -330,12 +331,12 @@ export default function CacaoAsesor() {
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="rounded-xl bg-[var(--surface-sunken)] px-4 py-2.5 text-center">
                     <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Tu compra (prom.)</div>
-                    <div className="font-mono text-xl font-extrabold tabular-nums text-[var(--text-primary)]">S/ {data.local.miPrecioKg.toFixed(2)}<span className="text-sm font-normal text-[var(--text-tertiary)]">/kg</span></div>
+                    <div className="font-mono text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(data.local.miPrecioKg)}<span className="text-sm font-normal text-[var(--text-tertiary)]">/kg</span></div>
                   </div>
                   <Minus className="h-4 w-4 text-[var(--text-tertiary)]" />
                   <div className="rounded-xl bg-[var(--surface-sunken)] px-4 py-2.5 text-center">
                     <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Internacional</div>
-                    <div className="font-mono text-xl font-extrabold tabular-nums text-[var(--text-primary)]">S/ {data.local.refKg.toFixed(2)}<span className="text-sm font-normal text-[var(--text-tertiary)]">/kg</span></div>
+                    <div className="font-mono text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(data.local.refKg)}<span className="text-sm font-normal text-[var(--text-tertiary)]">/kg</span></div>
                   </div>
                   {data.local.spreadPct != null && (
                     <div className="flex-1 min-w-[180px]">
@@ -387,7 +388,7 @@ export default function CacaoAsesor() {
                       <b className="text-[var(--text-primary)]">{t.pct}%{t.kg != null ? ` (${t.kg} kg)` : ""}</b>
                       <span className="text-[var(--text-secondary)]"> — {t.cuando}</span>
                     </span>
-                    {t.precioRef != null && <span className="shrink-0 font-mono text-xs font-bold text-[var(--text-tertiary)]">USD {t.precioRef.toLocaleString("es-PE")}</span>}
+                    {t.precioRef != null && <span className="shrink-0 font-mono text-xs font-bold text-[var(--text-tertiary)]">USD {formatNumber(t.precioRef)}</span>}
                   </li>
                 ))}
               </ol>
@@ -404,7 +405,7 @@ export default function CacaoAsesor() {
                   return (
                     <div key={e.nombre} className="rounded-xl bg-[var(--surface-sunken)] p-3 text-center">
                       <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider" style={{ color: c }}>{e.nombre}</div>
-                      <div className="mt-1 font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">USD {e.target.toLocaleString("es-PE")}</div>
+                      <div className="mt-1 font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">USD {formatNumber(e.target)}</div>
                       <div className="text-xs font-bold" style={{ color: c }}>{e.pct > 0 ? "+" : ""}{e.pct}%</div>
                       <div className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">prob. {e.prob}%</div>
                     </div>

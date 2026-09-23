@@ -26,10 +26,11 @@ import { cn } from "@/lib/utils";
 import { exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
 import { generateContractPDF } from "@/lib/assets-contract";
+import { formatDate, formatDateLong, formatMonth } from "@/lib/format";
 
 interface AssetStats {
   id: string; name: string; type: string; plate: string | null; imageUrl: string | null;
@@ -50,7 +51,7 @@ interface Maintenance { id: string; assetId: string; title: string; intervalHour
 interface Receivable extends IncomeMov { assetName: string }
 
 const fmt = (n: number) => new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
-const dStr = (s: string) => new Date(s).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" });
+const dStr = (s: string) => formatDate(s);
 
 const TYPES = [
   { v: "cargador", label: "Cargador" }, { v: "oruga", label: "Oruga" }, { v: "camion", label: "Camión" },
@@ -170,13 +171,18 @@ export default function ActivosModule() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <KpiCard label="Máquinas" value={String(assets.length)} sub={`${assets.filter(a => a.status === "operativo").length} operativas`} bar="primary" />
-        <KpiCard label="Ingresos" value={fmt(totals.income)} sub="por alquileres" tone="primary" bar="primary" />
-        <KpiCard label="Gastos" value={fmt(totals.expense)} sub="combustible + mantto." bar="muted" />
-        <KpiCard label="Ganancia neta" value={fmt(totals.profit)} sub="ingresos − gastos" tone={totals.profit >= 0 ? "primary" : "error"} bar={totals.profit >= 0 ? "primary" : "error"} highlight />
-        <button type="button" onClick={() => setView("cobrar")} className="text-left">
-          <KpiCard label="Por cobrar" value={fmt(totals.pending)} sub={totals.pending > 0 ? "ver pendientes →" : "todo cobrado"} tone={totals.pending > 0 ? "warning" : "neutral"} bar={totals.pending > 0 ? "warning" : "muted"} />
-        </button>
+        <StatCard label="Máquinas" value={String(assets.length)} subValue={`${assets.filter(a => a.status === "operativo").length} operativas`} accentBar />
+        <StatCard label="Ingresos" value={fmt(totals.income)} subValue="por alquileres" emphasis="success" accentBar />
+        <StatCard label="Gastos" value={fmt(totals.expense)} subValue="combustible + mantto." accentBar />
+        <StatCard label="Ganancia neta" value={fmt(totals.profit)} subValue="ingresos − gastos" emphasis={totals.profit >= 0 ? "success" : "error"} accentBar highlight />
+        <StatCard
+          label="Por cobrar"
+          value={fmt(totals.pending)}
+          subValue={totals.pending > 0 ? "ver pendientes →" : "todo cobrado"}
+          emphasis={totals.pending > 0 ? "warning" : "neutral"}
+          accentBar
+          onClick={() => setView("cobrar")}
+        />
       </div>
 
       {/* Sub-tabs top-level: AdminTabBar da coherencia con el resto del admin
@@ -236,21 +242,12 @@ function EmptyFleet({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-function KpiCard({ label, value, sub, tone = "neutral", bar = "muted", highlight }: {
-  label: string; value: string; sub: string;
-  tone?: "neutral" | "primary" | "error" | "warning"; bar?: "primary" | "muted" | "error" | "warning"; highlight?: boolean;
-}) {
-  const valueColor = tone === "primary" ? "text-primary" : tone === "error" ? "text-[var(--data-error-600)]" : tone === "warning" ? "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-primary)]";
-  const barColor = bar === "primary" ? "bg-primary" : bar === "error" ? "bg-[var(--data-error-500)]/50" : bar === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--rule-soft)]";
-  return (
-    <div className={cn("rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5", highlight && "ring-1 ring-[var(--accent)]/25")}>
-      <p className="text-xs font-medium text-[var(--text-secondary)] ">{label}</p>
-      <p className={cn("mt-1 font-mono text-2xl font-bold tabular-nums", valueColor)}>{value}</p>
-      <p className="mt-1 text-xs text-[var(--text-tertiary)] ">{sub}</p>
-      <div className={cn("mt-2 h-1 rounded-full", barColor)} />
-    </div>
-  );
-}
+// `KpiCard` migró a `StatCard` (canon KPI 2026-09-22): `tone`/`bar` (dos ejes
+// de color independientes) se unificaron en un solo `emphasis` + `accentBar`
+// (la barra ahora sigue el mismo tono que el texto, no uno propio). El
+// `font-mono` del valor se pierde — StatCard usa la sans del panel a propósito
+// (memoria `font-mono-era-un-noop-en-el-panel`: nadie carga Geist Mono, esa
+// declaración ya no rendía monoespaciado real en ningún lado del admin).
 
 function typeIcon(type: string) { return type === "camion" ? Truck : Construction; }
 function typeLabel(type: string) { return TYPES.find(t => t.v === type)?.label ?? (type ? type.charAt(0).toUpperCase() + type.slice(1) : type); }
@@ -569,7 +566,7 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
   const all = mov ? [...mov.incomes.map(i => ({ ...i, t: "income" as const })), ...mov.expenses.map(e => ({ ...e, t: "expense" as const }))].sort((a, b) => (a.date < b.date ? 1 : -1)) : [];
 
   return (
-    <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex justify-end">
+    <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" className="fixed inset-0 z-modal flex justify-end">
       <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 bg-[var(--text-primary)]/50 backdrop-blur-sm" />
       <div className="relative flex h-full w-full max-w-md flex-col bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] motion-safe:animate-[slideInRight_0.25s_ease-out]">
         <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
@@ -759,7 +756,7 @@ function CalendarView({ assets }: { assets: AssetStats[] }) {
           <li key={i.id} className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
             <span className={cn("inline-flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg", active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
               <span className="text-sm font-black leading-none tabular-nums">{new Date(start).getDate()}</span>
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase leading-none">{new Date(start).toLocaleDateString("es-PE", { month: "short" })}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase leading-none">{formatMonth(start)}</span>
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">{i.assetName} {active && <span className="rounded bg-primary/10 px-1 text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">EN USO</span>}</p>
@@ -914,7 +911,7 @@ function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => v
       mode: form.mode, asset: { name: asset.name, type: asset.type, plate: asset.plate },
       client: form.client.trim(), quantity: form.quantity ? Number(form.quantity) : null, unitLabel: unitNoun(asset.rateUnit),
       rate: Number(form.rate) || 0, amount, startDate: form.startDate ? dStr(form.startDate) : null, endDate: form.endDate ? dStr(form.endDate) : null,
-      notes: form.notes.trim() || null, dateStr: new Date().toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" }),
+      notes: form.notes.trim() || null, dateStr: formatDateLong(new Date()),
     });
     toast.success("PDF generado"); onClose();
   };
@@ -987,7 +984,7 @@ function ModalShell({ title, subtitle, onClose, children, icon: Icon = Construct
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: onClose });
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] sm:max-w-2xl sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-start gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-5">
           <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2.1} /></span>

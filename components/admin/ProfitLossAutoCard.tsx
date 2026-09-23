@@ -5,6 +5,7 @@ import { sinDato } from "@/lib/errores/sin-dato";
 import { useState, useEffect, useCallback } from "react";
 import { DollarSign, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -37,7 +38,7 @@ type PLRow = {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${Math.abs(n).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(Math.abs(n))}`;
 }
 
 function getCurrentMonthRange(): { start: Date; end: Date } {

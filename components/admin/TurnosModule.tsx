@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
+import { formatCurrency, formatDateNumeric, formatDateShort, formatDateTime, formatTime } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -45,21 +46,6 @@ type Turno = {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatCurrency(n: number) {
-  return `S/${n.toFixed(2)}`;
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("es-PE", {
-    day: "2-digit", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
-}
 
 function elapsedTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -1305,9 +1291,9 @@ export default function TurnosModule() {
                   const diferencia = t.cierreEfectivo != null ? (t.cierreEfectivo - t.inicioEfectivo - t.ventasTotal) : 0;
                   return {
                     Cajero: t.adminUserId,
-                    Fecha: new Date(t.abrioEn).toLocaleDateString("es-PE"),
-                    "Hora inicio": new Date(t.abrioEn).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }),
-                    "Hora fin": t.cerroEn ? new Date(t.cerroEn).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : "—",
+                    Fecha: formatDateNumeric(t.abrioEn),
+                    "Hora inicio": formatTime(t.abrioEn),
+                    "Hora fin": t.cerroEn ? formatTime(t.cerroEn) : "—",
                     "Duracion (hrs)": duracion,
                     "Ventas total (S/)": Number(t.ventasTotal.toFixed(2)),
                     "Diferencia caja (S/)": Number(diferencia.toFixed(2)),
@@ -1354,7 +1340,7 @@ export default function TurnosModule() {
                       </p>
                       <p className="text-xs text-[var(--text-tertiary)]">
                         {cuadro === null ? "" : cuadro ? "Cuadrado" : `Dif: ${dif! >= 0 ? "+" : ""}${formatCurrency(dif!)}`}
-                        {" · "}{new Date(t.abrioEn).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                        {" · "}{formatDateShort(t.abrioEn)}
                       </p>
                     </div>
                   </div>
@@ -1571,7 +1557,7 @@ export default function TurnosModule() {
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
                 {/* Resumen — card destacado */}
                 <div className="bg-[var(--surface-alt)] rounded-xl p-5 space-y-2.5">
                   <div className="flex justify-between items-center text-base">

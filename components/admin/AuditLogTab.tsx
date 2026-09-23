@@ -10,6 +10,7 @@ import {
 import { cn, exportToCSV } from "@/lib/utils";
 import ResponsiveTable from "@/components/ui/ResponsiveTable";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { formatDateShort, formatTime } from "@/lib/format";
 // import type { ReactNode } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -35,7 +36,7 @@ type AuditEntry = {
 function fmtDate(iso: string) {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) + " " + d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+    return formatDateShort(d) + " " + formatTime(d);
   } catch { return iso; }
 }
 

@@ -9,6 +9,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
+import { formatDateTime } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,7 +55,7 @@ const TYPE_LABELS: Record<string, { label: string; color: string; dir: "in" | "o
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    return formatDateTime(iso);
   } catch { return iso; }
 }
 

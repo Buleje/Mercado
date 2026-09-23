@@ -18,6 +18,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { TIPOS_GESTION, type TipoGestion } from "@/lib/adelantos/gestion-cobranza";
 import { ModalActions, ModalShell, inputCls } from "../shared";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 const isoDia = (d: Date) => {
   const c = new Date(d);
@@ -91,7 +92,7 @@ export default function AnotarGestion({
   return (
     <ModalShell
       title={`Anotar gestión · ${nombre}`}
-      subtitle={`Debe S/ ${saldo.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`}
+      subtitle={`Debe S/ ${formatNumber(saldo, { min: 2 })}`}
       onClose={onClose}
       size="sm"
       footer={<ModalActions onClose={onClose} onSubmit={guardar} saving={saving} label="Anotar" />}
@@ -150,7 +151,7 @@ export default function AnotarGestion({
             min={0}
             value={montoPrometido}
             onChange={(e) => setMontoPrometido(e.target.value)}
-            placeholder={`¿Cuánto? (vacío = todo, S/ ${saldo.toFixed(2)})`}
+            placeholder={`¿Cuánto? (vacío = todo, ${formatCurrency(saldo)})`}
             aria-label="Monto prometido"
             className={`${inputCls} h-11 tabular-nums`}
           />

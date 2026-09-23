@@ -25,6 +25,7 @@ import { Field } from "@/components/admin/shared/Field";
 import { printCotizacion, type EmpresaEmisor } from "@/lib/documentos/cotizacion-print";
 import { cn } from "@/lib/utils";
 import ClienteFormModal from "./clientes/ClienteFormModal";
+import { formatCurrency, formatDate, formatMonth } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -68,11 +69,6 @@ const STATUS_META: Record<CotizacionStatus, { label: string; color: string; bg: 
   VENCIDA:    { label: "Vencida",    color: "text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)]" },
   CONVERTIDA: { label: "Convertida", color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 const PER_PAGE = 10;
 
@@ -187,7 +183,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("es-PE", { month: "short" });
+    const label = formatMonth(d);
     const count = cotizaciones.filter(c => c.createdAt.startsWith(mesKey)).length;
     monthlyData.push({ mes: label, count });
   }
@@ -972,7 +968,7 @@ export default function CotizacionesModule() {
 
       {/* ── TAB: NUEVA COTIZACIÓN (multi-step) ──────────────────────────── */}
       {activeTab === "nueva" && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-5">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
           {/* Step indicators */}
           <div className="flex items-center gap-2">
             {[1, 2, 3].map(s => (
@@ -1235,7 +1231,7 @@ export default function CotizacionesModule() {
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto"
             >
-              <div className="p-4 sm:p-6 space-y-5">
+              <div className="p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <CardTitle id={detailTituloId} className="text-lg font-bold text-[var(--text-primary)]">Cotización {selected.numero}</CardTitle>
                   <button aria-label="Cerrar" onClick={cerrarDetalle} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
@@ -1348,7 +1344,7 @@ export default function CotizacionesModule() {
                     }
                     if (diasEnviada > 3) {
                       const _phone = selected.customerId || "";
-                      const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${selected.numero} por S/${Number(selected.total).toFixed(2)}. ¿Te interesa?`;
+                      const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${selected.numero} por ${formatCurrency(Number(selected.total))}. ¿Te interesa?`;
                       return (
                         <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3 space-y-2">
                           <p className="text-xs font-bold text-[var(--data-warning-500)]">Sin respuesta hace {diasEnviada} días — ¿Enviar recordatorio?</p>
@@ -1400,7 +1396,7 @@ export default function CotizacionesModule() {
                     onClick={() => {
                       const c = selected;
                       const itemsText = (c.items ?? []).map((it, i) =>
-                        `${i + 1}. ${it.descripcion} x ${it.cantidad} — S/ ${Number(it.subtotal).toFixed(2)}`
+                        `${i + 1}. ${it.descripcion} x ${it.cantidad} — ${formatCurrency(Number(it.subtotal))}`
                       ).join("\n");
                       const texto = [
                         `*Cotización ${c.numero} — Buleje*`,
@@ -1410,9 +1406,9 @@ export default function CotizacionesModule() {
                         `─────────`,
                         itemsText,
                         `─────────`,
-                        `Subtotal: S/ ${Number(c.subtotal).toFixed(2)}`,
-                        `IGV (18%): S/ ${Number(c.igv).toFixed(2)}`,
-                        `*Total: S/ ${Number(c.total).toFixed(2)}*`,
+                        `Subtotal: ${formatCurrency(Number(c.subtotal))}`,
+                        `IGV (18%): ${formatCurrency(Number(c.igv))}`,
+                        `*Total: ${formatCurrency(Number(c.total))}*`,
                         `─────────`,
                         `Te interesa? Responde a este mensaje.`,
                         `Buleje — Pucallpa`,

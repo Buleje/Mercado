@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, StatCard } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@buleje/design-system/icons";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
+import { formatCurrency, formatNumber, formatTime } from "@/lib/format";
 
 interface Sale {
   id: string;
@@ -50,11 +51,11 @@ function isValidSale(s: unknown): s is Sale {
 }
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtShort(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/${formatNumber(n, { max: 0 })}`;
 }
 
 function getHourLabel(hour: number): string {
@@ -183,45 +184,14 @@ function HourlyChart({ buckets }: { buckets: HourlyBucket[] }) {
   );
 }
 
-interface KPIProps {
-  label: string;
-  value: string;
-  sub?: string;
-  delta?: number | null;
-  icon: React.ElementType;
-  accent?: "success" | "warning" | "danger" | "neutral";
-}
-
-function KPICard({ label, value, sub, delta, icon: Icon, accent = "neutral" }: KPIProps) {
-  const accentText = {
-    success: "text-[var(--data-success-500)]",
-    warning: "text-[var(--data-warning-500)]",
-    danger:  "text-[var(--data-error-500)]",
-    neutral: "text-[var(--text-primary)]",
-  }[accent];
-
-  return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2 min-w-0">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</span>
-        <Icon className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
-      </div>
-      <p className={cn("text-2xl font-extrabold tabular-nums leading-none truncate", accentText)}>{value}</p>
-      <div className="flex items-center gap-1.5 text-xs">
-        {delta != null && (
-          <span className={cn(
-            "inline-flex items-center gap-0.5 font-bold",
-            delta >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
-          )}>
-            {delta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-            {Math.abs(Math.round(delta))}%
-          </span>
-        )}
-        {sub && <span className="text-[var(--text-tertiary)] truncate">{sub}</span>}
-      </div>
-    </div>
-  );
-}
+/**
+ * Migración a StatCard (canon KPI 2026-09-22): la local `KPICard` mapea
+ * accent → emphasis 1:1 (danger → error). Cuando había `delta` numérico se usa
+ * el trend nativo de StatCard (flecha + %); cuando sólo había `sub` sin delta
+ * (Transacciones/Ticket/Mejor hora), va a `subValue` — pasarlo por
+ * `deltaLabel` habría dibujado una flecha de tendencia que el original no
+ * tenía para esos tres.
+ */
 
 interface DailyGoalTrackerProps {
   dailyGoal?: number;
@@ -271,7 +241,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
       return;
     }
     if (v > MAX_DAILY_GOAL) {
-      setEditError(`Máximo permitido: S/${MAX_DAILY_GOAL.toLocaleString("es-PE")}`);
+      setEditError(`Máximo permitido: S/${formatNumber(MAX_DAILY_GOAL)}`);
       return;
     }
     setEditError(null);
@@ -468,7 +438,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
           <div>
             <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">Meta del dia</SectionTitle>
             <p className="text-xs text-[var(--text-tertiary)]">
-              {lastUpdated ? `Actualizado ${lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}` : "Cargando..."}
+              {lastUpdated ? `Actualizado ${formatTime(lastUpdated)}` : "Cargando..."}
             </p>
           </div>
         </div>
@@ -664,31 +634,30 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
 
       {/* 4 KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
+        <StatCard
           label="Ventas hoy"
           value={fmtShort(stats.todayTotal)}
           icon={Target}
-          accent={pct >= 100 ? "success" : pct >= 50 ? "neutral" : "danger"}
-          delta={stats.deltaVsYesterday}
-          sub={stats.deltaVsYesterday != null ? "vs ayer al mismo horario" : undefined}
+          emphasis={pct >= 100 ? "success" : pct >= 50 ? "neutral" : "error"}
+          delta={stats.deltaVsYesterday ?? undefined}
+          deltaLabel={stats.deltaVsYesterday != null ? "vs ayer al mismo horario" : undefined}
         />
-        <KPICard
+        <StatCard
           label="Transacciones"
           value={String(stats.todayCount)}
           icon={ShoppingCart}
-          sub={`Ayer cerró ${stats.yesterdayTotal > 0 ? Math.round((stats.yesterdayUntilNowTotal / Math.max(1, stats.yesterdayTotal)) * 100) : 0}% a esta hora`}
+          subValue={`Ayer cerró ${stats.yesterdayTotal > 0 ? Math.round((stats.yesterdayUntilNowTotal / Math.max(1, stats.yesterdayTotal)) * 100) : 0}% a esta hora`}
         />
-        <KPICard
+        <StatCard
           label="Ticket promedio"
           value={stats.todayAOV > 0 ? fmtShort(stats.todayAOV) : "Sin ventas"}
           icon={Activity}
-          accent={stats.todayAOV > 0 ? "neutral" : undefined}
         />
-        <KPICard
+        <StatCard
           label="Mejor hora"
           value={stats.bestHour ? stats.bestHour.label : "—"}
           icon={Clock}
-          sub={stats.bestHour ? `${fmtShort(stats.bestHour.revenue)} · ${stats.bestHour.count} ${stats.bestHour.count === 1 ? "venta" : "ventas"}` : "Aún sin ventas"}
+          subValue={stats.bestHour ? `${fmtShort(stats.bestHour.revenue)} · ${stats.bestHour.count} ${stats.bestHour.count === 1 ? "venta" : "ventas"}` : "Aún sin ventas"}
         />
       </div>
 

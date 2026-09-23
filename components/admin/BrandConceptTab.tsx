@@ -958,7 +958,7 @@ function ConceptCard({
               borderRadius: buttonRadius,
             }}
           >
-            <span className="text-[length:var(--ts-2xs)] font-bold">♥</span>
+            <Heart className="h-4 w-4" fill="currentColor" aria-hidden />
           </div>
         </div>
 
@@ -1031,7 +1031,7 @@ function ConceptCard({
                 : "bg-[var(--rule-soft)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-transparent",
             )}
           >
-            {isActive ? "✓ Aplicado" : "Aplicar"}
+            {isActive ? <span className="inline-flex items-center justify-center gap-1"><Check className="h-4 w-4" aria-hidden /> Aplicado</span> : "Aplicar"}
           </button>
           <button
             type="button"

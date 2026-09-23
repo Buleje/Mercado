@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Product, Sale, SaleItem } from "@/types/erp";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface ProfitMarginAnalyzerProps {
@@ -24,7 +25,7 @@ interface ProductMargin {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtPct(n: number) {

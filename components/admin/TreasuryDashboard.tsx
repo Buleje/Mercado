@@ -1,18 +1,18 @@
 "use client";
-import { DataTable, SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle, StatCard } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle,
   Calendar, ArrowUpRight, ArrowDownRight, RefreshCw, MessageCircle,
 } from "@buleje/design-system/icons";
 import {
-  AreaChart, Area, XAxis, YAxis,
+  Area, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { LazyAreaChart } from "@/components/charts";
 import { cn } from "@/lib/utils";
 import { useFinanceAggregates } from "@/hooks/use-finance-aggregates";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import KPICard from "@/components/admin/shared/KPICard";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -287,36 +287,33 @@ export default function TreasuryDashboard() {
           ))
         ) : (
           <>
-            <KPICard
+            <StatCard
               label="Saldo del mes"
               value={fmt(kpis.saldoActual)}
               icon={kpis.saldoActual >= 0 ? TrendingUp : TrendingDown}
-              color={kpis.saldoActual >= 0 ? "var(--accent)" : "#e63946"}
-              alert={kpis.saldoActual < 0}
-              subtitle={`Ingresos ${fmt(kpis.ingresosMes)} − Gastos ${fmt(kpis.gastosMes)}`}
+              emphasis={kpis.saldoActual >= 0 ? "neutral" : "error"}
+              subValue={`Ingresos ${fmt(kpis.ingresosMes)} − Gastos ${fmt(kpis.gastosMes)}`}
             />
-            <KPICard
+            <StatCard
               label="Por cobrar (fiados)"
               value={fmt(kpis.porCobrar)}
               icon={ArrowUpRight}
-              color="#ff6b5b"
-              subtitle={`${fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length} clientes pendientes`}
+              emphasis="warning"
+              subValue={`${fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length} clientes pendientes`}
             />
-            <KPICard
+            <StatCard
               label="Por pagar"
               value={fmt(kpis.porPagar)}
               icon={ArrowDownRight}
-              color="#e63946"
-              alert={kpis.porPagar > 0 && pendingPayables.some(p => daysUntil(p.dueDate) < 0)}
-              subtitle={`${pendingPayables.length} facturas pendientes`}
+              emphasis="error"
+              subValue={`${pendingPayables.length} facturas pendientes`}
             />
-            <KPICard
+            <StatCard
               label="Flujo neto proyectado"
               value={fmt(kpis.flujoProyectado)}
               icon={kpis.flujoProyectado >= 0 ? TrendingUp : TrendingDown}
-              color={kpis.flujoProyectado >= 0 ? "var(--accent)" : "#e63946"}
-              alert={kpis.flujoProyectado < 0}
-              subtitle="Saldo + cobrar − pagar"
+              emphasis={kpis.flujoProyectado >= 0 ? "neutral" : "error"}
+              subValue="Saldo + cobrar − pagar"
             />
           </>
         )}
@@ -350,7 +347,7 @@ export default function TreasuryDashboard() {
           </div>
         ) : (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
-            <AreaChart data={flowData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <LazyAreaChart data={flowData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="ingGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
@@ -379,7 +376,7 @@ export default function TreasuryDashboard() {
               <Tooltip content={<FlowTooltip />} />
               <Area type="monotone" dataKey="ingresos" name="ingresos" stroke="var(--accent)" strokeWidth={2} fill="url(#ingGrad)" dot={false} />
               <Area type="monotone" dataKey="gastos" name="gastos" stroke="#ff6b5b" strokeWidth={2} fill="url(#gasGrad)" dot={false} />
-            </AreaChart>
+            </LazyAreaChart>
           </ResponsiveContainer>
         )}
       </div>

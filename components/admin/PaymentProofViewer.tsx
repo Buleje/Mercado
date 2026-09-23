@@ -323,7 +323,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
       {lightbox && (
         <div
           role="presentation"
-          className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm"
+          className="fixed inset-0 z-system bg-black/85 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && setLightbox(false)}
         >
           {/* El diálogo deja pasar los clics (`pointer-events-none`): tocar fuera de la

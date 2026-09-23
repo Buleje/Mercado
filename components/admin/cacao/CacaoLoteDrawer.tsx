@@ -32,6 +32,7 @@ import {
   type CacaoGrado,
 } from "@/lib/cacao/cacao-quality";
 import { printCacaoRecibo } from "@/lib/cacao/cacao-recibo";
+import { formatDate } from "@/lib/format";
 
 interface LoteFull {
   id: string;
@@ -89,12 +90,7 @@ interface VentaLink {
 
 const fdate = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      timeZone: "UTC",
-    });
+    return formatDate(iso, { soloFecha: true });
   } catch {
     return iso;
   }
@@ -243,7 +239,7 @@ export default function CacaoLoteDrawer({
           </button>
         </header>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 text-sm">
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 text-sm">
           {loading && (
             <div className="flex items-center justify-center gap-2 py-16 text-[var(--text-tertiary)]">
               <Loader2 className="h-5 w-5 animate-spin" /> Cargando ficha…

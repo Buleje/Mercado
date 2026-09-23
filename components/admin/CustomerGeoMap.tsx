@@ -13,6 +13,7 @@ import {
   EyeOff,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -67,7 +68,7 @@ function getTierLabel(tier: "high" | "medium" | "low"): string {
 }
 
 function formatSoles(n: number): string {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────

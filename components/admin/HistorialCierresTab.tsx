@@ -6,6 +6,7 @@ import { Download, Eye, ChevronLeft, ChevronRight, CalendarOff } from "@buleje/d
 import { exportToExcel } from "@/lib/export-excel";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
+import { formatCurrency, formatDateTime } from "@/lib/format";
 
 type DailySummary = {
   id: string;
@@ -41,7 +42,7 @@ function formatFecha(dateStr: string) {
 
 function formatMoney(n: number | null | undefined) {
   if (n == null) return "N/A";
-  return `S/ ${Number(n).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(Number(n))}`;
 }
 
 export default function HistorialCierresTab() {
@@ -325,7 +326,7 @@ export default function HistorialCierresTab() {
 
                 {/* Footer */}
                 <div className="pt-2 text-xs text-[var(--text-tertiary)] dark:text-muted">
-                  Creado por: {detail.creadoPor} &middot; {new Date(detail.createdAt).toLocaleString("es-PE")}
+                  Creado por: {detail.creadoPor} &middot; {formatDateTime(detail.createdAt)}
                 </div>
           </div>
         )}

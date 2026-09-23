@@ -28,13 +28,14 @@ const API_VERSION = "2023-06-01";
 export const anthropicProvider: LLMProvider = {
   name: "anthropic",
 
-  // Familia Claude 5 (verificado 2026-09-11 en platform.claude.com): Sonnet 5
-  // ($2/$10) y Opus 5 ($5/$25) reemplazan a 4.6 — más capaces y más baratos.
-  // Haiku 4.5 sigue siendo el económico ($1/$5). IDs sin fecha = snapshot fijo.
+  // Familia Claude 5 (verificado 2026-09-22 en platform.claude.com): Opus 5.5
+  // ($4/$20, salió el 22-09) es el premium — 20 % más barato que Opus 5 ($5/$25),
+  // que queda legacy. Sonnet 5 ($2/$10) balanceado, Haiku 4.5 ($1/$5) el económico.
+  // IDs sin fecha = snapshot fijo.
   models: {
     cheap: "claude-haiku-4-5-20251001",
     balanced: "claude-sonnet-5",
-    premium: "claude-opus-5",
+    premium: "claude-opus-5-5",
   },
 
   isAvailable() {

@@ -4,10 +4,11 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import { AlertTriangle, TrendingUp, Search, Loader2, RefreshCw, ShieldAlert } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 /* ── Helpers ── */
 const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+  `S/ ${formatNumber(n, { min: 2 })}`;
 
 /* ── Types ── */
 type ExpenseRecord = {

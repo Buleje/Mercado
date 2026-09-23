@@ -17,11 +17,12 @@ import {
   IGV_RATE,
   type RegimenTributario,
 } from "@/lib/tax/obligaciones-peru";
+import { formatCurrency } from "@/lib/format";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const REGIMENES = ["nrus", "rer", "rmt", "general"] as const;
 
-const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (n: number) => `${formatCurrency(n)}`;
 
 export default function ObligacionesTab() {
   const now = new Date();

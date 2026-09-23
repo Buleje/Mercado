@@ -11,6 +11,7 @@ import {
 } from "@buleje/design-system/icons";
 import { PLANS, type PlanId, type PlanDef, type PlanLimits } from "@/lib/plans";
 import { tenantFetch } from "@/lib/tenant-fetch";
+import { formatNumber } from "@/lib/format";
 
 // ─── Icono SVG de Mercado Pago ────────────────────────────
 function MercadoPagoIcon({ className }: { className?: string }) {
@@ -55,7 +56,7 @@ function pct(used: number, max: number) {
 }
 
 function formatLimit(max: number) {
-  return max === -1 ? "Ilimitado" : max.toLocaleString("es-PE");
+  return max === -1 ? "Ilimitado" : formatNumber(max);
 }
 
 const PLAN_COLORS: Record<string, string> = {
@@ -100,7 +101,7 @@ function UsageBar({
           {unlimited ? (
             <span className="text-[var(--data-success-500)] font-bold">∞ ilimitado</span>
           ) : (
-            <>{used.toLocaleString("es-PE")} / {max.toLocaleString("es-PE")}</>
+            <>{formatNumber(used)} / {formatNumber(max)}</>
           )}
         </span>
       </div>
@@ -445,7 +446,7 @@ export default function PlanTab() {
   const trialActive = trialDaysLeft !== null && trialDaysLeft > 0;
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-6 max-w-4xl">
       <AdminModuleHeader
         eyebrow="Cuenta · Suscripción"
         title="Mi Plan"

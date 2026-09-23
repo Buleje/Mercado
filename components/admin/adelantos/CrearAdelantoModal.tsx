@@ -25,6 +25,12 @@ import { tenantCacheKey } from "@/lib/tenant-cache";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import type { AdelantoModalidad, DbAdelanto } from "@/lib/db/adelantos.db";
 import CapturaFoto from "./CapturaFoto";
+import CamposPersonalizados, {
+  guardarValoresPendientes as guardarCamposPendientes,
+  hayPendientes,
+  pendientesVacios as camposVacios,
+  type PendientesCampos,
+} from "@/components/admin/shared/CamposPersonalizados";
 import { Field, ModalShell, fmtMon, inputCls } from "./shared";
 import SelectorContrato from "@/components/admin/forestal/SelectorContrato";
 import SelectorPersona from "./crear-adelanto/SelectorPersona";
@@ -45,6 +51,11 @@ import {
 import type { BeneficiarioConSaldo, CuotaBorrador } from "./crear-adelanto/tipos";
 
 export type { BeneficiarioConSaldo } from "./crear-adelanto/tipos";
+
+/** Id estable de este formulario para los campos personalizados (ADR-427).
+ *  El mismo que la ficha (`DetalleAdelantoModal`): lo que se pregunta al dar
+ *  la plata se lee después, cuando alguien llama a preguntar por el adelanto. */
+const FORMULARIO = "adelantos.adelanto";
 
 const MONEDAS = ["PEN", "USD"] as const;
 
@@ -138,6 +149,12 @@ export default function CrearAdelantoModal({
   const [notasRapidas, setNotasRapidas] = useState<string[]>(leerNotasRapidas);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  /** Lo escrito en campos personalizados: se guarda con el id del adelanto (ADR-427). */
+  const [camposPendientes, setCamposPendientes] = useState<PendientesCampos>(() => camposVacios(FORMULARIO));
+  /* Si el adelanto YA se creó y lo único que falló fueron sus campos
+     personalizados, volver a apretar «Crear» NO puede dar la plata dos veces:
+     con el id anotado se reintenta sólo lo que faltó. */
+  const adelantoCreadoRef = useRef<string | null>(null);
   /** Segunda pulsación cuando el monto pasa el tope de la persona. */
   const [confirmandoTope, setConfirmandoTope] = useState(false);
   const [conCamara, setConCamara] = useState(false);
@@ -196,8 +213,30 @@ export default function CrearAdelantoModal({
     [adelantos, beneficiarioId],
   );
 
+  /**
+   * Guarda los campos personalizados del adelanto recién dado. Devuelve el
+   * aviso si algo falló: la plata YA salió, así que se avisa y no se revierte.
+   */
+  const guardarCamposDelAdelanto = async (id: string): Promise<string | null> => {
+    if (!hayPendientes(camposPendientes)) return null;
+    const rc = await guardarCamposPendientes(id, camposPendientes);
+    return rc.errores.length > 0
+      ? `El adelanto quedó registrado, pero sus campos personalizados no: ${rc.errores.join(" · ")}. Puedes volver a cargarlos desde su ficha.`
+      : null;
+  };
+
   const submit = async () => {
     setErr(null);
+    /* Reintento después de que el adelanto ya entró: sólo faltan sus campos. */
+    const yaCreado = adelantoCreadoRef.current;
+    if (yaCreado) {
+      setSaving(true);
+      const aviso = await guardarCamposDelAdelanto(yaCreado);
+      setSaving(false);
+      if (aviso) { setErr(aviso); return; }
+      onCreated();
+      return;
+    }
     if (!beneficiarioId || montoNum <= 0) {
       setErr("Elige una persona y un monto válido.");
       return;
@@ -254,6 +293,16 @@ export default function CrearAdelantoModal({
         }),
       });
       if (res.ok) {
+        /* Los campos personalizados se guardan recién acá: antes no había
+           adelanto al que colgarlos (ADR-427). */
+        const creado = await leerJson<{ id?: string }>(res);
+        if (creado?.id) adelantoCreadoRef.current = creado.id;
+        const aviso = creado?.id
+          ? await guardarCamposDelAdelanto(creado.id)
+          : hayPendientes(camposPendientes)
+            ? "El adelanto quedó registrado, pero el servidor no devolvió su número: lo escrito en los campos personalizados no se guardó."
+            : null;
+        if (aviso) { setErr(aviso); return; }
         onCreated();
         return;
       }
@@ -557,6 +606,18 @@ export default function CrearAdelantoModal({
       {modalidad === "ENTREGAS_PACTADAS" && (
         <PlanDeEntregas cuotas={cuotas} onCambiar={setCuotas} montoAdelantado={montoNum} moneda={moneda} />
       )}
+
+      {/* Lo que este negocio anota de un adelanto y el formulario no pregunta
+          (ADR-427). Va a lo ancho y al final: son preguntas propias, no una
+          cuarta columna de las tres que se miran con el billete en la mano. */}
+      <CamposPersonalizados
+        className="mt-5"
+        formulario={FORMULARIO}
+        registroId={null}
+        etiquetaFormulario="adelantos"
+        pendientes={camposPendientes}
+        onPendientes={setCamposPendientes}
+      />
 
       {conCamara && <CapturaFoto onSubida={setComprobante} onCerrar={() => setConCamara(false)} />}
     </ModalShell>

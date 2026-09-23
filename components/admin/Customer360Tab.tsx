@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import EstadoCuentaModal from "./EstadoCuentaModal";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 import { LinkedDocumentsSection } from "./documentos/LinkedDocumentsSection";
+import { formatCurrency, formatDate, formatDateNumeric, formatMonth } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -80,11 +81,11 @@ type Segment = "frecuente" | "ocasional" | "nuevo" | "perdido";
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+  return formatDate(iso);
 }
 
 function fmtRelative(iso: string) {
@@ -884,7 +885,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               return labels.map((label, idx) => {
                 const val = values[idx];
                 const height = Math.max(4, (val / maxVal) * 64);
-                const monthName = new Date(label + "-01").toLocaleDateString("es-PE", { month: "short" });
+                const monthName = formatMonth(label + "-01");
                 return (
                   <div key={label} className="flex-1 flex flex-col items-center gap-1" title={`${monthName}: S/${val.toFixed(0)}`}>
                     <div className="w-full max-w-[28px] rounded-t" style={{ height, backgroundColor: "var(--accent)", opacity: val > 0 ? 1 : 0.2 }} />
@@ -935,7 +936,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Genero:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customer.genero === 'M' ? 'Masculino' : customer.genero === 'F' ? 'Femenino' : 'Otro'}</span></div>
             )}
             {customer.fechaNacimiento && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Nacimiento:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{new Date(customer.fechaNacimiento).toLocaleDateString('es-PE')}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Nacimiento:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatDateNumeric(customer.fechaNacimiento)}</span></div>
             )}
             {customer.comoLlego && (
               <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Llego por:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] capitalize">{customer.comoLlego}</span></div>
@@ -1016,7 +1017,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     )}>
                       {pct <= 0
                         ? "Sin crédito disponible"
-                        : `S/ ${disponible.toFixed(2)} disponible de S/ ${Number(customer.creditLimit).toFixed(2)}`}
+                        : `${formatCurrency(disponible)} disponible de ${formatCurrency(Number(customer.creditLimit))}`}
                     </span>
                     <button
                       onClick={() => { setEditingCreditLimit(true); setCreditLimitInput(String(customer.creditLimit ?? 0)); }}
@@ -1265,7 +1266,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 <Star className="h-6 w-6 text-[var(--data-warning-500)]" />
                 <div>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{totalPoints} puntos</p>
-                  <p className="text-xs text-[var(--text-secondary)] dark:text-muted">= S/{(totalPoints * 0.05).toFixed(2)} en descuento</p>
+                  <p className="text-xs text-[var(--text-secondary)] dark:text-muted">= {formatCurrency(totalPoints * 0.05)} en descuento</p>
                 </div>
                 {totalPoints >= 100 && (
                   <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">

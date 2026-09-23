@@ -149,7 +149,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-9000 bg-black/80 flex items-center justify-center p-4" onClick={cerrar}>
+    <div className="fixed inset-0 z-system bg-black/80 flex items-center justify-center p-4" onClick={cerrar}>
       <div
         ref={panelRef}
         role="dialog"

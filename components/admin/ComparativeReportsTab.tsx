@@ -10,6 +10,7 @@ import {
   TrendingUp, TrendingDown, Minus, RefreshCw, AlertTriangle, BarChart3,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -48,10 +49,10 @@ function fmtValue(key: keyof PeriodData, value: number) {
   const m = METRICAS.find(m => m.key === key);
   if (!m) return String(value);
   if (m.prefix === "S/") {
-    return `S/ ${value.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `${formatCurrency(value)}`;
   }
   if (key === "margen") return `${value.toFixed(1)}%`;
-  return value.toLocaleString("es-PE");
+  return formatNumber(value);
 }
 
 function calcChange(a: number, b: number) {

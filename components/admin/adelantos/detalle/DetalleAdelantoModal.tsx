@@ -24,6 +24,11 @@ import AnularAdelantoModal from "../lista/AnularAdelantoModal";
 import EditarNotasModal from "../lista/EditarNotasModal";
 import FichaAdelanto from "./FichaAdelanto";
 import PlanPactado from "./PlanPactado";
+import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
+
+/** Id estable de este formulario para los campos personalizados (ADR-427):
+ *  el mismo que el alta (`CrearAdelantoModal`). */
+const FORMULARIO = "adelantos.adelanto";
 
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
 
@@ -350,6 +355,15 @@ export default function DetalleAdelantoModal({
               </div>
             </div>
           </div>
+
+          {/* Lo que este negocio anota de un adelanto y la ficha no pregunta
+              (ADR-427). Acá se lee lo que se escribió al darlo, y se puede
+              completar después: el adelanto ya existe, se guarda solo. */}
+          <CamposPersonalizados
+            formulario={FORMULARIO}
+            registroId={adelantoId}
+            etiquetaFormulario="adelantos"
+          />
         </div>
       )}
 

@@ -57,6 +57,8 @@ import {
   MousePointer,
   Eye,
   AlertTriangle,
+  PenLine,
+  Trophy,
 } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import ImageUpload from "./ImageUpload";
@@ -67,6 +69,7 @@ import type { StoreTheme } from "./StoreCustomizer";
 import type { SectionKey } from "./StorefrontEditor";
 import type { Section, SectionTemplate } from "@/lib/store-sections-types";
 import { SECTION_TEMPLATES } from "@/lib/store-sections-types";
+import { formatCurrency, formatTime } from "@/lib/format";
 
 // Etiquetas legibles por tipo de sección custom (SectionRenderer / ADR-301 Fase 4).
 const CUSTOM_SECTION_LABELS: Record<string, string> = {
@@ -1923,7 +1926,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     const nm = versionName.trim();
     if (!nm) return;
     setSavedSnapshots((prev) => [
-      { theme: draftRef.current, savedAt: new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }), name: nm },
+      { theme: draftRef.current, savedAt: formatTime(new Date()), name: nm },
       ...prev.slice(0, 9),
     ]);
     setVersionName("");
@@ -2719,7 +2722,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       setSavedAt(Date.now());
       setIframeKey((k) => k + 1);
       setSavedSnapshots((prev) => [
-        { theme: draft, savedAt: new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) },
+        { theme: draft, savedAt: formatTime(new Date()) },
         ...prev.slice(0, 4),
       ]);
       // #3.1 Publicado → el borrador local ya no es "sin publicar".
@@ -2874,10 +2877,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   ];
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[#0c0d10] text-gray-200">
+    <div className="fixed inset-0 z-system flex flex-col bg-[#0c0d10] text-gray-200">
       {/* #17 Onboarding guiado (Lote K) — tarjeta de pasos, abajo a la derecha */}
       {tourStep !== null && TOUR_STEPS[tourStep] && (
-        <div className="fixed bottom-5 right-5 z-[115] w-full max-w-xs rounded-2xl border border-[var(--accent-soft)]/40 bg-[#16181d] p-4 shadow-[var(--shadow-xl)]">
+        <div className="fixed bottom-5 right-5 z-modal w-full max-w-xs rounded-2xl border border-[var(--accent-soft)]/40 bg-[#16181d] p-4 shadow-[var(--shadow-xl)]">
           <div className="mb-1 flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)]"><Sparkles className="h-3.5 w-3.5" /> Tour · {tourStep + 1}/{TOUR_STEPS.length}</span>
             <button type="button" onClick={closeTour} aria-label="Saltar tour" className="rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
@@ -2905,7 +2908,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       )}
       {/* #16 Modal de atajos de teclado (Lote H) */}
       {showShortcuts && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-modal-2 flex items-center justify-center p-4">
           <button type="button" aria-label="Cerrar" onClick={() => setShowShortcuts(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div ref={shortcutsPanelRef} role="dialog" aria-modal="true" aria-label="Atajos de teclado" tabIndex={-1} className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-[var(--shadow-xl)] outline-none">
             <div className="mb-3 flex items-center justify-between">
@@ -3138,7 +3141,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
       {/* #3.1 Banner de restauración de borrador sin publicar */}
       {pendingRestore && (
-        <div className="flex items-center gap-3 border-b border-[var(--accent-soft)]/30 bg-primary/10/[0.08] px-4 py-2">
+        <div className="flex items-center gap-3 border-b border-[var(--accent-soft)]/30 bg-primary/10 px-4 py-2">
           <Clock className="h-4 w-4 shrink-0 text-[var(--accent-soft)]" />
           <p className="min-w-0 flex-1 text-xs text-gray-200">
             Tenemos cambios sin publicar de un borrador anterior. ¿Restaurar o descartar?
@@ -3163,7 +3166,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       <div className="flex flex-1 min-h-0">
         {/* #7.4 Modo Focus: botón flotante para volver */}
         {focusMode && (
-          <button type="button" onClick={() => setFocusMode(false)} className="fixed left-1/2 top-3 z-[115] -translate-x-1/2 rounded-full bg-[#16181d] px-4 py-1.5 text-xs font-bold text-white shadow-[var(--shadow-xl)] ring-1 ring-white/10 transition-opacity hover:opacity-90">
+          <button type="button" onClick={() => setFocusMode(false)} className="fixed left-1/2 top-3 z-modal -translate-x-1/2 rounded-full bg-[#16181d] px-4 py-1.5 text-xs font-bold text-white shadow-[var(--shadow-xl)] ring-1 ring-white/10 transition-opacity hover:opacity-90">
             Salir de Focus · Esc
           </button>
         )}
@@ -3224,7 +3227,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <div className="p-4 space-y-3">
             {/* #1.1 Recomendaciones de diseño en tiempo real */}
             {designTips.length > 0 && (
-              <div className="space-y-1.5 rounded-xl border border-[var(--accent-soft)]/30 bg-primary/10/[0.07] p-2.5">
+              <div className="space-y-1.5 rounded-xl border border-[var(--accent-soft)]/30 bg-primary/10 p-3">
                 <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)]"><Sparkles className="h-3.5 w-3.5" /> Sugerencias ({designTips.length})</p>
                 {designTips.map((t, i) => (
                   <p key={i} className={cn("flex items-start gap-1.5 text-[length:var(--ts-2xs)] leading-snug", t.level === "warn" ? "text-[var(--data-warning-500)]" : "text-gray-300")}>
@@ -3286,8 +3289,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             <>
             {pbSelected && PB_KEY_LABEL[pbSelected] && (
               <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--data-info-500)]/40 bg-[var(--data-info-500)]/10 px-3 py-2">
-                <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
-                  ✎ Seleccionaste <b className="text-white">{PB_KEY_LABEL[pbSelected]}</b> en la tienda
+                <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
+                  <PenLine className="h-4 w-4 shrink-0" aria-hidden /> Seleccionaste <b className="text-white">{PB_KEY_LABEL[pbSelected]}</b> en la tienda
                 </span>
                 <button type="button" onClick={() => setPbSelected(null)} aria-label="Quitar selección" className="text-[var(--text-tertiary)] hover:text-white">
                   <X className="h-3.5 w-3.5" />
@@ -3713,7 +3716,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                             const win = abStats.A.views > 0 && abStats.B.views > 0 && ((v === "A" && abStats.A.clicks / Math.max(1, abStats.A.views) >= abStats.B.clicks / Math.max(1, abStats.B.views)) || (v === "B" && abStats.B.clicks / Math.max(1, abStats.B.views) > abStats.A.clicks / Math.max(1, abStats.A.views)));
                             return (
                               <div key={v} className={cn("rounded-md border p-2", win ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10" : "border-white/10 bg-white/[0.03]")}>
-                                <p className="text-xs font-bold text-white">Variante {v}{win ? " 🏆" : ""}</p>
+                                <p className="flex items-center gap-1 text-xs font-bold text-white">Variante {v}{win && <Trophy className="h-3.5 w-3.5" aria-hidden />}</p>
                                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{s.views} vistas · {s.clicks} clicks</p>
                                 <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">CTR {ctr}%</p>
                               </div>
@@ -4610,7 +4613,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         </button>
                       </div>
                       <select className={INPUT_CLASS} value={t.stars} onChange={(e) => updateTestimonial(idx, "stars", Number(e.target.value))} aria-label="Calificación de estrellas de la reseña">
-                        {[5, 4, 3, 2, 1].map((s) => <option key={s} value={s}>{"★".repeat(s)} ({s})</option>)}
+                        {[5, 4, 3, 2, 1].map((s) => <option key={s} value={s}>{s} estrella{s === 1 ? "" : "s"}</option>)}
                       </select>
                       <textarea className={cn(INPUT_CLASS, "resize-none")} rows={2} value={t.comment} onChange={(e) => updateTestimonial(idx, "comment", e.target.value)} placeholder="Comentario de la reseña…" />
                     </div>
@@ -4733,7 +4736,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
                 {/* Lote G: comparación side-by-side de 2 versiones seleccionadas. */}
                 {compareIdx.length === 2 && (
-                  <div className="rounded-lg border border-[var(--accent-soft)]/40 bg-primary/10 p-2.5">
+                  <div className="rounded-lg border border-[var(--accent-soft)]/40 bg-primary/10 p-3">
                     <p className="mb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">Comparando 2 versiones</p>
                     <div className="grid grid-cols-2 gap-2">
                       {compareIdx.map((ci) => {
@@ -4943,7 +4946,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     { name: "Leche entera 400g", price: 4.80 },
                     { name: "Azucar rubia 1kg", price: 5.20 },
                   ]).map((p, i) => (
-                    <PreviewCard key={i} title={p.name} price={`S/ ${Number(p.price).toFixed(2)}`} primaryColor={draft.primaryColor} borderRadius={draft.borderRadius} styleVariant={draft.cardStyle} />
+                    <PreviewCard key={i} title={p.name} price={`${formatCurrency(Number(p.price))}`} primaryColor={draft.primaryColor} borderRadius={draft.borderRadius} styleVariant={draft.cardStyle} />
                   ))}
                 </div>
 

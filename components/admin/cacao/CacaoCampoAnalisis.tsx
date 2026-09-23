@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, AlertCircle, TrendingUp, Scale, Coins, Trees, Trophy, Calendar } from "@buleje/design-system/icons";
 import { DataTable, StatCard } from "@buleje/design-system";
+import { formatNumber } from "@/lib/format";
 
 interface Seccion {
   id: string; codigo: string; nombre: string | null; variedad: string | null;
@@ -27,10 +28,10 @@ interface Totales {
 }
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const soles = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-const kg = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 0 });
-const n1 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { maximumFractionDigits: 1 }));
-const n2 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { maximumFractionDigits: 2 }));
+const soles = (v: number) => formatNumber(v, 0);
+const kg = (v: number) => formatNumber(v, { max: 0 });
+const n1 = (v: number | null) => (v == null ? "—" : formatNumber(v, { max: 1 }));
+const n2 = (v: number | null) => (v == null ? "—" : formatNumber(v, { max: 2 }));
 
 /** Sparkline de barras de la tendencia de cosecha por campaña. */
 function Sparkline({ data }: { data: { anio: number; kg: number }[] }) {
@@ -71,7 +72,7 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
   if (secciones.length === 0) return <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]"><span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><TrendingUp className="h-7 w-7" /></span><p className="text-base font-bold text-[var(--text-primary)]">Sin datos para analizar</p><p className="mx-auto mt-1 max-w-sm text-sm">Registra cosechas y costos de labores en tus secciones y acá verás rendimiento, ingresos y margen por sección.</p></div>;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {totales && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatCard label="Cosecha total" value={`${kg(totales.cosechaKg)} kg`} subValue={totales.kgSinValorar > 0 ? `${kg(totales.kgSinValorar)} kg sin valorar` : undefined} icon={Trees} emphasis="neutral" />

@@ -10,6 +10,7 @@ import {
   ResponsiveContainer, Tooltip,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -79,7 +80,7 @@ function calcScore(s: Supplier): SupplierWithScore {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function ScoreBar({ value, color }: { value: number; color: string }) {
@@ -342,7 +343,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mejor precio</p>
-              <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.lowestPrice != null ? `S/${Number(kpis.lowestPrice).toFixed(2)}` : "—"}</p>
+              <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.lowestPrice != null ? `${formatCurrency(Number(kpis.lowestPrice))}` : "—"}</p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1 truncate">{kpis.lowestPriceName}</p>
             </div>
             <RefreshCw className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />

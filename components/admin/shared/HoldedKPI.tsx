@@ -3,6 +3,7 @@
 import React from "react";
 import { CardTitle, PageTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 interface HoldedKPIProps {
   title: string;
@@ -77,7 +78,7 @@ function HoldedKPI({
             </p>
             <p className="text-sm font-medium text-[var(--text-secondary)]">
               {prefix}
-              {objective.toLocaleString("es-PE")}
+              {formatNumber(objective)}
             </p>
           </div>
         )}
@@ -86,7 +87,7 @@ function HoldedKPI({
       <PageTitle as="p">
         {prefix}
         {typeof value === "number"
-          ? value.toLocaleString("es-PE", { minimumFractionDigits: 2 })
+          ? formatNumber(value, { min: 2 })
           : value}
         {suffix && (
           <span className="text-lg font-normal text-[var(--text-tertiary)] ml-1">

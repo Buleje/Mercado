@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, XCircle, Clock, MapPin, Phone, AlertCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DeliveryStopView, StopStatus } from "./types";
+import { formatTime } from "@/lib/format";
 
 const STATUS_LABELS: Record<StopStatus, string> = {
   pending: "Pendiente",
@@ -176,10 +177,7 @@ export function StopsTimeline({ stops, loading, onMarkStop }: StopsTimelineProps
                 <div className="mt-2 flex items-center gap-1 text-sm text-[var(--text-tertiary)] font-bold">
                   <Clock className="h-4 w-4" />
                   ETA{" "}
-                  {new Date(stop.estimatedArrivalAt).toLocaleTimeString("es-PE", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatTime(stop.estimatedArrivalAt)}
                 </div>
               )}
 

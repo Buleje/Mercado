@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
 import ClienteFormModal from "./clientes/ClienteFormModal";
+import { formatCurrency, formatDate, formatMonth, formatDateShort, formatDateNumeric, formatDateLong } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -127,14 +128,6 @@ const ENTIDAD_LABELS: Record<PrestamoEntidadTipo, string> = {
   EMPRESA: "Empresa",
   PROVEEDOR: "Proveedor",
 };
-
-function formatCurrency(n: number, moneda = "PEN") {
-  const symbol = moneda === "USD" ? "$" : "S/";
-  return `${symbol}${n.toFixed(2)}`;
-}
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 const PER_PAGE = 10;
 
@@ -271,7 +264,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
   for (let i = 5; i >= 0; i--) {
     const d = new Date(); d.setMonth(d.getMonth() - i);
     const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("es-PE", { month: "short" });
+    const label = formatMonth(d);
     const cobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn && c.pagadoEn.startsWith(mesKey)).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
     const prestamosDelMes = prestamos.filter(p => p.createdAt.startsWith(mesKey));
     const nuevos = prestamosDelMes.reduce((s, p) => s + p.monto, 0);
@@ -1093,7 +1086,7 @@ export default function PrestamosModule() {
           const d = new Date();
           d.setMonth(d.getMonth() - i);
           const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-          const label = d.toLocaleDateString("es-PE", { month: "short" });
+          const label = formatMonth(d);
           const cobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn && c.pagadoEn.startsWith(mesKey)).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
           const nuevos = prestamos.filter(p => p.createdAt.startsWith(mesKey)).reduce((s, p) => s + p.monto, 0);
           monthData.push({ mes: label, cobrado, nuevos });
@@ -1428,7 +1421,7 @@ export default function PrestamosModule() {
                               </span>
                             </div>
                             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                              Cuota N°{c.numeroCuota} · Vencía {new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                              Cuota N°{c.numeroCuota} · Vencía {formatDateShort(c.fechaVence)}
                             </p>
                           </div>
                           <span className="text-sm font-extrabold font-mono text-[var(--data-error-500)] shrink-0">
@@ -1489,7 +1482,7 @@ export default function PrestamosModule() {
                               </span>
                             </div>
                             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                              Cuota N°{c.numeroCuota} · Vence {new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                              Cuota N°{c.numeroCuota} · Vence {formatDateShort(c.fechaVence)}
                             </p>
                           </div>
                           <span className="text-sm font-extrabold font-mono text-[var(--text-primary)] shrink-0">
@@ -1898,7 +1891,7 @@ export default function PrestamosModule() {
                                 {rows.map(c => (
                                   <tr key={c.id} className={c.pagadoEn ? "bg-primary/10" : !c.pagadoEn && new Date(c.fechaVence) < new Date() ? "bg-[var(--data-error-50)]/50" : undefined}>
                                     <td className="font-mono text-[var(--text-secondary)]">{c.numeroCuota}</td>
-                                    <td className="text-[var(--text-secondary)]">{new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</td>
+                                    <td className="text-[var(--text-secondary)]">{formatDateShort(c.fechaVence)}</td>
                                     <td className="text-right font-mono text-[var(--text-primary)]">{formatCurrency(c.capital)}</td>
                                     <td className="text-right font-mono text-[var(--data-error-500)]/70">{formatCurrency(c.interes)}</td>
                                     <td className="text-right font-mono font-bold text-[var(--text-primary)]">{formatCurrency(c.monto)}</td>
@@ -2024,15 +2017,15 @@ export default function PrestamosModule() {
 <tbody>
 ${cuotas.map(c => { const row = `<tr>
   <td>${c.numeroCuota}</td>
-  <td>${new Date(c.fechaVence).toLocaleDateString("es-PE")}</td>
-  <td class="right">S/${Number(c.capital).toFixed(2)}</td>
-  <td class="right">S/${Number(c.interes).toFixed(2)}</td>
-  <td class="right"><b>S/${Number(c.monto).toFixed(2)}</b></td>
-  <td class="right">S/${(saldo = Math.max(0, saldo - c.capital)).toFixed(2)}</td>
+  <td>${formatDateNumeric(c.fechaVence)}</td>
+  <td class="right">${formatCurrency(c.capital)}</td>
+  <td class="right">${formatCurrency(c.interes)}</td>
+  <td class="right"><b>${formatCurrency(c.monto)}</b></td>
+  <td class="right">${formatCurrency((saldo = Math.max(0, saldo - c.capital)))}</td>
   <td class="${c.pagadoEn ? "paid" : "pending"}">${c.pagadoEn ? "Pagado" : "Pendiente"}</td>
-  <td>${c.pagadoEn ? new Date(c.pagadoEn).toLocaleDateString("es-PE") : "—"}</td>
+  <td>${formatDateNumeric(c.pagadoEn)}</td>
 </tr>`; return row; }).join("")}
-<tr class="total-row"><td colspan="2"><b>TOTAL</b></td><td class="right"><b>S/${cuotas.reduce((s,c)=>s+c.capital,0).toFixed(2)}</b></td><td class="right"><b>S/${cuotas.reduce((s,c)=>s+c.interes,0).toFixed(2)}</b></td><td class="right"><b>S/${totalPagar.toFixed(2)}</b></td><td colspan="3"></td></tr>
+<tr class="total-row"><td colspan="2"><b>TOTAL</b></td><td class="right"><b>${formatCurrency(cuotas.reduce((s,c)=>s+c.capital,0))}</b></td><td class="right"><b>${formatCurrency(cuotas.reduce((s,c)=>s+c.interes,0))}</b></td><td class="right"><b>${formatCurrency(totalPagar)}</b></td><td colspan="3"></td></tr>
 </tbody></table>
 <div class="footer">
   <div class="firma">Firma del deudor</div>
@@ -2052,7 +2045,7 @@ ${cuotas.map(c => { const row = `<tr>
                             const pagadas = cuotas.filter(c => c.pagadoEn);
                             const pendientes = cuotas.filter(c => !c.pagadoEn);
                             const saldoPendiente = pendientes.reduce((s, c) => s + c.monto, 0);
-                            const hoy = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+                            const hoy = formatDateLong(new Date());
                             const w = window.open("", "_blank");
                             if (!w) return;
                             w.document.write(`<!DOCTYPE html><html><head><title>Resumen de Deuda</title>
@@ -2102,12 +2095,12 @@ ${cuotas.map(c => { const row = `<tr>
   <tbody>
   ${cuotas.map(c => `<tr>
     <td>${c.numeroCuota}</td>
-    <td>${new Date(c.fechaVence).toLocaleDateString("es-PE")}</td>
-    <td class="right">S/ ${Number(c.capital).toFixed(2)}</td>
-    <td class="right">S/ ${Number(c.interes).toFixed(2)}</td>
-    <td class="right"><b>S/ ${Number(c.monto).toFixed(2)}</b></td>
+    <td>${formatDateNumeric(c.fechaVence)}</td>
+    <td class="right">${formatCurrency(c.capital)}</td>
+    <td class="right">${formatCurrency(c.interes)}</td>
+    <td class="right"><b>${formatCurrency(c.monto)}</b></td>
     <td class="${c.pagadoEn ? "paid" : "pend"}">${c.pagadoEn ? "PAGADO" : "PEND."}</td>
-    <td>${c.pagadoEn ? new Date(c.pagadoEn).toLocaleDateString("es-PE") : "—"}</td>
+    <td>${formatDateNumeric(c.pagadoEn)}</td>
   </tr>`).join("")}
   </tbody></table>
 </div>
@@ -2155,7 +2148,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   />
                                   <span className="flex-1 text-xs">
                                     <span className="font-bold text-[var(--text-primary)]">Cuota {c.numeroCuota}</span>
-                                    <span className="text-[var(--text-secondary)] ml-1">— {new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
+                                    <span className="text-[var(--text-secondary)] ml-1">— {formatDateShort(c.fechaVence)}</span>
                                   </span>
                                   <span className="text-xs font-bold font-mono text-[var(--text-primary)]">{formatCurrency(c.monto)}</span>
                                   {isOverdue && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1 py-0.5 rounded">VENCIDA</span>}
@@ -2274,7 +2267,7 @@ ${cuotas.map(c => { const row = `<tr>
         {showRefinanciar && selected && (
           <>
             <m.div key="ref-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowRefinanciar(false)} />
-            <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
+            <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-modal-2 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
               <div ref={refinanciarPanelRef} role="dialog" aria-modal="true" aria-label="Refinanciar préstamo" tabIndex={-1} className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2"><RotateCcw className="h-5 w-5 text-[var(--data-success-500)]" /> Refinanciar Préstamo</CardTitle>
@@ -2304,7 +2297,7 @@ ${cuotas.map(c => { const row = `<tr>
         {showCancelConfirm && selected && (
           <>
             <m.div key="cancel-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowCancelConfirm(false)} />
-            <m.div key="cancel-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowCancelConfirm(false)}>
+            <m.div key="cancel-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-modal-2 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowCancelConfirm(false)}>
               <div ref={cancelPanelRef} role="dialog" aria-modal="true" aria-label="¿Cancelar este préstamo?" tabIndex={-1} className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
                 <div className="flex items-center gap-3 p-3 bg-[var(--data-error-50)] rounded-xl border border-[var(--data-error-500)]">
                   <AlertCircle className="h-6 w-6 text-[var(--data-error-500)] shrink-0" />
@@ -2343,7 +2336,7 @@ ${cuotas.map(c => { const row = `<tr>
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+              className="fixed inset-0 z-modal-2 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowPago(false)}
             >
               <div ref={pagoPanelRef} role="dialog" aria-modal="true" aria-label="Pagar cuota" tabIndex={-1} className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
@@ -2395,7 +2388,7 @@ ${cuotas.map(c => { const row = `<tr>
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+              className="fixed inset-0 z-modal flex items-center justify-center p-4 overflow-y-auto"
               onClick={e => e.target === e.currentTarget && (() => { setShowCreate(false); resetCreateForm(); })()}
             >
               <div ref={createPanelRef} role="dialog" aria-modal="true" aria-label="Crear préstamo" tabIndex={-1} className="w-full max-w-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 my-4 outline-none">

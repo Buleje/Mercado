@@ -4,6 +4,7 @@ import { Search, ArrowRight, Package, Users, Zap, Loader2 } from "@buleje/design
 import { cn } from "@/lib/utils";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { ComponentType } from "react";
+import { formatCurrency } from "@/lib/format";
 
 // Historial de búsqueda eliminado (Brandon 2026-05-29): el palette solo busca
 // los módulos actuales del negocio + productos/clientes, sin recientes.
@@ -96,7 +97,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
           setDynProducts(products.map(p => ({
             id: `product-${p.id}`,
             label: p.name,
-            subtitle: `S/ ${Number(p.price).toFixed(2)}${p.category ? ` · ${p.category}` : ""}`,
+            subtitle: `${formatCurrency(Number(p.price))}${p.category ? ` · ${p.category}` : ""}`,
             category: "Producto",
             iconComponent: Package,
             onSelect: () => {

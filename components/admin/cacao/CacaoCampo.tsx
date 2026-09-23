@@ -18,6 +18,7 @@ import CacaoCampoMapa from "./CacaoCampoMapa";
 import CacaoCampoAgenda from "./CacaoCampoAgenda";
 import CacaoCampoAnalisis from "./CacaoCampoAnalisis";
 import CacaoCampoSanidad from "./CacaoCampoSanidad";
+import { formatNumber } from "@/lib/format";
 
 type PorTipo = Record<CacaoLaborTipo, { hechos: number; pendientes: number; vencido: boolean; ultimoHecho: string | null }>;
 export interface Parcela {
@@ -27,7 +28,7 @@ export interface Parcela {
   sanidad: { focos: number; severidadMax: SanidadSeveridad | null; plagas: string[] };
 }
 
-const n1 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { maximumFractionDigits: 1 }));
+const n1 = (v: number | null) => (v == null ? "—" : formatNumber(v, { max: 1 }));
 const VARIEDADES = ["CCN-51", "criollo", "trinitario", "forastero", "nacional"];
 
 /** Estado de una labor en la sección → key de PARCELA_STATUS (mismo color que la leyenda). */
@@ -68,7 +69,7 @@ export default function CacaoCampo() {
   }, [parcelas]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Secciones" value={String(kpis.total)} icon={Grid3x3} emphasis="neutral" />
         <StatCard label="Hectáreas" value={`${n1(kpis.area)} ha`} icon={Square} emphasis="neutral" />

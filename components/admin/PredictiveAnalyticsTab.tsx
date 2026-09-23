@@ -7,6 +7,7 @@ import {
   Users, Clock, RefreshCw, ExternalLink, Package,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatTime } from "@/lib/format";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -167,7 +168,7 @@ export default function PredictiveAnalyticsTab() {
         <div>
           <SectionTitle className="text-base font-extrabold text-[var(--text-primary)]">Predicciones IA</SectionTitle>
           <p className="text-xs text-[var(--text-tertiary)]">
-            Basado en historial de 28 dias · {new Date(data.generatedAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
+            Basado en historial de 28 dias · {formatTime(data.generatedAt)}
           </p>
         </div>
         <button
@@ -182,7 +183,7 @@ export default function PredictiveAnalyticsTab() {
       {/* Card 1: Ventas próxima semana */}
       <PredCard icon={data.trendPct >= 0 ? TrendingUp : TrendingDown} title="Ventas próxima semana" iconBg={data.trendPct >= 0 ? "bg-primary/10" : "bg-[var(--data-error-500)]"}>
         <div className="flex items-end gap-3">
-          <p className="text-4xl font-extrabold text-[var(--text-primary)]">S/{Number(data.salesForecast).toFixed(2)}</p>
+          <p className="text-4xl font-extrabold text-[var(--text-primary)]">{formatCurrency(Number(data.salesForecast))}</p>
           <span className={cn(
             "text-sm font-bold px-2 py-0.5 rounded-full mb-1",
             data.trendPct >= 0

@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, StatCard, BadgeStatus, type BadgeStatusVariant } from "@buleje/design-system";
 import { useMemo, useState } from "react";
 import {
   BarChart,
@@ -23,14 +23,12 @@ import {
 } from "@buleje/design-system/icons";
 import { cn, limaDateKey } from "@/lib/utils";
 import type { BusinessData } from "../ai-center.types";
+import { formatCurrency, formatWeekday } from "@/lib/format";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function getGreeting(): string {
@@ -75,41 +73,25 @@ function trendPct(today: number, yesterday: number): number | null {
   return Math.round(((today - yesterday) / yesterday) * 100);
 }
 
+/**
+ * Migración a StatCard (canon KPI 2026-09-22): antes devolvía clases de texto
+ * y de badge a mano; ahora devuelve `emphasis` (para el valor del StatCard) y
+ * `badgeVariant` (para el `BadgeStatus` del propio DS) — un solo mapeo, dos
+ * primitivos canónicos en vez de className armadas a mano.
+ */
 function healthScoreColor(score: number): {
-  text: string;
-  badge: string;
+  emphasis: "success" | "warning" | "error";
+  badgeVariant: BadgeStatusVariant;
   label: string;
 } {
-  if (score >= 80)
-    return {
-      text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-      badge:
-        "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-      label: "Saludable",
-    };
-  if (score >= 60)
-    return {
-      text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-      badge:
-        "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-      label: "Bueno",
-    };
-  if (score >= 40)
-    return {
-      text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
-      badge:
-        "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
-      label: "Regular",
-    };
-  return {
-    text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
-    badge: "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
-    label: "Critico",
-  };
+  if (score >= 80) return { emphasis: "success", badgeVariant: "success", label: "Saludable" };
+  if (score >= 60) return { emphasis: "success", badgeVariant: "success", label: "Bueno" };
+  if (score >= 40) return { emphasis: "warning", badgeVariant: "warning", label: "Regular" };
+  return { emphasis: "error", badgeVariant: "error", label: "Critico" };
 }
 
 function dayAbbr(date: Date): string {
-  return date.toLocaleDateString("es-PE", { weekday: "short" }).slice(0, 3);
+  return formatWeekday(date).slice(0, 3);
 }
 
 function formatDateHeader(): string {
@@ -247,41 +229,12 @@ function TrendBadge({ pct, size = "sm" }: TrendBadgeProps) {
   );
 }
 
-interface KPICardProps {
-  label: string;
-  value: string;
-  sub?: React.ReactNode;
-  icon: React.ReactNode;
-}
-
-function KPICard({ label, value, sub, icon }: KPICardProps) {
-  // 2026-04-24: tipografia subida (text-xs -> text-xs uppercase tracking;
-  // text-lg -> text-2xl extrabold) + padding generoso. Hereda --section-primary
-  // del wrapper para que el valor tome el accent rotativo de la posicion.
-  // 2026-04-25: empty-state ("Sin datos") usa tipografia secundaria muted
-  // para no competir visualmente con KPIs reales.
-  const isEmpty = typeof value === "string" && /sin datos/i.test(value);
-  return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 h-full flex flex-col justify-between gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-          {label}
-        </span>
-        <span className="text-[var(--text-tertiary)]">{icon}</span>
-      </div>
-      <p
-        className={
-          isEmpty
-            ? "text-base font-medium text-[var(--text-tertiary)] leading-none"
-            : "text-2xl sm:text-3xl font-extrabold text-[color:var(--section-primary,var(--text-primary))] leading-none tabular-nums tracking-tight"
-        }
-      >
-        {value}
-      </p>
-      {sub && <div className="text-xs text-[var(--text-secondary)] font-medium">{sub}</div>}
-    </div>
-  );
-}
+// `KPICard` migró a `StatCard` (canon KPI 2026-09-22). Se pierde a propósito
+// la paleta rotativa por posición (`--section-primary`: slate/cyan/naranja/
+// verde sin relación con bueno/malo) — StatCard sólo colorea con significado
+// (`emphasis`), y un color distinto por posición sin ese significado es
+// justo lo que el canon evita. El trend ahora es el nativo de StatCard
+// (`delta`/`deltaLabel`) en vez de un `<TrendBadge>` armado a mano en `sub`.
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
@@ -516,65 +469,44 @@ export default function ResumenSection({ data }: Props) {
         </a>
       </div>
 
-      {/* ── KPI grid — paleta rotativa por posicion ──
-          Cada celda hereda --section-primary distinto: slate / cyan / orange /
-          green. El KPICard usa esta CSS var para colorear el numero principal
-          de manera diferenciada. Salud negocio se mantiene con su healthColor
-          dinámico (verde/amber/rojo segun valor real). */}
-      <div
-        className="grid grid-cols-2 lg:grid-cols-4 gap-3 [&>*:nth-child(1)]:[--section-primary:#0f172a] [&>*:nth-child(2)]:[--section-primary:#0891b2] [&>*:nth-child(3)]:[--section-primary:#c2410c] [&>*:nth-child(4)]:[--section-primary:#15803d]"
-      >
-        <KPICard
+      {/* ── KPI grid ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard
           label="Ventas hoy"
           value={fmt(kpis.revenue.today)}
-          sub={<TrendBadge pct={kpis.revenue.trend} size="xs" />}
-          icon={<TrendingUp className="w-4 h-4" />}
+          icon={TrendingUp}
+          delta={kpis.revenue.trend ?? undefined}
+          deltaLabel={kpis.revenue.trend != null ? "vs ayer" : undefined}
+          subValue={kpis.revenue.trend == null ? "Sin datos previos" : undefined}
         />
-        <KPICard
+        <StatCard
           label="Transacciones"
           value={String(kpis.transactions.today)}
-          sub={<TrendBadge pct={kpis.transactions.trend} size="xs" />}
-          icon={<ShoppingCart className="w-4 h-4" />}
+          icon={ShoppingCart}
+          delta={kpis.transactions.trend ?? undefined}
+          deltaLabel={kpis.transactions.trend != null ? "vs ayer" : undefined}
+          subValue={kpis.transactions.trend == null ? "Sin datos previos" : undefined}
         />
-        <KPICard
+        <StatCard
           label="Ticket promedio"
           value={kpis.ticket.today > 0 ? fmt(kpis.ticket.today) : "Sin datos"}
-          sub={
-            kpis.ticket.today > 0 ? (
-              <TrendBadge pct={kpis.ticket.trend} size="xs" />
-            ) : undefined
-          }
-          icon={<Activity className="w-4 h-4" />}
+          icon={Activity}
+          delta={kpis.ticket.today > 0 ? (kpis.ticket.trend ?? undefined) : undefined}
+          deltaLabel={kpis.ticket.today > 0 && kpis.ticket.trend != null ? "vs ayer" : undefined}
+          subValue={kpis.ticket.today > 0 && kpis.ticket.trend == null ? "Sin datos previos" : undefined}
         />
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 h-full flex flex-col justify-between gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Salud negocio
-            </span>
-            <Users className="w-4 h-4 text-[var(--text-tertiary)]" />
-          </div>
-          <p
-            className={cn(
-              "text-2xl sm:text-3xl font-extrabold leading-none tabular-nums tracking-tight",
-              healthColor.text
-            )}
-          >
-            {healthScore}
-            <span className="text-sm font-bold text-[var(--text-tertiary)] ml-1">
-              /100
-            </span>
-          </p>
-          <div>
-            <span
-              className={cn(
-                "text-xs px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wider",
-                healthColor.badge
-              )}
-            >
-              {healthColor.label}
-            </span>
-          </div>
-        </div>
+        <StatCard
+          label="Salud negocio"
+          value={
+            <>
+              {healthScore}
+              <span className="text-sm font-bold text-[var(--text-tertiary)] ml-1">/100</span>
+            </>
+          }
+          icon={Users}
+          emphasis={healthColor.emphasis}
+          subValue={<BadgeStatus variant={healthColor.badgeVariant} label={healthColor.label} size="sm" />}
+        />
       </div>
 
       {/* ── Two-column grid ───────────────────────────────────────────────── */}

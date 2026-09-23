@@ -26,6 +26,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 
 import { SectionTitle } from "@buleje/design-system";
+import { formatDate, formatDateNumeric } from "@/lib/format";
 type Status = "pending" | "approved" | "rejected" | "hidden" | "all";
 
 interface AdminReview {
@@ -122,7 +123,7 @@ function ReplyBox({ review, onReplied }: { review: AdminReview; onReplied: () =>
     return (
       <div className="rounded-lg bg-primary/10 border border-[var(--accent)]/20 p-3">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)] mb-1">
-          Tu respuesta · {review.adminReplyDate ? new Date(review.adminReplyDate).toLocaleDateString("es-PE") : ""}
+          Tu respuesta · {review.adminReplyDate ? formatDateNumeric(review.adminReplyDate) : ""}
         </p>
         <p className="text-sm text-[var(--text-primary)]">{review.adminReply}</p>
         <button
@@ -218,7 +219,7 @@ export default function StoreReviewsAdminModule() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <SectionTitle className="text-[var(--text-primary)]">Reseñas de tu tienda</SectionTitle>
@@ -275,7 +276,7 @@ export default function StoreReviewsAdminModule() {
       )}
 
       {!loading && reviews.length === 0 && !error && (
-        <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-8 text-center">
+        <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-6 text-center">
           <p className="text-sm font-bold text-[var(--text-primary)]">Sin reseñas en esta categoría</p>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">
             Cuando los clientes dejen reseñas, aparecerán acá para que las moderes.
@@ -297,7 +298,7 @@ export default function StoreReviewsAdminModule() {
                 </div>
                 <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
                   <StarsDisplay rating={r.rating} />
-                  <span className="tabular-nums">{new Date(r.date).toLocaleDateString("es-PE", { year: "numeric", month: "short", day: "numeric" })}</span>
+                  <span className="tabular-nums">{formatDate(r.date)}</span>
                   {r.location && <span>· {r.location}</span>}
                   {r.phone && <span className="font-mono">· {r.phone}</span>}
                 </div>

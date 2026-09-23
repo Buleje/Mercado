@@ -9,6 +9,7 @@ import {
   ArrowRight,
   MessageCircle,
 } from "@buleje/design-system/icons";
+import { StatCard, type StatCardEmphasis } from "@buleje/design-system";
 import { cn, formatCurrency } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -101,46 +102,18 @@ function SkeletonRow() {
   );
 }
 
-interface KPICardProps {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  sub?: string;
-  accent?: "emerald" | "red" | "amber" | "gray";
-}
-
-function KPICard({ icon: Icon, label, value, sub, accent = "gray" }: KPICardProps) {
-  const iconColor = {
-    emerald: "text-[var(--data-success-500)]",
-    red: "text-[var(--data-error-500)]",
-    amber: "text-[var(--data-warning-500)]",
-    gray: "text-[var(--text-tertiary)]",
-  }[accent];
-
-  const valueColor = {
-    emerald: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    red: "text-[var(--data-error-700)] dark:text-red-400",
-    amber: "text-[var(--data-warning-700)] dark:text-amber-400",
-    gray: "text-[var(--text-primary)]",
-  }[accent];
-
-  return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 h-full flex flex-col justify-between gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">
-          {label}
-        </span>
-        <Icon className={cn("w-4 h-4 shrink-0", iconColor)} />
-      </div>
-      <p className={cn("text-2xl sm:text-3xl font-extrabold leading-none tabular-nums tracking-tight", valueColor)}>
-        {value}
-      </p>
-      {sub && (
-        <p className="text-xs font-medium text-[var(--text-secondary)]">{sub}</p>
-      )}
-    </div>
-  );
-}
+// El KPICard local migró a StatCard (canon KPI 2026-09-22), inline en los 4
+// usos: `accent` → `emphasis` (emerald→success, red→error, amber→warning,
+// gray→neutral) + `iconEmphasis` para que el ícono siga el mismo tono que
+// antes. Sin wrapper propio — un componente puente que sólo reenvía a
+// StatCard dispara igual el gate ds-no-kpi-card-clone.
+type AccentFiado = "emerald" | "red" | "amber" | "gray";
+const ACCENT_TO_EMPHASIS: Record<AccentFiado, StatCardEmphasis> = {
+  emerald: "success",
+  red: "error",
+  amber: "warning",
+  gray: "neutral",
+};
 
 interface StatusBadgeProps {
   status: FiadoEntry["status"];
@@ -309,39 +282,43 @@ export default function FiadosSection() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <KPICard
+          <StatCard
             icon={CreditCard}
             label="Total fiados activos"
             value={formatCurrency(kpis.totalBalance)}
-            sub={`${kpis.activosCount + kpis.vencidosCount} registros`}
-            accent="gray"
+            subValue={`${kpis.activosCount + kpis.vencidosCount} registros`}
+            emphasis={ACCENT_TO_EMPHASIS.gray}
+            iconEmphasis
           />
-          <KPICard
+          <StatCard
             icon={AlertTriangle}
             label="Vencidos"
             value={String(kpis.vencidosCount)}
-            sub={kpis.vencidosCount === 1 ? "cuenta" : "cuentas"}
-            accent={kpis.vencidosCount > 0 ? "red" : "gray"}
+            subValue={kpis.vencidosCount === 1 ? "cuenta" : "cuentas"}
+            emphasis={ACCENT_TO_EMPHASIS[kpis.vencidosCount > 0 ? "red" : "gray"]}
+            iconEmphasis
           />
-          <KPICard
+          <StatCard
             icon={Users}
             label="Clientes con fiado"
             value={String(kpis.uniqueCustomers)}
-            sub="activos o vencidos"
-            accent="gray"
+            subValue="activos o vencidos"
+            emphasis={ACCENT_TO_EMPHASIS.gray}
+            iconEmphasis
           />
-          <KPICard
+          <StatCard
             icon={ShieldAlert}
             label="Nivel de riesgo"
             value={kpis.risk}
-            sub={
+            subValue={
               kpis.risk === "ALTO"
                 ? "Mas del 30% vencido"
                 : kpis.risk === "MEDIO"
                 ? "Entre 10-30% vencido"
                 : "Menos del 10% vencido"
             }
-            accent={riskColor[kpis.risk] as "red" | "amber" | "emerald"}
+            emphasis={ACCENT_TO_EMPHASIS[riskColor[kpis.risk] as AccentFiado]}
+            iconEmphasis
           />
         </div>
       )}

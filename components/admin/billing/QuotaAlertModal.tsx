@@ -28,6 +28,7 @@ import {
 } from "@/components/admin/unified/MeteringCard/types";
 import { METERED_EVENTS } from "@/lib/billing/metering";
 import type { MeteredEvent } from "@/lib/billing/metering";
+import { formatDate, formatDateShort, formatNumber } from "@/lib/format";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -102,10 +103,10 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
 
       <div className="flex items-center justify-between">
         <span className={`text-xs ${TEXT_COLORS[light]}`}>
-          {used.toLocaleString("es-PE")} usados
+          {formatNumber(used)} usados
         </span>
         <span className="text-xs text-[var(--text-tertiary)]">
-          {limit === Infinity ? "Sin límite" : `Límite: ${limit.toLocaleString("es-PE")}`}
+          {limit === Infinity ? "Sin límite" : `Límite: ${formatNumber(limit)}`}
         </span>
       </div>
 
@@ -152,7 +153,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
+        className="fixed inset-0 z-modal bg-black/50 dark:bg-black/70 backdrop-blur-sm"
         aria-hidden="true"
         onClick={onClose}
       />
@@ -165,7 +166,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
         aria-labelledby={titleId}
         aria-describedby={descId}
         tabIndex={-1}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+        className="fixed inset-0 z-modal flex items-end sm:items-center justify-center p-4"
       >
         <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]">
 
@@ -183,9 +184,9 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
                 className="text-sm text-[var(--text-tertiary)] mt-0.5"
               >
                 Plan {PLAN_LABELS[snapshot.plan]} · Período:{" "}
-                {new Date(snapshot.period.from).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                {formatDateShort(snapshot.period.from)}
                 {" – "}
-                {new Date(snapshot.period.to).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+                {formatDate(snapshot.period.to)}
               </p>
             </div>
 

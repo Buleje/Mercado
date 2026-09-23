@@ -16,8 +16,9 @@
 import { CalendarDays, CheckCircle, Clock } from "@buleje/design-system/icons";
 import type { DbEntregaPactada } from "@/lib/db/adelantos.db";
 import { fmtMon } from "../shared";
+import { formatDate } from "@/lib/format";
 
-const dia = (iso: string) => new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" });
+const dia = (iso: string) => formatDate(iso);
 
 export default function PlanPactado({
   pactadas,

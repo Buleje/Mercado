@@ -12,15 +12,16 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CACAO_LABORES, LABOR_LABEL, LABOR_UNIDADES, PARCELA_STATUS, type CacaoLaborTipo, type CacaoParcelaStatus } from "@/lib/cacao/cacao-labores";
 import { PLAGA_LABEL, SANIDAD_SEVERIDAD, SANIDAD_ESTADO, type CacaoPlaga, type SanidadSeveridad, type SanidadEstado } from "@/lib/cacao/cacao-sanidad";
+import { formatDate, formatNumber } from "@/lib/format";
 
 const CACAO_VARIEDADES = ["CCN-51", "criollo", "trinitario", "forastero", "nacional"];
 
 interface Parcela { id: string; codigo: string; nombre: string | null; areaHa: number | null; variedad: string | null; anioSiembra: number | null; nPlantas: number | null; status: string; observaciones: string | null }
 interface Labor { id: string; tipo: CacaoLaborTipo; estado: string; fechaPlan: string | null; fechaHecho: string | null; responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null; insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null; loteId: string | null; gastoId: string | null; createdAt: string }
 interface Foco { id: string; plaga: CacaoPlaga; severidad: SanidadSeveridad; incidenciaPct: number | null; estado: SanidadEstado; fecha: string; tratamiento: string | null }
-const money = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = (v: number) => formatNumber(v, 2);
 
-const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
+const fdate = (iso: string | null) => { if (!iso) return "—"; try { return formatDate(iso, { soloFecha: true }); } catch { return iso; } };
 const ICON = Object.fromEntries(CACAO_LABORES.map((l) => [l.tipo, l.icon])) as Record<CacaoLaborTipo, (typeof CACAO_LABORES)[number]["icon"]>;
 
 function statusOf(labores: Labor[]): CacaoParcelaStatus {
@@ -98,7 +99,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
           <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
             <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold" style={{ background: m.bg, color: m.fg }}><m.icon className="h-3 w-3" />{m.label}</span>
             {parcela.status === "inactiva" && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]"><Power className="h-3 w-3" />Inactiva</span>}
-            {parcela.areaHa != null && <span>{parcela.areaHa.toLocaleString("es-PE", { maximumFractionDigits: 1 })} ha</span>}
+            {parcela.areaHa != null && <span>{formatNumber(parcela.areaHa, { max: 1 })} ha</span>}
             {parcela.variedad && <span>· {parcela.variedad}</span>}
             {parcela.anioSiembra && <span>· siembra {parcela.anioSiembra}</span>}
             {parcela.nPlantas && <span>· {parcela.nPlantas} plantas</span>}
@@ -138,7 +139,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
           {CACAO_LABORES.map((l) => {
             const ult = ultimoPorTipo.get(l.tipo);
             return (
-              <div key={l.tipo} className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+              <div key={l.tipo} className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
                 <l.icon className="h-4 w-4 shrink-0 text-[var(--accent)]" />
                 <div className="min-w-0">
                   <p className="truncate text-xs font-bold text-[var(--text-primary)]">{l.label}</p>
@@ -165,7 +166,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
                 const Icon = ICON[l.tipo];
                 const vencido = l.estado !== "hecho" && l.fechaPlan && new Date(l.fechaPlan).getTime() < Date.now();
                 return (
-                  <li key={l.id} className="flex items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2.5">
+                  <li key={l.id} className="flex items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
                     <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]" />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -251,7 +252,7 @@ function EditarParcelaForm({ parcela, onDone, onCancel }: { parcela: Parcela; on
         <label className="text-xs font-bold text-[var(--text-secondary)]">Estado<select value={f.status} onChange={set("status")} className={`mt-1 ${I}`}><option value="activa">Activa</option><option value="inactiva">Inactiva</option></select></label>
       </div>
       <label className="block text-xs font-bold text-[var(--text-secondary)]">Notas<input value={f.observaciones} onChange={set("observaciones")} placeholder="opcional" className={`mt-1 ${I}`} /></label>
-      {error && <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-2 text-xs text-[var(--data-error-700)]">{error}</div>}
+      {error && <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-xs text-[var(--data-error-700)]">{error}</div>}
       <div className="flex gap-2 pt-1">
         <button type="button" onClick={onCancel} className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">Cancelar</button>
         <button type="submit" disabled={submitting} className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar datos</button>
@@ -320,7 +321,7 @@ function CosechaAcopioModal({ labor, onClose, onSent }: { labor: Labor; onClose:
 
   const I = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
-    <AdminModal open onClose={onClose} variant="centered-sm" icon={Warehouse} title="Enviar cosecha a Acopio" description={`${kg.toLocaleString("es-PE")} kg cosechados el ${fdate(labor.fechaHecho)}.`}>
+    <AdminModal open onClose={onClose} variant="centered-sm" icon={Warehouse} title="Enviar cosecha a Acopio" description={`${formatNumber(kg)} kg cosechados el ${fdate(labor.fechaHecho)}.`}>
       <div className="space-y-4 px-5 py-5 sm:px-6">
         <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se creará un lote en <strong className="text-[var(--text-primary)]">Acopio</strong> con estos {kg} kg y el origen de esta sección (trazabilidad NTP 208.040). Puedes ajustarlo luego en Acopio.</p>
         <div className="grid grid-cols-2 gap-3">
@@ -391,7 +392,7 @@ function RegistrarLaborForm({ parcelaId, responsables, onDone }: { parcelaId: st
       <label className="block text-xs font-bold text-[var(--text-secondary)]">Detalle<input value={f.detalle} onChange={set("detalle")} placeholder="opcional" className={`mt-1 ${I}`} /></label>
       {f.recurrente && Number(f.recurrente) > 0 && <p className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]"><RotateCcw className="h-3 w-3" />Al marcarla hecha, se agenda automáticamente la próxima a {f.recurrente} días.</p>}
       {fechaFutura && !error && <p className="text-xs font-bold text-[var(--data-error-700)]">Una labor “ya hecha” no puede tener fecha futura.</p>}
-      {error && <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-2 text-xs text-[var(--data-error-700)]">{error}</div>}
+      {error && <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-xs text-[var(--data-error-700)]">{error}</div>}
       <button type="submit" disabled={submitting || fechaFutura} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar labor</button>
     </form>
   );

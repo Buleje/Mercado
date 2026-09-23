@@ -25,7 +25,7 @@ import { PLAZO_REGISTRO_DIAS, estaFueraDePlazo } from "@/lib/forestal/ctp-compli
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
 import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
 import type { CambioRecepcion } from "@/lib/forestal/recepcion-trozas";
-import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { guiaRecibida, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
@@ -1458,10 +1458,14 @@ export class WoodEntriesDB {
       proveedor: t.entry.providerName,
       fechaIngreso: t.entry.entryDate as unknown as string,
       fechaRecepcion: t.fechaRecepcion as unknown as string | null,
-      guiaRecepcionada:
-        t.entry.status === "validado" ||
-        Boolean(t.entry.fechaRecepcion) ||
-        Boolean(t.fechaRecepcion),
+      /* La MISMA derivación que usa el escritor de lotes (`motivoNoElegible`):
+         vive una sola vez en `guiaRecibida` para que la pantalla y el POST no
+         puedan discrepar sobre si esa madera llegó. */
+      guiaRecepcionada: guiaRecibida({
+        estado: t.entry.status,
+        fechaRecepcionGuia: t.entry.fechaRecepcion,
+        fechaRecepcionTroza: t.fechaRecepcion,
+      }),
       permiso: t.entry.originCode,
       resolucion: t.entry.originSourceNumber,
       /* DERIVADO, y se dice que lo es: «serfor» = la guía trae su constancia

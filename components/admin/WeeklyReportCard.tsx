@@ -6,6 +6,7 @@ import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { FileText, Download, Loader2, RefreshCw, TrendingUp, Package, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateLong, formatDateShort } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -50,7 +51,7 @@ type WeeklyData = {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function getWeekRange() {
@@ -120,7 +121,7 @@ export default function WeeklyReportCard() {
       }, 0);
       const margin = weekTotal > 0 ? ((weekTotal - totalCost) / weekTotal) * 100 : 0;
 
-      const weekLabel = `${monday.toLocaleDateString("es-PE", { day: "numeric", month: "short" })} — ${sunday.toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}`;
+      const weekLabel = `${formatDateShort(monday)} — ${formatDate(sunday)}`;
 
       setData({
         dashboard: dashRes,
@@ -153,7 +154,7 @@ export default function WeeklyReportCard() {
       const autoTable = (await import("jspdf-autotable")).default;
 
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const now = new Date().toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" });
+      const now = formatDateLong(new Date());
 
       // Header
       doc.setFillColor(45, 106, 79);
@@ -283,7 +284,7 @@ export default function WeeklyReportCard() {
         ) : error ? (
           <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-center py-6">{error}</p>
         ) : data ? (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Periodo */}
             <p className="text-xs text-[var(--text-tertiary)]">{data.weekLabel}</p>
 

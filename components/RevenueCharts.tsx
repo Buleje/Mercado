@@ -17,9 +17,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  AreaChart,
   Area,
-  BarChart,
   Bar,
   XAxis,
   YAxis,
@@ -27,6 +25,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { LazyAreaChart, LazyBarChart } from "@/components/charts";
 import {
   DollarSign,
   Users,
@@ -140,7 +139,7 @@ export default function RevenueCharts({ from, to, periodLabel }: RevenueChartsPr
         loading={loading}
       >
         <ResponsiveContainer minWidth={0} width="100%" height={280}>
-          <AreaChart data={revenueSeries} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+          <LazyAreaChart data={revenueSeries} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
             <defs>
               <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.35} />
@@ -176,7 +175,7 @@ export default function RevenueCharts({ from, to, periodLabel }: RevenueChartsPr
               strokeWidth={2.5}
               fill="url(#revGrad)"
             />
-          </AreaChart>
+          </LazyAreaChart>
         </ResponsiveContainer>
       </ChartCard>
 
@@ -189,7 +188,7 @@ export default function RevenueCharts({ from, to, periodLabel }: RevenueChartsPr
         loading={loading}
       >
         <ResponsiveContainer minWidth={0} width="100%" height={240}>
-          <BarChart data={signupSeries} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+          <LazyBarChart data={signupSeries} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" />
             <XAxis
               dataKey="bucket"
@@ -213,7 +212,7 @@ export default function RevenueCharts({ from, to, periodLabel }: RevenueChartsPr
               formatter={((value: number) => [value, "Registros"]) as never}
             />
             <Bar dataKey="count" fill="var(--accent)" radius={[6, 6, 0, 0]} />
-          </BarChart>
+          </LazyBarChart>
         </ResponsiveContainer>
       </ChartCard>
 
@@ -227,7 +226,7 @@ export default function RevenueCharts({ from, to, periodLabel }: RevenueChartsPr
           loading={loading}
         >
           <ResponsiveContainer minWidth={0} width="100%" height={240}>
-            <BarChart data={orderSeries} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+            <LazyBarChart data={orderSeries} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" />
               <XAxis
                 dataKey="bucket"
@@ -251,7 +250,7 @@ export default function RevenueCharts({ from, to, periodLabel }: RevenueChartsPr
                 formatter={((value: number) => [value, "Pedidos"]) as never}
               />
               <Bar dataKey="count" fill="#ff6b5b" radius={[6, 6, 0, 0]} />
-            </BarChart>
+            </LazyBarChart>
           </ResponsiveContainer>
         </ChartCard>
       )}

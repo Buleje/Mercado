@@ -32,6 +32,7 @@ import { requiereAtencion } from "@/lib/adelantos/limite-credito";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { fmtMon, fmtMonedas, inputCls } from "../shared";
 import type { BeneficiarioConSaldo } from "./tipos";
+import { formatDate, formatNumber } from "@/lib/format";
 
 /**
  * De dónde sale la plata. Decide si se anota un egreso en la caja del día.
@@ -86,7 +87,7 @@ export function MontoRapido({ monto, onCambiar }: { monto: string; onCambiar: (v
               : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           }`}
         >
-          {m.toLocaleString("es-PE")}
+          {formatNumber(m)}
         </button>
       ))}
       {/* Sumar en vez de reemplazar: «500 y 200 más» es como se arma un monto
@@ -312,7 +313,7 @@ function Fila({ label, valor, tono }: { label: string; valor: string; tono: "ok"
 }
 
 const fechaCorta = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" });
+  formatDate(iso);
 
 /** Cómo se portó las veces anteriores: el dato que decide si conviene repetir. */
 export function HistorialPersona({ historial }: { historial: DbAdelanto[] }) {

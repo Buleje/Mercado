@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { useState } from "react";
 import {
@@ -16,6 +16,7 @@ import {
   Users,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDateTime } from "@/lib/format";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -46,39 +47,16 @@ const MONTH_NAMES = [
 ];
 
 function fmt(n: number): string {
-  return `S/ ${n.toFixed(2)}`;
-}
-
-// ── Subcomponente: tarjeta KPI ────────────────────────────────────────────────
-
-function KpiCard({
-  label,
-  value,
-  icon: Icon,
-  color,
-}: {
-  label: string;
-  value: string;
-  icon:  React.ElementType;
-  color: "green" | "red" | "blue";
-}) {
-  const colors = {
-    green: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
-    red:   "bg-[var(--data-error-50)]   dark:bg-[var(--data-error-500)]/20   text-[var(--data-error-500)]   dark:text-[var(--data-error-500)]   border-[var(--data-error-500)]   dark:border-[var(--data-error-500)]",
-    blue:  "bg-primary/10  dark:bg-primary/15  text-[var(--data-success-500)]  dark:text-[var(--data-success-500)]  border-[var(--data-success-500)]/30  dark:border-[var(--data-success-500)]/30",
-  };
-  return (
-    <div className={cn("rounded-xl border p-4 flex items-center gap-3", colors[color])}>
-      <Icon className="h-6 w-6 shrink-0" />
-      <div>
-        <p className="text-xs opacity-70">{label}</p>
-        <p className="text-lg font-bold">{value}</p>
-      </div>
-    </div>
-  );
+  return `${formatCurrency(n)}`;
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
+// Nota de migración (canon KPI 2026-09-22): la tarjeta local `KpiCard` pintaba
+// TODO el cuerpo del color (fondo+borde+texto) — decorativo, y usado en un solo
+// archivo, así que no se absorbió a `StatCard` (que es monocromo por diseño,
+// sólo colorea con `emphasis`). Se pierde a propósito el fondo de color; se
+// preserva el significado (verde/rojo/azul → success/error/success) vía
+// `emphasis` + `iconEmphasis`.
 
 export default function ReporteMensualTab() {
   const now          = new Date();
@@ -240,23 +218,26 @@ export default function ReporteMensualTab() {
 
           {/* KPIs del reporte */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <KpiCard
+            <StatCard
               label="Ingresos"
               value={fmt(result.ingresos)}
               icon={TrendingUp}
-              color="green"
+              emphasis="success"
+              iconEmphasis
             />
-            <KpiCard
+            <StatCard
               label="Gastos"
               value={fmt(result.gastos)}
               icon={TrendingDown}
-              color="red"
+              emphasis="error"
+              iconEmphasis
             />
-            <KpiCard
+            <StatCard
               label="Utilidad"
               value={fmt(result.utilidad)}
               icon={BarChart3}
-              color={result.utilidad >= 0 ? "blue" : "red"}
+              emphasis={result.utilidad >= 0 ? "success" : "error"}
+              iconEmphasis
             />
           </div>
 
@@ -292,7 +273,7 @@ export default function ReporteMensualTab() {
                     Ingresos: {fmt(entry.ingresos)} · Utilidad: {fmt(entry.utilidad)}
                   </p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    Generado: {new Date(entry.generatedAt).toLocaleString("es-PE")}
+                    Generado: {formatDateTime(entry.generatedAt)}
                   </p>
                 </div>
                 <button

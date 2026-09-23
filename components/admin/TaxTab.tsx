@@ -10,6 +10,7 @@ import {
 import { cn, exportToCSV } from "@/lib/utils";
 import AdminCard from "./shared/AdminCard";
 import StatusBadge from "./shared/StatusBadge";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -39,10 +40,10 @@ type PeriodSummary = {
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 function fmt(n: number) {
-  return `S/ ${Math.abs(n).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(Math.abs(n))}`;
 }
 function fmtDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
+  try { return formatDate(iso); }
   catch { return iso; }
 }
 

@@ -13,10 +13,11 @@ import { AlertCircle, CheckCircle2, ChevronDown, Loader2, Lock, RotateCcw, Shiel
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { CacaoCierrePeriodo } from "@/lib/cacao/cacao-cierre-types";
+import { formatDateTime, formatMonthYear, formatNumber } from "@/lib/format";
 
 const URL = "/api/admin/cacao/cierre";
-const kg = (n: number) => `${n.toLocaleString("es-PE", { maximumFractionDigits: 2 })} kg`;
-const fmtFecha = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); };
+const kg = (n: number) => `${formatNumber(n, { max: 2 })} kg`;
+const fmtFecha = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? "—" : formatDateTime(d); };
 
 interface MonthOpt { key: string; label: string; year: number; month: number }
 function buildMonths(): MonthOpt[] {
@@ -24,7 +25,7 @@ function buildMonths(): MonthOpt[] {
   const now = new Date();
   for (let i = 1; i <= 12; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    out.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString("es-PE", { month: "long", year: "numeric" }), year: d.getFullYear(), month: d.getMonth() + 1 });
+    out.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: formatMonthYear(d, { largo: true }), year: d.getFullYear(), month: d.getMonth() + 1 });
   }
   return out;
 }
@@ -89,7 +90,7 @@ export default function CacaoCierrePanel() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="flex items-start gap-3">
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Lock className="h-5 w-5" /></span>
@@ -146,7 +147,7 @@ export default function CacaoCierrePanel() {
                       <Kpi label="Acopiado (mes)" value={kg(c.totales.acopioKg)} sub={`${c.totales.lotes} lotes`} />
                       <Kpi label="Vendido (mes)" value={kg(c.totales.ventasKg)} sub={`${c.totales.ventas} ventas`} />
                       <Kpi label="Stock de cierre" value={kg(c.snapshot.stockKg)} sub="apertura del mes siguiente" />
-                      <Kpi label="Pagado a productores" value={`S/ ${c.snapshot.pagadoProductores.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`} />
+                      <Kpi label="Pagado a productores" value={`S/ ${formatNumber(c.snapshot.pagadoProductores, { min: 2 })}`} />
                       {c.snapshot.porGrado.length > 0 && (
                         <div className="sm:col-span-2 lg:col-span-4">
                           <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Existencia por grado</p>

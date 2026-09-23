@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
+import { formatCurrency, formatDate, formatDateLong, formatDateNumeric, formatMonth, formatNumber } from "@/lib/format";
 import { Field } from "@/components/admin/shared/Field";
 import OCPDFExport from "./compras/OCPDFExport";
 import SupplierPriceComparison, { QuotationComparator } from "./compras/SupplierPriceComparison";
@@ -91,11 +92,6 @@ function OCProgressBar({ status }: { status: string }) {
       </div>
     </div>
   );
-}
-
-function formatDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
-  catch { return iso; }
 }
 
 type ItemDraft = { productId: number; name: string; quantity: number; unitCost: number; unit: string };
@@ -179,7 +175,7 @@ function FleteTardio({
         )}
       >
         <Truck className="h-3.5 w-3.5" />
-        {yaTiene ? `Costo de traerla: S/${((orden.flete ?? 0) + (orden.otrosCostos ?? 0)).toFixed(2)}` : "Falta cargar el flete"}
+        {yaTiene ? `Costo de traerla: ${formatCurrency((orden.flete ?? 0) + (orden.otrosCostos ?? 0))}` : "Falta cargar el flete"}
       </button>
     );
   }
@@ -415,11 +411,7 @@ export default function PurchaseOrdersTab() {
        al abrir el modal se recalcula con la fecha de HOY. */
     if (!showRecurringModal) return "";
     const baseMs = Date.now();
-    return new Date(baseMs + recurringInterval * 86400000).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
+    return formatDateLong(baseMs + recurringInterval * 86400000);
   }, [recurringInterval, showRecurringModal]);
 
   useScrollLock(showCreate || showScanner || showAddItemModal);
@@ -606,7 +598,7 @@ export default function PurchaseOrdersTab() {
       const aCredito = (orden?.paymentMethod ?? "").startsWith("credito_");
       const ok = await confirm({
         title: `¿Cancelar la orden de ${orden?.supplierName || "este proveedor"}?`,
-        description: `Por S/${Number(orden?.total ?? 0).toFixed(2)}.` +
+        description: `Por ${formatCurrency(Number(orden?.total ?? 0))}.` +
           (aCredito ? " Se anulará también la cuenta por pagar que generó (salvo que ya tenga pagos)." : "") +
           " Una orden cancelada no vuelve atrás.",
         intent: "danger",
@@ -790,7 +782,7 @@ export default function PurchaseOrdersTab() {
       const d = new Date(now);
       d.setMonth(d.getMonth() - i);
       const monthKey = d.toISOString().slice(0, 7);
-      const monthLabel = d.toLocaleDateString("es-PE", { month: "short" });
+      const monthLabel = formatMonth(d);
       const monthOrders = supplierOrders.filter(o => o.createdAt.startsWith(monthKey));
       const monthTotal = monthOrders.reduce((s, o) => s + o.total, 0);
       monthlyData.push({ month: monthLabel, amount: monthTotal });
@@ -818,11 +810,11 @@ export default function PurchaseOrdersTab() {
           <p className="text-sm text-[var(--text-secondary)]">
             {orders.length === 0
               ? "Crea la primera orden a un proveedor. Después puedes duplicarla o hacerla recurrente."
-              : `${orders.length} ${orders.length === 1 ? "orden registrada" : "órdenes registradas"} · Total acumulado S/${kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}${
+              : `${orders.length} ${orders.length === 1 ? "orden registrada" : "órdenes registradas"} · Total acumulado S/${formatNumber(kpis.totalAcumulado, { max: 0 })}${
                   // Decir qué quedó afuera: un total que baja sin explicación
                   // se lee como un error del sistema.
                   kpis.canceladas > 0
-                    ? ` (sin ${kpis.canceladas} cancelada${kpis.canceladas === 1 ? "" : "s"} por S/${kpis.montoCancelado.toLocaleString("es-PE", { maximumFractionDigits: 0 })})`
+                    ? ` (sin ${kpis.canceladas} cancelada${kpis.canceladas === 1 ? "" : "s"} por S/${formatNumber(kpis.montoCancelado, { max: 0 })})`
                     : ""
                 }`}
           </p>
@@ -953,9 +945,9 @@ export default function PurchaseOrdersTab() {
               Comprobante: o.invoiceNumber ?? "",
               "Total (S/)": o.total,
               "Flete (S/)": o.flete ?? 0,
-              Fecha: new Date(o.createdAt).toLocaleDateString("es-PE"),
-              "Prometida": o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString("es-PE") : "",
-              "Llegó": o.receivedDate ? new Date(o.receivedDate).toLocaleDateString("es-PE") : "",
+              Fecha: formatDateNumeric(o.createdAt),
+              "Prometida": o.deliveryDate ? formatDateNumeric(o.deliveryDate) : "",
+              "Llegó": o.receivedDate ? formatDateNumeric(o.receivedDate) : "",
               "La pidió": o.createdBy ?? "",
               "La recibió": o.receivedBy ?? "",
               Notas: o.notes ?? "",
@@ -998,8 +990,8 @@ export default function PurchaseOrdersTab() {
           />
           <KPICardOC
             label="Total este mes"
-            value={`S/${kpis.totalMes.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
-            sub={`acum. S/${kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
+            value={`S/${formatNumber(kpis.totalMes, { max: 0 })}`}
+            sub={`acum. S/${formatNumber(kpis.totalAcumulado, { max: 0 })}`}
             icon={TrendingUp}
             accent="neutral"
           />
@@ -1114,7 +1106,7 @@ export default function PurchaseOrdersTab() {
                       <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">OC a</p>
                       <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">{r.supplierName}</p>
                       <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                        {r.items.length} producto{r.items.length === 1 ? "" : "s"} · S/{r.items.reduce((s, i) => s + i.quantity * i.unitCost, 0).toFixed(2)}
+                        {r.items.length} producto{r.items.length === 1 ? "" : "s"} · {formatCurrency(r.items.reduce((s, i) => s + i.quantity * i.unitCost, 0))}
                       </p>
                     </div>
                     <button
@@ -1262,11 +1254,11 @@ export default function PurchaseOrdersTab() {
                     </div>
                     <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Total gastado</p>
-                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(stats.totalAmount).toFixed(2)}</p>
+                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(stats.totalAmount))}</p>
                     </div>
                     <div className="bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-base)]">
                       <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] uppercase mb-1">Promedio</p>
-                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(stats.avgAmount).toFixed(2)}</p>
+                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(stats.avgAmount))}</p>
                     </div>
                     <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase mb-1">Última compra</p>
@@ -1289,7 +1281,7 @@ export default function PurchaseOrdersTab() {
                               {prod.name}
                               <span className="text-[var(--text-tertiary)] dark:text-muted text-xs">({prod.count} und)</span>
                             </span>
-                            <span className="font-semibold text-primary">S/{Number(prod.total).toFixed(2)}</span>
+                            <span className="font-semibold text-primary">{formatCurrency(Number(prod.total))}</span>
                           </div>
                         ))}
                       </div>
@@ -1311,7 +1303,7 @@ export default function PurchaseOrdersTab() {
                               <div
                                 className="w-full bg-[var(--text-primary)] rounded-t transition-all hover:opacity-80"
                                 style={{ height: `${height}%` }}
-                                title={`${m.month}: S/${Number(m.amount).toFixed(2)}`}
+                                title={`${m.month}: ${formatCurrency(Number(m.amount))}`}
                               ></div>
                             </div>
                             <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">{m.month}</p>
@@ -1343,7 +1335,7 @@ export default function PurchaseOrdersTab() {
       {showCreate && (
         <div
           role="presentation"
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
+          className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
           onClick={(e) => e.target === e.currentTarget && closeCreateModal()}
         >
           <div
@@ -1516,7 +1508,7 @@ export default function PurchaseOrdersTab() {
 
                   {sobrecostos > 0 && items.length > 0 && (
                     <p className="text-xs text-[var(--text-secondary)] bg-[var(--surface-sunken)] rounded-xl px-3.5 py-2.5 border border-[var(--rule-base)]">
-                      Los S/{sobrecostos.toFixed(2)} se reparten entre los productos según cuánto vale cada uno.
+                      Los {formatCurrency(sobrecostos)} se reparten entre los productos según cuánto vale cada uno.
                       Así el costo del producto incluye lo que costó traerlo, y el margen que ves después es el de verdad.
                     </p>
                   )}
@@ -1667,7 +1659,7 @@ export default function PurchaseOrdersTab() {
                               </div>
                               <div className="ml-auto inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                                 <span className="text-xs font-bold uppercase">Total</span>
-                                <span className="text-base font-extrabold tabular-nums">S/{lineTotal.toFixed(2)}</span>
+                                <span className="text-base font-extrabold tabular-nums">{formatCurrency(lineTotal)}</span>
                               </div>
                             </div>
                           </div>
@@ -1687,18 +1679,18 @@ export default function PurchaseOrdersTab() {
                       <p className="text-xs text-[var(--text-secondary)]">{items.length} producto{items.length === 1 ? "" : "s"} · {items.reduce((s, i) => s + i.quantity, 0)} unidades</p>
                       {discount > 0 && (
                         <p className="text-xs text-[var(--data-success-500)] font-bold mt-0.5">
-                          Subtotal S/{itemsTotal.toFixed(2)} − {discount}% = ahorras S/{(itemsTotal - totalConDescuento).toFixed(2)}
+                          Subtotal {formatCurrency(itemsTotal)} − {discount}% = ahorras {formatCurrency(itemsTotal - totalConDescuento)}
                         </p>
                       )}
                       {sobrecostos > 0 && (
                         <p className="text-xs text-[var(--text-secondary)] font-bold mt-0.5">
-                          + S/{sobrecostos.toFixed(2)} de traerla · te cuesta S/{(totalConDescuento + sobrecostos).toFixed(2)}
+                          + {formatCurrency(sobrecostos)} de traerla · te cuesta {formatCurrency(totalConDescuento + sobrecostos)}
                         </p>
                       )}
                     </div>
                     <div className="text-right">
                       <p className="text-3xl font-extrabold text-primary tabular-nums">
-                        S/{totalConDescuento.toFixed(2)}
+                        {formatCurrency(totalConDescuento)}
                       </p>
                       {sobrecostos > 0 && (
                         <p className="text-xs text-[var(--text-tertiary)] font-bold">le pagas al proveedor</p>
@@ -1822,7 +1814,7 @@ export default function PurchaseOrdersTab() {
                   <div className="text-right shrink-0">
                     <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
                     <p className="text-2xl font-extrabold text-primary tabular-nums leading-none mt-0.5">
-                      S/{Number(o.total).toFixed(2)}
+                      {formatCurrency(Number(o.total))}
                     </p>
                   </div>
                 </div>
@@ -1935,16 +1927,16 @@ export default function PurchaseOrdersTab() {
                               {item.quantity}x {item.name} <span className="text-[var(--text-tertiary)] dark:text-muted">({item.unit})</span>
                             </span>
                             <div className="text-right">
-                              <span className="text-[var(--text-tertiary)] dark:text-muted text-xs mr-2">S/{Number(item.unitCost).toFixed(2)} c/u</span>
-                              <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{(item.quantity * item.unitCost).toFixed(2)}</span>
+                              <span className="text-[var(--text-tertiary)] dark:text-muted text-xs mr-2">{formatCurrency(Number(item.unitCost))} c/u</span>
+                              <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(item.quantity * item.unitCost)}</span>
                             </div>
                           </div>
                           {/* Mejora 20: Referencia de precio anterior */}
                           {prevPrice != null && (
                             <p className="text-xs text-[var(--text-tertiary)] pl-5 mt-0.5">
-                              Última vez: S/{prevPrice.toFixed(2)} ({prevDateRelative})
-                              {diff != null && diff > 0 && <span className="text-[var(--data-error-500)] ml-1">↑ S/{diff.toFixed(2)} mas caro</span>}
-                              {diff != null && diff < 0 && <span className="text-[var(--data-success-500)] ml-1">↓ S/{Math.abs(diff).toFixed(2)} mas barato</span>}
+                              Última vez: {formatCurrency(prevPrice)} ({prevDateRelative})
+                              {diff != null && diff > 0 && <span className="text-[var(--data-error-500)] ml-1">↑ {formatCurrency(diff)} mas caro</span>}
+                              {diff != null && diff < 0 && <span className="text-[var(--data-success-500)] ml-1">↓ {formatCurrency(Math.abs(diff))} mas barato</span>}
                               {diff != null && diff === 0 && <span className="text-[var(--text-tertiary)] ml-1">= Mismo precio</span>}
                             </p>
                           )}
@@ -1953,7 +1945,7 @@ export default function PurchaseOrdersTab() {
                     })}
                     <div className="flex justify-between items-center text-sm font-bold border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] pt-1.5 mt-1">
                       <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total</span>
-                      <span className="text-primary">S/{Number(o.total).toFixed(2)}</span>
+                      <span className="text-primary">{formatCurrency(Number(o.total))}</span>
                     </div>
                   </div>
                   {/* ADR-377: el papel, lo que costó traerla y quién la manejó. */}
@@ -1961,7 +1953,7 @@ export default function PurchaseOrdersTab() {
                     const sobrecosto = (o.flete ?? 0) + (o.otrosCostos ?? 0);
                     const datos: Array<{ etiqueta: string; valor: string }> = [];
                     if (o.invoiceNumber) datos.push({ etiqueta: TIPOS_COMPROBANTE.find(t => t.id === o.invoiceType)?.label ?? "Comprobante", valor: o.invoiceNumber });
-                    if (sobrecosto > 0) datos.push({ etiqueta: "Costo de traerla", valor: `S/${sobrecosto.toFixed(2)}` });
+                    if (sobrecosto > 0) datos.push({ etiqueta: "Costo de traerla", valor: `${formatCurrency(sobrecosto)}` });
                     if (o.deliveryDate) datos.push({ etiqueta: "Prometida", valor: formatDate(o.deliveryDate) });
                     if (o.receivedDate) datos.push({ etiqueta: "Llegó", valor: formatDate(o.receivedDate) });
                     if (o.createdBy) datos.push({ etiqueta: "La pidió", valor: o.createdBy });
@@ -2019,8 +2011,8 @@ export default function PurchaseOrdersTab() {
                           ? "bg-[var(--data-warning-50)] dark:bg-orange-950/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                           : "bg-[var(--surface-alt)] text-[var(--text-secondary)]"
                       )}>
-                        {diff < 0 ? `Ahorraste S/${Math.abs(diff).toFixed(2)} vs última compra` :
-                         diff > 0 ? `Pagaste S/${diff.toFixed(2)} mas vs última compra` :
+                        {diff < 0 ? `Ahorraste ${formatCurrency(Math.abs(diff))} vs última compra` :
+                         diff > 0 ? `Pagaste ${formatCurrency(diff)} mas vs última compra` :
                          "Mismo total que la compra anterior"}
                       </div>
                     );
@@ -2085,7 +2077,7 @@ export default function PurchaseOrdersTab() {
       {showAddItemModal && (
         <div
           role="presentation"
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
+          className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50"
           onClick={(e) => e.target === e.currentTarget && setShowAddItemModal(false)}
         >
           <div ref={addItemModalRef} role="dialog" aria-modal="true" aria-label="Agregar producto" tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl max-h-[85dvh] flex flex-col overflow-hidden">
@@ -2304,7 +2296,7 @@ export default function PurchaseOrdersTab() {
 
       {/* Barcode scanner modal */}
       {showScanner && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" role="presentation" onClick={(e) => e.target === e.currentTarget && setShowScanner(false)}>
+        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" role="presentation" onClick={(e) => e.target === e.currentTarget && setShowScanner(false)}>
           <div ref={scannerModalRef} role="dialog" aria-modal="true" aria-label="Escanear código de barras" tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>

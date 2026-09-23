@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Target, Pencil, Check, X, Trophy } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Sale } from "@/types/erp";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 interface WeeklyGoalCardProps {
   sales: Sale[];
@@ -84,7 +85,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
       return;
     }
     if (val > MAX_WEEKLY_GOAL) {
-      setEditError(`Máximo: S/${MAX_WEEKLY_GOAL.toLocaleString("es-PE")}`);
+      setEditError(`Máximo: S/${formatNumber(MAX_WEEKLY_GOAL)}`);
       return;
     }
     setEditError(null);
@@ -161,15 +162,15 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
       {/* Values */}
       <div className="flex items-center justify-between">
         <p className="text-sm font-bold text-[var(--text-primary)] ">
-          S/{weeklySales.toFixed(2)}{" "}
+          {formatCurrency(weeklySales)}{" "}
           <span className="text-xs font-normal text-[var(--text-tertiary)] ">
-            de S/{goal.toFixed(2)} ({percentage.toFixed(0)}%)
+            de {formatCurrency(goal)} ({percentage.toFixed(0)}%)
           </span>
         </p>
         {exceeded && (
           <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-2 py-1 rounded-full">
             <Trophy className="w-3.5 h-3.5" />
-            Meta alcanzada! +S/{extra.toFixed(2)}
+            Meta alcanzada! +{formatCurrency(extra)}
           </span>
         )}
       </div>

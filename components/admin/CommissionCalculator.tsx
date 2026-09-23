@@ -5,10 +5,11 @@ import { DataTable } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 /* ── Helpers ── */
 const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+  `S/ ${formatNumber(n, { min: 2 })}`;
 
 const STORAGE_KEY = "commission_rates";
 

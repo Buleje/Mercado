@@ -11,6 +11,7 @@ import {
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn, exportToCSV } from "@/lib/utils";
 import dynamic from "next/dynamic";
+import { formatDateNumeric, formatNumber } from "@/lib/format";
 
 // Estado del Modo SUNAT Oficial (read-only para el admin). Toggle = superadmin.
 const SunatModoOficialCard = dynamic(() => import("@/components/admin/sunat/SunatModoOficialCard"), { ssr: false });
@@ -49,7 +50,7 @@ type EmitForm = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
+const fmt = (n: number) => "S/ " + formatNumber(n, { min: 2 });
 
 const TYPE_META: Record<DocType, { label: string; color: string; bg: string }> = {
   boleta:         { label: "Boleta",          color: "text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15" },
@@ -135,7 +136,7 @@ export default function EInvoiceTab() {
         id: inv.id,
         serie: inv.series || (inv.type === "factura" ? "F001" : "B001"),
         number: inv.number != null ? String(inv.number) : "0",
-        date: inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("es-PE") : "-",
+        date: inv.createdAt ? formatDateNumeric(inv.createdAt) : "-",
         type: TYPE_MAP[inv.type ?? ""] ?? "boleta",
         status: STATUS_MAP[inv.sunatStatus ?? ""] ?? "emitido",
         clientName: inv.customerName || "-",
@@ -235,7 +236,7 @@ export default function EInvoiceTab() {
       id: data.invoice?.id || `${serie}-${Date.now()}`,
       serie,
       number: data.invoice?.número || String(Math.floor(Date.now() / 1000) % 99999999).padStart(8, "0"),
-      date: new Date().toLocaleDateString("es-PE"),
+      date: formatDateNumeric(new Date()),
       type: tipo,
       status: "emitido",
       clientName: emitForm.clienteNombre,

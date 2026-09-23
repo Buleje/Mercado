@@ -15,6 +15,7 @@ import {
 import { TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
+import { formatNumber } from "@/lib/format";
 
 type ChartRow = {
   mes: string;    // ISO "2026-05" (raw)
@@ -35,7 +36,7 @@ function isoToLabel(iso: string): string {
 }
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/${formatNumber(n, { max: 0 })}`;
 }
 
 /**
@@ -214,7 +215,7 @@ export default function FiadoTendenciaCobroChart() {
               const v = Number(value);
               const n = String(name);
               const display = n === "cobrados" ? "Cobrado" : n === "nuevos" ? "Prestado" : "Neto";
-              return [`S/${v.toLocaleString("es-PE")}`, display];
+              return [`S/${formatNumber(v)}`, display];
             }}
           />
           <Legend

@@ -18,6 +18,7 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import StatusBadge from "./shared/StatusBadge";
 import { Field } from "@/components/admin/shared/Field";
+import { formatCurrency, formatDate } from "@/lib/format";
 const PAY_STATUS_LABELS = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado" } as const;
 const PAY_STATUS_VARIANT: Record<"pendiente" | "parcial" | "pagado", "warning" | "info" | "success"> = {
   pendiente: "warning",
@@ -27,11 +28,6 @@ const PAY_STATUS_VARIANT: Record<"pendiente" | "parcial" | "pagado", "warning" |
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   efectivo: "Efectivo", yape: "Yape", plin: "Plin", transferencia: "Transferencia",
 };
-
-function formatDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
-  catch { return iso; }
-}
 
 // Extrae un mensaje legible de una respuesta fallida (evita el fallo silencioso).
 async function readError(res: Response): Promise<string> {
@@ -175,8 +171,8 @@ export default function PayablesTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Por pagar" value={`S/ ${totalDebt.toFixed(2)}`} icon={DollarSign} emphasis={totalDebt > 0 ? "warning" : "neutral"} />
-        <StatCard label="Pagado" value={`S/ ${totalPaid.toFixed(2)}`} icon={Check} emphasis="success" />
+        <StatCard label="Por pagar" value={`${formatCurrency(totalDebt)}`} icon={DollarSign} emphasis={totalDebt > 0 ? "warning" : "neutral"} />
+        <StatCard label="Pagado" value={`${formatCurrency(totalPaid)}`} icon={Check} emphasis="success" />
         <StatCard label="Cuentas activas" value={filtered.length} icon={CreditCard} />
       </div>
 
@@ -196,8 +192,8 @@ export default function PayablesTab() {
             >
               <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm truncate">{s.name}</p>
               <div className="flex flex-wrap items-center gap-3 mt-1">
-                <span className="text-xs text-[var(--data-error-500)] font-bold">Debe: S/{Number(s.pending).toFixed(2)}</span>
-                <span className="text-xs text-[var(--data-success-500)]">Pagado: S/{Number(s.totalPaid).toFixed(2)}</span>
+                <span className="text-xs text-[var(--data-error-500)] font-bold">Debe: {formatCurrency(Number(s.pending))}</span>
+                <span className="text-xs text-[var(--data-success-500)]">Pagado: {formatCurrency(Number(s.totalPaid))}</span>
               </div>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{s.count} factura{s.count !== 1 ? "s" : ""}</p>
             </button>
@@ -230,9 +226,9 @@ export default function PayablesTab() {
                     </div>
                     {p.description && <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">{p.description}</p>}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
-                      <span>Total: <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(p.amount).toFixed(2)}</span></span>
-                      <span>Pagado: <span className="font-bold text-[var(--data-success-500)]">S/{Number(p.paidAmount).toFixed(2)}</span></span>
-                      <span>Restante: <span className="font-bold text-[var(--data-error-500)]">S/{remaining.toFixed(2)}</span></span>
+                      <span>Total: <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(p.amount))}</span></span>
+                      <span>Pagado: <span className="font-bold text-[var(--data-success-500)]">{formatCurrency(Number(p.paidAmount))}</span></span>
+                      <span>Restante: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(remaining)}</span></span>
                       <span>Vence: {formatDate(p.dueDate)}</span>
                     </div>
                     {/* Progress bar — fill sólido y diferenciado: verde cuando
@@ -314,7 +310,7 @@ export default function PayablesTab() {
                         {p.payments.map((pay) => (
                           <div key={pay.id} className="flex items-center justify-between text-sm bg-[var(--surface-raised)] rounded-lg px-3 py-2">
                             <div>
-                              <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(pay.amount).toFixed(2)}</span>
+                              <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(pay.amount))}</span>
                               <span className="text-[var(--text-tertiary)] dark:text-muted ml-2">{METHOD_LABELS[pay.method]}</span>
                               {pay.reference && <span className="text-[var(--text-tertiary)] dark:text-muted ml-2 text-xs">Ref: {pay.reference}</span>}
                             </div>
@@ -333,7 +329,7 @@ export default function PayablesTab() {
       )}
       {/* ── Add payable modal ── */}
       {showAdd && (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
+      <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
         <div ref={addPanelRef} role="dialog" aria-modal="true" aria-labelledby={addTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
           <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
             <CardTitle id={addTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</CardTitle>

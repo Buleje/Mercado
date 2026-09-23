@@ -17,7 +17,7 @@
 
 import { useMemo, useState } from "react";
 import { CardTitle, StatCard } from "@buleje/design-system";
-import { BarChart3, TrendingDown, TrendingUp, Coins, Users, Clock, FileText, Gauge } from "@buleje/design-system/icons";
+import { BarChart3, TrendingDown, TrendingUp, Coins, Users, Clock, FileText, Gauge, PartyPopper } from "@buleje/design-system/icons";
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -26,6 +26,7 @@ import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { fmtMon, EmptyState, SkeletonGrid } from "./shared";
 import { deudoresDeCobranza } from "@/lib/adelantos/urgencia-cobranza";
 import { TRAMOS, tramoDe, type TramoId } from "@/lib/adelantos/gestion-cobranza";
+import { formatMonth } from "@/lib/format";
 
 export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading: boolean }) {
   // Monedas presentes (por volumen adelantado), para el toggle.
@@ -101,7 +102,7 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
     for (let i = 5; i >= 0; i--) {
       const d = new Date(); d.setMonth(d.getMonth() - i);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const label = d.toLocaleDateString("es-PE", { month: "short" });
+      const label = formatMonth(d);
       let adelantado = 0, liquidado = 0;
       for (const a of scoped) {
         if (a.fechaAdelanto.startsWith(key)) adelantado += a.montoAdelantado;
@@ -204,7 +205,7 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
               <Bar dataKey="monto" radius={[6, 6, 0, 0]}>{aging.map((b) => <Cell key={b.key} fill={b.color} />)}</Bar>
             </BarChart>
           </ResponsiveContainer>
-        ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Nadie te debe nada en {monedaLabel(cur)}. 🎉</p>}
+        ) : <p className="flex items-center justify-center gap-1.5 py-8 text-center text-base text-[var(--text-tertiary)]"><PartyPopper className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" aria-hidden /> Nadie te debe nada en {monedaLabel(cur)}.</p>}
       </div>
 
       {/* Evolución mensual */}

@@ -10,6 +10,7 @@ import { Thermometer, Loader2, X, Plus, RotateCw, Check } from "@buleje/design-s
 import { CardTitle, DataTable } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatDateShort } from "@/lib/format";
 
 interface Registro {
   id: string;
@@ -30,11 +31,7 @@ const I =
   "w-full h-11 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] placeholder:text-[var(--text-tertiary)]";
 const fdate = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      timeZone: "UTC",
-    });
+    return formatDateShort(iso, { soloFecha: true });
   } catch {
     return iso;
   }

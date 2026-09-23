@@ -15,6 +15,7 @@ import {
   RefreshCw,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ type SegmentInfo = {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+  `S/ ${formatNumber(n, { min: 2 })}`;
 
 function daysSince(iso: string | null | undefined): number {
   if (!iso) return 999;

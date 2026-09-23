@@ -77,7 +77,7 @@ export default function ManualDeliveryModal({
       description={`Pedido de ${customerName}`}
       variant="default"
     >
-      <div className="space-y-5 px-5 py-5 sm:px-6">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {/* Método */}
         <div className="space-y-2">
           <p className="text-sm font-bold text-[var(--text-primary)]">

@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, useId } from "react"
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   Calendar, DollarSign, FileX, Download, ArrowUpDown, ArrowUp,
@@ -134,13 +135,6 @@ const MOTIVOS_SUNAT = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-}
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
 function getDocIcon(número: string): string {
   if (número.startsWith("F")) return "\u{1F9FE}";
   if (número.startsWith("B")) return "\u{1F4C4}";
@@ -1279,7 +1273,7 @@ export default function NotasCreditoModule() {
             <m.div key="nc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 40 }} onClick={() => setSelected(null)} />
             <m.div key="nc-panel" ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto">
-              <div className="p-4 sm:p-6 space-y-5">
+              <div className="p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle id={detailTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
@@ -1412,7 +1406,7 @@ export default function NotasCreditoModule() {
           <>
             <m.div key="nnc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" onClick={() => resetWizard()} />
             <m.div key="nnc-modal" initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && resetWizard()}>
+              className="fixed inset-0 z-modal flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && resetWizard()}>
               <div
                 ref={wizardPanelRef}
                 role="dialog"

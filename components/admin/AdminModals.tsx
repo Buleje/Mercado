@@ -81,7 +81,7 @@ export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
         </button>
       }
     >
-      <div className={cn(MODAL_BODY, "space-y-5")}>
+      <div className={cn(MODAL_BODY, "space-y-4")}>
         {SHORTCUT_SECTIONS.map((section) => (
           <div key={section.title}>
             <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">

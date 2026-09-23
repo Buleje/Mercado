@@ -70,7 +70,7 @@ export default function EditarNotasModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"

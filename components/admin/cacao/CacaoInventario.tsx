@@ -33,6 +33,7 @@ import {
   type CacaoGrado,
 } from "@/lib/cacao/cacao-quality";
 import CacaoAjusteModal from "./CacaoAjusteModal";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 interface Inv {
   kgSecoDisponible: number;
@@ -77,7 +78,7 @@ interface Ajuste {
 const n2 = (v: number | null) =>
   v == null
     ? "—"
-    : v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    : formatNumber(v, 2);
 function relTime(iso: string | null): string {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -226,7 +227,7 @@ export default function CacaoInventario() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-[var(--text-tertiary)]">
           Cacao seco disponible, valorizado a costo y a precio internacional en vivo.
@@ -289,7 +290,7 @@ export default function CacaoInventario() {
           value={`S/ ${n2(inv.valorEstimado)}`}
           subValue={
             inv.precioRefProm > 0
-              ? `S/ ${Number(inv.precioRefProm).toFixed(2)}/kg acopio`
+              ? `${formatCurrency(Number(inv.precioRefProm))}/kg acopio`
               : "sin precio ref."
           }
           icon={Coins}
@@ -300,7 +301,7 @@ export default function CacaoInventario() {
           value={valorMercado != null ? `S/ ${n2(valorMercado)}` : "—"}
           subValue={
             precioIntlKg != null
-              ? `S/ ${precioIntlKg.toFixed(2)}/kg ICE${
+              ? `${formatCurrency(precioIntlKg)}/kg ICE${
                   precioMeta.stale
                     ? " · desactualizado"
                     : precioMeta.at

@@ -183,7 +183,7 @@ export default function WhatsAppTemplates() {
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-lg">💬</span>
+                <MessageSquare className="h-4 w-4 text-[var(--accent)]" aria-hidden />
                 <p className="text-sm font-bold text-[var(--text-primary)]">{template.nombre}</p>
               </div>
               {template.custom && (

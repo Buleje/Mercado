@@ -12,6 +12,9 @@ import {
 import { cn, exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
+import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 
 interface PendingOC {
   id: string;
@@ -68,7 +71,7 @@ const COND_MAP: Record<ItemCondition, { label: string; color: string; bg: string
 
 function fmtDate(iso: string) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" });
+  return formatDate(iso);
 }
 
 const EMPTY_CHECKLIST: ReceptionItem = { product: "", expectedQty: 0, receivedQty: 0, condition: "ok", notes: "" };
@@ -77,7 +80,16 @@ export default function ReceivingTab() {
   const [receptions, setReceptions]     = useState<Reception[]>([]);
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState("");
-  const [filterStatus, setFilterStatus] = useState<ReceptionStatus | "todos">("todos");
+  // Filtros en la cabecera, estilo Excel (Brandon, 2026-09-03/22): un solo
+  // estado por columna; las pastillas de arriba y el autofiltro del `<th>`
+  // escriben lo mismo. `[]` = todos los estados (antes era el sentinela
+  // "todos"), y ahora admite VARIOS a la vez (antes sólo 4 de los 5 estados
+  // tenían pastilla — "parcial"/"rechazada" quedaban sin forma de filtrarse).
+  const [estadoFiltro, setEstadoFiltro] = useState<ReceptionStatus[]>([]);
+  // Proveedor, en su columna: no existía ningún filtro para esto antes.
+  const [proveedorFiltro, setProveedorFiltro] = useState<string[]>([]);
+  // Fecha programada, en su columna: "entre estas fechas".
+  const [programadaRango, setProgramadaRango] = useState<Rango<string>>({ min: null, max: null });
   const [detail, setDetail]             = useState<Reception | null>(null);
   const [showNew, setShowNew]           = useState(false);
   const detailTitleId = useId();
@@ -186,7 +198,9 @@ export default function ReceivingTab() {
 
   const filtered = useMemo(() => {
     let list = receptions;
-    if (filterStatus !== "todos") list = list.filter(r => r.status === filterStatus);
+    if (estadoFiltro.length > 0) list = list.filter(r => estadoFiltro.includes(r.status));
+    if (proveedorFiltro.length > 0) list = list.filter(r => proveedorFiltro.includes(r.supplier));
+    list = list.filter(r => enRango(r.scheduledDate || null, programadaRango));
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(r =>
@@ -196,7 +210,21 @@ export default function ReceivingTab() {
       );
     }
     return list;
-  }, [receptions, search, filterStatus]);
+  }, [receptions, search, estadoFiltro, proveedorFiltro, programadaRango]);
+
+  // Opciones de los autofiltros de columna, con su peso (cuántas recepciones).
+  const proveedorFaceta = useMemo((): FacetaOpcion[] => {
+    const m = new Map<string, number>();
+    for (const r of receptions) m.set(r.supplier, (m.get(r.supplier) ?? 0) + 1);
+    return [...m.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+  }, [receptions]);
+  const estadoFaceta = useMemo((): FacetaOpcion[] => {
+    const m = new Map<ReceptionStatus, number>();
+    for (const r of receptions) m.set(r.status, (m.get(r.status) ?? 0) + 1);
+    return (Object.keys(STATUS_MAP) as ReceptionStatus[])
+      .filter(k => (m.get(k) ?? 0) > 0)
+      .map(k => ({ value: k, count: m.get(k) ?? 0 }));
+  }, [receptions]);
 
   // Discrepancy summary for a reception
   const getDiscrepancies = (items: ReceptionItem[]) =>
@@ -341,10 +369,12 @@ export default function ReceivingTab() {
         ] as const).map((p) => (
           <button
             key={p.id}
-            onClick={() => setFilterStatus(p.id as typeof filterStatus)}
+            // Atajo rápido: escribe el mismo `estadoFiltro` que el autofiltro
+            // de la columna Estado (que sí ofrece los 5 estados, no sólo 4).
+            onClick={() => setEstadoFiltro(p.id === "todos" ? [] : [p.id as ReceptionStatus])}
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
-              filterStatus === p.id
+              (p.id === "todos" ? estadoFiltro.length === 0 : estadoFiltro.length === 1 && estadoFiltro[0] === p.id)
                 ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
                 : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             )}
@@ -352,7 +382,7 @@ export default function ReceivingTab() {
             {p.label}
             <span className={cn(
               "rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums min-w-[20px] text-center",
-              filterStatus === p.id ? "bg-white/25" : "bg-[var(--surface-sunken)]"
+              (p.id === "todos" ? estadoFiltro.length === 0 : estadoFiltro.length === 1 && estadoFiltro[0] === p.id) ? "bg-white/25" : "bg-[var(--surface-sunken)]"
             )}>
               {p.count}
             </span>
@@ -368,20 +398,85 @@ export default function ReceivingTab() {
         </div>
       </div>
 
+      {/* Filtros de columna puestos, con su cruz — arriba de la tabla, para
+          que nunca quede acotada sin un control visible que lo saque. */}
+      <ChipsDeFiltros
+        chips={[
+          ...(proveedorFiltro.length > 0
+            ? [{ id: "proveedor", label: "Proveedor", texto: proveedorFiltro.length === 1 ? proveedorFiltro[0] : `Proveedor: ${proveedorFiltro.length} elegidos` }]
+            : []),
+          ...(rangoActivo(programadaRango)
+            ? [{ id: "programada", label: "Programada", texto: textoDeRango("Programada", programadaRango, { formatear: (v) => fmtDate(String(v)) }) }]
+            : []),
+          ...(estadoFiltro.length > 0
+            ? [{ id: "estado", label: "Estado", texto: estadoFiltro.length === 1 ? STATUS_MAP[estadoFiltro[0]].label : `Estado: ${estadoFiltro.length} elegidos` }]
+            : []),
+        ] satisfies ChipFiltro[]}
+        onQuitar={(id) => {
+          if (id === "proveedor") setProveedorFiltro([]);
+          else if (id === "programada") setProgramadaRango({ min: null, max: null });
+          else if (id === "estado") setEstadoFiltro([]);
+        }}
+        onLimpiarTodo={() => { setProveedorFiltro([]); setProgramadaRango({ min: null, max: null }); setEstadoFiltro([]); }}
+      />
+
+      {/* <640px la tabla es cards y el <thead> no existe: acá viven los mismos
+          autofiltros (mismo estado, un solo filtro cada uno). Sólo mobile —
+          en desktop ya están en su <th> y repetirlos enseña a dudar de cuál manda. */}
+      <div className="flex flex-wrap gap-2 sm:hidden [&>details]:mt-0">
+        <FiltroColumnaMulti label="Proveedor" value={proveedorFiltro} options={proveedorFaceta} onChange={setProveedorFiltro} placeholder="Proveedor" />
+        <FiltroColumnaRango label="Programada" esFecha placeholder="Programada" valor={programadaRango} onChange={(r) => setProgramadaRango(r as Rango<string>)} />
+        <FiltroColumnaMulti
+          label="Estado"
+          value={estadoFiltro}
+          options={estadoFaceta}
+          etiqueta={(v) => STATUS_MAP[v as ReceptionStatus]?.label ?? v}
+          onChange={(v) => setEstadoFiltro(v as ReceptionStatus[])}
+          placeholder="Estado"
+        />
+      </div>
+
       {/* Table */}
       <div>
         {loading ? (
           <LoadingState />
         ) : (
-          <DataTable className="min-w-[720px]">
+          <DataTable filtrable className="min-w-[720px]">
               <thead>
                 <tr>
                   <th>Ref</th>
-                  <th>Proveedor</th>
-                  <th>Programada</th>
+                  <th>
+                    <span className="block">Proveedor</span>
+                    <FiltroColumnaMulti
+                      label="Proveedor"
+                      value={proveedorFiltro}
+                      options={proveedorFaceta}
+                      onChange={setProveedorFiltro}
+                      placeholder="Todos"
+                    />
+                  </th>
+                  <th>
+                    <span className="block">Programada</span>
+                    <FiltroColumnaRango
+                      label="Programada"
+                      esFecha
+                      valor={programadaRango}
+                      onChange={(r) => setProgramadaRango(r as Rango<string>)}
+                    />
+                  </th>
                   <th>Recibida</th>
                   <th>Inspector</th>
-                  <th>Estado</th>
+                  <th>
+                    <span className="block">Estado</span>
+                    <FiltroColumnaMulti
+                      label="Estado"
+                      value={estadoFiltro}
+                      options={estadoFaceta}
+                      etiqueta={(v) => STATUS_MAP[v as ReceptionStatus]?.label ?? v}
+                      onChange={(v) => setEstadoFiltro(v as ReceptionStatus[])}
+                      placeholder="Todos"
+                    />
+                  </th>
                   <th className="text-center">Fotos</th>
                   <th className="text-center">NC</th>
                   <th></th>
@@ -558,7 +653,7 @@ export default function ReceivingTab() {
                   <option value="">— Elegir orden de compra —</option>
                   {pendingOCs.map((oc) => (
                     <option key={oc.id} value={oc.id}>
-                      {oc.id} · {oc.supplierName ?? "Sin proveedor"} · {oc.items?.length ?? 0} items{oc.total ? ` · S/${Number(oc.total).toFixed(2)}` : ""}
+                      {oc.id} · {oc.supplierName ?? "Sin proveedor"} · {oc.items?.length ?? 0} items{oc.total ? ` · ${formatCurrency(Number(oc.total))}` : ""}
                     </option>
                   ))}
                 </select>

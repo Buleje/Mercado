@@ -110,7 +110,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
 
         <div className="flex-1 overflow-y-auto">
           <div className="grid lg:grid-cols-[minmax(0,1fr)_300px]">
-            <form id="cacao-beneficio-form" onSubmit={submit} className="space-y-5 px-5 py-5">
+            <form id="cacao-beneficio-form" onSubmit={submit} className="space-y-4 px-5 py-5">
               {error && <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">{error}</div>}
 
               {/* Picker de lote */}

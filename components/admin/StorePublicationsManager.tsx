@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 import { PageTitle } from "@buleje/design-system";
+import { formatDateTimeShort } from "@/lib/format";
 interface OwnerPost {
   id: string;
   body: string;
@@ -170,7 +171,7 @@ export default function StorePublicationsManager() {
                     <Pin className="h-3 w-3" aria-hidden /> Fijada
                   </span>
                 )}
-                <span>{new Date(p.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                <span>{formatDateTimeShort(p.createdAt)}</span>
                 <span className="inline-flex items-center gap-1">
                   <MessageCircle className="h-3.5 w-3.5" aria-hidden /> {p.commentCount}
                 </span>

@@ -314,7 +314,7 @@ export default function CacaoBeneficio() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard

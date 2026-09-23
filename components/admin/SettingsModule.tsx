@@ -19,7 +19,7 @@ import {
   Calendar, Timer, Layers, Mail, Key, Wifi, WifiOff,
   BarChart3, Crown, ChevronRight, ChevronDown, Save,
   Plus, Trash2, Copy, Send, Activity,
-  HardDrive, ClipboardList, Monitor, SlidersHorizontal,
+  HardDrive, ClipboardList, Monitor, SlidersHorizontal, Palmtree,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { CardTitle, BlockTitle } from "@buleje/design-system";
@@ -1142,7 +1142,7 @@ export default function SettingsModule({
             <FieldLabel>Mensaje para clientes</FieldLabel>
             <TextInput value={maintenanceMsg} onChange={setMaintenanceMsg} placeholder="Ej: Estamos de vacaciones. Volvemos el lunes." />
             <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]">
-              <span className="text-lg">🏖</span>
+              <Palmtree className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" aria-hidden />
               <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium flex-1">{maintenanceMsg || "Vista previa..."}</p>
             </div>
           </div>
@@ -1169,7 +1169,7 @@ export default function SettingsModule({
         {bypassLogin && (
           <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
             <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
-            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">⚠️ RIESGO DE SEGURIDAD: Cualquier persona podrá acceder al panel de administración.</p>
+            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">RIESGO DE SEGURIDAD: Cualquier persona podrá acceder al panel de administración.</p>
           </div>
         )}
       </SectionCard>
@@ -2048,7 +2048,7 @@ export default function SettingsModule({
                 className={cn(
                 "shrink-0 space-y-1",
                 showMobileNav
-                  ? "fixed inset-0 z-40 bg-[var(--surface-raised)] p-4 overflow-y-auto sm:relative sm:inset-auto sm:z-auto sm:bg-transparent sm:p-0 sm:w-60"
+                  ? "fixed inset-0 z-dropdown bg-[var(--surface-raised)] p-4 overflow-y-auto sm:relative sm:inset-auto sm:z-auto sm:bg-transparent sm:p-0 sm:w-60"
                   : "hidden sm:block w-60"
               )}>
                 {showMobileNav && (
@@ -2138,7 +2138,7 @@ export default function SettingsModule({
 
       {/* Map picker modal */}
       {showMapPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" role="presentation" onClick={() => setShowMapPicker(false)}>
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60" role="presentation" onClick={() => setShowMapPicker(false)}>
           <m.div
             ref={mapPickerPanelRef}
             role="dialog"

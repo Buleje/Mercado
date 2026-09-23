@@ -28,9 +28,10 @@ import {
 } from "@/lib/adelantos/planilla-lote";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { ModalShell, inputCls } from "./shared";
+import { formatMonthYear } from "@/lib/format";
 
 const periodoDeHoy = () =>
-  new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
+  formatMonthYear(new Date(), { largo: true });
 
 export default function DescuentoPlanillaModal({
   adelantos,
@@ -98,7 +99,7 @@ export default function DescuentoPlanillaModal({
   return (
     <ModalShell title="Descuentos de planilla" onClose={onClose} wide>
       {base.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center">
           <Users className="mx-auto mb-3 h-10 w-10 text-[var(--text-tertiary)] opacity-40" />
           <p className="text-base font-bold text-[var(--text-primary)]">No hay adelantos de planilla abiertos</p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">

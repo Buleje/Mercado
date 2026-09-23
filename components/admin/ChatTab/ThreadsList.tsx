@@ -10,6 +10,7 @@ import {
   type ChatThreadView,
   type ThreadStatus,
 } from "./types";
+import { formatTime } from "@/lib/format";
 
 interface ThreadsListProps {
   threads: ChatThreadView[];
@@ -127,10 +128,7 @@ export function ThreadsList({
               const isSelected = thread.id === selectedThreadId;
               const unread = thread.unreadForSeller;
               const lastMsg = thread.lastMessageAt
-                ? new Date(thread.lastMessageAt).toLocaleTimeString("es-PE", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
+                ? formatTime(thread.lastMessageAt)
                 : "";
 
               return (

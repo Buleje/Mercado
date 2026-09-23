@@ -13,24 +13,31 @@ import type { OrderStatus } from "@/lib/jsondb";
 interface OrdersFiltersProps {
   filters: OrderFilters;
   dispatch: React.Dispatch<FiltersAction>;
+  /** Repartidores con pedidos hoy: el modal es donde este filtro vive en el
+   *  celular (<640px la barra no lo muestra). Mismo estado que la barra. */
+  repartidores: string[];
+  repartidor: string;
+  onRepartidor: (v: string) => void;
   onClose: () => void;
 }
 
-export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps) {
+export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onRepartidor, onClose }: OrdersFiltersProps) {
   const handleClearAndClose = () => {
     dispatch({ type: "CLEAR" });
+    onRepartidor("");
     onClose();
   };
 
   const titleId = useId();
   const dateFromId = useId();
   const dateToId = useId();
+  const repartidorId = useId();
   const modalRef = useRef<HTMLDivElement>(null);
   useModalAccesible(modalRef, { onCerrar: onClose });
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+      className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
       onClick={onClose}
     >
       <div
@@ -132,6 +139,24 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
               ))}
             </div>
           </div>
+
+          {/* Repartidor — la barra lo muestra ≥640px; acá es su casa en el celular. */}
+          {repartidores.length > 0 && (
+            <div className="space-y-2">
+              <label htmlFor={repartidorId} className="block text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Repartidor</label>
+              <select
+                id={repartidorId}
+                value={repartidor}
+                onChange={(e) => onRepartidor(e.target.value)}
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary"
+              >
+                <option value="">Todos los repartidores</option>
+                {repartidores.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Date range */}
           <div className="grid grid-cols-2 gap-3">

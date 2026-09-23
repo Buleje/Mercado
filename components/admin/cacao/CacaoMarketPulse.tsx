@@ -14,11 +14,12 @@ import { CardTitle } from "@buleje/design-system";
 import { computeMarketStats, type PricePointLike } from "@/lib/cacao/cacao-lecturas";
 import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
 import CacaoChartPresent from "./CacaoChartPresent";
+import { formatTime } from "@/lib/format";
 
 export interface LecturaSesion { t: number; usd: number; pen: number | null }
 
 const fmt = (v: number | null, d = 0) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: d, maximumFractionDigits: d }));
-const hora = (t: number | string) => new Date(t).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+const hora = (t: number | string) => formatTime(t);
 const pctStr = (v: number, d = 1) => `${v > 0 ? "+" : ""}${v.toFixed(d)}%`;
 
 export default function CacaoMarketPulse({

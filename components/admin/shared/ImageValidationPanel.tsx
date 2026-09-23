@@ -107,9 +107,9 @@ export function ImageValidationPanel({ result, className }: Props) {
 function metaBackgroundLabel(bg: ImageValidationResult["meta"]["estimatedBackground"]): string {
   switch (bg) {
     case "white":
-      return "fondo blanco ✓";
+      return "fondo blanco";
     case "transparent":
-      return "fondo transparente ✓";
+      return "fondo transparente";
     case "light":
       return "fondo claro (casi blanco)";
     case "colored":

@@ -32,23 +32,32 @@ interface RouteRule {
 
 // ── Model IDs ────────────────────────────────────────────────────────────
 
-// Familia Claude 5 (verificado 2026-09-11 en platform.claude.com/docs/en/models/overview):
-//   Opus 5    claude-opus-5              $5 / $25 por MTok   1M contexto
-//   Sonnet 5  claude-sonnet-5            $2 / $10 por MTok   1M contexto
-//   Haiku 4.5 claude-haiku-4-5-20251001  $1 / $5  por MTok   200K contexto
-// Los IDs sin fecha son snapshots fijos desde la generación 4.6. Sonnet 4.6 y
-// Opus 4.6 siguen disponibles (legacy) pero salían MÁS caros que sus sucesores.
+// Familia Claude 5 (verificado 2026-09-22 en platform.claude.com/docs/en/models/overview):
+//   Fable 5.1 claude-fable-5-1           $10 / $50 por MTok  1M contexto
+//   Opus 5.5  claude-opus-5-5            $4  / $20 por MTok  1M contexto
+//   Sonnet 5  claude-sonnet-5            $2  / $10 por MTok  1M contexto
+//   Haiku 4.5 claude-haiku-4-5-20251001  $1  / $5  por MTok  200K contexto
+// Los IDs sin fecha son snapshots fijos desde la generación 4.6.
+//
+// 2026-09-22: el tier `opus` pasa de Opus 5 a **Opus 5.5**, que salió hoy. Es la
+// recomendación por defecto de Anthropic para la mayoría de las cargas y además
+// cuesta 20 % menos ($4/$20 contra $5/$25). Opus 5 queda como legacy: no se borra
+// de la tabla de precios de `lib/ai/track-usage.ts` porque el historial ya grabado lo cita.
+// Fable 5.1 NO entra en el router: es para razonamiento exigente y sale 2,5× más
+// caro que Opus 5.5 — si una tarea lo necesita, se pide explícitamente, no por keywords.
 const MODEL_IDS: Record<ModelTier, string> = {
   haiku: 'claude-haiku-4-5-20251001',
   sonnet: 'claude-sonnet-5',
-  opus: 'claude-opus-5',
+  opus: 'claude-opus-5-5',
 }
 
-// Relación de precio de ENTRADA contra Opus 5 ($5): son los cocientes reales de
-// la tabla de arriba, no estimaciones. La salida guarda la misma proporción.
+// Relación de precio de ENTRADA contra el tier opus (ahora $4): son los cocientes
+// reales de la tabla de arriba, no estimaciones. La salida guarda la misma proporción
+// ($5/$20 y $10/$20). Al bajar el precio base, el ahorro relativo de bajar de tier
+// se ACHICA: antes haiku costaba 1/5 de opus, ahora 1/4.
 const COST_MULTIPLIERS: Record<ModelTier, number> = {
-  haiku: 0.2,   // $1 / $5
-  sonnet: 0.4,  // $2 / $5
+  haiku: 0.25,  // $1 / $4
+  sonnet: 0.5,  // $2 / $4
   opus: 1.0,    // precio base
 }
 
@@ -113,7 +122,7 @@ const OPUS_RULES: RouteRule = {
  * // → { model: 'haiku', modelId: 'claude-haiku-4-5-20251001', ... }
  *
  * routeModel("design the fiado digital architecture")
- * // → { model: 'opus', modelId: 'claude-opus-5', ... }
+ * // → { model: 'opus', modelId: 'claude-opus-5-5', ... }
  */
 export function routeModel(task: string): RouteResult {
   const lower = task.toLowerCase()

@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { Truck, Clock, MapPin, Phone, User } from "@buleje/design-system/icons";
+import {
+  Truck, Clock, MapPin, Phone, User,
+  Motorbike, Scooter, Car, Bike, Footprints,
+} from "@buleje/design-system/icons";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { LiveTrackingEvent, DeliveryStopView } from "./types";
 import { TRACKING_STATUS_LABELS } from "./types";
@@ -12,12 +16,12 @@ interface OrdenesEnVivoPanelProps {
   className?: string;
 }
 
-const VEHICLE_EMOJI: Record<string, string> = {
-  moto: "🏍️",
-  motokar: "🛺",
-  auto: "🚗",
-  bicicleta: "🚴",
-  pie: "🚶",
+const VEHICLE_ICON: Record<string, LucideIcon> = {
+  moto: Motorbike,
+  motokar: Scooter,
+  auto: Car,
+  bicicleta: Bike,
+  pie: Footprints,
 };
 
 interface ActiveOrder {
@@ -117,7 +121,7 @@ export function OrdenesEnVivoPanel({
     <ul className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3", className)} role="list">
       {activeOrders.map((order) => {
         const meta = STATUS_COLOR[order.status];
-        const emoji = VEHICLE_EMOJI[order.vehicle?.toLowerCase()] ?? "🛵";
+        const VehicleIcon = VEHICLE_ICON[order.vehicle?.toLowerCase()] ?? Scooter;
         const isMoving = ["in_transit", "nearby"].includes(order.status);
 
         return (
@@ -150,12 +154,12 @@ export function OrdenesEnVivoPanel({
             {/* Cliente + vehículo */}
             <div className="flex items-center gap-3 mb-3">
               <div className={cn(
-                "h-11 w-11 rounded-2xl flex items-center justify-center text-xl shrink-0 border-2",
+                "h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 border-2",
                 isMoving
                   ? "bg-primary/10 border-primary/30"
                   : "bg-[var(--surface-raised)] border-[var(--rule-base)]",
               )}>
-                {emoji}
+                <VehicleIcon className="h-5 w-5" aria-hidden />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-base font-extrabold text-[var(--text-primary)] truncate leading-tight">

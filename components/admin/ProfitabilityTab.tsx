@@ -10,6 +10,7 @@ import {
 import { cn, exportToCSV } from "@/lib/utils";
 import { useProductProfitability } from "@/hooks/use-product-profitability";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -30,7 +31,7 @@ type ProfitLine = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 function pct(n: number) { return `${n.toFixed(1)}%`; }
 
@@ -208,7 +209,7 @@ export default function ProfitabilityTab() {
           { label: "Costo de venta", value: fmt(totals.cogs), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
           { label: "Margen bruto", value: fmt(totals.grossMargin), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "% Margen", value: pct(totals.marginPct), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-          { label: "Uds. vendidas", value: totals.units.toLocaleString("es-PE"), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
+          { label: "Uds. vendidas", value: formatNumber(totals.units), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
@@ -296,7 +297,7 @@ export default function ProfitabilityTab() {
               <td className="text-xs text-[var(--text-tertiary)]">{i + 1}</td>
               <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.product}</td>
               <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{l.category}</td>
-              <td className="text-right text-[var(--text-secondary)] dark:text-muted">{l.unitsSold.toLocaleString("es-PE")}</td>
+              <td className="text-right text-[var(--text-secondary)] dark:text-muted">{formatNumber(l.unitsSold)}</td>
               <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(l.revenue)}</td>
               <td className="text-right text-[var(--text-secondary)]">
                 <span className="inline-flex items-center justify-end gap-1">
@@ -327,7 +328,7 @@ export default function ProfitabilityTab() {
             <td colSpan={3} className="text-xs uppercase text-[var(--text-secondary)]">
               {isFiltered ? `Totales (${filtered.length} de ${lines.length})` : "Totales"}
             </td>
-            <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{visibleTotals.units.toLocaleString("es-PE")}</td>
+            <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatNumber(visibleTotals.units)}</td>
             <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(visibleTotals.revenue)}</td>
             <td className="text-right text-[var(--text-secondary)]">{fmt(visibleTotals.cogs)}</td>
             <td className="text-right text-[var(--data-success-500)]">{fmt(visibleTotals.grossMargin)}</td>
@@ -364,7 +365,7 @@ export default function ProfitabilityTab() {
             <div className="space-y-2 text-sm">
               {[
                 ["Producto", detail.product], ["Categoría", detail.category], ["Período", detail.period],
-                ["Uds. vendidas", detail.unitsSold.toLocaleString("es-PE")],
+                ["Uds. vendidas", formatNumber(detail.unitsSold)],
                 ["Ingresos", fmt(detail.revenue)], ["Costo de venta", fmt(detail.cogs)],
                 ["Margen bruto", fmt(detail.grossMargin)], ["% Margen", pct(detail.marginPct)],
               ].map(([k, v]) => (

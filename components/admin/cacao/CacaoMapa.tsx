@@ -12,6 +12,7 @@ import { MapPin, Scale, Layers, RefreshCw, AlertCircle, Navigation, Trees, Users
 import { StatCard } from "@buleje/design-system";
 import { BRAND_GEO } from "@/lib/geo";
 import { PARCELA_STATUS, type CacaoParcelaStatus } from "@/lib/cacao/cacao-labores";
+import { formatNumber } from "@/lib/format";
 import "leaflet/dist/leaflet.css";
 
 interface PStats { kg: number; pagado: number; lotes: number }
@@ -20,8 +21,8 @@ interface Parcela { id: string; codigo: string; areaHa: number | null; poligono:
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const n2 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const n0 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 0 });
+const n2 = (v: number) => formatNumber(v, 2);
+const n0 = (v: number) => formatNumber(v, { max: 0 });
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => (({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }) as Record<string, string>)[c] ?? c);
 const coord = (v: string | null): number | null => { if (v == null || v === "") return null; const n = Number(v); return Number.isFinite(n) ? n : null; };
 function parseCoords(json: string | null): [number, number][] | null {
@@ -133,7 +134,7 @@ export default function CacaoMapa() {
 
   const btn = "inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold hover:bg-[var(--surface-canvas)]";
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Productores mapeados" value={String(kpis.mapeados)} subValue={`de ${kpis.total}`} icon={Users} emphasis={kpis.mapeados > 0 ? "success" : "neutral"} />
         <StatCard label={sector === "todos" ? "Kg geolocalizado" : `Kg en ${sector}`} value={`${n0(kpis.kg)} kg`} icon={Scale} emphasis="neutral" />

@@ -14,6 +14,7 @@
 
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/format";
 
 const KEY = "bsm-last-login";
 // Guard a nivel módulo: evita doble-toast si el componente se remonta (HMR en
@@ -31,7 +32,7 @@ function formatRelative(iso: string): string {
   if (h < 24) return `hace ${h} h`;
   const d = Math.floor(h / 24);
   if (d < 30) return `hace ${d} día${d === 1 ? "" : "s"}`;
-  return new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" });
+  return formatDate(iso);
 }
 
 export function LastLoginToast() {

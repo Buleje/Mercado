@@ -14,6 +14,7 @@ import {
   FileText, CheckCircle, XCircle, Copy } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { Field } from "@/components/admin/shared/Field";
+import { formatDate, formatDateTime } from "@/lib/format";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type GuiaStatus = "BORRADOR" | "EMITIDA" | "EN_TRANSITO" | "ENTREGADA" | "ANULADA";
@@ -120,13 +121,6 @@ const _PILL_COLORS: Record<string, { active: string; inactive: string }> = {
 };
 
 const PER_PAGE = 10;
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-}
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
 
 function validateRuc(ruc: string): "valid" | "invalid" | "empty" {
   if (!ruc || ruc.trim() === "") return "empty";
@@ -975,7 +969,7 @@ export default function GuiasRemisionModule() {
               initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto">
-              <div className="p-4 sm:p-6 space-y-5">
+              <div className="p-4 sm:p-6 space-y-4">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
@@ -1209,7 +1203,7 @@ export default function GuiasRemisionModule() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
+              className="fixed inset-0 z-modal flex items-start justify-center p-4 overflow-y-auto"
               onClick={e => e.target === e.currentTarget && setShowNew(false)}
             >
               <div ref={newPanelRef} role="dialog" aria-modal="true" aria-labelledby={newTitleId} tabIndex={-1}

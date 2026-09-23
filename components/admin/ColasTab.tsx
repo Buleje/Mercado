@@ -14,6 +14,7 @@ import {
   Play,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatNumber, formatTime } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,7 +68,7 @@ function StatBadge({ label, value, colorClasses, icon }: BadgeProps) {
     >
       {icon}
       <span className="hidden sm:inline">{label}</span>
-      <span className="ml-auto font-bold tabular-nums">{value.toLocaleString("es-PE")}</span>
+      <span className="ml-auto font-bold tabular-nums">{formatNumber(value)}</span>
     </div>
   );
 }
@@ -95,7 +96,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
           </CardTitle>
         </div>
         <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">
-          {total.toLocaleString("es-PE")} total
+          {formatNumber(total)} total
         </span>
       </div>
 
@@ -253,7 +254,7 @@ export default function ColasTab() {
           {/* Last updated */}
           {lastUpdated && (
             <span className="text-xs text-[var(--text-tertiary)]">
-              Actualizado: {lastUpdated.toLocaleTimeString("es-PE")}
+              Actualizado: {formatTime(lastUpdated, { segundos: true })}
             </span>
           )}
 
@@ -303,7 +304,7 @@ export default function ColasTab() {
           <Clock className="h-8 w-8 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
           <div>
             <p className="text-2xl font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
-              {totalWaiting.toLocaleString("es-PE")}
+              {formatNumber(totalWaiting)}
             </p>
             <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">En espera (total)</p>
           </div>
@@ -312,7 +313,7 @@ export default function ColasTab() {
           <Activity className="h-8 w-8 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           <div>
             <p className="text-2xl font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-              {totalActive.toLocaleString("es-PE")}
+              {formatNumber(totalActive)}
             </p>
             <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Activos (total)</p>
           </div>
@@ -321,7 +322,7 @@ export default function ColasTab() {
           <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
           <div>
             <p className="text-2xl font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-              {totalFailed.toLocaleString("es-PE")}
+              {formatNumber(totalFailed)}
             </p>
             <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Fallidos (total)</p>
           </div>

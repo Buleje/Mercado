@@ -15,6 +15,7 @@ import {
   RotateCw,
   RefreshCw,
 } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ function isV2(data: KPIDataV2 | KPIDataV1): data is KPIDataV2 {
 
 function fmt(v: number): string {
   if (v >= 1000) return `S/ ${(v / 1000).toFixed(1)}k`;
-  return `S/ ${v.toFixed(2)}`;
+  return `${formatCurrency(v)}`;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────

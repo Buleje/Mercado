@@ -468,7 +468,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
           el pill del header queda claramente de fondo/inactivo y este input
           se lee como el único foco. */}
       <div
-        className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm animate-in fade-in duration-[var(--dur-base)]"
+        className="fixed inset-0 z-tour bg-black/50 backdrop-blur-sm animate-in fade-in duration-[var(--dur-base)]"
         onClick={onClose}
         aria-hidden
       />

@@ -19,6 +19,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatTime } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -45,16 +46,16 @@ type PosStep = "idle" | "paying" | "success" | "error";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function useClock(): string {
   const [time, setTime] = useState(() =>
-    new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })
+    formatTime(new Date())
   );
   useEffect(() => {
     const t = setInterval(() => {
-      setTime(new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }));
+      setTime(formatTime(new Date()));
     }, 10_000);
     return () => clearInterval(t);
   }, []);

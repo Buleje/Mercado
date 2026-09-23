@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Check, Clock, Smartphone } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,7 +25,7 @@ const PROVIDER_CONFIG: Record<QRProvider, { label: string; color: string }> = {
 const TIMER_SECONDS = 5 * 60;
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 // ── QR Canvas drawing ────────────────────────────────────────────────────────

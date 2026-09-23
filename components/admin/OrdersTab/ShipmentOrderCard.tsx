@@ -18,6 +18,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import OrderTrackingTimeline from "../logistics/OrderTrackingTimeline";
+import { formatCurrency, formatDateShort, formatTime } from "@/lib/format";
 
 // ─── Types (re-exportados para que ShipmentTrackingTab pueda importarlos) ─────
 
@@ -68,13 +69,13 @@ export const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  return formatTime(iso);
 }
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(iso);
 }
 function fmtMoney(n: number) {
-  return `S/ ${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 function minutesSince(iso: string) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 60000);

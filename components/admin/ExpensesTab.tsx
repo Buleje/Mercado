@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { decodeExpenseDescription } from "@/lib/expense-meta";
 import SelectorContrato from "@/components/admin/forestal/SelectorContrato";
+import { formatCurrency, formatDateNumeric, formatMonth } from "@/lib/format";
 
 type Expense = { id: string; category: string; description: string; amount: number; date: string; recurring: boolean };
 type Summary = { category: string; total: number; count: number };
@@ -112,7 +113,7 @@ export default function ExpensesTab() {
           return ed.getMonth() === d.getMonth() && ed.getFullYear() === d.getFullYear();
         })
         .reduce((s, e) => s + e.amount, 0);
-      return { label: d.toLocaleDateString("es-PE", { month: "short" }), total };
+      return { label: formatMonth(d), total };
     });
   }, [historicExpenses]);
 
@@ -159,11 +160,11 @@ export default function ExpensesTab() {
           <input type="date" value={to} onChange={e => setTo(e.target.value)} aria-label="Hasta" className="bg-transparent text-sm flex-1 min-w-0" />
         </div>
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)]">S/{totalPeriod.toFixed(2)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)]">{formatCurrency(totalPeriod)}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Este periodo</p>
         </div>
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{totalAll.toFixed(2)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(totalAll)}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Total histórico</p>
         </div>
       </div>
@@ -176,7 +177,7 @@ export default function ExpensesTab() {
             <span className="font-bold text-[var(--text-primary)]">
               {templates.length} gasto{templates.length === 1 ? "" : "s"} fijo{templates.length === 1 ? "" : "s"} configurado{templates.length === 1 ? "" : "s"}
             </span>{" "}
-            por S/{templates.reduce((s, t) => s + Number(t.amount), 0).toFixed(2)} al período. No suman
+            por {formatCurrency(templates.reduce((s, t) => s + Number(t.amount), 0))} al período. No suman
             acá hasta que registres el pago.
           </p>
           <a
@@ -222,7 +223,7 @@ export default function ExpensesTab() {
                     <div
                       className={cn("w-full rounded-t-md transition-all", isCurrent ? "bg-[var(--data-error-500)]" : "bg-[var(--data-error-500)]/70 dark:bg-[var(--data-error-500)]/40")}
                       style={{ height: `${barH}px`, opacity: m.total > 0 ? 1 : 0.25 }}
-                      title={`${m.label}: S/${Number(m.total).toFixed(2)}`}
+                      title={`${m.label}: ${formatCurrency(Number(m.total))}`}
                     />
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted capitalize">{m.label}</p>
                   </div>
@@ -281,9 +282,9 @@ export default function ExpensesTab() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{decodeExpenseDescription(e.description).description || "—"}</p>
-                <p className="text-xs text-[var(--text-tertiary)]">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
+                <p className="text-xs text-[var(--text-tertiary)]">{formatDateNumeric(e.date)} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
               </div>
-              <p className="font-extrabold text-[var(--data-error-500)] shrink-0">-S/{Number(e.amount).toFixed(2)}</p>
+              <p className="font-extrabold text-[var(--data-error-500)] shrink-0">-{formatCurrency(Number(e.amount))}</p>
               <button aria-label="Eliminar" onClick={() => remove(e.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition"><Trash2 className="h-4 w-4" /></button>
             </div>
             );

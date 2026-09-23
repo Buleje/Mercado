@@ -5,6 +5,7 @@ import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { ShieldAlert, ShieldCheck, AlertTriangle, TrendingUp, Clock, CreditCard, User } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -129,11 +130,11 @@ function calcScore(customer: Customer, orders: Order[]): CreditResult {
   const label = score >= 70 ? "Confiable" : score >= 40 ? "Precaucion" : "No recomendado";
   const recommendation =
     score >= 70
-      ? `Puede fiar hasta S/ ${maxCredit.toFixed(2)}`
+      ? `Puede fiar hasta ${formatCurrency(maxCredit)}`
       : score >= 40
-      ? `Limite bajo — máximo S/ ${maxCredit.toFixed(2)}`
+      ? `Limite bajo — máximo ${formatCurrency(maxCredit)}`
       : totalPending > 0
-      ? `Tiene S/ ${totalPending.toFixed(2)} pendiente sin pagar`
+      ? `Tiene ${formatCurrency(totalPending)} pendiente sin pagar`
       : "Historial insuficiente o deudas antiguas";
 
   return { score, color, label, recommendation, breakdown, totalPending, maxCredit };
@@ -326,7 +327,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
               <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
                 <span className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Deuda pendiente actual</span>
                 <span className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                  S/ {Number(result.totalPending).toFixed(2)}
+                  {formatCurrency(Number(result.totalPending))}
                 </span>
               </div>
             )}

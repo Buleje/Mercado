@@ -4,6 +4,7 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo, useEffect, startTransition } from "react";
 import { Star, ThumbsUp, ThumbsDown, Minus, TrendingUp, Download, Filter, MessageSquare, Loader2, AlertTriangle } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { formatDateShort, formatMonthYear } from "@/lib/format";
 
 type Survey = { id: string; customer: string; score: number; comment: string; date: string; channel: "tienda" | "delivery" | "whatsapp" };
 type NPSTrend = { month: string; promoters: number; passives: number; detractors: number; nps: number };
@@ -24,8 +25,8 @@ function locationToChannel(location: string): Survey["channel"] {
 }
 
 function classify(score: number) { return score >= 9 ? "promoter" : score >= 7 ? "passive" : "detractor"; }
-function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
-function fmtMonth(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { month: "short", year: "2-digit" }); }
+function fmtDate(iso: string) { return formatDateShort(iso); }
+function fmtMonth(iso: string) { return formatMonthYear(iso); }
 
 /** Gauge SVG semicircular para el NPS score */
 function NPSGauge({ nps }: { nps: number }) {

@@ -8,6 +8,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Product } from "@/types/erp";
+import { formatCurrency, formatDateTime } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -23,15 +24,12 @@ type PriceRecord = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleString("es-PE", {
-      day: "2-digit", month: "short", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    });
+    return formatDateTime(iso);
   } catch { return iso; }
 }
 

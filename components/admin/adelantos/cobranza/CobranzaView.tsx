@@ -45,6 +45,7 @@ import AnotarGestion from "./AnotarGestion";
 import PlantillasModal from "./PlantillasModal";
 import MetaModal from "./MetaModal";
 import ModoLlamada from "./ModoLlamada";
+import { formatDateNumeric } from "@/lib/format";
 
 /**
  * Fila = persona + moneda: `deudoresDeCobranza` puede devolver DOS filas para
@@ -225,7 +226,7 @@ export default function CobranzaView({
     doc.text("Lista de cobranza", 14, 18);
     doc.setFontSize(10);
     doc.text(
-      `Por cobrar: ${fmtMonedas(totalPorCobrar)} · ${deudores.length} deudores · ${new Date().toLocaleDateString("es-PE")}`,
+      `Por cobrar: ${fmtMonedas(totalPorCobrar)} · ${deudores.length} deudores · ${formatDateNumeric(new Date())}`,
       14,
       25,
     );
@@ -241,8 +242,8 @@ export default function CobranzaView({
           d.nombre,
           fmtMon(d.saldo, d.moneda),
           d.dias > 0 ? `${d.dias} días` : "al día",
-          u ? `${u.tipo} ${new Date(u.fecha).toLocaleDateString("es-PE")}` : "—",
-          p?.gestion.fechaPrometida ? new Date(p.gestion.fechaPrometida).toLocaleDateString("es-PE") : "—",
+          u ? `${u.tipo} ${formatDateNumeric(u.fecha)}` : "—",
+          p?.gestion.fechaPrometida ? formatDateNumeric(p.gestion.fechaPrometida) : "—",
           d.telefono ?? "—",
         ];
       }),

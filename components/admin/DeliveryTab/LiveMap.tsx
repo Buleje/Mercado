@@ -3,15 +3,20 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import { cn } from "@/lib/utils";
+import { leafletIconSvg } from "@/lib/leaflet-icon-html";
+import {
+  Store, Home, Phone, Timer, Ruler,
+  Motorbike, Scooter, Car, Bike, Footprints,
+} from "@buleje/design-system/icons";
 import type { DeliveryStopView, LiveTrackingEvent } from "./types";
 
 /**
  * LiveMap PRO — mapa Leaflet con iconos profesionales y movimiento en vivo.
  *
  * Iconos custom (todos div-based, no imágenes externas):
- *  - 🏪 Tienda (con logoUrl real del tenant si existe, fallback a inicial)
- *  - 🛵 Repartidores con avatar circular + emoji vehículo + pulse halo + ETA
- *  - 🏠 Domicilio del cliente (paradas) numerado por secuencia
+ *  - Store — Tienda (con logoUrl real del tenant si existe, fallback a inicial)
+ *  - vehículo (Motorbike/Scooter/Car/Bike/Footprints) — repartidores, con avatar circular + pulse halo + ETA
+ *  - Home — Domicilio del cliente (paradas) numerado por secuencia
  *
  * Funciones:
  *  - Smooth interpolation: marker se mueve suave entre posiciones (200ms ease)
@@ -38,16 +43,25 @@ interface LiveMapProps {
   className?: string;
 }
 
-const VEHICLE_EMOJI: Record<string, string> = {
-  moto: "🏍️",
-  motokar: "🛺",
-  auto: "🚗",
-  bicicleta: "🚴",
-  pie: "🚶",
-};
+// Los emoji de vehículo (🏍️🛺🚗🚴🚶) se veían distinto por SO/navegador —
+// se pre-renderizan una vez a SVG del ícono Lucide correspondiente.
+const STORE_ICON_SVG = leafletIconSvg(Store, { size: 22 });
+const HOME_ICON_SVG = leafletIconSvg(Home, { size: 18, color: "#475569" });
+const PHONE_ICON_SVG = leafletIconSvg(Phone, { size: 13 });
+const TIMER_ICON_SVG = leafletIconSvg(Timer, { size: 13 });
+const RULER_ICON_SVG = leafletIconSvg(Ruler, { size: 13 });
 
-function emojiFor(actorType: string): string {
-  return VEHICLE_EMOJI[actorType?.toLowerCase()] ?? "🛵";
+const VEHICLE_ICON_SVG: Record<string, string> = {
+  moto: leafletIconSvg(Motorbike, { size: 22, color: "#fff" }),
+  motokar: leafletIconSvg(Scooter, { size: 22, color: "#fff" }),
+  auto: leafletIconSvg(Car, { size: 20, color: "#fff" }),
+  bicicleta: leafletIconSvg(Bike, { size: 20, color: "#fff" }),
+  pie: leafletIconSvg(Footprints, { size: 20, color: "#fff" }),
+};
+const DEFAULT_VEHICLE_ICON_SVG = leafletIconSvg(Scooter, { size: 22, color: "#fff" });
+
+function vehicleIconSvgFor(actorType: string): string {
+  return VEHICLE_ICON_SVG[actorType?.toLowerCase()] ?? DEFAULT_VEHICLE_ICON_SVG;
 }
 
 function escapeHtml(s: string): string {
@@ -105,10 +119,10 @@ export function LiveMap({
 
       // Pin de tienda — con logo o inicial
       const storeName = tenantName ?? "Tu tienda";
-      const initial = storeName.trim().charAt(0).toUpperCase() || "🏪";
+      const initial = storeName.trim().charAt(0).toUpperCase();
       const logoHtml = tenantLogoUrl
         ? `<img src="${escapeHtml(tenantLogoUrl)}" alt="${escapeHtml(storeName)}" />`
-        : `<span class="store-fallback">${escapeHtml(initial)}</span>`;
+        : `<span class="store-fallback">${initial ? escapeHtml(initial) : STORE_ICON_SVG}</span>`;
 
       const storeIcon = L.divIcon({
         className: "delivery-store-marker",
@@ -151,10 +165,10 @@ export function LiveMap({
       const L = await import("leaflet");
       if (cancelled || !storeMarkerRef.current) return;
       const storeName = tenantName ?? "Tu tienda";
-      const initial = storeName.trim().charAt(0).toUpperCase() || "🏪";
+      const initial = storeName.trim().charAt(0).toUpperCase();
       const logoHtml = tenantLogoUrl
         ? `<img src="${escapeHtml(tenantLogoUrl)}" alt="${escapeHtml(storeName)}" />`
-        : `<span class="store-fallback">${escapeHtml(initial)}</span>`;
+        : `<span class="store-fallback">${initial ? escapeHtml(initial) : STORE_ICON_SVG}</span>`;
       const newIcon = L.divIcon({
         className: "delivery-store-marker",
         html: `
@@ -209,7 +223,7 @@ export function LiveMap({
           className: "delivery-stop-marker",
           html: `
             <div class="stop-wrapper stop-${stop.status}">
-              <div class="stop-house">🏠</div>
+              <div class="stop-house">${HOME_ICON_SVG}</div>
               <div class="stop-badge">${stop.sequence}</div>
             </div>
           `,
@@ -224,7 +238,7 @@ export function LiveMap({
               `<span style="color:#666;font-size:12px">${escapeHtml(stop.address)}</span><br/>` +
               `<em style="text-transform:uppercase;font-size:11px;font-weight:700;` +
                 `color:${isDelivered ? "#16a34a" : isFailed ? "#dc2626" : "#ff6b5b"}">${stop.status}</em>` +
-              (stop.customerPhone ? `<br/><span style="font-size:12px">📞 ${escapeHtml(stop.customerPhone)}</span>` : "") +
+              (stop.customerPhone ? `<br/><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px">${PHONE_ICON_SVG}${escapeHtml(stop.customerPhone)}</span>` : "") +
               `</div>`,
           );
         stopMarkersRef.current.push(marker);
@@ -263,7 +277,7 @@ export function LiveMap({
         const newCoords: [number, number] = [latest.lat, latest.lng];
 
         const isMoving = ["in_transit", "nearby"].includes(latest.status);
-        const emoji = emojiFor(latest.actorType);
+        const vehicleSvg = vehicleIconSvgFor(latest.actorType);
 
         // Construir trail (últimas N posiciones distintas)
         const trailPoints: Array<[number, number]> = [];
@@ -283,7 +297,7 @@ export function LiveMap({
             <div class="driver-wrapper ${isMoving ? "driver-moving" : ""}" style="--brand:${accent}">
               ${isMoving ? '<div class="driver-pulse"></div>' : ""}
               <div class="driver-avatar">
-                <span class="driver-emoji">${emoji}</span>
+                <span class="driver-emoji">${vehicleSvg}</span>
                 ${latest.etaMinutes != null ? `<div class="driver-eta">${latest.etaMinutes}'</div>` : ""}
               </div>
               ${isMoving ? '<div class="driver-arrow"></div>' : ""}
@@ -298,10 +312,10 @@ export function LiveMap({
           `<strong>${escapeHtml(latest.customerName ?? "Repartidor")}</strong>` +
           `<span style="display:inline-block;margin-left:6px;font-size:11px;text-transform:uppercase;font-weight:700;color:${accent}">${latest.status}</span><br/>` +
           (latest.etaMinutes != null
-            ? `<span style="color:#666;font-size:12px">⏱ ETA ${latest.etaMinutes} min</span><br/>`
+            ? `<span style="display:inline-flex;align-items:center;gap:4px;color:#666;font-size:12px">${TIMER_ICON_SVG}ETA ${latest.etaMinutes} min</span><br/>`
             : "") +
           (latest.distanceM != null
-            ? `<span style="color:#666;font-size:12px">📏 ${(latest.distanceM / 1000).toFixed(1)} km de la tienda</span>`
+            ? `<span style="display:inline-flex;align-items:center;gap:4px;color:#666;font-size:12px">${RULER_ICON_SVG}${(latest.distanceM / 1000).toFixed(1)} km de la tienda</span>`
             : "") +
           `</div>`;
 

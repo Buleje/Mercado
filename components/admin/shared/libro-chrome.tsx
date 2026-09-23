@@ -480,7 +480,7 @@ function HerramientasDelLibro({ children }: { children: ReactNode }) {
 
   const panel = open && pos && (
     <>
-      <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} aria-hidden="true" />
+      <div className="fixed inset-0 z-modal-2" onClick={() => setOpen(false)} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"

@@ -4,12 +4,13 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Tag, Plus, Trash2, ToggleLeft, ToggleRight, X, Loader2, RefreshCw,
-  Gift, Package, ShoppingCart, DollarSign,
+  Gift, Package, ShoppingCart, DollarSign, Check,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { Field } from "@/components/admin/shared/Field";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { formatDate } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ function promoStatus(promo: Promocion): "hoy" | "futura" | "pasada" {
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -372,8 +373,8 @@ export default function PromocionesModule() {
 
       {/* Mensaje de éxito */}
       {successMsg && (
-        <div className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 rounded-xl px-4 py-2.5 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
-          ✓ {successMsg}
+        <div className="flex items-center gap-1.5 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 rounded-xl px-4 py-2.5 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+          <Check className="h-4 w-4 shrink-0" aria-hidden /> {successMsg}
         </div>
       )}
 

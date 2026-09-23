@@ -11,6 +11,7 @@ import { Calendar, Search, RefreshCw, AlertCircle, CheckCircle2, Clock, AlertTri
 import { CACAO_LABORES, LABOR_LABEL, type CacaoLaborTipo } from "@/lib/cacao/cacao-labores";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { Parcela } from "./CacaoCampo";
+import { formatDate, formatMonthYear, formatNumber } from "@/lib/format";
 
 interface LaborRow {
   id: string; parcelaId: string; parcelaCodigo: string; parcelaNombre: string | null;
@@ -19,11 +20,11 @@ interface LaborRow {
   insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null;
 }
 interface Sugerida { parcelaId: string; codigo: string; tipo: CacaoLaborTipo; ultimaHecha: string | null; dueDate: string; diasRestantes: number; atrasada: boolean; nunca: boolean }
-const money = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = (v: number) => formatNumber(v, 2);
 
 const ICON = Object.fromEntries(CACAO_LABORES.map((l) => [l.tipo, l.icon])) as Record<CacaoLaborTipo, (typeof CACAO_LABORES)[number]["icon"]>;
-const fdate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
-const monthKey = (iso: string) => { try { const d = new Date(iso); return d.toLocaleDateString("es-PE", { month: "long", year: "numeric", timeZone: "UTC" }); } catch { return "—"; } };
+const fdate = (iso: string) => { try { return formatDate(iso, { soloFecha: true }); } catch { return iso; } };
+const monthKey = (iso: string) => { try { const d = new Date(iso); return formatMonthYear(d, { largo: true, soloFecha: true }); } catch { return "—"; } };
 const ESTADO = {
   hecho: { label: "Hecha", icon: CheckCircle2, bg: "var(--data-success-50)", fg: "var(--data-success-700)" },
   pendiente: { label: "Programada", icon: Clock, bg: "var(--data-warning-50)", fg: "var(--data-warning-700)" },
@@ -105,7 +106,7 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
               const Icon = ICON[s.tipo]; const key = `${s.parcelaId}:${s.tipo}`;
               const tono = s.atrasada ? "text-[var(--data-error-700)]" : s.nunca ? "text-[var(--data-warning-700)]" : "text-[var(--text-tertiary)]";
               return (
-                <div key={key} className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2.5">
+                <div key={key} className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
                   <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--surface-raised)] text-[var(--accent)]"><Icon className="h-4 w-4" /></span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-[var(--text-primary)]"><span className="font-mono">{s.codigo}</span> · {LABOR_LABEL[s.tipo]}</p>
@@ -142,7 +143,7 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
           <p className="mx-auto mt-1 max-w-sm text-sm">{labores.length === 0 ? "Registra labores en tus secciones y acá verás el cronograma completo." : "Ajusta los filtros para ver otras labores."}</p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {groups.map(([mes, rows]) => (
             <div key={mes}>
               <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]"><Calendar className="h-3.5 w-3.5" />{mes}</p>

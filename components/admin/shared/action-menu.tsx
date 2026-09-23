@@ -318,10 +318,14 @@ export default function ActionMenu({
 
   const menu = open && pos && (
     <>
-      <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} aria-hidden="true" />
+      {/* Velo y menú comparten z-modal-2 (mismo nombre a propósito): el menú
+          va DESPUÉS en el DOM dentro del mismo fragmento portalado, así que
+          con z-index igual queda arriba por orden de pintado. Ver gate
+          ds-no-z-arbitrary-admin. */}
+      <div className="fixed inset-0 z-modal-2" onClick={() => setOpen(false)} aria-hidden="true" />
       <div
         style={{ top: pos.top, right: pos.right, maxHeight: pos.maxHeight }}
-        className="fixed z-[61] flex w-[19rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+        className="fixed z-modal-2 flex w-[19rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
         {/* Los degradés van FUERA del área que scrollea, si no se irían con el
             contenido. `pointer-events-none` para no comerse el clic de la

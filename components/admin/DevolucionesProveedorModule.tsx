@@ -9,6 +9,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { Field } from "@/components/admin/shared/Field";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { formatCurrency, formatDate, formatDateNumeric, formatMonthYear } from "@/lib/format";
 
 const DevolucionesChart = dynamic(() => import("./DevolucionesChart"), {
   ssr: false,
@@ -47,7 +48,7 @@ function valorDevolucion(items: ItemDevuelto[]): { total: number; sinPrecio: num
   return { total, sinPrecio };
 }
 
-const soles = (n: number) => `S/${n.toFixed(2)}`;
+const soles = (n: number) => `${formatCurrency(n)}`;
 
 interface Devolucion {
   id:              string;
@@ -338,7 +339,7 @@ export default function DevolucionesProveedorModule() {
   const reportesPorMes = useMemo(() => {
     const counts: Record<string, number> = {};
     devoluciones.forEach(d => {
-      const mes = new Date(d.createdAt).toLocaleDateString("es-PE", { year: "2-digit", month: "short" });
+      const mes = formatMonthYear(d.createdAt);
       counts[mes] = (counts[mes] ?? 0) + 1;
     });
     return Object.entries(counts)
@@ -367,7 +368,7 @@ export default function DevolucionesProveedorModule() {
     const header = ["ID", "Fecha", "Proveedor", "Motivo", "Estado", "Notas", "Items"];
     const rows = devoluciones.map(d => [
       d.id,
-      new Date(d.createdAt).toLocaleDateString("es-PE"),
+      formatDateNumeric(d.createdAt),
       d.proveedorNombre,
       d.motivo,
       d.estado,
@@ -818,7 +819,7 @@ export default function DevolucionesProveedorModule() {
       ) : (
         <div className="space-y-2">
           {devolucionesFiltradas.length === 0 ? (
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-8 text-center">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 text-center">
               <RotateCcw className="h-8 w-8 mx-auto mb-2 text-[var(--text-tertiary)]" />
               <p className="text-sm text-[var(--text-tertiary)]">
                 {filtroEstado ? `No hay devoluciones con estado ${filtroEstado}` : "No hay devoluciones registradas"}
@@ -871,7 +872,7 @@ export default function DevolucionesProveedorModule() {
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
                       <span className="text-xs text-[var(--text-tertiary)]">
-                        {new Date(dev.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+                        {formatDate(dev.createdAt)}
                       </span>
                       <span className="text-xs text-[var(--text-tertiary)] flex items-center gap-1">
                         <Package className="h-3 w-3" />

@@ -265,7 +265,7 @@ export default function AICommandCenter() {
       className={cn(
         "flex flex-col bg-[var(--surface-raised)] overflow-hidden",
         maximized
-          ? "fixed inset-0 z-[9999]"
+          ? "fixed inset-0 z-tour"
           : "rounded-xl border border-[var(--rule-base)] min-h-[600px]",
       )}
     >

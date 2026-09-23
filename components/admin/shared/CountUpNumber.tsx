@@ -8,7 +8,7 @@
  * que algo cambió. Respeta prefers-reduced-motion.
  *
  * Uso:
- *   <CountUpNumber value={1250.50} format={(v) => `S/ ${v.toFixed(2)}`} />
+ *   <CountUpNumber value={1250.50} format={formatCurrency} />   // de @/lib/format
  */
 
 import { useEffect, useRef, useState } from "react";

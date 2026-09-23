@@ -16,6 +16,7 @@ import {
   PlusCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ type LookupState = "idle" | "loading" | "found" | "notfound" | "error";
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${formatCurrency(n)}`;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import type { ABCProduct } from "@/app/api/analytics/abc/route";
+import { formatCurrency } from "@/lib/format";
 
 const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label: string; border: string; variant: BadgeVariant }> = {
   A: { badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", row: "bg-primary/10 dark:bg-primary/15", label: "A — Critico", border: "border-l-4 border-l-green-500", variant: "success" },
@@ -14,7 +15,7 @@ const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label:
   C: { badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",      row: "",                 label: "C — Bajo impacto", border: "border-l-4 border-l-red-500", variant: "error" },
 };
 
-function fmt(n: number) { return `S/${n.toFixed(2)}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 
 export default function ABCAnalysisTab() {
   const [data, setData]   = useState<ABCProduct[]>([]);

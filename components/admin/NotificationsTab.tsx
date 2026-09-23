@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Bell, Loader2, Send, ExternalLink, CheckCircle2, Clock, Search, MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency, formatDateTime } from "@/lib/format";
 
 type NotifLog = { id: string; type: string; recipient: string; message: string; status: string; orderId: string | null; createdAt: string };
 type Order = { id: string; customerName: string; customerPhone: string; total: number; status: string; createdAt: string };
@@ -113,7 +114,7 @@ export default function NotificationsTab() {
                     o.status === "en_camino" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
                     "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                   )}>{o.status}</span>
-                  <span className="font-bold text-sm text-[var(--text-secondary)]">S/{o.total?.toFixed(2)}</span>
+                  <span className="font-bold text-sm text-[var(--text-secondary)]">{formatCurrency(o.total)}</span>
                 </button>
               ))}
             </div>
@@ -130,7 +131,7 @@ export default function NotificationsTab() {
               </div>
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="text-[var(--text-secondary)]">Pedido #{selectedOrder.id.slice(0, 8)}</span>
-                <span className="font-bold">S/{selectedOrder.total?.toFixed(2)}</span>
+                <span className="font-bold">{formatCurrency(selectedOrder.total)}</span>
                 <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase",
                   selectedOrder.status === "entregado" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
                   selectedOrder.status === "cancelado" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" :
@@ -170,7 +171,7 @@ export default function NotificationsTab() {
                     <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                       {l.recipient}
                     </span>
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{new Date(l.createdAt).toLocaleString("es-PE")}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatDateTime(l.createdAt)}</span>
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{l.message}</p>
                   <div className="flex flex-wrap items-center gap-2">

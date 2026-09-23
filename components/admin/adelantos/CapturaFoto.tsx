@@ -122,7 +122,7 @@ export default function CapturaFoto({
 
   return (
     /* z-[60]: por encima del modal de alta (z-50), que sigue montado detrás. */
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onCerrar()}>
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/60 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onCerrar()}>
       <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"

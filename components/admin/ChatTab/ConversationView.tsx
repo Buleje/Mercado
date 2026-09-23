@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Bot, User, Settings2, Undo2, ShoppingCart, Wallet, MapPin, Star } from "@buleje/design-system/icons";
+import { Bot, User, Settings2, Undo2, ShoppingCart, Wallet, MapPin, Star, CheckCheck } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, parseReviewRequest, fmtSoles } from "@/lib/chat/shared-product";
 import { parseChatLocation, osmTile, googleMapsUrl } from "@/lib/chat/location";
@@ -10,6 +10,7 @@ import { parseChatVoice } from "@/lib/chat/voice";
 import { VoiceNotePlayer } from "@/components/marketplace/chat/VoiceNotePlayer";
 import type { ChatMessageView } from "./types";
 import type { MsgReplySnapshot } from "./hooks";
+import { formatTime } from "@/lib/format";
 
 interface ConversationViewProps {
   messages: ChatMessageView[];
@@ -111,10 +112,7 @@ function MessageBubble({
 }) {
   const isSeller = message.senderType === "seller";
   const isSystem = message.senderType === "system";
-  const time = new Date(message.createdAt).toLocaleTimeString("es-PE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const time = formatTime(message.createdAt);
   const meta = parseMeta(message.metadataJson);
   const shared = parseSharedProduct(message.metadataJson);
   const sub = parseSubstitution(message.metadataJson);
@@ -440,7 +438,11 @@ function MessageBubble({
           )}
         >
           <span>{time}</span>
-          {isSeller && message.readByBuyerAt && <span role="img" aria-label="Leído">· ✓✓</span>}
+          {isSeller && message.readByBuyerAt && (
+            <span className="inline-flex items-center gap-0.5">
+              · <CheckCheck className="h-3.5 w-3.5" role="img" aria-label="Leído" />
+            </span>
+          )}
         </div>
       </div>
     </div>

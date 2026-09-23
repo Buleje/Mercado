@@ -8,9 +8,10 @@ import type { CustomKpi, KpiTrendPoint } from "@/app/api/custom-kpis/route";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { formatCurrency } from "@/lib/format";
 
 function fmt(v: number, unit: string) {
-  if (unit === "S/") return `S/ ${v.toFixed(2)}`;
+  if (unit === "S/") return `${formatCurrency(v)}`;
   if (unit === "%") return `${v.toFixed(1)}%`;
   return `${v} ${unit}`;
 }

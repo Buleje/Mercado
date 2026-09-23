@@ -16,6 +16,7 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import { Field } from "@/components/admin/shared/Field";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/format";
 import type { RecetaCostBreakdown } from "@/lib/types/recetas";
 
 // ── Recetas Dashboard ─────────────────────────────────────────────────────────
@@ -110,7 +111,7 @@ function RecetasDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Recetas activas" value={recetasActivas} icon={BookOpen} density="compact" />
         <StatCard label="Lotes del mes" value={lotesMes} icon={Layers} density="compact" />
-        <StatCard label="Costo promedio" value={`S/${costoPromedio.toFixed(2)}`} icon={Coins} density="compact" />
+        <StatCard label="Costo promedio" value={`${formatCurrency(costoPromedio)}`} icon={Coins} density="compact" />
         <StatCard label="Ingredientes totales" value={ingredientesTotales} icon={FlaskConical} density="compact" />
       </div>
       </m.div>
@@ -232,11 +233,6 @@ type ProducciónLote = {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 const PER_PAGE = 10;
 
@@ -757,7 +753,7 @@ export default function RecetasModule() {
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto"
             >
-              <div className="p-4 sm:p-6 space-y-5">
+              <div className="p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <CardTitle id={detailTitleId} className="text-lg font-bold text-[var(--text-primary)]">{selected.nombre}</CardTitle>
                   <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
@@ -970,13 +966,13 @@ export default function RecetasModule() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 z-modal flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && resetNew()}
             >
               <div ref={newPanelRef} role="dialog" aria-modal="true" aria-labelledby={newTitleId} tabIndex={-1}
                 className="w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div className="sticky top-0 z-dropdown bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <CardTitle id={newTitleId} className="text-lg font-semibold text-[var(--text-primary)]">
                     Nueva Receta — Paso {step}/3
                   </CardTitle>
@@ -1155,7 +1151,7 @@ export default function RecetasModule() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+              className="fixed inset-0 z-modal-2 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowProducir(false)}
             >
               <div ref={producirPanelRef} role="dialog" aria-modal="true" aria-labelledby={producirTitleId} tabIndex={-1}
@@ -1407,7 +1403,7 @@ function ProducciónTab() {
                   <Tooltip formatter={(value: unknown, name: unknown) => {
                     const v = Number(value);
                     const n = String(name);
-                    return [n === "lotes" ? `${v} lotes` : `S/${v.toFixed(2)}`, n === "lotes" ? "Lotes" : "Costo total"];
+                    return [n === "lotes" ? `${v} lotes` : `${formatCurrency(v)}`, n === "lotes" ? "Lotes" : "Costo total"];
                   }} />
                   <Bar dataKey="lotes" fill="#2563EB" radius={[4, 4, 0, 0]} />
                 </BarChart>

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Calendar } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatTime } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export type DatePreset = "today" | "week" | "month" | "custom";
@@ -36,11 +37,7 @@ export default function AdminDateFilter({
   const [customTo, setCustomTo] = useState("");
 
   const now = new Date();
-  const timeStr = now.toLocaleTimeString("es-PE", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
+  const timeStr = formatTime(now);
 
   const handlePreset = (preset: DatePreset) => {
     if (preset === "custom") {

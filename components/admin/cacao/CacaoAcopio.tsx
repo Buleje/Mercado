@@ -62,6 +62,7 @@ import CacaoCierrePanel from "./CacaoCierrePanel";
 import CacaoCampo from "./CacaoCampo";
 import CacaoVentas from "./CacaoVentas";
 import CacaoAlertsBell from "./CacaoAlertsBell";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 interface Lote {
   id: string;
@@ -101,12 +102,7 @@ const QUICK_CHIPS: { key: Quick; label: string }[] = [
 
 const fdate = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      timeZone: "UTC",
-    });
+    return formatDate(iso, { soloFecha: true });
   } catch {
     return iso;
   }
@@ -1072,7 +1068,7 @@ function PagoBadge({ estado, saldo }: { estado: string; saldo: number }) {
       <span className={`rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold ${cls}`}>{label}</span>
       {estado !== "pagado" && saldo > 0 && (
         <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
-          debe S/ {saldo.toFixed(2)}
+          debe {formatCurrency(saldo)}
         </span>
       )}
     </span>

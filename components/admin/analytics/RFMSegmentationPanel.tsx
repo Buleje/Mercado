@@ -7,6 +7,7 @@ import {
 import { DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { Customer, Sale } from "@/types/erp";
+import { formatNumber } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type RFMSegment = "Champions" | "Loyal" | "At Risk" | "Lost" | "New" | "Regular";
@@ -51,7 +52,7 @@ function classifyRFM(R: number, F: number, M: number): RFMSegment {
 }
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(n, 0)}`;
 }
 
 function rfmScore(R: number, F: number, M: number): string {

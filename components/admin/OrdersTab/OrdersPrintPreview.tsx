@@ -6,6 +6,7 @@ import { X, Printer, Store } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { DbOrder } from "@/lib/jsondb";
 import { STATUS_LABELS } from "./types";
+import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 
 interface OrdersPrintPreviewProps {
   orders: DbOrder[];
@@ -29,7 +30,7 @@ export function OrdersPrintPreview({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+      className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
       onClick={onClose}
     >
       <div
@@ -84,7 +85,7 @@ export function OrdersPrintPreview({
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="font-bold text-[var(--text-secondary)]">Fecha:</span>
-                      <span>{new Date(order.createdAt).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                      <span>{formatDateTimeShort(order.createdAt)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="font-bold text-[var(--text-secondary)]">Estado:</span>
@@ -121,7 +122,7 @@ export function OrdersPrintPreview({
                             <span className="font-bold">{item.quantity}×</span> {item.name}
                             <span className="text-[var(--text-tertiary)] text-xs ml-1">({item.unit})</span>
                           </span>
-                          <span className="font-semibold">S/{(item.price * item.quantity).toFixed(2)}</span>
+                          <span className="font-semibold">{formatCurrency(item.price * item.quantity)}</span>
                         </div>
                       ))}
                     </div>
@@ -148,7 +149,7 @@ export function OrdersPrintPreview({
                   <div className="bg-[var(--rule-soft)] rounded-lg p-3 mb-4">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-extrabold text-[var(--text-primary)]">TOTAL</span>
-                      <span className="text-2xl font-extrabold text-primary">S/{Number(order.total).toFixed(2)}</span>
+                      <span className="text-2xl font-extrabold text-primary">{formatCurrency(Number(order.total))}</span>
                     </div>
                   </div>
 

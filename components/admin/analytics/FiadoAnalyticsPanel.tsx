@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { RefreshCw, AlertTriangle, TrendingDown, TrendingUp, DollarSign } from "@buleje/design-system/icons";
 import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
+import { formatCurrencyCompact } from "@/lib/format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -62,11 +63,6 @@ interface FiadoRecord {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function formatCurrency(v: number): string {
-  if (Math.abs(v) >= 1000) return `S/ ${(v / 1000).toFixed(1)}k`;
-  return `S/ ${v.toFixed(2)}`;
-}
-
 function daysBetween(from: string, to: Date): number {
   return Math.floor((to.getTime() - new Date(from).getTime()) / (1000 * 60 * 60 * 24));
 }
@@ -80,7 +76,7 @@ function DonutTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{payload[0].name}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Monto</span>
-        <span className="font-mono font-medium text-primary">{formatCurrency(payload[0].value)}</span>
+        <span className="font-mono font-medium text-primary">{formatCurrencyCompact(payload[0].value)}</span>
       </p>
     </div>
   );
@@ -97,16 +93,16 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{d.mes}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Cobrados</span>
-        <span className="font-mono font-medium text-primary">{formatCurrency(d.cobrados)}</span>
+        <span className="font-mono font-medium text-primary">{formatCurrencyCompact(d.cobrados)}</span>
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Nuevos</span>
-        <span className="font-mono font-medium text-[var(--data-error-500)]">{formatCurrency(d.nuevos)}</span>
+        <span className="font-mono font-medium text-[var(--data-error-500)]">{formatCurrencyCompact(d.nuevos)}</span>
       </p>
       <div className="border-t border-[var(--rule-base)] mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-[var(--text-secondary)]">Neto</span>
-          <span className={cn("font-mono font-bold", neto >= 0 ? "text-primary" : "text-[var(--data-error-500)]")}>{formatCurrency(neto)}</span>
+          <span className={cn("font-mono font-bold", neto >= 0 ? "text-primary" : "text-[var(--data-error-500)]")}>{formatCurrencyCompact(neto)}</span>
         </p>
       </div>
     </div>
@@ -263,9 +259,9 @@ export default function FiadoAnalyticsPanel() {
   }
 
   const kpiCards = [
-    { label: "Total pendiente", value: formatCurrency(totales.pendiente), icon: DollarSign, accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
-    { label: "Vencido hoy", value: formatCurrency(totales.vencidoHoy), icon: AlertTriangle, accent: totales.vencidoHoy > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
-    { label: "Cobrado este mes", value: formatCurrency(totales.cobradoEsteMes), icon: TrendingUp, accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+    { label: "Total pendiente", value: formatCurrencyCompact(totales.pendiente), icon: DollarSign, accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
+    { label: "Vencido hoy", value: formatCurrencyCompact(totales.vencidoHoy), icon: AlertTriangle, accent: totales.vencidoHoy > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+    { label: "Cobrado este mes", value: formatCurrencyCompact(totales.cobradoEsteMes), icon: TrendingUp, accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
     { label: "Tasa recuperacion", value: `${Number(totales.tasaRecuperacion).toFixed(1)}%`, icon: TrendingDown, accent: totales.tasaRecuperacion >= 50 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
   ];
 
@@ -335,7 +331,7 @@ export default function FiadoAnalyticsPanel() {
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="text-center">
                   <p className="text-xl font-mono font-bold text-[var(--text-primary)]" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {formatCurrency(totales.pendiente)}
+                    {formatCurrencyCompact(totales.pendiente)}
                   </p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pendiente</p>
                 </div>
@@ -436,7 +432,7 @@ export default function FiadoAnalyticsPanel() {
                     {d.nombre}
                   </td>
                   <td className="py-1.5 text-right font-mono font-medium text-[var(--text-primary)]" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {formatCurrency(d.monto)}
+                    {formatCurrencyCompact(d.monto)}
                   </td>
                   <td className={cn(
                     "py-1.5 text-right font-mono",

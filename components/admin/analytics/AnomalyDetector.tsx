@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { Sale, SaleItem } from "@/types/erp";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type OrderStatus = "pendiente" | "completado" | "cancelado" | string;
@@ -46,14 +47,14 @@ function stdDev(values: number[], avg: number): number {
 
 function fmtDate(dateStr: string): string {
   try {
-    return new Date(dateStr).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+    return formatDateShort(dateStr);
   } catch {
     return dateStr;
   }
 }
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 const SEVERITY_STYLE: Record<Severity, { bg: string; text: string; border: string; dot: string; label: string }> = {

@@ -321,7 +321,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
         <div className="flex-1 overflow-y-auto">
           <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_300px]">
             {/* ── Columna formulario ── */}
-            <form id="cacao-lote-form" onSubmit={submit} className="space-y-5 px-5 py-5">
+            <form id="cacao-lote-form" onSubmit={submit} className="space-y-4 px-5 py-5">
               {!online && (
                 <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-medium text-[var(--data-warning-700)]">
                   <WifiOff className="h-4 w-4 shrink-0" />

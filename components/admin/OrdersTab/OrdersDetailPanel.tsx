@@ -36,6 +36,7 @@ import { STATUS_COLORS, STATUS_LABELS } from "./types";
 import { DespachoSection } from "./DespachoSection";
 import ManualDeliveryModal from "./ManualDeliveryModal";
 import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
+import { formatCurrency } from "@/lib/format";
 
 interface OrdersDetailPanelProps {
   order: DbOrder;
@@ -106,7 +107,7 @@ function printComanda(order: DbOrder): void {
       `</head><body><h1>COMANDA</h1><div class="meta">#${escapeHtml(order.id.slice(-8))} · ${when}</div><hr>` +
       `<div class="cust"><b>${escapeHtml(order.customer.name)}</b><br>${escapeHtml(order.customer.phone ?? "")}<br>` +
       `${escapeHtml(order.customer.location ?? "")}${ref}</div><hr><table>${rows}</table><hr>` +
-      `<div class="total"><span>TOTAL</span><span>S/ ${Number(order.total).toFixed(2)}</span></div></body></html>`,
+      `<div class="total"><span>TOTAL</span><span>${formatCurrency(Number(order.total))}</span></div></body></html>`,
   );
   w.document.close();
   w.focus();
@@ -226,7 +227,7 @@ export function OrdersDetailPanel({
 
   return (
     <div ref={cajaRef} tabIndex={-1}
-      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-modal flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -281,7 +282,7 @@ export function OrdersDetailPanel({
               Total
             </p>
             <p className="text-xl font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
-              S/{Number(order.total).toFixed(2)}
+              {formatCurrency(Number(order.total))}
             </p>
             <button
               type="button"
@@ -349,7 +350,7 @@ export function OrdersDetailPanel({
         )}
 
         {/* ─── SCROLLABLE BODY ──────────────────────────────────────────── */}
-        <div className="overflow-y-auto px-5 py-5 space-y-5 flex-1 bg-[var(--surface-canvas)]">
+        <div className="overflow-y-auto px-5 py-5 space-y-4 flex-1 bg-[var(--surface-canvas)]">
           {/* ─── 3. ITEMS + RESUMEN ──────────────────────────────────────── */}
           <section className="space-y-2">
             <div className="flex items-baseline justify-between">
@@ -370,7 +371,7 @@ export function OrdersDetailPanel({
                         {item.name}
                       </p>
                       <p className="text-xs text-[var(--text-tertiary)] mt-0.5 tabular-nums">
-                        S/{Number(item.price).toFixed(2)} · {item.unit}
+                        {formatCurrency(Number(item.price))} · {item.unit}
                       </p>
                       {item.note && (
                         <p className="text-xs text-[var(--text-secondary)] italic mt-1">
@@ -379,7 +380,7 @@ export function OrdersDetailPanel({
                       )}
                     </div>
                     <p className="text-sm font-semibold tabular-nums text-[var(--text-primary)] shrink-0">
-                      S/{(item.price * item.quantity).toFixed(2)}
+                      {formatCurrency(item.price * item.quantity)}
                     </p>
                   </li>
                 ))}
@@ -390,7 +391,7 @@ export function OrdersDetailPanel({
                   <>
                     <div className="flex justify-between items-center px-4 py-1.5 text-xs">
                       <span className="text-[var(--text-secondary)]">Subtotal</span>
-                      <span className="text-[var(--text-secondary)] tabular-nums">S/{subtotal.toFixed(2)}</span>
+                      <span className="text-[var(--text-secondary)] tabular-nums">{formatCurrency(subtotal)}</span>
                     </div>
                     {(order.discountAmount ?? 0) > 0 && (
                       <div className="flex justify-between items-center px-4 py-1.5 text-xs">
@@ -398,7 +399,7 @@ export function OrdersDetailPanel({
                           Descuento{order.appliedPromoId ? ` · ${order.appliedPromoId}` : ""}
                         </span>
                         <span className="font-semibold text-[var(--data-success-500)] tabular-nums">
-                          −S/{Number(order.discountAmount).toFixed(2)}
+                          −{formatCurrency(Number(order.discountAmount))}
                         </span>
                       </div>
                     )}
@@ -408,7 +409,7 @@ export function OrdersDetailPanel({
                           Cupón{order.appliedCouponCode ? ` · ${order.appliedCouponCode}` : ""}
                         </span>
                         <span className="font-semibold text-[var(--data-success-500)] tabular-nums">
-                          −S/{Number(order.couponDiscount).toFixed(2)}
+                          −{formatCurrency(Number(order.couponDiscount))}
                         </span>
                       </div>
                     )}
@@ -419,7 +420,7 @@ export function OrdersDetailPanel({
                     Total a cobrar
                   </span>
                   <span className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-                    S/{Number(order.total).toFixed(2)}
+                    {formatCurrency(Number(order.total))}
                   </span>
                 </div>
               </div>

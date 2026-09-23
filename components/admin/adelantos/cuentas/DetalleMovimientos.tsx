@@ -10,10 +10,11 @@ import { DataTable } from "@buleje/design-system";
 import { ExternalLink } from "@buleje/design-system/icons";
 import { corridaDeSaldos, CONCEPTO_LABEL, type MovimientoCuenta } from "@/lib/forestal/cuenta-corriente";
 import { fmtMon } from "../shared";
+import { formatDate } from "@/lib/format";
 
 /** Fecha date-only (UTC): con la zona de Lima el día cambia antes de tiempo. */
 const diaUtc = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" });
+  formatDate(iso, { soloFecha: true });
 
 export default function DetalleMovimientos({
   movimientos,

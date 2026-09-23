@@ -17,6 +17,7 @@ import {
   Target,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 type Suggestion = "Subir" | "Bajar" | "OK" | "Sin datos";
@@ -67,13 +68,13 @@ function PriceBar({
       <div
         className="absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-gray-400 dark:bg-gray-500 rounded-full"
         style={{ left: `${avgPct}%` }}
-        title={`Promedio: S/${avgPrice.toFixed(2)}`}
+        title={`Promedio: ${formatCurrency(avgPrice)}`}
       />
       {/* Mi precio */}
       <div
         className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary dark:bg-primary rounded-full border-2 border-white dark:border-[var(--rule-base)] shadow"
         style={{ left: `${myPct}%`, transform: "translate(-50%, -50%)" }}
-        title={`Mi precio: S/${myPrice.toFixed(2)}`}
+        title={`Mi precio: ${formatCurrency(myPrice)}`}
       />
     </div>
   );
@@ -129,7 +130,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
                 style={{ width: `${(p.myPrice / maxVal) * 100}%` }}
               />
               <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
-                S/{Number(p.myPrice).toFixed(2)}
+                {formatCurrency(Number(p.myPrice))}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -138,7 +139,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
                 style={{ width: `${(p.avgPrice! / maxVal) * 100}%` }}
               />
               <span className="text-sm font-bold tabular-nums text-[var(--text-secondary)] whitespace-nowrap">
-                S/{p.avgPrice!.toFixed(2)}
+                {formatCurrency(p.avgPrice!)}
               </span>
             </div>
           </div>
@@ -181,7 +182,7 @@ export default function CompetitivePricingTab() {
         : Math.floor(product.avgPrice * 100) / 100;
 
     if (!(await confirm({
-      title: `¿Cambiar precio de "${product.name}" a S/${newPrice.toFixed(2)}?`,
+      title: `¿Cambiar precio de "${product.name}" a ${formatCurrency(newPrice)}?`,
       intent: "warning",
       confirmLabel: "Sí, cambiar",
     }))) return;
@@ -338,7 +339,7 @@ export default function CompetitivePricingTab() {
               Oportunidad estimada
             </p>
             <p className="text-3xl font-extrabold tabular-nums text-primary leading-tight mt-2">
-              S/{opportunityIncome.toFixed(2)}
+              {formatCurrency(opportunityIncome)}
             </p>
             <p className="text-sm text-[var(--text-tertiary)] mt-1">
               Ingreso extra si subes los precios bajos
@@ -408,12 +409,12 @@ export default function CompetitivePricingTab() {
                       )}
                     </td>
                     <td className="text-right text-base font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
-                      S/{Number(p.myPrice).toFixed(2)}
+                      {formatCurrency(Number(p.myPrice))}
                     </td>
                     <td className="text-right text-sm tabular-nums text-[var(--text-secondary)] hidden sm:table-cell whitespace-nowrap">
                       {p.avgPrice !== null ? (
                         <div>
-                          <p className="font-bold">S/{Number(p.avgPrice).toFixed(2)}</p>
+                          <p className="font-bold">{formatCurrency(Number(p.avgPrice))}</p>
                           {p.minPrice !== null && p.maxPrice !== null && (
                             <div className="mt-2">
                               <PriceBar
@@ -430,10 +431,10 @@ export default function CompetitivePricingTab() {
                       )}
                     </td>
                     <td className="text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
-                      {p.minPrice !== null ? `S/${Number(p.minPrice).toFixed(2)}` : "—"}
+                      {p.minPrice !== null ? `${formatCurrency(Number(p.minPrice))}` : "—"}
                     </td>
                     <td className="text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
-                      {p.maxPrice !== null ? `S/${Number(p.maxPrice).toFixed(2)}` : "—"}
+                      {p.maxPrice !== null ? `${formatCurrency(Number(p.maxPrice))}` : "—"}
                     </td>
                     <td className="text-center text-sm font-bold text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                       {p.competitorCount}

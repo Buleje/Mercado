@@ -16,6 +16,7 @@ import {
   Table, BarChart, Activity, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
+import { formatDateTimeShort } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -164,7 +165,7 @@ function saveSession(messages: Message[]) {
   const summary = userMsgs.slice(0, 3).map(m => m.content.slice(0, 60)).join(" · ");
   const session: SessionSummary = {
     id: `s-${Date.now()}`,
-    date: new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+    date: formatDateTimeShort(new Date()),
     messageCount: userMsgs.length + assistantMsgs.length,
     summary: summary.slice(0, 120),
   };
@@ -1016,7 +1017,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {!open && (
         <button onClick={() => setOpen(true)}
           className={cn(
-            "fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 h-14 w-14 rounded-xl flex items-center justify-center transition-all duration-[var(--dur-base)]",
+            "fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-modal h-14 w-14 rounded-xl flex items-center justify-center transition-all duration-[var(--dur-base)]",
             "bg-[var(--text-primary)] hover:opacity-90 hover:scale-105",
             "text-[var(--surface-canvas)]",
             pulse && "animate-bounce"
@@ -1049,8 +1050,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {/* Mejora 21: Global command palette */}
       {showCmdPalette && !open && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => { setShowCmdPalette(false); setCmdSearch(""); }} />
-          <div className="fixed top-1/4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md mx-4">
+          <div className="fixed inset-0 z-modal bg-black/30 backdrop-blur-sm" onClick={() => { setShowCmdPalette(false); setCmdSearch(""); }} />
+          <div className="fixed top-1/4 left-1/2 -translate-x-1/2 z-modal w-full max-w-md mx-4">
             <div ref={cmdPalettePanelRef} role="dialog" aria-modal="true" aria-label="Comandos rápidos del asistente" tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden outline-none">
               <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -1086,7 +1087,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {/* Mejora 28: Chat panel with 3 sizes */}
       {open && (
         <div className={cn(
-          "fixed z-50 flex flex-col bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] transition-all duration-[var(--dur-base)]",
+          "fixed z-modal flex flex-col bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] transition-all duration-[var(--dur-base)]",
           expanded ? "inset-4 rounded-xl" :
           widgetSize === "mini" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-80 h-96 max-h-[70vh] rounded-xl" :
           widgetSize === "large" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-[480px] h-[700px] max-h-[90vh] rounded-xl" :

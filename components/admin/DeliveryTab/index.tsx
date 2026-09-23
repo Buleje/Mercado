@@ -18,6 +18,7 @@ import {
   Minimize2,
   Home,
   Store,
+  Scooter,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { RoutesList } from "./RoutesList";
@@ -27,6 +28,7 @@ import { useDeliveryRoutes, useRouteStops, useLiveTrackingFeed } from "./hooks";
 import { TRACKING_STATUS_LABELS } from "./types";
 import { TRACKING_STATUS_ICON } from "./status-icons";
 import { useTenant } from "@/contexts/tenant-context";
+import { formatTime } from "@/lib/format";
 
 const LiveMap = dynamic(
   () => import("./LiveMap").then((m) => ({ default: m.LiveMap })),
@@ -295,19 +297,19 @@ export default function DeliveryTab() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 border-2 border-primary text-xs">
-                <Store className="h-3 w-3 text-primary" />
+                <Store className="h-3.5 w-3.5 text-primary" />
               </span>
               <span>Tu tienda</span>
             </div>
             <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white text-xs">
-                🛵
+                <Scooter className="h-3.5 w-3.5" aria-hidden />
               </span>
               <span>Repartidor en vivo</span>
             </div>
             <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-raised)] border-2 border-[var(--data-warning-500)]">
-                <Home className="h-3 w-3 text-[var(--data-warning-500)]" />
+                <Home className="h-3.5 w-3.5 text-[var(--data-warning-500)]" />
               </span>
               <span>Domicilio cliente</span>
             </div>
@@ -316,7 +318,7 @@ export default function DeliveryTab() {
         {/* Indicador "última actualización" */}
         <div className="absolute top-6 right-6 z-[400] inline-flex items-center gap-1.5 px-3 h-9 rounded-full bg-[var(--surface-raised)]/95 backdrop-blur border border-[var(--rule-base)] shadow-[var(--shadow-md)] text-xs font-bold text-[var(--text-secondary)]">
           <span className="h-2 w-2 rounded-full bg-[var(--data-success-500)] animate-pulse" />
-          Live · {lastUpdate.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+          Live · {formatTime(lastUpdate, { segundos: true })}
         </div>
       </div>
     </section>

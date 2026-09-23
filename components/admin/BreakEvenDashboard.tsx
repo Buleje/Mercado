@@ -33,9 +33,10 @@ const BreakEvenGauge = dynamic(() => import("./BreakEvenGauge"), {
   ),
 });
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { formatNumber, formatTime } from "@/lib/format";
 
 const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+  `S/ ${formatNumber(n, { min: 2 })}`;
 
 type SaleRecord = {
   id: string;
@@ -110,10 +111,7 @@ export default function BreakEvenDashboard() {
     if (!reached && salesPerHour > 0) {
       const hoursToBreakEven = remaining / salesPerHour;
       const breakEvenTime = new Date(now.getTime() + hoursToBreakEven * 3600000);
-      estimatedHour = breakEvenTime.toLocaleTimeString("es-PE", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      estimatedHour = formatTime(breakEvenTime);
     }
 
     return {
@@ -144,7 +142,7 @@ export default function BreakEvenDashboard() {
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-          {lastRefresh.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
+          {formatTime(lastRefresh)}
         </button>
       </AdminModuleHeader>
 

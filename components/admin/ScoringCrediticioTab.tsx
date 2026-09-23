@@ -5,6 +5,7 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Shield, TrendingUp, AlertTriangle, CheckCircle, XCircle, Search, Users } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ const LEVEL_CONFIG: Record<ScoreLevel, {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function Skeleton({ className }: { className?: string }) {

@@ -6,6 +6,7 @@ import { Search, X, Plus, Minus, Trash2, Package, Check } from "@buleje/design-s
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency } from "@/lib/format";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -111,12 +112,12 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
           </div>
         )}
         <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] text-center leading-tight line-clamp-2 w-full px-0.5">{product.name}</span>
-        <span className="text-[length:var(--ts-xs)] font-extrabold text-[var(--data-success-500)]">S/{Number(product.price).toFixed(2)}</span>
+        <span className="text-[length:var(--ts-xs)] font-extrabold text-[var(--data-success-500)]">{formatCurrency(Number(product.price))}</span>
       </button>
 
       {/* Long press modal — cantidad */}
       {longPressQty !== null && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-modal bg-black/80 flex items-center justify-center p-6">
           <div
             ref={qtyModalRef}
             role="dialog"
@@ -199,7 +200,7 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
     >
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-[var(--text-tertiary)] truncate">{item.product.name}</p>
-        <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] font-bold">S/{Number(item.product.price).toFixed(2)} c/u</p>
+        <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] font-bold">{formatCurrency(Number(item.product.price))} c/u</p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         <button aria-label="Disminuir cantidad"
@@ -457,7 +458,7 @@ export default function MobilePOS() {
           {/* Total */}
           <div className="flex items-center justify-between bg-gray-900 dark:bg-gray-800 rounded-xl px-4 py-2 border border-gray-800 dark:border-gray-700">
             <span className="text-[var(--text-tertiary)] text-sm font-semibold">Total</span>
-            <span className="text-4xl font-extrabold text-white">S/{total.toFixed(2)}</span>
+            <span className="text-4xl font-extrabold text-white">{formatCurrency(total)}</span>
           </div>
 
           {/* 3 métodos de pago */}
@@ -485,7 +486,7 @@ export default function MobilePOS() {
             className="w-full rounded-xl bg-primary/10 hover:bg-primary/10 active:scale-95 text-white font-semibold text-lg transition-all disabled:opacity-30"
             style={{ height: 80, touchAction: "manipulation" }}
           >
-            {paying ? "Procesando..." : paySuccess ? "Cobrado!" : `Cobrar S/${total.toFixed(2)}`}
+            {paying ? "Procesando..." : paySuccess ? "Cobrado!" : `Cobrar ${formatCurrency(total)}`}
           </button>
           {payError && (
             <div role="alert" className="mt-2 px-3 py-2 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)]/40">
@@ -497,11 +498,11 @@ export default function MobilePOS() {
 
       {/* Overlay de éxito */}
       {paySuccess && (
-        <div className="fixed inset-0 z-50 bg-primary/15 flex items-center justify-center pointer-events-none">
+        <div className="fixed inset-0 z-modal bg-primary/15 flex items-center justify-center pointer-events-none">
           <div className="text-center">
             <Check className="h-16 w-16 text-white mx-auto mb-2" strokeWidth={3} />
             <p className="text-white text-2xl font-semibold">Cobrado!</p>
-            <p className="text-[var(--data-success-500)] text-lg tabular-nums">S/{total.toFixed(2)}</p>
+            <p className="text-[var(--data-success-500)] text-lg tabular-nums">{formatCurrency(total)}</p>
           </div>
         </div>
       )}

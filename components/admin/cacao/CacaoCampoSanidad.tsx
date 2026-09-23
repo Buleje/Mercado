@@ -13,6 +13,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CACAO_PLAGAS, PLAGA_LABEL, SANIDAD_SEVERIDAD, SANIDAD_ESTADO, type CacaoPlaga, type SanidadSeveridad, type SanidadEstado } from "@/lib/cacao/cacao-sanidad";
 import type { Parcela } from "./CacaoCampo";
+import { formatDate } from "@/lib/format";
 
 interface Foco {
   id: string; parcelaId: string; parcelaCodigo: string; plaga: CacaoPlaga; severidad: SanidadSeveridad;
@@ -22,7 +23,7 @@ interface Foco {
 interface Stats { focosActivos: number; criticos: number; seccionesAfectadas: number; incidenciaProm: number | null; plagaTop: CacaoPlaga | null; porPlaga: { plaga: CacaoPlaga; count: number; sevRank: number }[]; total: number }
 
 const PLAGA = Object.fromEntries(CACAO_PLAGAS.map((p) => [p.tipo, p])) as Record<CacaoPlaga, (typeof CACAO_PLAGAS)[number]>;
-const fdate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
+const fdate = (iso: string) => { try { return formatDate(iso, { soloFecha: true }); } catch { return iso; } };
 const NEXT_ESTADO: Record<SanidadEstado, SanidadEstado | null> = { activo: "controlado", controlado: "resuelto", resuelto: null };
 const NEXT_LABEL: Record<SanidadEstado, string> = { activo: "Marcar en control", controlado: "Marcar resuelto", resuelto: "" };
 
@@ -77,7 +78,7 @@ export default function CacaoCampoSanidad({ parcelas, onOpenParcela, onChanged }
   const S = "h-11 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Focos activos" value={String(stats?.focosActivos ?? 0)} subValue={stats && stats.criticos > 0 ? `${stats.criticos} de severidad alta` : undefined} icon={ShieldAlert} emphasis={stats && stats.focosActivos > 0 ? (stats.criticos > 0 ? "error" : "warning") : "success"} />
         <StatCard label="Secciones afectadas" value={`${stats?.seccionesAfectadas ?? 0} de ${parcelas.length}`} icon={MapPin} emphasis={stats && stats.seccionesAfectadas > 0 ? "warning" : "neutral"} />

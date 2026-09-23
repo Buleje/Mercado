@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { ShoppingCart, ArrowRight, Download, Link2, Package, RefreshCw, Lightbulb } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Association } from "@/app/api/analytics/basket-analysis/route";
+import { formatCurrency } from "@/lib/format";
 
 type SortKey = "count" | "confidence" | "support" | "lift";
 
@@ -86,7 +87,7 @@ export default function BasketAnalysisTab() {
         {[
           { label: "Asociaciones detectadas", value: associations.length, color: "text-[var(--data-success-500)]" },
           { label: "Tamaño prom. cesta", value: `${avgBasketSize.toFixed(1)} items`, color: "text-[var(--data-success-500)]" },
-          { label: "Valor prom. cesta", value: `S/ ${avgBasketValue.toFixed(2)}`, color: "text-[var(--text-secondary)]" },
+          { label: "Valor prom. cesta", value: `${formatCurrency(avgBasketValue)}`, color: "text-[var(--text-secondary)]" },
           { label: "Sugerencias cross-sell", value: crossSell.length, color: "text-[var(--data-warning-500)]" },
         ].map(k => (
           <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">

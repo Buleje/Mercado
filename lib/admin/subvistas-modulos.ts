@@ -82,9 +82,11 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "pl", label: "Ganancias y pérdidas", hint: "Estado de resultados" },
     { key: "rentabilidad", label: "Rentabilidad", hint: "Margen por producto y categoría" },
     { key: "comparador", label: "Comparar períodos", hint: "Este mes contra el anterior" },
-    { key: "gastos", label: "Gastos y costos", hint: "En qué se va la plata" },
-    { key: "presupuesto", label: "Presupuesto", hint: "Cuánto planeaste gastar y cuánto va" },
-    { key: "flujo-caja", label: "Proyección", hint: "Flujo de caja de las próximas semanas" },
+    /* El presupuesto dejó de ser una vista propia: vive DENTRO de Gastos desde
+       que Mi Plata se unificó. Se nombra igual en el label y en la pista para
+       que buscar «presupuesto» siga llevando a donde está. */
+    { key: "gastos", label: "Gastos y presupuesto", hint: "En qué se va la plata y cuánto planeaste gastar" },
+    { key: "flujo-caja", label: "Proyección de caja", hint: "Flujo de caja de las próximas semanas" },
     { key: "tesoreria", label: "Tesorería", hint: "Cuentas bancarias y saldos" },
     { key: "por-cobrar", label: "Todo lo que me deben", hint: "Cobranzas pendientes" },
     { key: "fiados", label: "Fiados", hint: "Lo que se llevaron anotado" },

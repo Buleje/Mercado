@@ -140,7 +140,7 @@ export default function PlanTierSelector({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* ── Header ───────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-canvas)] to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="flex items-start gap-4">

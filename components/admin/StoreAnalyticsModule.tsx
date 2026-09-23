@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
 import {
   Eye,
   ShoppingCart,
@@ -94,42 +94,10 @@ function Sparkline({ values, height = 40 }: { values: number[]; height?: number 
 }
 
 // ── Subcomponents ────────────────────────────────────────────────────────────
-function KpiCard({
-  label,
-  value,
-  hint,
-  Icon,
-  accent,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  Icon: typeof Eye;
-  accent?: boolean;
-}) {
-  return (
-    <div className={cn(
-      "rounded-xl border p-4 flex items-start gap-3",
-      accent
-        ? "bg-[var(--accent)]/10 border-[var(--accent)]/30"
-        : "bg-[var(--surface-raised)] border-[var(--rule-soft)]",
-    )}>
-      <span className={cn(
-        "shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-lg",
-        accent ? "bg-[var(--accent)]/20 text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-      )}>
-        <Icon className="h-4 w-4" strokeWidth={2} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          {label}
-        </p>
-        <p className="text-2xl font-black text-[var(--text-primary)] tabular-nums leading-tight">{value}</p>
-        {hint && <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5">{hint}</p>}
-      </div>
-    </div>
-  );
-}
+// `KpiCard` migró a `StatCard` (canon KPI 2026-09-22): `accent` (bool) pasa a
+// `highlight` (ring de acento) — la caja circular con fondo teal alrededor del
+// ícono NO se absorbe (StatCard es minimalista a propósito desde el rediseño
+// 2026-06-10: ícono plano, sin chip). `hint` → `subValue`.
 
 function FunnelBar({ label, value, max, pctTotal, color }: { label: string; value: number; max: number; pctTotal: number; color: string }) {
   const widthPct = max > 0 ? (value / max) * 100 : 0;
@@ -299,10 +267,10 @@ export default function StoreAnalyticsModule() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard label="Vistas" value={fmtN.format(kpis.views)} Icon={Eye} />
-        <KpiCard label="Adds al carrito" value={fmtN.format(kpis.addsToCart)} Icon={ShoppingCart} />
-        <KpiCard label="Conversiones" value={fmtN.format(kpis.conversions)} hint={`${pct(kpis.conversionRate)} de las vistas`} Icon={CheckCircle2} accent />
-        <KpiCard label="Ingresos" value={fmtPen.format(kpis.revenue)} hint={`${pct(kpis.cartAbandonRate)} abandono carrito`} Icon={TrendingUp} accent />
+        <StatCard label="Vistas" value={fmtN.format(kpis.views)} icon={Eye} />
+        <StatCard label="Adds al carrito" value={fmtN.format(kpis.addsToCart)} icon={ShoppingCart} />
+        <StatCard label="Conversiones" value={fmtN.format(kpis.conversions)} subValue={`${pct(kpis.conversionRate)} de las vistas`} icon={CheckCircle2} highlight />
+        <StatCard label="Ingresos" value={fmtPen.format(kpis.revenue)} subValue={`${pct(kpis.cartAbandonRate)} abandono carrito`} icon={TrendingUp} highlight />
       </div>
 
       {/* Sparkline + Funnel — AVANZADO (beneficio superadmin) */}

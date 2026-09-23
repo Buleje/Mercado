@@ -36,6 +36,7 @@ import {
 import { MODALIDAD_LABEL, PT_TIPO_LABEL, STATUS_BADGE, fmtMon, fmtPt } from "../shared";
 import AnularAdelantoModal from "./AnularAdelantoModal";
 import EditarNotasModal from "./EditarNotasModal";
+import { formatDate } from "@/lib/format";
 
 /** Cómo se abrevia cada modalidad en una celda. El título largo va en `title`. */
 const MODALIDAD_CHIP: Record<string, string> = {
@@ -45,7 +46,7 @@ const MODALIDAD_CHIP: Record<string, string> = {
 };
 
 const fechaCelda = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" });
+  formatDate(iso);
 
 export default function TablaAdelantos({
   adelantos,

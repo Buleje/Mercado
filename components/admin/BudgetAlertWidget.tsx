@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, CheckCircle, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ interface BudgetAlertWidgetProps {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function getAlertLevel(pct: number): AlertLevel {

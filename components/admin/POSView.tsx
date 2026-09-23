@@ -71,6 +71,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { fiadoDelCliente } from "@/lib/fiados/fiado-del-cliente";
 import { Field } from "@/components/admin/shared/Field";
 import { estaAgotado } from "@/lib/pos/stock-vendible";
+import { formatCurrency, formatDateNumeric, formatTime } from "@/lib/format";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 const YapeQRPayment = dynamic(() => import("@/components/admin/YapeQRPayment"), { ssr: false });
@@ -98,7 +99,7 @@ interface SaleRecord {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/${n.toFixed(2)}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 
 function readStoredIds(key: string) {
   if (typeof window === "undefined") return [] as number[];
@@ -181,7 +182,7 @@ function PromoBadge({ productId, quantity, unitPrice }: { productId: number; qua
 
 function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
   const [expanded, setExpanded] = useState(false);
-  const time = new Date(sale.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  const time = formatTime(sale.createdAt);
   const itemCount = sale.items.reduce((sum, i) => sum + i.quantity, 0);
   return (
     <div className="bg-[var(--surface-sunken)] rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-primary transition-colors">
@@ -363,7 +364,7 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
   return (
     <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-4 space-y-3">
       <p className="text-sm font-semibold text-[var(--data-warning-500)]">
-        {customerName || customerPhone} tiene fiado de <span className="font-bold">S/{Number(fiado.saldo).toFixed(2)}</span>. ¿Abonar?
+        {customerName || customerPhone} tiene fiado de <span className="font-bold">{formatCurrency(Number(fiado.saldo))}</span>. ¿Abonar?
       </p>
       <div className="flex flex-wrap gap-2">
         {quickAmounts.map(a => (
@@ -374,7 +375,7 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
         ))}
         <button onClick={() => abonar(fiado.saldo)} disabled={paying}
           className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white transition-colors disabled:opacity-50">
-          Todo S/{Number(fiado.saldo).toFixed(2)}
+          Todo {formatCurrency(Number(fiado.saldo))}
         </button>
         <button onClick={() => setFiado(null)} className="px-4 py-2 rounded-xl text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">No, gracias</button>
       </div>
@@ -425,8 +426,8 @@ function SaleCompleteModal({
 
   function buildWhatsAppUrl(phone: string) {
     const now = new Date();
-    const dateStr = now.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
-    const timeStr = now.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: true });
+    const dateStr = formatDateNumeric(now);
+    const timeStr = formatTime(now);
 
     const details = lastSaleDetails;
     const items = details?.items || cart.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price }));
@@ -443,7 +444,7 @@ function SaleCompleteModal({
     const comprobanteNum = details?.comprobanteNumero;
 
     const itemsText = items
-      .map(i => `  ${i.name} x${i.quantity} — S/${(i.price * i.quantity).toFixed(2)}`)
+      .map(i => `  ${i.name} x${i.quantity} — ${formatCurrency(i.price * i.quantity)}`)
       .join("\n");
 
     const lines = [
@@ -453,11 +454,11 @@ function SaleCompleteModal({
       `─────────`,
       itemsText,
       `─────────`,
-      `💰 *Total: S/${total.toFixed(2)}*`,
+      `💰 *Total: ${formatCurrency(total)}*`,
     ];
 
     if (discount && discount > 0) {
-      lines.push(`🏷 Descuento: -S/${discount.toFixed(2)}`);
+      lines.push(`🏷 Descuento: -${formatCurrency(discount)}`);
     }
 
     lines.push(
@@ -759,7 +760,7 @@ function POSIdleScreen({ onWake }: { onWake: () => void }) {
   }, []);
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center cursor-pointer select-none"
+      className="fixed inset-0 z-system bg-black/80 flex flex-col items-center justify-center cursor-pointer select-none"
       onClick={onWake}
       onKeyDown={onWake}
       onTouchStart={onWake}
@@ -767,7 +768,7 @@ function POSIdleScreen({ onWake }: { onWake: () => void }) {
       tabIndex={0}
     >
       <p className="text-6xl font-mono text-white tabular-nums">
-        {time.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
+        {formatTime(time, { segundos: true })}
       </p>
       <p className="text-xl font-bold text-white mt-4">Buleje</p>
       <p className="text-[var(--text-tertiary)] mt-6 text-sm animate-pulse">Toca para continuar</p>
@@ -1639,7 +1640,7 @@ export default function POSView() {
         onClearQueue={posOffline.clearQueue}
       />
       {saleError && (
-        <div className="flex flex-wrap items-center gap-2 p-2.5 mb-3 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
+        <div className="flex flex-wrap items-center gap-2 p-3 mb-3 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
           <Info className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
           <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex-1">{saleError}</p>
           <button aria-label="Quitar" onClick={() => setSaleError(null)} className="p-0.5 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-3.5 w-3.5" /></button>
@@ -1766,95 +1767,6 @@ export default function POSView() {
                 >
                   <Settings className="h-4 w-4" /> <span className="hidden 2xl:inline">Opciones</span>
                 </button>
-                {showMoreTools && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setShowMoreTools(false)} />
-                    <div className="absolute right-0 top-full mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-2 z-20 min-w-[220px] space-y-1 shadow-[var(--shadow-lg)]">
-                      <button
-                        onClick={() => { setShowWhatsAppOrder(true); setShowMoreTools(false); }}
-                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-success-500)] hover:bg-primary/10 px-3 py-2 rounded-xl transition-colors"
-                      >
-                        <MessageCircle className="h-4 w-4" /> Pedido por WhatsApp
-                      </button>
-                      <button
-                        onClick={() => { setShowHistory(!showHistory); setShowMoreTools(false); }}
-                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-xl transition-colors"
-                      >
-                        <History className="h-4 w-4" /> Historial de ventas
-                        <kbd className="ml-auto text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] px-1 rounded">F4</kbd>
-                      </button>
-                      {(() => {
-                        try { const ls = localStorage.getItem("pos-last-sale-items"); if (!ls) return null; } catch { return null; }
-                        return (
-                          <button
-                            onClick={async () => {
-                              try {
-                                const raw = localStorage.getItem("pos-last-sale-items");
-                                if (!raw) return;
-                                const items: { productId: number; name: string; quantity: number; price: number; stock?: number }[] = JSON.parse(raw);
-                                if (cart.length > 0 && !(await confirm({
-                                  title: "¿Reemplazar el carrito actual?",
-                                  intent: "warning",
-                                  confirmLabel: "Sí, reemplazar",
-                                }))) return;
-                                const newCart: CartItem[] = [];
-                                const skipped: string[] = [];
-                                for (const item of items) {
-                                  const found = products.find(p => p.id === item.productId);
-                                  if (!found || estaAgotado(found)) { skipped.push(item.name); continue; }
-                                  newCart.push({ product: found, quantity: item.quantity });
-                                }
-                                if (newCart.length > 0) setCart(newCart);
-                                if (skipped.length > 0) setSaleError(`Sin stock: ${skipped.join(", ")}`);
-                              } catch { /* ignore */ }
-                              setShowMoreTools(false);
-                            }}
-                            className="w-full flex items-center gap-2 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 px-3 py-2 rounded-xl transition-colors"
-                          >
-                            <RotateCcw className="h-4 w-4" /> Repetir última venta
-                          </button>
-                        );
-                      })()}
-                      <button
-                        onClick={() => { setShowReturn(true); setShowMoreTools(false); }}
-                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/5 px-3 py-2 rounded-xl transition-colors"
-                      >
-                        <History className="h-4 w-4 rotate-180" /> Devolucion
-                      </button>
-
-                      <div className="h-px bg-[var(--rule-soft)] my-1.5" />
-
-                      <div className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted px-3 py-1">
-                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-wider">Tamano fuente</span>
-                      </div>
-                      <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5 mx-2">
-                        {(["normal", "large", "xlarge"] as const).map(size => (
-                          <button
-                            key={size}
-                            onClick={() => changeFontSize(size)}
-                            className={cn(
-                              "flex-1 px-1.5 py-1 rounded-lg text-xs font-bold transition-colors",
-                              fontSize === size ? "bg-[var(--surface-raised)] text-primary " : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
-                            )}
-                            title={size === "normal" ? "Fuente normal" : size === "large" ? "Fuente grande" : "Fuente extra grande"}
-                          >
-                            {size === "normal" ? "A" : size === "large" ? "A+" : "A++"}
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => { toggleSound(); setShowMoreTools(false); }}
-                        className={cn(
-                          "w-full flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl transition-colors",
-                          soundEnabled ? "text-primary hover:bg-primary/5" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)]"
-                        )}
-                      >
-                        {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                        {soundEnabled ? "Sonido ON" : "Sonido OFF"}
-                      </button>
-                    </div>
-                  </>
-                )}
               </div>
 
               <button
@@ -1870,6 +1782,99 @@ export default function POSView() {
                 aria-hidden
                 className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-[var(--surface-raised)] to-transparent"
               />
+              {/* El menú «Opciones» cuelga de ESTE wrapper, fuera de la banda con scroll:
+                  la banda es overflow-x-auto y un `absolute` adentro se recorta — el menú
+                  se abría y no se veía (medido 2026-09-22). Velo y panel comparten la capa
+                  z-dropdown; el panel va después en el DOM, por eso queda encima. */}
+              {showMoreTools && (
+                <>
+                  <div className="fixed inset-0 z-dropdown" onClick={() => setShowMoreTools(false)} />
+                  <div className="absolute right-0 top-full mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-2 z-dropdown min-w-[220px] space-y-1 shadow-[var(--shadow-lg)]">
+                    <button
+                      onClick={() => { setShowWhatsAppOrder(true); setShowMoreTools(false); }}
+                      className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-success-500)] hover:bg-primary/10 px-3 py-2 rounded-xl transition-colors"
+                    >
+                      <MessageCircle className="h-4 w-4" /> Pedido por WhatsApp
+                    </button>
+                    <button
+                      onClick={() => { setShowHistory(!showHistory); setShowMoreTools(false); }}
+                      className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-xl transition-colors"
+                    >
+                      <History className="h-4 w-4" /> Historial de ventas
+                      <kbd className="ml-auto text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] px-1 rounded">F4</kbd>
+                    </button>
+                    {(() => {
+                      try { const ls = localStorage.getItem("pos-last-sale-items"); if (!ls) return null; } catch { return null; }
+                      return (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const raw = localStorage.getItem("pos-last-sale-items");
+                              if (!raw) return;
+                              const items: { productId: number; name: string; quantity: number; price: number; stock?: number }[] = JSON.parse(raw);
+                              if (cart.length > 0 && !(await confirm({
+                                title: "¿Reemplazar el carrito actual?",
+                                intent: "warning",
+                                confirmLabel: "Sí, reemplazar",
+                              }))) return;
+                              const newCart: CartItem[] = [];
+                              const skipped: string[] = [];
+                              for (const item of items) {
+                                const found = products.find(p => p.id === item.productId);
+                                if (!found || estaAgotado(found)) { skipped.push(item.name); continue; }
+                                newCart.push({ product: found, quantity: item.quantity });
+                              }
+                              if (newCart.length > 0) setCart(newCart);
+                              if (skipped.length > 0) setSaleError(`Sin stock: ${skipped.join(", ")}`);
+                            } catch { /* ignore */ }
+                            setShowMoreTools(false);
+                          }}
+                          className="w-full flex items-center gap-2 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 px-3 py-2 rounded-xl transition-colors"
+                        >
+                          <RotateCcw className="h-4 w-4" /> Repetir última venta
+                        </button>
+                      );
+                    })()}
+                    <button
+                      onClick={() => { setShowReturn(true); setShowMoreTools(false); }}
+                      className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/5 px-3 py-2 rounded-xl transition-colors"
+                    >
+                      <History className="h-4 w-4 rotate-180" /> Devolucion
+                    </button>
+
+                    <div className="h-px bg-[var(--rule-soft)] my-1.5" />
+
+                    <div className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted px-3 py-1">
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] uppercase tracking-wider">Tamano fuente</span>
+                    </div>
+                    <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5 mx-2">
+                      {(["normal", "large", "xlarge"] as const).map(size => (
+                        <button
+                          key={size}
+                          onClick={() => changeFontSize(size)}
+                          className={cn(
+                            "flex-1 px-1.5 py-1 rounded-lg text-xs font-bold transition-colors",
+                            fontSize === size ? "bg-[var(--surface-raised)] text-primary " : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
+                          )}
+                          title={size === "normal" ? "Fuente normal" : size === "large" ? "Fuente grande" : "Fuente extra grande"}
+                        >
+                          {size === "normal" ? "A" : size === "large" ? "A+" : "A++"}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => { toggleSound(); setShowMoreTools(false); }}
+                      className={cn(
+                        "w-full flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl transition-colors",
+                        soundEnabled ? "text-primary hover:bg-primary/5" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)]"
+                      )}
+                    >
+                      {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                      {soundEnabled ? "Sonido ON" : "Sonido OFF"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
             {/* Categorías compactas (chips h-10) derivadas del inventario real
                 (products de /api/products), no de la lista estática. Antes: cards
@@ -2047,7 +2052,7 @@ export default function POSView() {
                       Cola: {clientQueues.length}
                     </button>
                     {showQueueDropdown && (
-                      <div className="absolute right-0 top-7 z-50 w-56 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-2 space-y-1">
+                      <div className="absolute right-0 top-7 z-dropdown w-56 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-2 space-y-1">
                         {clientQueues.map((q, idx) => {
                           const qTotal = q.reduce((s, i) => s + i.product.price * i.quantity, 0);
                           const qItems = q.reduce((s, i) => s + i.quantity, 0);
@@ -2122,7 +2127,7 @@ export default function POSView() {
                 const discountMultiplier = 1 - (item.discount || 0) / 100;
                 const itemTotal = item.product.price * item.quantity * discountMultiplier;
                 return (
-                  <div key={item.product.id} className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-2 hover:bg-[var(--surface-sunken)] transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-primary/10 dark:bg-primary/15")}>
+                  <div key={item.product.id} className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3 hover:bg-[var(--surface-sunken)] transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-primary/10 dark:bg-primary/15")}>
                     <div className="flex flex-wrap items-center gap-2">
                       {item.product.image ? (
                         <Image src={item.product.image} alt={item.product.name} width={48} height={48} className="rounded-lg object-cover shrink-0 w-12 h-12" />
@@ -2261,7 +2266,7 @@ export default function POSView() {
               {(() => {
                 const { base, igv } = extractIgv(cartTotal);
                 return (
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono text-right">Sub: S/{base.toFixed(2)} · IGV: S/{igv.toFixed(2)}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono text-right">Sub: {formatCurrency(base)} · IGV: {formatCurrency(igv)}</p>
                 );
               })()}
 
@@ -2368,7 +2373,7 @@ export default function POSView() {
           <div className="flex items-center justify-between">
             <div>
               <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{cartCount} items</span>
-              <span className="text-lg font-bold font-mono ml-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/ {cartTotal.toFixed(2)}</span>
+              <span className="text-lg font-bold font-mono ml-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(cartTotal)}</span>
             </div>
             <button onClick={openPaymentModal} className="bg-primary text-white px-6 min-h-11 rounded-xl font-semibold text-sm">
               Cobrar
@@ -2395,14 +2400,14 @@ export default function POSView() {
               <div className="mt-4 space-y-2">
                 <p className="text-xs font-bold text-[var(--text-secondary)]">Productos encontrados</p>
                 {waParsedItems.map((item, idx) => (
-                  <div key={idx} className="p-2.5 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                  <div key={idx} className="p-3 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     {item.selected || item.matches.length === 1 ? (
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-[var(--data-success-500)] font-bold text-xs shrink-0">x{item.qty}</span>
                           <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{(item.selected || item.matches[0]).name}</span>
                         </div>
-                        <span className="text-sm font-bold text-primary shrink-0">S/{((item.selected || item.matches[0]).price * item.qty).toFixed(2)}</span>
+                        <span className="text-sm font-bold text-primary shrink-0">{formatCurrency((item.selected || item.matches[0]).price * item.qty)}</span>
                       </div>
                     ) : item.matches.length > 1 ? (
                       <div>
@@ -2416,7 +2421,7 @@ export default function POSView() {
                               }}
                               className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-raised)] border border-[var(--rule-base)] hover:border-primary hover:text-primary transition-colors"
                             >
-                              {m.name} · S/{Number(m.price).toFixed(2)}
+                              {m.name} · {formatCurrency(Number(m.price))}
                             </button>
                           ))}
                         </div>
@@ -2433,7 +2438,7 @@ export default function POSView() {
                   return (
                     <div className="pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm font-bold text-[var(--text-primary)]">Total estimado: <span className="text-primary">S/{total.toFixed(2)}</span></span>
+                        <span className="text-sm font-bold text-[var(--text-primary)]">Total estimado: <span className="text-primary">{formatCurrency(total)}</span></span>
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{resolved.length}/{waParsedItems.length} items</span>
                       </div>
                       <button
@@ -2468,7 +2473,7 @@ export default function POSView() {
 
       {/* ── Sales History Sidebar ──────────────────────────────────────────── */}
       {showHistory && (
-        <div className="fixed inset-y-0 right-0 z-40 w-80 bg-[var(--surface-raised)] border-l border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col">
+        <div className="fixed inset-y-0 right-0 z-modal w-80 bg-[var(--surface-raised)] border-l border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col">
           {/* Header */}
           <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
             <div className="flex flex-wrap items-center gap-2">
@@ -2544,7 +2549,7 @@ export default function POSView() {
                   {Number(truequeValor) >= cartTotal ? (
                     <span>Sin pago adicional (valor trueque cubre el total)</span>
                   ) : (
-                    <span>Diferencia a pagar: S/{(cartTotal - Number(truequeValor)).toFixed(2)}</span>
+                    <span>Diferencia a pagar: {formatCurrency(cartTotal - Number(truequeValor))}</span>
                   )}
                 </div>
               )}
@@ -2617,7 +2622,7 @@ export default function POSView() {
 
       {/* ── Mejora 7: Stock Alert Toast ──────────────────────────────────────── */}
       {stockAlert && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-[var(--dur-base)]">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-modal animate-in slide-in-from-bottom-4 fade-in duration-[var(--dur-base)]">
           <div className={cn(
             "px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2",
             stockAlert.type === "warning"
@@ -2692,7 +2697,7 @@ export default function POSView() {
 
   if (expanded) {
     return (
-      <div className={cn("fixed inset-0 z-50 bg-[var(--surface-sunken)] overflow-y-auto", fontSize === "large" && "pos-large", fontSize === "xlarge" && "pos-xlarge")}>
+      <div className={cn("fixed inset-0 z-modal bg-[var(--surface-sunken)] overflow-y-auto", fontSize === "large" && "pos-large", fontSize === "xlarge" && "pos-xlarge")}>
         {fontSizeStyle}
         <div className="max-w-480 mx-auto px-4 sm:px-6 py-4 space-y-4">
           {posContent}

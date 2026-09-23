@@ -4,14 +4,15 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo, useEffect, startTransition } from "react";
 import { GitCompareArrows, ArrowUp, ArrowDown, Minus, Calendar, Download, BarChart3 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 type Metric = { label: string; periodA: number; periodB: number; format: "money" | "number" | "pct" };
 
-function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 function fmtNum(n: number, format: Metric["format"]) {
   if (format === "money") return fmt(n);
   if (format === "pct") return `${n.toFixed(1)}%`;
-  return n.toLocaleString("es-PE");
+  return formatNumber(n);
 }
 
 const PRESETS = [

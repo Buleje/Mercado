@@ -9,6 +9,7 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
+import { formatCurrency, formatDate, formatDateNumeric } from "@/lib/format";
 
 type Coupon = {
   id: string; code: string; description: string;
@@ -187,7 +188,7 @@ export default function CouponsTab() {
 
   const buildWhatsappMsg = (c: Coupon) => {
     const descuento = c.discountType === "percent" ? `${c.discountValue}%` : c.discountType === "giftcard" ? `Gift Card S/${c.discountValue}` : `S/${c.discountValue}`;
-    const expira = c.expiresAt ? `\nValido hasta: ${new Date(c.expiresAt).toLocaleDateString("es-PE")}` : "";
+    const expira = c.expiresAt ? `\nValido hasta: ${formatDateNumeric(c.expiresAt)}` : "";
     return `¡Cupon especial de Buleje!\nUsa el codigo: ${c.code}\nDescuento: ${descuento}${expira}\n¡No te lo pierdas!`;
   };
 
@@ -294,7 +295,7 @@ export default function CouponsTab() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{log.customer}</p>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
-                    {log.ruleType} · {new Date(log.date).toLocaleDateString()} · <span className="font-mono font-bold text-primary">{log.couponCode}</span>
+                    {log.ruleType} · {formatDate(log.date)} · <span className="font-mono font-bold text-primary">{log.couponCode}</span>
                   </p>
                 </div>
                 <span className={cn("inline-flex px-2 py-1 rounded-full text-xs font-bold",
@@ -412,10 +413,10 @@ export default function CouponsTab() {
               </div>
               <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{c.description || "Sin descripción"}</p>
               <div className="flex flex-wrap gap-3 mt-1 text-xs text-[var(--text-tertiary)] dark:text-muted">
-                <span className="font-bold text-[var(--data-success-500)]">{c.discountType === "percent" ? `${c.discountValue}%` : c.discountType === "giftcard" ? `GC S/${(c.balance ?? c.discountValue).toFixed(2)}` : `S/${c.discountValue}`}</span>
+                <span className="font-bold text-[var(--data-success-500)]">{c.discountType === "percent" ? `${c.discountValue}%` : c.discountType === "giftcard" ? `GC ${formatCurrency(c.balance ?? c.discountValue)}` : `S/${c.discountValue}`}</span>
                 {c.minPurchase ? <span>Min: S/{c.minPurchase}</span> : null}
                 {c.maxUses ? <span>Usos: {c.usedCount}/{c.maxUses}</span> : <span>Usos: {c.usedCount}/∞</span>}
-                {c.expiresAt && <span>Exp: {new Date(c.expiresAt).toLocaleDateString()}</span>}
+                {c.expiresAt && <span>Exp: {formatDate(c.expiresAt)}</span>}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">

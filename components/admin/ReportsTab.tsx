@@ -3,6 +3,7 @@
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useCallback } from "react";
 import { FileText, Loader2, Download, BarChart3, Package, Users, DollarSign, Clock, TrendingUp, Printer, Database, CalendarDays } from "@buleje/design-system/icons";
+import { formatCurrency, formatDate, formatDateNumeric, formatDateTime, formatMonthYear } from "@/lib/format";
 
 type ReportType = "ventas" | "inventario" | "clientes" | "financiero" | "horas-pico" | "margen" | "metricas-completas" | "informe-mensual";
 
@@ -40,28 +41,28 @@ export default function ReportsTab() {
     try {
       const data = await fetchData(type);
       let csv = "";
-      const now = new Date().toLocaleDateString("es-PE");
+      const now = formatDateNumeric(new Date());
 
       if (type === "ventas") {
         const [sales, products] = data;
         const productMap = Object.fromEntries((products || []).map((p: { id: number; name: string }) => [p.id, p.name]));
         const total = (sales || []).reduce((s: number, sale: { total: number }) => s + sale.total, 0);
         csv = `Reporte de Ventas - ${now}\n\n`;
-        csv += `Total Ventas,${(sales || []).length}\nMonto Total,"S/${total.toFixed(2)}"\n\n`;
+        csv += `Total Ventas,${(sales || []).length}\nMonto Total,"${formatCurrency(total)}"\n\n`;
         csv += `ID,Fecha,Total,Método Pago,Productos\n`;
         (sales || []).forEach((s: { id: string; createdAt: string; total: number; paymentMethod?: string; items?: { productId: number; quantity: number }[] }) => {
           const items = (s.items || []).map((i: { productId: number; quantity: number }) => `${productMap[i.productId] || i.productId} x${i.quantity}`).join("; ");
-          csv += `${s.id.slice(-8)},${new Date(s.createdAt).toLocaleDateString()},S/${Number(s.total).toFixed(2)},${s.paymentMethod || "efectivo"},"${items}"\n`;
+          csv += `${s.id.slice(-8)},${formatDate(s.createdAt)},${formatCurrency(Number(s.total))},${s.paymentMethod || "efectivo"},"${items}"\n`;
         });
       } else if (type === "inventario") {
         const [products] = data;
         const totalValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + p.price * p.stock, 0);
         const lowStock = (products || []).filter((p: { stock: number; minStock?: number }) => p.stock <= (p.minStock || 5));
         csv = `Reporte de Inventario - ${now}\n\n`;
-        csv += `Total Productos,${(products || []).length}\nValor Total Inventario,"S/${totalValue.toFixed(2)}"\nProductos Stock Bajo,${lowStock.length}\n\n`;
+        csv += `Total Productos,${(products || []).length}\nValor Total Inventario,"${formatCurrency(totalValue)}"\nProductos Stock Bajo,${lowStock.length}\n\n`;
         csv += `ID,Nombre,Categoría,Precio,Stock,Min Stock,Valor\n`;
         (products || []).forEach((p: { id: number; name: string; category?: string; price: number; stock: number; minStock?: number }) => {
-          csv += `${p.id},"${p.name}",${p.category || ""},S/${Number(p.price).toFixed(2)},${p.stock},${p.minStock || 5},S/${(p.price * p.stock).toFixed(2)}\n`;
+          csv += `${p.id},"${p.name}",${p.category || ""},${formatCurrency(Number(p.price))},${p.stock},${p.minStock || 5},${formatCurrency(p.price * p.stock)}\n`;
         });
       } else if (type === "clientes") {
         const [customers] = data;
@@ -69,7 +70,7 @@ export default function ReportsTab() {
         csv += `Total Clientes,${(customers || []).length}\n\n`;
         csv += `Teléfono,Nombre,Dirección,Total Gastado,Puntos,Nivel\n`;
         (customers || []).forEach((c: { phone: string; name: string; address?: string; totalSpent?: number; loyaltyPoints?: number; loyaltyTier?: string }) => {
-          csv += `${c.phone},"${c.name}","${c.address || ""}",S/${(c.totalSpent || 0).toFixed(2)},${c.loyaltyPoints || 0},${c.loyaltyTier || "Nuevo"}\n`;
+          csv += `${c.phone},"${c.name}","${c.address || ""}",${formatCurrency(c.totalSpent || 0)},${c.loyaltyPoints || 0},${c.loyaltyTier || "Nuevo"}\n`;
         });
       } else if (type === "horas-pico") {
         const [sales] = data;
@@ -95,11 +96,11 @@ export default function ReportsTab() {
         csv = `Reporte de Horas Pico - ${now}\n\n`;
         csv += `Análisis por Hora\nHora,Cantidad Ventas,Monto Total\n`;
         hourData.forEach(h => {
-          csv += `${h.hour}:00,${h.count},S/${Number(h.total).toFixed(2)}\n`;
+          csv += `${h.hour}:00,${h.count},${formatCurrency(Number(h.total))}\n`;
         });
         csv += `\nAnálisis por Día de la Semana\nDía,Cantidad Ventas,Monto Total\n`;
         dayData.forEach(d => {
-          csv += `${dayNames[d.day]},${d.count},S/${Number(d.total).toFixed(2)}\n`;
+          csv += `${dayNames[d.day]},${d.count},${formatCurrency(Number(d.total))}\n`;
         });
       } else if (type === "margen") {
         const [products, sales] = data;
@@ -128,14 +129,14 @@ export default function ReportsTab() {
         csv += `Producto,Unidades Vendidas,Ingresos,Costo,Margen,% Margen\n`;
         topMargin.forEach(p => {
           const marginPct = p.revenue > 0 ? ((p.margin / p.revenue) * 100).toFixed(1) : "0.0";
-          csv += `"${p.name}",${p.units},S/${Number(p.revenue).toFixed(2)},S/${Number(p.cost).toFixed(2)},S/${Number(p.margin).toFixed(2)},${marginPct}%\n`;
+          csv += `"${p.name}",${p.units},${formatCurrency(Number(p.revenue))},${formatCurrency(Number(p.cost))},${formatCurrency(Number(p.margin))},${marginPct}%\n`;
         });
       } else if (type === "metricas-completas") {
         // FASE 6.4: Full Business Metrics Export
         const [sales, products, customers, payables, suppliers, orders] = data;
         
         csv = `BULEJE ERP - METRICAS COMPLETAS DEL NEGOCIO\n`;
-        csv += `Generado: ${new Date().toLocaleString("es-PE")}\n\n`;
+        csv += `Generado: ${formatDateTime(new Date())}\n\n`;
         
         // === EXECUTIVE SUMMARY ===
         csv += `=== RESUMEN EJECUTIVO ===\n\n`;
@@ -143,10 +144,10 @@ export default function ReportsTab() {
         const totalOrders = (orders || []).filter((o: { status: string }) => o.status !== "cancelado").length;
         const totalCustomers = (customers || []).length;
         const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-        csv += `Ingresos Totales,S/${totalRevenue.toFixed(2)}\n`;
+        csv += `Ingresos Totales,${formatCurrency(totalRevenue)}\n`;
         csv += `Pedidos/Ventas Totales,${totalOrders + (sales || []).length}\n`;
         csv += `Total Clientes,${totalCustomers}\n`;
-        csv += `Valor Promedio Pedido,S/${avgOrderValue.toFixed(2)}\n\n`;
+        csv += `Valor Promedio Pedido,${formatCurrency(avgOrderValue)}\n\n`;
         
         // === REVENUE BREAKDOWN ===
         csv += `=== INGRESOS POR CATEGORIA ===\n`;
@@ -161,7 +162,7 @@ export default function ReportsTab() {
         });
         [...categoryRevenue.entries()].sort((a, b) => b[1] - a[1]).forEach(([cat, rev]) => {
           const pct = totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(1) : "0.0";
-          csv += `${cat},S/${rev.toFixed(2)},${pct}%\n`;
+          csv += `${cat},${formatCurrency(rev)},${pct}%\n`;
         });
         csv += `\n`;
         
@@ -179,7 +180,7 @@ export default function ReportsTab() {
         });
         [...paymentRevenue.entries()].sort((a, b) => b[1] - a[1]).forEach(([method, rev]) => {
           const pct = totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(1) : "0.0";
-          csv += `${method},S/${rev.toFixed(2)},${pct}%\n`;
+          csv += `${method},${formatCurrency(rev)},${pct}%\n`;
         });
         csv += `\n`;
         
@@ -188,7 +189,7 @@ export default function ReportsTab() {
         csv += `Total Productos,${(products || []).length}\n`;
         csv += `Productos Activos,${(products || []).filter((p: { active: boolean }) => p.active).length}\n`;
         const totalStockValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + (p.price * (p.stock || 0)), 0);
-        csv += `Valor Total Inventario,S/${totalStockValue.toFixed(2)}\n`;
+        csv += `Valor Total Inventario,${formatCurrency(totalStockValue)}\n`;
         const lowStock = (products || []).filter((p: { stock: number; stockMin?: number }) => (p.stock || 0) <= (p.stockMin || 5));
         csv += `Productos con Stock Bajo,${lowStock.length}\n`;
         const outOfStock = (products || []).filter((p: { stock: number }) => (p.stock || 0) === 0);
@@ -208,7 +209,7 @@ export default function ReportsTab() {
           });
         });
         [...productSales.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 10).forEach(p => {
-          csv += `"${p.name}",${p.units},S/${Number(p.revenue).toFixed(2)}\n`;
+          csv += `"${p.name}",${p.units},${formatCurrency(Number(p.revenue))}\n`;
         });
         csv += `\n`;
         
@@ -236,20 +237,20 @@ export default function ReportsTab() {
         
         // === INVENTORY ===
         csv += `=== GESTION DE INVENTARIO ===\n`;
-        csv += `Valor Total Inventario,S/${totalStockValue.toFixed(2)}\n`;
+        csv += `Valor Total Inventario,${formatCurrency(totalStockValue)}\n`;
         const totalCostValue = (products || []).reduce((s: number, p: { costPrice?: number; price: number; stock: number }) => s + ((p.costPrice || p.price * 0.7) * (p.stock || 0)), 0);
-        csv += `Costo Total Inventario,S/${totalCostValue.toFixed(2)}\n`;
+        csv += `Costo Total Inventario,${formatCurrency(totalCostValue)}\n`;
         const inventoryMargin = totalStockValue > 0 ? ((totalStockValue - totalCostValue) / totalStockValue * 100).toFixed(1) : "0.0";
         csv += `Margen Promedio Inventario,${inventoryMargin}%\n\n`;
         
         // === CASH FLOW ===
         csv += `=== FLUJO DE CAJA ===\n`;
-        csv += `Ingresos,S/${totalRevenue.toFixed(2)}\n`;
+        csv += `Ingresos,${formatCurrency(totalRevenue)}\n`;
         const totalPurchases = (payables || []).reduce((s: number, p: { amount: number }) => s + p.amount, 0);
-        csv += `Compras/Gastos,S/${totalPurchases.toFixed(2)}\n`;
-        csv += `Balance,S/${(totalRevenue - totalPurchases).toFixed(2)}\n`;
+        csv += `Compras/Gastos,${formatCurrency(totalPurchases)}\n`;
+        csv += `Balance,${formatCurrency(totalRevenue - totalPurchases)}\n`;
         const totalPayablesPending = (payables || []).reduce((s: number, p: { amount: number; paidAmount?: number }) => s + (p.amount - (p.paidAmount || 0)), 0);
-        csv += `Cuentas por Pagar Pendientes,S/${totalPayablesPending.toFixed(2)}\n\n`;
+        csv += `Cuentas por Pagar Pendientes,${formatCurrency(totalPayablesPending)}\n\n`;
         
         // === SUPPLIERS ===
         csv += `=== PROVEEDORES ===\n`;
@@ -267,7 +268,7 @@ export default function ReportsTab() {
         const cancelledOrders = (orders || []).filter((o: { status: string }) => o.status === "cancelado").length;
         const cancellationRate = totalOrders > 0 ? ((cancelledOrders / totalOrders) * 100).toFixed(1) : "0.0";
         csv += `Tasa de Cancelación,${cancellationRate}%\n`;
-        csv += `Valor Promedio de Orden,S/${avgOrderValue.toFixed(2)}\n\n`;
+        csv += `Valor Promedio de Orden,${formatCurrency(avgOrderValue)}\n\n`;
         
         csv += `=== FIN DEL REPORTE ===\n`;
       } else {
@@ -276,7 +277,7 @@ export default function ReportsTab() {
         const totalPayables = (payables || []).reduce((s: number, p: { amount: number; paidAmount: number }) => s + (p.amount - (p.paidAmount || 0)), 0);
         const inventoryValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + p.price * p.stock, 0);
         csv = `Reporte Financiero - ${now}\n\n`;
-        csv += `Ingresos por Ventas,"S/${totalIncome.toFixed(2)}"\nCuentas por Pagar,"S/${totalPayables.toFixed(2)}"\nValor Inventario,"S/${inventoryValue.toFixed(2)}"\n`;
+        csv += `Ingresos por Ventas,"${formatCurrency(totalIncome)}"\nCuentas por Pagar,"${formatCurrency(totalPayables)}"\nValor Inventario,"${formatCurrency(inventoryValue)}"\n`;
       }
 
       const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -294,7 +295,7 @@ export default function ReportsTab() {
     setGenerating(type);
     try {
       const data = await fetchData(type);
-      const now = new Date().toLocaleDateString("es-PE");
+      const now = formatDateNumeric(new Date());
       let html = `
         <!DOCTYPE html>
         <html>
@@ -387,12 +388,12 @@ export default function ReportsTab() {
         html += `<h2>Reporte de Ventas</h2>`;
         html += `<div class="summary">
           <div class="summary-item"><span class="summary-label">Total Ventas:</span><span class="summary-value">${(sales || []).length}</span></div>
-          <div class="summary-item"><span class="summary-label">Monto Total:</span><span class="summary-value">S/${total.toFixed(2)}</span></div>
+          <div class="summary-item"><span class="summary-label">Monto Total:</span><span class="summary-value">${formatCurrency(total)}</span></div>
         </div>`;
         html += `<table><thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Método Pago</th><th>Productos</th></tr></thead><tbody>`;
         (sales || []).forEach((s: { id: string; createdAt: string; total: number; paymentMethod?: string; items?: { productId: number; quantity: number }[] }) => {
           const items = (s.items || []).map((i: { productId: number; quantity: number }) => `${productMap[i.productId] || i.productId} x${i.quantity}`).join(", ");
-          html += `<tr><td>${s.id.slice(-8)}</td><td>${new Date(s.createdAt).toLocaleDateString()}</td><td>S/${Number(s.total).toFixed(2)}</td><td>${s.paymentMethod || "efectivo"}</td><td>${items}</td></tr>`;
+          html += `<tr><td>${s.id.slice(-8)}</td><td>${formatDate(s.createdAt)}</td><td>${formatCurrency(Number(s.total))}</td><td>${s.paymentMethod || "efectivo"}</td><td>${items}</td></tr>`;
         });
         html += `</tbody></table>`;
       } else if (type === "inventario") {
@@ -402,12 +403,12 @@ export default function ReportsTab() {
         html += `<h2>Reporte de Inventario</h2>`;
         html += `<div class="summary">
           <div class="summary-item"><span class="summary-label">Total Productos:</span><span class="summary-value">${(products || []).length}</span></div>
-          <div class="summary-item"><span class="summary-label">Valor Total:</span><span class="summary-value">S/${totalValue.toFixed(2)}</span></div>
+          <div class="summary-item"><span class="summary-label">Valor Total:</span><span class="summary-value">${formatCurrency(totalValue)}</span></div>
           <div class="summary-item"><span class="summary-label">Stock Bajo:</span><span class="summary-value">${lowStock.length}</span></div>
         </div>`;
         html += `<table><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Min Stock</th><th>Valor</th></tr></thead><tbody>`;
         (products || []).forEach((p: { id: number; name: string; category?: string; price: number; stock: number; minStock?: number }) => {
-          html += `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.category || ""}</td><td>S/${Number(p.price).toFixed(2)}</td><td>${p.stock}</td><td>${p.minStock || 5}</td><td>S/${(p.price * p.stock).toFixed(2)}</td></tr>`;
+          html += `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.category || ""}</td><td>${formatCurrency(Number(p.price))}</td><td>${p.stock}</td><td>${p.minStock || 5}</td><td>${formatCurrency(p.price * p.stock)}</td></tr>`;
         });
         html += `</tbody></table>`;
       } else if (type === "clientes") {
@@ -416,7 +417,7 @@ export default function ReportsTab() {
         html += `<div class="summary"><div class="summary-item"><span class="summary-label">Total Clientes:</span><span class="summary-value">${(customers || []).length}</span></div></div>`;
         html += `<table><thead><tr><th>Teléfono</th><th>Nombre</th><th>Dirección</th><th>Total Gastado</th><th>Puntos</th><th>Nivel</th></tr></thead><tbody>`;
         (customers || []).forEach((c: { phone: string; name: string; address?: string; totalSpent?: number; loyaltyPoints?: number; loyaltyTier?: string }) => {
-          html += `<tr><td>${c.phone}</td><td>${c.name}</td><td>${c.address || ""}</td><td>S/${(c.totalSpent || 0).toFixed(2)}</td><td>${c.loyaltyPoints || 0}</td><td>${c.loyaltyTier || "Nuevo"}</td></tr>`;
+          html += `<tr><td>${c.phone}</td><td>${c.name}</td><td>${c.address || ""}</td><td>${formatCurrency(c.totalSpent || 0)}</td><td>${c.loyaltyPoints || 0}</td><td>${c.loyaltyTier || "Nuevo"}</td></tr>`;
         });
         html += `</tbody></table>`;
       } else if (type === "financiero") {
@@ -426,9 +427,9 @@ export default function ReportsTab() {
         const inventoryValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + p.price * p.stock, 0);
         html += `<h2>Reporte Financiero</h2>`;
         html += `<div class="summary">
-          <div class="summary-item"><span class="summary-label">Ingresos por Ventas:</span><span class="summary-value">S/${totalIncome.toFixed(2)}</span></div>
-          <div class="summary-item"><span class="summary-label">Cuentas por Pagar:</span><span class="summary-value">S/${totalPayables.toFixed(2)}</span></div>
-          <div class="summary-item"><span class="summary-label">Valor Inventario:</span><span class="summary-value">S/${inventoryValue.toFixed(2)}</span></div>
+          <div class="summary-item"><span class="summary-label">Ingresos por Ventas:</span><span class="summary-value">${formatCurrency(totalIncome)}</span></div>
+          <div class="summary-item"><span class="summary-label">Cuentas por Pagar:</span><span class="summary-value">${formatCurrency(totalPayables)}</span></div>
+          <div class="summary-item"><span class="summary-label">Valor Inventario:</span><span class="summary-value">${formatCurrency(inventoryValue)}</span></div>
         </div>`;
       } else if (type === "horas-pico") {
         const [sales] = data;
@@ -455,13 +456,13 @@ export default function ReportsTab() {
         html += `<h3 style="font-size: 16px; color: #475569; margin-top: 20px;">Análisis por Hora</h3>`;
         html += `<table><thead><tr><th>Hora</th><th>Cantidad Ventas</th><th>Monto Total</th></tr></thead><tbody>`;
         hourData.forEach(h => {
-          html += `<tr><td>${h.hour}:00</td><td>${h.count}</td><td>S/${Number(h.total).toFixed(2)}</td></tr>`;
+          html += `<tr><td>${h.hour}:00</td><td>${h.count}</td><td>${formatCurrency(Number(h.total))}</td></tr>`;
         });
         html += `</tbody></table>`;
         html += `<h3 style="font-size: 16px; color: #475569; margin-top: 30px;">Análisis por Día de la Semana</h3>`;
         html += `<table><thead><tr><th>Día</th><th>Cantidad Ventas</th><th>Monto Total</th></tr></thead><tbody>`;
         dayData.forEach(d => {
-          html += `<tr><td>${dayNames[d.day]}</td><td>${d.count}</td><td>S/${Number(d.total).toFixed(2)}</td></tr>`;
+          html += `<tr><td>${dayNames[d.day]}</td><td>${d.count}</td><td>${formatCurrency(Number(d.total))}</td></tr>`;
         });
         html += `</tbody></table>`;
       } else if (type === "margen") {
@@ -491,13 +492,13 @@ export default function ReportsTab() {
         html += `<table><thead><tr><th>Producto</th><th>Unidades Vendidas</th><th>Ingresos</th><th>Costo</th><th>Margen</th><th>% Margen</th></tr></thead><tbody>`;
         topMargin.forEach(p => {
           const marginPct = p.revenue > 0 ? ((p.margin / p.revenue) * 100).toFixed(1) : "0.0";
-          html += `<tr><td>${p.name}</td><td>${p.units}</td><td>S/${Number(p.revenue).toFixed(2)}</td><td>S/${Number(p.cost).toFixed(2)}</td><td>S/${Number(p.margin).toFixed(2)}</td><td>${marginPct}%</td></tr>`;
+          html += `<tr><td>${p.name}</td><td>${p.units}</td><td>${formatCurrency(Number(p.revenue))}</td><td>${formatCurrency(Number(p.cost))}</td><td>${formatCurrency(Number(p.margin))}</td><td>${marginPct}%</td></tr>`;
         });
         html += `</tbody></table>`;
       } else if (type === "informe-mensual") {
         const [sales, orders, products, customers, payables] = data;
         const thisMonth = new Date();
-        const monthLabel = thisMonth.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
+        const monthLabel = formatMonthYear(thisMonth, { largo: true });
 
         // Revenue
         const allSales = [...(sales || []), ...(orders || []).filter((o: { status: string }) => o.status !== "cancelado")];
@@ -549,18 +550,18 @@ export default function ReportsTab() {
 
         <h3 style="color:#121f17;margin-top:20px;">💰 Resumen Financiero</h3>
         <div class="summary">
-          <div class="summary-item"><span class="summary-label">Ingresos totales:</span><span class="summary-value" style="color:#16a34a;">S/${totalRevenue.toFixed(2)}</span></div>
-          <div class="summary-item"><span class="summary-label">Valor promedio de pedido:</span><span class="summary-value">S/${avgOrder.toFixed(2)}</span></div>
-          <div class="summary-item"><span class="summary-label">Valor del inventario:</span><span class="summary-value">S/${inventoryValue.toFixed(2)}</span></div>
-          <div class="summary-item"><span class="summary-label">Cuentas por pagar pendientes:</span><span class="summary-value" style="color:#dc2626;">S/${totalPendingPayables.toFixed(2)}</span></div>
-          <div class="summary-item"><span class="summary-label">Pagos vencidos:</span><span class="summary-value" style="color:#dc2626;">S/${overdueAmt.toFixed(2)}</span></div>
+          <div class="summary-item"><span class="summary-label">Ingresos totales:</span><span class="summary-value" style="color:#16a34a;">${formatCurrency(totalRevenue)}</span></div>
+          <div class="summary-item"><span class="summary-label">Valor promedio de pedido:</span><span class="summary-value">${formatCurrency(avgOrder)}</span></div>
+          <div class="summary-item"><span class="summary-label">Valor del inventario:</span><span class="summary-value">${formatCurrency(inventoryValue)}</span></div>
+          <div class="summary-item"><span class="summary-label">Cuentas por pagar pendientes:</span><span class="summary-value" style="color:#dc2626;">${formatCurrency(totalPendingPayables)}</span></div>
+          <div class="summary-item"><span class="summary-label">Pagos vencidos:</span><span class="summary-value" style="color:#dc2626;">${formatCurrency(overdueAmt)}</span></div>
         </div>
 
         <h3 style="color:#121f17;margin-top:25px;">🏆 Top Productos del Período</h3>
         <table><thead><tr><th>#</th><th>Producto</th><th>Unidades</th><th>Ingresos</th><th>Costo</th><th>Margen</th></tr></thead><tbody>
         ${topProducts.map((p, i) => {
           const margin = p.revenue > 0 ? ((p.revenue - p.cost) / p.revenue * 100).toFixed(1) : "0.0";
-          return `<tr><td>${i + 1}</td><td>${p.name}</td><td>${p.units}</td><td>S/${Number(p.revenue).toFixed(2)}</td><td>S/${Number(p.cost).toFixed(2)}</td><td>${margin}%</td></tr>`;
+          return `<tr><td>${i + 1}</td><td>${p.name}</td><td>${p.units}</td><td>${formatCurrency(Number(p.revenue))}</td><td>${formatCurrency(Number(p.cost))}</td><td>${margin}%</td></tr>`;
         }).join("")}
         </tbody></table>
 
@@ -576,7 +577,7 @@ export default function ReportsTab() {
           <div class="summary-item"><span class="summary-label">Nuevos este mes:</span><span class="summary-value" style="color:#2563eb;">${newThisMonthCustomers}</span></div>
         </div>
 
-        <p style="margin-top:30px;font-size:11px;color:#94a3b8;text-align:center;">Generado automáticamente por el panel Buleje · ${new Date().toLocaleString("es-PE")}</p>
+        <p style="margin-top:30px;font-size:11px;color:#94a3b8;text-align:center;">Generado automáticamente por el panel Buleje · ${formatDateTime(new Date())}</p>
         `;
       }
 
