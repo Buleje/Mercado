@@ -6,11 +6,17 @@
  * marcados, el resumen de todos juntos.
  */
 
-import { AlertTriangle, BarChart3, Lock } from "@buleje/design-system/icons";
+import { AlertTriangle, BarChart3, CalendarDays, Layers, Lock } from "@buleje/design-system/icons";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { etiquetaCorta, etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import type { JornadaDeProduccion } from "./hooks/use-jornadas-produccion";
 import { cuantos, type NombreDeLaTira } from "./tira-de-dias-copy";
+import type { CorteResumen } from "./ctp-resumen-jornadas-tablas";
+
+const BOTON_RESUMEN =
+  "inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold transition-colors";
+const BOTON_RESUMEN_PRINCIPAL = `${BOTON_RESUMEN} border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]`;
+const BOTON_RESUMEN_OTRO = `${BOTON_RESUMEN} border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]`;
 
 /** El día elegido YA tiene registros: el aviso que evita cargar la misma jornada dos veces. */
 export function AvisoDiaConRegistro({
@@ -59,7 +65,8 @@ export function DiasMarcados({
 }: {
   marcados: readonly string[];
   onLimpiar: () => void;
-  onResumen: () => void;
+  /** Abre el resumen de los días marcados con ese corte (el modal deja cambiarlo). */
+  onResumen: (corte: CorteResumen) => void;
 }) {
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
@@ -79,14 +86,20 @@ export function DiasMarcados({
       >
         Limpiar
       </button>
-      <button
-        type="button"
-        onClick={onResumen}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
-      >
-        <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Resumen por especie de{" "}
-        {marcados.length === 1 ? "ese día" : "esos días"}
-      </button>
+      {/* Tres maneras de leer los mismos días (Brandon, 2026-09-23): todos
+          juntos por especie, un renglón por día, o cada día abierto en una fila
+          por especie y tipo. Van a la vista porque son EL uso de marcar días. */}
+      <div role="group" aria-label="Resumen de los días marcados" className="flex flex-wrap items-center gap-1.5">
+        <button type="button" onClick={() => onResumen("dia")} className={BOTON_RESUMEN_PRINCIPAL}>
+          <CalendarDays className="h-3.5 w-3.5" aria-hidden /> Resumen por día
+        </button>
+        <button type="button" onClick={() => onResumen("diaEspecie")} className={BOTON_RESUMEN_OTRO}>
+          <Layers className="h-3.5 w-3.5" aria-hidden /> Por día, especie y tipo
+        </button>
+        <button type="button" onClick={() => onResumen("especie")} className={BOTON_RESUMEN_OTRO}>
+          <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Por especie de {marcados.length === 1 ? "ese día" : "esos días"}
+        </button>
+      </div>
       {/* Marcar muchos días es el gesto de «quiero cerrar el mes»: ese camino
           ya existe entero (revisar pendientes, cerrar, bajar el paquete
           oficial) y estaba a cinco clics sin cartel. */}

@@ -30,6 +30,7 @@ import CtpResumenDeJornadasModal from "./CtpResumenDeJornadasModal";
 import CtpCasilleroDelDia from "./CtpCasilleroDelDia";
 import CtpCabeceraDeLaTira from "./CtpCabeceraDeLaTira";
 import { AvisoDiaConRegistro, DiasMarcados } from "./CtpAvisosDeLaTira";
+import type { CorteResumen } from "./ctp-resumen-jornadas-tablas";
 import { useDetalleFlotante } from "./hooks/use-detalle-flotante";
 import {
   correrSemanas,
@@ -83,6 +84,17 @@ interface Props {
   anulandoDia?: string | null;
 }
 
+/**
+ * En el celular la tira arranca PLEGADA (Brandon, 2026-09-23): a 400 px los
+ * siete casilleros ocupan unos 365 de 900 px — el 40 % de la pantalla antes de
+ * llegar a lo que se carga. Es sólo el valor de fábrica: si alguien la abre, su
+ * elección se guarda y manda (`useLocalStorage`).
+ */
+function enCelular(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(max-width: 639px)").matches;
+}
+
 export default function CtpSemanaDeRegistro({
   valor,
   onElegir,
@@ -121,7 +133,7 @@ export default function CtpSemanaDeRegistro({
    * Plegada NO esconde a qué día va el registro: la línea que queda dice el día
    * elegido y lo que ya tiene. Plegar no es esconder el dato.
    */
-  const [plegada, setPlegada] = useLocalStorage<boolean>(`ctp-tira-dias-plegada:${seccion}`, false);
+  const [plegada, setPlegada] = useLocalStorage<boolean>(`ctp-tira-dias-plegada:${seccion}`, enCelular());
   const idCuerpo = useId();
 
   /**
@@ -136,7 +148,7 @@ export default function CtpSemanaDeRegistro({
    * semana anterior y marcar otro es justo para lo que sirve.
    */
   const [marcados, setMarcados] = useState<string[]>([]);
-  const [resumen, setResumen] = useState<string[] | null>(null);
+  const [resumen, setResumen] = useState<{ dias: string[]; corte: CorteResumen } | null>(null);
   const marcar = (iso: string) =>
     setMarcados((prev) => (prev.includes(iso) ? prev.filter((d) => d !== iso) : [...prev, iso]));
 
@@ -221,10 +233,16 @@ export default function CtpSemanaDeRegistro({
                 nombre={nombre}
                 esProduccion={esProduccion}
                 marcado={marcados.includes(iso)}
-                onMarcar={() => marcar(iso)}
+                onMarcar={() => {
+                  marcar(iso);
+                  /* Marcar es ir a los botones del resumen, justo debajo: el
+                     detalle del día (se abre al pasar el mouse) los tapaba
+                     (medido 23-09 en «Producir sin lote»). */
+                  flotante.cerrar();
+                }}
                 onElegir={() => onElegir(iso)}
                 flotante={flotante}
-                onVerResumen={() => setResumen([iso])}
+                onVerResumen={() => setResumen({ dias: [iso], corte: "especie" })}
                 onAnular={onAnularDia ? () => onAnularDia(iso) : undefined}
                 anulando={anulandoDia === iso}
               />
@@ -236,7 +254,7 @@ export default function CtpSemanaDeRegistro({
               valor={valor}
               jornada={jornadaElegida}
               nombre={nombre}
-              onVerResumen={esProduccion ? () => setResumen([valor]) : undefined}
+              onVerResumen={esProduccion ? () => setResumen({ dias: [valor], corte: "especie" }) : undefined}
             />
           )}
 
@@ -244,7 +262,7 @@ export default function CtpSemanaDeRegistro({
             <DiasMarcados
               marcados={marcados}
               onLimpiar={() => setMarcados([])}
-              onResumen={() => setResumen([...marcados])}
+              onResumen={(corte) => setResumen({ dias: [...marcados], corte })}
             />
           )}
 
@@ -276,7 +294,8 @@ export default function CtpSemanaDeRegistro({
 
       {resumen && (
         <CtpResumenDeJornadasModal
-          dias={resumen}
+          dias={resumen.dias}
+          corte={resumen.corte}
           onClose={() => setResumen(null)}
           onCopiarAlCubicado={onCopiarAlCubicado}
         />

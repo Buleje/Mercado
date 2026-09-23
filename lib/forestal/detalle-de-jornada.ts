@@ -166,7 +166,7 @@ export function jornadasDesdeFilas(
  * bajo un día que dice 1 PT: cifras contiguas que no cierran enseñan a
  * desconfiar del panel entero. Se reparte por el mayor resto.
  */
-function repartirPt(m3s: readonly number[], total: number): number[] {
+export function repartirPt(m3s: readonly number[], total: number): number[] {
   const crudos = m3s.map((m) => m * PT_POR_M3);
   const pisos = crudos.map((c) => Math.floor(c));
   let resto = total - pisos.reduce((a, b) => a + b, 0);

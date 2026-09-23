@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { AlertTriangle, BarChart3, Copy, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
@@ -24,35 +25,21 @@ import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { acercarAEscala } from "@/lib/forestal/escala-de-medida";
+import type { ResumenDeJornadas } from "@/lib/forestal/resumen-de-jornadas";
+import {
+  CELDA,
+  CIFRA,
+  ETIQUETA_CORTE,
+  TablaPorDia,
+  TablaPorDiaEspecieTipo,
+  TablaPorEspecie,
+  type CorteResumen,
+} from "./ctp-resumen-jornadas-tablas";
 
-export interface ResumenDeJornadas {
-  dias: string[];
-  corridas: {
-    id: string;
-    lineNo: number;
-    dia: string;
-    especie: string | null;
-    linea: string | null;
-    m3: number;
-    piezas: number;
-    materiaPrimaRef: string | null;
-    paquetes: number;
-  }[];
-  porEspecie: {
-    especie: string;
-    corridas: number;
-    piezas: number;
-    m3: number;
-    pt: number;
-    productos: { producto: string; piezas: number; m3: number; pt: number }[];
-  }[];
-  totales: { corridas: number; piezas: number; m3: number; pt: number };
-}
+/* El tipo (y la cuenta) viven en `lib/forestal/resumen-de-jornadas.ts`. */
+export type { ResumenDeJornadas };
 
-/* El corte de una celda del Libro. Venía en `px-2 py-1.5`: cuatro columnas de
-   cifras pegadas al filo, que es justo lo que se lee como «apretado». */
-const CELDA = "px-3 py-2.5 text-sm";
-const CIFRA = `${CELDA} text-right font-mono tabular-nums`;
 
 /** Un paquete como lo devuelve el libro: medidas en cm/m, que es como se declaran. */
 interface PaqueteDelLibro {
@@ -66,26 +53,10 @@ interface PaqueteDelLibro {
 const CM_A_PULG = 2.54;
 const M_A_PIE = 0.3048;
 const n = (v: number | string | null | undefined) => (v == null ? 0 : Number(v));
-const r2 = (v: number) => Math.round(v * 100) / 100;
 
-/**
- * Devolver la medida a la escala en que se midió.
- *
- * El libro guarda cm y metros con **2 decimales**, y 8 pies son 2.4384 m: lo
- * guardado es 2.44, y al volver da 8.0052 → «8.01 pies». Medido de verdad en la
- * corrida N° 28: salían 4.99, 6.99, 8.01 y 1.51. Nadie corta a 8.01 pies, y una
- * planilla llena de esos números se lee como si el sistema no supiera medir.
- *
- * Se acerca al múltiplo de `paso` SÓLO si está a menos de `tolerancia`, y la
- * tolerancia sale del error que mete el libro, no de un número redondo: 0.005 m
- * de redondeo son 0.017 pies, y 0.005 cm son 0.002 pulgadas. Con eso, 8.0052
- * pies vuelve a 8 y una medida que de verdad es otra se queda como está — 8.25
- * pies sigue siendo 8.25, y 2.7 pulgadas no se convierte en 2¾.
- */
-export function acercarAEscala(valor: number, paso: number, tolerancia: number): number {
-  const cerca = Math.round(valor / paso) * paso;
-  return Math.abs(valor - cerca) <= tolerancia ? r2(cerca) : r2(valor);
-}
+/* Vive en `lib/forestal/escala-de-medida.ts` (la usa también la escuadría del
+   paquete); se re-exporta para los que ya la importaban de acá. */
+export { acercarAEscala };
 
 /**
  * De los paquetes del libro a filas del cubicador.
@@ -134,11 +105,18 @@ export function piezasDesdePaquetes(
 
 export default function CtpResumenDeJornadasModal({
   dias,
+  corte: corteInicial = "especie",
   onClose,
   onCopiarAlCubicado,
 }: {
   /** Los días a resumir, `YYYY-MM-DD`. Uno o varios. */
   dias: readonly string[];
+  /**
+   * Con qué corte se abre (Brandon, 2026-09-23): cada botón de la barra de días
+   * marcados abre el suyo. Adentro se cambia sin volver a pedir nada — los tres
+   * salen de la misma respuesta.
+   */
+  corte?: CorteResumen;
   onClose: () => void;
   /**
    * Traer las piezas de una corrida al lote cubicado (Brandon, 2026-09-11).
@@ -149,6 +127,7 @@ export default function CtpResumenDeJornadasModal({
   onCopiarAlCubicado?: (piezas: PiezaCubicada[]) => void;
 }) {
   const [datos, setDatos] = useState<ResumenDeJornadas | null>(null);
+  const [corte, setCorte] = useState<CorteResumen>(corteInicial);
   const [error, setError] = useState<string | null>(null);
   /** La corrida cuyas piezas se están trayendo, para no tocar dos veces. */
   const [copiando, setCopiando] = useState<string | null>(null);
@@ -224,7 +203,7 @@ export default function CtpResumenDeJornadasModal({
     <AdminModal
       open
       onClose={onClose}
-      title="Resumen por especie"
+      title={`Resumen ${ETIQUETA_CORTE[corte].toLowerCase()}`}
       description={titulo}
       /* `info` y no `wide`: con 42rem la tabla de corridas se cortaba y el
          botón «Traer al cubicado» quedaba fuera del borde derecho. */
@@ -282,26 +261,24 @@ export default function CtpResumenDeJornadasModal({
               />
             </div>
 
-            {/* Por especie, y dentro de cada una por producto. */}
-            <div className="max-h-[46vh] overflow-auto rounded-xl border border-[var(--rule-base)]">
-              <table className="w-full min-w-[34rem] border-collapse">
-                {/* El encabezado se queda a la vista: un mes son decenas de
-                    filas y a la mitad ya no se sabe qué columna es cuál. */}
-                <thead className="sticky top-0 z-[1]">
-                  <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] [&>th]:border-b [&>th]:border-[var(--rule-base)]">
-                    <th className={CELDA}>Especie · producto</th>
-                    <th className={`${CELDA} text-right`}>Piezas</th>
-                    <th className={`${CELDA} text-right`}>m³</th>
-                    <th className={`${CELDA} text-right`}>PT</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {datos.porEspecie.map((e) => (
-                    <EspecieYProductos key={e.especie} especie={e} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {/* El corte: los tres salen de la misma respuesta. */}
+            <SegmentedControl
+              value={corte}
+              onChange={setCorte}
+              size="sm"
+              label="Cómo se agrupa el resumen"
+              options={(Object.keys(ETIQUETA_CORTE) as CorteResumen[]).map((c) => ({
+                value: c,
+                label: ETIQUETA_CORTE[c],
+              }))}
+            />
+            {corte === "dia" ? (
+              <TablaPorDia datos={datos} />
+            ) : corte === "diaEspecie" ? (
+              <TablaPorDiaEspecieTipo datos={datos} />
+            ) : (
+              <TablaPorEspecie datos={datos} />
+            )}
 
             {/* Las corridas, para saber de dónde sale cada número. */}
             {avisoCopia && (
@@ -418,37 +395,5 @@ function Cifra({
         <span className="font-sans text-xs font-normal leading-none text-[var(--text-tertiary)]">{unidad}</span>
       </p>
     </div>
-  );
-}
-
-function EspecieYProductos({
-  especie,
-}: {
-  especie: ResumenDeJornadas["porEspecie"][number];
-}) {
-  return (
-    <>
-      <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/60">
-        <td className={`${CELDA} font-bold text-[var(--text-primary)]`}>
-          {especie.especie}{" "}
-          <span className="font-normal text-[var(--text-tertiary)]">
-            · {especie.corridas} corrida{especie.corridas === 1 ? "" : "s"}
-          </span>
-        </td>
-        <td className={`${CIFRA} font-bold`}>{fmtPiezas(especie.piezas)}</td>
-        <td className={`${CIFRA} font-bold`}>{fmtM3(especie.m3)}</td>
-        <td className={`${CIFRA} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
-          {fmtPt(especie.pt)}
-        </td>
-      </tr>
-      {especie.productos.map((p) => (
-        <tr key={p.producto} className="border-t border-[var(--rule-soft)]">
-          <td className={`${CELDA} pl-6 text-[var(--text-secondary)]`}>{p.producto}</td>
-          <td className={CIFRA}>{fmtPiezas(p.piezas)}</td>
-          <td className={CIFRA}>{fmtM3(p.m3)}</td>
-          <td className={CIFRA}>{fmtPt(p.pt)}</td>
-        </tr>
-      ))}
-    </>
   );
 }

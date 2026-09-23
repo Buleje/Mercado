@@ -189,13 +189,13 @@ export default function CtpCasilleroDelDia({
       {j && esProduccion && (
         <label
           className="absolute left-1 top-1 flex cursor-pointer items-center"
-          title={`Sumar el ${etiquetaLarga(iso)} al resumen`}
+          title={`Sumar el ${etiquetaLarga(iso)} al resumen (por día, por especie y tipo)`}
         >
           <input
             type="checkbox"
             checked={marcado}
             onChange={onMarcar}
-            aria-label={`Sumar el ${etiquetaLarga(iso)} al resumen por especie`}
+            aria-label={`Sumar el ${etiquetaLarga(iso)} al resumen de días`}
             className="h-3.5 w-3.5 cursor-pointer accent-[var(--accent)]"
           />
         </label>
