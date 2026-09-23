@@ -12,7 +12,8 @@
  *  - al registrar se VACÍA la libreta de «Producir sin lote» —el doble cobro
  *    medido en el ADR era reabrir y volver a declarar lo mismo—;
  *  - el cotejo del SNIFFS con varias especies compara sólo contra la suya;
- *  - una cuenta recién creada al lado aparece elegida sin recargar.
+ *  - una cuenta recién creada al lado aparece elegida sin recargar;
+ *  - con piezas de dos dueños se declara uno a la vez y salen sólo las suyas.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -134,25 +135,35 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function montar(piezas: PiezaCubicada[] = MEZCLA) {
+function montar(piezas: readonly PiezaCubicada[] = MEZCLA) {
   const onRegistrado = vi.fn();
   const onCerrar = vi.fn();
-  render(
+  const arbol = (p: readonly PiezaCubicada[]) => (
     <ConfirmDialogProvider>
       <CtpDeclararProduccionModal
         abierto
         onCerrar={onCerrar}
-        piezas={piezas}
+        piezas={p}
         codigosEnPlanta={[]}
         fecha="2026-09-22"
         onFecha={vi.fn()}
         trozas={[]}
         onRegistrado={onRegistrado}
       />
-    </ConfirmDialogProvider>,
+    </ConfirmDialogProvider>
   );
-  return { onRegistrado, onCerrar };
+  const { rerender } = render(arbol(piezas));
+  /* Lo que hace «Producir sin lote» al recibir las piezas que quedan. */
+  const conPiezas = (p: readonly PiezaCubicada[]) => rerender(arbol(p));
+  return { onRegistrado, onCerrar, conPiezas };
 }
+
+/** Las especies de la tabla de resumen, en orden. */
+const especiesDelResumen = (candidatas: readonly string[]) =>
+  within(screen.getByRole("table", { name: /Resumen de lo que se declara/ }))
+    .getAllByRole("rowheader")
+    .map((th) => th.textContent ?? "")
+    .filter((t) => candidatas.includes(t));
 
 const botonRegistrar = () => screen.getByRole("button", { name: /^Registrar/ });
 
@@ -268,6 +279,100 @@ describe("Declarar producción — el modal aparte", () => {
   it("la libreta que se vacía es la MISMA clave que escribe el cubicador", () => {
     const fuente = readFileSync(join(process.cwd(), "components/admin/forestal/CubicadorMadera.tsx"), "utf8");
     expect(fuente).toContain("return `buleje-cubicacion-${slug}${espacio}`;");
+  });
+});
+
+describe("Libreta con dos dueños: un registro por dueño (Brandon, 23-09)", () => {
+  const deWasaco = (p: PiezaCubicada): PiezaCubicada => ({ ...p, dueno: "WASACO", duenoParteId: "parte-wasaco" });
+  const DOS_DUENOS: PiezaCubicada[] = [
+    deWasaco(pieza("d-w-1", "Tornillo", 5, 2, 8, 10)),
+    pieza("d-s-1", "Capirona", 4, 1, 6, 8),
+    deWasaco(pieza("d-w-2", "Cumala", 10, 1, 4, 8)),
+  ];
+  const ESPECIES = ["Tornillo", "Cumala", "Capirona"];
+  const selector = () => screen.getByRole("group", { name: "Qué dueño se declara" });
+  const radioServicio = (nombre: RegExp) => screen.getByRole("radio", { name: nombre }) as HTMLInputElement;
+
+  it("con un solo dueño no aparece el selector y el servicio sigue sin elegir", () => {
+    montar(MEZCLA.map(deWasaco));
+    expect(screen.queryByRole("group", { name: "Qué dueño se declara" })).toBeNull();
+    expect(radioServicio(/Servicio de aserrío a un tercero/).checked).toBe(false);
+    expect(especiesDelResumen(ESPECIES)).toEqual(["Tornillo", "Cumala"]);
+  });
+
+  it("con dos aparece; el resumen es sólo del elegido y el servicio se PROPONE desde su ficha", () => {
+    partesMock.lista = [parte("parte-wasaco", "WASACO")];
+    montar(DOS_DUENOS);
+    const opciones = within(selector()).getAllByRole("radio");
+    expect(opciones.map((r) => r.closest("label")?.textContent)).toEqual([
+      "WASACO· 15 pzas · 93 PT",
+      "Sin dueño· 4 pzas · 16 PT",
+    ]);
+    /* WASACO: sus dos especies, sin la Capirona del otro; aserrío a su cuenta. */
+    expect(especiesDelResumen(ESPECIES)).toEqual(["Tornillo", "Cumala"]);
+    expect(radioServicio(/Servicio de aserrío a un tercero/).checked).toBe(true);
+    expect(screen.getByText(/Propuesto por las piezas: aserrío a la cuenta de WASACO/)).toBeTruthy();
+
+    /* Sin dueño: sólo la Capirona, y no se propone servicio. */
+    fireEvent.click(within(selector()).getByRole("radio", { name: /Sin dueño/ }));
+    expect(especiesDelResumen(ESPECIES)).toEqual(["Capirona"]);
+    expect(radioServicio(/Servicio de aserrío a un tercero/).checked).toBe(false);
+    expect(radioServicio(/Madera propia/).checked).toBe(false);
+    expect(botonRegistrar().textContent).toMatch(/Registrar producción sin dueño/);
+
+    /* Lo elegido en un dueño no se arrastra al otro. */
+    fireEvent.click(radioServicio(/Madera propia/));
+    fireEvent.click(within(selector()).getByRole("radio", { name: /WASACO/ }));
+    expect(radioServicio(/Servicio de aserrío a un tercero/).checked).toBe(true);
+  });
+
+  it("registrar un dueño manda sólo sus paquetes, quita sólo sus piezas y sigue con el otro", async () => {
+    localStorage.setItem(LIBRETA, JSON.stringify(DOS_DUENOS));
+    localStorage.setItem(`${LIBRETA}-apartados`, JSON.stringify({ "d-s-1": 1, "d-w-1": 2 }));
+    respuestas = [
+      {
+        status: 200,
+        body: {
+          corridas: [{ id: "c-cap", lineNo: 40, especie: "Capirona", pt: 16, m3: 0.0377, valorVenta: null, aserrio: null }],
+          total: { pt: 16, m3: 0.0377, valorVenta: null },
+        } satisfies ProduccionSinLoteRespuesta,
+      },
+    ];
+    const { onRegistrado, conPiezas } = montar(DOS_DUENOS);
+    fireEvent.click(within(selector()).getByRole("radio", { name: /Sin dueño/ }));
+    fireEvent.click(radioServicio(/Madera propia/));
+    fireEvent.click(botonRegistrar());
+
+    await waitFor(() => expect(onRegistrado).toHaveBeenCalledTimes(1));
+    expect(pedidos[0]?.corridas.map((c) => c.especie)).toEqual(["Capirona"]);
+    const [mensaje, detalle] = onRegistrado.mock.calls[0] as [string, { quedan: PiezaCubicada[]; codigos: string[] }];
+    expect(mensaje).toMatch(/^Sin dueño: Producción registrada sin lote: 1 corrida \(Capirona N\.º 40\)/);
+    expect(detalle.quedan.map((p) => p.id)).toEqual(["d-w-1", "d-w-2"]);
+    expect(detalle.codigos).toHaveLength(1);
+    /* La libreta conserva a WASACO, con su apartado; el de la Capirona se fue. */
+    const libreta = JSON.parse(localStorage.getItem(LIBRETA) ?? "[]") as PiezaCubicada[];
+    expect(libreta.map((p) => p.id)).toEqual(["d-w-1", "d-w-2"]);
+    expect(JSON.parse(localStorage.getItem(`${LIBRETA}-apartados`) ?? "{}")).toEqual({ "d-w-1": 2 });
+
+    /* «Producir sin lote» le pasa lo que quedó: un solo dueño, sin selector,
+       con lo registrado dicho arriba y el aserrío a WASACO ya propuesto. */
+    conPiezas(detalle.quedan);
+    expect(screen.queryByRole("group", { name: "Qué dueño se declara" })).toBeNull();
+    expect(screen.getByRole("status").textContent).toMatch(/Sin dueño: Producción registrada/);
+    expect(especiesDelResumen(ESPECIES)).toEqual(["Tornillo", "Cumala"]);
+    expect(radioServicio(/Servicio de aserrío a un tercero/).checked).toBe(true);
+
+    /* El último dueño vacía la libreta y el mensaje final dice los DOS registros. */
+    respuestas = [{ status: 200, body: respuestaOk }];
+    fireEvent.click(radioServicio(/Madera propia/));
+    fireEvent.click(botonRegistrar());
+    await waitFor(() => expect(onRegistrado).toHaveBeenCalledTimes(2));
+    expect(pedidos[1]?.corridas.map((c) => c.especie)).toEqual(["Tornillo", "Cumala"]);
+    const [final, detalleFinal] = onRegistrado.mock.calls[1] as [string, { quedan: PiezaCubicada[] }];
+    expect(detalleFinal.quedan).toEqual([]);
+    expect(final).toMatch(/^Sin dueño: .*Capirona N\.º 40.* WASACO: .*Tornillo N\.º 31, Cumala N\.º 32/);
+    expect(localStorage.getItem(LIBRETA)).toBeNull();
+    expect(localStorage.getItem(`${LIBRETA}-apartados`)).toBeNull();
   });
 });
 

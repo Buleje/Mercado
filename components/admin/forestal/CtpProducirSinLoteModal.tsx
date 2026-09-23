@@ -19,7 +19,9 @@
  *    especie y tipo con su precio, el servicio (madera propia o aserrío a un
  *    tercero con su cuenta), el detalle, el permiso y el SNIFFS. Allá se
  *    registra —una corrida por especie— y, al registrar, esta libreta se vacía
- *    para que no se pueda declarar ni cobrar dos veces lo mismo.
+ *    para que no se pueda declarar ni cobrar dos veces lo mismo. Con piezas de
+ *    dos dueños o más, se declara un dueño a la vez y salen sólo sus piezas
+ *    (2026-09-23): lo del otro queda para el registro siguiente.
  *
  * ## Lo que NO hace, a propósito
  *
@@ -43,6 +45,7 @@ import {
 } from "@/components/admin/shared/modal-controles-ventana";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { paquetesDeLoCubicado } from "@/lib/forestal/declarar-produccion";
+import { gruposPorDueno } from "@/lib/forestal/declarar-por-dueno";
 import CubicadorMadera from "./CubicadorMadera";
 import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
 import CtpSemanaDeProduccion from "./CtpSemanaDeProduccion";
@@ -76,9 +79,20 @@ export default function CtpProducirSinLoteModal({
 }) {
   const [piezas, setPiezas] = useState<PiezaCubicada[]>([]);
   const [declarando, setDeclarando] = useState(false);
-  /* Registrar vacía la libreta: el cubicador se vuelve a montar para leerla
-     vacía —si alguien deja este modal abierto, no puede re-declarar lo mismo—. */
+  /* Registrar vacía la libreta —o le quita sólo las piezas del dueño que se
+     declaró—: el cubicador se vuelve a montar para leerla así; si alguien deja
+     este modal abierto, no puede re-declarar lo mismo. */
   const [libreta, setLibreta] = useState(0);
+  /* Tras declarar UN dueño de varios, el cubicador recién montado avisa primero
+     «sin piezas» (antes de leer la libreta) y «Declarar», que sigue abierto con
+     el dueño que queda, se quedaba en blanco un instante. Ese primer aviso se
+     ignora; el siguiente, con lo que quedó, pasa. */
+  const esperandoLibreta = useRef(false);
+  const alLote = useCallback((p: PiezaCubicada[]) => {
+    if (esperandoLibreta.current && p.length === 0) return;
+    esperandoLibreta.current = false;
+    setPiezas(p);
+  }, []);
   const [fecha, setFecha] = useState(hoyIso);
   /* La semana que se está MIRANDO. Arranca en la del día elegido y se mueve
      sola cuando se tipea una fecha de otra semana en el campo: dos controles
@@ -146,6 +160,8 @@ export default function CtpProducirSinLoteModal({
     () => new Set(paquetes.map((p) => claveEspecie(p.especie)).filter(Boolean)).size,
     [paquetes],
   );
+  /* Dos dueños o más se declaran por separado: se dice antes de abrir. */
+  const duenos = useMemo(() => gruposPorDueno(piezas).length, [piezas]);
   const elegirFecha = (iso: string) => {
     setFecha(iso);
     /* Tipear una fecha de otra semana mueve la tira de arriba: si no, el campo
@@ -224,7 +240,7 @@ export default function CtpProducirSinLoteModal({
           <CubicadorMadera
             key={libreta}
             espacio={ESPACIO_PRODUCCION}
-            onLote={setPiezas}
+            onLote={alLote}
             piezasAImportar={aImportar}
             onImportado={alImportar}
             /* El código de la troza es interno (Brandon, 2026-09-14): no
@@ -246,9 +262,11 @@ export default function CtpProducirSinLoteModal({
               ? "Cubica al menos una medida para poder declarar."
               : piezasSinEspecie > 0
                 ? `${fmtPiezas(piezasSinEspecie)} ${piezasSinEspecie === 1 ? "pieza no tiene" : "piezas no tienen"} especie: pónsela en la columna «Especie» antes de declarar.`
-                : `${paquetes.length} ${paquetes.length === 1 ? "medida" : "medidas"} · ${especies} ${
-                    especies === 1 ? "especie: 1 corrida" : `especies: ${especies} corridas`
-                  }`}
+                : duenos > 1
+                  ? `${paquetes.length} medidas · ${duenos} dueños: un registro por dueño, uno a la vez`
+                  : `${paquetes.length} ${paquetes.length === 1 ? "medida" : "medidas"} · ${especies} ${
+                      especies === 1 ? "especie: 1 corrida" : `especies: ${especies} corridas`
+                    }`}
           </span>
           <button
             type="button"
@@ -273,11 +291,23 @@ export default function CtpProducirSinLoteModal({
         fecha={fecha}
         onFecha={elegirFecha}
         trozas={trozasParaCodigo.trozas}
-        onRegistrado={(mensaje) => {
-          setDeclarando(false);
-          setPiezas([]);
+        onRegistrado={(mensaje, { quedan, codigos }) => {
           setLibreta((n) => n + 1);
-          onListo(mensaje);
+          if (quedan.length === 0) {
+            setDeclarando(false);
+            setPiezas([]);
+            onListo(mensaje);
+            return;
+          }
+          /* Quedan piezas de otro dueño: «Declarar» sigue abierto con él. Los
+             códigos recién tomados se suman a la serie (si no, el siguiente
+             dueño propondría los mismos y el servidor lo rechazaría), y la
+             tira de días y la tabla de atrás releen lo que se acaba de anotar. */
+          esperandoLibreta.current = true;
+          setPiezas([...quedan]);
+          setCodigosPlanta((prev) => [...prev, ...codigos]);
+          void jornadas.recargar();
+          onCambioEnElLibro?.();
         }}
       />
     </div>

@@ -7,6 +7,8 @@
  * escribe `CubicadorMadera`) y antes seguía ahí DESPUÉS de registrar: reabrir el
  * modal mostraba las mismas piezas listas para declararlas —y cobrarlas— otra
  * vez. Medido en el ADR: es el camino del doble cobro. Registrar ahora la vacía.
+ * Con piezas de varios dueños se declara uno a la vez y sólo salen las suyas
+ * (`quitarDeLaLibretaProduccion`, 2026-09-23).
  *
  * La clave se arma igual que en `CubicadorMadera` (`buleje-cubicacion-{slug}{espacio}`,
  * el slug al medio): si divergen, el vaciado borra una clave que nadie lee y
@@ -19,6 +21,8 @@
  * escribe solo: un precio que nadie tipeó no puede terminar valorizando nada.
  */
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { quitarAsignaciones, type ApartadosAsignados } from "@/lib/forestal/cubicacion-apartados";
+import { filasSinLasDeclaradas } from "@/lib/forestal/declarar-por-dueno";
 import { logger } from "@/lib/logger";
 
 /** El espacio propio del cubicador de «Producir sin lote» — otra libreta, la misma pantalla. */
@@ -51,6 +55,40 @@ export function vaciarLibretaProduccion(): void {
     /* Si esto falla la producción YA quedó registrada; lo que queda en riesgo
        es declararla dos veces al reabrir, así que se deja rastro. */
     logger.warn("[declarar-produccion] no se pudo vaciar la libreta", { error: String(err) });
+  }
+}
+
+/**
+ * Quita de la libreta SÓLO las piezas que se acaban de declarar (un dueño de
+ * varios, `lib/forestal/declarar-por-dueno.ts`): las de los otros dueños quedan
+ * para el siguiente registro. Sus apartados se van con ellas; los de las que
+ * quedan, no. Si no queda ninguna fila, se vacía como siempre.
+ *
+ * Quien la llama vuelve a montar el cubicador para que lea la libreta así.
+ */
+export function quitarDeLaLibretaProduccion(ids: readonly string[]): void {
+  if (typeof window === "undefined" || ids.length === 0) return;
+  const clave = claveLibretaProduccion();
+  try {
+    const filas = filasSinLasDeclaradas(JSON.parse(localStorage.getItem(clave) ?? "null"), ids);
+    if (!filas || filas.length === 0) {
+      vaciarLibretaProduccion();
+      return;
+    }
+    localStorage.setItem(clave, JSON.stringify(filas));
+    const apartados: unknown = JSON.parse(localStorage.getItem(`${clave}-apartados`) ?? "null");
+    if (apartados && typeof apartados === "object" && !Array.isArray(apartados)) {
+      localStorage.setItem(
+        `${clave}-apartados`,
+        JSON.stringify(quitarAsignaciones(apartados as ApartadosAsignados, [...ids])),
+      );
+    }
+  } catch (err) {
+    /* Igual que al vaciar: lo declarado YA está en el Libro; lo que queda en
+       riesgo es volver a declararlo al reabrir, así que se deja rastro. */
+    logger.warn("[declarar-produccion] no se pudieron quitar las piezas declaradas", {
+      error: String(err),
+    });
   }
 }
 

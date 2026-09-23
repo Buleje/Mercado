@@ -14,12 +14,17 @@
  *  - **Un solo pedido** que crea y declara todas las corridas o ninguna.
  *  - **Registrar vacía la libreta**: reabrir ya no ofrece declarar —y cobrar—
  *    lo mismo otra vez. El duplicado que igual se intente, lo frena el servidor.
+ *  - **Un registro por dueño** (Brandon, 23-09: «que proponga 2 registros
+ *    solos»). Con piezas de dos dueños o más, arriba se elige cuál se declara:
+ *    el resumen, los paquetes y el cobro son sólo de las suyas, el servicio se
+ *    PROPONE desde su ficha, y al registrar salen de la libreta sólo ésas —el
+ *    modal sigue con el dueño que queda—. Con un solo dueño, todo como antes.
  *
  * El borrador (servicio, cuenta, precios, permiso…) vive en el componente de
  * afuera, que no se desmonta al cerrar: volver a cubicar para corregir una
  * especie y regresar no borra lo que ya se había puesto.
  */
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useState } from "react";
 import { Boxes, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
@@ -35,14 +40,13 @@ import {
   corridasPorEspecie,
   paquetesDeLoCubicado,
   resumenEspecieTipo,
-  type TipoServicio,
 } from "@/lib/forestal/declarar-produccion";
+import { etiquetaDeGrupo } from "@/lib/forestal/declarar-por-dueno";
 import { useTarifaAserrio } from "./hooks/use-tarifa-aserrio";
 import { useTratoDelCliente } from "./hooks/use-trato-del-cliente";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { useRegistrarProduccionSinLote } from "./hooks/use-registrar-produccion-sin-lote";
 import {
-  TEXTOS_VACIOS,
   bloquesDeEspecie,
   faltaParaRegistrar,
   lineasDePrecio,
@@ -50,49 +54,23 @@ import {
   notaDelPie,
   preciosDelPedido,
   totalDePrecios,
-  type TextosDePrecio,
 } from "./hooks/declarar-produccion-pantalla";
 import {
   preciosDeVentaRecordados,
+  quitarDeLaLibretaProduccion,
   recordarPreciosDeVenta,
-  vaciarLibretaProduccion,
 } from "./hooks/libreta-produccion";
+import { useDeclararPorDueno, type DeclararPorDueno } from "./hooks/use-declarar-por-dueno";
 import { Btn, ModalBody, ModalFooter, Seccion } from "./ctp-shared";
 import CtpAsientoProduccion from "./CtpAsientoProduccion";
 import CtpAvisoSinEspecie, { AvisoEspeciePuesta } from "./CtpAvisoSinEspecie";
 import CtpLoQueSeDeclara from "./CtpLoQueSeDeclara";
 import CtpServicioProduccion from "./CtpServicioProduccion";
+import CtpGruposDeDueno, { AvisoDuenoRegistrado } from "./CtpGruposDeDueno";
 
-export interface BorradorDeclaracion {
-  /** Sin valor inicial a propósito: suponer «propia» es la respuesta que nadie revisa. */
-  servicio: TipoServicio | null;
-  /** Aserrío a un tercero: a quién se le carga. */
-  parteId: string | null;
-  /**
-   * Madera propia: para qué cliente, si ya se sabe (opcional). Sólo sugiere el
-   * precio de venta de su trato (ADR-430); no viaja al servidor. Va aparte de
-   * `parteId`: el dueño de una madera ajena no es el comprador de la propia.
-   */
-  compradorId: string | null;
-  textos: TextosDePrecio;
-  linea: string;
-  permiso: string;
-  observaciones: string;
-  /** La especie que se le pone a lo cubicado SIN especie. Nunca pisa una que ya está. */
-  especieParaSinEspecie: string | null;
-}
+import type { BorradorDeclaracion } from "./hooks/use-declarar-por-dueno";
 
-const BORRADOR_INICIAL: BorradorDeclaracion = {
-  servicio: null,
-  parteId: null,
-  compradorId: null,
-  textos: TEXTOS_VACIOS,
-  /* La del día a día, como el alta con lote (`CtpRegistrarProduccionModal`). */
-  linea: "LP",
-  permiso: "",
-  observaciones: "",
-  especieParaSinEspecie: null,
-};
+export type { BorradorDeclaracion };
 
 interface Props {
   abierto: boolean;
@@ -106,30 +84,45 @@ interface Props {
   onFecha: (iso: string) => void;
   /** El patio que ya leyó «Producir sin lote» (campo «Código»): permiso sugerido y especies conocidas. */
   trozas: readonly TrozaParaCodigo[];
-  /** Ya quedó registrado y la libreta se vació: el mensaje resume qué se hizo. */
-  onRegistrado: (mensaje: string) => void;
+  /**
+   * Ya quedó registrado. `quedan` vacío = no queda nada que declarar y la
+   * libreta se vació (como siempre). Con piezas de otro dueño, sólo salieron
+   * las declaradas: `quedan` son las otras, este modal sigue abierto con el
+   * siguiente dueño y `codigos` son los paquetes que la planta acaba de tomar.
+   */
+  onRegistrado: (
+    mensaje: string,
+    detalle: { quedan: readonly PiezaCubicada[]; codigos: readonly string[] },
+  ) => void;
 }
 
 export default function CtpDeclararProduccionModal(props: Props) {
-  const [borrador, setBorrador] = useState<BorradorDeclaracion>(BORRADOR_INICIAL);
+  /* El borrador y el dueño elegido viven acá afuera: cerrar para volver a
+     cubicar no los borra. */
+  const porDueno = useDeclararPorDueno(props.piezas);
   if (!props.abierto) return null;
-  return <Dialogo {...props} borrador={borrador} setBorrador={setBorrador} />;
+  return (
+    <Dialogo
+      {...props}
+      onCerrar={() => {
+        porDueno.cerrarAviso();
+        props.onCerrar();
+      }}
+      porDueno={porDueno}
+    />
+  );
 }
 
 function Dialogo({
   onCerrar,
-  piezas,
   codigosEnPlanta,
   fecha,
   onFecha,
   trozas,
   onRegistrado,
-  borrador,
-  setBorrador,
-}: Omit<Props, "abierto"> & {
-  borrador: BorradorDeclaracion;
-  setBorrador: Dispatch<SetStateAction<BorradorDeclaracion>>;
-}) {
+  porDueno,
+}: Omit<Props, "abierto" | "piezas"> & { porDueno: DeclararPorDueno }) {
+  const { borrador, setBorrador, piezas, grupo, separados } = porDueno;
   const cambiar = (parcial: Partial<BorradorDeclaracion>) =>
     setBorrador((b) => ({ ...b, ...parcial }));
   const { servicio, parteId, compradorId, textos, especieParaSinEspecie } = borrador;
@@ -256,9 +249,13 @@ function Dialogo({
     }
     if (servicio === "propia")
       recordarPreciosDeVenta(lineas.map((l) => ({ especie: l.especie, precioPt: l.precio })));
-    vaciarLibretaProduccion();
-    setBorrador(BORRADOR_INICIAL);
-    onRegistrado(mensajeDeRegistro(resp, servicio, cliente));
+    /* Sólo salen de la libreta las piezas DECLARADAS, por id —también en el
+       último registro—: una pieza dictada mientras viajaba el pedido no se
+       declaró y no se puede borrar. Si no queda ninguna, `quitar…` vacía la
+       libreta entera como siempre. */
+    const { quedan, ids, mensaje } = porDueno.registrado(mensajeDeRegistro(resp, servicio, cliente));
+    quitarDeLaLibretaProduccion(ids);
+    onRegistrado(mensaje, { quedan, codigos: paquetes.map((p) => p.codigo) });
   };
 
   const nota =
@@ -271,8 +268,8 @@ function Dialogo({
       onClose={guardando ? () => undefined : onCerrar}
       title="Declarar producción"
       description={`${esIsoValido(fecha) ? etiquetaLarga(fecha) : "Sin fecha"} · sin lote · ${
-        conEspecie.length === 1 ? "1 corrida" : `${conEspecie.length} corridas, una por especie`
-      }`}
+        separados && grupo ? `${etiquetaDeGrupo(grupo)} · ` : ""
+      }${conEspecie.length === 1 ? "1 corrida" : `${conEspecie.length} corridas, una por especie`}`}
       icon={Boxes}
       variant="info"
       footer={
@@ -284,22 +281,43 @@ function Dialogo({
             variant="primary"
             disabled={Boolean(falta) || guardando}
             onClick={() => void alRegistrar()}
+            /* Con el nombre del dueño el rótulo se alarga: a 400 px se recorta
+               el nombre, no el botón. */
+            className="min-w-0 max-w-full"
           >
             {guardando ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             ) : (
               <Boxes className="h-4 w-4" aria-hidden />
             )}
-            {guardando
-              ? "Registrando…"
-              : conEspecie.length > 1
-                ? `Registrar ${conEspecie.length} corridas`
-                : "Registrar producción"}
+            {guardando ? (
+              "Registrando…"
+            ) : (
+              <span className="min-w-0 truncate">
+                {conEspecie.length > 1 ? `Registrar ${conEspecie.length} corridas` : "Registrar producción"}
+                {separados && grupo
+                  ? grupo.nombre || grupo.parteId
+                    ? ` de ${etiquetaDeGrupo(grupo)}`
+                    : " sin dueño"
+                  : ""}
+              </span>
+            )}
           </Btn>
         </ModalFooter>
       }
     >
       <ModalBody>
+        {porDueno.aviso && (
+          <AvisoDuenoRegistrado mensaje={porDueno.aviso} onCerrar={porDueno.cerrarAviso} />
+        )}
+        {separados && (
+          <CtpGruposDeDueno
+            grupos={porDueno.grupos}
+            clave={grupo?.clave ?? null}
+            onElegir={porDueno.elegir}
+            propuestaVigente={Boolean(grupo?.parteId) && servicio === "tercero" && parteId === grupo?.parteId}
+          />
+        )}
         {sinEspecie && (
           <CtpAvisoSinEspecie
             piezas={sinEspecie.piezas}
