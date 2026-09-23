@@ -160,3 +160,20 @@ describe("elegir dueños en la barra de días marcados", () => {
     expect(filtroDeDuenos([MARTES], { [LUNES]: [A, B] }, { [LUNES]: [B] })).toEqual({});
   });
 });
+
+describe("el Excel del resumen", () => {
+  it("lleva los tres cortes en hojas, el que se mira primero, con números y el total", async () => {
+    const { hojasDelResumen, nombreDelArchivo } = await import("@/lib/forestal/resumen-de-jornadas-excel");
+    const r = resumirJornadas([LUNES, MARTES], semana);
+    const hojas = hojasDelResumen(r, "diaEspecie");
+    expect(hojas.map((h) => h.nombre)).toEqual(["Por día, especie y tipo", "Por día", "Por especie", "Corridas"]);
+    const porDia = hojas[1]!.filas;
+    expect(porDia[0]).toMatchObject({ Fecha: LUNES, Día: "lunes", Piezas: 79, PT: r.porDia[0]!.pt });
+    expect(typeof porDia[0]!["m³"]).toBe("number");
+    expect(porDia.at(-1)).toMatchObject({ Fecha: "TOTAL", PT: r.totales.pt, Piezas: r.totales.piezas });
+    /* Cada fila del detalle trae su día y su especie: nada de «como la de arriba». */
+    expect(hojas[0]!.filas.slice(0, -1).every((f) => f.Fecha && f.Especie && f.Tipo)).toBe(true);
+    expect(nombreDelArchivo(r, false)).toBe(`resumen-produccion-${LUNES}_${MARTES}`);
+    expect(nombreDelArchivo(r, true)).toBe(`resumen-produccion-${LUNES}_${MARTES}-filtrado`);
+  });
+});

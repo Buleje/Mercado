@@ -230,6 +230,21 @@ export default function CtpDetalleDeJornada({
           </p>
         )}
 
+        {/* Una corrida cuyo asiento dice otras piezas que sus paquetes (23-09:
+            N° 29 de Blas, 156 contra 336). El día cuenta las de los paquetes;
+            esto dice cuál corregir. Ámbar y no neutro: acá SÍ hay un error. */}
+        {(detalle.piezasSinCuadrar ?? []).length > 0 && (
+          <p className="mt-2 rounded-lg bg-[var(--data-warning-50)] px-2 py-1 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+            {(detalle.piezasSinCuadrar ?? []).map((c) => (
+              <span key={c.lineNo} className="block">
+                N° <b className="tabular-nums">{c.lineNo}</b>: el asiento dice{" "}
+                <b className="tabular-nums">{c.asiento}</b> piezas y sus paquetes{" "}
+                <b className="tabular-nums">{c.paquetes}</b> — el día cuenta las de los paquetes.
+              </span>
+            ))}
+          </p>
+        )}
+
         <Bloque
           titulo={ocultas > 0 ? `Corridas (${detalle.corridas.length} de ${jornada.corridas})` : "Corridas"}
           /* En dos columnas si entran: una corrida es un renglón corto. Tres

@@ -32,7 +32,7 @@
 
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
-import { repartirPt } from "@/lib/forestal/detalle-de-jornada";
+import { piezasDeLaCorrida, repartirPt } from "@/lib/forestal/detalle-de-jornada";
 
 export const SIN_ESPECIE = "Sin especie declarada";
 export const SIN_PRODUCTO = "Sin producto declarado";
@@ -138,8 +138,7 @@ export function resumirJornadas(
   const salida: ResumenDeJornadas["corridas"] = [];
 
   for (const c of corridas) {
-    const piezasPaquetes = c.paquetes.reduce((a, p) => a + (p.cantidad ?? 0), 0);
-    const piezas = piezasPaquetes > 0 ? piezasPaquetes : c.piezasAsiento;
+    const piezas = piezasDeLaCorrida(c.paquetes, c.piezasAsiento);
     const nombre = (c.especie ?? "").trim() || SIN_ESPECIE;
     const clave = claveEspecie(nombre) || nombre;
     if (!nombreDe.has(clave)) nombreDe.set(clave, nombre);

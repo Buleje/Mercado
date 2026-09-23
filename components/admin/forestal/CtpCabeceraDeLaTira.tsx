@@ -18,7 +18,7 @@ import {
   Loader2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import {
   correrSemanas,
   esIsoValido,
@@ -49,6 +49,7 @@ export default function CtpCabeceraDeLaTira({
   idCuerpo,
   onSemana,
   onHoy,
+  totalSemana = null,
 }: {
   nombre: NombreDeLaTira;
   /** El día elegido. */
@@ -66,6 +67,8 @@ export default function CtpCabeceraDeLaTira({
   idCuerpo: string;
   onSemana: (iso: string) => void;
   onHoy: () => void;
+  /** Lo de la semana a la vista, sumado de sus casilleros. `null` = cargando o falló. */
+  totalSemana?: { corridas: number; pt: number; m3: number; piezas: number } | null;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -105,6 +108,30 @@ export default function CtpCabeceraDeLaTira({
             </span>
           ) : (
             <span className="text-[var(--text-tertiary)]"> · {nombre.ninguno}</span>
+          )}
+        </span>
+      )}
+      {/* La semana, en la misma fila que su título: los siete casilleros de
+          abajo suman esto. Sólo abierta — plegada la línea habla del día. */}
+      {!plegada && totalSemana && (
+        <span
+          className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 py-0.5 font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)] max-sm:order-last max-sm:basis-full max-sm:text-center"
+          title={`La semana: ${cuantos(totalSemana.corridas, nombre)}`}
+        >
+          {totalSemana.corridas === 0 ? (
+            <span className="font-sans text-[var(--text-tertiary)]">Semana sin {nombre.varios}</span>
+          ) : (
+            <>
+              <span className="font-sans font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Semana</span>{" "}
+              {/* Como el casillero: «0 PT» se lee «no hay nada», y una corrida
+                  chica que redondea a cero sí es algo — ahí se cuentan corridas. */}
+              <b className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                {totalSemana.pt >= 1 ? `${fmtPt(totalSemana.pt)} PT` : cuantos(totalSemana.corridas, nombre)}
+              </b>
+              {" · "}
+              {fmtM3(totalSemana.m3)} m³
+              {totalSemana.piezas > 0 && <>{" · "}{fmtPiezas(totalSemana.piezas)} pza</>}
+            </>
           )}
         </span>
       )}

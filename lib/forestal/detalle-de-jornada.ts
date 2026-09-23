@@ -45,6 +45,12 @@ export interface DetalleDeJornada {
    */
   sinMateriaPrima: number;
   paquetes: number;
+  /**
+   * Corridas cuyo asiento declara OTRAS piezas que las que suman sus paquetes
+   * (medido 23-09: la N° 29 de Blas, 156 contra 336). El día cuenta las de los
+   * paquetes; esto dice cuál corregir.
+   */
+  piezasSinCuadrar?: { lineNo: number; asiento: number; paquetes: number }[];
   /** Las primeras `TOPE_CORRIDAS_DEL_DETALLE`, por `lineNo`. */
   corridas: { lineNo: number; especie: string | null; m3: number; materiaPrimaRef: string | null }[];
 }
@@ -120,12 +126,28 @@ function m3Declarado(f: FilaDeJornada): number {
  * Las jornadas de una semana a partir de sus asientos.
  *
  * Es la cuenta de `ForestCtpDB.jornadasDeProduccion` sin la base. Por sección:
- *  · `produccion` y `despacho`: m³ declarado (sólo en m³) y piezas del asiento;
+ *  · `produccion`: m³ declarado (sólo en m³) y piezas de sus paquetes, o del
+ *    asiento si no tiene (`piezasDeLaCorrida`, la misma regla del resumen);
+ *  · `despacho`: m³ declarado y piezas del asiento;
  *  · `consumo`: m³ de ENTRADA y piezas = consumos del puente (ADR-326).
  * El detalle se arma sólo en producción, con las filas del día en el MISMO
  * orden en que se sumó su m³: así el PT del día y el de sus especies salen de
  * la misma suma, sin un pie de diferencia por el punto flotante.
  */
+/**
+ * Las piezas de una corrida: las de sus paquetes, que son el detalle; las del
+ * asiento sólo si ningún paquete trae cantidad. UNA regla para el casillero
+ * del día y el resumen de jornadas (`resumen-de-jornadas.ts`): con dos, el
+ * 15/09 de Blas decía 156 piezas en la tira y 336 en el resumen.
+ */
+export function piezasDeLaCorrida(
+  paquetes: readonly { cantidad: number | null }[],
+  piezasDelAsiento: number | null,
+): number {
+  const dePaquetes = paquetes.reduce((a, p) => a + (p.cantidad ?? 0), 0);
+  return dePaquetes > 0 ? dePaquetes : (piezasDelAsiento ?? 0);
+}
+
 export function jornadasDesdeFilas(
   filas: readonly FilaDeLaSemana[],
   seccion: SeccionDeLaTira,
@@ -139,7 +161,7 @@ export function jornadasDesdeFilas(
       acc.piezas += f.consumos;
     } else {
       acc.m3 += m3Declarado(f);
-      acc.piezas += f.pieces ?? 0;
+      acc.piezas += seccion === "produccion" ? piezasDeLaCorrida(f.paquetes, f.pieces) : (f.pieces ?? 0);
     }
     if (seccion === "produccion") acc.filas.push(f);
     porDia.set(f.dia, acc);
@@ -191,6 +213,7 @@ export function detalleDeJornada(filas: readonly FilaDeJornada[]): DetalleDeJorn
   let sinMateriaPrima = 0;
   let paquetes = 0;
   let totalM3 = 0;
+  const piezasSinCuadrar: NonNullable<DetalleDeJornada["piezasSinCuadrar"]> = [];
 
   const sumarClasificacion = (producto: string, piezas: number, m3: number) => {
     const acc = clasificaciones.get(producto) ?? { piezas: 0, m3: 0 };
@@ -246,6 +269,11 @@ export function detalleDeJornada(filas: readonly FilaDeJornada[]): DetalleDeJorn
     if (texto(f.originCode)) permisos.add(texto(f.originCode));
     if (texto(f.lineaProduccion)) lineas.add(texto(f.lineaProduccion));
     if (corridaSinOrigen({ consumos: f.consumos, reprocesos: f.reprocesosEntrada })) sinMateriaPrima += 1;
+    const dePaquetes = f.paquetes.reduce((a, p) => a + (p.cantidad ?? 0), 0);
+    const delAsiento = f.pieces ?? 0;
+    if (dePaquetes > 0 && delAsiento > 0 && dePaquetes !== delAsiento) {
+      piezasSinCuadrar.push({ lineNo: f.lineNo, asiento: delAsiento, paquetes: dePaquetes });
+    }
   }
 
   const listaEspecies = [...especies.values()]
@@ -274,6 +302,7 @@ export function detalleDeJornada(filas: readonly FilaDeJornada[]): DetalleDeJorn
     lineas: [...lineas].sort((a, b) => a.localeCompare(b, "es")),
     sinMateriaPrima,
     paquetes,
+    piezasSinCuadrar: piezasSinCuadrar.sort((a, b) => a.lineNo - b.lineNo),
     corridas: [...filas]
       .sort((a, b) => a.lineNo - b.lineNo)
       .slice(0, TOPE_CORRIDAS_DEL_DETALLE)

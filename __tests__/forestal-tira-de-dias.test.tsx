@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, within } from "@testing-library/react";
 import CtpSemanaDeRegistro from "@/components/admin/forestal/CtpSemanaDeRegistro";
 import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
 import type { JornadaDeProduccion } from "@/components/admin/forestal/hooks/use-jornadas-produccion";
@@ -72,12 +72,26 @@ describe("los siete casilleros", () => {
 describe("lo que ya se produjo ese día", () => {
   it("lo dice en pie tablar", () => {
     tira({ porDia: jornadas({ dia: "2026-09-17", corridas: 1, m3: 5.6, pt: 2374, piezas: 40 }) });
-    expect(screen.getByText("2,374 PT")).toBeInTheDocument();
+    const casilleros = screen.getByRole("group", { name: "Elige el día de la jornada" });
+    expect(within(casilleros).getByText("2,374 PT")).toBeInTheDocument();
+  });
+
+  it("la cabecera suma la semana con las mismas cifras de los casilleros (23-09)", () => {
+    tira({
+      porDia: jornadas(
+        { dia: "2026-09-15", corridas: 2, m3: 1.2, pt: 509, piezas: 30 },
+        { dia: "2026-09-17", corridas: 1, m3: 5.6, pt: 2374, piezas: 40 },
+      ),
+    });
+    expect(screen.getByTitle("La semana: 3 corridas").textContent).toMatch(/Semana\s*2,883 PT · 6\.800 m³ · 70 pza/);
   });
 
   it("una corrida que redondea a 0 PT cuenta corridas, nunca dice «0 PT»", () => {
     tira({ porDia: jornadas({ dia: "2026-09-17", corridas: 1, m3: 0.001, pt: 0, piezas: 141 }) });
-    expect(screen.getByText("1 corrida")).toBeInTheDocument();
+    const casilleros = screen.getByRole("group", { name: "Elige el día de la jornada" });
+    expect(within(casilleros).getByText("1 corrida")).toBeInTheDocument();
+    /* La semana tampoco dice «0 PT»: cuenta corridas igual que el casillero. */
+    expect(screen.getByTitle("La semana: 1 corrida").textContent).toContain("1 corrida");
     expect(screen.queryByText("0 PT")).not.toBeInTheDocument();
   });
 
@@ -291,6 +305,7 @@ describe("la tira por sección", () => {
       seccion: "despacho",
       porDia: jornadas({ dia: "2026-09-17", corridas: 1, m3: 0.001, pt: 0, piezas: 4 }),
     });
-    expect(screen.getByText("1 despacho")).toBeInTheDocument();
+    const casilleros = screen.getByRole("group", { name: "Elige el día de la jornada" });
+    expect(within(casilleros).getByText("1 despacho")).toBeInTheDocument();
   });
 });

@@ -136,6 +136,26 @@ export default function CtpSemanaDeRegistro({
    * elegido y lo que ya tiene. Plegar no es esconder el dato.
    */
   const [plegada, setPlegada] = useLocalStorage<boolean>(`ctp-tira-dias-plegada:${seccion}`, enCelular());
+
+  /**
+   * Lo de la semana a la vista, sumado (Brandon, 2026-09-23: *«añade el
+   * resumen de la semana, el PT, m³ y piezas aserradas»*). Son las MISMAS
+   * cifras de los siete casilleros, sumadas: la semana y sus días tienen que
+   * cerrar a la vista. Mientras carga o si falló, no se afirma nada.
+   */
+  const totalSemana = useMemo(() => {
+    if (cargando || error) return null;
+    const t = { corridas: 0, pt: 0, m3: 0, piezas: 0 };
+    for (const d of dias) {
+      const j = porDia.get(d);
+      if (!j) continue;
+      t.corridas += j.corridas;
+      t.pt += j.pt;
+      t.m3 += j.m3;
+      t.piezas += j.piezas;
+    }
+    return { ...t, m3: Math.round(t.m3 * 10000) / 10000 };
+  }, [dias, porDia, cargando, error]);
   const idCuerpo = useId();
 
   /**
@@ -206,6 +226,7 @@ export default function CtpSemanaDeRegistro({
         elegidoFuera={elegidoFuera}
         plegada={plegada}
         setPlegada={setPlegada}
+        totalSemana={totalSemana}
         idCuerpo={idCuerpo}
         onSemana={onSemana}
         onHoy={() => {

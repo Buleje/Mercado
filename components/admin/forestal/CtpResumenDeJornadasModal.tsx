@@ -18,7 +18,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
-import { AlertTriangle, BarChart3, Copy, Loader2 } from "@buleje/design-system/icons";
+import { AlertTriangle, BarChart3, Copy, Download, Loader2 } from "@buleje/design-system/icons";
+import { exportSheetsToExcel } from "@/lib/export-excel";
+import { hojasDelResumen, nombreDelArchivo } from "@/lib/forestal/resumen-de-jornadas-excel";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
@@ -136,6 +138,7 @@ export default function CtpResumenDeJornadasModal({
   /** La corrida cuyas piezas se están trayendo, para no tocar dos veces. */
   const [copiando, setCopiando] = useState<string | null>(null);
   const [avisoCopia, setAvisoCopia] = useState<string | null>(null);
+  const [bajando, setBajando] = useState(false);
   const clave = [...dias].sort().join(",");
   /* Parte de la clave del pedido: elegir otro dueño es otro resumen. */
   const filtro = Object.keys(duenos).length > 0 ? JSON.stringify(duenos) : "";
@@ -273,17 +276,39 @@ export default function CtpResumenDeJornadasModal({
               />
             </div>
 
-            {/* El corte: los tres salen de la misma respuesta. */}
-            <SegmentedControl
-              value={corte}
-              onChange={setCorte}
-              size="sm"
-              label="Cómo se agrupa el resumen"
-              options={(Object.keys(ETIQUETA_CORTE) as CorteResumen[]).map((c) => ({
-                value: c,
-                label: ETIQUETA_CORTE[c],
-              }))}
-            />
+            {/* El corte (los tres salen de la misma respuesta) y el Excel, que
+                se lleva los tres en hojas —primero el que se está mirando—. */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <SegmentedControl
+                value={corte}
+                onChange={setCorte}
+                size="sm"
+                label="Cómo se agrupa el resumen"
+                options={(Object.keys(ETIQUETA_CORTE) as CorteResumen[]).map((c) => ({
+                  value: c,
+                  label: ETIQUETA_CORTE[c],
+                }))}
+              />
+              <button
+                type="button"
+                disabled={bajando}
+                onClick={async () => {
+                  setBajando(true);
+                  try {
+                    await exportSheetsToExcel(hojasDelResumen(datos, corte), nombreDelArchivo(datos, Boolean(filtro)));
+                  } catch (e) {
+                    setAvisoCopia(`No se pudo descargar el Excel: ${e instanceof Error ? e.message : String(e)}`);
+                  } finally {
+                    setBajando(false);
+                  }
+                }}
+                title="Un archivo con el resumen por día, por día · especie · tipo, por especie y las corridas"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
+              >
+                {bajando ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Download className="h-3.5 w-3.5" aria-hidden />}
+                Descargar Excel
+              </button>
+            </div>
             {corte === "dia" ? (
               <TablaPorDia datos={datos} />
             ) : corte === "diaEspecie" ? (

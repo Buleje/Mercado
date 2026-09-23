@@ -244,7 +244,17 @@ describe("corridas, permisos y líneas", () => {
       lineas: [],
       sinMateriaPrima: 0,
       paquetes: 0,
+      piezasSinCuadrar: [],
       corridas: [],
     });
+  });
+});
+
+describe("piezas: la regla del casillero es la del resumen (23-09)", () => {
+  it("cuentan las de los paquetes; las del asiento sólo si ningún paquete trae cantidad", async () => {
+    const { piezasDeLaCorrida } = await import("@/lib/forestal/detalle-de-jornada");
+    expect(piezasDeLaCorrida([{ cantidad: 200 }, { cantidad: 136 }], 156)).toBe(336);
+    expect(piezasDeLaCorrida([{ cantidad: null }], 156)).toBe(156);
+    expect(piezasDeLaCorrida([], null)).toBe(0);
   });
 });

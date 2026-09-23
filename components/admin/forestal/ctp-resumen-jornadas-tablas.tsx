@@ -23,7 +23,9 @@ import type { ResumenDeJornadas } from "@/lib/forestal/resumen-de-jornadas";
 import { SIN_DUENO } from "@/lib/forestal/detalle-de-jornada";
 import { nombreCortoDeDueno } from "@/lib/forestal/dueno-de-la-madera";
 
-export type CorteResumen = "especie" | "dia" | "diaEspecie";
+/* El corte vive en lib (lo usa también el Excel): uno solo para los dos. */
+import type { CorteDelResumen } from "@/lib/forestal/resumen-de-jornadas-excel";
+export type CorteResumen = CorteDelResumen;
 
 export const ETIQUETA_CORTE: Record<CorteResumen, string> = {
   especie: "Por especie",
