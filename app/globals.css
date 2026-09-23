@@ -41,6 +41,22 @@
 /* Habilitar dark mode por clase (.dark en <html>) */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ── Scroll-lock de Radix sin recalcular la página entera ──────────────────
+   Al abrir un modal de Radix, react-remove-scroll-bar inyecta
+   `body[data-scroll-locked] { --removed-body-scroll-bar-size: Npx }`. Una
+   custom property HEREDABLE que cambia en <body> obliga a recalcular el estilo
+   de TODOS los elementos de la página. Con «Producir sin lote» abierto (60
+   piezas, 7.072 elementos) abrir «Dueños» tardaba 546 ms, 430 de estilo.
+   Nadie en el repo lee esa variable desde un hijo (grep 23-09): registrada NO
+   heredable, el cambio se queda en <body>. A/B intercalado con esta regla
+   (6 ciclos × 2 corridas): abrir 576 → 455 ms, estilo 474 → 340 ms.
+   Guardián: __tests__/scroll-lock-variable-no-heredable.test.ts. */
+@property --removed-body-scroll-bar-size {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 /* ── Variables de marca (aliases para uso futuro en componentes) ─────────── */
 :root {
   /* Brandon 2026-06-05 (paleta B "Turquesa + Coral"): primary = turquesa REAL
