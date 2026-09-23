@@ -230,7 +230,16 @@ export const ForestAserrioDB = {
             paquetes: {
               where: { deletedAt: null },
               orderBy: { codigo: "asc" },
-              select: { codigo: true, productType: true, volumenM3: true, espesorCm: true, anchoCm: true, largoM: true },
+              select: {
+                codigo: true,
+                productType: true,
+                volumenM3: true,
+                espesorCm: true,
+                anchoCm: true,
+                largoM: true,
+                /* El PT medido (ADR-429): con él PT × precio cuadra con el cargo. */
+                pieTablar: true,
+              },
             },
           },
         });
@@ -253,6 +262,7 @@ export const ForestAserrioDB = {
               espesorCm: num(p.espesorCm),
               anchoCm: num(p.anchoCm),
               largoM: num(p.largoM),
+              pieTablar: num(p.pieTablar),
             })),
           ),
           { precioManualPt },

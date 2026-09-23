@@ -49,7 +49,7 @@ describe("el código de la troza no cambia lo que se declara", () => {
   });
 
   it("paquetesDeLoCubicado arma exactamente los mismos paquetes", async () => {
-    const { paquetesDeLoCubicado } = await import("@/components/admin/forestal/CtpProducirSinLoteModal");
+    const { paquetesDeLoCubicado } = await import("@/lib/forestal/declarar-produccion");
     const opts = { codigosEnPlanta: ["PQ-2609-004"], hoy: new Date("2026-09-14T12:00:00Z") };
     const sin = paquetesDeLoCubicado([pieza("a"), pieza("b"), corta("c")], opts);
     const con = paquetesDeLoCubicado([pieza("a", "25"), pieza("b", "17"), corta("c", "5")], opts);

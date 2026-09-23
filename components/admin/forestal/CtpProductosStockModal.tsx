@@ -18,7 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Boxes, Loader2, PackageOpen, Search } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
-import { filasDeCorridas, r4, TOLERANCIA_M3, type CorridaDisponible, type FilaDespacho } from "@/lib/forestal/despacho-lista";
+import { filasDeCorridas, r4, TOLERANCIA_M3, valorPropuesto, type CorridaDisponible, type FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { Btn, ModalFooter, productLabel } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 
@@ -134,7 +134,13 @@ export default function CtpProductosStockModal({
   const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(visibles, { porPaginaInicial: 25 });
 
   /** La fila con lo que el operador editó encima. */
-  const conEdits = (f: FilaDespacho): FilaDespacho => ({ ...f, ...edits[f.uid] });
+  const conEdits = (f: FilaDespacho): FilaDespacho => {
+    const editada = { ...f, ...edits[f.uid] };
+    /* La venta PROPUESTA (ADR-429) sigue al volumen que se edita acá: sin
+       esto, bajar el volumen antes de agregar metía medio paquete con la
+       venta del paquete entero (lo cazó el recorrido del tester, 22-09). */
+    return editada.valorPropuesto ? { ...editada, valorVenta: valorPropuesto(editada) } : editada;
+  };
 
   const seleccionadas = useMemo(
     () => visibles.filter((f) => elegidas.has(f.uid)).map(conEdits),

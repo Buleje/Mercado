@@ -71,6 +71,18 @@ export interface FilaDespacho {
    * desde Rentabilidad. Nunca 0 por defecto: un 0 diría "regalado".
    */
   valorVenta?: number | null;
+  /**
+   * S/ por pie tablar que se puso al DECLARAR la madera propia (ADR-429). Con
+   * él la venta entra propuesta; `null` = el paquete no trae precio.
+   */
+  precioVentaPt?: number | null;
+  /** PT por m³ de ESTE paquete (su PT medido ÷ su m³): prorratea lo que sale. */
+  ptPorM3?: number | null;
+  /**
+   * La venta de la fila es la PROPUESTA del precio guardado y nadie la tocó:
+   * si cambia el volumen, se recalcula. Al editarla a mano deja de serlo.
+   */
+  valorPropuesto?: boolean;
   // ── Contexto de origen (se muestra en la lista, no se guarda en la línea) ──
   gtfOrigen: string[];
   titularOrigen: string[];
@@ -345,6 +357,23 @@ export interface PaqueteDisponible {
   espesorCm: number | null;
   anchoCm: number | null;
   largoM: number | null;
+  /** PT medido al cubicar (ADR-429). `null` = paquete anterior a ADR-429. */
+  pieTablar?: number | null;
+  /** S/ por PT de la madera propia (ADR-429). `null` = sin precio. */
+  precioVentaPt?: number | null;
+}
+
+/**
+ * La venta PROPUESTA de una fila: lo que sale (m³ × PT por m³ del paquete)
+ * por el precio que se puso al declarar la madera propia (ADR-429, «se
+ * propone al despachar»). `null` si falta el precio o el PT del paquete — no
+ * se inventa con el 424 de la plaza: el precio se puso sobre el PT medido.
+ */
+export function valorPropuesto(f: { volumen: number; precioVentaPt?: number | null; ptPorM3?: number | null }): number | null {
+  const precio = f.precioVentaPt ?? null;
+  const ptPorM3 = f.ptPorM3 ?? null;
+  if (precio == null || !(precio > 0) || ptPorM3 == null || !(ptPorM3 > 0) || !(f.volumen > 0)) return null;
+  return Math.round(f.volumen * ptPorM3 * precio * 100) / 100;
 }
 
 /** Una corrida con saldo, tal como la devuelve `?disponibles=1`. */
@@ -406,18 +435,29 @@ export function filasDeCorridas(corridas: readonly CorridaDisponible[]): FilaDes
         volumen: r4(c.disponible),
       }];
     }
-    return c.paquetes.map((p) => ({
-      ...base,
-      uid: uidDeFila(c.id, p.id),
-      paqueteId: p.id,
-      producto: p.producto ?? c.producto,
-      codigo: p.codigo,
-      presentacion: p.presentacion ?? c.presentacion,
-      cantidad: p.cantidad,
-      espesorCm: p.espesorCm, anchoCm: p.anchoCm, largoM: p.largoM,
+    return c.paquetes.map((p) => {
       /* Un paquete no puede sacar más de lo que le queda a su corrida: si ya
          salió parte, el tope es el saldo, no lo que el paquete pesó al nacer. */
-      volumen: r4(Math.min(p.volumenM3, c.disponible)),
-    }));
+      const volumen = r4(Math.min(p.volumenM3, c.disponible));
+      const ptPorM3 = p.pieTablar != null && p.pieTablar > 0 && p.volumenM3 > 0 ? p.pieTablar / p.volumenM3 : null;
+      const precioVentaPt = p.precioVentaPt ?? null;
+      const propuesto = valorPropuesto({ volumen, precioVentaPt, ptPorM3 });
+      return {
+        ...base,
+        uid: uidDeFila(c.id, p.id),
+        paqueteId: p.id,
+        producto: p.producto ?? c.producto,
+        codigo: p.codigo,
+        presentacion: p.presentacion ?? c.presentacion,
+        cantidad: p.cantidad,
+        espesorCm: p.espesorCm, anchoCm: p.anchoCm, largoM: p.largoM,
+        volumen,
+        precioVentaPt,
+        ptPorM3,
+        /* La madera propia entra con su venta propuesta (ADR-429); sin precio
+           guardado, vacía como siempre — nunca 0. */
+        ...(propuesto != null ? { valorVenta: propuesto, valorPropuesto: true } : {}),
+      };
+    });
   });
 }

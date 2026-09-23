@@ -295,9 +295,10 @@ export interface BloqueACobrar {
   especie: string | null;
   volumenM3: number;
   /**
-   * El PT declarado, cuando la corrida vino en pie tablar: se cobra ESE número.
-   * Pasarlo por m³ y volver lo cambia — `ptDesdeM3` redondea el m³ a 3
-   * decimales, y 5000 PT volverían como 4999.81.
+   * El PT declarado —la corrida vino en pie tablar, o el paquete guardó el que
+   * se midió al cubicar (ADR-429)—: se cobra ESE número. Pasarlo por m³ y
+   * volver lo cambia — `ptDesdeM3` redondea el m³ a 3 decimales, y 5000 PT
+   * volverían como 4999.81.
    */
   pt?: number | null;
   productType?: string | null;
@@ -499,6 +500,13 @@ export function bloquesDeCorrida(
     espesorCm?: number | null;
     anchoCm?: number | null;
     largoM?: number | null;
+    /**
+     * El PT medido al cubicar, cuando el paquete lo guardó (ADR-429). Manda
+     * sobre el que sale del m³: `ptDesdeM3` redondea el volumen a 3 decimales
+     * y corría ±0,21 PT por paquete, así que PT × precio no cuadraba con el
+     * importe. Ausente o `null` (paquete viejo) = el cálculo de siempre.
+     */
+    pieTablar?: number | null;
   }[],
 ): BloqueACobrar[] {
   if (paquetes.length > 0) {
@@ -506,6 +514,7 @@ export function bloquesDeCorrida(
       etiqueta: p.codigo,
       especie: corrida.speciesCommon,
       volumenM3: Number(p.volumenM3) || 0,
+      ...(p.pieTablar != null && Number.isFinite(p.pieTablar) && p.pieTablar > 0 ? { pt: p.pieTablar } : {}),
       productType: p.productType ?? corrida.productType,
       espesorCm: p.espesorCm ?? null,
       anchoCm: p.anchoCm ?? null,

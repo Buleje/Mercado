@@ -72,6 +72,9 @@ export interface CobroAserrioTocado {
   precio: boolean;
 }
 
+/** Una instancia de la libreta, para que quien monta el bloque la comparta con él. */
+export type DirectorioForestal = ReturnType<typeof useDirectorioForestal>;
+
 export default function CtpCobroAserrio({
   fecha,
   bloques,
@@ -82,6 +85,8 @@ export default function CtpCobroAserrio({
   labelSinElegir,
   ocultarImportePreview,
   onTarifaGuardada,
+  soloDueno = false,
+  directorio: directorioExterno,
 }: {
   fecha: string;
   bloques: BloqueACobrar[];
@@ -123,8 +128,22 @@ export default function CtpCobroAserrio({
    * acá (MEDIO, revisión 2026-09-14).
    */
   onTarifaGuardada?: () => void;
+  /**
+   * Sólo la pregunta «¿a quién?», sin precio ni vista previa ni la opción
+   * «Madera del centro». Lo usa «Declarar producción» (ADR-429): ahí el precio
+   * es UNO POR ESPECIE, en la columna del resumen, y elegir el servicio de
+   * aserrío ya dijo que la madera NO es del centro.
+   */
+  soloDueno?: boolean;
+  /**
+   * La libreta de quien monta el bloque. Sin esto el bloque tiene la suya, y
+   * una cuenta creada al lado («Crear cuenta nueva») no aparecía como elegida
+   * hasta recargar: quedaba «Buscando…» con la ficha ya guardada.
+   */
+  directorio?: DirectorioForestal;
 }) {
-  const directorio = useDirectorioForestal();
+  const directorioPropio = useDirectorioForestal({ activo: !directorioExterno });
+  const directorio = directorioExterno ?? directorioPropio;
   const tarifa = useTarifaAserrio();
   const [abierto, setAbierto] = useState(false);
   const [q, setQ] = useState("");
@@ -313,7 +332,7 @@ export default function CtpCobroAserrio({
                     ? `${nombreGuardado?.trim() || "Dueño"} (dado de baja)`
                     : valor.duenoParteId && directorio.error
                       ? "No se pudo leer el directorio"
-                      : labelSinElegir && !duenoTocado
+                      : labelSinElegir && (!duenoTocado || soloDueno)
                         ? labelSinElegir
                         : "Madera del centro — no se cobra"}
             </span>
@@ -340,13 +359,15 @@ export default function CtpCobroAserrio({
                   className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
-              <button
-                type="button"
-                onClick={() => elegir(null)}
-                className="mb-1 flex w-full items-center rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-              >
-                Madera del centro — no se cobra
-              </button>
+              {!soloDueno && (
+                <button
+                  type="button"
+                  onClick={() => elegir(null)}
+                  className="mb-1 flex w-full items-center rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                >
+                  Madera del centro — no se cobra
+                </button>
+              )}
               {/* De entrada (buscador vacío) van ARRIBA de la lista: son la
                   razón #1 por la que alguien abre este selector sin encontrar
                   a nadie todavía, y antes quedaban debajo de TODA la libreta
@@ -382,6 +403,7 @@ export default function CtpCobroAserrio({
         </div>
       </div>
 
+      {!soloDueno && (
       <div>
         <span className={LABEL}>Precio</span>
         <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -450,8 +472,9 @@ export default function CtpCobroAserrio({
           </p>
         )}
       </div>
+      )}
 
-      {valor.duenoParteId && (
+      {valor.duenoParteId && !soloDueno && (
         <div className="rounded-xl bg-[var(--surface-sunken)] p-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <span className="text-sm font-bold text-[var(--text-primary)]">Vista previa</span>

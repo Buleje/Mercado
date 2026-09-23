@@ -1024,7 +1024,7 @@ export class ForestCtpDB {
    */
   static async getById(tenantId: string, id: string) {
     if (!tenantId) throw new Error("tenantId is required");
-    return prisma.forestCtpEntry.findFirst({
+    const entry = await prisma.forestCtpEntry.findFirst({
       where: { tenantId, id, deletedAt: null },
       include: {
         paquetes: {
@@ -1038,11 +1038,25 @@ export class ForestCtpDB {
             espesorCm: true,
             anchoCm: true,
             largoM: true,
+            pieTablar: true,
+            precioVentaPt: true,
           },
           orderBy: { createdAt: "asc" },
         },
       },
     });
+    if (!entry) return null;
+    /* El PT medido y el precio de venta (ADR-429) viajan como número: el
+       Decimal llegaría como texto y `null` tiene que seguir siendo «no se
+       guardó» / «sin precio», nunca 0. */
+    return {
+      ...entry,
+      paquetes: entry.paquetes.map((p) => ({
+        ...p,
+        pieTablar: p.pieTablar != null ? Number(p.pieTablar) : null,
+        precioVentaPt: p.precioVentaPt != null ? Number(p.precioVentaPt) : null,
+      })),
+    };
   }
 
   /**
@@ -2050,6 +2064,9 @@ export class ForestCtpDB {
         espesorCm: num(p.espesorCm),
         anchoCm: num(p.anchoCm),
         largoM: num(p.largoM),
+        /* ADR-429: el PT medido y el precio de venta, si el paquete los guardó. */
+        pieTablar: num(p.pieTablar),
+        precioVentaPt: num(p.precioVentaPt),
         observations: p.observations,
         createdAt: p.createdAt,
         corrida: {
@@ -3375,6 +3392,11 @@ export class ForestCtpDB {
             espesorCm: p.espesorCm != null ? Number(p.espesorCm) : null,
             anchoCm: p.anchoCm != null ? Number(p.anchoCm) : null,
             largoM: p.largoM != null ? Number(p.largoM) : null,
+            /** El PT medido al cubicar (ADR-429). `null` = paquete viejo: el PT sale del m³. */
+            pieTablar: p.pieTablar != null ? Number(p.pieTablar) : null,
+            /** S/ por PT de la madera propia (ADR-429): lo que se propone al
+             *  despachar este paquete. `null` = sin precio, nunca 0. */
+            precioVentaPt: p.precioVentaPt != null ? Number(p.precioVentaPt) : null,
             observations: p.observations,
             /** Quién tiene reservado ESTE paquete (ADR-418). `null` = libre. */
             apartado: p.apartados[0] ? apartadoDto(p.apartados[0]) : null,

@@ -39,6 +39,7 @@ import {
   enviosDeLista,
   filasDeCorridas,
   problemasDeLista,
+  valorPropuesto,
   volumenTotal,
   type CorridaDisponible,
   type FilaDespacho,
@@ -369,9 +370,13 @@ export default function CtpDespachoGuiaModal({
            despacha nada— pero un 0 en la venta diría "regalado" y le fabricaría
            al margen una pérdida del 100%. */
         if (campo === "valorVenta") {
-          return { ...f, valorVenta: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : null };
+          /* Tocada a mano deja de ser la propuesta del precio guardado. */
+          return { ...f, valorVenta: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : null, valorPropuesto: false };
         }
-        return { ...f, [campo]: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : 0 };
+        const nueva = { ...f, [campo]: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : 0 };
+        /* Mientras la venta sea la PROPUESTA (ADR-429), sigue al volumen: sacar
+           medio paquete propone media venta, no la del paquete entero. */
+        return f.valorPropuesto ? { ...nueva, valorVenta: valorPropuesto(nueva) } : nueva;
       }),
     );
   }

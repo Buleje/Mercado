@@ -183,6 +183,13 @@ export default function CtpListaProductosTab({
                     {(f.valorVenta / f.volumen).toFixed(2)}/{f.unidad}
                   </div>
                 )}
+                {/* De dónde salió el número: el precio que se puso al declarar
+                    la madera propia (ADR-429). Editarlo lo vuelve propio. */}
+                {f.valorPropuesto && f.precioVentaPt != null && (
+                  <div className="mt-0.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                    propuesto · S/{"\u00a0"}{Number(f.precioVentaPt).toFixed(2)} por PT
+                  </div>
+                )}
               </td>
               <td className="px-3 py-2 text-right">
                 <button

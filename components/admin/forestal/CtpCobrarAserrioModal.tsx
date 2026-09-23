@@ -29,6 +29,8 @@ interface PaqueteGuardado {
   espesorCm?: number | string | null;
   anchoCm?: number | string | null;
   largoM?: number | string | null;
+  /** PT medido al cubicar (ADR-429): el cargo del servidor lo usa, la vista previa también. */
+  pieTablar?: number | string | null;
 }
 
 export default function CtpCobrarAserrioModal({
@@ -94,6 +96,7 @@ export default function CtpCobrarAserrioModal({
           espesorCm: p.espesorCm != null ? Number(p.espesorCm) : null,
           anchoCm: p.anchoCm != null ? Number(p.anchoCm) : null,
           largoM: p.largoM != null ? Number(p.largoM) : null,
+          pieTablar: p.pieTablar != null ? Number(p.pieTablar) : null,
         })),
       ),
     [entry, paquetes],

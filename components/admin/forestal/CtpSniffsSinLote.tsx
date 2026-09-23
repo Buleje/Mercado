@@ -33,14 +33,18 @@ import {
   type DetalleProduccionSniffs,
 } from "@/lib/forestal/sniffs-produccion-parse";
 import { cotejarSniffsSinLote } from "@/lib/forestal/sniffs-cotejo-sin-lote";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { useLecturaPegada } from "./hooks/use-lectura-pegada";
 import { leerDetalleConIA } from "./hooks/leer-sniffs-con-ia";
 import { Tecla, ZonaPegarSniffs } from "./CtpPegarSniffs";
 import { PanelCotejoSniffs } from "./CtpCotejoSniffsPanel";
 
+type PaqueteCotejable = { productType: string | null; volumenM3: number };
+
 export default function CtpSniffsSinLote({
   paquetes,
   especie,
+  corridas,
   especiesConocidas,
   fecha,
   onUsarFecha,
@@ -51,6 +55,13 @@ export default function CtpSniffsSinLote({
   paquetes: readonly { productType: string | null; volumenM3: number }[];
   /** La especie que va a declarar el asiento, ya decidida. */
   especie: string | null;
+  /**
+   * Lo cubicado partido en una corrida por especie (ADR-429). La programación
+   * del SNIFFS es de UNA especie: con panguana y tornillo en el mismo lote,
+   * cotejar la captura de tornillo contra todo pintaba la panguana como
+   * «de más». Si la especie leída es una de estas, se coteja sólo contra ella.
+   */
+  corridas?: readonly { especie: string; paquetes: readonly PaqueteCotejable[] }[];
   especiesConocidas: readonly string[];
   fecha: string;
   onUsarFecha: (iso: string) => void;
@@ -74,10 +85,15 @@ export default function CtpSniffsSinLote({
     onLeido: (d) => setDetalle(d),
   });
 
-  const cotejo = useMemo(
-    () => (detalle ? cotejarSniffsSinLote(detalle, { paquetes, especie }) : null),
-    [detalle, paquetes, especie],
-  );
+  const cotejo = useMemo(() => {
+    if (!detalle) return null;
+    const leida = claveEspecie(detalle.especieComun ?? "");
+    const suya = leida ? corridas?.find((c) => claveEspecie(c.especie) === leida) : undefined;
+    return cotejarSniffsSinLote(
+      detalle,
+      suya ? { paquetes: suya.paquetes, especie: suya.especie } : { paquetes, especie },
+    );
+  }, [detalle, paquetes, especie, corridas]);
 
   if (detalle && cotejo && !lectura.leyendo) {
     return (

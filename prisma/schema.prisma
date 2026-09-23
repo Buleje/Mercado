@@ -6476,6 +6476,8 @@ model ForestCtpPaquete {
   espesorCm Decimal? @db.Decimal(8, 2)
   anchoCm   Decimal? @db.Decimal(8, 2)
   largoM    Decimal? @db.Decimal(8, 2)
+  pieTablar     Decimal? @db.Decimal(12, 2) // PT medido al cubicar (ADR-429); null = paquete viejo, el PT sale del m³
+  precioVentaPt Decimal? @db.Decimal(10, 4) // S/ por PT de la madera propia (ADR-429); null = sin precio, nunca 0
 
   observations String?
 

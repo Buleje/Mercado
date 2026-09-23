@@ -122,6 +122,7 @@ export default function CtpParteModal({
   onUsarExistente,
   onGuardar,
   onClose,
+  aboveModals = false,
 }: {
   /** `null` = alta. */
   parte: Parte | null;
@@ -146,6 +147,12 @@ export default function CtpParteModal({
    */
   onGuardar: (input: Borrador) => Promise<Parte | void>;
   onClose: () => void;
+  /**
+   * Se abre ENCIMA de otro modal: «Crear cuenta nueva» desde «Declarar
+   * producción» (ADR-429). Sin esto se monta detrás y Radix apaga los clics de
+   * toda la página (ver `AdminModal`).
+   */
+  aboveModals?: boolean;
 }) {
   const [b, setB] = useState<Borrador>(() => aBorrador(parte, rolInicial));
   const [copiado, setCopiado] = useState<string | null>(null);
@@ -439,6 +446,7 @@ export default function CtpParteModal({
     <AdminModal
       open
       onClose={cerrar}
+      aboveModals={aboveModals}
       title={parte ? `Editar ${parte.nombre}` : "Agregar al directorio"}
       description={b.roles.map((r) => ROL_LABEL[r]).join(" · ")}
       icon={Users}

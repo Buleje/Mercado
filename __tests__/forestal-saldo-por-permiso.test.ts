@@ -183,7 +183,7 @@ describe("paquetesDeLoCubicado — el código del paquete es único en toda la p
   });
 
   it("sigue la serie de la planta en vez de empezar de SL-1 cada vez", async () => {
-    const { paquetesDeLoCubicado } = await import("@/components/admin/forestal/CtpProducirSinLoteModal");
+    const { paquetesDeLoCubicado } = await import("@/lib/forestal/declarar-produccion");
     const r = paquetesDeLoCubicado([pieza("a", 2, 8, 10), pieza("b", 1, 6, 8)], {
       codigosEnPlanta: ["PQ-2609-004", "PQ-2609-003"],
       hoy: new Date("2026-09-10T12:00:00Z"),
@@ -192,7 +192,7 @@ describe("paquetesDeLoCubicado — el código del paquete es único en toda la p
   });
 
   it("dos medidas de la misma tanda nunca piden el mismo código", async () => {
-    const { paquetesDeLoCubicado } = await import("@/components/admin/forestal/CtpProducirSinLoteModal");
+    const { paquetesDeLoCubicado } = await import("@/lib/forestal/declarar-produccion");
     const r = paquetesDeLoCubicado([pieza("a", 2, 8, 10), pieza("b", 1, 6, 8), pieza("c", 3, 9, 12)], {
       hoy: new Date("2026-09-10T12:00:00Z"),
     });

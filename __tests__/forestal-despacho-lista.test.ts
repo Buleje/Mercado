@@ -2,6 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
   enviosDeLista,
   excesosDeCorrida,
+  filasDeCorridas,
+  valorPropuesto,
+  type CorridaDisponible,
+  type PaqueteDisponible,
   payloadDeFila,
   piezasTotales,
   problemasDeLista,
@@ -262,5 +266,50 @@ describe("payload extra", () => {
   it("la guía viaja tal cual", () => {
     const p = payloadDeFila(fila(), { entryDate: "2026-08-07", docType: "GTF", gtfNumber: "001-1", destino: null, observations: null }, { propietario: {} });
     expect(p.gtfDatos).toEqual({ propietario: {} });
+  });
+});
+
+/**
+ * ADR-429 · «el precio de la madera propia se propone al despachar»: el
+ * paquete trae el precio por PT que se puso al declarar y su PT medido; la
+ * fila entra con la venta ya calculada, prorrateada si sale sólo una parte.
+ */
+describe("venta propuesta desde el precio de la producción (ADR-429)", () => {
+  const corrida = (disponible: number, paquete: Partial<PaqueteDisponible>): CorridaDisponible => ({
+    id: "c1", lineNo: 7, fecha: "2026-09-22", especie: "Tornillo", especieCientifica: null,
+    producto: "MADERA ASERRADA", presentacion: "PIEZAS", unidad: "m3", disponible,
+    lote: null, lineaProduccion: "LP", gtfOrigen: [], titularOrigen: [],
+    paquetes: [{ id: "p1", codigo: "PQ-1", producto: null, presentacion: null, cantidad: 12, volumenM3: 0.3774, espesorCm: 5.08, anchoCm: 20.32, largoM: 3.05, ...paquete }],
+  } as CorridaDisponible);
+
+  it("PT medido × precio: 160 PT a S/ 3,50 entran como S/ 560 propuestos", () => {
+    const [f] = filasDeCorridas([corrida(0.3774, { pieTablar: 160, precioVentaPt: 3.5 })]);
+    expect(f.valorVenta).toBe(560);
+    expect(f.valorPropuesto).toBe(true);
+  });
+
+  it("si la corrida ya despachó parte, la venta se prorratea con lo que sale", () => {
+    const [f] = filasDeCorridas([corrida(0.1887, { pieTablar: 160, precioVentaPt: 3.5 })]);
+    expect(f.volumen).toBe(0.1887);
+    expect(f.valorVenta).toBe(280);
+  });
+
+  it("sin precio o sin PT medido no se inventa: queda vacía, nunca 0", () => {
+    expect(filasDeCorridas([corrida(0.3774, { pieTablar: 160, precioVentaPt: null })])[0].valorVenta).toBeUndefined();
+    expect(filasDeCorridas([corrida(0.3774, { pieTablar: null, precioVentaPt: 3.5 })])[0].valorVenta).toBeUndefined();
+    expect(valorPropuesto({ volumen: 0, precioVentaPt: 3.5, ptPorM3: 424 })).toBeNull();
+  });
+});
+
+describe("la venta propuesta sigue al volumen editado (selector de stock)", () => {
+  it("medio paquete propone media venta; tocada a mano ya no se recalcula", () => {
+    const [f] = filasDeCorridas([{
+      id: "c1", lineNo: 6, fecha: "2026-09-22", especie: "Cumala", especieCientifica: null, producto: "MADERA ASERRADA",
+      presentacion: "PIEZAS", unidad: "m3", disponible: 0.3302, lote: null, lineaProduccion: "LP",
+      paquetes: [{ id: "p5", codigo: "PQ-005", producto: null, presentacion: null, cantidad: 6, volumenM3: 0.3302, espesorCm: 7.62, anchoCm: 10.16, largoM: 3.66, pieTablar: 140, precioVentaPt: 2.8 }],
+    } as CorridaDisponible]);
+    expect(f.valorVenta).toBe(392);
+    const mitad = { ...f, volumen: 0.1651 };
+    expect(valorPropuesto(mitad)).toBe(196);
   });
 });
