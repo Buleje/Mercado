@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
-import { CheckCircle, Clock, DollarSign, Star, Trophy, Users } from "@buleje/design-system/icons";
+import { CheckCircle, Clock, DollarSign, Star, Trophy, Users, Crown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon, toNum } from "@/components/admin/delivery-partners/shared";
@@ -48,9 +48,9 @@ export function RankingTab() {
               <CardTitle className="font-display text-xl leading-tight">
                 Ranking de repartidores
               </CardTitle>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+              <p className="flex items-start gap-1 text-sm text-[var(--text-secondary)] mt-1 leading-snug">
                 {topPartner
-                  ? <>👑 <span className="font-bold text-[var(--text-primary)]">{topPartner.name}</span> lidera {periodLabel} con {topPartner.delivered} entregas y rating {toNum(topPartner.rating).toFixed(1)}.</>
+                  ? <><Crown className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-warning-500)]" aria-hidden /> <span><span className="font-bold text-[var(--text-primary)]">{topPartner.name}</span> lidera {periodLabel} con {topPartner.delivered} entregas y rating {toNum(topPartner.rating).toFixed(1)}.</span></>
                   : `Métricas de rendimiento ${periodLabel}. Aceptación, entregas, ratings y ganancias.`}
               </p>
             </div>

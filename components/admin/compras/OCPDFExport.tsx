@@ -4,6 +4,7 @@ import { FileText, MessageCircle } from "@buleje/design-system/icons";
 import type { DbPurchaseOrder, DbSupplier } from "@/lib/jsondb";
 import { printPurchaseOrder } from "../PurchaseOrderPDF";
 import { totalesOC } from "@/lib/compras/totales-oc";
+import { formatCurrency, formatDateNumeric } from "@/lib/format";
 
 interface OCPDFExportProps {
   oc: DbPurchaseOrder;
@@ -17,7 +18,7 @@ export default function OCPDFExport({ oc, supplier }: OCPDFExportProps) {
 
   const handleWhatsApp = () => {
     const items = oc.items
-      .map((i, idx) => `${idx + 1}. ${i.name} x${i.quantity} ${i.unit} @ S/${Number(i.unitCost).toFixed(2)} = S/${(i.quantity * i.unitCost).toFixed(2)}`)
+      .map((i, idx) => `${idx + 1}. ${i.name} x${i.quantity} ${i.unit} @ ${formatCurrency(Number(i.unitCost))} = ${formatCurrency(i.quantity * i.unitCost)}`)
       .join("\n");
 
     // El monto que se le manda al proveedor es el de la orden. Antes se le
@@ -28,14 +29,14 @@ export default function OCPDFExport({ oc, supplier }: OCPDFExportProps) {
     const message = encodeURIComponent(
       `*ORDEN DE COMPRA #${oc.id.slice(-8).toUpperCase()}*\n\n` +
       `Proveedor: ${supplier?.name ?? oc.supplierName}\n` +
-      `Fecha: ${new Date(oc.createdAt).toLocaleDateString("es-PE")}\n\n` +
+      `Fecha: ${formatDateNumeric(oc.createdAt)}\n\n` +
       `*Productos:*\n${items}\n\n` +
       (t.descuentoPct > 0
-        ? `Subtotal: S/ ${t.subtotalBruto.toFixed(2)}\n` +
-          `Descuento (${t.descuentoPct}%): -S/ ${t.descuentoMonto.toFixed(2)}\n`
+        ? `Subtotal: ${formatCurrency(t.subtotalBruto)}\n` +
+          `Descuento (${t.descuentoPct}%): -${formatCurrency(t.descuentoMonto)}\n`
         : "") +
-      `*TOTAL: S/ ${t.total.toFixed(2)}*\n` +
-      `(incluye IGV S/ ${t.igvContenido.toFixed(2)})\n\n` +
+      `*TOTAL: ${formatCurrency(t.total)}*\n` +
+      `(incluye IGV ${formatCurrency(t.igvContenido)})\n\n` +
       `Buleje - Pucallpa`,
     );
 

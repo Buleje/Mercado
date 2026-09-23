@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, History } from "@buleje/design-system/icons";
+import { formatDateTime } from "@/lib/format";
 
 interface Evento {
   id: string;
@@ -48,7 +49,7 @@ const ACTIONS_DANGER = new Set(["ctp_ingreso_reject", "ctp_ingreso_annul", "ctp_
 // createdAt es timestamp real → hora LOCAL (no el fix UTC de las date-only).
 const fmtDateTime = (iso: string) => {
   try {
-    return new Date(iso).toLocaleString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    return formatDateTime(iso);
   } catch {
     return iso;
   }

@@ -42,9 +42,13 @@ import { Btn, Field, I, ModalBody, ModalFooter, Seccion, productLabel } from "./
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import { IconAction } from "@/components/admin/shared/module-primitives";
 import CtpMarcarUsadoModal from "./CtpMarcarUsadoModal";
+import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
 import { CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+
+/** Id estable de este formulario para los campos personalizados (ADR-427). */
+const FORMULARIO = "forestal.lote";
 
 const fmt = (iso: string | null) => {
   if (!iso) return "—";
@@ -666,6 +670,16 @@ export default function CtpLoteDetalleModal({
             />
           </div>
         </Seccion>
+
+        {/* Lo que esta planta anota de un lote y el formato del SNIFFS no
+            pregunta (ADR-427). El lote ya existe, así que lo escrito se guarda
+            solo, sin pasar por los campos de identidad de arriba. */}
+        <CamposPersonalizados
+          className="mt-4"
+          formulario={FORMULARIO}
+          registroId={lote.id}
+          etiquetaFormulario="lotes de aserrío"
+        />
       </ModalBody>
       {marcarUsadoCorrida && (
         <CtpMarcarUsadoModal

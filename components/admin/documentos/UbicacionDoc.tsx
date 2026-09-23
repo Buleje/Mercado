@@ -69,8 +69,8 @@ export default function UbicacionDoc({ folderId, folders, onMover, compacto }: {
 
       {abierto && (
         <>
-          <button className="fixed inset-0 z-30 cursor-default" aria-label="Cerrar el selector de carpeta" onClick={() => setAbierto(false)} />
-          <div className="absolute left-0 top-full z-40 mt-1 max-h-80 w-72 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl">
+          <button className="fixed inset-0 z-dropdown cursor-default" aria-label="Cerrar el selector de carpeta" onClick={() => setAbierto(false)} />
+          <div className="absolute left-0 top-full z-dropdown mt-1 max-h-80 w-72 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl">
             <p className="px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               Guardar en
             </p>

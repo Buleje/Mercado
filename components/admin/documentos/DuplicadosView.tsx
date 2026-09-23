@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import type { DbDocument } from "@/lib/types/documents";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { formatDate } from "@/lib/format";
 
 interface Grupo { clave: string; nombre: string; size: number; docs: DbDocument[] }
 
@@ -28,7 +29,7 @@ function pesoLegible(b: number): string {
 }
 
 function fecha(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+  return formatDate(iso);
 }
 
 export default function DuplicadosView({ onOpenDoc, onEliminar }: {

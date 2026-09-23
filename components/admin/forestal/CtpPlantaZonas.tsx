@@ -22,9 +22,10 @@ import {
   type PlantaZona,
 } from "@/lib/forestal/planta-zona-types";
 import { fmtSubtotales, resumirItems } from "@/lib/forestal/planta-resumen";
+import { formatNumber } from "@/lib/format";
 
 const fmtArea = (m2: number) =>
-  m2 >= 10000 ? `${(m2 / 10000).toFixed(2)} ha` : `${Math.round(m2).toLocaleString("es-PE")} m²`;
+  m2 >= 10000 ? `${(m2 / 10000).toFixed(2)} ha` : `${formatNumber(Math.round(m2))} m²`;
 
 export interface CtpPlantaZonasProps {
   zonas: PlantaZona[];

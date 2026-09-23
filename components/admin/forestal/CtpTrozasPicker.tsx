@@ -26,6 +26,7 @@ import {
 } from "@/lib/forestal/consumo-trozas";
 import CtpTrozaCardMobile from "./CtpTrozaCardMobile";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 /** Mismo campo que los filtros de Ingresos: el módulo se lee como uno solo. */
 const CAMPO =
@@ -104,7 +105,7 @@ export default function CtpTrozasPicker({
         </CardTitle>
         <span className="ml-auto font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
           {totales.piezas} pza · {fmtM3(totales.volumenM3)} m³ ·{" "}
-          {totales.pieTablar.toLocaleString("es-PE")} pt
+          {formatNumber(totales.pieTablar)} pt
         </span>
       </div>
 

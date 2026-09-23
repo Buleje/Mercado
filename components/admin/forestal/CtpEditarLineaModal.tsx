@@ -40,6 +40,7 @@ import {
   type DefCampoEditable,
   type ValoresLinea,
 } from "@/lib/forestal/ctp-linea-editable";
+import { formatDateNumeric } from "@/lib/format";
 
 /** Lo que el modal necesita saber de la fila. */
 export interface LineaEditable {
@@ -334,7 +335,7 @@ export default function CtpEditarLineaModal({
 
   return (
     <div
-      className="modal-backdrop fixed inset-0 z-[9990] flex items-center justify-center bg-black/50 p-4"
+      className="modal-backdrop fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
     >
       <div ref={cajaRef} tabIndex={-1}
@@ -349,7 +350,7 @@ export default function CtpEditarLineaModal({
               Editar la corrida N° {linea.lineNo ?? "—"}
             </SectionTitle>
             <p className="text-sm text-[var(--text-tertiary)]">
-              {new Date(linea.fecha).toLocaleDateString("es-PE", { timeZone: "UTC" })} · queda registrado qué
+              {formatDateNumeric(linea.fecha, { soloFecha: true })} · queda registrado qué
               decía antes de cada cambio
             </p>
           </div>
@@ -439,7 +440,7 @@ export default function CtpEditarLineaModal({
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
           <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
             <b className="text-[var(--text-secondary)]">
-              Fecha: {new Date(linea.fecha).toLocaleDateString("es-PE", { timeZone: "UTC" })}
+              Fecha: {formatDateNumeric(linea.fecha, { soloFecha: true })}
             </b>{" "}
             — no se corrige desde acá. Cambiarla mueve la producción de un mes a otro y con eso el rendimiento
             y los cuadros de los dos períodos. Una fecha mal puesta se anula con motivo y se registra de nuevo.

@@ -213,7 +213,7 @@ export default function CtpPiezasDelIngreso({
       </div>
 
       {/* ── Lo que se hace con ellas ───────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
         <span className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           Sobre {alcance} {alcance === 1 ? "pieza" : "piezas"}
         </span>

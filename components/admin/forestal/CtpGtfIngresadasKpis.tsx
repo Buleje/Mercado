@@ -37,8 +37,9 @@ import {
   PLAZO_REGISTRO_DIAS,
   type WoodEntry,
 } from "./ctp-shared";
+import { formatNumber } from "@/lib/format";
 
-const nf = (n: number) => n.toLocaleString("es-PE");
+const nf = (n: number) => formatNumber(n);
 
 export default function CtpGtfIngresadasKpis({
   guias,

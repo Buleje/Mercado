@@ -23,7 +23,7 @@ import { ChevronRight, FileCheck, PackageOpen, PenLine } from "@buleje/design-sy
 import { agruparTrozas, motivoBloqueo, type AgrupacionPatio, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
-import { FiltroColumna, type FacetaOpcion } from "./ctp-filtros-panel";
+import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 
 /**
  * Los autofiltros de la cabecera (estilo Excel, Brandon 2026-09-03): Guía (varias
@@ -37,13 +37,14 @@ export interface FiltrosPatioColumna {
   especie?: { value: readonly string[]; options: FacetaOpcion[]; onChange: (v: string[]) => void };
 }
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 const fmtDia = (iso: string | null | undefined) => {
   if (!iso) return "—";
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? "—"
-    : d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+    : formatDateShort(d, { soloFecha: true });
 };
 
 /** Las medidas como las canta el patio: dos diámetros y el largo. */
@@ -260,7 +261,7 @@ export default function CtpTrozasIngresadas({
         {elegidas.length > 0 && (
           <span className="font-mono text-sm font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">
             {elegidas.length} elegida{elegidas.length === 1 ? "" : "s"} · {fmtM3(volumenElegido)} m³ ·{" "}
-            {pieTablarDe(volumenElegido).toLocaleString("es-PE")} pt
+            {formatNumber(pieTablarDe(volumenElegido))} pt
             {delLoteElegidas > 0 && (
               <span className="ml-2 font-sans font-normal text-[var(--text-tertiary)]">
                 ({delLoteElegidas} ya apartada{delLoteElegidas === 1 ? "" : "s"} en el lote)
@@ -320,17 +321,17 @@ export default function CtpTrozasIngresadas({
                 ampara. */}
             <th className="px-3 py-2 font-bold">
               <span className="block">Guía</span>
-              {fc.guia && <FiltroColumna label="Guía" {...fc.guia} placeholder="Todas" />}
+              {fc.guia && <FiltroColumnaMulti label="Guía" {...fc.guia} placeholder="Todas" />}
             </th>
             <th className="px-3 py-2 font-bold">
               <span className="block">Permiso</span>
-              {fc.permiso && <FiltroColumna label="Permiso" {...fc.permiso} placeholder="Todos" />}
+              {fc.permiso && <FiltroColumnaMulti label="Permiso" {...fc.permiso} placeholder="Todos" />}
             </th>
             <th className="px-3 py-2 font-bold">Codificación</th>
             <th className="px-3 py-2 font-bold">Cód. planta</th>
             <th className="px-3 py-2 font-bold">
               <span className="block">Especie</span>
-              {fc.especie && <FiltroColumna label="Especie" {...fc.especie} placeholder="Todas" />}
+              {fc.especie && <FiltroColumnaMulti label="Especie" {...fc.especie} placeholder="Todas" />}
             </th>
             <th className="px-3 py-2 font-bold">Medidas</th>
             <th className="px-3 py-2 text-right font-bold">Volumen</th>
@@ -401,7 +402,7 @@ export default function CtpTrozasIngresadas({
           sustantivo="troza"
           extra={
             <span className="font-mono tabular-nums">
-              {fmtM3(totalVisible)} m³ · {pieTablarDe(totalVisible).toLocaleString("es-PE")} pt
+              {fmtM3(totalVisible)} m³ · {formatNumber(pieTablarDe(totalVisible))} pt
             </span>
           }
         />

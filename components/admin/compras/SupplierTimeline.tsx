@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { Package, Undo2, Loader2, AlertCircle, RotateCw } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 type PurchaseStatus = "pendiente" | "recibido" | "parcial" | "cancelado" | "auto_generated";
 type ReturnEstado = "PENDIENTE" | "ENVIADA" | "RESUELTA";
@@ -208,7 +209,7 @@ export default function SupplierTimeline({ supplierId, supplierName }: SupplierT
               </div>
               <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
                 {isPurchase
-                  ? `Total S/ ${Number(entry.total).toFixed(2)}`
+                  ? `Total ${formatCurrency(Number(entry.total))}`
                   : `${entry.motivo} · ${entry.itemsCount} item${entry.itemsCount !== 1 ? "s" : ""}`}
               </p>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1" title={absoluta}>

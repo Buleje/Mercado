@@ -21,6 +21,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { PAYMENT_METHOD_LABELS, type ExpensePaymentMethod } from "@/lib/expense-meta";
 import { borrarGasto, restaurarGasto } from "./restaurar";
 import { fmt, type HistorialItem } from "./shared";
+import { formatDate } from "@/lib/format";
 
 /** `YYYY-MM-DD` en hora local: con `toISOString()` el día se corre en Perú. */
 function comoFechaInput(iso: string): string {
@@ -143,7 +144,7 @@ export default function GastoEditarModal({
       onClose={ocupado ? () => {} : onClose}
       variant="wide"
       title="Corregir gasto"
-      description={`Registrado el ${new Date(item.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })} · ${fmt(item.amount)}`}
+      description={`Registrado el ${formatDate(item.fecha)} · ${fmt(item.amount)}`}
       footer={
         <div className="flex flex-wrap items-center gap-2">
           {/* Sin «¿estás seguro?»: borra y deja 5 segundos para deshacer, que

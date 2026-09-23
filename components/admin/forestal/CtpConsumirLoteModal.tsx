@@ -43,6 +43,7 @@ import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDateLong, formatNumber } from "@/lib/format";
 
 /** Lo que el modal devuelve cuando se firma. */
 export interface ConfirmacionConsumo {
@@ -58,7 +59,7 @@ const fmtDia = (dia: string) => {
   const d = new Date(`${dia}T12:00:00.000Z`);
   return Number.isNaN(d.getTime())
     ? dia
-    : d.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
+    : formatDateLong(d, { soloFecha: true });
 };
 
 /* El «hoy» es el de Pucallpa: pasadas las 19:00 el UTC ya está en mañana, y un
@@ -194,7 +195,7 @@ export default function CtpConsumirLoteModal({
           nota={
             <span className="font-mono tabular-nums">
               {totales.piezas} pza · {fmtM3(totales.volumenM3)} m³ ·{" "}
-              {pieTablarDe(totales.volumenM3).toLocaleString("es-PE")} pt · {totales.guias} guía
+              {formatNumber(pieTablarDe(totales.volumenM3))} pt · {totales.guias} guía
               {totales.guias === 1 ? "" : "s"}
             </span>
           }
@@ -215,14 +216,14 @@ export default function CtpConsumirLoteModal({
           <Cifra
             icon={PackageOpen}
             label="Piezas"
-            valor={totales.piezas.toLocaleString("es-PE")}
+            valor={formatNumber(totales.piezas)}
             detalle={
               quitadas.size > 0
                 ? `${quitadas.size} ${quitadas.size === 1 ? "sacada" : "sacadas"} acá`
                 : `${yaEnElLote.size} ya en el lote`
             }
           />
-          <Cifra icon={TreePine} label="Volumen" valor={`${fmtM3(totales.volumenM3)} m³`} detalle={`${pieTablarDe(totales.volumenM3).toLocaleString("es-PE")} pt`} />
+          <Cifra icon={TreePine} label="Volumen" valor={`${fmtM3(totales.volumenM3)} m³`} detalle={`${formatNumber(pieTablarDe(totales.volumenM3))} pt`} />
           <Cifra icon={Layers} label="Especies" valor={String(totales.especies)} detalle={lote.speciesCommon} />
           <Cifra
             icon={CalendarDays}

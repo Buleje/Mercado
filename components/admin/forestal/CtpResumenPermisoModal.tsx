@@ -78,8 +78,9 @@ import { agruparPor } from "@/lib/forestal/cubicacion-resumen";
 import { RENDIMIENTO_META, productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
-const nf = (n: number) => n.toLocaleString("es-PE");
+const nf = (n: number) => formatNumber(n);
 
 /** Sólo lo que este modal necesita de "Productos disponibles" — referencia,
  *  no se toca el resto de la forma real (`CtpProductosDisponibles.tsx`). */

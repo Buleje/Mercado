@@ -23,6 +23,7 @@ import {
 } from "@/lib/forestal/tarifa-aserrio";
 import { Btn, Field, CampoGrid, formatDate, ModalFooter } from "./ctp-shared";
 import { borradorDesde, borradorDesdeProduccion, inputDesde, tiposDelBorrador, type BorradorTarifa } from "./ctp-tarifa-aserrio-shared";
+import { formatNumber } from "@/lib/format";
 
 const I =
   "h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
@@ -295,7 +296,7 @@ export default function CtpTarifaAserrioForm({
         {ejemplo && ejemplo.cot.lineas[0] ? (
           <>
             <p className="mt-1 text-sm text-[var(--text-primary)]">
-              1 m³ ({ejemplo.cot.pt.toLocaleString("es-PE")} PT) de{" "}
+              1 m³ ({formatNumber(ejemplo.cot.pt)} PT) de{" "}
               <b>{ejemplo.especiePrimera ?? "la especie general"}</b> comercial de 10 pies → S/{" "}
               <b className="font-mono tabular-nums">{Number(ejemplo.cot.importe).toFixed(2)}</b>
             </p>

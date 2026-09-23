@@ -140,7 +140,7 @@ export default function CtpBuscarGtf({
 
   return (
     <div ref={cajaRef} tabIndex={-1}
-      className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center bg-black/45 p-4 backdrop-blur-sm sm:pt-[12vh]"
+      className="modal-backdrop fixed inset-0 z-modal flex items-start justify-center bg-black/45 p-4 backdrop-blur-sm sm:pt-[12vh]"
       role="dialog"
       aria-modal="true"
       aria-label="Buscar en el libro"

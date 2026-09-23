@@ -43,7 +43,8 @@ import { tieneCosto } from "@/lib/forestal/costo-sugerido";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { PROVEEDOR_INVENTARIO_APERTURA } from "@/lib/forestal/ctp-serfor-a-libro";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
-import { FiltroColumna, type FacetaOpcion } from "./ctp-filtros-panel";
+import { type FacetaOpcion } from "./ctp-filtros-panel";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import CtpEntryActions from "./CtpEntryActions";
 import CtpGuiaCardMobile from "./CtpGuiaCardMobile";
 import EspecieFoto from "./EspecieFoto";
@@ -62,6 +63,7 @@ import {
   type WoodEntryStatus,
 } from "./ctp-shared";
 import { UNIT_LABELS } from "./ctp-section-shared";
+import { formatNumber } from "@/lib/format";
 
 /** Un autofiltro en la cabecera de su columna (estilo Excel). Lo arma la vista. */
 /**
@@ -142,6 +144,22 @@ export interface FiltroColumnaGuias {
   onChange: (v: string[]) => void;
   placeholder?: string;
   etiqueta?: (v: string) => string;
+}
+
+/**
+ * De `FiltroColumnaGuias` (forestal, pesa en `volumeM3`) a las props del
+ * autofiltro COMPARTIDO (`@/components/admin/shared/filtros-columna`, pesa en
+ * `peso`) — se traduce una sola vez acá, no en cada lugar que arma las
+ * opciones desde `stats.providers/species/permisos`.
+ */
+function propsDeFiltroColumna(f: FiltroColumnaGuias) {
+  return {
+    value: Array.isArray(f.value) ? f.value : f.value ? [f.value] : undefined,
+    options: f.options.map((o) => ({ value: o.value, count: o.count, peso: o.volumeM3 })),
+    onChange: f.onChange,
+    etiqueta: f.etiqueta,
+    placeholder: f.placeholder,
+  };
 }
 
 export interface CtpGuiasTableProps {
@@ -306,7 +324,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                   <Th>
                     N° Permiso
                     {props.filtrosColumna?.permiso && (
-                      <FiltroColumna label="permiso" {...props.filtrosColumna.permiso} />
+                      <FiltroColumnaMulti label="permiso" {...propsDeFiltroColumna(props.filtrosColumna.permiso)} />
                     )}
                   </Th>
                 )}
@@ -903,7 +921,7 @@ function FilaGuia({
               return (
                 <>
                   <div className="whitespace-nowrap font-bold text-[var(--text-primary)]">
-                    {moneda} {total.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {moneda} {formatNumber(total, 2)}
                   </div>
                   {conCosto.length < guia.lineas.length && (
                     <div className="text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
@@ -1112,7 +1130,7 @@ function ThSort({
         <Icono className={`h-3.5 w-3.5 ${activo ? "" : "opacity-40"}`} aria-hidden="true" />
       </button>
       {/* Título arriba, autofiltro debajo — igual que en las otras tablas del libro. */}
-      {filtro && <FiltroColumna label={String(children)} {...filtro} />}
+      {filtro && <FiltroColumnaMulti label={String(children)} {...propsDeFiltroColumna(filtro)} />}
     </th>
   );
 }

@@ -53,6 +53,7 @@ import { CtpKpisPlegables, type WoodEntryStats } from "./ctp-shared";
 import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros";
 import type { CtpFacetasActivas } from "./CtpIngresosFiltros";
 import { productLabel } from "./ctp-shared";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 export interface CtpIngresosKpisProps {
   stats: WoodEntryStats | null;
@@ -95,8 +96,8 @@ export interface CtpIngresosKpisProps {
   onFacetas: (f: CtpFacetasActivas) => void;
 }
 
-const nf = (n: number) => n.toLocaleString("es-PE");
-const soles = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const nf = (n: number) => formatNumber(n);
+const soles = (n: number) => `${formatCurrency(n)}`;
 
 /** ¿La columna tiene un filtro puesto? Acepta el formato viejo de un solo string. */
 const filtrada = (v: string | readonly string[] | undefined) =>

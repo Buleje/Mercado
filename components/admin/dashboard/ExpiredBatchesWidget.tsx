@@ -19,6 +19,7 @@ import {
 } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
+import { formatDate, formatNumber } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -59,11 +60,7 @@ function daysExpired(expiryDate: string): number {
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -400,7 +397,7 @@ export default function ExpiredBatchesWidget() {
                       {/* Cantidad + badge días vencido */}
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                          {batch.quantity.toLocaleString("es-PE")}{" "}
+                          {formatNumber(batch.quantity)}{" "}
                           <span className="font-normal text-[var(--text-tertiary)] dark:text-muted">
                             {batch.unit}
                           </span>
@@ -481,7 +478,7 @@ export default function ExpiredBatchesWidget() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 px-4"
+            className="fixed inset-0 z-modal flex items-center justify-center bg-black/40 dark:bg-black/60 px-4"
             onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
           >
             <m.div

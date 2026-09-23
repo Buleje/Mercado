@@ -25,6 +25,7 @@ import {
   type PorEspecie,
 } from "@/lib/forestal/planta-resumen";
 import type { Item, ItemKind } from "@/lib/forestal/planta-zona-types";
+import { formatNumber } from "@/lib/format";
 
 /** Paleta de series: tokens de dataviz, que siguen el tema (ADR-071). */
 const SERIE = ["var(--data-5)", "var(--data-6)", "var(--data-8)", "var(--data-7)", "var(--data-2)", "var(--data-3)"];
@@ -106,7 +107,7 @@ export default function CtpPlantaEspecies({ items, ubicados }: { items: Item[]; 
               <div
                 key={f.especie}
                 style={{ width: `${(f.m3 / enM3.total) * 100}%`, background: SERIE[i % SERIE.length] }}
-                title={`${f.especie} · ${f.m3.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³ (${pct1((f.m3 / enM3.total) * 100)}%)`}
+                title={`${f.especie} · ${formatNumber(f.m3, { max: 2 })} m³ (${pct1((f.m3 / enM3.total) * 100)}%)`}
               />
             ))}
           </div>
@@ -132,9 +133,9 @@ export default function CtpPlantaEspecies({ items, ubicados }: { items: Item[]; 
             })}
           </ul>
           <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-            % sobre <strong className="text-[var(--text-secondary)]">{enM3.total.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³</strong> · es la existencia <strong className="text-[var(--text-secondary)]">disponible en el libro</strong>, no el saldo del período de arriba
+            % sobre <strong className="text-[var(--text-secondary)]">{formatNumber(enM3.total, { max: 2 })} m³</strong> · es la existencia <strong className="text-[var(--text-secondary)]">disponible en el libro</strong>, no el saldo del período de arriba
             {otrasUnidades.length > 0 && (
-              <> · aparte hay {otrasUnidades.map((u) => `${u.cantidad.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ${u.unidad}`).join(" y ")}, que no se suman a los m³ porque son otra unidad</>
+              <> · aparte hay {otrasUnidades.map((u) => `${formatNumber(u.cantidad, { max: 2 })} ${u.unidad}`).join(" y ")}, que no se suman a los m³ porque son otra unidad</>
             )}
             {resumen.cites && <> · <strong className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">hay especies CITES</strong></>}
           </p>

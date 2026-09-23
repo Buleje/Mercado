@@ -64,6 +64,7 @@ import CtpRegistrarProduccionModal, {
 import { Btn, CtpKpisPlegables, PanelSkeleton, VistaHeader } from "./ctp-shared";
 import { sniffsRefDesdeDetalle } from "@/lib/forestal/sniffs-produccion-parse";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 const CAMPO =
   "h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
@@ -355,7 +356,7 @@ export default function CtpLotesView({
             key="volumen"
             label="Volumen apartado"
             value={`${fmtM3(resumen.volumenApartado)} m³`}
-            subValue={`${resumen.pieTablarApartado.toLocaleString("es-PE")} pt · listos para el carro`}
+            subValue={`${formatNumber(resumen.pieTablarApartado)} pt · listos para el carro`}
             icon={TreePine}
             emphasis="success"
           />,
@@ -392,7 +393,7 @@ export default function CtpLotesView({
             key="sobrante"
             label="Volumen sobrante"
             value={`${fmtM3(resumen.margenTotalM3)} m³`}
-            subValue={`${pieTablarDe(resumen.margenTotalM3).toLocaleString("es-PE")} pt · declarable desde Producción`}
+            subValue={`${formatNumber(pieTablarDe(resumen.margenTotalM3))} pt · declarable desde Producción`}
             icon={Boxes}
             emphasis={resumen.margenTotalM3 > 0 ? "success" : "neutral"}
           />,

@@ -63,7 +63,7 @@ export default function CtpVehiculoBarra({
         )}
       </div>
       {abierta && (
-        <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2">
+        <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
           {vehiculos.map((v) => (
             <li key={v.id}>
               <button

@@ -130,7 +130,7 @@ export default function FolderBulkBar({
       ref={cajaRef}
       role="group"
       aria-label="Acciones sobre las carpetas marcadas"
-      className="relative mx-1 mb-2 rounded-xl border-2 border-primary/40 bg-primary/5 p-2"
+      className="relative mx-1 mb-2 rounded-xl border-2 border-primary/40 bg-primary/5 p-3"
     >
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-white">
@@ -194,7 +194,7 @@ export default function FolderBulkBar({
       )}
 
       {panel === "emoji" && (
-        <div className="mt-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+        <div className="mt-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
           <div className="grid grid-cols-8 gap-1">
             {EMOJIS.map((e) => (
               <button
@@ -233,7 +233,7 @@ export default function FolderBulkBar({
       )}
 
       {panel === "tags" && (
-        <div className="mt-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+        <div className="mt-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
           {/* El input va en su propia fila: el sidebar es angosto y con los dos
               botones al lado quedaba de dos centímetros. */}
           <input
@@ -285,7 +285,7 @@ export default function FolderBulkBar({
       )}
 
       {panel === "color" && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
           {FOLDER_COLORS.map((c) => (
             <button
               key={c.key}

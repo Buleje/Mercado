@@ -37,6 +37,7 @@ import { TipoSelect } from "./tipo-badge";
 import Anexo04Modal from "./Anexo04Modal";
 import { Btn, I, ModalBody, ModalFooter } from "./ctp-shared";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
+import { formatNumber } from "@/lib/format";
 
 /** Una fila de la grilla: lo tipeado vive como texto hasta que se cubica. */
 interface FilaCubicada {
@@ -69,7 +70,7 @@ const nuevaFila = (base?: Partial<FilaCubicada>): FilaCubicada => ({
 });
 
 const n = (v: string) => Number(String(v).replace(",", ".")) || 0;
-const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtPt = (v: number) => formatNumber(v, 2);
 
 /** La fila, ya medida. `null` si todavía no tiene las tres dimensiones. */
 function cubicar(f: FilaCubicada): PiezaCubicada | null {

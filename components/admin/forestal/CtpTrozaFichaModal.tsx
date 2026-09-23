@@ -20,9 +20,10 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { usePlantaUbicacion } from "./hooks/use-planta-ubicacion";
+import { formatDate } from "@/lib/format";
 
 const fecha = (iso: string | null | undefined) =>
-  iso ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : null;
+  iso ? formatDate(iso, { soloFecha: true }) : null;
 const n = (v: number | null | undefined, d = 4) => (v == null ? "—" : v.toFixed(d));
 
 interface Ficha {
@@ -264,7 +265,7 @@ function Hito({ icono: Icono, ocurrio, tono = "ok", titulo, cuando, children }: 
 }) {
   const color = !ocurrio ? "var(--rule-strong)" : tono === "warn" ? "var(--data-warning-500)" : "var(--data-success-500)";
   return (
-    <li className={`flex gap-2.5 rounded-xl border p-2.5 ${ocurrio ? "border-[var(--rule-base)] bg-[var(--surface-raised)]" : "border-dashed border-[var(--rule-base)]"}`}>
+    <li className={`flex gap-2.5 rounded-xl border p-3 ${ocurrio ? "border-[var(--rule-base)] bg-[var(--surface-raised)]" : "border-dashed border-[var(--rule-base)]"}`}>
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: `color-mix(in oklab, ${color} 16%, transparent)` }}>
         <Icono className="h-4 w-4" style={{ color }} aria-hidden="true" />
       </span>

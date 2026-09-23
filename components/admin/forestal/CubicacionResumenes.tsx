@@ -45,6 +45,7 @@ import ResumenTrozas from "./ResumenTrozas";
 import Anexo04Modal from "./Anexo04Modal";
 import TablaDeTrabajo, { type FilaTrabajo } from "./resumen-tabla-trabajo";
 import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
+import { formatDateLong } from "@/lib/format";
 
 /** Botón de acción de la cabecera: mismo alto y peso que los filtros del admin. */
 const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
@@ -269,7 +270,7 @@ export default function CubicacionResumenes() {
      que falta. Las otras vistas no tendrían nada que mostrar. */
   if (rows.length === 0) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-4">
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <p className="text-base font-bold text-[var(--text-primary)]">
             {bloquesRolliza} {bloquesRolliza === 1 ? "bloque cargado" : "bloques cargados"}, sin
@@ -289,7 +290,7 @@ export default function CubicacionResumenes() {
   }
 
   return (
-    <div className="space-y-5" id="resumen-lote">
+    <div className="space-y-4" id="resumen-lote">
       {/* Al imprimir queda sólo el resumen: el admin alrededor no aporta al papel. */}
       <style>{`@media print {
         body * { visibility: hidden; }
@@ -306,7 +307,7 @@ export default function CubicacionResumenes() {
         porTipo={porTipo}
         porMedida={porMedida}
         conValor={conValor}
-        fecha={new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
+        fecha={formatDateLong(new Date())}
         acciones={
           <>
             {/*

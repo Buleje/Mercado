@@ -22,6 +22,7 @@ import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import EspecieFoto from "./EspecieFoto";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
+import { formatDateNumeric } from "@/lib/format";
 
 export interface TrozaIndividual {
   id: string;
@@ -212,7 +213,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
                   <td className={`${TD} font-mono text-xs text-[var(--text-secondary)]`}>
                     {t.ingreso.gtfNumber}
                     <span className="block text-[var(--text-tertiary)]">
-                      {new Date(t.ingreso.entryDate).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })}
+                      {formatDateNumeric(t.ingreso.entryDate, { soloFecha: true })}
                     </span>
                   </td>
                   <td className={`${TD} text-xs font-bold ${e.cls}`}>{e.label}</td>

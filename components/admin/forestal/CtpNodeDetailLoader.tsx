@@ -85,7 +85,7 @@ export default function CtpNodeDetailLoader({
 
   if (!entry) {
     return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30">
+      <div className="fixed inset-0 z-modal-3 flex items-center justify-center bg-black/30">
         <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-4 text-sm font-bold text-[var(--text-primary)] shadow-xl">
           <Loader2 className="h-5 w-5 animate-spin text-[var(--accent)]" /> Abriendo la ficha…
         </div>

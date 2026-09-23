@@ -24,10 +24,11 @@ import {
 import { CardTitle } from "@buleje/design-system";
 import type { CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import type { CtpCierresState } from "@/hooks/use-ctp-cierres";
-const fmt4 = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+import { formatDateTime, formatNumber } from "@/lib/format";
+const fmt4 = (n: number) => formatNumber(n, { min: 0, max: 4 });
 const fmtFecha = (iso: string) => {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return Number.isNaN(d.getTime()) ? "—" : formatDateTime(d);
 };
 
 export default function CtpCierrePanel({ estado }: { estado: CtpCierresState }) {

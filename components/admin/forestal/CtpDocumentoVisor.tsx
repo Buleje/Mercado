@@ -191,7 +191,7 @@ export default function CtpDocumentoVisor({
 
   return (
     <div ref={cajaRef} tabIndex={-1}
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-2 sm:p-6"
+      className="fixed inset-0 z-modal-3 flex items-center justify-center bg-black/70 p-2 sm:p-6"
       onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
       aria-modal="true"

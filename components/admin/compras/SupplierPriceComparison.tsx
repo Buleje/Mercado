@@ -2,9 +2,10 @@
 
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { useId, useRef, useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle, BarChart3, X } from "@buleje/design-system/icons";
+import { TrendingUp, TrendingDown, AlertTriangle, BarChart3, X, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency, formatDate, formatDateShort } from "@/lib/format";
 
 type Comparacion = {
   supplierId: string;
@@ -136,7 +137,7 @@ export function QuotationComparator({ orders, suppliers }: {
                   )}
                 >
                   <span className="font-semibold">{sup?.name || oc.supplierId}</span>
-                  <span className="text-[var(--text-tertiary)] ml-2">S/{Number(oc.total).toFixed(2)} · {oc.items.length} items · {new Date(oc.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
+                  <span className="text-[var(--text-tertiary)] ml-2">{formatCurrency(Number(oc.total))} · {oc.items.length} items · {formatDateShort(oc.createdAt)}</span>
                 </button>
               );
             })}
@@ -171,14 +172,14 @@ export function QuotationComparator({ orders, suppliers }: {
                         const isBest = best && best.ocId === oc.id;
                         return (
                           <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
-                            {item ? `S/ ${Number(item.unitCost).toFixed(2)}` : "—"}
+                            {item ? `${formatCurrency(Number(item.unitCost))}` : "—"}
                           </td>
                         );
                       })}
                       <td className="py-2 px-2 text-center">
                         {best && (
-                          <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                            {selectedOCs.find(oc => oc.id === best.ocId)?.supplierName?.split(" ")[0] ?? ""} ✓
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+                            {selectedOCs.find(oc => oc.id === best.ocId)?.supplierName?.split(" ")[0] ?? ""} <Check className="h-3.5 w-3.5" aria-hidden />
                           </span>
                         )}
                       </td>
@@ -193,13 +194,13 @@ export function QuotationComparator({ orders, suppliers }: {
                     const isBest = oc.id === bestTotalOcId;
                     return (
                       <td key={oc.id} className={cn("py-2 px-2 text-right", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
-                        S/ {total.toFixed(2)}
+                        {formatCurrency(total)}
                       </td>
                     );
                   })}
                   <td className="py-2 px-2 text-center">
-                    <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                      {selectedOCs.find(oc => oc.id === bestTotalOcId)?.supplierName?.split(" ")[0] ?? ""} ✓
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+                      {selectedOCs.find(oc => oc.id === bestTotalOcId)?.supplierName?.split(" ")[0] ?? ""} <Check className="h-3.5 w-3.5" aria-hidden />
                     </span>
                   </td>
                 </tr>
@@ -211,7 +212,7 @@ export function QuotationComparator({ orders, suppliers }: {
               <div className="mt-3 flex items-center gap-2 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-2.5">
                 <TrendingDown className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
                 <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                  Ahorro vs mas caro: S/ {savings.toFixed(2)}
+                  Ahorro vs mas caro: {formatCurrency(savings)}
                 </span>
               </div>
             )}
@@ -220,14 +221,6 @@ export function QuotationComparator({ orders, suppliers }: {
       </div>
     </div>
   );
-}
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-  } catch {
-    return iso;
-  }
 }
 
 function SkeletonTable() {
@@ -316,7 +309,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                     )}
                   </td>
                   <td className="py-2 px-2 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                    S/ {Number(c.lastPrice).toFixed(2)}
+                    {formatCurrency(Number(c.lastPrice))}
                   </td>
                   <td className="py-2 px-2 text-right text-[var(--text-secondary)] dark:text-muted text-xs">
                     {formatDate(c.lastDate)}

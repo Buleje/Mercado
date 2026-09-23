@@ -43,6 +43,7 @@ import { useTarifaAserrio } from "./hooks/use-tarifa-aserrio";
 import CtpCobroAserrio from "./CtpCobroAserrio";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { UNIT_LABELS, type CtpEntry } from "./ctp-section-shared";
+import { formatCurrency } from "@/lib/format";
 
 interface PaqueteGuardado {
   codigo: string;
@@ -274,9 +275,9 @@ export default function CtpCobrarEnTandaModal({
   function cerrarConResultado() {
     onListo(
       `Se cobraron ${cobradas.length} de ${corridas.length} corridas`,
-      `S/ ${Number(resumen.importeCobrado).toFixed(2)} en total` +
+      `${formatCurrency(Number(resumen.importeCobrado))} en total` +
         (resumen.dadasDeBaja > 0
-          ? ` · se dejaron de cobrar S/ ${Number(resumen.importeDadoDeBaja).toFixed(2)} en ${resumen.dadasDeBaja}`
+          ? ` · se dejaron de cobrar ${formatCurrency(Number(resumen.importeDadoDeBaja))} en ${resumen.dadasDeBaja}`
           : "") +
         (noCobradas.length > 0 ? ` · ${noCobradas.length} sin cobrar` : ""),
       noCobradas.map((f) => f.id),
@@ -373,7 +374,7 @@ export default function CtpCobrarEnTandaModal({
                     <li key={f.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                       <span className="font-bold text-[var(--text-primary)]">N° {f.lineNo}</span>
                       <span className="font-mono font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                        S/ {(f.importe ?? 0).toFixed(2)}
+                        {formatCurrency(f.importe ?? 0)}
                       </span>
                     </li>
                   ))}
@@ -391,7 +392,7 @@ export default function CtpCobrarEnTandaModal({
                     <li key={f.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                       <span className="font-bold text-[var(--text-primary)]">N° {f.lineNo}</span>
                       <span className="font-mono font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                        Se dejó de cobrar S/ {(f.importeDadoDeBaja ?? 0).toFixed(2)}
+                        Se dejó de cobrar {formatCurrency(f.importeDadoDeBaja ?? 0)}
                       </span>
                     </li>
                   ))}
@@ -430,7 +431,7 @@ export default function CtpCobrarEnTandaModal({
             {esDejarDeCobrar && (
               <p className="mb-3 flex items-start gap-1.5 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-3 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                Vas a dejar de cobrar S/ {importeYaCobrado.toFixed(2)} en {corridasConCobro.length}{" "}
+                Vas a dejar de cobrar {formatCurrency(importeYaCobrado)} en {corridasConCobro.length}{" "}
                 {corridasConCobro.length === 1 ? "corrida" : "corridas"}
                 {nombresActuales.length === 1
                   ? ` a ${nombresActuales[0]}`
@@ -489,7 +490,7 @@ export default function CtpCobrarEnTandaModal({
                           {c.duenoParteId ? (c.titularNombre?.trim() || "Con dueño") : "Madera del centro"}
                         </td>
                         <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
-                          {c.duenoParteId ? `S/ ${Number(c.aserrioImporte ?? 0).toFixed(2)}` : "—"}
+                          {c.duenoParteId ? `${formatCurrency(Number(c.aserrioImporte ?? 0))}` : "—"}
                         </td>
                         <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                           {sinPt ? (
@@ -501,7 +502,7 @@ export default function CtpCobrarEnTandaModal({
                               No se pudo leer
                             </span>
                           ) : valor.duenoParteId && cot ? (
-                            `S/ ${Number(cot.importe).toFixed(2)}`
+                            `${formatCurrency(Number(cot.importe))}`
                           ) : (
                             "—"
                           )}
@@ -516,7 +517,7 @@ export default function CtpCobrarEnTandaModal({
                       <td className="px-3 py-2" colSpan={5}>
                         Total{fallaronPaquetes.size > 0 || sinPtIds.size > 0 ? " (sin las que no se pueden cotizar acá)" : ""}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums">S/ {totalPreview.toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right font-mono tabular-nums">{formatCurrency(totalPreview)}</td>
                     </tr>
                   </tfoot>
                 )}

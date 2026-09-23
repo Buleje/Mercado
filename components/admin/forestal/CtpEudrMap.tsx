@@ -13,7 +13,8 @@
  */
 import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Layers, Warehouse, Camera } from "@buleje/design-system/icons";
+import { Layers, Warehouse, Camera, CheckCircle2, AlertTriangle } from "@buleje/design-system/icons";
+import { leafletIconSvg } from "@/lib/leaflet-icon-html";
 import { BRAND_GEO } from "@/lib/geo";
 import { origenGeolocalizado, type OrigenGeo, type OrigenRow } from "@/lib/forestal/eudr-types";
 
@@ -24,6 +25,9 @@ const C_DF = "#16a34a"; // geolocalizado + sin deforestación
 const C_GEO = "#d97706"; // geolocalizado, sin atestar
 const C_PLANT = "#0d9488"; // planta (teal accent)
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
+// Antes ✓/⚠ de texto (se veían distinto por SO/navegador) — mismo ícono Lucide del panel.
+const DF_ICON_SVG = leafletIconSvg(CheckCircle2, { size: 13, color: "#15803d" });
+const NO_DF_ICON_SVG = leafletIconSvg(AlertTriangle, { size: 13, color: "#b45309" });
 
 function popupHtml(o: OrigenRow, g: OrigenGeo): string {
   const df = g.deforestationFree === true;
@@ -31,7 +35,7 @@ function popupHtml(o: OrigenRow, g: OrigenGeo): string {
     <div style="font-weight:800;font-size:13px">${esc(o.originCode)}</div>
     <div style="color:#475569">${esc(o.originType ?? "—")}${o.region ? " · " + esc(o.region) : ""}</div>
     <div>${o.ingresos} ingreso${o.ingresos === 1 ? "" : "s"}</div>
-    <div style="color:${df ? "#15803d" : "#b45309"};font-weight:700">${df ? "✓ sin deforestación" : "⚠ falta atestar"}</div>
+    <div style="display:flex;align-items:center;gap:4px;color:${df ? "#15803d" : "#b45309"};font-weight:700">${df ? DF_ICON_SVG : NO_DF_ICON_SVG}${df ? "sin deforestación" : "falta atestar"}</div>
   </div>`;
 }
 

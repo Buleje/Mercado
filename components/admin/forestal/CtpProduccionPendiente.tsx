@@ -38,11 +38,12 @@ import CtpRegistrarProduccionModal, {
 } from "./CtpRegistrarProduccionModal";
 import { Btn } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDateNumeric } from "@/lib/format";
 
 const fmtDia = (iso: string | null) => {
   if (!iso) return "—";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("es-PE", { timeZone: "UTC" });
+  return Number.isNaN(d.getTime()) ? "—" : formatDateNumeric(d, { soloFecha: true });
 };
 
 /** El día de la corrida en `AAAA-MM-DD`, que es lo que el modal muestra. */

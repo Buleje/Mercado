@@ -10,7 +10,7 @@
  */
 import { useMemo, useState } from "react";
 import {
-  AlertTriangle, CheckCircle2, Download, FileSpreadsheet, FileText, Loader2, Lock,
+  AlertTriangle, Ban, CheckCircle2, Download, FileSpreadsheet, FileText, Loader2, Lock,
 } from "@buleje/design-system/icons";
 import { exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
 import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
@@ -148,13 +148,17 @@ export default function CtpCierreAsistido({ onIr, cierres }: {
           <ul className="mt-1.5 space-y-1 text-[length:var(--ts-2xs)]">
             {revision.impedimentos.map((t) => (
               <li key={t} className="flex gap-1.5 font-bold">
-                <span role="img" aria-label="Impide cerrar" title="Impide cerrar">⛔</span>
+                <span role="img" aria-label="Impide cerrar" title="Impide cerrar">
+                  <Ban className="h-4 w-4 shrink-0" aria-hidden />
+                </span>
                 <span>{t}</span>
               </li>
             ))}
             {revision.observaciones.map((t) => (
               <li key={t} className="flex gap-1.5">
-                <span role="img" aria-label="No frena el cierre" title="No frena el cierre, pero conviene mirarlo">⚠️</span>
+                <span role="img" aria-label="No frena el cierre" title="No frena el cierre, pero conviene mirarlo">
+                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+                </span>
                 <span>{t}</span>
               </li>
             ))}

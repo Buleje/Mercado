@@ -17,6 +17,7 @@ import { ChevronRight, FileSignature, Search } from "@buleje/design-system/icons
 import { DataTable, EmptyState } from "@buleje/design-system";
 import { resumirBalance, type BalanceContrato, type Contrato } from "@/lib/forestal/contratos";
 import { ESTADO_CLASE, ESTADO_LABEL, soles, TIPO_LABEL, vigenciaTexto } from "./contratos-ui";
+import { formatNumber } from "@/lib/format";
 
 /* Sin constantes de padding ni de tipografía: `DataTable` pinta `thead`, `td`
    y `tfoot` con variantes descendientes (`[&_tbody_td]:px-3`) que le GANAN por
@@ -64,7 +65,7 @@ function CeldasDePlata({ balance }: { balance?: BalanceContrato }) {
         {m3 > 0 ? (
           <>
             <span className="whitespace-nowrap font-mono font-bold tabular-nums text-[var(--text-primary)]">
-              {m3.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³
+              {formatNumber(m3, { max: 3 })} m³
             </span>
             <span className="block whitespace-nowrap text-xs text-[var(--text-tertiary)]">
               {balance.madera.documentos} {balance.madera.documentos === 1 ? "ingreso" : "ingresos"}
@@ -118,7 +119,7 @@ function CeldasDePlata({ balance }: { balance?: BalanceContrato }) {
             </span>
             {r.margenPct != null && (
               <span className="block whitespace-nowrap text-xs text-[var(--text-tertiary)]">
-                {r.margenPct.toLocaleString("es-PE", { maximumFractionDigits: 1 })}% de lo vendido
+                {formatNumber(r.margenPct, { max: 1 })}% de lo vendido
               </span>
             )}
           </>

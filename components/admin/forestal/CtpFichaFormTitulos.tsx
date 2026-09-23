@@ -123,7 +123,7 @@ export default function CtpFichaFormTitulos({
           {draft.titulos.map((t, i) => (
             <div
               key={i}
-              className={`rounded-xl border-2 p-2 ${i === 0 ? "border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/10" : "border-[var(--rule-base)]"}`}
+              className={`rounded-xl border-2 p-3 ${i === 0 ? "border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/10" : "border-[var(--rule-base)]"}`}
             >
               {i === 0 && (
                 <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-muted)] px-2.5 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent-dark)] dark:bg-[var(--accent)]/15 dark:text-[var(--accent)]">

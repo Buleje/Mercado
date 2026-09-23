@@ -22,6 +22,7 @@ import type { LoteConMadera } from "./ctp-entries-acciones";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { formatNumber } from "@/lib/format";
 
 type Orden = "antiguedad" | "volumen";
 
@@ -99,7 +100,7 @@ function FilaLote({
       <span className="shrink-0 text-right">
         <span className="block font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(volumen)} m³</span>
         <span className="block text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">
-          {pieTablarDe(volumen).toLocaleString("es-PE")} pt
+          {formatNumber(pieTablarDe(volumen))} pt
         </span>
       </span>
     </button>

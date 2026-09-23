@@ -47,6 +47,7 @@ import MenuContextual from "./hoja/MenuContextual";
 import FiltroColumna from "./hoja/FiltroColumna";
 import { useEditorHoja } from "./hoja/useEditorHoja";
 import type JSZipType from "jszip";
+import { formatTime } from "@/lib/format";
 
 type Estado = "cargando" | "listo" | "guardando" | "error";
 
@@ -567,7 +568,7 @@ function EditorCargado({
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-[var(--text-primary)]">{nombre}</p>
             <p className="text-xs text-[var(--text-tertiary)]">
-              {sucio ? "Cambios sin guardar" : guardadoEn ? `Guardado ${guardadoEn.toLocaleTimeString("es-PE")} · nueva versión en tu panel` : "Sin cambios"}
+              {sucio ? "Cambios sin guardar" : guardadoEn ? `Guardado ${formatTime(guardadoEn, { segundos: true })} · nueva versión en tu panel` : "Sin cambios"}
             </p>
           </div>
         </div>

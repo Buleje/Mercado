@@ -16,13 +16,14 @@ import { AlertCircle, ArrowDownRight, ArrowUpRight, Scale } from "@buleje/design
 import { LoadingState, DataTable } from "@buleje/design-system";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDate } from "@/lib/format";
 
 interface Mov { fecha: string; tipo: "ingreso" | "consumo"; doc: string; entra: number; sale: number; saldo: number }
 interface Kardex { especie: string; movimientos: Mov[]; ingresoTotal: number; consumoTotal: number; saldo: number }
 
 const n4 = (v: number) => fmtM3(v);
 // entryDate es date-only a medianoche UTC → sin timeZone:UTC se corre un día.
-const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
+const fmtDate = (iso: string) => { try { return formatDate(iso, { soloFecha: true }); } catch { return iso; } };
 
 export default function CtpKardexModal({ especie, period, onClose }: { especie: string; period: CtpPeriod; onClose: () => void }) {
   const [k, setK] = useState<Kardex | null>(null);

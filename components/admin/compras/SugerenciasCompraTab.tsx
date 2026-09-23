@@ -11,6 +11,7 @@ import { SectionTitle, StatCard } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 type Urgency = "CRITICO" | "URGENTE" | "PLANIFICAR";
 
@@ -392,7 +393,7 @@ export default function SugerenciasCompraTab() {
   const nadaQueComprar = sugerencias.length === 0;
 
   return (
-    <div className="space-y-5 pb-32">
+    <div className="space-y-4 pb-32">
       {/* ─── Hero header ─────────────────────────────────────────────── */}
       <section className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--accent-soft)]/40 dark:from-[var(--color-card)] dark:to-[var(--accent-muted)]/20 px-5 py-4 flex items-center gap-4 flex-wrap">
         <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 shrink-0">
@@ -516,14 +517,14 @@ export default function SugerenciasCompraTab() {
         <StatCard label="A planificar" value={stats.counts.PLANIFICAR} icon={Package} emphasis="success" subValue="Hay margen" />
         <StatCard
           label="Costo estimado"
-          value={resumen && resumen.costoEstimado > 0 ? `S/${Math.round(resumen.costoEstimado).toLocaleString("es-PE")}` : "—"}
+          value={resumen && resumen.costoEstimado > 0 ? `S/${formatNumber(Math.round(resumen.costoEstimado))}` : "—"}
           icon={ShoppingCart}
           // Un «—» sin explicación deja al usuario sin saber si es cero o si
           // falta el dato. El total sólo cubre los productos con precio.
           subValue={
             resumen && resumen.sinPrecio > 0
-              ? `${stats.totalSuggested.toLocaleString("es-PE")} unidades · sin precio en ${resumen.sinPrecio}`
-              : `${stats.totalSuggested.toLocaleString("es-PE")} unidades`
+              ? `${formatNumber(stats.totalSuggested)} unidades · sin precio en ${resumen.sinPrecio}`
+              : `${formatNumber(stats.totalSuggested)} unidades`
           }
         />
       </div>
@@ -749,7 +750,7 @@ export default function SugerenciasCompraTab() {
                           </span>
                           {lineTotal != null && (
                             <span className="ml-auto text-sm font-bold text-[var(--text-primary)] tabular-nums">
-                              ≈ S/{lineTotal.toFixed(2)}
+                              ≈ {formatCurrency(lineTotal)}
                             </span>
                           )}
                         </div>
@@ -769,7 +770,7 @@ export default function SugerenciasCompraTab() {
                           )}
                           {s.lastPrice != null && (
                             <span className="ml-auto text-[var(--text-tertiary)] tabular-nums">
-                              Último S/{Number(s.lastPrice).toFixed(2)}
+                              Último {formatCurrency(Number(s.lastPrice))}
                             </span>
                           )}
                         </div>
@@ -827,7 +828,7 @@ export default function SugerenciasCompraTab() {
                 {selected.size} {selected.size === 1 ? "producto" : "productos"} · {selectedStats.qty} {selectedStats.qty === 1 ? "unidad" : "unidades"}
               </p>
               <p className="text-xs text-[var(--text-secondary)] font-medium truncate">
-                {selectedStats.cost > 0 ? `≈ S/${Math.round(selectedStats.cost).toLocaleString("es-PE")} · ` : ""}
+                {selectedStats.cost > 0 ? `≈ S/${formatNumber(Math.round(selectedStats.cost))} · ` : ""}
                 {selectedStats.supplierGroups} {selectedStats.supplierGroups === 1 ? "orden" : "órdenes"} por proveedor
               </p>
             </div>

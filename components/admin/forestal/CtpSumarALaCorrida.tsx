@@ -23,6 +23,7 @@ import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 export default function CtpSumarALaCorrida({
   lineNo,
@@ -90,7 +91,7 @@ export default function CtpSumarALaCorrida({
         {elegidas.length > 0 && (
           <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
             {elegidas.length} pza · {fmtM3(volumen)} m³ ·{" "}
-            {pieTablarDe(volumen).toLocaleString("es-PE")} pt
+            {formatNumber(pieTablarDe(volumen))} pt
           </span>
         )}
         {/**

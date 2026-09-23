@@ -10,7 +10,7 @@
  * inventario / Anular) full-width. Misma data y mismos handlers que la tabla.
  */
 
-import { AlertCircle, Boxes, Calendar, Coins, Download, FileText, HandCoins, Link2, Paperclip, PackagePlus, Truck } from "@buleje/design-system/icons";
+import { AlertCircle, Boxes, Calendar, Coins, Download, FileText, HandCoins, Link2, Paperclip, PackagePlus, Truck, Check } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
@@ -19,6 +19,7 @@ import type { CtpEntry, CtpSection } from "./CtpSectionViews";
 import { UNIT_LABELS } from "./ctp-section-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { esInventarioDeApertura } from "@/lib/forestal/lotes-aserrio";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 interface CtpSeccionCardMobileProps {
   entry: CtpEntry;
@@ -49,7 +50,7 @@ interface CtpSeccionCardMobileProps {
 const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
 // timeZone UTC: entryDate es date-only a medianoche UTC (off-by-one en Lima).
 const fmtDate = (iso: string) => {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; }
+  try { return formatDate(iso, { soloFecha: true }); } catch { return iso; }
 };
 
 export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul, ampliable, onAmpliar, onPapeles, onGuia, onCobrarAserrio, marcadaCobro, onMarcarCobro }: CtpSeccionCardMobileProps) {
@@ -177,7 +178,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
               <Row
                 icon={Coins}
                 label="Aserrío cobrado"
-                value={`S/ ${Number(e.aserrioImporte).toFixed(2)}`}
+                value={`${formatCurrency(Number(e.aserrioImporte))}`}
               />
             )}
           </>
@@ -229,7 +230,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
                 ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
             >
-              <FileText className="h-3.5 w-3.5" /> Anexo 04{anexoEmitido ? " ✓" : ""}
+              <FileText className="h-3.5 w-3.5" /> Anexo 04{anexoEmitido && <Check className="h-3.5 w-3.5" aria-hidden />}
             </button>
           )}
           {/* Guía de transporte y papeles del despacho — existían sólo en la
@@ -244,7 +245,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
                 ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
             >
-              <Truck className="h-3.5 w-3.5" /> Guía{estadoDeGuia(e.gtfNumber) === "emitida" ? " ✓" : ""}
+              <Truck className="h-3.5 w-3.5" /> Guía{estadoDeGuia(e.gtfNumber) === "emitida" && <Check className="h-3.5 w-3.5" aria-hidden />}
             </button>
           )}
           {section === "despacho" && onPapeles && (

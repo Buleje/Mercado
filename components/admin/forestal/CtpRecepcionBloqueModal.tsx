@@ -31,6 +31,7 @@ import {
 import { loQueFaltaRecibir } from "@/lib/forestal/recepcion-guias";
 import { useRecepcionBloque, type ResultadoBloque } from "@/hooks/use-recepcion-bloque";
 import { Btn, ModalBody, ModalFooter, formatDate } from "./ctp-shared";
+import { formatCurrency } from "@/lib/format";
 
 /** Una guía como la ve este modal: la del libro más su papel y su fecha. */
 export interface GuiaParaBloque extends GuiaDelBloque {
@@ -51,7 +52,7 @@ const hoyLocal = () => {
 };
 
 const soles = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${formatCurrency(n)}`;
 
 export default function CtpRecepcionBloqueModal({
   guias,

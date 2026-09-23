@@ -16,13 +16,14 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { filtrarCubicaciones, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { m3DesdePt } from "@/lib/forestal/cubicacion";
+import { formatDate, formatNumber } from "@/lib/format";
 
-const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtM3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-const soles = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtPt = (v: number) => formatNumber(v, 2);
+const fmtM3 = (v: number) => formatNumber(v, 3);
+const soles = (v: number) => formatNumber(v, 2);
 // date-only con timeZone UTC: sin eso, en Lima la fecha se corre un día.
 const fmtFecha = (f: string) =>
-  new Date(`${f}T12:00:00Z`).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+  formatDate(`${f}T12:00:00Z`, { soloFecha: true });
 
 export default function CubicacionesGuardadas({
   onAbrir, onCerrar, recargarToken,

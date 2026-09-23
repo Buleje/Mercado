@@ -10,11 +10,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from "recharts";
 import { ShoppingCart, Package, Activity, RefreshCw, TrendingUp, TrendingDown, Minus, Boxes, FileSpreadsheet, Image as ImageIcon } from "@buleje/design-system/icons";
+import { formatNumber } from "@/lib/format";
 
 interface Punto { mes: string; precioCompra: number | null; precioVenta: number | null; kgCompra: number; kgVenta: number }
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const mesLabel = (m: string) => { const [y, mm] = m.split("-"); return `${MESES[Number(mm) - 1] ?? mm} ${(y ?? "").slice(2)}`; };
-const n0 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 0 });
+const n0 = (v: number) => formatNumber(v, { max: 0 });
 
 type Metric = "kg" | "valor";
 const RANGES = [{ k: "3M", n: 3 }, { k: "6M", n: 6 }, { k: "1A", n: 12 }, { k: "Todo", n: 9999 }] as const;

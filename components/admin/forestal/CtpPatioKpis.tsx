@@ -27,8 +27,9 @@ import { DIAS_PATIO_ANEJO, type ResumenPatio } from "@/lib/forestal/patio-resume
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { pieTablarAserrableDe } from "@/lib/forestal/cubicacion";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
+import { formatNumber } from "@/lib/format";
 
-const nf = (n: number) => n.toLocaleString("es-PE");
+const nf = (n: number) => formatNumber(n);
 
 export default function CtpPatioKpis({
   resumen,

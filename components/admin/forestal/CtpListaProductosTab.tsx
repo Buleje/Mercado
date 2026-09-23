@@ -23,6 +23,7 @@ import {
 import { Btn, Field, I, productLabel } from "./ctp-shared";
 import { Bloque } from "./ctp-guia-bloques";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
+import { formatNumber } from "@/lib/format";
 
 const CELDA_NUM =
   "h-9 w-24 rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
@@ -206,7 +207,7 @@ export default function CtpListaProductosTab({
           {filas.length > 0 && (
             <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
               <td colSpan={4} className="px-3 py-2.5 text-[var(--text-primary)]">Total volumen movilizado</td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{piezas.toLocaleString("es-PE")}</td>
+              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{formatNumber(piezas)}</td>
               <td colSpan={4} />
               <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{total.toFixed(4)}</td>
               <td className="px-3 py-2.5 text-xs font-normal text-[var(--text-tertiary)]">{MEDIDA[unidad] ?? unidad}</td>
@@ -215,7 +216,7 @@ export default function CtpListaProductosTab({
               <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
                 {ventaTotal == null
                   ? <span className="text-xs font-normal text-[var(--text-tertiary)]">—</span>
-                  : ventaTotal.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  : formatNumber(ventaTotal, 2)}
               </td>
               <td />
             </tr>
@@ -247,7 +248,7 @@ export default function CtpListaProductosTab({
               <tr key={`${r.especie}|${r.producto}`}>
                 <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie}</td>
                 <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">{productLabel(r.producto)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.cantidad.toLocaleString("es-PE")}</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(r.cantidad)}</td>
                 <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{r.volumen.toFixed(4)}</td>
               </tr>
             ))}

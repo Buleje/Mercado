@@ -32,6 +32,7 @@ import {
 import { descargarArchivo } from "@/lib/documentos/archivo-remoto";
 import AvisoArchivo from "./AvisoArchivo";
 import FilaBloqueTexto from "./FilaBloqueTexto";
+import { formatNumber, formatTime } from "@/lib/format";
 
 type Estado = "cargando" | "listo" | "guardando" | "error";
 
@@ -324,7 +325,7 @@ export default function DocumentoTextoEditor({
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-[var(--text-primary)]">{nombre}</p>
             <p className="text-xs text-[var(--text-tertiary)]">
-              {sucio ? "Cambios sin guardar" : guardadoEn ? `Guardado ${guardadoEn.toLocaleTimeString("es-PE")} · nueva versión en tu panel` : "Sin cambios"}
+              {sucio ? "Cambios sin guardar" : guardadoEn ? `Guardado ${formatTime(guardadoEn, { segundos: true })} · nueva versión en tu panel` : "Sin cambios"}
             </p>
           </div>
         </div>
@@ -400,8 +401,8 @@ export default function DocumentoTextoEditor({
 
       <footer className="flex items-center justify-end gap-4 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
         <span>{bloques.length === 1 ? "1 párrafo" : `${bloques.length} párrafos`}</span>
-        <span>{palabras === 1 ? "1 palabra" : `${palabras.toLocaleString("es-PE")} palabras`}</span>
-        <span>{caracteres.toLocaleString("es-PE")} caracteres</span>
+        <span>{palabras === 1 ? "1 palabra" : `${formatNumber(palabras)} palabras`}</span>
+        <span>{formatNumber(caracteres)} caracteres</span>
       </footer>
     </div>
   );

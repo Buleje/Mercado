@@ -33,6 +33,7 @@ import { StatCard, type StatCardEmphasis } from "@buleje/design-system";
 import { ChevronDown } from "@buleje/design-system/icons";
 import type { LucideIcon } from "@buleje/design-system/icons";
 import { variacionPct } from "@/lib/forestal/movimiento-libro";
+import { formatNumber } from "@/lib/format";
 
 /**
  * Qué quiere decir que este número suba.
@@ -279,7 +280,7 @@ export function DesgloseSimple({
               <span className="shrink-0 tabular-nums text-[var(--text-tertiary)]">
                 {hayVolumen && typeof f.volumeM3 === "number"
                   ? `${Number(f.volumeM3).toFixed(2)} ${unidad}`
-                  : f.count.toLocaleString("es-PE")}
+                  : formatNumber(f.count)}
                 <span className="ml-1.5">{pct.toFixed(0)} %</span>
               </span>
             </span>

@@ -20,11 +20,12 @@ import { Scale } from "@buleje/design-system/icons";
 import { RENDIMIENTO_PLAUSIBLE_MIN } from "@/lib/forestal/loctp-catalogos";
 import { TOPE_RENDIMIENTO_PCT } from "@/lib/forestal/vincular-produccion";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
+import { formatNumber } from "@/lib/format";
 /* Dos decimales y no los tres de `fmtM3`: son totales de PERÍODO, y al lado
    vive la tarjeta «En planta» que siempre mostró dos. El mismo número escrito
    de dos formas a diez centímetros se lee como dos números distintos. Los tres
    decimales quedan donde miden una troza, que es donde esa precisión existe. */
-const n2 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const n2 = (v: number) => formatNumber(v, 2);
 
 /** Hasta dónde llega la escala del gauge. El techo (56) tiene que caer adentro
  *  con aire a la derecha: si el tope quedara pegado al borde, «pasarse» no se
@@ -211,8 +212,8 @@ export default function CtpBalanceProduccion({
 
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[length:var(--ts-2xs)]">
           <span className="text-[var(--text-secondary)] tabular-nums">
-            {piezas > 0 ? `${piezas.toLocaleString("es-PE")} piezas · ` : ""}
-            {pieTablarDe(consumido).toLocaleString("es-PE")} pt a la sierra
+            {piezas > 0 ? `${formatNumber(piezas)} piezas · ` : ""}
+            {formatNumber(pieTablarDe(consumido))} pt a la sierra
           </span>
           {mermaSobre > 0 ? (
             <span

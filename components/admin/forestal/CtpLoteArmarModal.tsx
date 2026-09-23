@@ -37,6 +37,7 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import CtpPegarSniffsLote from "./CtpPegarSniffsLote";
 import { CtpEspecieInput, CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
 import type { DetalleProduccionSniffs } from "@/lib/forestal/sniffs-produccion-parse";
+import { formatNumber } from "@/lib/format";
 
 export interface LoteProgramado {
   speciesCommon: string;
@@ -265,7 +266,7 @@ export default function CtpLoteArmarModal({
             modo === "inventario"
               ? "El siguiente paso pide los paquetes que produjo esta madera"
               : elegida
-                ? `Disponible de ${elegida.nombre}: ${elegida.piezas} pza · ${fmtM3(elegida.volumen)} m³ · ${pieTablarDe(elegida.volumen).toLocaleString("es-PE")} pt`
+                ? `Disponible de ${elegida.nombre}: ${elegida.piezas} pza · ${fmtM3(elegida.volumen)} m³ · ${formatNumber(pieTablarDe(elegida.volumen))} pt`
                 : especie.trim()
                   /* Especie del catálogo sin madera en el patio: se puede
                      programar igual —la guía llega mañana— pero se dice, o el

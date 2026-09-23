@@ -22,11 +22,12 @@ import { marcasDeZona } from "@/lib/forestal/planta-marcadores";
 import { etiquetaCorta, MARCA_CSS, marcaHtml, marcaSobranteHtml } from "@/lib/forestal/planta-iconos";
 
 import { Btn, CampoGrid, Field, I, MODAL_BODY, ModalBody, ModalFooter } from "./ctp-shared";
+import { formatNumber } from "@/lib/format";
 
 export type { ZonaInv };
 
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
-const fmtArea = (m2: number) => (m2 >= 10000 ? `${(m2 / 10000).toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : `${Math.round(m2).toLocaleString("es-PE")} m²`);
+const fmtArea = (m2: number) => (m2 >= 10000 ? `${formatNumber(m2 / 10000, { max: 2 })} ha` : `${formatNumber(Math.round(m2))} m²`);
 
 /** HTML de la etiqueta sobre cada zona: código + tipo + área + inventario ubicado. */
 function labelHtml(z: PlantaZona, inv?: ZonaInv, arriba = false): string {
@@ -34,7 +35,7 @@ function labelHtml(z: PlantaZona, inv?: ZonaInv, arriba = false): string {
   const header = `<div style="font-weight:800;font-size:12px">${escapeHtml(z.codigo)}${z.areaM2 != null ? ` · ${fmtArea(z.areaM2)}` : ""}</div><div style="font-weight:700;color:${meta.ring}">${escapeHtml(meta.label)}</div>`;
   const sub = z.nombre ? `<div style="opacity:.85">${escapeHtml(z.nombre)}</div>` : "";
   const parts: string[] = [];
-  if (inv?.trozas) parts.push(`${inv.trozas} ${inv.trozas === 1 ? "troza" : "trozas"} · ${inv.m3.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³`);
+  if (inv?.trozas) parts.push(`${inv.trozas} ${inv.trozas === 1 ? "troza" : "trozas"} · ${formatNumber(inv.m3, { max: 2 })} m³`);
   if (inv?.productos) parts.push(`${inv.productos} ${inv.productos === 1 ? "producto" : "productos"}`);
   if (inv?.despachos) parts.push(`${inv.despachos} ${inv.despachos === 1 ? "despacho" : "despachos"}`);
   // Color FIJO y no `var(--accent-glow)`: ese token vale `#00a0a047` —un teal
@@ -683,7 +684,7 @@ export default function CtpPlantaMapa({
   const tiposPresentes = ZONA_TIPOS.filter((t) => zonas.some((z) => z.tipo === t.tipo));
 
   return (
-    <div className={fullscreen ? "fixed inset-0 z-[45] flex flex-col gap-3 bg-[var(--surface-canvas)] p-3 sm:p-4" : "space-y-3"}>
+    <div className={fullscreen ? "fixed inset-0 z-dropdown flex flex-col gap-3 bg-[var(--surface-canvas)] p-3 sm:p-4" : "space-y-3"}>
       <div className="flex flex-wrap items-center gap-1.5">
         {drawing ? (
           <>
@@ -864,7 +865,7 @@ function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; 
         </ModalFooter>
       }
     >
-      <ModalBody className="space-y-5">
+      <ModalBody className="space-y-4">
         <div>
           <p className="mb-1 text-sm font-bold text-[var(--text-primary)]">Crear zona por coordenadas</p>
           <p className="mb-2 text-xs text-[var(--text-tertiary)]">Pega los vértices, una coordenada por línea: <span className="font-mono">latitud, longitud</span>. Se cierra el polígono solo.</p>

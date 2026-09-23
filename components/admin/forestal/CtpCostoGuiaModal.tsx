@@ -26,11 +26,12 @@ import {
   textoDeOrigen,
   type IngresoValorizable,
 } from "@/lib/forestal/costo-sugerido";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 const CAMPO =
   "h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-base tabular-nums text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
-const soles = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const soles = (n: number) => `${formatCurrency(n)}`;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Lo que se necesita de la guía recién recepcionada. */
@@ -116,7 +117,7 @@ export default function CtpCostoGuiaModal({
       variant="default"
       icon={Coins}
       title="¿Cuánto pagaste por esta guía?"
-      description={`${guia.gtfNumber}${guia.providerName ? ` · ${guia.providerName}` : ""} · ${guia.especie ?? "sin especie"} · ${vol.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³`}
+      description={`${guia.gtfNumber}${guia.providerName ? ` · ${guia.providerName}` : ""} · ${guia.especie ?? "sin especie"} · ${formatNumber(vol, { max: 3 })} m³`}
       footer={
         <ModalFooter error={error}>
           {/* «Después» no es cancelar: la guía YA se recepcionó. El libro admite
@@ -204,7 +205,7 @@ export default function CtpCostoGuiaModal({
             <ul className="space-y-1">
               {reparto.map((a) => (
                 <li key={a.id} className="flex items-baseline justify-between gap-2 text-[var(--text-secondary)]">
-                  <span className="font-mono tabular-nums">{a.volumeM3.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³</span>
+                  <span className="font-mono tabular-nums">{formatNumber(a.volumeM3, { max: 3 })} m³</span>
                   <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{soles(a.costoTotal)}</span>
                 </li>
               ))}

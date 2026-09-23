@@ -36,8 +36,9 @@ import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { Btn } from "./ctp-shared";
+import { formatCurrency } from "@/lib/format";
 
-const soles = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const soles = (n: number) => `${formatCurrency(n)}`;
 
 /** Cómo se fue el camión: todo a cuenta, todo pagado, o una parte. */
 type Cobro = "cuenta" | "todo" | "parcial";

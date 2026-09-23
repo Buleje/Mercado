@@ -5,6 +5,7 @@ import { Sparkles, Send, FileText, Loader2, User, Bot, PenLine, Share2, CheckCir
 import { cn } from "@/lib/utils";
 import { askDocAssistantStream, type DocAssistantAnswer } from "@/hooks/use-documents";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { formatDateShort } from "@/lib/format";
 
 type Turn = { q: string; a: DocAssistantAnswer | null; partial?: string; error?: boolean };
 
@@ -29,7 +30,7 @@ function convoDate(ts: number): string {
   if (d <= 0) return "hoy";
   if (d === 1) return "ayer";
   if (d < 7) return `hace ${d} d`;
-  return new Date(ts).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(ts);
 }
 
 /** Asistente de documentos: preguntá en lenguaje natural y encontrá el doc + la info. */

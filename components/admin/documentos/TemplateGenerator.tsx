@@ -121,7 +121,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         ref={panelRef}
         role="dialog"
@@ -188,7 +188,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                 </div>
               </div>
             ) : success ? (
-              <div className="bg-[var(--data-success)]/10 border border-[var(--data-success)]/30 rounded-2xl p-8 text-center">
+              <div className="bg-[var(--data-success)]/10 border border-[var(--data-success)]/30 rounded-2xl p-6 text-center">
                 <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--data-success)] text-white mb-3">
                   <Check className="h-7 w-7" />
                 </span>

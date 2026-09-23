@@ -30,6 +30,7 @@ import { aTsv, etiquetaRango, normalizar, type Punto, type Rango } from "@/lib/d
 import { numeroALetra, type HojaFormato } from "@/lib/documentos/xlsx-formato";
 import TablaHojaLectura from "./hoja/TablaHojaLectura";
 import AvisoArchivo from "./AvisoArchivo";
+import { formatNumber } from "@/lib/format";
 
 /** Primera tanda de filas. Con el alto real, ~120 llenan varias pantallas. */
 const TANDA_INICIAL = 120;
@@ -361,5 +362,5 @@ const BOTON =
 
 /** Números legibles: miles separados y como mucho dos decimales. */
 function fmt(n: number): string {
-  return n.toLocaleString("es-PE", { maximumFractionDigits: 2 });
+  return formatNumber(n, { max: 2 });
 }

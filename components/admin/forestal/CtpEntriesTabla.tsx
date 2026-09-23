@@ -33,12 +33,14 @@ import {
   UNIT_LABELS,
 } from "./ctp-section-shared";
 import { IconAction, productLabel } from "./ctp-shared";
-import { FiltroColumna, FiltroColumnaRango, type FacetaOpcion } from "./ctp-filtros-panel";
+import { type FacetaOpcion } from "./ctp-filtros-panel";
+import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 import { estadoDeGuia } from "@/lib/forestal/gtf-estado";
 import { CAMPO_RANGO_META, type CampoRango, type RangoNumerico } from "@/lib/forestal/ctp-secciones-filtro";
 import type { totalesDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { esInventarioDeApertura } from "@/lib/forestal/lotes-aserrio";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 /** Por qué columna se puede ordenar. Lo resuelve la vista; acá sólo se dibuja. */
 export type SortKey = "fecha" | "cantidad" | "rend";
@@ -76,9 +78,25 @@ export interface FiltrosDeColumna {
   rangos?: Partial<Record<CampoRango, RangoDeColumna>>;
 }
 
+/**
+ * De `FiltroDeColumna` (forestal, pesa en `volumeM3`) a las props del
+ * autofiltro COMPARTIDO (`@/components/admin/shared/filtros-columna`, pesa en
+ * `peso`) — se traduce una sola vez acá, no en cada vista que arma las
+ * opciones (`opciones.species/products/destinos/salidas/permisos`).
+ */
+function propsDeFiltroColumna(f: FiltroDeColumna) {
+  return {
+    value: Array.isArray(f.value) ? f.value : f.value ? [f.value] : undefined,
+    options: f.options.map((o) => ({ value: o.value, count: o.count, peso: o.volumeM3 })),
+    onChange: f.onChange,
+    etiqueta: f.etiqueta,
+    placeholder: f.placeholder,
+  };
+}
+
 // timeZone UTC: entryDate es date-only guardada a medianoche UTC — en hora Lima
 // se corría un día.
-const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
+const fmtDate = (iso: string) => { try { return formatDate(iso, { soloFecha: true }); } catch { return iso; } };
 /** `v` en m³ salvo que `unit` diga otra cosa (kg, pt, unidad): esas quedan tal cual. */
 const n4 = (v: string | null, unit?: string | null) =>
   v == null ? "—" : !unit || unit === "m3" ? fmtM3(Number(v)) : Number(v).toFixed(4);
@@ -178,7 +196,7 @@ function AserrioChip({ entry }: { entry: CtpEntry }) {
       className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
     >
       <Coins className="h-3 w-3 shrink-0" aria-hidden />
-      Aserrío S/ {Number(entry.aserrioImporte).toFixed(2)}
+      Aserrío {formatCurrency(Number(entry.aserrioImporte))}
     </div>
   );
 }
@@ -335,7 +353,7 @@ function ThFiltro({ label, filtro, className }: {
   return (
     <Th className={className}>
       <span className="block">{label}</span>
-      {filtro && <FiltroColumna label={label} {...filtro} />}
+      {filtro && <FiltroColumnaMulti label={label} {...propsDeFiltroColumna(filtro)} />}
     </Th>
   );
 }
@@ -355,7 +373,11 @@ function ThRango({ campo, rango, className }: {
           unidad={meta.unidad}
           paso={meta.paso}
           valor={rango.valor}
-          onChange={rango.onChange}
+          // El primitivo compartido admite rango de FECHA además de número
+          // (`esFecha`); acá nunca se pasa esa prop, así que sólo llega
+          // `Rango<number>` — se lo decimos a TS en vez de ensanchar
+          // `RangoDeColumna` a un caso que esta columna no usa.
+          onChange={(r) => rango.onChange(r as RangoNumerico)}
         />
       )}
     </Th>
@@ -386,7 +408,11 @@ function SortTh({ label, by, sort, onSort, className, campoRango, rango }: {
           unidad={meta.unidad}
           paso={meta.paso}
           valor={rango.valor}
-          onChange={rango.onChange}
+          // El primitivo compartido admite rango de FECHA además de número
+          // (`esFecha`); acá nunca se pasa esa prop, así que sólo llega
+          // `Rango<number>` — se lo decimos a TS en vez de ensanchar
+          // `RangoDeColumna` a un caso que esta columna no usa.
+          onChange={(r) => rango.onChange(r as RangoNumerico)}
         />
       )}
     </th>
@@ -505,7 +531,7 @@ export default function CtpEntriesTabla({
         id: "cobrar-aserrio",
         label: e.duenoParteId ? "Cambiar dueño o precio del aserrío" : "Cobrar aserrío",
         hint: e.aserrioImporte != null
-          ? `Ya se cargó S/ ${Number(e.aserrioImporte).toFixed(2)} a su cuenta`
+          ? `Ya se cargó ${formatCurrency(Number(e.aserrioImporte))} a su cuenta`
           : "Pon quién es el dueño de esta madera y a qué precio se le asierra",
         icon: HandCoins,
         onSelect: () => onCobrarAserrio(e),

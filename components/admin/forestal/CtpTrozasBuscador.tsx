@@ -22,6 +22,7 @@ import { DataTable, EmptyState } from "@buleje/design-system";
 import EspecieFoto from "./EspecieFoto";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDate } from "@/lib/format";
 
 type Troza = {
   id: string;
@@ -153,7 +154,7 @@ export default function CtpTrozasBuscador() {
               <span className="font-mono text-xs text-[var(--text-tertiary)]">Título {g.ingreso.originCode}</span>
             )}
             <span className="ml-auto text-xs text-[var(--text-tertiary)]">
-              {new Date(g.ingreso.entryDate).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })}
+              {formatDate(g.ingreso.entryDate, { soloFecha: true })}
             </span>
           </div>
 

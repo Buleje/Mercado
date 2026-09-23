@@ -42,7 +42,7 @@ export function FolderEditModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
         ref={panelRef}
         role="dialog"
@@ -60,7 +60,7 @@ export function FolderEditModal({
           <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
-        <div className="space-y-5 p-5">
+        <div className="space-y-4 p-5">
           {/* Nombre */}
           <div>
             <label htmlFor={nombreId} className="mb-1.5 block text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Nombre</label>

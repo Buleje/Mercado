@@ -333,7 +333,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
   const deshabilitado = enviando || (via === "enlace" ? creating || listos === 0 : false);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
         ref={panelRef}
         role="dialog"

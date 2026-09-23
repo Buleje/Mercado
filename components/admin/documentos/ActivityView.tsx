@@ -7,6 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { DbDocumentActivity, DocAction } from "@/lib/types/documents";
 import { fetchRecentActivity } from "@/hooks/use-documents";
+import { formatDateShort } from "@/lib/format";
 
 // Verbo + ícono + tint por acción. Los tints usan tokens --data-* con dark.
 const ACTION_META: Record<DocAction, { verb: string; Icon: typeof Upload; cls: string }> = {
@@ -40,7 +41,7 @@ function relativeTime(iso: string): string {
   const d = Math.round(h / 24);
   if (d === 1) return "ayer";
   if (d < 7) return `hace ${d} d`;
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(iso);
 }
 
 /** Feed de actividad reciente del drive (cross-documento). */

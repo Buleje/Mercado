@@ -30,6 +30,7 @@ import { useTarifaAserrio } from "./hooks/use-tarifa-aserrio";
 import { formatDate } from "./ctp-shared";
 import CtpTarifaAserrioModal from "./CtpTarifaAserrioModal";
 import CtpDuenoSugeridos from "./CtpDuenoSugeridos";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 const LABEL = "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const PILL_BASE = "h-9 rounded-lg border px-3 text-sm font-semibold transition-colors";
@@ -480,9 +481,9 @@ export default function CtpCobroAserrio({
             <span className="text-sm font-bold text-[var(--text-primary)]">Vista previa</span>
             {!ocultarImportePreview && (
               <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-                S/ {Number(cot.importe).toFixed(2)}{" "}
+                {formatCurrency(Number(cot.importe))}{" "}
                 <span className="font-sans text-xs font-normal text-[var(--text-tertiary)]">
-                  · {cot.pt.toLocaleString("es-PE")} PT
+                  · {formatNumber(cot.pt)} PT
                 </span>
               </span>
             )}

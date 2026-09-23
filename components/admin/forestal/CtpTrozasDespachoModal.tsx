@@ -28,6 +28,7 @@ import { r4, uidDeFila, type FilaDespacho } from "@/lib/forestal/despacho-lista"
 import { Btn, ModalFooter } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
+import { formatDateNumeric } from "@/lib/format";
 
 const CAMPO =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
@@ -37,7 +38,7 @@ const PRODUCTO_ROLLIZO = "MADERA EN ROLLO";
 const PRESENTACION_ROLLIZO = "TROZAS";
 
 const fmtDia = (iso: string | null | undefined) =>
-  iso ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }) : "—";
+  iso ? formatDateNumeric(iso, { soloFecha: true }) : "—";
 
 /** La troza del patio, traducida a un renglón de la lista de la guía. */
 export function filaDeTroza(t: TrozaConsumible): FilaDespacho {

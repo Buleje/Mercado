@@ -90,7 +90,7 @@ export default function CtpAsistente() {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-0 z-dropdown" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
             ref={panelRef}
             role="dialog"

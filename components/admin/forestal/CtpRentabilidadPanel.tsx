@@ -16,6 +16,7 @@ import { BulejeWaterfallChart, type WaterfallStep } from "@/components/ui-system
 import CtpValorizarIngresos from "./CtpValorizarIngresos";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
+import { formatNumber } from "@/lib/format";
 
 interface PnlDespacho { id: string; lineNo: number; producto: string; gtfSalida: string | null; valorVenta: number | null; cogs: number | null; margen: number | null; margenPct: number | null; motivo: string }
 interface Pnl {
@@ -26,8 +27,8 @@ interface Pnl {
 }
 
 const CTP = "/api/admin/forestal/ctp";
-const money = (n: number | null, m = "PEN") => n == null ? "—" : `${m === "PEN" ? "S/" : m} ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const pct = (n: number | null) => n == null ? "—" : `${n.toLocaleString("es-PE", { maximumFractionDigits: 1 })}%`;
+const money = (n: number | null, m = "PEN") => n == null ? "—" : `${m === "PEN" ? "S/" : m} ${formatNumber(n, 2)}`;
+const pct = (n: number | null) => n == null ? "—" : `${formatNumber(n, { max: 1 })}%`;
 const MOTIVO_LABEL: Record<string, string> = { sin_venta: "sin valor de venta", sin_costo: "sin costo (falta factura)", sin_atribucion: "sin origen atribuido", falta_costo: "falta factura de una guía", monedas_mezcladas: "monedas mezcladas", sin_cantidad: "sin cantidad" };
 
 export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) {
@@ -112,7 +113,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
   const cur = pnl.moneda === "PEN" ? "S/" : pnl.moneda;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Lo tipeado y no guardado, dicho: antes se perdía al cambiar de pestaña
           sin que nada avisara. */}
       {pendientes > 0 && (

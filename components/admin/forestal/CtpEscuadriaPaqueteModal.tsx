@@ -45,6 +45,7 @@ import {
 } from "@/lib/forestal/escuadria-del-paquete";
 import type { Unidad } from "@/lib/forestal/cubicacion";
 import type { EscuadriaAGuardar } from "@/lib/forestal/escuadria-guardar";
+import { formatNumber } from "@/lib/format";
 
 /** El paquete que se está midiendo, en lo que este modal necesita de él. */
 export interface PaqueteAMedir {
@@ -240,7 +241,7 @@ export default function CtpEscuadriaPaqueteModal({
           <p className="text-sm text-[var(--text-secondary)]">
             El paquete declara{" "}
             <strong className="font-mono tabular-nums text-[var(--text-primary)]">
-              {paquete.cantidad.toLocaleString("es-PE")}
+              {formatNumber(paquete.cantidad)}
             </strong>{" "}
             pieza{paquete.cantidad === 1 ? "" : "s"}.
           </p>

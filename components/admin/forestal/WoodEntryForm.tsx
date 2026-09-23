@@ -22,6 +22,12 @@ import CtpPiezasDelIngreso from "./CtpPiezasDelIngreso";
 import { Btn, estaFueraDePlazo, Field, I, ModalFooter, PLAZO_REGISTRO_DIAS, Seccion, useAtajoGuardar } from "./ctp-shared";
 import CtpParteBarra from "./CtpParteBarra";
 import CtpTrozasImportModal from "./CtpTrozasImportModal";
+import CamposPersonalizados, {
+  guardarValoresPendientes,
+  hayPendientes,
+  pendientesVacios,
+  type PendientesCampos,
+} from "@/components/admin/shared/CamposPersonalizados";
 import type { TrozaImportada } from "@/lib/forestal/trozas-import";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
@@ -63,9 +69,21 @@ export interface WoodEntryPreset {
   productType?: string;
 }
 
+/** Id estable de este formulario para los campos personalizados (ADR-427).
+ *  El mismo que usa `CtpIngresoEditModal`: lo que se pregunta al registrar la
+ *  guía tiene que verse después al corregir el ingreso. */
+const FORMULARIO = "forestal.ingreso";
+
 interface Props {
   onClose: () => void;
-  onSaved: (opts?: { keepOpen?: boolean; /** Quedó anotado en el patio, no en el libro. */ offline?: boolean }) => void;
+  onSaved: (opts?: {
+    keepOpen?: boolean;
+    /** Quedó anotado en el patio, no en el libro. */
+    offline?: boolean;
+    /** El ingreso entró, pero lo escrito en sus campos personalizados no: el
+     *  aviso lo muestra la vista, que sobrevive al cierre de este modal. */
+    camposAviso?: string;
+  }) => void;
   /** Bandeja monte→planta: abre el form con esta guía ya cargada (sin doble digitación). */
   initialGtfNumber?: string;
   /** Duplicar: campos repetidos ya cargados (ver WoodEntryPreset). */
@@ -285,6 +303,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   // Aviso flotante: el operador está mirando el formulario llenarse solo, no el
   // renglón de estado del campo.
   const { toasts, push: pushToast, dismiss: dismissToast } = useActionToasts();
+  /* Lo escrito en los campos personalizados mientras el ingreso todavía no
+     existe: se guarda cuando el servidor devuelve su id (ADR-427). */
+  const [camposPendientes, setCamposPendientes] = useState<PendientesCampos>(() => pendientesVacios(FORMULARIO));
   /**
    * Dos caminos para el mismo ingreso:
    * · "manual" — se llena a mano (el de siempre, por defecto);
@@ -943,7 +964,14 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         if (typeof navigator !== "undefined" && !navigator.onLine) {
           const { anotar, URL_INGRESO } = await import("@/lib/forestal/patio-cola");
           await anotar("ingresos", payload, URL_INGRESO);
-          onSaved({ offline: true });
+          /* La cola del patio guarda el ingreso, no su id: sin id no hay a qué
+             colgar los campos personalizados. Se dice, no se pierde en silencio. */
+          onSaved({
+            offline: true,
+            camposAviso: hayPendientes(camposPendientes)
+              ? "Lo que escribiste en los campos personalizados no viaja con la guía anotada en el patio: vuelve a cargarlo al corregir el ingreso."
+              : undefined,
+          });
           return;
         }
         throw netErr;
@@ -956,6 +984,22 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
 
       try { localStorage.removeItem(draftKey()); } catch {}
       marcarProveedorUsado();
+
+      /* Los campos personalizados se guardan recién acá: hasta que el servidor
+         no devuelve el id no hay ingreso al que colgarlos (ADR-427). Si fallan,
+         el ingreso YA está en el libro — se avisa y no se pierde el alta. */
+      let camposAviso: string | undefined;
+      if (hayPendientes(camposPendientes)) {
+        const creado = (await res.json().catch(() => ({}))) as { entry?: { id?: string } };
+        const idIngreso = creado.entry?.id;
+        if (!idIngreso) {
+          camposAviso = "El ingreso entró, pero el servidor no devolvió su número: lo que escribiste en los campos personalizados quedó sin guardar.";
+        } else {
+          const rc = await guardarValoresPendientes(idIngreso, camposPendientes);
+          if (rc.errores.length > 0) camposAviso = rc.errores.join(" · ");
+        }
+        setCamposPendientes(pendientesVacios(FORMULARIO));
+      }
 
       if (keepOpen) {
         setData((prev) => ({
@@ -971,9 +1015,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
           originDistrict: prev.originDistrict,
         }));
         setSubmitting(false);
-        onSaved({ keepOpen: true });
+        onSaved({ keepOpen: true, camposAviso });
       } else {
-        onSaved();
+        onSaved(camposAviso ? { camposAviso } : undefined);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -2041,6 +2085,20 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               </div>
             )}
 
+            {/* Lo que este negocio anota de un ingreso y el formato no pregunta
+                (ADR-427). Sólo en el alta a mano: con la guía traída del SNIFFS
+                el servidor crea UN ingreso por especie declarada, y no habría
+                un registro al que colgarle la respuesta. */}
+            {modo === "manual" && (
+              <CamposPersonalizados
+                className="mt-5"
+                formulario={FORMULARIO}
+                registroId={null}
+                etiquetaFormulario="ingresos"
+                pendientes={camposPendientes}
+                onPendientes={setCamposPendientes}
+              />
+            )}
           </form>
 
           {/* ─── Panel derecho: el registro tal como va a quedar ─────

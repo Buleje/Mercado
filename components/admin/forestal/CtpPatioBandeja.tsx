@@ -9,10 +9,11 @@
 import { AlertTriangle, Loader2, RefreshCw, Trash2, Upload, WifiOff } from "@buleje/design-system/icons";
 import { borrar } from "@/lib/forestal/patio-cola";
 import type { PatioColaState } from "@/hooks/use-patio-cola";
+import { formatDateTimeShort } from "@/lib/format";
 
 const fhora = (iso: string) => {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  return Number.isNaN(d.getTime()) ? "" : formatDateTimeShort(d);
 };
 
 export default function CtpPatioBandeja({ cola }: { cola: PatioColaState }) {

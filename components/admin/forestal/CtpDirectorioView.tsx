@@ -275,9 +275,9 @@ export default function CtpDirectorioView() {
           // La misma ficha abierta desde el picker lista los camiones del
           // transportista; sin esto, la de ESTA pantalla no los mostraba.
           vehiculos={dir.vehiculos}
-          onGuardar={async (input) => {
-            await dir.guardarParte(input);
-          }}
+          // Devuelve la ficha guardada: el modal la necesita para colgarle los
+          // permisos que se cargaron durante el alta (ADR-425).
+          onGuardar={(input) => dir.guardarParte(input)}
           onClose={() => setEditando(null)}
         />
       )}

@@ -45,6 +45,7 @@ import { Btn } from "./ctp-shared";
 import { IconAction } from "@/components/admin/shared/module-primitives";
 import EspecieFoto from "./EspecieFoto";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDate, formatNumber } from "@/lib/format";
 
 /**
  * «MADERA ASERRADA (COMERCIAL)» a «Madera aserrada (comercial)».
@@ -97,7 +98,7 @@ const fmtFecha = (iso: string | null) => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? null
-    : d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+    : formatDate(d, { soloFecha: true });
 };
 
 export default function CtpLoteCard({
@@ -267,7 +268,7 @@ export default function CtpLoteCard({
         <div>
           <dt className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Pie tablar</dt>
           <dd className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">
-            {pieTablarDe(volumen).toLocaleString("es-PE")}
+            {formatNumber(pieTablarDe(volumen))}
           </dd>
         </div>
       </dl>

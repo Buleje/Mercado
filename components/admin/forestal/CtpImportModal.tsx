@@ -42,6 +42,7 @@ import {
   type GrupoDuplicado,
   type MapeoIngreso,
 } from "@/lib/forestal/ctp-import-mapeo";
+import { formatDateTime } from "@/lib/format";
 
 type Registro = "ingresos" | "produccion" | "salida";
 type ImportMode = Registro | "completo";
@@ -568,7 +569,7 @@ function describeCombined(porReg: Partial<Record<Registro, number>>): string {
 function fmtFecha(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return formatDateTime(d);
 }
 
 function StepDot({ n, on }: { n: number; on: boolean }) {

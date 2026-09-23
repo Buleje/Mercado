@@ -22,14 +22,15 @@ import {
 } from "@/lib/forestal/proveedor-trazabilidad";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 /** Producido/despachado suman corridas y despachos que pueden estar en m³,
  *  pies tablares o unidades (`FilaCorridaProveedor.unit`): a diferencia de los
  *  campos `*M3` del balance, acá NO se puede asumir m³ sin mentir la unidad. */
 const n4 = (n: number) => n.toFixed(4);
-const soles = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const soles = (n: number) => `${formatCurrency(n)}`;
 const fecha = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" });
+  formatDate(iso, { soloFecha: true });
 
 export default function CtpProveedorTrazaModal({ proveedor, onClose }: { proveedor: string; onClose: () => void }) {
   const [datos, setDatos] = useState<TrazabilidadProveedor | null>(null);

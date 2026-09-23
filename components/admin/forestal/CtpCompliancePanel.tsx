@@ -49,6 +49,7 @@ import { ctpComplianceTone, ctpComplianceBreakdown, type CtpComplianceTone } fro
 import { printCumplimiento } from "@/lib/forestal/ctp-cumplimiento-print";
 import { ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
+import { formatNumber } from "@/lib/format";
 
 type ComplianceNavTarget = "ingresos" | "saldos" | "despacho" | "produccion" | "ficha";
 type Severity = "error" | "warning";
@@ -367,7 +368,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
     <div className="space-y-3">
       <VistaHeader
         titulo="Chequeo del período"
-        meta={`${ctpPeriodShortLabel(period)} · ${data.totalIngresos.toLocaleString("es-PE")} ingresos`}
+        meta={`${ctpPeriodShortLabel(period)} · ${formatNumber(data.totalIngresos)} ingresos`}
         hint="Los mismos números que exporta el libro a Excel."
       >
         <Btn variant="dark" size="md" onClick={() => void handleReport()}>

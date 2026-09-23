@@ -38,6 +38,7 @@ import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn, formatDate } from "./ctp-shared";
 import type { CtpEntry } from "./ctp-section-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 /** Lo que le queda al lote de esta corrida sin aserrar. */
 export interface RestoDelLote {
@@ -313,7 +314,7 @@ export default function CtpCorridaSinDeclarar({
           <p className="font-mono text-sm tabular-nums text-[var(--text-tertiary)]">
             {formatDate(corrida.entryDate)} · {corrida.speciesCommon ?? "Sin especie"} · entraron{" "}
             <b className="text-[var(--text-secondary)]">{fmtM3(entrada)} m³</b> ·{" "}
-            {pieTablarDe(entrada).toLocaleString("es-PE")} pt
+            {formatNumber(pieTablarDe(entrada))} pt
           </p>
         </div>
         <div className="flex items-center gap-2">

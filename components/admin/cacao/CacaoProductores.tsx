@@ -14,6 +14,7 @@ import CacaoProducerForm from "./CacaoProducerForm";
 import CacaoProducerDrawer from "./CacaoProducerDrawer";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
 import CacaoReconcileModal from "./CacaoReconcileModal";
+import { formatDate, formatNumber } from "@/lib/format";
 
 interface PStats { kg: number; pagado: number; abonado: number; saldo: number; lotes: number; lastFecha: string | null; gradoI: number }
 interface Producer {
@@ -21,8 +22,8 @@ interface Producer {
   parcelaHa: string | null; variedad: string | null; certificacion: string | null; status: string; stats: PStats;
 }
 
-const n2 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
+const n2 = (v: number | null) => (v == null ? "—" : formatNumber(v, 2));
+const fdate = (iso: string | null) => { if (!iso) return "—"; try { return formatDate(iso, { soloFecha: true }); } catch { return iso; } };
 const CERT_LABEL: Record<string, string> = { organico: "Orgánico", comercio_justo: "Comercio justo", convencional: "Convencional" };
 type Sort = "pagado" | "kg" | "lotes" | "reciente" | "nombre";
 const SORTS: { v: Sort; label: string }[] = [
@@ -99,7 +100,7 @@ export default function CacaoProductores() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Productores" value={String(kpis.total)} subValue={`${kpis.conCompras} con compras`} icon={Users} emphasis="neutral" />

@@ -26,9 +26,10 @@ import {
   type RetrozoParaApartado,
 } from "@/lib/forestal/loctp-apartados";
 import { Celda, Cuadro, Entero, SinDatos, Texto, Th } from "./ctp-cuadro-shared";
+import { formatDateNumeric } from "@/lib/format";
 
 const fmtFecha = (iso: string | null) =>
-  iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("es-PE", { timeZone: "UTC" }) : null;
+  iso ? formatDateNumeric(`${iso}T00:00:00Z`, { soloFecha: true }) : null;
 
 export default function CtpApartadosSerfor({ period }: { period: CtpPeriod }) {
   const [cargando, setCargando] = useState(true);

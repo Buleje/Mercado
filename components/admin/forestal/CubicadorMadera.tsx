@@ -64,6 +64,7 @@ import {
   type OrdenFilas,
 } from "@/lib/forestal/cubicador-bloques-especie";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
+import { formatNumber } from "@/lib/format";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -162,13 +163,13 @@ const ESPECIES = ESPECIES_MADERA;
 // Solo los errores DUROS cortan el dictado; no-speech/network/aborted son
 // transitorios en modo continuo y el reconocedor se reinicia solo.
 const ERR_MSG: Record<string, string> = {
-  "not-allowed": "Permiso de micrófono denegado. Toca el candado 🔒 en la barra de direcciones, permite el micrófono y recarga la página.",
+  "not-allowed": "Permiso de micrófono denegado. Toca el ícono de candado en la barra de direcciones, permite el micrófono y recarga la página.",
   "service-not-allowed": "El navegador bloqueó el micrófono. Revisa los permisos del sitio y recarga.",
   "audio-capture": "No se encontró micrófono. Conecta uno y reintenta.",
 };
 
-const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtM3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+const fmtPt = (v: number) => formatNumber(v, 2);
+const fmtM3 = (v: number) => formatNumber(v, 3);
 /**
  * Dónde guarda este cubicador su lote.
  *
@@ -1560,7 +1561,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
   );
   const conValor = precio > 0 || hayPreciosEspecie;
   const valorLote = useMemo(() => rows.reduce((a, r) => a + r.pieTablar * precioDe(r), 0), [rows, precioDe]);
-  const soles = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const soles = (v: number) => formatNumber(v, 2);
 
   // Espejo del total para el comando de voz "cuánto llevo" (el handler del
   // reconocedor vive en un closure; lee el ref para no quedar con datos viejos).
@@ -1919,7 +1920,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote, pieza
         id="cub-tabla-ancla"
         className={
           tablaExpandida
-            ? "fixed inset-0 z-[9995] overflow-auto bg-[var(--surface-raised)] p-4 sm:p-5"
+            ? "fixed inset-0 z-system overflow-auto bg-[var(--surface-raised)] p-4 sm:p-5"
             : "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"
         }
       >

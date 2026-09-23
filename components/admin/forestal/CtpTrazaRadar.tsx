@@ -693,7 +693,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
 
           {vista === "cadena" && (
             <div className={pantallaCompleta
-              ? "fixed inset-0 z-40 space-y-3 overflow-y-auto bg-[var(--surface-canvas)] p-4"
+              ? "fixed inset-0 z-dropdown space-y-3 overflow-y-auto bg-[var(--surface-canvas)] p-4"
               : "space-y-4"}>
             <CtpRadarControles
               query={query}

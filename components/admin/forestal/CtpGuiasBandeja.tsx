@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowRight, TreePine } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { formatDateShort } from "@/lib/format";
 
 interface GuiaPendiente {
   id: string;
@@ -28,7 +29,7 @@ interface GuiaPendiente {
 // gtfDate es date-only a medianoche UTC — sin timeZone:"UTC" se corre un día.
 const fmtDate = (iso: string | null) => {
   if (!iso) return null;
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" }); } catch { return null; }
+  try { return formatDateShort(iso, { soloFecha: true }); } catch { return null; }
 };
 
 export default function CtpGuiasBandeja({ onIngresar }: { onIngresar: (gtfNumber: string) => void }) {

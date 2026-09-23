@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { HandCoins, Check, X, Loader2 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 /**
  * CreditRequestsPanel — cola de solicitudes de línea de fiado que el vecino
@@ -24,7 +25,7 @@ type CreditRequest = {
 
 const fmtDate = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short" });
+    return formatDateShort(iso);
   } catch {
     return "";
   }
@@ -115,7 +116,7 @@ export default function CreditRequestsPanel() {
             <p className="text-xs text-[var(--text-secondary)]">
               {r.customerId}
               {r.requestedAmount != null && (
-                <> · pide <span className="font-semibold">S/{r.requestedAmount.toFixed(2)}</span></>
+                <> · pide <span className="font-semibold">{formatCurrency(r.requestedAmount)}</span></>
               )}
             </p>
             {r.reason && (

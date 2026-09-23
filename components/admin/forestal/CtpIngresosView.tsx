@@ -1156,6 +1156,16 @@ export default function CtpIngresosView({
                 detail: "El ingreso todavía NO está en el libro. Sube solo cuando vuelva la conexión.",
               });
             }
+            /* El ingreso entró y sus campos personalizados no (ADR-427). El
+               aviso se muestra ACÁ y no en el modal: el modal ya se cerró y su
+               mensaje se iría con él. */
+            if (o?.camposAviso) {
+              pushToast({
+                tono: "warning",
+                msg: "El ingreso entró; sus campos propios no",
+                detail: o.camposAviso,
+              });
+            }
           }}
         />
       )}

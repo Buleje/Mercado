@@ -168,7 +168,7 @@ export default function ImportarProgreso({
       {/* Archivo por archivo: la parte que la gente mira cuando algo tarda. */}
       <ul
         ref={listaRef}
-        className="max-h-56 overflow-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2 text-sm"
+        className="max-h-56 overflow-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-sm"
       >
         {archivos.map((a) => {
           const estado = estados[a.ruta] ?? "en-cola";

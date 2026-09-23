@@ -21,6 +21,7 @@ import { useTarifaAserrio } from "./hooks/use-tarifa-aserrio";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import CtpTarifaAserrioForm from "./CtpTarifaAserrioForm";
 import { Btn, ModalBody, formatDate } from "./ctp-shared";
+import { formatCurrency } from "@/lib/format";
 
 type Editando = VersionTarifa | "nueva" | "borrador" | null;
 
@@ -159,7 +160,7 @@ export default function CtpTarifaAserrioModal({ open, onClose }: { open: boolean
                     )}
                   </span>
                   <span className="block text-xs text-[var(--text-tertiary)]">
-                    General S/ {Number(v.basePt).toFixed(2)} · {v.especies.length}{" "}
+                    General {formatCurrency(Number(v.basePt))} · {v.especies.length}{" "}
                     {v.especies.length === 1 ? "especie" : "especies"} · {v.tipos.length}{" "}
                     {v.tipos.length === 1 ? "ajuste de tipo" : "ajustes de tipo"} · {v.largos.length}{" "}
                     {v.largos.length === 1 ? "tramo" : "tramos"} de largo

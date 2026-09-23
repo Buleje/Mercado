@@ -32,7 +32,13 @@ import {
   type WoodEntry,
 } from "./ctp-shared";
 import CtpIngresoPartesForm from "./CtpIngresoPartesForm";
+import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
 import { leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+
+/** Id estable de este formulario para los campos personalizados (ADR-427).
+ *  El MISMO que el alta (`WoodEntryForm`): lo que se preguntó al registrar la
+ *  guía tiene que verse acá, o corregir un ingreso lo dejaría en blanco. */
+const FORMULARIO = "forestal.ingreso";
 
 const ORIGENES = [
   { value: "concesion", label: "Concesión forestal" },
@@ -613,6 +619,16 @@ export default function CtpIngresoEditModal({
             </Seccion>
           </div>
         </div>
+
+        {/* Lo que este negocio anota de un ingreso y el formato no pregunta
+            (ADR-427). El ingreso ya existe, así que se guarda solo: no espera
+            al botón de «Guardar corrección», que manda sólo los casilleros. */}
+        <CamposPersonalizados
+          className="mt-5"
+          formulario={FORMULARIO}
+          registroId={entry.id}
+          etiquetaFormulario="ingresos"
+        />
       </div>
     </AdminModal>
   );

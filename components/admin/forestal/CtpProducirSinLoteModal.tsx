@@ -155,7 +155,7 @@ export default function CtpProducirSinLoteModal({
   };
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-2">
+    <div className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/60 p-2">
       <div
         ref={cajaRef}
         tabIndex={-1}

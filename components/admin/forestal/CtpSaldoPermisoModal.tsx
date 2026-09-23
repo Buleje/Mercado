@@ -46,15 +46,11 @@ import {
 } from "@/lib/forestal/saldo-por-permiso";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { exportarSaldoPorPermiso, printSaldoPorPermiso } from "@/lib/forestal/saldo-permiso-export";
+import { formatDate } from "@/lib/format";
 
 // date-only en UTC: sin eso, en Lima la fecha se corre un día.
 const fmtFecha = (f: string) =>
-  new Date(f.length <= 10 ? `${f}T12:00:00Z` : f).toLocaleDateString("es-PE", {
-    day: "2-digit",
-    month: "short",
-    year: "2-digit",
-    timeZone: "UTC",
-  });
+  formatDate(f.length <= 10 ? `${f}T12:00:00Z` : f, { soloFecha: true });
 
 function Kpi({
   label,
@@ -211,7 +207,7 @@ export default function CtpSaldoPermisoModal({
                       {s.totales.producidoM3 > 0
                         ? ` · ${fmtM3(s.totales.producidoM3)} m³ sin lote`
                         : ""}
-                      {s.hayExceso ? " ⚠" : ""}
+                      {s.hayExceso ? " (exceso)" : ""}
                     </option>
                   ))}
                 </select>

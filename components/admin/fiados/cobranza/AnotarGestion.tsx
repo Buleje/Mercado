@@ -15,6 +15,7 @@ import { logger } from "@/lib/logger";
 import { TIPOS_GESTION, type TipoGestion } from "@/lib/fiados/gestion-cobranza";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ModalActions, inputCls } from "./shared";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 const isoDia = (d: Date) => {
   const c = new Date(d);
@@ -87,7 +88,7 @@ export default function AnotarGestion({
       open
       onClose={onClose}
       title={`Anotar gestión · ${nombre}`}
-      description={`Debe S/ ${saldo.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`}
+      description={`Debe S/ ${formatNumber(saldo, { min: 2 })}`}
       variant="wide"
       footer={<ModalActions onClose={onClose} onSubmit={guardar} saving={saving} label="Anotar" />}
     >
@@ -146,7 +147,7 @@ export default function AnotarGestion({
               min={0}
               value={montoPrometido}
               onChange={(e) => setMontoPrometido(e.target.value)}
-              placeholder={`¿Cuánto? (vacío = todo, S/ ${saldo.toFixed(2)})`}
+              placeholder={`¿Cuánto? (vacío = todo, ${formatCurrency(saldo)})`}
               aria-label="Monto prometido"
               className={`${inputCls} tabular-nums`}
             />

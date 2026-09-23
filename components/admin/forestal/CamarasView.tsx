@@ -34,11 +34,12 @@ import ConectarCamaraModal, {
 } from "./camaras/ConectarCamaraModal";
 import VisorEnVivo from "./camaras/VisorEnVivo";
 import ControlPtz from "./camaras/ControlPtz";
+import { formatDateTimeShort } from "@/lib/format";
 
 const API = "/api/admin/camaras";
 
 const cuando = (iso: string) =>
-  new Date(iso).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  formatDateTimeShort(iso);
 
 export default function CamarasView() {
   const [camaras, setCamaras] = useState<CamaraConConexion[]>([]);

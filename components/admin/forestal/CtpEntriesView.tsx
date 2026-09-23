@@ -96,11 +96,12 @@ import {
 import { ColumnasMenu, TablaSkeleton, useColumnasVisibles } from "./ctp-shared";
 import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 /* Totales de período: dos decimales, como el resumen y las tarjetas que viven
    al lado. Los tres de `fmtM3` son para medir una troza. */
 const n2m3 = (v: number) =>
-  v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  formatNumber(v, 2);
 
 /**
  * Debajo de esto, una corrida sin materia prima es polvo de aserradero.
@@ -210,11 +211,8 @@ function ListaCifrasImposibles({
               <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
                 <b className="font-mono text-[var(--text-primary)]">N° {f.lineNo}</b>
                 <span className="font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                  {f.piezas.toLocaleString("es-PE")} piezas en{" "}
-                  {f.volumenM3.toLocaleString("es-PE", {
-                    minimumFractionDigits: 4,
-                    maximumFractionDigits: 4,
-                  })}{" "}
+                  {formatNumber(f.piezas)} piezas en{" "}
+                  {formatNumber(f.volumenM3, 4)}{" "}
                   m³ = {fmtVolumenDePieza(f.m3PorPieza)} por pieza
                 </span>
                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
@@ -226,7 +224,7 @@ function ListaCifrasImposibles({
                 {(() => {
                   const frase = explicarHipotesis(
                     hipotesisDeCarga(f.volumenM3, f.piezas, referenciaDe(f.producto, referencias)),
-                    (n) => n.toLocaleString("es-PE", { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
+                    (n) => formatNumber(n, 4),
                   );
                   return frase ? (
                     <span className="block w-full text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
@@ -2283,7 +2281,7 @@ export function CtpEntriesView({
 
         {/* Filtro activo sin resultados (pero sí hay datos): distinto de "sin datos". */}
         {!loading && entries.length > 0 && visible.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
             Ninguna línea{" "}
             {statusFilter === "anulado"
               ? "anulada"
@@ -2437,7 +2435,7 @@ export function CtpEntriesView({
 
       {annulId && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/40 p-4"
           onClick={() => setAnnulId(null)}
         >
           <div

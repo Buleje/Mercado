@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { logger } from "@/lib/logger";
 import { fetchFinanzas, n, calcHealthScore, MESES, type HealthData } from "@/components/admin/finanzas/shared";
+import { formatMonthYear } from "@/lib/format";
 
 export function HealthSemaphore() {
   const [data, setData] = useState<HealthData | null>(null);
@@ -439,7 +440,7 @@ export function ProyeccionCierreMes() {
   const gastosProyectados = Math.round((data.gastosMes / data.diasTranscurridos) * data.diasTotales);
   const utilidadProyectada = ventasProyectadas - gastosProyectados;
   const progreso = data.diasTotales > 0 ? (data.diasTranscurridos / data.diasTotales) * 100 : 0;
-  const mesNombre = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
+  const mesNombre = formatMonthYear(new Date(), { largo: true });
 
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
@@ -517,7 +518,7 @@ export function ResumenFiscal() {
   const igvCobrado = data.ventas * 0.18 / 1.18;
   const igvPagado = data.compras * 0.18 / 1.18;
   const igvNeto = igvCobrado - igvPagado;
-  const mesActual = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
+  const mesActual = formatMonthYear(new Date(), { largo: true });
 
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">

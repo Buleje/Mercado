@@ -22,7 +22,7 @@ import {
   SIN_TITULO,
   type EstadoTroza,
 } from "@/lib/forestal/trozas-patio";
-import { FiltroColumna, type FacetaOpcion } from "./ctp-filtros-panel";
+import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { claseDias, n, NUM, tituloDias } from "./ctp-trozas-lista-shared";
 import { puntoDeTono } from "./ctp-trozas-ui";
 import EspecieFoto from "./EspecieFoto";
@@ -91,13 +91,13 @@ export default function CtpTrozasTabla({
           <th className={TH}>Código</th>
           <th className={TH}>
             <span className="block">Especie</span>
-            <FiltroColumna label="Especie" value={especie} options={especiesFaceta} onChange={onEspecie} placeholder="Todas" />
+            <FiltroColumnaMulti label="Especie" value={especie} options={especiesFaceta} onChange={onEspecie} placeholder="Todas" />
           </th>
           <th className={TH}>
             <span className="block">Estado</span>
             {/* El mismo filtro que las pastillas del panorama (`onEstadoFiltro`):
                 tocar la pastilla o elegir acá es lo mismo. */}
-            <FiltroColumna
+            <FiltroColumnaMulti
               label="Estado"
               value={estadoFiltro}
               options={estadosFaceta}
@@ -120,10 +120,10 @@ export default function CtpTrozasTabla({
                 de alta que las demás y descuadraban la cabecera entera. */}
             <div className="flex flex-wrap gap-1">
               <span className="min-w-[8rem] flex-1">
-                <FiltroColumna label="Guía" value={guia} options={guiasFaceta} onChange={onGuia} placeholder="Guía" />
+                <FiltroColumnaMulti label="Guía" value={guia} options={guiasFaceta} onChange={onGuia} placeholder="Guía" />
               </span>
               <span className="min-w-[8rem] flex-1">
-                <FiltroColumna
+                <FiltroColumnaMulti
                   label="Título habilitante"
                   value={titulo}
                   options={titulosFaceta}

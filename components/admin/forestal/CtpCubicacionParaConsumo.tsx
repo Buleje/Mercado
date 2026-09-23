@@ -36,6 +36,7 @@ import type { Jornada } from "@/lib/forestal/consumo-en-jornadas";
 import type { ResumenJornadas } from "@/lib/forestal/registrar-jornadas";
 import { Btn, I } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDateNumeric, formatNumber } from "@/lib/format";
 
 /** Una troza elegida para la sierra, con lo que el reparto necesita de ella. */
 export interface TrozaParaReparto {
@@ -197,7 +198,7 @@ export default function CtpCubicacionParaConsumo({
       {/* El resumen: qué se midió, contra cuánta rolliza y con qué rendimiento. */}
       {cubicacion && (
         <div className="grid gap-2 sm:grid-cols-4">
-          <Cifra icon={Layers} label="Aserrada medida" valor={`${fmtM3(totales.m3)} m³`} sub={`${totales.piezas} piezas · ${pieTablarDe(totales.m3).toLocaleString("es-PE")} pt`} />
+          <Cifra icon={Layers} label="Aserrada medida" valor={`${fmtM3(totales.m3)} m³`} sub={`${totales.piezas} piezas · ${formatNumber(pieTablarDe(totales.m3))} pt`} />
           <Cifra icon={Scale} label="Rolliza elegida" valor={`${fmtM3(totales.rollizaM3)} m³`} sub={`${trozas.length} troza${trozas.length === 1 ? "" : "s"} tildada${trozas.length === 1 ? "" : "s"}`} />
           <Cifra icon={Scale} label="Rendimiento" valor={rendimiento != null ? `${rendimiento} %` : "—"} sub={`Aprovechable declarado ${aprovechable} %`} />
           <Cifra icon={CalendarDays} label="Días" valor={String(dias)} sub={dias === 1 ? "Todo en una jornada" : `${fmtM3(totales.m3 / dias)} m³ por día`} />
@@ -277,7 +278,7 @@ export default function CtpCubicacionParaConsumo({
         <CtpCubicarProductoModal
           filas={[]}
           ctpEntryIds={[]}
-          titulo={`Aserrada del ${new Date().toLocaleDateString("es-PE")}`}
+          titulo={`Aserrada del ${formatDateNumeric(new Date())}`}
           onClose={() => setAbierto(false)}
           onGuardada={(msg, registro) => {
             setAbierto(false);

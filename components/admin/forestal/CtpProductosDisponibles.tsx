@@ -114,6 +114,7 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { esInventarioDeApertura } from "@/lib/forestal/lotes-aserrio";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
+import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 
 interface PaqueteDisponible {
   id: string;
@@ -197,7 +198,7 @@ const EDAD_TONO: Record<TramoEdad, string> = {
     "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
 };
 
-const nf = (n: number) => n.toLocaleString("es-PE");
+const nf = (n: number) => formatNumber(n);
 const norm = (v: string | null | undefined) => (v ?? "").toLowerCase().trim();
 
 /**
@@ -244,12 +245,7 @@ function agruparPorClave(valores: string[], clave: (v: string) => string): strin
 }
 
 const fmtDia = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  formatDate(iso, { soloFecha: true });
 
 /**
  * Columnas OPCIONALES de esta tabla (mismo patrón que Producción/Documentos):
@@ -1021,8 +1017,8 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                fórmula donde ningún término explicaba ese cero. */
             subValue={
               ocultosPorUsado
-                ? `${pieTablarDe(totales.volumen).toLocaleString("es-PE")} pt · ${fmtM3(ocultosPorUsado.volumen)} m³ más están marcados como usados`
-                : `${pieTablarDe(totales.volumen).toLocaleString("es-PE")} pt · producido − despachado − reprocesado − marcado usado`
+                ? `${formatNumber(pieTablarDe(totales.volumen))} pt · ${fmtM3(ocultosPorUsado.volumen)} m³ más están marcados como usados`
+                : `${formatNumber(pieTablarDe(totales.volumen))} pt · producido − despachado − reprocesado − marcado usado`
             }
             icon={TreePine}
             desglose={
@@ -1150,7 +1146,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             value={
               valorDelStock.filasValorizadas === 0
                 ? "sin costear"
-                : `S/ ${valorDelStock.totalSoles.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`
+                : `S/ ${formatNumber(valorDelStock.totalSoles, { max: 0 })}`
             }
             subValue={
               valorDelStock.guiasSinCosto.length > 0
@@ -1516,7 +1512,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                   patio; el libro guarda m³ y la conversión se hacía aparte. */}
               {colsVisibles.pieTablar && (
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                  {pieTablarDe(p?.volumenM3 ?? c.disponible).toLocaleString("es-PE")}
+                  {formatNumber(pieTablarDe(p?.volumenM3 ?? c.disponible))}
                 </td>
               )}
               {colsVisibles.valor && (
@@ -1531,7 +1527,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                       —
                     </span>
                   ) : (
-                    `S/ ${valorSoles.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    `${formatCurrency(valorSoles)}`
                   )}
                 </td>
               )}
@@ -1718,7 +1714,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
               </td>
               {colsVisibles.pieTablar && (
                 <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                  {pieTablarDe(volumenALaVista).toLocaleString("es-PE")}
+                  {formatNumber(pieTablarDe(volumenALaVista))}
                 </td>
               )}
               {colsVisibles.valor && (
@@ -1733,7 +1729,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                       parcial
                     </span>
                   ) : (
-                    `S/ ${valorDelStock.totalSoles.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    `${formatCurrency(valorDelStock.totalSoles)}`
                   )}
                 </td>
               )}
@@ -1807,7 +1803,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             { label: "Volumen", valor: `${fmtM3(totalElegido.m3)} m³`, fuerte: true },
             {
               label: "Pie tablar",
-              valor: `${pieTablarDe(totalElegido.m3).toLocaleString("es-PE")} pt`,
+              valor: `${formatNumber(pieTablarDe(totalElegido.m3))} pt`,
             },
           ]}
           onLimpiar={() => setSeleccion(new Set())}

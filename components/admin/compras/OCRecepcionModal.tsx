@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency } from "@/lib/format";
 
 type OCItem = {
   productId: number;
@@ -314,7 +315,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                               {item.name}
                             </td>
                             <td className="py-2 px-1 text-right text-[var(--text-secondary)] dark:text-muted">
-                              S/ {Number(item.originalPrice).toFixed(2)}
+                              {formatCurrency(Number(item.originalPrice))}
                             </td>
                             <td className="py-2 px-1 text-center">
                               <input
@@ -349,7 +350,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
               <div className="text-right">
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Total factura:</p>
                 <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                  S/ {totalFactura.toFixed(2)}
+                  {formatCurrency(totalFactura)}
                 </p>
               </div>
             </>
@@ -374,7 +375,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                 </div>
                 <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Total factura</p>
-                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/ {totalFactura.toFixed(2)}</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(totalFactura)}</p>
                 </div>
               </div>
 
@@ -386,7 +387,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                       {item.name}
                     </span>
                     <span className="text-[var(--text-secondary)] dark:text-muted font-semibold">
-                      {item.receivedQty}/{item.orderedQty} - S/ {(item.receivedQty * item.unitPrice).toFixed(2)}
+                      {item.receivedQty}/{item.orderedQty} - {formatCurrency(item.receivedQty * item.unitPrice)}
                     </span>
                   </div>
                 ))}

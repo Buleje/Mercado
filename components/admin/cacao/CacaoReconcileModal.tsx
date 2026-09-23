@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link2, Loader2, RefreshCw, UserPlus, Users, AlertTriangle, Check } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatNumber } from "@/lib/format";
 
 interface OrphanGroup {
   nombre: string;
@@ -28,7 +29,7 @@ interface OrphanResp {
 interface Producer { id: string; nombre: string; codigo: string | null }
 
 const NEW = "__new__";
-const n2 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const n2 = (v: number) => formatNumber(v, 2);
 
 export default function CacaoReconcileModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const [groups, setGroups] = useState<OrphanGroup[]>([]);

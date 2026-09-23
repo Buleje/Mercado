@@ -32,6 +32,7 @@ import {
 } from "@/lib/cacao/cacao-quality";
 import { printCacaoVentasReporte } from "@/lib/cacao/cacao-liquidacion";
 import CacaoVentaForm from "./CacaoVentaForm";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 interface Venta {
   id: string;
@@ -66,12 +67,7 @@ interface Stats {
 const n2 = (v: string | number | null) => (v == null || v === "" ? "—" : Number(v).toFixed(2));
 const fdate = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "2-digit",
-      timeZone: "UTC",
-    });
+    return formatDate(iso, { soloFecha: true });
   } catch {
     return iso;
   }
@@ -222,7 +218,7 @@ export default function CacaoVentas() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
           label="Ingresos por venta"
@@ -395,7 +391,7 @@ export default function CacaoVentas() {
           </tbody>
         </DataTable>
         {loading && items.length === 0 ? (
-          <div className="p-8 text-center text-[var(--text-tertiary)]">
+          <div className="p-6 text-center text-[var(--text-tertiary)]">
             <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
             <p className="mt-2 text-sm">Cargando…</p>
           </div>
@@ -581,7 +577,7 @@ function PagoBadge({ estado, saldo }: { estado: string; saldo: number }) {
       </span>
       {saldo > 0 && (
         <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-          S/ {saldo.toFixed(2)}
+          {formatCurrency(saldo)}
         </span>
       )}
     </span>

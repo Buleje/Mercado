@@ -8,6 +8,7 @@ import React, { useCallback, useId, useRef } from "react";
 import { toast } from "sonner";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency, formatDateLong, formatTime } from "@/lib/format";
 import {
   X, DollarSign,
   Loader2,
@@ -97,8 +98,6 @@ type FiadoModalsProps = {
   setShowDebtorsMap: (v: boolean) => void;
   fiados: Fiado[];
 };
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
 export default function FiadoModals({
   showPago, setShowPago, selected, pagoMonto, setPagoMonto, pagoNotas, setPagoNotas, paying, pagoError, handlePago, setPagoError: _setPagoError,
@@ -385,7 +384,7 @@ export default function FiadoModals({
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-[var(--text-secondary)] print:text-black">Fecha:</span>
-                    <span className="font-bold text-[var(--text-primary)]">{reciboData.fecha} {new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
+                    <span className="font-bold text-[var(--text-primary)]">{reciboData.fecha} {formatTime(new Date())}</span>
                   </div>
                   <div className="border-t border-[var(--rule-base)] print:border-gray-400" />
                   <div className="flex justify-between">
@@ -438,7 +437,7 @@ export default function FiadoModals({
                   <a
                     href={waLink(
                       reciboData.clientePhone,
-                      `*RECIBO DE PAGO*\n${"=".repeat(25)}\nBuleje\nFecha: ${reciboData.fecha}\n${"─".repeat(25)}\nCliente: ${reciboData.clienteNombre}\nMonto pagado: S/${Number(reciboData.montoPagado).toFixed(2)}\nSaldo anterior: S/${Number(reciboData.saldoAnterior).toFixed(2)}\n*Saldo actual: S/${Number(reciboData.saldoActual).toFixed(2)}*\n${"─".repeat(25)}\nGracias por tu pago. Vuelve pronto!`,
+                      `*RECIBO DE PAGO*\n${"=".repeat(25)}\nBuleje\nFecha: ${reciboData.fecha}\n${"─".repeat(25)}\nCliente: ${reciboData.clienteNombre}\nMonto pagado: ${formatCurrency(Number(reciboData.montoPagado))}\nSaldo anterior: ${formatCurrency(Number(reciboData.saldoAnterior))}\n*Saldo actual: ${formatCurrency(Number(reciboData.saldoActual))}*\n${"─".repeat(25)}\nGracias por tu pago. Vuelve pronto!`,
                     ) ?? "#"}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -608,8 +607,8 @@ export default function FiadoModals({
                   </div>
                   <p className="text-[var(--text-primary)] leading-relaxed">
                     Yo, <strong>{selected.customerName || selected.customerId}</strong>, me comprometo a pagar{" "}
-                    <strong>S/{parseFloat(compromisoMonto || "0").toFixed(2)}</strong> antes del{" "}
-                    <strong>{compromisoFecha ? new Date(compromisoFecha + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" }) : "---"}</strong>.
+                    <strong>{formatCurrency(parseFloat(compromisoMonto || "0"))}</strong> antes del{" "}
+                    <strong>{compromisoFecha ? formatDateLong(compromisoFecha + "T12:00:00") : "---"}</strong>.
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-xs text-[var(--text-secondary)]">
                     <div>Deuda original: <strong className="text-[var(--text-primary)]">{formatCurrency(selected.total)}</strong></div>
@@ -620,7 +619,7 @@ export default function FiadoModals({
                     <div className="h-[80px] border-b border-gray-400" />
                   </div>
                   <p className="text-xs text-[var(--text-tertiary)] text-right">
-                    Fecha: {new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
+                    Fecha: {formatDateLong(new Date())}
                   </p>
                 </div>
 
@@ -748,13 +747,13 @@ export default function FiadoModals({
                         ];
                         for (const [zone, items] of zones) {
                           const zoneTotal = items.reduce((s, f) => s + f.saldo, 0);
-                          lines.push("", `${zone} — ${items.length} deudor${items.length !== 1 ? "es" : ""} (S/${zoneTotal.toFixed(2)})`);
+                          lines.push("", `${zone} — ${items.length} deudor${items.length !== 1 ? "es" : ""} (${formatCurrency(zoneTotal)})`);
                           for (const f of items) {
                             const phone = f.customerId.replace(/\D/g, "");
-                            lines.push(`  -> ${f.customerName || f.customerId} · S/${Number(f.saldo).toFixed(2)} · ${phone.slice(0, 3)}XXXXXX [ ]`);
+                            lines.push(`  -> ${f.customerName || f.customerId} · ${formatCurrency(Number(f.saldo))} · ${phone.slice(0, 3)}XXXXXX [ ]`);
                           }
                         }
-                        lines.push("", `Total: S/${deudores.reduce((s, f) => s + f.saldo, 0).toFixed(2)} (${deudores.length} clientes)`);
+                        lines.push("", `Total: ${formatCurrency(deudores.reduce((s, f) => s + f.saldo, 0))} (${deudores.length} clientes)`);
 
                         const printWin = window.open("", "_blank", "width=420,height=600");
                         if (printWin) {
@@ -830,7 +829,7 @@ export default function FiadoModals({
                                       </div>
                                       <div className="flex gap-1 shrink-0">
                                         <a
-                                          href={waLink(f.customerId, `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`) ?? "#"}
+                                          href={waLink(f.customerId, `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de ${formatCurrency(Number(f.saldo))} en Buleje.`) ?? "#"}
                                           target="_blank" rel="noopener noreferrer"
                                           className="p-1.5 rounded-lg bg-[var(--color-whatsapp)]/10 text-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp)]/20 transition-colors"
                                           title="WhatsApp"

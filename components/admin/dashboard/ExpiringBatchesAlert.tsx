@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, ChevronRight, Calendar, Package, RefreshCw } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,11 +34,7 @@ function daysUntilExpiry(expiryDate: string): number {
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDate(iso);
   } catch {
     return iso;
   }

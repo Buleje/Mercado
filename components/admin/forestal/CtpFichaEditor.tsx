@@ -128,7 +128,7 @@ export default function CtpFichaEditor() {
           {/* En vivo mientras se llena: la cuenta baja a medida que se carga,
               que es lo que hace que valga la pena terminar la carátula. */}
           <CtpFichaCompletitud ficha={draft} />
-          <div className="space-y-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+          <div className="space-y-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
             <CtpFichaFormIdentidad
               draft={draft}
               set={set}

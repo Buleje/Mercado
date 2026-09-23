@@ -25,8 +25,9 @@ import {
   type FilaDespacho,
 } from "@/lib/forestal/despacho-lista";
 import { Btn, ModalFooter } from "./ctp-shared";
+import { formatNumber } from "@/lib/format";
 
-const n4 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 4 });
+const n4 = (v: number) => formatNumber(v, { max: 4 });
 
 export interface CtpPlantaReservaModalProps {
   /** Título del bloque: el nombre de la cancha («Lote 1 · Juan»). */

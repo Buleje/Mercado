@@ -179,7 +179,7 @@ function ObservacionesModal({
     .join("\n");
   return (
     <div
-      className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
+      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/60 p-4"
       /* Fijado = «lo dejo abierto para trabajar sobre el anexo»: el clic afuera
          deja de cerrar. La X, el botón Listo y Escape siguen cerrando. */
       onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}
@@ -237,7 +237,7 @@ function ObservacionesModal({
         {/* El detalle por especie · tipo NO se imprime solo: es un texto que el
             emisor puede copiar al casillero si quiere dejarlo escrito. */}
         {resumen.length > 0 && (
-          <div className="mt-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2.5">
+          <div className="mt-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className={LABEL}>Detalle por especie · tipo{unidadPt ? "" : ""}</span>
               <button

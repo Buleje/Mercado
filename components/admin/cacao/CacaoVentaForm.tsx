@@ -27,6 +27,7 @@ import {
   cacaoEstadoPago,
   cacaoVentaTotalPen,
 } from "@/lib/cacao/cacao-quality";
+import { formatCurrency } from "@/lib/format";
 
 interface LotePick {
   id: string;
@@ -492,7 +493,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
                     <span className="text-[var(--text-secondary)]">
                       Saldo:{" "}
                       <b className="font-mono tabular-nums text-[var(--text-primary)]">
-                        S/ {pago.saldo.toFixed(2)}
+                        {formatCurrency(pago.saldo)}
                       </b>
                     </span>
                   )}
@@ -513,7 +514,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
                 </div>
               )}
               {excede && (
-                <div className="mt-2 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-2.5 text-xs text-[var(--data-warning-700)]">
+                <div className="mt-2 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)]">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> Estás vendiendo más que tu
                   stock disponible. Revisa el peso o registra más acopio/beneficio.
                 </div>
@@ -531,7 +532,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
                 </div>
               )}
               {excedeLote && (
-                <div className="mt-2 flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-2.5 text-xs text-[var(--data-error-700)]">
+                <div className="mt-2 flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-xs text-[var(--data-error-700)]">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> El peso supera el remanente
                   vendible del lote. No se puede registrar hasta corregirlo.
                 </div>

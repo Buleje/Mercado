@@ -56,6 +56,7 @@ import { tenantDeLaClave } from "@/lib/forestal/sembrar-reparto";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 import { bloquesDeCorrida, type CobroAserrioValor } from "@/lib/forestal/tarifa-aserrio";
 import CtpCobroAserrio from "./CtpCobroAserrio";
+import { formatDateNumeric, formatNumber } from "@/lib/format";
 
 /** Lo que se va a consumir: las piezas elegidas del lote. */
 export interface MaterialAConsumir {
@@ -102,7 +103,7 @@ const CAMPO =
 const fmtDia = (iso: string | null | undefined) => {
   if (!iso) return "—";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("es-PE", { timeZone: "UTC" });
+  return Number.isNaN(d.getTime()) ? "—" : formatDateNumeric(d, { soloFecha: true });
 };
 
 /**
@@ -1364,7 +1365,7 @@ export default function CtpRegistrarProduccionModal({
                   label="Volumen (m³)"
                   valor={
                     volumenCalculado != null
-                      ? `${fmtM3(volumenCalculado)}  ·  ${pieTablarDe(volumenCalculado).toLocaleString("es-PE")} pt`
+                      ? `${fmtM3(volumenCalculado)}  ·  ${formatNumber(pieTablarDe(volumenCalculado))} pt`
                       : "—"
                   }
                 />

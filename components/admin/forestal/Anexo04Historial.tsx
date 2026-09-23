@@ -11,16 +11,17 @@
  * anexo — y no puede depender de que alguien despliegue este panel.
  */
 import { useMemo, useState } from "react";
-import { Download, FileSpreadsheet, History, Loader2, Printer, RotateCcw, Search, Trash2 } from "@buleje/design-system/icons";
+import { Download, FileSpreadsheet, History, Loader2, Printer, RotateCcw, Search, Trash2, Star } from "@buleje/design-system/icons";
 import {
   etiquetaEmision, filtrarEmisiones, mesesDeEmisiones, emisionesDelMes, etiquetaMes,
   type AnexoEmitido,
 } from "@/lib/forestal/anexo04-registro";
 import { fmtAnexo } from "@/lib/forestal/anexo04-serfor";
 import { exportarBandejaAnexos } from "@/lib/forestal/anexo04-excel";
+import { formatDate } from "@/lib/format";
 
 const fecha = (iso: string) => {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); }
+  try { return formatDate(iso, { soloFecha: true }); }
   catch { return iso.slice(0, 10); }
 };
 
@@ -145,7 +146,7 @@ export default function Anexo04Historial({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="truncate text-xs font-bold text-[var(--text-primary)]">
-                  {ctpEntryId && a.ctpEntryId === ctpEntryId && <span className="mr-1 text-[var(--accent)]">★</span>}
+                  {ctpEntryId && a.ctpEntryId === ctpEntryId && <Star className="mr-1 inline h-4 w-4 text-[var(--accent)]" aria-hidden fill="currentColor" />}
                   {etiquetaEmision(a)}
                 </p>
                 <p className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">

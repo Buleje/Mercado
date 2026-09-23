@@ -35,6 +35,7 @@ import {
   type EnvioDeAviso,
   type EstadoCanal,
 } from "@/lib/forestal/estado-de-avisos";
+import { formatDateTimeShort } from "@/lib/format";
 
 const TONO: Record<Pendiente["urgencia"], string> = {
   bloquea:
@@ -260,7 +261,7 @@ function EstadoDeEnvios() {
             {e.cuando && (
               <span className="text-[var(--text-tertiary)]">
                 {" · "}
-                {new Date(e.cuando).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                {formatDateTimeShort(e.cuando)}
               </span>
             )}
             {e.motivo && <span className="block text-[var(--text-tertiary)]">{e.motivo}</span>}

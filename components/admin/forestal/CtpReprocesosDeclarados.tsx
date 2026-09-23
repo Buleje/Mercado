@@ -41,6 +41,7 @@ import {
   resumirReprocesos,
   type ReprocesoDeclarado,
 } from "@/lib/forestal/reprocesos-declarados";
+import { formatDateNumeric } from "@/lib/format";
 
 const TH =
   "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
@@ -51,12 +52,7 @@ const CHIP =
 
 /** Date-only en UTC: con la hora de Lima el asiento del día 1 se ve como el 31. */
 const fmtFecha = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", {
-    timeZone: "UTC",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  formatDateNumeric(iso, { soloFecha: true });
 
 export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod }) {
   const [filas, setFilas] = useState<ReprocesoDeclarado[]>([]);

@@ -75,6 +75,7 @@ import { Celda, Cuadro, SinDatos, Texto, Th } from "./ctp-cuadro-shared";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
+import { formatDate, formatNumber } from "@/lib/format";
 
 /** Sin tildes ni mayúsculas: se busca como se tipea, no como se escribió. */
 const norm = (v: string | null | undefined) =>
@@ -84,14 +85,14 @@ const norm = (v: string | null | undefined) =>
 const entraEn = (elegidos: readonly string[], valor: string | null | undefined) =>
   elegidos.length === 0 || elegidos.some((e) => norm(e) === norm(valor));
 
-const nf = (n: number) => n.toLocaleString("es-PE");
+const nf = (n: number) => formatNumber(n);
 
 const fmtFecha = (iso: string | null) => {
   if (!iso) return null;
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? null
-    : d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+    : formatDate(d, { soloFecha: true });
 };
 
 const CAMPO =
@@ -1148,7 +1149,7 @@ export default function CtpConsumosView({
                             <>
                               {" · "}
                               {g.porEspecie.map((e) => `${e.especie} ${fmtM3(e.cantidad)} m³`).join(" · ")}
-                              {` · ≈${pieTablarAserrableDe(g.cantidad, RENDIMIENTO_META).toLocaleString("es-PE")} pt aserrables (56%)`}
+                              {` · ≈${formatNumber(pieTablarAserrableDe(g.cantidad, RENDIMIENTO_META))} pt aserrables (56%)`}
                             </>
                           )}
                         </span>

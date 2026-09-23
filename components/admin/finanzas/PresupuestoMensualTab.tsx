@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,8 +30,6 @@ type DraftCategoria = {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
 const CATEGORIAS_SUGERIDAS = [
   "Mercaderia", "Alquiler", "Servicios", "Personal", "Transporte", "Marketing", "Otros",

@@ -1,10 +1,11 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, StatCard, type StatCardEmphasis } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Package, AlertTriangle, CheckCircle2, TrendingDown, RefreshCw } from "@buleje/design-system/icons";
+import { Package, AlertTriangle, CheckCircle2, TrendingDown, RefreshCw, type LucideIcon } from "@buleje/design-system/icons";
 import { m } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -19,45 +20,42 @@ interface BatchStats {
 }
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
+// La tarjeta migró a `StatCard` (canon KPI 2026-09-22). El skeleton de carga
+// queda fuera de la card (StatCard no tiene estado `loading`) — es un
+// placeholder, no un feature de KPI. La "chip" circular de color detrás del
+// ícono se pierde a propósito (rediseño minimalista de StatCard); el color de
+// severidad se preserva con `iconEmphasis`.
 
-function StatCard({
+function StatCardSkeleton() {
+  return (
+    <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 animate-pulse">
+      <div className="h-3 w-20 bg-[var(--rule-base)] rounded mb-3" />
+      <div className="h-8 w-12 bg-[var(--rule-base)] rounded" />
+    </div>
+  );
+}
+
+function AnimatedStatCard({
   label,
   value,
-  icon: Icon,
-  colorClass,
-  bgClass,
-  loading,
+  icon,
+  emphasis,
 }: {
   label: string;
   value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  colorClass: string;
-  bgClass: string;
-  loading: boolean;
+  icon: LucideIcon;
+  emphasis: StatCardEmphasis;
 }) {
-  if (loading) {
-    return (
-      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 animate-pulse">
-        <div className="h-3 w-20 bg-[var(--rule-base)] rounded mb-3" />
-        <div className="h-8 w-12 bg-[var(--rule-base)] rounded" />
-      </div>
-    );
-  }
-
   return (
-    <m.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4"
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center", bgClass)}>
-          <Icon className={cn("h-3.5 w-3.5", colorClass)} />
-        </div>
-        <span className="text-[length:var(--ts-xs)] font-medium text-[var(--text-secondary)] dark:text-muted leading-tight">{label}</span>
-      </div>
-      <span className={cn("text-2xl font-bold", colorClass)}>{value.toLocaleString("es-PE")}</span>
+    <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+      <StatCard
+        label={label}
+        value={formatNumber(value)}
+        icon={icon}
+        emphasis={emphasis}
+        iconEmphasis
+        density="compact"
+      />
     </m.div>
   );
 }
@@ -88,47 +86,31 @@ export default function BatchStatsWidget() {
     fetchStats();
   }, [fetchStats]);
 
-  const cards = stats
+  const cards: Array<{ label: string; value: number; icon: LucideIcon; emphasis: StatCardEmphasis }> = stats
     ? [
         {
           label: "Lotes activos",
           value: stats.activeBatches,
           icon: CheckCircle2,
-          colorClass: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-          bgClass: "bg-primary/10 dark:bg-primary/15",
+          emphasis: "success",
         },
         {
           label: "Por vencer (7 días)",
           value: stats.expiringWithin7Days,
           icon: AlertTriangle,
-          colorClass:
-            stats.expiringWithin7Days > 0
-              ? "text-[var(--data-warning-600)] dark:text-amber-400"
-              : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-          bgClass:
-            stats.expiringWithin7Days > 0
-              ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/30"
-              : "bg-primary/10 dark:bg-primary/15",
+          emphasis: stats.expiringWithin7Days > 0 ? "warning" : "success",
         },
         {
           label: "Vencidos con stock",
           value: stats.expiredWithStock,
           icon: TrendingDown,
-          colorClass:
-            stats.expiredWithStock > 0
-              ? "text-[var(--data-error-600)] dark:text-red-400"
-              : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-          bgClass:
-            stats.expiredWithStock > 0
-              ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30"
-              : "bg-primary/10 dark:bg-primary/15",
+          emphasis: stats.expiredWithStock > 0 ? "error" : "success",
         },
         {
           label: "Total unidades",
           value: stats.totalUnits,
           icon: Package,
-          colorClass: "text-primary dark:text-[var(--data-success-500)]",
-          bgClass: "bg-primary/10 dark:bg-primary/15",
+          emphasis: "neutral",
         },
       ]
     : [];
@@ -162,18 +144,8 @@ export default function BatchStatsWidget() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {loading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <StatCard
-                  key={i}
-                  label=""
-                  value={0}
-                  icon={Package}
-                  colorClass=""
-                  bgClass=""
-                  loading
-                />
-              ))
-            : cards.map((c) => <StatCard key={c.label} {...c} loading={false} />)}
+            ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+            : cards.map((c) => <AnimatedStatCard key={c.label} {...c} />)}
         </div>
       )}
     </div>

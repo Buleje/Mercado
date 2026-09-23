@@ -36,6 +36,7 @@ import { Btn, I } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
+import { formatNumber } from "@/lib/format";
 
 /**
  * El turno a medio cargar, guardado por lote.
@@ -466,7 +467,7 @@ export default function CtpProduccionDeLote({
             <CifraSeleccion label="Volumen" valor={fmtM3(material.volumenM3)} sufijo="m³" fuerte />
             <CifraSeleccion
               label="Pie tablar"
-              valor={pieTablarDe(material.volumenM3).toLocaleString("es-PE")}
+              valor={formatNumber(pieTablarDe(material.volumenM3))}
               sufijo="pt"
             />
           </div>
@@ -636,7 +637,7 @@ export default function CtpProduccionDeLote({
           cifras={[
             { label: "Trozas", valor: `${alConsumo.length}` },
             { label: "Volumen", valor: `${fmtM3(material.volumenM3)} m³`, fuerte: true },
-            { label: "Pie tablar", valor: `${pieTablarDe(material.volumenM3).toLocaleString("es-PE")} pt` },
+            { label: "Pie tablar", valor: `${formatNumber(pieTablarDe(material.volumenM3))} pt` },
           ]}
           onLimpiar={() => elegir(new Set())}
           accionLabel="Declarar producción"

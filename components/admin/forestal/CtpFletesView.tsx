@@ -37,13 +37,14 @@ import CtpFletesCandidatosBanner from "./CtpFletesCandidatosBanner";
 import CtpCuentaCorriente from "./CtpCuentaCorriente";
 import { Btn, IconAction, TablaSkeleton, VistaHeader } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 type Pestaña = "viajes" | "transportistas" | "proveedores" | "cuenta";
 
-const soles = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const soles = (n: number) => `${formatCurrency(n)}`;
 /** Fecha date-only en UTC: sin esto, un viaje del día 1 se muestra el 31 en Lima. */
 const fecha = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+  formatDateShort(iso, { soloFecha: true });
 
 export default function CtpFletesView({ period }: { period: CtpPeriod }) {
   const { fletes, candidatos, resumen, cargando, error, guardar, marcarPago, eliminar } = useFletesForestales(period);

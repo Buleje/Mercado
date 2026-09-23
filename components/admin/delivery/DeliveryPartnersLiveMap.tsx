@@ -32,6 +32,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
+import { formatDateShort } from "@/lib/format";
 
 // F1-XSS: helper modulo-level para escapar HTML antes de interpolar en Leaflet divIcon/bindPopup
 function escapeHtml(s: string): string {
@@ -128,7 +129,7 @@ function timeAgo(iso: string | null): string {
   if (m < 60) return `hace ${m} min`;
   const h = Math.floor(m / 60);
   if (h < 24) return `hace ${h}h`;
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(iso);
 }
 
 /**

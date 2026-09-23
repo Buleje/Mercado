@@ -27,6 +27,7 @@ import {
 import ConfirmarPagoModal from "./ConfirmarPagoModal";
 import UnificarDuplicadosModal, { type GrupoRepetido } from "./UnificarDuplicadosModal";
 import { fmt } from "./shared";
+import { formatDateShort } from "@/lib/format";
 
 type GastoCrudo = {
   id: string; category: string; description: string; amount: number; date: string; recurring: boolean;
@@ -319,7 +320,7 @@ export default function GastosFijosPanel({
             {f.pagado ? (
               <p className="inline-flex items-center gap-1 text-sm font-bold text-[var(--data-success-ink)]">
                 <Check className="h-4 w-4" aria-hidden />
-                Pagado{f.fechaPago ? ` el ${new Date(f.fechaPago).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}` : ""}
+                Pagado{f.fechaPago ? ` el ${formatDateShort(f.fechaPago)}` : ""}
               </p>
             ) : (
               <button

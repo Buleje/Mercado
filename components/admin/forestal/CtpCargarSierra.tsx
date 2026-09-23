@@ -28,6 +28,7 @@ import CtpBarraSeleccion from "./ctp-barra-seleccion";
 import { Btn } from "./ctp-shared";
 import type { EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 export default function CtpCargarSierra({
   lote,
@@ -172,7 +173,7 @@ export default function CtpCargarSierra({
           )}
         </p>
         <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-          {alConsumo.length} pza · {fmtM3(volumen)} m³ · {pieTablarDe(volumen).toLocaleString("es-PE")} pt
+          {alConsumo.length} pza · {fmtM3(volumen)} m³ · {formatNumber(pieTablarDe(volumen))} pt
         </span>
       </header>
 
@@ -232,7 +233,7 @@ export default function CtpCargarSierra({
           cifras={[
             { label: "Trozas", valor: `${alConsumo.length}` },
             { label: "Volumen", valor: `${fmtM3(volumen)} m³`, fuerte: true },
-            { label: "Pie tablar", valor: `${pieTablarDe(volumen).toLocaleString("es-PE")} pt` },
+            { label: "Pie tablar", valor: `${formatNumber(pieTablarDe(volumen))} pt` },
             ...(yaEnElLote.length > 0
               ? [{ label: "Del lote", valor: `${elegidas.filter((t) => idsYaEnElLote.has(t.id)).length}` }]
               : []),

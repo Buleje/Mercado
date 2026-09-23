@@ -84,13 +84,13 @@ export default function CtpPeriodPicker({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-0 z-dropdown" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
             ref={popoverRef}
             role="dialog"
             aria-label="Período del libro"
             tabIndex={-1}
-            className="absolute right-0 z-50 mt-2 w-[17rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
+            className="absolute right-0 z-modal mt-2 w-[17rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
           >
             {CTP_PERIOD_OPTIONS.map((o) => (
               <button

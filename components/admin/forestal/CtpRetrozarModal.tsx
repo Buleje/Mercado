@@ -139,7 +139,7 @@ export default function CtpRetrozarModal({
         </ModalFooter>
       }
     >
-      <ModalBody ref={bodyRef} className="space-y-5">
+      <ModalBody ref={bodyRef} className="space-y-4">
         {/* Lo que hay para cortar, antes de tocar nada. */}
         <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:grid-cols-4">
           <Dato label="Troza" valor={troza.codificacion ?? "—"} mono />

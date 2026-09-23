@@ -4,6 +4,7 @@ import { CardTitle, DataTable } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Target, Loader2, TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 // ── Análisis RFM (Recencia · Frecuencia · Monto) ────────────────────────────────
 // Consume /api/analytics/rfm (existía sin UI). Segmenta a los clientes por
@@ -46,7 +47,7 @@ const PERIODS = [
   { days: 365, label: "1 año" },
 ];
 
-const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
+const fmt = (n: number) => "S/ " + formatNumber(n, { min: 2 });
 const segLabel = (s: string) => SEGMENT_LABELS[s] ?? s;
 
 export default function RFMTab() {

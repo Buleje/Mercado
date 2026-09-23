@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertCircle, CheckCircle, Clock, FileText, MapPin, Phone, RefreshCw, ThumbsDown, ThumbsUp, X } from "@buleje/design-system/icons";
+import { AlertCircle, CheckCircle, Clock, FileText, MapPin, Phone, RefreshCw, ThumbsDown, ThumbsUp, X, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon } from "@/components/admin/delivery-partners/shared";
+import { formatDateNumeric, formatDateTime } from "@/lib/format";
 
 export function SolicitudesTab() {
   const [apps, setApps] = useState<DriverApplication[]>([]);
@@ -352,13 +353,7 @@ export function SolicitudesTab() {
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] mt-2 font-bold">
                         Recibida:{" "}
-                        {new Date(app.createdAt).toLocaleDateString("es-PE", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatDateTime(app.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -425,12 +420,12 @@ export function SolicitudesTab() {
                     <KycSection
                       title="Consentimientos"
                       rows={[
-                        ["Términos", app.kyc.consents.acceptedTerms ? "✔" : "✗"],
-                        ["Privacidad (Ley 29733)", app.kyc.consents.acceptedPrivacy ? "✔" : "✗"],
-                        ["18+ confirmado", app.kyc.consents.confirmAdult ? "✔" : "✗"],
+                        ["Términos", consentIcon(app.kyc.consents.acceptedTerms)],
+                        ["Privacidad (Ley 29733)", consentIcon(app.kyc.consents.acceptedPrivacy)],
+                        ["18+ confirmado", consentIcon(app.kyc.consents.confirmAdult)],
                         [
                           "Aceptado el",
-                          new Date(app.kyc.consents.acceptedAt).toLocaleDateString("es-PE"),
+                          formatDateNumeric(app.kyc.consents.acceptedAt),
                         ],
                       ]}
                     />
@@ -450,7 +445,13 @@ export function SolicitudesTab() {
   );
 }
 
-function KycSection({ title, rows }: { title: string; rows: [string, string][] }) {
+function consentIcon(ok: boolean) {
+  return ok
+    ? <Check className="ml-auto h-4 w-4 text-[var(--data-success-500)]" aria-label="Sí" />
+    : <X className="ml-auto h-4 w-4 text-[var(--data-error-500)]" aria-label="No" />;
+}
+
+function KycSection({ title, rows }: { title: string; rows: [string, ReactNode][] }) {
   return (
     <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-3 py-2.5">
       <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">

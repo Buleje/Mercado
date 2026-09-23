@@ -22,6 +22,7 @@
 import { SlidersHorizontal, X } from "@buleje/design-system/icons";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { filtroActivo, valoresDe, type ValorFiltro } from "@/lib/forestal/ctp-secciones-filtro";
+import { formatNumber } from "@/lib/format";
 
 /** Las cuatro facetas de la bandeja de Ingresos, cada una con uno o varios valores. */
 export interface FacetasDeIngresos {
@@ -152,7 +153,7 @@ export function camposDeIngresos({
   /** Cómo se escribe un tipo de producto para una persona. */
   productLabel: (v: string) => string;
 }): CampoKpiFiltro[] {
-  const nf = (n: number) => n.toLocaleString("es-PE");
+  const nf = (n: number) => formatNumber(n);
   /* «asientos» dicho con todas las letras: en el archivo la tarjeta cuenta
      GUÍAS (documentos) y esto cuenta líneas del libro. Sin la palabra, «9 ·
      55.78 m³» al lado de una tarjeta que dice «8 guías» se lee como un error. */

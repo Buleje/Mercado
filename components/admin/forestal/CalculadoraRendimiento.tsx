@@ -14,6 +14,7 @@ import { Gauge, Percent, Download } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 /** Totales de lo que ya está cubicado en las otras herramientas (localStorage). */
 function totalesCubicador(): { aserradoPt: number; trozasM3: number } {
@@ -36,7 +37,7 @@ const RANGOS = [
   { hasta: Infinity, label: "imposible: salió más de lo que entró", tono: "error" },
 ] as const;
 
-const fmtPct = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fmtPct = (v: number) => formatNumber(v, 1);
 
 interface PromedioLibro {
   promedio: number;
@@ -114,9 +115,9 @@ export default function CalculadoraRendimiento() {
             <Download className="h-4 w-4" /> Traer del cubicador
           </span>
           <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
-            {disponible.trozasM3 > 0 && <>trozas {disponible.trozasM3.toLocaleString("es-PE", { maximumFractionDigits: 4 })} m³</>}
+            {disponible.trozasM3 > 0 && <>trozas {formatNumber(disponible.trozasM3, { max: 4 })} m³</>}
             {disponible.trozasM3 > 0 && disponible.aserradoPt > 0 && " · "}
-            {disponible.aserradoPt > 0 && <>aserrado {disponible.aserradoPt.toLocaleString("es-PE", { maximumFractionDigits: 2 })} PT</>}
+            {disponible.aserradoPt > 0 && <>aserrado {formatNumber(disponible.aserradoPt, { max: 2 })} PT</>}
           </span>
         </button>
       )}

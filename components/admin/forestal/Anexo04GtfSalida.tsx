@@ -25,6 +25,7 @@ import { documentoGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/fore
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import { logger } from "@/lib/logger";
+import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
 import { useEspeciesConCatalogo } from "./ctp-especie-campo";
 
 export interface DespachoParaGtf {
@@ -59,6 +60,11 @@ export default function Anexo04GtfSalida({
   const [error, setError] = useState<string | null>(null);
   /* El catálogo de la planta completa el binomio que el asiento no trae. */
   const catalogoEspecies = useEspeciesConCatalogo();
+  /* Los permisos cargados (ADR-421/425): el título declarado en la guía puede
+     ser uno que la Ficha del CTP no tiene, y sin la lista sus casilleros
+     (5)(8)(9) salían en blanco. `contratos` arranca `[]` y sólo cambia de
+     identidad cuando la carga termina — por eso puede ir en las deps. */
+  const { contratos: permisos } = usePermisosForestal();
 
   useEffect(() => {
     let vivo = true;
@@ -98,7 +104,15 @@ export default function Anexo04GtfSalida({
           gtfNumber: despacho.gtfNumber,
           destino: despacho.destino,
         };
-        const d = await documentoGtfSalida(doc, ficha ?? {}, cadena, leerGtfDatos(despacho.gtfDatos));
+        const d = await documentoGtfSalida(
+          doc,
+          ficha ?? {},
+          cadena,
+          leerGtfDatos(despacho.gtfDatos),
+          // El detalle (37) sale del propio despacho, como hasta hoy.
+          undefined,
+          permisos,
+        );
         const armado = documentoHtml({
           titulo: d.titulo,
           css: d.css,
@@ -123,7 +137,7 @@ export default function Anexo04GtfSalida({
     /* `cientificoDe` entra en las deps a propósito: el catálogo llega DESPUÉS
        del primer render (es un fetch), y sin esto el anexo se armaría con el
        casillero del binomio vacío y no se volvería a armar nunca. */
-  }, [despacho, ficha, onHtml, catalogoEspecies.cientificoDe]);
+  }, [despacho, ficha, onHtml, catalogoEspecies.cientificoDe, permisos]);
 
   if (error) {
     return (

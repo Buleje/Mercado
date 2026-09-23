@@ -60,7 +60,7 @@ export default function CtpRadarRendimiento({
   onVerCorrida: (id: string) => void;
 }) {
   if (rs.length === 0) {
-    return <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">Sin corridas de producción en el período.</p>;
+    return <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">Sin corridas de producción en el período.</p>;
   }
   const alertas = alertasRendimiento(rs);
   const conRatio = rs.filter((r) => r.ratio != null);

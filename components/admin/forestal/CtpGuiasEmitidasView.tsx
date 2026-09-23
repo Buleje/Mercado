@@ -25,9 +25,10 @@ import {
 } from "@/lib/forestal/guias-emitidas";
 import { Btn, I, TablaSkeleton, VistaHeader } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDateShort } from "@/lib/format";
 
 const fecha = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+  formatDateShort(iso, { soloFecha: true });
 
 const ESTADO_CLASE: Record<EstadoGuia, string> = {
   completa: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
@@ -229,7 +230,7 @@ export default function CtpGuiasEmitidasView({
       </VistaHeader>
 
       {repetidos.length > 0 && (
-        <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-2.5 text-sm font-medium text-[var(--data-warning-700)]">
+        <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-sm font-medium text-[var(--data-warning-700)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           Número repetido en más de un despacho vigente: {repetidos.join(", ")}. Puede ser una guía que ampara varias
           líneas, o un error de tipeo — conviene revisarlo antes de que lo haga un control.

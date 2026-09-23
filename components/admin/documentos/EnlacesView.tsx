@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { DbSharedLink } from "@/lib/types/documents";
 import { fetchSharedLinks, revokeAllSharedLinks, revokeSharedLink } from "@/hooks/use-documents";
+import { formatDateShort } from "@/lib/format";
 
 type Estado = "activo" | "vencido" | "revocado";
 
@@ -50,7 +51,7 @@ function vigencia(l: DbSharedLink, estado: Estado): string {
 }
 
 function fechaCorta(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(iso);
 }
 
 /**

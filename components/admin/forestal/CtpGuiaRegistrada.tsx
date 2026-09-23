@@ -24,6 +24,7 @@ import { faltantesGtf, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { volumenTotal, type FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
 import type { FichaCtp } from "@/hooks/use-ficha-ctp";
+import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
 import { Btn } from "./ctp-shared";
@@ -60,6 +61,10 @@ export default function CtpGuiaRegistrada({
   /* El catálogo de especies de la planta: completa el binomio que el asiento no
      trae, al imprimir (ADR-410). */
   const catalogoEspecies = useEspeciesConCatalogo();
+  /* Los permisos cargados (ADR-421/425): la guía puede declarar uno que la
+     Ficha del CTP no tiene, y sin la lista sus casilleros (5)(8)(9) —origen,
+     resolución y plan de manejo— salían en blanco en el papel. */
+  const { contratos: permisos } = usePermisosForestal();
 
   const faltan = faltantesGtf(datos);
   const total = volumenTotal(filas);
@@ -81,6 +86,7 @@ export default function CtpGuiaRegistrada({
         /* El binomio que falte en el asiento sale del catálogo de la planta: el
            casillero (37) lo pide y una guía a medio llenar la para el control. */
         lineasDeGuia(filas, catalogoEspecies.cientificoDe),
+        permisos,
       );
       const html = documentoHtml({ titulo: d.titulo, css: d.css, cuerpo: d.cuerpos, pieCorrido: d.pieCorrido });
       /* No se dispara la impresión: se abre el visor. Original + 2 copias son

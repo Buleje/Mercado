@@ -16,10 +16,11 @@ import { claveBusqueda, formatearPlaca } from "@/lib/forestal/directorio";
 import { TIPO_TRANSPORTE_LABEL, type CandidatoFlete } from "@/lib/forestal/fletes";
 import { Btn } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDateShort } from "@/lib/format";
 
 /** Fecha date-only en UTC: sin esto, un viaje del día 1 se muestra el 31 en Lima. */
 const fecha = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+  formatDateShort(iso, { soloFecha: true });
 
 interface GrupoFletero {
   nombre: string;

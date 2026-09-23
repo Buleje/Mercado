@@ -32,9 +32,10 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Flete } from "@/lib/forestal/fletes";
 import { Btn, I, IconAction, TablaSkeleton } from "./ctp-shared";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
-const soles = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const fecha = (iso: string) => new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+const soles = (n: number) => `${formatCurrency(n)}`;
+const fecha = (iso: string) => formatDateShort(iso, { soloFecha: true });
 const hoy = () => new Date().toISOString().slice(0, 10);
 
 export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
@@ -229,7 +230,7 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
       )}
 
       {error && (
-        <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-2.5 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+        <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           {error}
         </p>
       )}

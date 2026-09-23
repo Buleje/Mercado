@@ -18,6 +18,7 @@ import { Download, Search } from "@buleje/design-system/icons";
 import { SIN_TITULO, type OrdenTrozas } from "@/lib/forestal/trozas-patio";
 import { CampoDeFiltro, type FacetaOpcion } from "./ctp-filtros-panel";
 import { ORDENES } from "./ctp-trozas-lista-shared";
+import { formatNumber } from "@/lib/format";
 
 const CAMPO =
   "h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none";
@@ -59,7 +60,7 @@ export default function CtpTrozasBarra({
             <>
               {piezasFiltradas === piezasTotales ? `${piezasFiltradas} piezas` : `${piezasFiltradas} de ${piezasTotales} piezas`}
               {" · "}
-              <span className="font-mono tabular-nums">{m3Filtrados.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³</span>
+              <span className="font-mono tabular-nums">{formatNumber(m3Filtrados, { max: 2 })} m³</span>
             </>
           )}
         </span>

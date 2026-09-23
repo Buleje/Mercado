@@ -16,6 +16,7 @@ import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { ChevronDown, FileText, Loader2, Printer } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
 import { documentoGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/forestal/ctp-gtf-print";
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
@@ -53,6 +54,10 @@ export default function CtpGtfSeccion({
   /** La guía de salida también va sola al expediente, igual que las de ingreso. */
   const [colaArchivo, setColaArchivo] = useState<GuiaParaArchivar[]>([]);
   const [archivada, setArchivada] = useState<string | null>(null);
+  /* Los permisos cargados (ADR-421/425): el título de la guía puede ser uno que
+     la Ficha del CTP no declara, y sin esta lista sus casilleros (5)(8)(9)
+     salían en blanco en el papel. Se piden sólo si hay guía que imprimir. */
+  const permisos = usePermisosForestal({ activo: Boolean(gtf) });
 
   const completos = leerGtfDatos(gtfDatosGuardado);
   const yaTieneDatos = Boolean(completos.propietario.nombre || completos.destinatario.nombre);
@@ -107,7 +112,15 @@ export default function CtpGtfSeccion({
     if (!ficha) throw new Error("Todavía no se pudo leer la Ficha del CTP. Reintenta en un momento.");
     setBusy("imprimir");
     try {
-      const d = await documentoGtfSalida({ ...despacho, gtfNumber: gtf }, ficha, cadena, datos);
+      const d = await documentoGtfSalida(
+        { ...despacho, gtfNumber: gtf },
+        ficha,
+        cadena,
+        datos,
+        // El detalle (37) lo arma el propio despacho: una guía, un producto.
+        undefined,
+        permisos.contratos,
+      );
       // No se dispara la impresión: se abre el visor. El original y sus dos
       // copias son tres hojas — conviene mirarlas antes de gastar el papel.
       const html = documentoHtml({

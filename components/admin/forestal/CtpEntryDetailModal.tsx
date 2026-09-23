@@ -95,7 +95,7 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
         </ModalFooter>
       }
     >
-      <div className={`space-y-5 ${MODAL_BODY}`}>
+      <div className={`space-y-4 ${MODAL_BODY}`}>
         {/* Antes de la ficha: qué falta para el formato. Los bloques de abajo
             siguen nombrando sus vacíos, pero sólo acá se distingue lo que
             IMPIDE presentar de lo que es complemento — y sale de la misma

@@ -144,15 +144,32 @@ export default function CtpDespachoGuiaModal({
    * desde otra pantalla mientras tanto), se avisa en vez de registrarlo igual.
    */
   const [precargando, setPrecargando] = useState(Boolean(presetUids?.length));
+  /**
+   * La dependencia es el CONTENIDO de la selección, no el array.
+   *
+   * `presetUids` llega como prop y al menos un padre lo arma en cada render
+   * —`CtpProductosDisponibles.tsx:1849` pasa `presetUids={[...seleccion]}`, un
+   * array nuevo cada vez—, así que su identidad cambia sola: el efecto volvía a
+   * correr con la MISMA selección y su `setTab("productos")` **devolvía el
+   * modal a la pestaña de productos** en medio de la carga de los datos de la
+   * guía. El arreglo va en el hijo y no en cada padre: un componente no puede
+   * confiar en la identidad de una prop de array, y así quedan cubiertos los
+   * tres que lo usan. Con una clave derivada del
+   * contenido, la precarga sólo se rehace cuando de verdad cambia qué se está
+   * despachando. Los uids salen de la propia clave para que el efecto no
+   * dependa del array.
+   */
+  const claveSeleccion = (presetUids ?? []).join("|");
   useEffect(() => {
-    if (!presetUids?.length) return;
+    const uids = claveSeleccion ? claveSeleccion.split("|") : [];
+    if (!uids.length) return;
     let vivo = true;
     setPrecargando(true);
     ctpGet<{ corridas?: CorridaDisponible[] }>("/api/admin/forestal/ctp?disponibles=1")
       .then((r) => {
         if (!vivo) return;
         const todas = filasDeCorridas(r.corridas ?? []);
-        const quiero = new Set(presetUids);
+        const quiero = new Set(uids);
         const elegidas = todas.filter((f) => quiero.has(f.uid));
         setFilas(elegidas);
         if (elegidas.length < quiero.size) {
@@ -163,7 +180,7 @@ export default function CtpDespachoGuiaModal({
       .catch((e) => { if (vivo) setError(e instanceof Error ? e.message : String(e)); })
       .finally(() => { if (vivo) setPrecargando(false); });
     return () => { vivo = false; };
-  }, [presetUids]);
+  }, [claveSeleccion]);
 
   /** Uso de la libreta en ESTA guía: se cuenta recién al registrar. */
   const usados = useRef<{ partes: Set<string>; vehiculos: Set<string> }>({ partes: new Set(), vehiculos: new Set() });

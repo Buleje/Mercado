@@ -39,6 +39,7 @@ import AnotarGestion from "./AnotarGestion";
 import PlantillasModal from "./PlantillasModal";
 import MetaModal from "./MetaModal";
 import ModoLlamada from "./ModoLlamada";
+import { formatDateNumeric } from "@/lib/format";
 
 type FiadoCobranza = FiadoParaCobranza & FiadoParaScore & { cuotas: readonly { pagadoEn?: string | null; monto: number }[] };
 
@@ -177,7 +178,7 @@ export default function CobranzaView({
     doc.text("Cobranza de fiados", 14, 18);
     doc.setFontSize(10);
     doc.text(
-      `Por cobrar: ${formatCurrency(totalPorCobrar)} · ${deudores.length} deudores · ${new Date().toLocaleDateString("es-PE")}`,
+      `Por cobrar: ${formatCurrency(totalPorCobrar)} · ${deudores.length} deudores · ${formatDateNumeric(new Date())}`,
       14,
       25,
     );
@@ -191,8 +192,8 @@ export default function CobranzaView({
           d.nombre,
           formatCurrency(d.saldo),
           d.dias > 0 ? `${d.dias} días` : "al día",
-          u ? `${u.tipo} ${new Date(u.fecha).toLocaleDateString("es-PE")}` : "—",
-          p?.gestion.fechaPrometida ? new Date(p.gestion.fechaPrometida).toLocaleDateString("es-PE") : "—",
+          u ? `${u.tipo} ${formatDateNumeric(u.fecha)}` : "—",
+          p?.gestion.fechaPrometida ? formatDateNumeric(p.gestion.fechaPrometida) : "—",
           d.telefono,
         ];
       }),

@@ -33,6 +33,7 @@ import {
   type DestinoProducto,
   type ResumenDeLote,
 } from "@/lib/forestal/productos-de-lote";
+import { formatDate } from "@/lib/format";
 
 const CELDA = "px-3 py-2.5 text-sm";
 const CIFRA = `${CELDA} text-right font-mono tabular-nums`;
@@ -66,7 +67,7 @@ const fmtFecha = (iso: string | null) => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? "—"
-    : d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+    : formatDate(d, { soloFecha: true });
 };
 
 export default function CtpLoteProductosModal({

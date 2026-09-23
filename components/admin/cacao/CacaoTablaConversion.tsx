@@ -13,6 +13,7 @@ import { Table } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT, ANCLA_CC_LABEL } from "@/lib/cacao/cacao-precio-regional";
 import CacaoChartPresent from "./CacaoChartPresent";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 interface PricePoint { t: number; c: number }
 interface Row { key: string; label: string; t: number; usd: number; fx: number; solKg: number; compraKg: number }
@@ -25,7 +26,7 @@ const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "o
 const DAY_MS = 86_400_000;
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const fmt0 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 0 });
+const fmt0 = (v: number) => formatNumber(v, { max: 0 });
 const dayLabel = (t: number) => {
   const d = new Date(t);
   return `${cap(DIAS[d.getUTCDay()])}. ${d.getUTCDate()} ${MESES[d.getUTCMonth()]}.`;
@@ -172,11 +173,11 @@ export default function CacaoTablaConversion({
                     </td>
                     <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">US$ {fmt0(r.usd)}/t</td>
                     <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.fx.toFixed(4)}</td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">S/ {r.solKg.toFixed(2)}/kg</td>
+                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{formatCurrency(r.solKg)}/kg</td>
                     <td className={`px-3 py-2.5 text-right font-mono font-bold tabular-nums ${esBase ? "text-[var(--text-secondary)]" : varPct > 0 ? "text-[var(--data-success-700)]" : varPct < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-secondary)]"}`}>
                       {esBase ? "0%" : `${varPct > 0 ? "+" : ""}${varPct.toFixed(2)}%`}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono text-base font-extrabold tabular-nums text-[var(--data-success-700)]">S/ {r.compraKg.toFixed(2)}/kg</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-base font-extrabold tabular-nums text-[var(--data-success-700)]">{formatCurrency(r.compraKg)}/kg</td>
                   </tr>
                 );
               })}

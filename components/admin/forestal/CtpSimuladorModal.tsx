@@ -17,13 +17,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle, LoadingState } from "@buleje/design-system";
-import { AlertCircle, Calculator, RefreshCw } from "@buleje/design-system/icons";
+import { AlertCircle, Calculator, RefreshCw, Check } from "@buleje/design-system/icons";
 import { rendimientoReferencial } from "@/lib/forestal/ctp-rendimiento";
 import { Btn, MODAL_BODY } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 /* La MISMA constante del cubicador, no una copia: acá vivía un `423.78`
    tipeado a mano, que ya se había separado del 424 con el que se compra. */
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
+import { formatNumber } from "@/lib/format";
 
 
 
@@ -38,7 +39,7 @@ interface Guia {
   moneda: string;
 }
 
-const money = (v: number, m = "PEN") => `${m === "USD" ? "US$" : "S/"} ${v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const money = (v: number, m = "PEN") => `${m === "USD" ? "US$" : "S/"} ${formatNumber(v, 2)}`;
 
 export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) {
   const [guias, setGuias] = useState<Guia[]>([]);
@@ -152,7 +153,7 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
                     const on = sel[g.id] != null;
                     return (
                       <div key={g.id} className={`flex flex-wrap items-center gap-3 rounded-xl border p-3 ${on ? "border-[var(--brand-ink)] bg-[var(--surface-canvas)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"}`}>
-                        <button type="button" onClick={() => toggle(g)} className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-xs font-bold ${on ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white" : "border-[var(--rule-base)] text-transparent"}`} aria-label={on ? "Quitar" : "Agregar"}>✓</button>
+                        <button type="button" onClick={() => toggle(g)} className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg border ${on ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white" : "border-[var(--rule-base)] text-transparent"}`} aria-label={on ? "Quitar" : "Agregar"}><Check className="h-4 w-4" aria-hidden /></button>
                         <div className="min-w-[8rem] flex-1">
                           <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">{g.species ?? "—"}{g.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}</div>
                           <div className="font-mono text-xs text-[var(--text-tertiary)]">GTF {g.code ?? "—"} · disp. {fmtM3(g.disponible)} m³ · {g.costoUnitario != null ? `${money(g.costoUnitario, g.moneda)}/m³` : "sin costo"}</div>

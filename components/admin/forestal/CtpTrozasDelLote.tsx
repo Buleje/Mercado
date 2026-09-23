@@ -25,9 +25,10 @@ import { CheckCircle2, PackageOpen, Search } from "@buleje/design-system/icons";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
-import { FiltroColumna, FiltroColumnaRango, type FacetaOpcion } from "./ctp-filtros-panel";
+import { FiltroColumnaMulti, FiltroColumnaRango, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { enRango, type RangoNumerico } from "@/lib/forestal/ctp-secciones-filtro";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDateNumeric, formatNumber } from "@/lib/format";
 
 /** `AAAA-MM-DD` o ISO → `DD/MM/AAAA` en UTC (las fechas del libro son date-only). */
 const fmtDia = (v: string | null | undefined) => {
@@ -35,7 +36,7 @@ const fmtDia = (v: string | null | undefined) => {
   const d = new Date(v.length <= 10 ? `${v}T12:00:00.000Z` : v);
   return Number.isNaN(d.getTime())
     ? "—"
-    : d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
+    : formatDateNumeric(d, { soloFecha: true });
 };
 const num = (v: number | null | undefined, dec: number) => (v == null ? "—" : Number(v).toFixed(dec));
 
@@ -241,7 +242,7 @@ export default function CtpTrozasDelLote({
               {elegidas.length === 1 ? "" : "s"}
             </>
           )}{" "}
-          · {fmtM3(volumen)} m³ · {pieTablarDe(volumen).toLocaleString("es-PE")} pt
+          · {fmtM3(volumen)} m³ · {formatNumber(pieTablarDe(volumen))} pt
         </p>
       </header>
 
@@ -321,13 +322,13 @@ export default function CtpTrozasDelLote({
             <th className="px-3 py-2 font-bold">
               <span className="block">Nro GTF</span>
               {opcionesGtf.length > 0 && (
-                <FiltroColumna label="Nro GTF" value={gtf} options={opcionesGtf} onChange={setGtf} placeholder="Todas" />
+                <FiltroColumnaMulti label="Nro GTF" value={gtf} options={opcionesGtf} onChange={setGtf} placeholder="Todas" />
               )}
             </th>
             <th className="px-3 py-2 font-bold">
               <span className="block">Nombre científico / Nombre común</span>
               {opcionesEspecie.length > 0 && (
-                <FiltroColumna label="Especie" value={especie} options={opcionesEspecie} onChange={setEspecie} placeholder="Todas" />
+                <FiltroColumnaMulti label="Especie" value={especie} options={opcionesEspecie} onChange={setEspecie} placeholder="Todas" />
               )}
             </th>
             <th className="px-3 py-2 font-bold">
@@ -355,7 +356,9 @@ export default function CtpTrozasDelLote({
                 unidad="m³"
                 paso={0.05}
                 valor={rangoVol}
-                onChange={setRangoVol}
+                // Nunca se pasa `esFecha`: el rango que puede llegar acá es
+                // siempre de número (m³), nunca de fecha.
+                onChange={(r) => setRangoVol(r as RangoNumerico)}
               />
             </th>
             <th className="px-3 py-2 text-center font-bold">

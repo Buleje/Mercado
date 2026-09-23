@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { waLink } from "@/lib/whatsapp-link";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { activateProps } from "@/components/admin/shared/a11y";
+import { formatCurrency, formatCurrencyCompact } from "@/lib/format";
 
 type FiadoStatus = "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
 
@@ -104,8 +105,6 @@ type FiadoStatsProps = {
   /** Sub-tab activo. Default "all" para preservar el render legacy. */
   view?: FiadoStatsView;
 };
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
 export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, setSearch, setSelected, FiadoTendenciaCobro, view = "all" }: FiadoStatsProps) {
   const [calMes, setCalMes] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
@@ -576,7 +575,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                               onClick={e => {
                                 e.stopPropagation();
                                 const nombre = f.customerName || f.customerId;
-                                const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje. Cuando puedas pasa a regularizarlo!`;
+                                const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de ${formatCurrency(Number(f.saldo))} en Buleje. Cuando puedas pasa a regularizarlo!`;
                                 const wa = waLink(f.customerId, msg);
                                 if (wa) window.open(wa, "_blank");
                               }}
@@ -649,7 +648,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             <button
               key={diaKey}
               onClick={() => fiadosDia.length > 0 && setCalDiaSeleccionado(calDiaSeleccionado === diaKey ? null : diaKey)}
-              aria-label={fiadosDia.length > 0 ? `Día ${d}: ${fiadosDia.length} fiados, S/${montoDia.toFixed(2)}` : `Día ${d}: sin vencimientos`}
+              aria-label={fiadosDia.length > 0 ? `Día ${d}: ${fiadosDia.length} fiados, ${formatCurrency(montoDia)}` : `Día ${d}: sin vencimientos`}
               className={cn(
                 "p-1 min-h-[44px] rounded-xl text-center transition-colors relative flex flex-col items-center justify-start gap-0.5",
                 esHoy && "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface-raised)]",
@@ -674,7 +673,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                     tieneVencidos ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]",
                   )}
                 >
-                  S/{montoDia >= 1000 ? `${(montoDia / 1000).toFixed(1)}k` : montoDia.toFixed(0)}
+                  {formatCurrencyCompact(montoDia)}
                 </span>
               )}
             </button>
@@ -758,7 +757,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                     </div>
                     <button
                       onClick={() => {
-                        const msg = `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`;
+                        const msg = `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de ${formatCurrency(Number(f.saldo))} en Buleje.`;
                         const wa = waLink(f.customerId, msg);
                         if (wa) window.open(wa, "_blank");
                       }}

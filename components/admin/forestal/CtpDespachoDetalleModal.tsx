@@ -38,6 +38,7 @@ import CtpGtfSeccion from "./CtpGtfSeccion";
 import CtpHistorial from "./CtpHistorial";
 import { Btn, MODAL_BODY } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 export interface DespachoResumen {
   id: string;
@@ -101,7 +102,7 @@ const COGS_MOTIVO: Record<Exclude<CogsDTO["motivo"], "ok">, string> = {
 const fmtCantidad = (v: number, unit: string | null | undefined) =>
   !unit || unit === "m3" ? fmtM3(v) : v.toFixed(4);
 const money = (v: number, moneda: string | null) =>
-  `${moneda === "USD" ? "US$" : "S/"} ${v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${moneda === "USD" ? "US$" : "S/"} ${formatNumber(v, 2)}`;
 
 export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: DespachoResumen; onClose: () => void }) {
   const [traza, setTraza] = useState<TrazabilidadDTO | null>(null);

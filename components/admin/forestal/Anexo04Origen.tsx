@@ -12,11 +12,12 @@ import { Loader2, PackageOpen } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { recubicarPiezas } from "@/lib/forestal/cubicacion";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import { formatDateShort } from "@/lib/format";
 
 export const ORIGEN_ACTUAL = "actual";
 
 const fecha = (iso: string) => {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" }); }
+  try { return formatDateShort(iso, { soloFecha: true }); }
   catch { return iso.slice(0, 10); }
 };
 
@@ -82,7 +83,7 @@ export default function Anexo04Origen({
         </option>
         {guardadas.map((c) => (
           <option key={c.id} value={c.id}>
-            {sugeridas.includes(c.id) ? "★ de este despacho · " : ""}
+            {sugeridas.includes(c.id) ? "Sugerida (este despacho) · " : ""}
             {c.nombre} · {fecha(c.fecha)} · {c.totales.piezas} pzas{c.cliente ? ` · ${c.cliente}` : ""}
           </option>
         ))}

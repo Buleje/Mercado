@@ -16,8 +16,7 @@ import {
 } from "@/lib/fiados/gestion-cobranza";
 import type { DeudorCobranza } from "@/lib/fiados/urgencia-cobranza";
 import { explicarAtraso } from "@/lib/fiados/urgencia-cobranza";
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
+import { formatCurrency } from "@/lib/format";
 
 const hace = (dias: number) => (dias <= 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} d`);
 

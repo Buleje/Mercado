@@ -24,6 +24,7 @@ import { CardTitle, StatCard } from "@buleje/design-system";
 import { AlertCircle, CheckCircle2, Coins, Loader2, PackageOpen, Percent } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 /** Sólo lo que este panel necesita del ingreso — no el WoodEntry entero. */
 interface IngresoValorizable {
@@ -42,10 +43,10 @@ const API = "/api/admin/forestal/wood-entries";
 const num = (v: number | string | null | undefined): number | null =>
   v == null || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null;
 const soles = (n: number | null, m = "PEN") =>
-  n == null ? "—" : `${m === "PEN" ? "S/" : m} ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const m3 = (n: number | null) => (n == null ? "—" : `${n.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³`);
+  n == null ? "—" : `${m === "PEN" ? "S/" : m} ${formatNumber(n, 2)}`;
+const m3 = (n: number | null) => (n == null ? "—" : `${formatNumber(n, { max: 3 })} m³`);
 /** Fecha date-only: UTC o se corre un día en Lima. */
-const dia = (iso: string) => new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+const dia = (iso: string) => formatDateShort(iso, { soloFecha: true });
 
 const TOPE = 200;
 

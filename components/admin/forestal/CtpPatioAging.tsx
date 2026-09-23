@@ -17,6 +17,7 @@ import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertCircle, Clock, RefreshCw } from "@buleje/design-system/icons";
 import { bucketsAntiguedad } from "@/lib/forestal/ctp-saldos-analisis";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { formatNumber } from "@/lib/format";
 
 interface Guia {
   id: string; code: string | null; entryDate: string; species: string | null;
@@ -57,7 +58,7 @@ const TONO_TRAMO = {
 } as const;
 
 const n2 = (v: number) => v.toFixed(2);
-const money = (v: number, m = "PEN") => `${m === "USD" ? "US$" : "S/"} ${v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const money = (v: number, m = "PEN") => `${m === "USD" ? "US$" : "S/"} ${formatNumber(v, 2)}`;
 const diasDesde = (iso: string) => {
   const d = new Date(iso).getTime();
   if (Number.isNaN(d)) return 0;

@@ -33,6 +33,7 @@ import CtpHistorial from "./CtpHistorial";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn, MODAL_BODY } from "./ctp-shared";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { formatDate, formatNumber } from "@/lib/format";
 
 export interface ProduccionResumen {
   id: string;
@@ -87,11 +88,11 @@ const COSTO_MOTIVO: Record<Exclude<CostoDTO["motivo"], "ok">, string> = {
 
 const n4 = (v: number) => v.toFixed(4);
 const money = (v: number, moneda: string | null) =>
-  `${moneda === "USD" ? "US$" : "S/"} ${v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${moneda === "USD" ? "US$" : "S/"} ${formatNumber(v, 2)}`;
 // timeZone UTC: entryDate del ingreso es date-only a medianoche UTC (off-by-one en Lima sin esto).
 const fmtDate = (iso: string | null) => {
   if (!iso) return "—";
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; }
+  try { return formatDate(iso, { soloFecha: true }); } catch { return iso; }
 };
 
 export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: ProduccionResumen; onClose: () => void }) {

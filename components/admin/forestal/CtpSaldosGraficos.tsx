@@ -34,6 +34,7 @@ import {
   type EspecieSaldo,
   type MateriaPrimaTotales,
 } from "@/lib/forestal/ctp-saldos-analisis";
+import { formatNumber } from "@/lib/format";
 
 const n2 = (v: number) => v.toFixed(2);
 const m3 = (v: number | string) => `${Number(v).toFixed(2)} m³`;
@@ -92,7 +93,7 @@ export default function CtpSaldosGraficos({
   const enPiezas = patio.unidad === "piezas";
   /** Formateador y rótulo de la unidad activa, en un solo lugar. */
   const fmtUnidad = enPiezas
-    ? (v: number | string) => `${Number(v).toLocaleString("es-PE")} trozas`
+    ? (v: number | string) => `${formatNumber(Number(v))} trozas`
     : m3;
   const rotuloUnidad = enPiezas ? "trozas en patio" : "m³ en patio";
 
@@ -182,7 +183,7 @@ export default function CtpSaldosGraficos({
                 />
                 <div className="min-w-0">
                   <p className="font-mono text-3xl font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
-                    {enPiezas ? totalPatio.toLocaleString("es-PE") : n2(totalPatio)}
+                    {enPiezas ? formatNumber(totalPatio) : n2(totalPatio)}
                   </p>
                   <p className="mt-1 text-sm text-[var(--text-secondary)]">
                     {rotuloUnidad}, {rebanadas[0].especies > 1 ? "repartidas entre" : "todas de"}{" "}
@@ -213,7 +214,7 @@ export default function CtpSaldosGraficos({
                     label={
                       <div className="text-center">
                         <p className="font-mono text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-                          {enPiezas ? totalPatio.toLocaleString("es-PE") : n2(totalPatio)}
+                          {enPiezas ? formatNumber(totalPatio) : n2(totalPatio)}
                         </p>
                         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                           {rotuloUnidad}
@@ -239,7 +240,7 @@ export default function CtpSaldosGraficos({
                         )}
                       </span>
                       <span className="ml-auto shrink-0 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
-                        {enPiezas ? r.value.toLocaleString("es-PE") : `${n2(r.value)} m³`}
+                        {enPiezas ? formatNumber(r.value) : `${n2(r.value)} m³`}
                       </span>
                       <span className="w-12 shrink-0 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
                         {totalPatio > 0 ? `${((r.value / totalPatio) * 100).toFixed(0)} %` : "—"}

@@ -23,6 +23,7 @@ import { BulejeLineChart } from "@/components/ui-system/charts";
 import { useCtpComplianceSerie, type ComplianceSnapshot } from "@/hooks/use-ctp-compliance-serie";
 import { densificarPorDia, queCambio, tramosSinMedir } from "@/lib/forestal/compliance-historia";
 import type { CtpPeriodKey } from "@/lib/forestal/ctp-period";
+import { formatDateShort } from "@/lib/format";
 
 /** Las cinco que restan puntos, con el nombre que usa el desglose del score. */
 const CATEGORIAS = [
@@ -35,11 +36,7 @@ const CATEGORIAS = [
 
 /** `yyyy-mm-dd` → «3 sep». UTC: la columna es date-only (off-by-one de Lima). */
 const dia = (f: string) =>
-  new Date(`${f}T00:00:00Z`).toLocaleDateString("es-PE", {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
+  formatDateShort(`${f}T00:00:00Z`, { soloFecha: true });
 
 export default function CtpComplianceHistoria({
   periodo,

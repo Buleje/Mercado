@@ -14,6 +14,7 @@
 
 import { useEffect, useState } from "react";
 import { History, Loader2 } from "@buleje/design-system/icons";
+import { formatDateTime } from "@/lib/format";
 
 type Entrada = { id: string; action: string; detail: string; user: string; createdAt: string };
 
@@ -26,9 +27,7 @@ const ACCION_LABEL: Record<string, string> = {
 function cuando(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("es-PE", {
-    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-  });
+  return formatDateTime(d);
 }
 
 export default function HistorialDeCambios({ refId }: { refId: string }) {

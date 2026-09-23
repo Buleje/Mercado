@@ -24,6 +24,7 @@ import CtpPlantaEspecies from "./CtpPlantaEspecies";
 import CtpPlantaZonas from "./CtpPlantaZonas";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpPlantaReservaModal from "./CtpPlantaReservaModal";
+import { formatNumber } from "@/lib/format";
 
 export type { Item, ItemKind, ZonaInv };
 
@@ -36,7 +37,7 @@ interface PlantaSaldos {
 const n2 = (v: number) => v.toFixed(2);
 
 /** Área legible: el aserradero se mide en m², el terreno grande en ha. */
-const fmtArea = (m2: number) => (m2 >= 10000 ? `${(m2 / 10000).toFixed(2)} ha` : `${Math.round(m2).toLocaleString("es-PE")} m²`);
+const fmtArea = (m2: number) => (m2 >= 10000 ? `${(m2 / 10000).toFixed(2)} ha` : `${formatNumber(Math.round(m2))} m²`);
 
 const KIND_LABEL: Record<ItemKind, string> = {
   troza: "Troza en patio",
@@ -311,7 +312,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
 
       {/* Qué se mueve en la planta AHORA (del Libro) — el contexto del mapa. */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard density="compact" label="Zonas mapeadas" value={String(zonas.length)} subValue={areaTotal > 0 ? `${areaTotal >= 10000 ? `${(areaTotal / 10000).toFixed(2)} ha` : `${Math.round(areaTotal).toLocaleString("es-PE")} m²`} en total` : "sin dibujar"} icon={MapIcon} emphasis="neutral" />
+        <StatCard density="compact" label="Zonas mapeadas" value={String(zonas.length)} subValue={areaTotal > 0 ? `${areaTotal >= 10000 ? `${(areaTotal / 10000).toFixed(2)} ha` : `${formatNumber(Math.round(areaTotal))} m²`} en total` : "sin dibujar"} icon={MapIcon} emphasis="neutral" />
         {/*
           ⛔ Esto NO es «el patio»: es el saldo del LIBRO por guía
           (Σ ingresos − Σ consumo declarado). Puede dar negativo cuando una

@@ -27,6 +27,7 @@ import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 import CtpEscuadriaPaqueteModal from "./CtpEscuadriaPaqueteModal";
 import { guardarEscuadriaDePaquete } from "@/lib/forestal/escuadria-guardar";
 import { CeldaEscuadria } from "./ctp-celda-escuadria";
+import { formatDateNumeric, formatNumber } from "@/lib/format";
 
 export interface PaqueteEncontrado {
   id: string;
@@ -80,7 +81,7 @@ const n = (v: number | string | null | undefined, dec = 4) =>
 const fmtDia = (iso: string | null | undefined) => {
   if (!iso) return "—";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("es-PE", { timeZone: "UTC" });
+  return Number.isNaN(d.getTime()) ? "—" : formatDateNumeric(d, { soloFecha: true });
 };
 
 function Dato({ label, valor, fuerte }: { label: string; valor: string; fuerte?: boolean }) {
@@ -233,7 +234,7 @@ export default function CtpPaqueteFicha({
                 <Dato label="Piezas" valor={String(p.cantidad ?? "—")} />
                 <Dato
                   label="Volumen"
-                  valor={`${n(p.volumenM3)} m³ · ${pieTablarDe(Number(p.volumenM3 ?? 0)).toLocaleString("es-PE")} pt`}
+                  valor={`${n(p.volumenM3)} m³ · ${formatNumber(pieTablarDe(Number(p.volumenM3 ?? 0)))} pt`}
                   fuerte
                 />
               </div>

@@ -106,7 +106,7 @@ export default function CtpTrozasImportModal({
         {texto.trim().length > 0 && (
           <div className="space-y-2">
             {desajuste && (
-              <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-2.5 text-sm font-medium text-[var(--data-warning-700)]">
+              <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-sm font-medium text-[var(--data-warning-700)]">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 {desajuste}
               </p>
@@ -125,7 +125,7 @@ export default function CtpTrozasImportModal({
             )}
 
             {resultado.trozas.length > 0 && (
-              <ul className="max-h-40 space-y-0.5 overflow-y-auto rounded-xl border border-[var(--rule-base)] p-2">
+              <ul className="max-h-40 space-y-0.5 overflow-y-auto rounded-xl border border-[var(--rule-base)] p-3">
                 {resultado.trozas.slice(0, 50).map((t) => (
                   <li key={t.orden} className="flex items-center gap-2 text-sm">
                     <span className="w-8 shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{t.orden}</span>

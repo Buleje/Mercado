@@ -82,6 +82,7 @@ import { TagEditModal } from "./TagEditModal";
 import { BulkTagModal } from "./BulkTagModal";
 import { PapeleraView } from "./PapeleraView";
 import { formatBytes, getFileIcon } from "./archivo-visual";
+import { formatDate, formatDateLong, formatDateNumeric, formatDateShort, formatNumber } from "@/lib/format";
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers
@@ -104,7 +105,7 @@ function sugDescartadasKey(): string {
 }
 
 const fmtFechaCorta = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
+  formatDateNumeric(iso, { soloFecha: true });
 
 /**
  * Miniatura de la card de la grilla: imagen real para archivos de imagen y
@@ -186,7 +187,7 @@ function fmtMoney(v: number | string | null | undefined, moneda?: string | null)
   const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[^\d.-]/g, ""));
   if (!isFinite(n)) return null;
   const sym = moneda === "USD" ? "$" : "S/";
-  return `${sym} ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${sym} ${formatNumber(n, 2)}`;
 }
 /** Chip compacto en la card: muestra el total (o el tipo) del comprobante detectado. */
 function StructuredChip({ doc }: { doc: DbDocument }) {
@@ -1287,7 +1288,7 @@ export default function DocumentosModule() {
     >
       {/* Drag overlay */}
       {dragOver && (
-        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
+        <div className="fixed inset-0 z-modal pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
           <div className="bg-[var(--surface-raised)] border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
             <Upload className="h-12 w-12 mx-auto text-primary mb-3" />
             <p className="text-xl font-extrabold text-[var(--text-primary)]">Suelta los archivos para subir</p>
@@ -1464,10 +1465,13 @@ export default function DocumentosModule() {
           <div className="min-w-0 text-sm">
             <p className="font-extrabold">Escaneado: {scanResult.name}</p>
             {scanResult.expiresAt ? (
-              <p className="mt-0.5">
-                📅 Detecté vencimiento el{" "}
-                <strong>{new Date(scanResult.expiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}</strong>
-                {" "}— te avisaré por WhatsApp antes.
+              <p className="flex items-start gap-1.5 mt-0.5">
+                <CalendarDays className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />
+                <span>
+                  Detecté vencimiento el{" "}
+                  <strong>{formatDateLong(scanResult.expiresAt)}</strong>
+                  {" "}— te avisaré por WhatsApp antes.
+                </span>
               </p>
             ) : (
               <p className="mt-0.5">La IA lo nombró y clasificó. Si vence, agrega la fecha desde el documento.</p>
@@ -2596,7 +2600,7 @@ export default function DocumentosModule() {
                         )}
                         {colsVisibles.subido && (
                           <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-tertiary)]">
-                            {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                            {formatDateShort(doc.uploadedAt)}
                           </td>
                         )}
                         <td className="px-4 py-3 text-center">
@@ -3040,7 +3044,7 @@ function ExpiryBadge({ expiresAt, className }: { expiresAt: string | null; class
       ? { label: `Vence en ${n}d`, cls: err }
       : n <= 30
       ? { label: `Vence en ${n}d`, cls: warn }
-      : { label: new Date(expiresAt!).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" }), cls: ok };
+      : { label: formatDate(expiresAt!), cls: ok };
   return (
     <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[length:var(--ts-2xs,11px)] font-bold", cls, className)}>
       <AlarmClock className="h-3 w-3" /> {label}

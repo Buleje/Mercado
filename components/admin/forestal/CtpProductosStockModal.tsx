@@ -21,6 +21,7 @@ import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { filasDeCorridas, r4, TOLERANCIA_M3, valorPropuesto, type CorridaDisponible, type FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { Btn, ModalFooter, productLabel } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
+import { formatDateNumeric } from "@/lib/format";
 
 const CAMPO =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
@@ -30,7 +31,7 @@ const CELDA_NUM =
 const norm = (v: string | null | undefined) => (v ?? "").toLowerCase().trim();
 const dia = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 const fmtDia = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }) : "—";
+  iso ? formatDateNumeric(iso, { soloFecha: true }) : "—";
 const MEDIDA: Record<string, string> = { m3: "Metros cúbicos", pt: "Pies tablares", kg: "Kilogramos", unidad: "Unidades" };
 
 export default function CtpProductosStockModal({

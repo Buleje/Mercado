@@ -48,6 +48,7 @@ import {
 import CajasPorSeccion, { type ArchivoDeSeccion } from "./serfor-import/CajasPorSeccion";
 import ReporteDeImport from "./serfor-import/ReporteDeImport";
 import { armarReporte } from "@/lib/forestal/ctp-reporte-import";
+import { formatNumber } from "@/lib/format";
 
 type ResultadoFila = { fila?: number; codigo: string; accion: string; mensaje: string };
 type Respuesta = {
@@ -377,7 +378,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
@@ -547,7 +548,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                   <div>
                     <dt className="text-sm font-semibold text-[var(--text-tertiary)]">Rolliza en patio</dt>
                     <dd className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-                      {inventario.rolliza.m3.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³
+                      {formatNumber(inventario.rolliza.m3, { max: 3 })} m³
                     </dd>
                     <dd className="text-sm text-[var(--text-tertiary)]">
                       {inventario.rolliza.piezas} trozas · {inventario.rolliza.especies} especies
@@ -558,7 +559,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                   <div>
                     <dt className="text-sm font-semibold text-[var(--text-tertiary)]">Aserrada en depósito</dt>
                     <dd className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-                      {inventario.aserrada.m3.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³
+                      {formatNumber(inventario.aserrada.m3, { max: 3 })} m³
                     </dd>
                     <dd className="text-sm text-[var(--text-tertiary)]">
                       {inventario.aserrada.piezas} paquetes · {inventario.aserrada.especies} especies
@@ -605,7 +606,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                         k.ojo ? "text-[var(--data-error)]" : "text-[var(--text-primary)]"
                       }`}
                     >
-                      {k.v.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³
+                      {formatNumber(k.v, { max: 3 })} m³
                     </dd>
                     <dd className="text-sm text-[var(--text-tertiary)]">{k.sub}</dd>
                   </div>
@@ -618,7 +619,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                   <span className="font-normal text-[var(--text-secondary)]">
                     Por el detalle harían falta al menos{" "}
                     <strong className="tabular-nums">
-                      {estado.aperturaNecesariaM3.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³
+                      {formatNumber(estado.aperturaNecesariaM3, { max: 3 })} m³
                     </strong>{" "}
                     de existencia inicial, pero el número exacto NO se estima: lo declara el «Saldo Inicial» del Cuadro
                     Resumen 2 del SNIFFS. Baja ese cuadro y cárgalo como existencia de apertura.

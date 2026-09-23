@@ -17,6 +17,7 @@ import { CardTitle, StatCard } from "@buleje/design-system";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
 import { PLAGA_LABEL, type CacaoPlaga } from "@/lib/cacao/cacao-sanidad";
 import { printCacaoReporte } from "@/lib/cacao/cacao-reporte";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 // Gráfico central grande (recharts) fuera del bundle inicial.
 const CacaoResumenChart = dynamic(() => import("./CacaoResumenChart"), {
@@ -43,10 +44,10 @@ interface CampoStats { parcelas: number; areaHa: number; alDia: number; pendient
 interface CampoSanidad { focosActivos: number; criticos: number; seccionesAfectadas: number; plagaTop: CacaoPlaga | null }
 interface CampoTotales { cosechaKg: number; rendKgHa: number | null; ingresos: number; costos: number; margen: number }
 
-const n2 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-const n0 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 0 });
-const n1 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 1 });
-const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" }); } catch { return iso; } };
+const n2 = (v: number | null) => (v == null ? "—" : formatNumber(v, 2));
+const n0 = (v: number) => formatNumber(v, { max: 0 });
+const n1 = (v: number) => formatNumber(v, { max: 1 });
+const fdate = (iso: string | null) => { if (!iso) return "—"; try { return formatDateShort(iso, { soloFecha: true }); } catch { return iso; } };
 
 /** Presets de campaña → rango ISO {from,to} para no mezclar años/campañas. */
 const RANGO_OPCIONES: { v: string; label: string }[] = [
@@ -133,7 +134,7 @@ export default function CacaoResumen() {
   const periodo = stats.primeraFecha ? `${fdate(stats.primeraFecha)} – ${fdate(stats.ultimaFecha)} · ${stats.diasCampana} día${stats.diasCampana !== 1 ? "s" : ""}` : "Sin lotes aún";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><Calendar className="h-4 w-4 text-[var(--text-tertiary)]" /><span className="font-medium">{periodo}</span></div>

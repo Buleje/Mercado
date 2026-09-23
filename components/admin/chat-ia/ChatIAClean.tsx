@@ -603,7 +603,7 @@ export default function ChatIAClean({
         {isEmpty ? (
           <EmptyState onPick={(p) => void sendMessage(p)} />
         ) : (
-          <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+          <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8 space-y-6">
             {messages.map((m) => (
               <MessageRow
                 key={m.id}

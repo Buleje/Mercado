@@ -25,12 +25,13 @@ import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { esLoteDeInventario } from "@/lib/forestal/lotes-aserrio";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { imprimirHistoriaLote } from "@/lib/forestal/historia-lote-print";
+import { formatDate, formatNumber } from "@/lib/format";
 
 const n4 = (v: number | null | undefined) => (v == null ? "—" : v.toFixed(4));
-const nf = (v: number) => v.toLocaleString("es-PE");
+const nf = (v: number) => formatNumber(v);
 const unidad = (u: string | null | undefined) => (!u || u === "m3" ? "m³" : u);
 const fecha = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
+  iso ? formatDate(iso, { soloFecha: true }) : "—";
 
 export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: string | null }) {
   const { lotes, cargando: cargandoLotes } = useLotesAserrio();

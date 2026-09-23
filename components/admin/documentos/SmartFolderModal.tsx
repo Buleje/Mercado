@@ -41,7 +41,7 @@ export function SmartFolderModal({ initial, onSave, onClose }: { initial?: Smart
   const labelCls = "text-xs font-bold text-[var(--text-secondary)]";
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
         className="w-full max-w-[30rem] rounded-2xl bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">

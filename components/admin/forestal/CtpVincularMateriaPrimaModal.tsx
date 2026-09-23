@@ -138,7 +138,7 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
     .sort((a, b) => b.m3 - a.m3);
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-3">
+    <div className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/60 p-3">
       <div
         ref={caja}
         tabIndex={-1}
@@ -478,7 +478,7 @@ export default function CtpVincularMateriaPrimaModal({
   const avisos = revision?.hallazgos.filter((h) => h.severidad === "aviso") ?? [];
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3">
+    <div className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3">
       {verMedidas && <MedidasDeclaradas paquetes={paquetes} onCerrar={() => setVerMedidas(false)} />}
       <div
         ref={cajaRef}

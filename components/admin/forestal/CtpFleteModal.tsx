@@ -32,6 +32,7 @@ import {
   type FleteInput,
 } from "@/lib/forestal/fletes";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
+import { formatCurrency } from "@/lib/format";
 
 type Borrador = FleteInput & { id?: string };
 
@@ -299,7 +300,7 @@ export default function CtpFleteModal({
             excedeCapacidad
               ? `${excedeCapacidad.placa} declara ${excedeCapacidad.cap} m³ y el viaje lleva ${excedeCapacidad.vol} m³.`
               : unitario != null
-                ? `Sale S/ ${unitario.toFixed(2)} por m³.`
+                ? `Sale ${formatCurrency(unitario)} por m³.`
                 : undefined
           }
           atajo

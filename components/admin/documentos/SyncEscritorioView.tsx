@@ -262,7 +262,7 @@ export default function SyncEscritorioView({
             <Loader2 className="h-4 w-4 animate-spin" /> Viendo si hay alguno…
           </p>
         ) : equipos.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center">
+          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center">
             <Monitor className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)] opacity-40" aria-hidden="true" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Todavía no hay ninguna PC conectada</p>
             <p className="mt-1 text-xs text-[var(--text-tertiary)]">
@@ -340,7 +340,7 @@ export default function SyncEscritorioView({
               otra y listo.
             </p>
             {claveNueva ? (
-              <div className="mt-2 rounded-lg border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-2 dark:bg-[var(--data-success-500)]/12">
+              <div className="mt-2 rounded-lg border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-3 dark:bg-[var(--data-success-500)]/12">
                 <p className="text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                   Copiala ahora — no se vuelve a mostrar
                 </p>

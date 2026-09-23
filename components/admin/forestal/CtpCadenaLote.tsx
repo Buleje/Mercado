@@ -6,6 +6,7 @@ import type { CadenaLote, MetaEspecie } from "@/lib/forestal/ctp-cadena-lote";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { RENDIMIENTO_REF_ASERRADA } from "@/lib/forestal/ctp-rendimiento";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDate, formatNumber } from "@/lib/format";
 
 /** El código del schema es `m3`; en pantalla se lee `m³`. */
 const UNIDAD: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "un." };
@@ -111,7 +112,7 @@ export default function CtpCadenaLote({ cadena }: { cadena: CadenaLote }) {
             key={s.despachoEntryId}
             titulo={s.gtfNumber ? `GTF ${s.gtfNumber}` : `Despacho #${s.lineNo ?? "?"}`}
             sub={s.destino ?? "sin destino declarado"}
-            extra={new Date(s.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })}
+            extra={formatDate(s.fecha, { soloFecha: true })}
             cantidad={s.cantidad.toFixed(4)}
             nota={s.compartida ? "la corrida de origen está repartida entre lotes" : undefined}
             alerta={s.compartida}
@@ -132,7 +133,7 @@ export default function CtpCadenaLote({ cadena }: { cadena: CadenaLote }) {
  */
 function MetaRendimiento({ meta }: { meta: MetaEspecie[] }) {
   if (meta.length === 0) return null;
-  const pt = (n: number) => n.toLocaleString("es-PE", { maximumFractionDigits: 0 });
+  const pt = (n: number) => formatNumber(n, { max: 0 });
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
       <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] px-4 py-2.5">

@@ -26,6 +26,7 @@ import type { OrigenMateriaPrima } from "@/lib/forestal/produccion-paquetes";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 /** Un paquete que la corrida ya declaró en una tanda anterior (ADR-361). */
 export interface PaquetePrevio {
@@ -140,7 +141,7 @@ export default function CtpMaterialPanel({
                     {fmtM3(g.volumenM3)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
-                    {g.pieTablar.toLocaleString("es-PE")}
+                    {formatNumber(g.pieTablar)}
                   </td>
                 </tr>
               ))}
@@ -203,7 +204,7 @@ export default function CtpMaterialPanel({
           <p className="mt-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
             Ya declarados: <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(totalPrevio)} m³</b>{" "}
             en {paquetesPrevios?.length ?? 0} paquete{(paquetesPrevios?.length ?? 0) === 1 ? "" : "s"} ·{" "}
-            {pieTablarDe(totalPrevio).toLocaleString("es-PE")} pt. Lo que cargues abajo se suma a esto.
+            {formatNumber(pieTablarDe(totalPrevio))} pt. Lo que cargues abajo se suma a esto.
           </p>
         </div>
       )}

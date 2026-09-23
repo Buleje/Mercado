@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { BulejeDonutChart } from "@/components/ui-system/charts";
 import VelocidadDrive from "@/components/admin/documentos/VelocidadDrive";
 import type { DbDocument } from "@/lib/types/documents";
+import { formatCurrency } from "@/lib/format";
 
 /**
  * Panel resumen del drive: KPIs + dona por categoría + facturado detectado +
@@ -19,7 +20,7 @@ function fmtBytes(b: number): string {
   return `${(b / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 function money(n: number): string {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 function num(v: unknown): number | null {
   if (v === null || v === undefined || v === "") return null;

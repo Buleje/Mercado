@@ -43,6 +43,7 @@ import CtpTrozasTabla from "./CtpTrozasTabla";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import { usePlantaUbicacion } from "./hooks/use-planta-ubicacion";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
+import { formatNumber } from "@/lib/format";
 
 /** El alto de la caja con scroll: entra en pantalla y deja ver lo que sigue. */
 const ALTO_LISTA = "max-h-[62vh]";
@@ -187,7 +188,7 @@ export default function CtpTrozasLista({
           <span className="text-sm font-bold text-[var(--text-primary)]">
             {elegidas.size} {elegidas.size === 1 ? "pieza elegida" : "piezas elegidas"}
             {" · "}
-            <span className="font-mono tabular-nums">{m3Elegidas.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³</span>
+            <span className="font-mono tabular-nums">{formatNumber(m3Elegidas, { max: 2 })} m³</span>
           </span>
           <button
             type="button"

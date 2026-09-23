@@ -33,6 +33,7 @@ import { useAnexo04Contraste } from "@/hooks/use-anexo04-contraste";
 import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 import Anexo04GtfSalida, { type DespachoParaGtf } from "./Anexo04GtfSalida";
 import Anexo04Cuadre from "./Anexo04Cuadre";
+import { formatNumber } from "@/lib/format";
 
 const A4_PX = 794; // ancho de una hoja A4 a 96 dpi
 
@@ -300,7 +301,7 @@ export default function Anexo04Modal({
 
   return (
     <div
-      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3"
+      className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3"
       onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
     >
       {/* Alto ACOTADO y scroll adentro (Brandon 2026-09-09: «está muy
@@ -360,7 +361,7 @@ export default function Anexo04Modal({
                 <span className={CHIP_HEAD}>
                   {contraste.fuente === "corrida" ? "corrida" : "guía"}:{" "}
                   <span className="ml-1 font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                    {contraste.cantidad.toLocaleString("es-PE", { maximumFractionDigits: 3 })}
+                    {formatNumber(contraste.cantidad, { max: 3 })}
                   </span>
                   <span className="ml-1">{contraste.unidad === "m3" ? "m³" : contraste.unidad?.toUpperCase() ?? ""}</span>
                   {contraste.piezas ? <span className="ml-1">· {contraste.piezas} pzas</span> : null}

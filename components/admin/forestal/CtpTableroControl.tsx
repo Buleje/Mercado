@@ -46,6 +46,7 @@ import {
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { Btn, VistaHeader } from "./ctp-shared";
 import CtpPuestaEnMarcha from "./CtpPuestaEnMarcha";
+import { formatNumber } from "@/lib/format";
 
 const m3 = (n: number) => `${n.toFixed(2)} m³`;
 const NOMBRE_PASO: Record<MovimientoDelLibro["paso"], string> = {
@@ -266,7 +267,7 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
               icon={PackageOpen}
               label="Entró al patio"
               valor={m3(t.ingresoM3)}
-              pie={`${pieTablarDe(t.ingresoM3).toLocaleString("es-PE")} pt`}
+              pie={`${formatNumber(pieTablarDe(t.ingresoM3))} pt`}
               delta={previo ? variacionPct(t.ingresoM3, previo.ingresoM3) : null}
               hayPrevio={previo != null}
             />

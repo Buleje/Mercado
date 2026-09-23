@@ -6,6 +6,7 @@ import { Loader2, Scale, AlertTriangle, CheckCircle, Info } from "@buleje/design
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import type { ContractRevisionIa, ContractRiesgo } from "@/lib/types/contracts";
+import { formatDateTime } from "@/lib/format";
 
 /**
  * El informe del revisor de cláusulas, en criollo.
@@ -97,7 +98,7 @@ export default function PanelRevision({ contratoId, revision, onRevisado }: Prop
               <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{actual.resumen}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
                 {actual.fuente === "ia" ? "Revisado con IA" : "Revisado con reglas legales"} ·{" "}
-                {new Date(actual.revisadoEn).toLocaleString("es-PE")}
+                {formatDateTime(actual.revisadoEn)}
               </p>
             </div>
           </div>

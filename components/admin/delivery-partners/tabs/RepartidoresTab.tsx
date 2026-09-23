@@ -8,6 +8,7 @@ import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon, vehicleKind, vehicleLabel, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
 import { Field } from "@/components/admin/shared/Field";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency } from "@/lib/format";
 
 const NetworkToggleCard = dynamic(
   () => import("@/components/admin/delivery/NetworkToggleCard"),
@@ -87,7 +88,7 @@ function PartnerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+      className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
       onClick={onClose}
       role="presentation"
     >
@@ -793,7 +794,7 @@ export function RepartidoresTab() {
                       </p>
                     </td>
                     <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)]">
-                      S/{toNum(p.fee).toFixed(2)}
+                      {formatCurrency(toNum(p.fee))}
                     </td>
                     <td className="px-4 py-4 text-center">
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-extrabold bg-[var(--data-warning-50)] text-[var(--data-warning-500)] tabular-nums">
@@ -893,7 +894,7 @@ export function RepartidoresTab() {
       {/* Confirm delete */}
       {confirmDelete && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
           onClick={() => setConfirmDelete(null)}
         >
           <div

@@ -75,7 +75,7 @@ export default function CtpRadarCronologia({
   const pos = new Map(puntos.map((p) => [p.id, p]));
 
   if (!t.desde || !t.hasta) {
-    return <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">Sin fechas para ubicar en el tiempo.</p>;
+    return <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">Sin fechas para ubicar en el tiempo.</p>;
   }
 
   return (

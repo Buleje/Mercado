@@ -34,6 +34,7 @@ import {
   type ApartadoDeFila,
 } from "./ctp-celda-apartado";
 import { contarFilas, resumirFilas, useApartado, type FilaAApartar } from "./hooks/use-apartado";
+import { formatNumber } from "@/lib/format";
 
 /* Los pedidos al API, la cuenta de «entraron 2 de 3» y el resumen de lo elegido
    viven con el tipo de la fila, en el hook. */
@@ -63,7 +64,7 @@ export interface CtpApartarModalProps {
   ahora?: Date;
 }
 
-const nf = (n: number) => n.toLocaleString("es-PE");
+const nf = (n: number) => formatNumber(n);
 
 /** Etiqueta + campo + pie de ayuda, la misma forma en los tres campos. */
 function Campo({

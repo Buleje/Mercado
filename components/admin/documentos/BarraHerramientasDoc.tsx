@@ -16,6 +16,7 @@ import type { ComponentType } from "react";
 import {
   Sparkles, Download, MessageCircle, Pencil, FolderInput, Star, Trash2, Printer,
   Link2, PencilLine, Stamp, RotateCw, FileStack, Scissors, Clock as AlarmClock, Tag,
+  Check,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -110,7 +111,7 @@ export default function BarraHerramientasDoc({ acciones: a, esPdf, favorito, est
             >
               <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", e.punto)} aria-hidden />
               <span className="truncate">{e.texto}</span>
-              {estado === e.valor && <span className="ml-auto text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">✓</span>}
+              {estado === e.valor && <Check className="ml-auto h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />}
             </button>
           ))}
         </Grupo>

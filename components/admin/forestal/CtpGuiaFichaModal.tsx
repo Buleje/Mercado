@@ -25,6 +25,7 @@ import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { formatDate, productLabel, StatusBadge, type WoodEntry, type WoodEntryStatus } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDateNumeric, formatNumber } from "@/lib/format";
 
 /** Una pieza de la guía, como la devuelve el endpoint de trozas. */
 export interface TrozaDeFicha {
@@ -155,7 +156,7 @@ export default function CtpGuiaFichaModal({
             </b>
           </span>
           <span className="font-mono tabular-nums text-[var(--text-secondary)]">
-            {fmtM3(guia.volumenM3)} m³ · {pieTablarDe(guia.volumenM3).toLocaleString("es-PE")} pt
+            {fmtM3(guia.volumenM3)} m³ · {formatNumber(pieTablarDe(guia.volumenM3))} pt
           </span>
         </div>
 
@@ -296,7 +297,7 @@ export default function CtpGuiaFichaModal({
                     title={
                       c.manual
                         ? `Completado a mano${c.manual.por ? ` por ${c.manual.por}` : ""}${
-                            c.manual.el ? ` el ${new Date(c.manual.el).toLocaleDateString("es-PE", { timeZone: "America/Lima" })}` : ""
+                            c.manual.el ? ` el ${formatDateNumeric(c.manual.el)}` : ""
                           }`
                         : undefined
                     }

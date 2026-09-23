@@ -11,6 +11,7 @@
 
 import { Hash } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatDate } from "@/lib/format";
 
 export interface PiezaDup {
   id: string;
@@ -38,7 +39,7 @@ const BTN =
 const ETIQUETA = "rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold";
 
 const fecha = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+  formatDate(iso, { soloFecha: true });
 
 export default function CtpCodigosDuplicadosGrupos({
   grupos, conservar, onConservar, onRenumerar, trabajando,

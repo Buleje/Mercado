@@ -528,12 +528,12 @@ export default function CtpGtfDatosForm({
       </div>
 
       {aviso && (
-        <p role="status" className="rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-2.5 text-sm font-bold text-[var(--data-success-700)]">
+        <p role="status" className="rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-3 text-sm font-bold text-[var(--data-success-700)]">
           {aviso}
         </p>
       )}
       {error && (
-        <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-2.5 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+        <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           {error}
         </p>
       )}

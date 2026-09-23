@@ -198,7 +198,7 @@ export default function CompararVersiones({
       {cambiadas.length === 0 ? (
         <p className="py-4 text-center text-sm text-[var(--text-secondary)]">Las dos versiones dicen lo mismo.</p>
       ) : (
-        <ul className="max-h-72 space-y-0.5 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+        <ul className="max-h-72 space-y-0.5 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
           {cambiadas.map((l, i) => (
             <li
               key={`${l.tipo}-${i}`}

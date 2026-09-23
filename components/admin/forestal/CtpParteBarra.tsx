@@ -209,7 +209,7 @@ export default function CtpParteBarra({
   }
 
   return (
-    <div className="mb-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2">
+    <div className="mb-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
       <div className="flex flex-wrap items-center gap-2">
         <Btn
           size="sm"
@@ -414,7 +414,7 @@ export function CtpVehiculoBarra({
         )}
       </div>
       {abierta && (
-        <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2">
+        <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
           {vehiculos.map((v) => (
             <li key={v.id}>
               <button

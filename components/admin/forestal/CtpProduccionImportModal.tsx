@@ -185,7 +185,7 @@ export default function CtpProduccionImportModal({
             )}
 
             {resultado.corridas.length > 0 && (
-              <ul className="max-h-40 space-y-0.5 overflow-y-auto rounded-xl border border-[var(--rule-base)] p-2">
+              <ul className="max-h-40 space-y-0.5 overflow-y-auto rounded-xl border border-[var(--rule-base)] p-3">
                 {resultado.corridas.slice(0, 50).map((c) => (
                   <li key={c.fila} className="flex items-center gap-2 text-sm">
                     <span className="w-20 shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{c.fecha}</span>
@@ -208,7 +208,7 @@ export default function CtpProduccionImportModal({
         {/* El corte parcial deja madera A MEDIO cargar: el detalle de qué hacer
             con lo que YA entró no cabe en el pie, así que se queda acá. */}
         {fallo && creadas > 0 && (
-          <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-2.5 text-sm font-medium text-[var(--text-secondary)]">
+          <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-3 text-sm font-medium text-[var(--text-secondary)]">
             Las {creadas} corrida(s) anteriores YA quedaron en el libro — corrige esa fila y vuelve a pegar sólo lo que falta.
           </p>
         )}

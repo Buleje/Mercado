@@ -32,6 +32,7 @@ import { juzgarRendimientoLote } from "@/lib/forestal/lotes-aserrio";
 import type { CtpSection } from "./ctp-section-shared";
 import type { KpisSeccion } from "@/lib/forestal/ctp-kpis-seccion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 
 /* `KpisSeccion` vive donde vive su fórmula (`lib/forestal/ctp-kpis-seccion`):
    dos definiciones del mismo contrato se desincronizan a la primera cifra
@@ -157,7 +158,7 @@ export default function CtpSeccionKpis({
         label="Despachado"
         value={n2(kpis.totalQty)}
         subValue={
-          kpis.piezas > 0 ? `${kpis.piezas.toLocaleString("es-PE")} piezas` : "suma de cantidades"
+          kpis.piezas > 0 ? `${formatNumber(kpis.piezas)} piezas` : "suma de cantidades"
         }
         icon={PackageCheck}
         actual={kpis.totalQty}

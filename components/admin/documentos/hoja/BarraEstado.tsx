@@ -14,10 +14,11 @@
 
 import { Minus, Plus } from "@buleje/design-system/icons";
 import type { Resumen } from "@/lib/documentos/hoja-analisis";
+import { formatNumber } from "@/lib/format";
 
 /** Números legibles: miles separados y como mucho dos decimales. */
 function fmt(n: number): string {
-  return n.toLocaleString("es-PE", { maximumFractionDigits: 2 });
+  return formatNumber(n, { max: 2 });
 }
 
 export default function BarraEstado({

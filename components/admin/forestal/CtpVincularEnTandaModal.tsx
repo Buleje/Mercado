@@ -220,7 +220,7 @@ export default function CtpVincularEnTandaModal({
   const volLibre = lote ? volumenLibre(lote) : 0;
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3">
+    <div className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3">
       <div
         ref={cajaRef}
         tabIndex={-1}

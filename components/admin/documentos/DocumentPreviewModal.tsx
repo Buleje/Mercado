@@ -55,6 +55,7 @@ import { buildChildrenMap, flattenAll, folderPath } from "@/lib/documentos/folde
 import type {
   DbDocument, DbDocumentFolder, DbDocumentVersion, DbDocumentAuditLog, DbDocumentShare,
 } from "@/lib/types/documents";
+import { formatDate, formatDateShort, formatNumber } from "@/lib/format";
 
 type Tab = "preview" | "texto" | "details" | "versions" | "audit" | "share" | "sign" | "comentarios";
 
@@ -103,7 +104,7 @@ function relativeTime(iso: string): string {
   if (m < 60) return `hace ${m}m`;
   const h = Math.floor(m / 60);
   if (h < 24) return `hace ${h}h`;
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(iso);
 }
 
 export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, carpetas, lote, onAbrirOtro }: Props) {
@@ -217,7 +218,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
 
   if (!doc) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
         <div role="dialog" aria-modal="true" aria-label={loading ? "Cargando" : "No disponible"} className="bg-[var(--surface-raised)] rounded-3xl p-8 text-sm text-[var(--text-tertiary)]">{loading ? "Cargando…" : "No disponible"}</div>
       </div>
     );
@@ -237,7 +238,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-modal flex items-center justify-center p-2 sm:p-3 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       {/* Casi toda la pantalla: un contrato o una planilla se leen mejor
@@ -276,7 +277,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
                   }}
                 />
                 <p className="text-xs text-[var(--text-tertiary)] tabular-nums truncate">
-                  {formatBytes(doc.size)} · {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+                  {formatBytes(doc.size)} · {formatDate(doc.uploadedAt)}
                   {doc.versionCount ? ` · v${doc.versionCount + 1}` : ""}
                 </p>
               </div>
@@ -662,7 +663,7 @@ function VersionsTab({
                   <p className="mb-2 text-sm font-bold text-primary">{etiqueta(a)} → {etiqueta(b)}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {[a, b].map((v) => (
-                      <div key={v.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2.5">
+                      <div key={v.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
                         <p className="text-xs font-bold text-[var(--text-primary)]">{etiqueta(v)}</p>
                         <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">{v.changeNote ?? "Sin nota"}</p>
                         <p className="mt-0.5 text-[length:var(--ts-2xs,11px)] tabular-nums text-[var(--text-tertiary)]">{formatBytes(v.size)} · {relativeTime(v.uploadedAt)}</p>
@@ -750,7 +751,7 @@ function money(v: number | string | null | undefined, moneda?: string | null): s
   if (v === null || v === undefined || v === "") return null;
   const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[^\d.-]/g, ""));
   if (!isFinite(n)) return null;
-  return `${moneda === "USD" ? "$" : "S/"} ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${moneda === "USD" ? "$" : "S/"} ${formatNumber(n, 2)}`;
 }
 
 function StructuredCard({ doc }: { doc: DbDocument }) {
@@ -1293,7 +1294,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
                     )}
                   </div>
                   <div className="flex items-center gap-3 mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    <span>Expira: {new Date(s.expiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                    <span>Expira: {formatDate(s.expiresAt)}</span>
                     <span>Accesos: {s.accessCount}</span>
                     {s.hasPassword && <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" /> protegido</span>}
                     {s.revokedAt && <span className="text-[var(--data-error-500)]">Revocado</span>}

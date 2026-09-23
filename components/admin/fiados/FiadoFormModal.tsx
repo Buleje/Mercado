@@ -9,8 +9,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
+import { formatCurrency } from "@/lib/format";
 
 export type FiadoNewForm = {
   customerId: string;

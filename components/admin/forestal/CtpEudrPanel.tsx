@@ -287,7 +287,7 @@ export default function CtpEudrPanel({
                     <MapPin className="h-4 w-4" /> <span className="hidden sm:inline">Punto</span>
                   </button>
                   <button type="button" onClick={() => setPolygonFor(o.originCode)} title="Dibuja el polígono de la parcela (EUDR exige polígono para > 4 ha)" className={`inline-flex h-11 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-semibold ${g?.polygonJson ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--accent)]/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/15"}`}>
-                    <PenTool className="h-4 w-4" /> <span className="hidden sm:inline">{g?.polygonJson ? "Polígono ✓" : "Polígono"}</span>
+                    <PenTool className="h-4 w-4" /> <span className="hidden sm:inline inline-flex items-center gap-1">Polígono{g?.polygonJson && <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />}</span>
                   </button>
                   <label className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
                     <input type="checkbox" checked={d.df} onChange={(e) => setDraftField(o.originCode, "df", e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" /> sin deforestación

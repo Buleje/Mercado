@@ -15,6 +15,7 @@ import { MessageCircle, Check, Loader2, RotateCcw, User, Trash2 } from "@buleje/
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { formatDateShort } from "@/lib/format";
 
 interface Comentario {
   id: string;
@@ -34,7 +35,7 @@ function cuando(iso: string): string {
   const d = Math.round(h / 24);
   if (d === 1) return "ayer";
   if (d < 7) return `hace ${d} d`;
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(iso);
 }
 
 export default function ComentariosDoc({ docId }: { docId: string }) {

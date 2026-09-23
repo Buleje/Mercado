@@ -7,6 +7,7 @@ import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
 import { Field } from "@/components/admin/shared/Field";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 
 interface DeliveryAssignment {
   id: string;
@@ -323,7 +324,7 @@ export function AsignacionesTab() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
-                          S/{toNum(a.fee).toFixed(2)}
+                          {formatCurrency(toNum(a.fee))}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -337,12 +338,7 @@ export function AsignacionesTab() {
                       <td className="px-6 py-4 text-right text-sm text-[var(--text-secondary)] hidden sm:table-cell">
                         <span className="inline-flex items-center justify-end gap-1.5 font-bold">
                           <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
-                          {new Date(a.assignedAt).toLocaleDateString("es-PE", {
-                            day: "2-digit",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {formatDateTimeShort(a.assignedAt)}
                         </span>
                       </td>
                     </tr>
@@ -394,7 +390,7 @@ export function AsignacionesTab() {
           </div>
         }
       >
-        <div className={cn(MODAL_BODY, "space-y-5")}>
+        <div className={cn(MODAL_BODY, "space-y-4")}>
           <Field className="space-y-2" label="ID de orden (opcional)" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             <input
               type="text"
@@ -418,7 +414,7 @@ export function AsignacionesTab() {
                     <option value="">Seleccionar repartidor...</option>
                     {partners.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} — {p.zone} — S/{toNum(p.fee).toFixed(2)}
+                        {p.name} — {p.zone} — {formatCurrency(toNum(p.fee))}
                       </option>
                     ))}
                   </select>

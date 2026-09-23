@@ -18,8 +18,7 @@ import {
 import { waLink } from "@/lib/whatsapp-link";
 import { etiquetaGestion, type Gestion, type PromesaVigente } from "@/lib/fiados/gestion-cobranza";
 import { explicarAtraso, type DeudorCobranza } from "@/lib/fiados/urgencia-cobranza";
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
+import { formatCurrency } from "@/lib/format";
 
 export default function ModoLlamada({
   deudores,
@@ -65,7 +64,7 @@ export default function ModoLlamada({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--surface-canvas)]">
+    <div className="fixed inset-0 z-modal flex flex-col bg-[var(--surface-canvas)]">
       <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-4">
         <p className="text-base font-bold text-[var(--text-secondary)]">
           <span className="tabular-nums text-[var(--text-primary)]">{i + 1}</span> de {deudores.length}
