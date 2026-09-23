@@ -16,6 +16,14 @@ export interface Plan {
   arffs: string | null; region: string | null; parcelaCorta: string | null;
   areaHa: string | null; uitRef: string | null; vigenciaDesde: string | null;
   vigenciaHasta: string | null; estado: string;
+  /** Lo que el plan ya guardaba y la pantalla no mostraba (ADR-425 ronda 2). */
+  costoExtraccionM3?: string | null; costoTransformacionM3?: string | null;
+  costoFleteM3?: string | null; notes?: string | null;
+  /** Cómo se reconoce y dónde queda (ADR-426). */
+  alias?: string | null; propietarioNombre?: string | null;
+  propietarioDocTipo?: string | null; propietarioDoc?: string | null;
+  provincia?: string | null; distrito?: string | null;
+  sector?: string | null; cuenca?: string | null; contratoId?: string | null;
 }
 export interface Species {
   id: string; speciesCommon: string; speciesScientific: string | null; cites: boolean;

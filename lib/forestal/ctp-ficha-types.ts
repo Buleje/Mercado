@@ -7,7 +7,10 @@
  * módulo de DB al bundle del navegador. La DB class re-exporta desde acá.
  */
 
+import { normalizarCodigoContrato, type Contrato, type TipoContrato } from "./contratos";
 import { fromUtm, parseUtmZone, zoneLabel } from "./loth-utm";
+import { TIPOS_PLAN, TIPOS_PLAN_META } from "./loth-tipos-plan";
+import { tipoPermisoDesdePlan, tipoPlanDesdePermiso } from "./permisos-de-parte";
 
 /** Título habilitante que ampara el origen de la materia prima del CTP. */
 export interface CtpTituloHabilitante {
@@ -460,6 +463,94 @@ export const CTP_FICHA_LABELS: Record<keyof CtpFicha, string> = {
 };
 
 /**
+ * Lo que un PERMISO (`ForestContrato`, ADR-421/425) aporta al título de la guía.
+ *
+ * Estructural y no el `Contrato` entero: cualquier contrato lo satisface, y los
+ * tests —y la vista previa— pueden armar el caso con cuatro campos.
+ */
+export type PermisoDeGuia = Pick<Contrato, "codigo" | "tipo" | "resolucionNumero" | "vigenciaHasta"> &
+  Partial<Pick<Contrato, "isActive">>;
+
+/**
+ * Del tipo de permiso a la casilla del (5) «Origen del Recurso».
+ *
+ * Sólo las correspondencias que la norma fija: un permiso de aprovechamiento
+ * —en comunidad (`PER-FMC`) o en predio privado (`PER-FMP`)— cruza «Permiso»,
+ * una concesión cruza «Concesión» y un registro de plantación cruza
+ * «Plantación». Lo que no está acá —«CONTRATO» (una compraventa no habilita a
+ * nadie a talar), «otro», o el tipo sin cargar— **no cruza ninguna casilla**:
+ * el (5) es una declaración de origen y marcarlo de más es inventarlo.
+ */
+const ORIGEN_POR_TIPO_DE_PERMISO: Partial<Record<TipoContrato, string>> = {
+  CONCESION: "concesion",
+  "PER-FMP": "permiso",
+  "PER-FMC": "permiso",
+  "REG-PLT": "plantacion",
+};
+
+function origenDelPermiso(tipo: TipoContrato | null | undefined): string {
+  if (!tipo) return "";
+  const directo = ORIGEN_POR_TIPO_DE_PERMISO[tipo];
+  if (directo) return directo;
+  /* Hay permisos cargados con el nombre del DOCUMENTO de gestión (DEMA, PMFI,
+     PO) en vez del título que lo ampara. Se traduce con la tabla que ya existe
+     y está probada (`tipoPermisoDesdePlan`), no adivinando de nuevo acá. */
+  const comoPlan = TIPOS_PLAN.find((p) => p === tipo);
+  const titulo = comoPlan ? tipoPermisoDesdePlan(comoPlan) : null;
+  return (titulo && ORIGEN_POR_TIPO_DE_PERMISO[titulo]) || "";
+}
+
+/**
+ * El (9) «Plan de Manejo (Tipo)» que le corresponde al permiso, escrito como se
+ * lee en el `<select>` de la guía.
+ *
+ * Gemelo de `planDelPermiso` en `titulos-de-la-guia.ts` (lo que se ofrece en
+ * pantalla) — el test «el papel escribe el (9) igual que el select» compara las
+ * dos salidas para los nueve tipos, así que si una cambia la otra se entera.
+ */
+function planDelPermiso(tipo: TipoContrato | null | undefined): string {
+  const plan = tipoPlanDesdePermiso(tipo);
+  if (!plan) return "";
+  const meta = TIPOS_PLAN_META[plan];
+  // «Plantación» no es un acrónimo: repetirla entre paréntesis se lee raro.
+  return meta.sigla === meta.sigla.toUpperCase() ? `${meta.nombre} (${meta.sigla})` : meta.nombre;
+}
+
+/**
+ * El permiso, leído como el título habilitante que imprime la GTF.
+ *
+ * **No completa nada**: lo que el permiso no tiene cargado sale vacío y el
+ * casillero queda en blanco para llenarlo a mano. Medido el 2026-09-21 en los
+ * dos tenants, 6 de 6 permisos están sin `resolucionNumero` — ese (8) en blanco
+ * es el resultado correcto, y rellenarlo con la resolución de otro papel sería
+ * declarar un origen falso en un documento que es declaración jurada.
+ */
+export function tituloDesdePermiso(c: PermisoDeGuia): CtpTituloHabilitante {
+  return {
+    tipo: origenDelPermiso(c.tipo),
+    // El código, tal cual lo escribió quien cargó el permiso.
+    codigo: s(c.codigo),
+    resolucion: s(c.resolucionNumero),
+    planManejo: planDelPermiso(c.tipo),
+    // `vigenciaHasta` viaja como ISO completo; el título lo guarda date-only.
+    vencimiento: s(c.vigenciaHasta).slice(0, 10),
+  };
+}
+
+/** El permiso cargado con ESE código. Se compara por código normalizado —la
+ *  misma vara del selector— y, si el código se volvió a cargar después de una
+ *  baja, gana el permiso vivo. */
+function permisoDelCodigo(
+  permisos: readonly PermisoDeGuia[] | null | undefined,
+  codigo: string,
+): PermisoDeGuia | null {
+  const k = normalizarCodigoContrato(codigo);
+  if (!k) return null;
+  const iguales = (permisos ?? []).filter((p) => normalizarCodigoContrato(s(p?.codigo)) === k);
+  return iguales.find((p) => p.isActive !== false) ?? iguales[0] ?? null;
+}
+
+/**
  * El título habilitante que se imprime en la GTF de salida — casilleros (5)
  * origen, (6) N° de título, (8) resolución y (9) plan de manejo.
  *
@@ -470,20 +561,33 @@ export const CTP_FICHA_LABELS: Record<keyof CtpFicha, string> = {
  * Sin `codigoElegido` (la vista previa de la Ficha, una guía vieja sin el campo)
  * cae al primero de la lista, que es el que la Ficha marca como predeterminado.
  *
- * Si el código elegido NO está en la Ficha —se tipeó a mano en el campo libre—
- * se imprime igual, con los casilleros (8) y (9) vacíos: el papel tiene que
- * declarar lo que el operador eligió, y un casillero en blanco se ve; imprimir
- * los datos de OTRO título sería declarar un origen falso.
+ * ── Dos fuentes, en este orden ───────────────────────────────────────────────
+ * 1. **La Ficha del CTP** (`titulos[]`) — es la fuente declarada del libro y la
+ *    que manda cuando el código está en las dos: se devuelve tal cual está
+ *    cargada, sin completarle nada.
+ * 2. **Los permisos** (`ForestContrato`, ADR-421/425), si se pasan. Desde que
+ *    el select ofrece las dos listas, el operador puede elegir un permiso que
+ *    la Ficha no tiene: medido el 2026-09-21 en el tenant de QA, la Ficha
+ *    declaraba 1 título y los permisos eran 6, así que cinco elecciones válidas
+ *    imprimían (5)(8)(9) en blanco teniendo el dato al lado.
+ *
+ * Si el código no está en ninguna de las dos —se tipeó a mano en el campo
+ * libre— se imprime igual, con los casilleros (8) y (9) vacíos: el papel tiene
+ * que declarar lo que el operador eligió, y un casillero en blanco se ve;
+ * imprimir los datos de OTRO título sería declarar un origen falso.
  */
 export function tituloDeGuia(
   f: { titulos?: CtpTituloHabilitante[] } | null | undefined,
   codigoElegido?: string | null,
+  permisos?: readonly PermisoDeGuia[] | null,
 ): CtpTituloHabilitante | null {
   const titulos = f?.titulos ?? [];
   const cod = s(codigoElegido).toLowerCase();
   if (!cod) return titulos[0] ?? null;
   const enFicha = titulos.find((t) => s(t.codigo).toLowerCase() === cod);
   if (enFicha) return enFicha;
+  const permiso = permisoDelCodigo(permisos, s(codigoElegido));
+  if (permiso) return tituloDesdePermiso(permiso);
   return { tipo: "", codigo: s(codigoElegido), resolucion: "", planManejo: "", vencimiento: "" };
 }
 

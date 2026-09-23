@@ -45,6 +45,10 @@ export type CtpAuditEntity =
    *  los gastos, los fletes y los adelantos. Quién lo creó y quién le ató
    *  registros es parte de la trazabilidad de la plata, no sólo del papel. */
   | "ForestContrato"
+  /** Plan de Manejo del Libro de Títulos Habilitantes (ADR-126): el documento
+   *  aprobado que autoriza especies y volúmenes. De él cuelgan el censo, los
+   *  asientos del LO-TH y las guías, así que darlo de baja deja rastro. */
+  | "ForestPlan"
   | "ForestCtpFicha"
   // KV (como ForestCtpFicha): la foto de referencia de una especie. No es una
   // prueba documental, pero orienta a quien recibe la troza — y quien la pone
@@ -136,6 +140,7 @@ export type CtpAuditAction =
   | "ctp_contrato_create"
   | "ctp_contrato_update"
   | "ctp_contrato_vincular"
+  | "ctp_contrato_baja"
   // Ingresos de materia prima
   | "ctp_ingreso_create"
   // Corrección de un ingreso pendiente (typo de GTF, volumen mal tipeado): el
@@ -296,6 +301,10 @@ export type CtpAuditAction =
   | "ctp_distribucion_update"
   | "ctp_distribucion_delete"
   // ANEXO N° 04 emitido con la GTF (lista de productos transformados)
+  // Baja lógica del Plan de Manejo (ADR-126). Es el papel que autoriza todo el
+  // LO-TH: sacarlo del selector no borra sus asientos ni sus guías, pero sí
+  // cambia qué plan se declara — y eso no puede pasar sin nombre y fecha.
+  | "ctp_plan_baja"
   | "ctp_anexo04_emit"
   | "ctp_anexo04_update"
   | "ctp_anexo04_delete";

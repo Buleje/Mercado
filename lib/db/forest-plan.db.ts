@@ -10,6 +10,8 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { logger } from "@/lib/logger";
 import {
   censusVolume, computeBalance, computeAprovechamiento, cruzarEspecies, detectAnomalias, projectSaldo, computeCosteo,
   estaFueraDePlazo,
@@ -22,6 +24,18 @@ const dec = (v: number | string | null | undefined) =>
 
 /** Volumen comercial del árbol en pie (re-export de la fórmula pura). */
 export { censusVolume };
+
+/**
+ * El plan se quiso atar a un permiso que no es de este negocio (o ya no existe).
+ * Clase propia para que la ruta lo devuelva como **400 con el motivo** y no
+ * como un 500 mudo: es un dato mal mandado, no una falla del servidor.
+ */
+export class ContratoAjenoError extends Error {
+  constructor() {
+    super("Ese permiso no existe en este negocio.");
+    this.name = "ContratoAjenoError";
+  }
+}
 
 export interface PlanInput {
   caratulaId?: string | null;
@@ -48,6 +62,18 @@ export interface PlanInput {
   vigenciaHasta?: Date | null;
   estado?: string;
   notes?: string | null;
+  /** Cómo se reconoce y dónde queda (ADR-426). */
+  alias?: string | null;
+  propietarioNombre?: string | null;
+  propietarioDocTipo?: string | null;
+  propietarioDoc?: string | null;
+  provincia?: string | null;
+  distrito?: string | null;
+  sector?: string | null;
+  cuenca?: string | null;
+  /** El permiso (`ForestContrato`) bajo el que se aprobó. Se valida que sea de
+   *  ESTE tenant: no hay FK que lo haga (ADR-426). */
+  contratoId?: string | null;
   createdBy: string;
 }
 
@@ -80,14 +106,48 @@ export interface TreeInput {
   calidad?: string | null;
   estado?: string;
   notes?: string | null;
+  /** Cómo se reconoce y dónde queda (ADR-426). */
+  alias?: string | null;
+  propietarioNombre?: string | null;
+  propietarioDocTipo?: string | null;
+  propietarioDoc?: string | null;
+  provincia?: string | null;
+  distrito?: string | null;
+  sector?: string | null;
+  cuenca?: string | null;
+  /** El permiso (`ForestContrato`) bajo el que se aprobó. Se valida que sea de
+   *  ESTE tenant: no hay FK que lo haga (ADR-426). */
+  contratoId?: string | null;
   createdBy: string;
 }
 
 export class ForestPlanDB {
   // ─── Plan ─────────────────────────────────────────────────────────────
+  /**
+   * El permiso existe, es de ESTE negocio y está vivo — o no se ata.
+   *
+   * `ForestPlan.contratoId` va **sin FK** a propósito (ADR-426): el ensayo de la
+   * migración mostró que una clave foránea habría aceptado un contrato de otro
+   * tenant, porque compara ids y no tenants. El aislamiento de este repo es
+   * app-level, así que el guard vive acá. Un id ajeno **rompe** la operación en
+   * vez de guardarse en silencio: es un bug del cliente o un intento cruzado, y
+   * las dos cosas se avisan.
+   */
+  private static async exigirContratoDelTenant(tenantId: string, contratoId: string | null | undefined) {
+    const id = (contratoId ?? "").trim();
+    if (!id) return null;
+    const existe = await prisma.forestContrato.findFirst({
+      where: { tenantId, id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existe) throw new ContratoAjenoError();
+    return existe.id;
+  }
+
   static async createPlan(tenantId: string, input: PlanInput) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!input.titularName?.trim()) throw new Error("titularName is required");
+    const contratoId = await this.exigirContratoDelTenant(tenantId, input.contratoId);
     const plan = await prisma.forestPlan.create({
       data: {
         tenantId,
@@ -114,6 +174,15 @@ export class ForestPlanDB {
         vigenciaHasta: input.vigenciaHasta ?? null,
         estado: input.estado ?? "vigente",
         notes: input.notes?.trim() || null,
+        alias: input.alias?.trim() || null,
+        propietarioNombre: input.propietarioNombre?.trim() || null,
+        propietarioDocTipo: input.propietarioDocTipo?.trim() || null,
+        propietarioDoc: input.propietarioDoc?.trim() || null,
+        provincia: input.provincia?.trim() || null,
+        distrito: input.distrito?.trim() || null,
+        sector: input.sector?.trim() || null,
+        cuenca: input.cuenca?.trim() || null,
+        contratoId,
         createdBy: input.createdBy,
       },
     });
@@ -148,6 +217,7 @@ export class ForestPlanDB {
     patch: Partial<Omit<PlanInput, "createdBy">>,
   ) {
     if (!tenantId) throw new Error("tenantId is required");
+    if (patch.contratoId !== undefined) await this.exigirContratoDelTenant(tenantId, patch.contratoId);
     const data: Prisma.ForestPlanUpdateInput = {};
     const decKeys = new Set(["areaHa", "uitRef", "costoExtraccionM3", "costoTransformacionM3", "costoFleteM3"]);
     for (const [k, v] of Object.entries(patch)) {
@@ -164,13 +234,94 @@ export class ForestPlanDB {
     return plan;
   }
 
-  static async softDeletePlan(tenantId: string, id: string) {
+  /**
+   * Qué cuelga de este plan hoy — para poder decirlo ANTES de confirmar la baja.
+   *
+   * Cinco tablas lo citan por `planId` y en una baja no significan lo mismo:
+   * las especies autorizadas y el censo SON el plan (se van con él de la
+   * vista), mientras que los asientos del LO-TH, las guías y los permisos son
+   * papel ya emitido que sigue existiendo y que se declara ante la ARFFS.
+   *
+   * ⚠️ No se suma el volumen de los asientos, a propósito. `ForestLothEntry`
+   * tiene `volumeM3`, pero la MISMA madera se asienta en tala, en trozado y
+   * otra vez en despacho: sumar las filas del plan daría cerca del triple del
+   * volumen real y sería un número inventado con cara de oficial (regla 2 de
+   * `verificacion-de-verdad`). El único volumen que el modelo publica sin
+   * derivar es el autorizado del plan, y ése es el que se devuelve.
+   */
+  static async usosDelPlan(tenantId: string, planId: string) {
     if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
+    const [especies, censo, asientos, guias, contratos, autorizado] = await Promise.all([
+      prisma.forestPlanSpecies.count({ where: { tenantId, planId, deletedAt: null } }),
+      prisma.forestCensusTree.count({ where: { tenantId, planId, deletedAt: null } }),
+      prisma.forestLothEntry.count({ where: { tenantId, planId, deletedAt: null } }),
+      prisma.forestGtf.count({ where: { tenantId, planId, deletedAt: null } }),
+      prisma.forestContrato.count({ where: { tenantId, planId, deletedAt: null } }),
+      prisma.forestPlanSpecies.aggregate({
+        where: { tenantId, planId, deletedAt: null },
+        _sum: { volumenAutorizadoM3: true },
+      }),
+    ]);
+    // Sin especies cargadas el volumen autorizado es DESCONOCIDO, no cero: un
+    // 0,000 m³ en el "¿estás seguro?" diría que el plan no autoriza nada.
+    const suma = autorizado._sum.volumenAutorizadoM3;
+    return {
+      especies,
+      censo,
+      asientos,
+      guias,
+      contratos,
+      volumenAutorizadoM3: suma == null ? null : Number(suma),
+    };
+  }
+
+  /**
+   * Da de baja un plan cargado por error.
+   *
+   * **Baja lógica** (`deletedAt`), nunca borrado físico: los asientos del
+   * LO-TH y las guías que lo citan siguen existiendo —son lo que se declara
+   * ante la ARFFS— y su `planId` apunta acá. El plan desaparece del selector y
+   * deja de ser el activo; la historia que se firmó bajo él, no.
+   *
+   * Devuelve `null` si no existe (o ya estaba de baja) para que la ruta
+   * responda 404 en vez de fabricar un update sobre nada. Lo que colgaba se
+   * mide ANTES del update y queda escrito en el rastro: un fiscalizador que ve
+   * un plan de baja necesita saber cuánto papel quedó huérfano.
+   */
+  static async eliminarPlan(tenantId: string, planId: string, actor: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
+    const existe = await prisma.forestPlan.findFirst({
+      where: { tenantId, id: planId, deletedAt: null },
+    });
+    if (!existe) return null;
+
+    const usos = await ForestPlanDB.usosDelPlan(tenantId, planId);
     const plan = await prisma.forestPlan.update({
-      where: { id, tenantId } satisfies Prisma.ForestPlanWhereUniqueInput,
+      where: { id: planId, tenantId } satisfies Prisma.ForestPlanWhereUniqueInput,
       data: { deletedAt: new Date(), isActive: false },
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch (err) {
+      logger.error("[forest-plan] no se pudo invalidar la caché tras la baja", {
+        error: String(err),
+        tenantId,
+        planId,
+      });
+    }
+    auditCtp({
+      tenantId,
+      action: "ctp_plan_baja",
+      entity: "ForestPlan",
+      entityId: plan.id,
+      detail:
+        `Baja del plan ${plan.planType} ${plan.planNumber ?? "(sin N°)"} — ${plan.titularName}. ` +
+        `Colgaban: ${usos.especies} especies, ${usos.censo} árboles del censo, ` +
+        `${usos.asientos} asientos del LO-TH, ${usos.guias} guías, ${usos.contratos} permisos`,
+      user: actor,
+    });
     return plan;
   }
 

@@ -7,6 +7,7 @@
  * escondido detrás de una pestaña es un aviso que nadie ve.
  *
  *   · el censo vino cortado → todo lo que se calcula sobre él es parcial;
+ *   · la VIGENCIA del plan venció o está por vencer;
  *   · una especie censada que NO figura en la resolución (tala no autorizada);
  *   · una especie con más árboles censados que los autorizados.
  *
@@ -14,20 +15,39 @@
  * aviso y no debe pesar como uno.
  */
 
-import { AlertTriangle, Ban, CheckCircle2 } from "@buleje/design-system/icons";
+import { AlertTriangle, Ban, CalendarClock, CheckCircle2 } from "@buleje/design-system/icons";
+import { avisoDeVigencia } from "@/lib/forestal/vigencia-avisos";
 import type { ControlRow } from "./loth-plan-shared";
 
-export default function LothPlanAvisos({ rows, onResolver, truncado }: {
+export default function LothPlanAvisos({ rows, onResolver, truncado, plan }: {
   rows: ControlRow[];
   onResolver?: (especie: string) => void;
   /** El censo tiene `total` árboles y se cargaron `cargados`. */
   truncado?: { total: number; cargados: number } | null;
+  /**
+   * El plan que está en pantalla, para avisar antes de que venza.
+   *
+   * La cabecera ya pinta «por vencer», pero un color hay que estar mirándolo:
+   * acá el aviso dice los días y qué se rompe. La regla es la misma que usa el
+   * Libro CTP para el permiso (`vigencia-avisos`), así que el mismo papel no
+   * puede decir días distintos en dos pantallas.
+   */
+  plan?: { codigo?: string | null; vigenciaHasta?: string | null; estado?: string | null } | null;
 }) {
   const hasCenso = rows.some((r) => r.censadoCount > 0);
   const noAut = rows.filter((r) => r.flags.includes("no_autorizada"));
   const excArb = rows.filter((r) => r.flags.includes("exceso_arboles"));
   const todoBien = hasCenso && noAut.length === 0 && excArb.length === 0;
-  if (!truncado && !hasCenso) return null;
+  const vigencia = plan
+    ? avisoDeVigencia({
+        id: "plan",
+        codigo: plan.codigo,
+        vigenciaHasta: plan.vigenciaHasta,
+        estado: plan.estado,
+        clase: "plan",
+      })
+    : null;
+  if (!truncado && !hasCenso && !vigencia) return null;
 
   return (
     <div className="space-y-2">
@@ -42,6 +62,26 @@ export default function LothPlanAvisos({ rows, onResolver, truncado }: {
             El censo tiene {truncado.total.toLocaleString("es-PE")} árboles y se cargaron {truncado.cargados.toLocaleString("es-PE")}.
             Todo el Plan Operativo está calculado sobre esos {truncado.cargados.toLocaleString("es-PE")}: no lo uses para declarar
             hasta filtrar por parcela o estado.
+          </span>
+        </p>
+      )}
+
+      {/* La vigencia va antes que el cuadre por especie: de un plan vencido no
+          se moviliza nada, por más que el censo cierre perfecto. Vencido es
+          rojo (ya pasó); por vencer es coral (todavía se puede renovar). */}
+      {vigencia && (
+        <p
+          data-aviso-vigencia={vigencia.nivel}
+          className={`flex items-start gap-2 rounded-xl border-2 p-3 text-sm ${
+            vigencia.nivel === "vencido"
+              ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
+              : "border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]"
+          }`}
+        >
+          <CalendarClock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>
+            <span className="font-bold">{vigencia.titulo}.</span>{" "}
+            <span className="font-medium">{vigencia.detalle}</span>
           </span>
         </p>
       )}

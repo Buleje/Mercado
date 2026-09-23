@@ -12,12 +12,13 @@
  * troza: «12 trozas varadas» es plata ya perdida; «12 trozas cruzan los 60 días
  * el jueves» es plata que se puede salvar aserrándolas.
  *
- * Cinco cosas se pueden ver venir con lo que el libro ya guarda:
+ * Seis cosas se pueden ver venir con lo que el libro ya guarda:
  *   1. guías a punto de vencer el plazo de registro SERFOR (2 días hábiles)
  *   2. trozas que están por cruzar el umbral de varadas (se manchan, se rajan)
  *   3. un título habilitante que vence con madera suya todavía sin aserrar
  *   4. un permiso CITES que vence con esa especie viva en el patio
  *   5. cuántos días le quedan al patio al ritmo de consumo real
+ *   6. el PERMISO propio bajo el que se compra y se despacha (`ForestContrato`)
  *
  * PURO: recibe los datos ya cargados y decide. Ningún fetch, ninguna fecha
  * implícita (`ahora` entra por parámetro) — así la proyección se testea.
@@ -25,6 +26,7 @@
 
 import { PLAZO_REGISTRO_DIAS, diasHabilesDeRegistro } from "./ctp-compliance";
 import { TROZAS_VARADAS_DIAS } from "./ctp-pendientes";
+import { avisosDeVigencia, hoyDelLibro, porVencer, type PapelConVigencia } from "./vigencia-avisos";
 
 const MS_DIA = 86_400_000;
 
@@ -94,6 +96,15 @@ export interface DatosAnticipa {
   trozasPorVarar?: BandaDeTrozas;
   /** Títulos habilitantes y permisos CITES de la Ficha. */
   documentos: readonly DocumentoPorVencer[];
+  /**
+   * Los permisos propios (`ForestContrato`) bajo los que se compra y despacha.
+   *
+   * Distintos de `documentos`: aquéllos son los papeles de la Ficha del CTP (la
+   * planta), éstos son los títulos habilitantes de origen. Los ya VENCIDOS no
+   * entran acá —salen en la lista de pendientes, que es donde va lo que ya
+   * pasó—; acá sólo lo que todavía se puede evitar.
+   */
+  permisos?: readonly PapelConVigencia[];
   /** m³ de materia prima disponibles hoy en el patio. */
   patioM3: number;
   /** m³ consumidos en los últimos `consumoDias` días. */
@@ -124,7 +135,7 @@ const fmt = (n: number): string =>
 
 const plural = (n: number, uno: string, varios: string) => (n === 1 ? uno : varios);
 
-/* ── Las cinco proyecciones ───────────────────────────────────────────────── */
+/* ── Las seis proyecciones ────────────────────────────────────────────────── */
 
 /**
  * Guías cuyo plazo de registro SERFOR está por vencerse.
@@ -225,6 +236,31 @@ function avisosDeDocumentos(d: DatosAnticipa, ahora: number): AvisoAnticipado[] 
 }
 
 /**
+ * El permiso propio a punto de vencerse.
+ *
+ * A diferencia de los documentos de la Ficha, éste NO se condiciona al saldo
+ * del patio: el permiso no ampara sólo la madera que ya está adentro, ampara la
+ * que se va a comprar y la que se va a despachar. Con el patio vacío sigue
+ * siendo la diferencia entre poder seguir operando el mes que viene y no poder.
+ *
+ * La regla y el texto viven en `vigencia-avisos` porque el mismo papel se avisa
+ * en dos libros: acá y en la vista Plan del LO-TH. Dos redacciones del mismo
+ * vencimiento terminarían diciendo días distintos.
+ */
+function avisosDePermisos(d: DatosAnticipa, ahora: number): AvisoAnticipado[] {
+  /* `hoyDelLibro` y no `diaUtc`: a las 20:00 de Pucallpa el UTC ya es mañana y
+     el permiso perdería un día de plazo justo en el turno de la tarde. */
+  return porVencer(avisosDeVigencia(d.permisos ?? [], hoyDelLibro(ahora))).map((a) => ({
+    clave: a.clave,
+    gravedad: a.gravedad,
+    dias: a.dias,
+    titulo: a.titulo,
+    detalle: a.detalle,
+    vista: "contratos",
+  }));
+}
+
+/**
  * Cuántos días le quedan al patio al ritmo real de consumo.
  *
  * No es una alerta de compliance: es de operación. Un aserradero que se queda
@@ -262,6 +298,7 @@ export function avisosQueVienen(d: DatosAnticipa, ahora: number = Date.now()): A
     ...avisosDePlazo(d, ahora),
     avisoDeTrozas(d),
     ...avisosDeDocumentos(d, ahora),
+    ...avisosDePermisos(d, ahora),
     avisoDePatio(d),
   ]
     .filter((a): a is AvisoAnticipado => a !== null)

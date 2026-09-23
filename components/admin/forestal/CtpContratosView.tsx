@@ -25,6 +25,7 @@ import {
 import CtpContratoBalance from "./CtpContratoBalance";
 import CtpContratosCandidatos from "./CtpContratosCandidatos";
 import CtpContratosLista from "./CtpContratosLista";
+import CtpPermisosIncompletos from "./CtpPermisosIncompletos";
 
 /** «3 ingresos, 1 corrida y 2 lotes», sin listar los bloques en cero. */
 function loAtado(r: ResultadoSembrado): string {
@@ -99,6 +100,16 @@ export default function CtpContratosView() {
       )}
 
       <CtpContratosCandidatos candidatos={candidatos} sembrando={sembrando} onSembrar={alSembrar} />
+
+      {/* Primero lo que falta, después el detalle: un papel sin área ni
+          vigencia no se ve en la tabla —las columnas dicen «—»— y así nadie lo
+          completa nunca. Si no falta nada, el bloque no se monta. La recarga va
+          en silencio: el aviso de guardado lo da el propio bloque. */}
+      <CtpPermisosIncompletos
+        contratos={contratos}
+        balances={balances}
+        onGuardado={() => void recargar({ silenciosa: true })}
+      />
 
       {cargando && contratos.length === 0 ? (
         <p className="flex items-center gap-2 px-1 py-8 text-sm text-[var(--text-tertiary)]">

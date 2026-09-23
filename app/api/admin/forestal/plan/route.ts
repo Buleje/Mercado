@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { ContratoAjenoError, ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -10,9 +10,12 @@ import { withApiHandler } from "@/lib/api-handler";
 /**
  * /api/admin/forestal/plan — Plan de Manejo Forestal (ADR-126)
  *
- * GET   — lista planes · ?active=1 → plan activo · ?planId=X → detalle (plan + especies + censo summary)
- * POST  — crea plan
- * PATCH — actualiza plan { id, ...campos }
+ * GET    — lista planes · ?active=1 → plan activo · ?planId=X → detalle (plan + especies + censo summary)
+ *          · ?planId=X&usos=1 → qué cuelga del plan (para el "¿estás seguro?" de la baja)
+ * POST   — crea plan
+ * PATCH  — actualiza plan { id, ...campos }
+ * DELETE — ?id=X da de baja el plan (lógica: los asientos y las guías que lo
+ *          citan siguen existiendo, son lo que se declara ante la ARFFS)
  */
 
 const planSchema = z.object({
@@ -44,6 +47,17 @@ const planSchema = z.object({
   regenteRegistro: z.string().trim().max(60).nullable().optional(),
   regenteEspecialidad: z.enum(["maderable", "no_maderable", "plantaciones"]).nullable().optional(),
   representanteLegal: z.string().trim().max(200).nullable().optional(),
+  // Cómo se reconoce y dónde queda (ADR-426). Ninguno es un casillero del
+  // formato oficial: son los datos con los que se ubica el papel en la oficina.
+  alias: z.string().trim().max(120).nullable().optional(),
+  propietarioNombre: z.string().trim().max(200).nullable().optional(),
+  propietarioDocTipo: z.enum(["RUC", "DNI", "CE", "PASAPORTE"]).nullable().optional(),
+  propietarioDoc: z.string().trim().max(20).nullable().optional(),
+  provincia: z.string().trim().max(80).nullable().optional(),
+  distrito: z.string().trim().max(80).nullable().optional(),
+  sector: z.string().trim().max(120).nullable().optional(),
+  cuenca: z.string().trim().max(120).nullable().optional(),
+  contratoId: z.string().trim().max(40).nullable().optional(),
 });
 const patchSchema = planSchema.partial().extend({ id: z.string().trim().min(1) });
 
@@ -70,6 +84,13 @@ export const GET = withApiHandler("forestal-plan-get", async (req: NextRequest) 
       return NextResponse.json({ analytics: await ForestPlanDB.analytics(auth.tenantId, url.searchParams.get("planId") ?? undefined) });
     }
     const planId = url.searchParams.get("planId");
+    // Antes del detalle: lo que la pantalla necesita para decir QUÉ se pierde
+    // de vista al dar de baja el plan, sin traerse el censo entero.
+    if (planId && url.searchParams.get("usos") === "1") {
+      const plan = await ForestPlanDB.getPlan(auth.tenantId, planId);
+      if (!plan) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ usos: await ForestPlanDB.usosDelPlan(auth.tenantId, planId) });
+    }
     if (planId) {
       const [plan, species, censusSummary] = await Promise.all([
         ForestPlanDB.getPlan(auth.tenantId, planId),
@@ -105,6 +126,9 @@ export const POST = withApiHandler("forestal-plan-post", async (req: NextRequest
     const plan = await ForestPlanDB.createPlan(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" });
     return NextResponse.json({ plan }, { status: 201 });
   } catch (err) {
+    if (err instanceof ContratoAjenoError) {
+      return NextResponse.json({ error: "contrato_ajeno", message: err.message }, { status: 400 });
+    }
     logger.error("[plan.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
@@ -127,7 +151,37 @@ export const PATCH = withApiHandler("forestal-plan-patch", async (req: NextReque
     const plan = await ForestPlanDB.updatePlan(auth.tenantId, id, patch);
     return NextResponse.json({ plan });
   } catch (err) {
+    if (err instanceof ContratoAjenoError) {
+      return NextResponse.json({ error: "contrato_ajeno", message: err.message }, { status: 400 });
+    }
     logger.error("[plan.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
+});
+
+const deleteSchema = z.object({ id: z.string().trim().min(1) });
+
+export const DELETE = withApiHandler("forestal-plan-delete", async (req: NextRequest) => {
+  const auth = await requireAdmin(req, ["admin", "owner"]);
+  if (auth instanceof NextResponse) return auth;
+  const rl = await applyRateLimit(req, "GENEROUS", "loth");
+  if (rl) return rl;
+  const guard = await ensureSpec(auth.tenantId);
+  if (guard) return guard;
+
+  const url = new URL(req.url);
+  const parsed = deleteSchema.safeParse({ id: url.searchParams.get("id") ?? undefined });
+  if (!parsed.success) {
+    return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
+  }
+  try {
+    const plan = await ForestPlanDB.eliminarPlan(auth.tenantId, parsed.data.id, auth.username ?? "unknown");
+    // `null` = no existe EN ESTE tenant (el WHERE lleva tenantId): 404, no 403,
+    // y nunca un update a ciegas sobre el id de otro.
+    if (!plan) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true, plan });
+  } catch (err) {
+    logger.error("[plan.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 });

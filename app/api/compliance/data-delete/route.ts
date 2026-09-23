@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { CamposPersonalizadosDB } from "@/lib/db/campos-personalizados.db";
 
 /**
  * POST /api/compliance/data-delete
@@ -110,7 +111,8 @@ async function deleteHandler(
     // anonimizado pero con SavedLocations vivas (estado inconsistente).
     // Timeout 30s holgado: el flujo toca hasta 8 tablas con tenants grandes.
     const { deletedLocationsCount, deletedNotifsCount, anonymizedOrdersCount,
-            fiadosCount, prestamosCount, invoicesCount, anonymizedSalesCount } =
+            fiadosCount, prestamosCount, invoicesCount, anonymizedSalesCount,
+            campos } =
       await prisma.$transaction(async (tx) => {
         // 1. Anonymize Customer PII fields (soft-delete)
         await tx.customer.update({
@@ -145,18 +147,31 @@ async function deleteHandler(
         });
 
         // 2. Delete saved locations
-         
+        //    Los ids se leen ANTES del borrado: son el único modo de saber
+        //    después qué campos personalizados colgaban de ellos (paso 9).
+        const locaciones = await tx.savedLocation.findMany({
+          where: { customerPhone: customer.phone },
+          select: { id: true },
+        });
         const dLocations = await tx.savedLocation.deleteMany({
           where: { customerPhone: customer.phone },
         });
          
 
         // 3. Delete customer notifications
+        const notifs = await tx.customerNotification.findMany({
+          where: { tenantId, customerPhone: customer.phone },
+          select: { id: true },
+        });
         const dNotifs = await tx.customerNotification.deleteMany({
           where: { tenantId, customerPhone: customer.phone },
         });
 
         // 4. Anonymize Order customer data (retain order for accounting)
+        const pedidos = await tx.order.findMany({
+          where: { tenantId, customerPhone: customer.phone },
+          select: { id: true },
+        });
         const aOrders = await tx.order.updateMany({
           where: { tenantId, customerPhone: customer.phone },
           data: {
@@ -191,9 +206,37 @@ async function deleteHandler(
         });
 
         // 8. Sales — retain financial records, anonymize customer reference
+        //    Los ids, antes: el `updateMany` de abajo corta el vínculo con la
+        //    persona y después ya no se sabe cuáles eran suyas.
+        const ventas = await tx.sale.findMany({
+          where: { tenantId, customerPhone: customer.phone },
+          select: { id: true },
+        });
         const aSales = await tx.sale.updateMany({
           where: { tenantId, customerPhone: customer.phone },
           data: { customerPhone: null },
+        });
+
+        /* 9. Campos personalizados (ADR-427) — las respuestas escritas en las
+              preguntas que inventó el negocio. Se BORRAN, no se anonimizan:
+              son texto libre de esta persona (ahí entra un DNI o un teléfono
+              tipeado a mano) y no hay obligación tributaria que las retenga,
+              como sí la hay con montos y comprobantes. La pregunta queda viva
+              para los demás registros — se borra la respuesta, no el campo.
+
+              `registroId` es un id libre, así que se pasan los ids que esta
+              misma ruta ya sabe suyos, agrupados por tabla: lo que no se pueda
+              atribuir con certeza NO se borra y se informa abajo. Borrar por
+              id suelto podría llevarse la respuesta de otra persona. */
+        const campos = await CamposPersonalizadosDB.borrarValoresDeUnaPersonaEnTx(tx, tenantId, {
+          customer: [customer.phone],
+          order: pedidos.map((o) => o.id),
+          sale: ventas.map((s) => s.id),
+          fiado: fiadosList.map((fi) => fi.id),
+          prestamo: prestamosList.map((p) => p.id),
+          sunatInvoice: invoicesList.map((inv) => inv.id),
+          savedLocation: locaciones.map((l) => l.id),
+          customerNotification: notifs.map((n) => n.id),
         });
 
         return {
@@ -204,6 +247,7 @@ async function deleteHandler(
           prestamosCount: prestamosList.length,
           invoicesCount: invoicesList.length,
           anonymizedSalesCount: aSales.count,
+          campos,
         };
       }, { timeout: 30_000 });
 
@@ -239,6 +283,26 @@ async function deleteHandler(
       retainedData.push({
         table: "Sale",
         reason: "Montos de venta retenidos por obligación contable SUNAT",
+      });
+    }
+
+    if (campos.borrados > 0) {
+      const detalle = campos.porFormulario
+        .map((f) => `${f.formularioNombre}: ${f.valores}`)
+        .join(", ");
+      deletedData.push(
+        `CampoPersonalizadoValor: ${campos.borrados} respuesta(s) de campos personalizados (${detalle})`,
+      );
+    }
+    if (campos.fueraDeAlcance.length > 0) {
+      // Se declara en vez de borrarse a ciegas: son formularios cuyos registros
+      // no son de esta persona (o cuya tabla no está declarada). Borrarlos por
+      // un id que coincide se llevaría el dato de otro.
+      retainedData.push({
+        table: "CampoPersonalizadoValor",
+        reason:
+          `No se tocaron los campos personalizados de ${campos.fueraDeAlcance.length} formulario(s) — ` +
+          campos.fueraDeAlcance.map((f) => `${f.formularioNombre} (${f.motivo})`).join(" · "),
       });
     }
 

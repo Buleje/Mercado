@@ -13,15 +13,25 @@
  * cuerpo del documento, uno solo para las N líneas de producto que viajan.
  */
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { AlertTriangle, Check } from "@buleje/design-system/icons";
 import { TIPOS_DOCUMENTO_LOCTP } from "@/lib/forestal/loctp-campos";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FichaCtp } from "@/hooks/use-ficha-ctp";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import type { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
+import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
+import {
+  buscarTitulo,
+  completarGuiaConTitulo,
+  enumerar,
+  titulosElegibles,
+  type TituloDeFicha,
+} from "@/lib/forestal/titulos-de-la-guia";
 import CtpParteBarra, { CtpVehiculoBarra, type ValorParte } from "./CtpParteBarra";
+import { ESTADO_LABEL } from "./contratos-ui";
 import { Bloque, CampoSoloLectura, DocsDeParte, UbicacionDeParte } from "./ctp-guia-bloques";
 import { Field, I } from "./ctp-shared";
 
@@ -31,6 +41,190 @@ type SeccionObjeto = "propietario" | "destinatario" | "transportista" | "vehicul
 
 const direccionDe = (f: FichaCtp | null) =>
   [f?.direccion, f?.distrito, f?.provincia, f?.region].filter(Boolean).join(", ");
+
+/** Valor del `<select>` para «no está en ninguna lista, lo escribo». */
+const TITULO_A_MANO = "__a-mano";
+
+/**
+ * (6) Título habilitante — con qué papel sale ESTA madera.
+ *
+ * El mismo permiso vive en dos lugares y el select miraba uno solo: los
+ * `titulos[]` de la Ficha del CTP. Medido en el tenant de QA (2026-09-21) la
+ * Ficha declaraba **1** título y los permisos cargados (`ForestContrato`,
+ * ADR-421/425) eran **6** — los otros cinco sólo se podían tipear a mano, y un
+ * código tipeado en un papel que pasa por un puesto de control es justo lo que
+ * no queremos.
+ *
+ * Los dos grupos van separados a propósito (`<optgroup>`): no son lo mismo. El
+ * de la Ficha es el que además IMPRIME sus casilleros (5)(8)(9); el permiso
+ * cargado aporta titular, área y vigencia, y se lo dice.
+ *
+ * Degrada sin pelear: si el tenant no tiene el módulo de permisos, el hook
+ * responde `disponible: false` y el campo se comporta como antes — ni grupo
+ * vacío ni error.
+ */
+function CampoTituloHabilitante({
+  titulos,
+  guia,
+  titulosFicha,
+  setDatos,
+}: {
+  titulos: string[];
+  guia: GtfDatos["guia"];
+  titulosFicha: readonly TituloDeFicha[];
+  setDatos: Dispatch<SetStateAction<GtfDatos>>;
+}) {
+  const permisos = usePermisosForestal();
+  /** `auto` = lo decide el código cargado; los otros dos, el operador. */
+  const [modo, setModo] = useState<"auto" | "lista" | "libre">("auto");
+  /** Qué completó la última elección, atado al código que la hizo. */
+  const [completado, setCompletado] = useState<{ codigoNorm: string; campos: string[] } | null>(null);
+  /**
+   * «Ya sabemos qué permisos hay». Sin esto, entre que el modal monta y el GET
+   * vuelve, un título YA guardado se vería como desconocido y el aviso naranja
+   * saldría en cada apertura. Se marca cuando una carga termina, no cuando
+   * arranca (en el primer render `cargando` todavía es `false`).
+   */
+  const [consultado, setConsultado] = useState(false);
+  const cargandoAntes = useRef(false);
+  useEffect(() => {
+    if (cargandoAntes.current && !permisos.cargando) setConsultado(true);
+    cargandoAntes.current = permisos.cargando;
+  }, [permisos.cargando]);
+
+  const opciones = useMemo(
+    () => titulosElegibles(titulosFicha, permisos.disponible ? permisos.contratos : []),
+    [titulosFicha, permisos.disponible, permisos.contratos],
+  );
+  const elegido = titulos[0] ?? "";
+  const opcion = buscarTitulo(opciones.todos, elegido);
+  const hayOpciones = opciones.todos.length > 0;
+  /* Avisar, no bloquear: la guía se guarda igual con un código que no está
+     cargado (puede ser un papel que todavía nadie registró). */
+  const desconocido = consultado && Boolean(elegido.trim()) && !opcion;
+  const modoLibre = !hayOpciones || modo === "libre" || (modo === "auto" && desconocido);
+
+  function elegir(valor: string) {
+    if (valor === TITULO_A_MANO) {
+      setModo("libre");
+      setCompletado(null);
+      return;
+    }
+    setModo("auto");
+    const t = buscarTitulo(opciones.todos, valor);
+    /* Los rótulos se calculan FUERA del updater: en desarrollo React lo invoca
+       dos veces para delatar efectos y saldrían repetidos. */
+    const { completados } = completarGuiaConTitulo(guia, t);
+    setCompletado(t && completados.length ? { codigoNorm: t.codigoNorm, campos: completados } : null);
+    setDatos((p) => ({
+      ...p,
+      titulos: valor ? [valor] : [],
+      guia: { ...p.guia, ...completarGuiaConTitulo(p.guia, t).guia },
+    }));
+  }
+
+  /* De dónde salió lo que se ve, en UNA línea. Al permiso se le agrega qué va a
+     pasar en el papel: los casilleros del título se imprimen desde la Ficha
+     (`tituloDeGuia`), así que uno que sólo vive como permiso los deja en blanco
+     — decirlo evita que alguien dé por impreso lo que está mirando en pantalla. */
+  const procedencia =
+    opcion?.fuente === "ficha"
+      ? `De la ficha del CTP${opcion.resolucion ? ` · Resolución ${opcion.resolucion}` : ""}`
+      : opcion
+        ? [
+            `Permiso cargado${opcion.titular ? ` · ${opcion.titular}` : ""}`,
+            opcion.area,
+            opcion.resolucion ? `Resolución ${opcion.resolucion}` : null,
+            "en el papel, los casilleros (5)(8)(9) salen de la ficha del CTP",
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : "";
+  const recienCompletado = completado && opcion && completado.codigoNorm === opcion.codigoNorm ? completado.campos : null;
+
+  return (
+    <Field span={6} label="Título habilitante" required hint="Acredita el origen legal de la madera">
+      {modoLibre ? (
+        <input
+          type="text"
+          className={I}
+          aria-label="Título habilitante"
+          aria-required
+          placeholder="Escríbelo tal cual está en el papel"
+          value={titulos.join(", ")}
+          onChange={(e) => {
+            // Quien tipea manda: sin esto, al completar un código que SÍ está
+            // cargado el campo se convertía en select a mitad de la palabra.
+            if (modo !== "libre") setModo("libre");
+            setCompletado(null);
+            setDatos((p) => ({
+              ...p,
+              titulos: e.target.value.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 10),
+            }));
+          }}
+        />
+      ) : (
+        <select
+          className={I}
+          aria-label="Título habilitante"
+          aria-required
+          value={opcion ? opcion.codigo : ""}
+          onChange={(e) => elegir(e.target.value)}
+        >
+          <option value="">Elige el título</option>
+          {opciones.ficha.length > 0 && (
+            <optgroup label="De la ficha del CTP">
+              {opciones.ficha.map((t) => (
+                <option key={t.codigoNorm} value={t.codigo}>{t.etiqueta}</option>
+              ))}
+            </optgroup>
+          )}
+          {opciones.permisos.length > 0 && (
+            <optgroup label="Permisos cargados">
+              {opciones.permisos.map((t) => (
+                <option key={t.codigoNorm} value={t.codigo}>
+                  {t.etiqueta}
+                  {t.estado && t.estado !== "vigente" ? ` · ${ESTADO_LABEL[t.estado]}` : ""}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          <option value={TITULO_A_MANO}>Otro — lo escribo a mano</option>
+        </select>
+      )}
+      {/* La línea que dice de dónde salió lo que se ve. Viva a propósito: lo
+          que cambia acá lo provocó un clic del operador. */}
+      <div className="mt-1 space-y-1 text-xs leading-snug" aria-live="polite">
+        {desconocido ? (
+          <p className="flex items-start gap-1.5 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+            {/* El código va NOMBRADO: al volver a la lista el `<select>` queda
+                en «Elige el título» y, sin decirlo, el papel seguiría saliendo
+                con un código que ya no se ve por ningún lado. */}
+            <span>«{elegido}» no está cargado como permiso ni en la ficha del CTP. La guía se guarda igual.</span>
+          </p>
+        ) : (
+          procedencia && <p className="text-[var(--text-tertiary)]">{procedencia}</p>
+        )}
+        {recienCompletado && (
+          <p className="flex items-start gap-1.5 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+            <Check className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span>Se completó {enumerar(recienCompletado)} desde este permiso.</span>
+          </p>
+        )}
+        {modoLibre && hayOpciones && (
+          <button
+            type="button"
+            onClick={() => setModo("lista")}
+            className="font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
+          >
+            Elegirlo de la lista
+          </button>
+        )}
+      </div>
+    </Field>
+  );
+}
 
 export default function CtpGuiaDatosTab({
   datos,
@@ -99,7 +293,8 @@ export default function CtpGuiaDatosTab({
     );
   }
 
-  /** Los títulos de la Ficha, para elegir cuál ampara ESTE viaje. */
+  /** Los títulos de la Ficha, para elegir cuál ampara ESTE viaje. Memoizados
+   *  porque el campo los cruza con los permisos cargados en cada render. */
   const titulosFicha = useMemo(() => (ficha?.titulos ?? []).filter((t) => t.codigo?.trim()), [ficha]);
 
   /**
@@ -389,27 +584,12 @@ export default function CtpGuiaDatosTab({
         <Field span={12} label="Ruta declarada" hint="Los puestos de control la cotejan">
           <input type="text" className={I} value={datos.traslado.ruta} onChange={(e) => set("traslado", { ruta: e.target.value })} />
         </Field>
-        <Field span={6} label="Título habilitante" required hint="Acredita el origen legal de la madera">
-          {titulosFicha.length > 0 ? (
-            <select
-              className={I}
-              value={datos.titulos[0] ?? ""}
-              onChange={(e) => setDatos((p) => ({ ...p, titulos: e.target.value ? [e.target.value] : [] }))}
-            >
-              <option value="">Elige el título</option>
-              {titulosFicha.map((t) => (
-                <option key={t.codigo} value={t.codigo}>{t.codigo}{t.planManejo ? ` · ${t.planManejo}` : ""}</option>
-              ))}
-            </select>
-          ) : (
-            <input
-              type="text"
-              className={I}
-              value={datos.titulos.join(", ")}
-              onChange={(e) => setDatos((p) => ({ ...p, titulos: e.target.value.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 10) }))}
-            />
-          )}
-        </Field>
+        <CampoTituloHabilitante
+          titulos={datos.titulos}
+          guia={datos.guia}
+          titulosFicha={titulosFicha}
+          setDatos={setDatos}
+        />
         <Field
           span={6}
           label="N° de permiso CITES"

@@ -21,7 +21,7 @@
  */
 
 import { esc, seccionDoc } from "@/lib/forestal/ctp-documento-print";
-import { tituloDeGuia, type CtpFicha } from "@/lib/forestal/ctp-ficha-types";
+import { tituloDeGuia, type CtpFicha, type PermisoDeGuia } from "@/lib/forestal/ctp-ficha-types";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 
 /**
@@ -171,9 +171,16 @@ export function bloqueIdentidadGtf(
     /** Código del título elegido EN LA GUÍA (`GtfDatos.titulos[0]`). Manda sobre
      *  el predeterminado de la Ficha: esa madera salió de ese permiso. */
     tituloElegido?: string;
+    /**
+     * Los permisos cargados (`ForestContrato`, ADR-421/425). Desde que el
+     * select de la guía ofrece las dos listas, el elegido puede ser uno que la
+     * Ficha no tiene: sin esto sus casilleros (5)(8)(9) salían en blanco
+     * teniendo el dato cargado. La Ficha sigue mandando cuando está en las dos.
+     */
+    permisos?: readonly PermisoDeGuia[];
   } = {},
 ): string {
-  const titulo = tituloDeGuia(f, extra.tituloElegido);
+  const titulo = tituloDeGuia(f, extra.tituloElegido, extra.permisos);
   return `${seccionDoc("Título habilitante y titular del recurso", "casilleros (2) a (12)")}
   <table class="cas">
     <tr>${box2("2", "Autoridad Regional Forestal (ARFFS)", f.arffs)}${box("3", "F. Expedición", fechaGtf(extra.fechaExpedicion))}${box("4", "F. Vencimiento", fechaGtf(extra.fechaVencimiento))}</tr>
@@ -209,6 +216,12 @@ export interface CuerpoGtfInput {
    * exactamente ese enum (concesión, permiso, autorización, plantación…).
    */
   origenRecurso?: string;
+  /**
+   * Los permisos cargados, para resolver un título elegido que sólo vive ahí
+   * (ADR-421/425). Sin ellos el comportamiento es el de siempre: lo que no está
+   * en la Ficha imprime el código y deja (5)(8)(9) en blanco.
+   */
+  permisos?: readonly PermisoDeGuia[];
 }
 
 /** El bloque central del documento, de (2) a (40). */
@@ -233,6 +246,7 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
     // El que eligió el operador en el formulario de la guía. Antes se guardaba
     // y NO se imprimía: el papel declaraba siempre el primero de la Ficha.
     tituloElegido: d.titulos?.[0],
+    permisos: i.permisos,
   })}
 
   ${seccionDoc("Propietario del producto", "casilleros (13) a (21)")}

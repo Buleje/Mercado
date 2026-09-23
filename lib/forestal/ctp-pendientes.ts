@@ -61,7 +61,21 @@ export interface DatosPendientes {
   ingresosSinCosto?: number;
   /** m³ de esos ingresos. El conteo solo subestima lo que está en juego. */
   m3SinCosto?: number;
-
+  /**
+   * Permisos propios (`ForestContrato`) con la vigencia ya vencida.
+   *
+   * Lo que está POR vencer va en «se viene» (`ctp-anticipa`), que es donde
+   * todavía se puede hacer algo; acá va lo que ya pasó y hay que corregir antes
+   * de la próxima compra o el próximo despacho. La vigencia **sin cargar** no
+   * cuenta: eso lo reclama el panel «qué le falta a tus permisos».
+   */
+  permisosVencidos?: number;
+  /**
+   * Cuáles y hace cuánto. El código solo no alcanza: «vencido» sin el número no
+   * distingue el permiso que se pasó ayer del que se pasó hace ocho meses, y
+   * son dos urgencias distintas. `dias` viene NEGATIVO (días ya transcurridos).
+   */
+  permisosVencidosDetalle?: readonly { codigo: string; dias: number }[];
 }
 
 /** A partir de acá una troza parada empieza a costar. Mismo corte que el patio. */
@@ -98,6 +112,25 @@ export function diaEnPeriodo(dia: string, desde: string, hasta: string): boolean
 const ORDEN: Record<UrgenciaPendiente, number> = { bloquea: 0, atrasado: 1, pendiente: 2 };
 
 /**
+ * Cuáles son los permisos vencidos, hace cuánto y qué se rompe.
+ *
+ * Con uno solo se escribe entero («venció hace 11 días»); con varios se listan
+ * los tres primeros con su antigüedad entre paréntesis, porque la línea entra
+ * en un renglón del modal y cuatro códigos completos no.
+ */
+function detallePermisosVencidos(detalle: readonly { codigo: string; dias: number }[]): string {
+  const dias = (n: number) => `${Math.abs(n).toLocaleString("es-PE")} ${Math.abs(n) === 1 ? "día" : "días"}`;
+  if (detalle.length === 0) return "La guía que emitas con ese papel queda observada.";
+  if (detalle.length === 1) {
+    const [p] = detalle as [{ codigo: string; dias: number }];
+    return `${p.codigo} venció hace ${dias(p.dias)}. La guía que emitas con ese papel queda observada.`;
+  }
+  const lista = detalle.slice(0, 3).map((p) => `${p.codigo} (hace ${dias(p.dias)})`).join(", ");
+  const resto = detalle.length > 3 ? ` y ${detalle.length - 3} más` : "";
+  return `${lista}${resto}. La guía que emitas con esos papeles queda observada.`;
+}
+
+/**
  * Arma la lista de pendientes, sólo con los que tienen casos, ordenada por lo
  * que traba primero: un saldo negativo invalida el libro entero; un ingreso sin
  * validar es rutina.
@@ -119,6 +152,18 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
       titulo: "Corridas sin materia prima atribuida",
       detalle: "Sin origen no hay cadena de custodia ni certificado.",
       vista: "produccion",
+    },
+    /* Va con lo «atrasado» y no con lo que «bloquea»: el libro del mes cierra
+       igual con un permiso vencido —`resumenPendientes` habla del cierre—, pero
+       cada guía que se emita bajo ese papel nace observada. Mismo nivel que un
+       ingreso fuera de plazo: ya pasó, y es lo que mira una fiscalización. */
+    {
+      clave: "permisos-vencidos",
+      urgencia: "atrasado",
+      cantidad: d.permisosVencidos ?? 0,
+      titulo: (d.permisosVencidos ?? 0) === 1 ? "Permiso con la vigencia vencida" : "Permisos con la vigencia vencida",
+      detalle: detallePermisosVencidos(d.permisosVencidosDetalle ?? []),
+      vista: "contratos",
     },
     {
       clave: "fuera-de-plazo",

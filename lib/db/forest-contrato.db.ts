@@ -29,6 +29,33 @@ import {
 
 const CACHE_PREFIX = "forest-contrato";
 
+/**
+ * El permiso se quiso atar a un plan que no es de este negocio.
+ *
+ * Es el reverso del guard de `ForestPlanDB` (ADR-426): `planId` tampoco tiene
+ * clave foránea, y sin esto un PATCH a mano podía colgar un permiso de un plan
+ * de otro tenant. La ruta lo devuelve como **400 con el motivo**, no como un
+ * 500 mudo: es un dato mal mandado.
+ */
+export class PlanAjenoError extends Error {
+  constructor() {
+    super("Ese plan de manejo no existe en este negocio.");
+    this.name = "PlanAjenoError";
+  }
+}
+
+/** El plan existe, es de ESTE negocio y está vivo — o no se ata. */
+async function exigirPlanDelTenant(tenantId: string, planId: string | null | undefined) {
+  const id = (planId ?? "").trim();
+  if (!id) return null;
+  const existe = await prisma.forestPlan.findFirst({
+    where: { tenantId, id, deletedAt: null },
+    select: { id: true },
+  });
+  if (!existe) throw new PlanAjenoError();
+  return existe.id;
+}
+
 type ContratoRow = Prisma.ForestContratoGetPayload<Record<string, never>>;
 
 const txt = (v: string | null | undefined): string | null => {
@@ -127,6 +154,7 @@ export class ForestContratoDB {
   }
 
   static async crear(tenantId: string, input: ContratoInput, actor: string): Promise<Contrato> {
+    if (input.planId !== undefined) await exigirPlanDelTenant(tenantId, input.planId);
     if (!tenantId) throw new Error("tenantId is required");
     const codigo = (input.codigo ?? "").trim();
     if (!codigo) throw new Error("codigo is required");
@@ -177,6 +205,7 @@ export class ForestContratoDB {
     if (!tenantId) throw new Error("tenantId is required");
     const existe = await prisma.forestContrato.findFirst({ where: { tenantId, id, deletedAt: null } });
     if (!existe) return null;
+    if (input.planId !== undefined) await exigirPlanDelTenant(tenantId, input.planId);
     const codigo = input.codigo?.trim();
     const row = await prisma.forestContrato.update({
       where: { id },
@@ -214,6 +243,54 @@ export class ForestContratoDB {
       user: actor,
     });
     return aContrato(row);
+  }
+
+  /**
+   * Da de baja un permiso cargado por error.
+   *
+   * **Baja lógica** (`deletedAt`), no borrado: los ingresos, corridas y lotes
+   * que se le imputaron siguen existiendo y su `contratoId` apunta acá — el
+   * papel desaparece de los selectores, pero la plata que se movió bajo él no
+   * se evapora. El índice único del código es PARCIAL (`WHERE deletedAt IS
+   * NULL`, ADR-396/421), así que el mismo código se puede volver a cargar.
+   *
+   * Devuelve cuánto colgaba de él para que la pantalla lo diga ANTES de
+   * confirmar: dar de baja un permiso con 24 ingresos imputados no es lo mismo
+   * que dar de baja uno que se cargó recién y está vacío.
+   */
+  static async darDeBaja(tenantId: string, id: string, actor: string): Promise<Contrato | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const existe = await prisma.forestContrato.findFirst({ where: { tenantId, id, deletedAt: null } });
+    if (!existe) return null;
+    const row = await prisma.forestContrato.update({
+      where: { id },
+      data: { deletedAt: new Date(), isActive: false },
+    });
+    await invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    auditCtp({
+      tenantId,
+      action: "ctp_contrato_baja",
+      entity: "ForestContrato",
+      entityId: row.id,
+      detail: `Baja del permiso ${row.codigo}`,
+      user: actor,
+    });
+    return aContrato(row);
+  }
+
+  /** Qué cuelga de este permiso hoy — para avisar antes de darlo de baja. */
+  static async usos(tenantId: string, id: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [madera, produccion, lotes, gastos, adelantos, fletes] = await Promise.all([
+      prisma.woodEntry.count({ where: { tenantId, contratoId: id, deletedAt: null } }),
+      prisma.forestCtpEntry.count({ where: { tenantId, contratoId: id, deletedAt: null } }),
+      prisma.forestLoteAserrio.count({ where: { tenantId, contratoId: id, deletedAt: null } }),
+      // `Expense` y `Adelanto` no tienen baja lógica: se cuentan todos.
+      prisma.expense.count({ where: { tenantId, contratoId: id } }),
+      prisma.adelanto.count({ where: { tenantId, contratoId: id } }),
+      prisma.forestFlete.count({ where: { tenantId, contratoId: id, deletedAt: null } }),
+    ]);
+    return { madera, produccion, lotes, gastos, adelantos, fletes, total: madera + produccion + lotes + gastos + adelantos + fletes };
   }
 
   /**

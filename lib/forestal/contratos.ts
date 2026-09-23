@@ -11,18 +11,28 @@
  */
 
 /** Los papeles que la operación maneja, deducidos del propio código. */
-export type TipoContrato =
-  | "PER-FMP"
-  | "PER-FMC"
-  | "REG-PLT"
-  | "CONCESION"
-  | "CONTRATO"
-  | "DEMA"
-  | "PMFI"
-  | "PO"
-  | "otro";
+/**
+ * Los papeles con los que se trabaja. Array y no sólo una unión de tipos: las
+ * rutas los validan con `z.enum` y los selectores los recorren, y las tres
+ * copias de la misma lista ya se habían desincronizado una vez.
+ */
+export const TIPOS_CONTRATO = [
+  "PER-FMP",
+  "PER-FMC",
+  "REG-PLT",
+  "CONCESION",
+  "CONTRATO",
+  "DEMA",
+  "PMFI",
+  "PO",
+  "otro",
+] as const;
 
-export type EstadoContrato = "vigente" | "vencido" | "cerrado" | "suspendido";
+export type TipoContrato = (typeof TIPOS_CONTRATO)[number];
+
+export const ESTADOS_CONTRATO = ["vigente", "vencido", "cerrado", "suspendido"] as const;
+
+export type EstadoContrato = (typeof ESTADOS_CONTRATO)[number];
 
 export interface Contrato {
   id: string;

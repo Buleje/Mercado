@@ -5,7 +5,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
+import { ForestContratoDB, PlanAjenoError } from "@/lib/db/forest-contrato.db";
+import { ESTADOS_CONTRATO, TIPOS_CONTRATO } from "@/lib/forestal/contratos";
 
 /**
  * /api/admin/forestal/contratos/[id] — la ficha del permiso y su balance (ADR-421).
@@ -46,7 +47,7 @@ const patchSchema = z.union([
     titularDocTipo: z.string().trim().max(12).nullish(),
     resolucionNumero: z.string().trim().max(120).nullish(),
     resolucionFecha: z.string().trim().nullish(),
-    tipo: z.enum(["PER-FMP", "PER-FMC", "REG-PLT", "CONCESION", "CONTRATO", "DEMA", "PMFI", "PO", "otro"]).nullish(),
+    tipo: z.enum(TIPOS_CONTRATO).nullish(),
     arffs: z.string().trim().max(120).nullish(),
     region: z.string().trim().max(80).nullish(),
     provincia: z.string().trim().max(80).nullish(),
@@ -54,7 +55,7 @@ const patchSchema = z.union([
     areaHa: z.number().nonnegative().nullish(),
     vigenciaDesde: z.string().trim().nullish(),
     vigenciaHasta: z.string().trim().nullish(),
-    estado: z.enum(["vigente", "vencido", "cerrado", "suspendido"]).optional(),
+    estado: z.enum(ESTADOS_CONTRATO).optional(),
     planId: z.string().trim().nullish(),
     notas: z.string().trim().max(2000).nullish(),
   }),
@@ -73,6 +74,9 @@ export const GET = withApiHandler("forestal-contrato-get", async (req: NextReque
   try {
     const contrato = await ForestContratoDB.get(auth.tenantId, id);
     if (!contrato) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    if (url.searchParams.get("usos") === "1") {
+      return NextResponse.json({ contrato, usos: await ForestContratoDB.usos(auth.tenantId, id) });
+    }
     if (url.searchParams.get("balance") !== "1") return NextResponse.json({ contrato });
     const balance = await ForestContratoDB.balance(auth.tenantId, id, {
       desde: fecha(url.searchParams.get("desde")),
@@ -116,7 +120,29 @@ export const PATCH = withApiHandler("forestal-contrato-patch", async (req: NextR
     if (!contrato) return NextResponse.json({ error: "not_found" }, { status: 404 });
     return NextResponse.json({ contrato });
   } catch (err) {
+    if (err instanceof PlanAjenoError) {
+      return NextResponse.json({ error: "plan_ajeno", message: err.message }, { status: 400 });
+    }
     logger.error("[contrato.PATCH] failed", { error: String(err), tenantId: auth.tenantId, id });
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
+});
+
+export const DELETE = withApiHandler("forestal-contrato-delete", async (req: NextRequest, ctx) => {
+  const auth = await requireAdmin(req, ["admin", "owner"]);
+  if (auth instanceof NextResponse) return auth;
+  const rl = await applyRateLimit(req, "GENEROUS", "ctp");
+  if (rl) return rl;
+  const guard = await ensureSpec(auth.tenantId);
+  if (guard) return guard;
+
+  const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
+  try {
+    const contrato = await ForestContratoDB.darDeBaja(auth.tenantId, id, auth.username ?? "unknown");
+    if (!contrato) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true, contrato });
+  } catch (err) {
+    logger.error("[contrato.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 });

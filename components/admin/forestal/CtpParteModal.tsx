@@ -20,6 +20,8 @@ import {
   estadoTitulo,
   motivoCciInvalido,
   pendientesDeFicha,
+  tituloCubiertoPorPermisos,
+  type ContextoDeFicha,
   type FichaParaSalud,
 } from "@/lib/forestal/directorio-salud";
 import {
@@ -48,10 +50,28 @@ import {
 } from "@/lib/forestal/directorio";
 import { consultarDocumento } from "@/hooks/use-directorio-forestal";
 import { Btn, CampoGrid, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
+import CamposPersonalizados, {
+  guardarValoresPendientes as guardarCamposPendientes,
+  pendientesVacios as camposVacios,
+  type PendientesCampos,
+} from "@/components/admin/shared/CamposPersonalizados";
+import CtpPartePermisos, {
+  guardarPermisosPendientes,
+  type PermisoBorrador,
+} from "./CtpPartePermisos";
+import { SelectConOtra } from "./campos-elegibles";
+import { TIPOS_PLAN_LISTA } from "@/lib/forestal/loth-tipos-plan";
+import { opcionesEscritas } from "@/lib/forestal/permisos-de-parte";
 import CtpParteLogo from "./CtpParteLogo";
 import CtpPartePuntoAcopio from "./CtpPartePuntoAcopio";
 import CtpParteBitacora from "./CtpParteBitacora";
 import CtpParteAdjuntos from "./CtpParteAdjuntos";
+
+/** Id estable de este formulario para los campos personalizados (ADR-427). */
+const FORMULARIO_FICHA = "directorio.parte";
+
+/** Los documentos de gestión de la norma — el casillero (9) de la guía. */
+const DOCUMENTOS_DE_GESTION = TIPOS_PLAN_LISTA.map((t) => t.sigla);
 
 /** Lo que el libro ya sabe de este proveedor, resumido para la ficha. */
 interface HistorialDeCompras {
@@ -118,7 +138,13 @@ export default function CtpParteModal({
    *  (el problema #1 que este módulo existe para evitar: "MADERERA DEL
    *  ORIENTE SAC" y "Maderera del Oriente" como dos filas distintas). */
   existentes?: Parte[];
-  onGuardar: (input: Borrador) => Promise<void>;
+  /**
+   * Guarda y **devuelve la ficha guardada**: el modal la necesita para colgarle
+   * los permisos que se cargaron durante el alta, cuando todavía no había id
+   * (ADR-425). El padre ya no cierra el modal — lo cierra él mismo cuando
+   * terminó de guardar todo.
+   */
+  onGuardar: (input: Borrador) => Promise<Parte | void>;
   onClose: () => void;
 }) {
   const [b, setB] = useState<Borrador>(() => aBorrador(parte, rolInicial));
@@ -126,6 +152,21 @@ export default function CtpParteModal({
   const [estado, setEstado] = useState<"idle" | "consultando" | "guardando">("idle");
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  /** Permisos cargados durante el ALTA: se crean cuando la ficha tiene id. */
+  const [permisosPendientes, setPermisosPendientes] = useState<PermisoBorrador[]>([]);
+  /* Campos personalizados cargados durante el ALTA: como los permisos, esperan
+     el id de la ficha (ADR-427). */
+  const [camposPendientes, setCamposPendientes] = useState<PendientesCampos>(() => camposVacios(FORMULARIO_FICHA));
+  /**
+   * Cuántos permisos tiene este titular, según la sección que los lista.
+   *
+   * La barra de salud reclamaba el «título habilitante» aunque abajo hubiera
+   * dos permisos vigentes con su área y su vigencia (ADR-425). El dato lo tiene
+   * `CtpPartePermisos` —es quien monta `usePermisosForestal`—, así que lo sube
+   * por callback: pedir la lista otra vez acá serían dos GET al mismo endpoint
+   * para el mismo número.
+   */
+  const [permisosDelTitular, setPermisosDelTitular] = useState(0);
 
   const docTipo = (b.docTipo ?? "RUC") as DocTipo;
   const fuente = fuenteAutocompletado(docTipo);
@@ -234,7 +275,33 @@ export default function CtpParteModal({
     setEstado("guardando");
     setError(null);
     try {
-      await onGuardar(b);
+      const guardada = await onGuardar(b);
+      /* Los permisos del alta se crean recién acá: antes no había id al que
+         colgarlos. Si alguno falla, la ficha YA está guardada — se avisa y el
+         modal queda abierto con la lista, en vez de perderlos en silencio. */
+      const idFicha = guardada?.id ?? b.id ?? null;
+      if (permisosPendientes.length > 0 && idFicha) {
+        const r = await guardarPermisosPendientes(
+          { id: idFicha, nombre: guardada?.nombre ?? b.nombre, docTipo: b.docTipo, docNumero: b.docNumero },
+          permisosPendientes,
+        );
+        setPermisosPendientes([]);
+        if (r.errores.length > 0) {
+          setError(`La ficha se guardó. Sus permisos: ${r.errores.join(" · ")}`);
+          setEstado("idle");
+          return;
+        }
+      }
+      /* Los campos personalizados del alta se guardan cuando la ficha ya tiene
+         id, igual que los permisos. Si fallan, la ficha YA está guardada. */
+      if (idFicha) {
+        const rc = await guardarCamposPendientes(idFicha, camposPendientes);
+        if (rc.errores.length > 0) {
+          setError(`La ficha se guardó. Sus campos personalizados: ${rc.errores.join(" · ")}`);
+          setEstado("idle");
+          return;
+        }
+      }
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -265,10 +332,20 @@ export default function CtpParteModal({
   };
 
   // Qué le falta a esta ficha para servir en los papeles que cumple.
-  const pendientes = pendientesDeFicha(b as FichaParaSalud);
-  const listo = completitud(b as FichaParaSalud);
+  const contextoSalud: ContextoDeFicha = { permisos: permisosDelTitular };
+  const pendientes = pendientesDeFicha(b as FichaParaSalud, contextoSalud);
+  const listo = completitud(b as FichaParaSalud, contextoSalud);
+  /** Si el título dejó de reclamarse porque sus permisos lo cubren, por qué. */
+  const tituloEnPermisos = tituloCubiertoPorPermisos(b as FichaParaSalud, contextoSalud);
   const cciMal = motivoCciInvalido(b.cuentaCci);
   const vigencia = estadoTitulo(b.tituloVigenciaHasta || null);
+  /* Las autoridades que la libreta ya tiene escritas, para no escribir la misma
+     de tres formas (pasó: «GERFOR Ucayali» vs «ATFFS SELVA CENTRAL» vs la misma
+     con su sede). */
+  const arffsDeLaLibreta = useMemo(
+    () => opcionesEscritas([...existentes.map((p) => p.arffs), b.arffs]),
+    [existentes, b.arffs],
+  );
 
   /**
    * Los vehículos de ESTE transportista.
@@ -351,7 +428,12 @@ export default function CtpParteModal({
   })();
 
   const bodyRef = useAtajoGuardar(() => void guardar(), estado === "idle");
-  const cerrar = useCierreSeguro(useHayCambios(b) && estado !== "guardando", onClose);
+  /* Un permiso cargado y todavía sin crear también es algo que perder: sin
+     contarlo, cerrar de un roce se llevaba la lista sin preguntar. */
+  const cerrar = useCierreSeguro(
+    (useHayCambios(b) || permisosPendientes.length > 0) && estado !== "guardando",
+    onClose,
+  );
 
   return (
     <AdminModal
@@ -448,9 +530,25 @@ export default function CtpParteModal({
               ))}
             </ul>
           )}
+          {/* Un pendiente que desaparece en silencio confunde tanto como uno de
+              más: se dice por qué dejó de pedirse. */}
+          {tituloEnPermisos && (
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-[var(--data-success-700)]">
+              <Check className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              <span>{tituloEnPermisos}</span>
+            </p>
+          )}
         </div>
 
-        <Seccion numero={nro.roles} title="Qué papel cumple" hint="Se puede marcar más de uno">
+        {/* A partir de `lg` las secciones se reparten en 2 columnas: chips,
+            identidad y «Según el papel» (ahí entra la tabla de permisos que se
+            agrega después) necesitan el ancho entero y van con `lg:col-span-2`;
+            «Dónde está» —la más alta: dirección, ubigeo, 2 teléfonos, 2
+            contactos, email— va SOLA en una columna frente a «Cómo se le paga»
+            + «Logo y papeles del titular» + «Notas» apiladas en la otra, para
+            que las dos columnas queden de altura parecida. */}
+        <div className="grid grid-cols-1 gap-x-6 items-start lg:grid-cols-2">
+        <Seccion numero={nro.roles} title="Qué papel cumple" hint="Se puede marcar más de uno" className="lg:col-span-2">
           <div className="sm:col-span-12 flex flex-wrap gap-2">
             {ROLES_PARTE.map((rol) => {
               const on = b.roles.includes(rol);
@@ -474,7 +572,7 @@ export default function CtpParteModal({
           </div>
         </Seccion>
 
-        <Seccion numero={nro.identidad} title="Identidad">
+        <Seccion numero={nro.identidad} title="Identidad" className="lg:col-span-2">
           <Field label="Tipo de documento" span={3}>
             <select className={I} value={docTipo} onChange={(e) => set({ docTipo: e.target.value as DocTipo })}>
               {DOC_TIPOS.map((t) => (
@@ -543,103 +641,8 @@ export default function CtpParteModal({
           )}
         </Seccion>
 
-        <Seccion numero={nro.donde} title="Dónde está" hint="La dirección del destinatario es el punto de llegada de la guía">
-          <Field label="Dirección" span={12}>
-            <input type="text" className={I} value={b.direccion ?? ""} onChange={(e) => set({ direccion: e.target.value })} />
-          </Field>
-          {/* Región · provincia · distrito en cascada, con el mismo selector que
-              ya usa la Ficha del CTP. Antes eran tres campos de texto libre:
-              «Coronel Portillo» y «CORONEL PORTILLO» quedaban como dos lugares
-              distintos, y el ubigeo había que buscarlo aparte. Ahora el código
-              INEI sale solo de los tres nombres elegidos. */}
-          <CtpUbigeoSelects
-            span={4}
-            valor={{ departamento: b.region ?? "", provincia: b.provincia ?? "", distrito: b.distrito ?? "" }}
-            onChange={(v) => {
-              /**
-               * `CtpUbigeoSelects` emite un PATCH PARCIAL, no el valor entero:
-               * al cambiar la provincia manda `{provincia, distrito}` sin el
-               * departamento. Leerlo como `v.departamento ?? ""` borraba la
-               * región y dejaba el distrito sin opciones — se vio eligiendo
-               * Ucayali → Coronel Portillo y quedándose sin distritos.
-               */
-              const region = v.departamento !== undefined ? v.departamento : (b.region ?? "");
-              const provincia = v.provincia !== undefined ? v.provincia : (b.provincia ?? "");
-              const distrito = v.distrito !== undefined ? v.distrito : (b.distrito ?? "");
-              const code = ubigeoDeNombres(region, provincia, distrito);
-              set({
-                region,
-                provincia,
-                distrito,
-                // Sólo se pisa el ubigeo cuando los tres nombres resuelven a un
-                // código: si alguien lo tenía cargado a mano y la selección
-                // todavía está a medias, su dato no se borra.
-                ...(code ? { ubigeo: code } : {}),
-              });
-            }}
-          />
-          <Field label="Zona" span={6} hint="Sector o caserío — identifica el punto de llegada cuando la dirección no tiene numeración">
-            <input type="text" className={I} value={b.zona ?? ""} onChange={(e) => set({ zona: e.target.value })} />
-          </Field>
-          <Field label="Ubigeo" span={6} hint="Se completa solo al elegir departamento, provincia y distrito">
-            <input type="text" className={`${I} font-mono`} value={b.ubigeo ?? ""} onChange={(e) => set({ ubigeo: e.target.value })} />
-          </Field>
-          <Field label="Teléfono" span={4}>
-            <input type="text" className={I} value={b.telefono ?? ""} onChange={(e) => set({ telefono: e.target.value })} />
-          </Field>
-          {/* WhatsApp aparte: en la selva el fijo no existe y el número que
-              contesta no siempre es el que figura en el RUC. */}
-          {/* El enlace va FUERA del Field, como el botón de SUNAT: `Field`
-              asocia el id por `htmlFor` y sólo a un input/select/textarea —
-              envolviéndolo en un div, el label quedaba sin campo asociado (se
-              vio: `label[for]` vacío para WhatsApp). */}
-          <Field label="WhatsApp" span={3} hint="Solo números, con o sin +51">
-            <input type="text" className={I} value={b.whatsapp ?? ""} onChange={(e) => set({ whatsapp: e.target.value })} />
-          </Field>
-          <div className="sm:col-span-1 flex items-end">
-            {whatsappLink && (
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Abrir el chat de WhatsApp"
-                aria-label="Abrir el chat de WhatsApp"
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--data-success-500)] text-[var(--data-success-700)] transition-colors hover:bg-[var(--data-success-50)]"
-              >
-                <MessageCircle className="h-4 w-4" />
-              </a>
-            )}
-          </div>
-          <Field label="Email" span={4}>
-            <input type="email" className={I} value={b.email ?? ""} onChange={(e) => set({ email: e.target.value })} />
-          </Field>
-          {/* Quien atiende de verdad, cuando no es el representante legal. */}
-          <Field label="Contacto" span={6} hint="El que coordina el flete o la entrega">
-            <input type="text" className={I} value={b.contactoNombre ?? ""} onChange={(e) => set({ contactoNombre: e.target.value })} />
-          </Field>
-          <Field label="Teléfono del contacto" span={6}>
-            <input type="text" className={I} value={b.contactoTelefono ?? ""} onChange={(e) => set({ contactoTelefono: e.target.value })} />
-          </Field>
-          {/* El segundo que contesta. En comunidades y empresas chicas el primer
-              contacto se queda sin señal o cambia de número, y la guía se frena
-              por no tener a quién llamar. */}
-          <Field label="Otro contacto" span={6} hint="El que contesta cuando el primero no">
-            <input type="text" className={I} value={b.contacto2Nombre ?? ""} onChange={(e) => set({ contacto2Nombre: e.target.value })} />
-          </Field>
-          <Field label="Su teléfono" span={6}>
-            <input type="text" className={I} value={b.contacto2Telefono ?? ""} onChange={(e) => set({ contacto2Telefono: e.target.value })} />
-          </Field>
-          {/* Dónde se carga el camión: no es la dirección legal. */}
-          <CtpPartePuntoAcopio
-            lat={b.acopioLat}
-            lng={b.acopioLng}
-            referencia={b.acopioReferencia ?? ""}
-            onCambio={(v) => set(v)}
-          />
-        </Seccion>
-
         {(esTransportista || esConductor || esProveedor) && (
-          <Seccion numero={nro.papel} title="Según el papel">
+          <Seccion numero={nro.papel} title="Según el papel" className="lg:col-span-2">
             {esTransportista && (
               <>
               {susVehiculos.length > 0 && (
@@ -713,8 +716,18 @@ export default function CtpParteModal({
                     <Field label="N° de resolución" span={4} hint="Casillero (8) de la GTF">
                       <input type="text" className={I} value={b.resolucion ?? ""} onChange={(e) => set({ resolucion: e.target.value })} />
                     </Field>
-                    <Field label="Plan de manejo" span={4} hint="Casillero (9) — ej. DEMA, PMFI">
-                      <input type="text" className={I} value={b.planManejo ?? ""} onChange={(e) => set({ planManejo: e.target.value })} />
+                    <Field label="Plan de manejo" span={4} hint="Casillero (9) — el documento con el que aprovecha">
+                      {/* Lista y no texto libre: son los documentos de gestión de
+                          la norma (`loth-tipos-plan`), los mismos que ofrece el
+                          alta de plan del Libro TH. */}
+                      <SelectConOtra
+                        className={I}
+                        valor={b.planManejo ?? ""}
+                        opciones={DOCUMENTOS_DE_GESTION}
+                        textoOtra="Otro documento…"
+                        placeholder="DEMA"
+                        onCambio={(v) => set({ planManejo: v })}
+                      />
                     </Field>
                     {/* Comprarle a alguien con el título vencido invalida la GTF
                       que se emita con esa madera: es un dato de riesgo. */}
@@ -742,8 +755,17 @@ export default function CtpParteModal({
                     </p>
                   )}
                   <Field label="ARFFS competente" span={6} hint="Casillero (2) — la autoridad regional del titular">
-                      <input type="text" className={I} value={b.arffs ?? ""} onChange={(e) => set({ arffs: e.target.value })} />
-                    </Field>
+                    {/* De lo ya escrito en la libreta: la misma autoridad estaba
+                        cargada de tres formas distintas entre fichas y permisos. */}
+                    <SelectConOtra
+                      className={I}
+                      valor={b.arffs ?? ""}
+                      opciones={arffsDeLaLibreta}
+                      textoOtra="Otra autoridad…"
+                      placeholder="ATFFS Selva Central"
+                      onCambio={(v) => set({ arffs: v })}
+                    />
+                  </Field>
                   </>
                 )}
                 {categoriaProveedor === "aserradero" && (
@@ -762,22 +784,135 @@ export default function CtpParteModal({
                     onChange={(e) => set({ representanteDni: e.target.value })}
                   />
                 </Field>
+                {/* Los campos de arriba guardan UN papel — el último que alguien
+                    escribió. Acá van TODOS los que maneja el titular, cada uno
+                    con su área y su vigencia (ADR-425). */}
+                <CtpPartePermisos
+                  parteId={b.id ?? null}
+                  titular={{ id: b.id ?? null, nombre: b.nombre, docTipo: b.docTipo, docNumero: b.docNumero }}
+                  arffsDeLaFicha={b.arffs}
+                  pendientes={permisosPendientes}
+                  onPendientes={setPermisosPendientes}
+                  onConteo={setPermisosDelTitular}
+                />
               </>
             )}
           </Seccion>
         )}
 
+        <Seccion numero={nro.donde} title="Dónde está" hint="La dirección del destinatario es el punto de llegada de la guía">
+          <Field label="Dirección" span={12}>
+            <input type="text" className={I} value={b.direccion ?? ""} onChange={(e) => set({ direccion: e.target.value })} />
+          </Field>
+          {/* Región · provincia · distrito en cascada, con el mismo selector que
+              ya usa la Ficha del CTP. Antes eran tres campos de texto libre:
+              «Coronel Portillo» y «CORONEL PORTILLO» quedaban como dos lugares
+              distintos, y el ubigeo había que buscarlo aparte. Ahora el código
+              INEI sale solo de los tres nombres elegidos. */}
+          <CtpUbigeoSelects
+            span={6}
+            valor={{ departamento: b.region ?? "", provincia: b.provincia ?? "", distrito: b.distrito ?? "" }}
+            onChange={(v) => {
+              /**
+               * `CtpUbigeoSelects` emite un PATCH PARCIAL, no el valor entero:
+               * al cambiar la provincia manda `{provincia, distrito}` sin el
+               * departamento. Leerlo como `v.departamento ?? ""` borraba la
+               * región y dejaba el distrito sin opciones — se vio eligiendo
+               * Ucayali → Coronel Portillo y quedándose sin distritos.
+               */
+              const region = v.departamento !== undefined ? v.departamento : (b.region ?? "");
+              const provincia = v.provincia !== undefined ? v.provincia : (b.provincia ?? "");
+              const distrito = v.distrito !== undefined ? v.distrito : (b.distrito ?? "");
+              const code = ubigeoDeNombres(region, provincia, distrito);
+              set({
+                region,
+                provincia,
+                distrito,
+                // Sólo se pisa el ubigeo cuando los tres nombres resuelven a un
+                // código: si alguien lo tenía cargado a mano y la selección
+                // todavía está a medias, su dato no se borra.
+                ...(code ? { ubigeo: code } : {}),
+              });
+            }}
+          />
+          <Field label="Zona" span={6} hint="Sector o caserío — identifica el punto de llegada cuando la dirección no tiene numeración">
+            <input type="text" className={I} value={b.zona ?? ""} onChange={(e) => set({ zona: e.target.value })} />
+          </Field>
+          <Field label="Ubigeo" span={6} hint="Se completa solo al elegir departamento, provincia y distrito">
+            <input type="text" className={`${I} font-mono`} value={b.ubigeo ?? ""} onChange={(e) => set({ ubigeo: e.target.value })} />
+          </Field>
+          <Field label="Teléfono" span={6}>
+            <input type="text" className={I} value={b.telefono ?? ""} onChange={(e) => set({ telefono: e.target.value })} />
+          </Field>
+          {/* WhatsApp aparte: en la selva el fijo no existe y el número que
+              contesta no siempre es el que figura en el RUC. */}
+          {/* El enlace va FUERA del Field, como el botón de SUNAT: `Field`
+              asocia el id por `htmlFor` y sólo a un input/select/textarea —
+              envolviéndolo en un div, el label quedaba sin campo asociado (se
+              vio: `label[for]` vacío para WhatsApp). */}
+          <Field label="WhatsApp" span={4} hint="Solo números, con o sin +51">
+            <input type="text" className={I} value={b.whatsapp ?? ""} onChange={(e) => set({ whatsapp: e.target.value })} />
+          </Field>
+          <div className="sm:col-span-1 flex items-end">
+            {whatsappLink && (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Abrir el chat de WhatsApp"
+                aria-label="Abrir el chat de WhatsApp"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--data-success-500)] text-[var(--data-success-700)] transition-colors hover:bg-[var(--data-success-50)]"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </a>
+            )}
+          </div>
+          <Field label="Email" span={12}>
+            <input type="email" className={I} value={b.email ?? ""} onChange={(e) => set({ email: e.target.value })} />
+          </Field>
+          {/* Quien atiende de verdad, cuando no es el representante legal. */}
+          <Field label="Contacto" span={6} hint="El que coordina el flete o la entrega">
+            <input type="text" className={I} value={b.contactoNombre ?? ""} onChange={(e) => set({ contactoNombre: e.target.value })} />
+          </Field>
+          <Field label="Teléfono del contacto" span={6}>
+            <input type="text" className={I} value={b.contactoTelefono ?? ""} onChange={(e) => set({ contactoTelefono: e.target.value })} />
+          </Field>
+          {/* El segundo que contesta. En comunidades y empresas chicas el primer
+              contacto se queda sin señal o cambia de número, y la guía se frena
+              por no tener a quién llamar. */}
+          <Field label="Otro contacto" span={6} hint="El que contesta cuando el primero no">
+            <input type="text" className={I} value={b.contacto2Nombre ?? ""} onChange={(e) => set({ contacto2Nombre: e.target.value })} />
+          </Field>
+          <Field label="Su teléfono" span={6}>
+            <input type="text" className={I} value={b.contacto2Telefono ?? ""} onChange={(e) => set({ contacto2Telefono: e.target.value })} />
+          </Field>
+          {/* Dónde se carga el camión: no es la dirección legal. */}
+          <CtpPartePuntoAcopio
+            lat={b.acopioLat}
+            lng={b.acopioLng}
+            referencia={b.acopioReferencia ?? ""}
+            onCambio={(v) => set(v)}
+          />
+        </Seccion>
+
+        {/* Columna derecha: al meter estas 3 secciones en un `<div>` propio
+            para emparejarlas con «Dónde está», la primera queda `:first-child`
+            de ESE div y `first:border-t-0` (pensado para la primera sección
+            del formulario entero) le borra el separador — se ve raro sólo del
+            lado derecho. Se lo devolvemos a mano con `!` para que pese más que
+            la variante `first:`. */}
+        <div className="flex flex-col">
         {/* Sin esto, cada pago vuelve a pedir el número de cuenta por chat. */}
-        <Seccion numero={nro.pago} title="Cómo se le paga" hint="Para transferirle sin volver a pedir los datos">
-          <Field label="Banco" span={4}>
+        <Seccion numero={nro.pago} title="Cómo se le paga" hint="Para transferirle sin volver a pedir los datos" className="!border-t !mt-4 !pt-4">
+          <Field label="Banco" span={6}>
             <input type="text" className={I} value={b.banco ?? ""} onChange={(e) => set({ banco: e.target.value })} placeholder="BCP, Interbank…" />
           </Field>
-          <Field label="N° de cuenta" span={4}>
+          <Field label="N° de cuenta" span={6}>
             <input type="text" className={`${I} font-mono`} value={b.cuentaNumero ?? ""} onChange={(e) => set({ cuentaNumero: e.target.value })} />
           </Field>
           <Field
             label="CCI"
-            span={4}
+            span={12}
             hint={cciMal ?? "20 dígitos — es el que sirve para transferir entre bancos distintos"}
           >
             <input
@@ -803,7 +938,7 @@ export default function CtpParteModal({
           {/* Contado o crédito: es lo que decide si una compra deja una fecha de
               pago que vigilar. Sin pactar NO es contado — asumirlo haría
               aparecer deuda cero donde en realidad no se sabe. */}
-          <Field label="Condición de pago" span={4} hint={textoCondicionPago(b.condicionPago, b.diasCredito)}>
+          <Field label="Condición de pago" span={6} hint={textoCondicionPago(b.condicionPago, b.diasCredito)}>
             <select
               className={I}
               value={b.condicionPago ?? ""}
@@ -821,7 +956,7 @@ export default function CtpParteModal({
             </select>
           </Field>
           {b.condicionPago === "credito" && (
-            <Field label="Días de crédito" span={4} hint="Los que se pactaron: de ahí sale el vencimiento">
+            <Field label="Días de crédito" span={6} hint="Los que se pactaron: de ahí sale el vencimiento">
               <input
                 type="number"
                 min={0}
@@ -835,7 +970,7 @@ export default function CtpParteModal({
           )}
           <Field
             label="Correo de cobranza"
-            span={b.condicionPago === "credito" ? 4 : 8}
+            span={b.condicionPago === "credito" ? 12 : 6}
             hint="Dónde mandar factura y liquidación, si no es el correo general"
           >
             <input type="email" className={I} value={b.emailCobranza ?? ""} onChange={(e) => set({ emailCobranza: e.target.value })} />
@@ -891,8 +1026,20 @@ export default function CtpParteModal({
               nueva={b.nuevaNota ?? ""}
               onNueva={(nuevaNota) => set({ nuevaNota })}
             />
+            {/* Lo que este negocio le pregunta a sus partes y la ficha no
+                previó (ADR-427). */}
+            <CamposPersonalizados
+              className="sm:col-span-12"
+              formulario={FORMULARIO_FICHA}
+              registroId={b.id ?? null}
+              etiquetaFormulario="fichas del Directorio"
+              pendientes={camposPendientes}
+              onPendientes={setCamposPendientes}
+            />
           </CampoGrid>
         </Seccion>
+        </div>
+        </div>
 
       </ModalBody>
     </AdminModal>

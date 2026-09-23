@@ -5,7 +5,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
+import { ForestContratoDB, PlanAjenoError } from "@/lib/db/forest-contrato.db";
+import { ESTADOS_CONTRATO, TIPOS_CONTRATO } from "@/lib/forestal/contratos";
 
 /**
  * /api/admin/forestal/contratos — el permiso bajo el que se trabaja (ADR-421).
@@ -28,8 +29,10 @@ async function ensureSpec(tenantId: string) {
       );
 }
 
-const estados = ["vigente", "vencido", "cerrado", "suspendido"] as const;
-const tipos = ["PER-FMP", "PER-FMC", "REG-PLT", "CONCESION", "CONTRATO", "DEMA", "PMFI", "PO", "otro"] as const;
+// La lista vive en `lib/forestal/contratos` (single source): acá se valida
+// contra ella para que la ruta y el selector nunca ofrezcan cosas distintas.
+const estados = ESTADOS_CONTRATO;
+const tipos = TIPOS_CONTRATO;
 
 const contratoSchema = z.object({
   codigo: z.string().trim().min(3, "El código del permiso es lo que lo identifica"),
@@ -119,6 +122,9 @@ export const POST = withApiHandler("forestal-contratos-post", async (req: NextRe
       : null;
     return NextResponse.json({ contrato, vinculado }, { status: 201 });
   } catch (err) {
+    if (err instanceof PlanAjenoError) {
+      return NextResponse.json({ error: "plan_ajeno", message: err.message }, { status: 400 });
+    }
     logger.error("[contratos.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

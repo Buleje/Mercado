@@ -109,3 +109,40 @@ describe("el aviso de ingresos sin costo", () => {
     expect(sin.find((p) => p.clave === "ingresos-sin-costo")).toBeUndefined();
   });
 });
+
+describe("permisos con la vigencia vencida", () => {
+  const conPermisos = (detalle: { codigo: string; dias: number }[]) =>
+    pendientesDelLibro({ ...VACIO, permisosVencidos: detalle.length, permisosVencidosDetalle: detalle })
+      .find((p) => p.clave === "permisos-vencidos");
+
+  it("sin permisos vencidos no ocupa lugar", () => {
+    expect(conPermisos([])).toBeUndefined();
+  });
+
+  it("uno solo: dice el código, hace cuántos días y qué se rompe", () => {
+    const p = conPermisos([{ codigo: "CON-25-UCA-0207", dias: -11 }])!;
+    expect(p.titulo).toBe("Permiso con la vigencia vencida");
+    expect(p.detalle).toBe(
+      "CON-25-UCA-0207 venció hace 11 días. La guía que emitas con ese papel queda observada.",
+    );
+    expect(p.vista).toBe("contratos");
+  });
+
+  it("varios: los tres primeros con su antigüedad, y el resto contado", () => {
+    const p = conPermisos([
+      { codigo: "A", dias: -1 }, { codigo: "B", dias: -30 },
+      { codigo: "C", dias: -60 }, { codigo: "D", dias: -90 },
+    ])!;
+    expect(p.titulo).toBe("Permisos con la vigencia vencida");
+    expect(p.detalle).toBe(
+      "A (hace 1 día), B (hace 30 días), C (hace 60 días) y 1 más. La guía que emitas con esos papeles queda observada.",
+    );
+  });
+
+  it("no traba el CIERRE del mes, pero va con lo atrasado: es lo que mira una fiscalización", () => {
+    const p = conPermisos([{ codigo: "X", dias: -5 }])!;
+    expect(p.urgencia).toBe("atrasado");
+    expect(resumenPendientes(pendientesDelLibro({ ...VACIO, permisosVencidos: 1, permisosVencidosDetalle: [{ codigo: "X", dias: -5 }] })))
+      .toMatch(/ninguno traba/);
+  });
+});

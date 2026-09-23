@@ -6085,6 +6085,36 @@ model ForestPlan {
   regenteName         String?
   regenteRegistro     String? // N° en el Registro Nacional de Regentes
   regenteEspecialidad String? // maderable | no_maderable | plantaciones
+
+  // ── Cómo se reconoce y dónde queda (ADR-426) ────────────────────────
+  // Brandon 2026-09-21: «más detalles y observaciones, como poner el dueño o
+  // propietario, apodo y otros, para identificar mejor todo». Ninguno de estos
+  // es un casillero del formato oficial: son los datos con los que se reconoce
+  // el papel en la oficina y se lo encuentra entre varios.
+  /// Cómo se le dice en la conversación («el de Puerto Inca»). El N° oficial no
+  /// se toca — mismo criterio que `ForestContrato.alias`.
+  alias              String?
+  /// Dueño del predio cuando NO coincide con el titular del título habilitante:
+  /// pasa en los PMFI, donde el permiso está a nombre del propietario y quien
+  /// opera es otro. Sin esto, el nombre del dueño vive en un cuaderno.
+  propietarioNombre  String?
+  propietarioDocTipo String? // RUC | DNI | CE | PASAPORTE
+  propietarioDoc     String?
+  /// Dónde queda el área, más fino que la región. La provincia y el distrito los
+  /// pide el expediente y el permiso ya los guarda (`ForestContrato`); el plan
+  /// sólo tenía `region`.
+  provincia          String?
+  distrito           String?
+  /// Sector, caserío o anexo donde está el área — en la selva es lo que ubica
+  /// de verdad cuando la dirección no existe.
+  sector             String?
+  /// Cuenca o microcuenca, como la nombra el plan aprobado.
+  cuenca             String?
+  /// El permiso bajo el que se aprobó este plan (`ForestContrato`). El vínculo
+  /// inverso (`ForestContrato.planId`) ya existía desde ADR-421; éste permite ir
+  /// del plan al papel sin recorrer todos los contratos. Ref. app-level, igual
+  /// que `caratulaId`: sin FK, para no atar la baja de uno a la del otro.
+  contratoId         String?
   /// Representante legal, cuando el titular es persona jurídica.
   representanteLegal  String?
 
@@ -6096,6 +6126,7 @@ model ForestPlan {
   deletedAt DateTime?
 
   @@index([tenantId, isActive])
+  @@index([tenantId, contratoId])
   @@index([deletedAt])
 }
 
@@ -7968,4 +7999,97 @@ model AlertState {
   updatedAt    DateTime  @updatedAt
 
   @@index([status])
+}
+
+// ─── Campos personalizados (ADR-427) ─────────────────────────────────────────
+// Brandon 2026-09-21: «que se puedan crear campos de forma personalizada, con
+// la opción de ponerlo temporal para ese modal o permanente para ese modal y
+// otros registros; crear personalizado y reutilizar campos, ponerle nombre y
+// para qué es».
+//
+// Por qué DOS tablas y no un `Json` en cada modelo: un JSON suelto guarda el
+// valor pero no la pregunta — nadie puede listar «qué campos inventé», ni
+// reusarlos en otro formulario, ni saber si uno era temporal. La definición es
+// un dato del negocio, no metadata de una fila.
+
+/// La definición de un campo que alguien inventó: qué se pregunta y dónde.
+model CampoPersonalizado {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// A qué formulario pertenece, con el id estable del modal
+  /// («forestal.plan», «directorio.parte»…). NO es la tabla: dos modales del
+  /// mismo modelo pueden preguntar cosas distintas.
+  formulario String
+  /// Slug estable para leerlo por código y para no repetir la misma pregunta.
+  clave      String
+  /// Cómo se llama el campo en pantalla.
+  nombre     String
+  /// **Para qué es** — lo escribe quien lo crea y se muestra como ayuda debajo.
+  /// Sin esto, en seis meses nadie sabe qué se esperaba ahí.
+  descripcion String?
+
+  /// texto | numero | fecha | opcion | si_no | nota
+  tipo     String   @default("texto")
+  /// Las opciones cuando el tipo es `opcion`: elegir es más fácil que tipear.
+  opciones String[]
+
+  /// **Temporal**: el campo vale sólo para ESE registro y su id va acá.
+  /// `null` = permanente: aparece en todos los registros de ese formulario.
+  soloParaRegistroId String?
+
+  /// Orden en el que se pinta dentro del bloque.
+  orden    Int     @default(0)
+  /// Un campo que ya no se usa se apaga; no se borra, porque sus valores
+  /// siguen siendo lo que alguien escribió.
+  activo   Boolean @default(true)
+
+  valores CampoPersonalizadoValor[]
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  /// ⚠️ Este `@@unique` **no alcanza** y por eso no es el que protege: en un
+  /// campo permanente `soloParaRegistroId` es NULL, y Postgres trata cada NULL
+  /// como distinto, así que dos permanentes con la misma clave entraban los dos
+  /// (verificado por API creando dos). El unique REAL son dos índices
+  /// **parciales** en SQL (`20260922010000_campos_unicos_parciales`): uno para
+  /// los permanentes y otro para los temporales, ambos con `WHERE "deletedAt"
+  /// IS NULL` para que un campo apagado no deje su clave bloqueada para
+  /// siempre. Mismo caso que `ForestLoteAserrio` (ADR-396) y `ForestContrato`
+  /// (ADR-421). Éste se queda porque quitarlo pediría un DROP y no estorba.
+  @@unique([tenantId, formulario, clave, soloParaRegistroId])
+  @@index([tenantId, formulario, activo])
+  @@index([deletedAt])
+}
+
+/// Lo que se contestó en un registro concreto.
+model CampoPersonalizadoValor {
+  id       String @id @default(cuid())
+  tenantId String
+
+  campoId String
+  campo   CampoPersonalizado @relation(fields: [campoId], references: [id], onDelete: Cascade)
+
+  /// El id de la fila a la que pertenece la respuesta (el plan, la parte, el
+  /// ingreso…). Sin FK: el campo puede colgar de cualquier modelo.
+  registroId String
+
+  /// Lo escrito, siempre como texto: es lo que se muestra tal cual.
+  valor     String?
+  /// El mismo dato como número cuando el tipo es `numero`, para poder sumarlo
+  /// y ordenarlo sin parsear texto en cada consulta.
+  valorNum  Decimal?  @db.Decimal(18, 4)
+  /// Y como fecha cuando el tipo es `fecha`, por la misma razón.
+  valorFecha DateTime?
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Una respuesta por campo y por registro.
+  @@unique([tenantId, campoId, registroId])
+  @@index([tenantId, registroId])
 }

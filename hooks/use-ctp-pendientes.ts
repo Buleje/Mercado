@@ -19,11 +19,25 @@ import {
   HORIZONTE_TROZA_DIAS, avisosQueVienen, type AvisoAnticipado, type DatosAnticipa,
 } from "@/lib/forestal/ctp-anticipa";
 import { documentosDeFicha } from "@/lib/forestal/ctp-ficha-types";
+import {
+  avisosDeVigencia, hoyDelLibro, vencidos, type PapelConVigencia,
+} from "@/lib/forestal/vigencia-avisos";
 
 const VACIO: DatosPendientes = {
   ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
   despachosSinGtf: 0, despachosSinAnexo: 0, corridasSinOrigen: 0, saldosNegativos: 0,
   trozasVaradas: 0, ingresosSinCosto: 0, m3SinCosto: 0,
+  permisosVencidos: 0, permisosVencidosDetalle: [],
+};
+
+/** Lo que se le lee a `/api/admin/forestal/contratos` para medirle la vigencia. */
+type ContratoDelAviso = {
+  id?: string;
+  codigo?: string | null;
+  alias?: string | null;
+  vigenciaHasta?: string | null;
+  estado?: string | null;
+  isActive?: boolean;
 };
 
 /* Deduplicado (ADR-347): estos mismos GET los hace la vista activa en el mismo
@@ -47,6 +61,8 @@ type Respuesta = {
   ficha?: unknown;
   /** `?sinOrigen=1`: corridas del período sin materia prima atribuida. */
   sinOrigen?: { corridas?: number; producidoM3?: number; detalle?: CorridaSinOrigen[] };
+  /** Los permisos propios, para avisar antes de que venza la vigencia. */
+  contratos?: unknown;
 };
 
 /** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
@@ -117,8 +133,12 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
          estaba fijo en 0 —el único que bloquea el cierre no se disparaba
          nunca— porque calcularlo acá pedía bajarse el grafo entero. */
       json(`/api/admin/forestal/ctp?sinOrigen=1&${q}`),
+      /* Sin período a propósito, igual que las trozas varadas: un permiso que
+         venció en marzo sigue vencido hoy, y acotarlo al mes elegido lo
+         escondería justo cuando más importa. */
+      json("/api/admin/forestal/contratos"),
     ])
-      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen]) => {
+      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen, contratos]) => {
         if (miCarga !== cargaRef.current) return;   // llegó tarde: manda la más nueva
         const despachos = arr<{ status?: string; gtfNumber?: string | null; id: string }>(desp?.entries)
           .filter((e) => e.status === "registrado");
@@ -129,6 +149,23 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
         const guias = arr<{ gtfDate?: string }>(gtf?.gtfs)
           .filter((g) => diaEnPeriodo(diaDeFechaOnly(g.gtfDate), desde, hasta));
         const conAnexo = new Set(arr<{ ctpEntryId?: string }>(anexos?.anexos).map((a) => a.ctpEntryId).filter(Boolean));
+
+        /* ── Permisos: la MISMA regla para lo vencido y lo por vencer ──────
+           Un permiso dado de baja ya no se usa para comprar ni despachar, así
+           que no avisa. El resto de los filtros —sin vigencia, cerrado,
+           suspendido— los decide `avisosDeVigencia`, que es la única regla. */
+        const papeles: PapelConVigencia[] = arr<ContratoDelAviso>(contratos?.contratos)
+          .filter((c) => c.isActive !== false && Boolean(c.id))
+          .map((c) => ({
+            id: String(c.id),
+            codigo: c.codigo ?? c.alias ?? "",
+            vigenciaHasta: c.vigenciaHasta,
+            estado: c.estado,
+            clase: "permiso" as const,
+          }));
+        const avisosPermiso = avisosDeVigencia(papeles, hoyDelLibro());
+        const yaVencidos = vencidos(avisosPermiso);
+
         setDatos({
           ingresosPendientes: we?.stats?.byStatus?.pendiente ?? 0,
           fueraDePlazo: we?.stats?.lateCount ?? 0,
@@ -143,6 +180,8 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           trozasVaradas: varadas?.piezas ?? 0,
           ingresosSinCosto: we?.stats?.sinCostoCount ?? 0,
           m3SinCosto: we?.stats?.sinCostoM3 ?? 0,
+          permisosVencidos: yaVencidos.length,
+          permisosVencidosDetalle: yaVencidos.map((a) => ({ codigo: a.codigo || "sin código", dias: a.dias })),
         });
 
         /* ── Lo que se viene ──────────────────────────────────────────────
@@ -170,6 +209,10 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           documentos: documentosDeFicha(
             (ficha as { ficha?: Parameters<typeof documentosDeFicha>[0] })?.ficha,
           ),
+          /* Los mismos papeles: `avisosQueVienen` se queda con los que todavía
+             no vencieron, y los vencidos ya salieron arriba. Una sola lectura
+             del endpoint para las dos mitades de la campana. */
+          permisos: papeles,
           patioM3: Number(mp.saldoM3 ?? 0),
           consumidoM3: Number(mp.consumidoM3 ?? 0),
           /* El consumo que devuelve `saldos` es el DEL PERÍODO elegido, así que
