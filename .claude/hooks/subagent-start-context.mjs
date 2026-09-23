@@ -37,7 +37,8 @@ if (tipo === "workflow-subagent") {
         hookEventName: "SubagentStart",
         additionalContext: [
           "## Contexto Buleje (hook SubagentStart, versión Workflow)",
-          "- Tenant real `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura); `main` = QA.",
+          "- Tenant real `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura); QA = `main` (bodega) o `inversiones-agroforestales-blas-sociedad-op-qa-ui` (forestal: `main` no tiene ese módulo).",
+          "- Lo independiente va en UN mensaje (varias llamadas juntas): cada tanda es una espera del modelo.",
           "- Reglas del repo: `lib/db/*.db.ts` en vez de `prisma.*`; `tenantId` 1er parámetro sin fallback `\"main\"`; Zod `safeParse`; `requireAdmin(req, roles[])`; sin hex en UI; totales en backend.",
           "- Todo hallazgo con evidencia directa (comando + salida, archivo:línea). Tu formato de salida es el schema de la tarea.",
         ].join("\n"),
@@ -49,10 +50,11 @@ if (tipo === "workflow-subagent") {
 const contexto = [
   "## Contexto Buleje para subagentes (hook SubagentStart, 2026-09-14)",
   `- Quién pide: leé \`${MEM}/perfil-brandon-como-trabaja.md\` (dueño-operador, prueba todo en el navegador, 3-6 pedidos por mensaje, «aplicarlo en general» = buscar las pantallas hermanas). Propuestas: \`${MEM}/propuestas-con-lentes.md\` (sin medición es una opinión).`,
-  "- Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima`; `main` es el tenant de QA (`qaadmin` / `Qa-admin-1234`). Leer del real, escribir solo en QA.",
+  "- Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima`. QA (`qaadmin` / `Qa-admin-1234`): `main` para la bodega; para lo FORESTAL, `inversiones-agroforestales-blas-sociedad-op-qa-ui` (slug completo; `main` no tiene el módulo). Leer del real, escribir solo en QA.",
+  "- Lo independiente viaja en UN mensaje con varias llamadas: lecturas o greps de archivos distintos, las capturas de un mismo estado, gates de áreas distintas. Cada mensaje es una espera entera del modelo; medido el 23-09 en 244 subagentes: `frontend` 1,23 llamadas por mensaje, `tester` 1,12, `backend` 1,14 — casi todo de a una.",
   "- Editá sobre el checkout principal, nunca en worktree (en ramas largas branchea de una base vieja y se pierde lógica).",
   "- Reglas duras: `lib/db/*.db.ts` en vez de `prisma.*`; `tenantId` 1er parámetro sin fallback `\"main\"`; Zod `safeParse`; `requireAdmin(req, roles[])`; sin hex en UI (tokens del DS); totales en backend; sin `@ts-ignore`/`--no-verify`.",
-  "- Gates: `npm run typecheck` (TS 7 nativo, ~22s caliente / 50s frío, ~7 GB: UNO POR VEZ) — es el que decide, el mismo que corre pre-commit y CI; `npm run lint:fast` → `npm run lint`; tests del área con `npx vitest run <archivo>`. UI = screenshot light + dark, viewport 1280 y 400, consola sin errores nuestros.",
+  "- Gates: `npm run typecheck` (TS 7 nativo, 4-8 s caliente / ~30 s frío, medido 23-09; UNO POR VEZ) — es el que decide, el mismo que corre pre-commit y CI; `npm run lint:fast` → `npm run lint`; tests del área con `./node_modules/.bin/vitest run <archivo>`. UI = screenshot light + dark, viewport 1280 y 400, consola sin errores nuestros.",
   "- «Listo» solo con evidencia pegada (comando + salida) por el camino del usuario (navegador/curl), no por un script propio. Si no pudiste verificar, decilo.",
   "- Reporte final en español, ≤150 palabras + tabla (archivo:línea · evidencia · qué queda). Lo que aprendiste que un futuro agente no sabría → tu MEMORY.md si tenés memoria; si no, ponelo en el reporte bajo «Para memoria».",
   "- Si la tarea que recibiste define su propio formato de salida (schema JSON de un Workflow, «respondé en 3 líneas», etc.), ESE formato manda sobre el reporte de arriba.",

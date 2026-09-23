@@ -2,11 +2,10 @@
 /**
  * medir-paralelismo.mjs — cuántos tool-calls salen por mensaje.
  *
- * Por qué existe (medido 2026-09-19): el repo manda paralelismo por defecto
- * (CLAUDE.md §9.1, regla `agentic-style`, skill `turbo-parallel`), pero el
- * censo de 35 transcripts dio **1,00 tool-calls por mensaje**: 7 mensajes de
- * 14.044 llevaban más de una llamada, y los 110 subagentes salieron de a uno.
- * Una regla que nadie mide no se cumple. Esto la mide.
+ * Por qué existe: el repo manda paralelismo por defecto (CLAUDE.md §9.1,
+ * regla `agentic-style`) y una regla que nadie mide no se cumple. El censo del
+ * 19-09 dio «1,00» porque contaba líneas (ver `censar`); recontado el 23-09:
+ * 1,20 por mensaje, 11,9 % con 2+ llamadas, 1,64 subagentes por tanda.
  *
  * El wall-clock de una sesión ≈ número de TANDAS, no número de llamadas: tres
  * llamadas independientes en un mensaje cuestan una espera, no tres.
@@ -15,6 +14,7 @@
  *   node scripts/medir-paralelismo.mjs            # última sesión cerrada
  *   node scripts/medir-paralelismo.mjs --todas    # histórico completo
  *   node scripts/medir-paralelismo.mjs --json     # una línea para el hook
+ *   node scripts/medir-paralelismo.mjs --subagentes  # por tipo de subagente (histórico)
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -74,6 +74,34 @@ function transcripts() {
 }
 
 const args = process.argv.slice(2);
+
+// Los subagentes guardan su transcript en <sesión>/subagents/agent-*.jsonl y
+// su tipo en el .meta.json de al lado. Medido el 23-09: frontend 1,23,
+// backend 1,14, tester 1,12 — los que más trabajan son los que menos agrupan.
+if (args.includes("--subagentes")) {
+  const porTipo = new Map();
+  for (const ses of readdirSync(DIR, { withFileTypes: true })) {
+    if (!ses.isDirectory()) continue;
+    const sub = join(DIR, ses.name, "subagents");
+    let archivos = [];
+    try { archivos = readdirSync(sub).filter((x) => x.endsWith(".jsonl")); } catch { continue; }
+    for (const a of archivos) {
+      let tipo = "?";
+      try { tipo = JSON.parse(readFileSync(join(sub, a.replace(/\.jsonl$/, ".meta.json")), "utf8")).agentType ?? "?"; } catch { /* sin meta */ }
+      const lista = porTipo.get(tipo) ?? [];
+      lista.push(join(sub, a));
+      porTipo.set(tipo, lista);
+    }
+  }
+  const filas = [...porTipo].map(([tipo, fs]) => ({ tipo, ...censar(fs) })).filter((r) => r.mensajes >= 50);
+  filas.sort((a, b) => b.llamadas - a.llamadas);
+  console.log("Paralelismo por tipo de subagente (≥50 tandas)");
+  for (const r of filas) {
+    console.log(`  ${r.tipo.padEnd(20)} ${r.ratio.toFixed(2)} llamadas/tanda · ${r.pctMulti.toFixed(1)}% con 2+ · ${r.mensajes} tandas`);
+  }
+  process.exit(0);
+}
+
 const todos = transcripts();
 if (!todos.length) {
   if (args.includes("--json")) console.log("{}");
