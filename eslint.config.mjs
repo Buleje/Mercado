@@ -4,6 +4,12 @@ import nextTs from "eslint-config-next/typescript";
 import prettierConfig from "eslint-config-prettier";
 import { PRISMA_DIRECT_LEGACY } from "./eslint.legacy-allowlist.mjs";
 
+// ESLint 9 flat-config: plugins declared in a files-scoped config object are
+// not automatically available in file-unrestricted config objects. We extract
+// the plugins from nextVitals[0] (which is files-scoped) so we can re-declare
+// them in our global overrides object below.
+const nextVitalsBasePlugins = nextVitals[0]?.plugins ?? {};
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -17,6 +23,12 @@ const eslintConfig = defineConfig([
   ]),
   // Downgrade strict rules to warnings so pre-existing issues don't block commits
   {
+    // re-declare plugins from nextVitals[0] (which is files-scoped) so this
+    // file-unrestricted config object can reference their rules without error.
+    plugins: {
+      "react-hooks": nextVitalsBasePlugins["react-hooks"],
+      "jsx-a11y": nextVitalsBasePlugins["jsx-a11y"],
+    },
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-non-null-asserted-optional-chain": "warn",
