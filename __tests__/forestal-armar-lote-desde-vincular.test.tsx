@@ -166,7 +166,12 @@ describe("armar el lote sin salir del modal de vincular", () => {
     await waitFor(() =>
       expect((screen.getByRole("combobox", { name: /Lote de aserrío/i }) as HTMLSelectElement).value).toBe(LOTE_NUEVO),
     );
-    expect((screen.getByLabelText(/Elegir la troza 115-A/i) as HTMLInputElement).checked).toBe(true);
+    /* Las trozas del lote se tildan en un render POSTERIOR al del combo: sin
+       esperar, bajo la carga del hook de commit (~840 archivos) la aserción
+       llegaba antes y fallaba (medido el 22-09; aislado pasaba siempre). */
+    await waitFor(() =>
+      expect((screen.getByLabelText(/Elegir la troza 115-A/i) as HTMLInputElement).checked).toBe(true),
+    );
     const vincular = screen.getByRole("button", { name: /Vincular al lote/i });
     await waitFor(() => expect(vincular).not.toBeDisabled());
 
