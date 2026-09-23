@@ -27,9 +27,11 @@
 import { useCallback, useId, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import CtpResumenDeJornadasModal from "./CtpResumenDeJornadasModal";
+import CtpDiaDeProduccionModal from "./CtpDiaDeProduccionModal";
+import CtpAnexoDeLosDias, { useAnexoDeLosDias } from "./CtpAnexoDeLosDias";
 import CtpCasilleroDelDia from "./CtpCasilleroDelDia";
 import CtpCabeceraDeLaTira from "./CtpCabeceraDeLaTira";
-import { AvisoDiaConRegistro, DiasMarcados } from "./CtpAvisosDeLaTira";
+import { AvisoDiaConRegistro, AyudaDeLaTira, DiasMarcados } from "./CtpAvisosDeLaTira";
 import type { CorteResumen } from "./ctp-resumen-jornadas-tablas";
 import { useDiasMarcados } from "./hooks/use-dias-marcados";
 import type { DuenosPorDia } from "@/lib/forestal/resumen-de-jornadas";
@@ -38,7 +40,6 @@ import {
   correrSemanas,
   diasDeLaSemana,
   esIsoValido,
-  etiquetaLarga,
   hoyEnLima,
 } from "@/lib/forestal/semana-de-registro";
 import type { JornadaDeProduccion, SeccionDeJornada } from "./hooks/use-jornadas-produccion";
@@ -84,6 +85,11 @@ interface Props {
   onAnularDia?: (iso: string) => void;
   /** El día que se está anulando ahora (la papelera gira). */
   anulandoDia?: string | null;
+  /**
+   * Se corrigió algo desde «Ver qué salió ese día» (una escuadría, una
+   * corrida): quien monta la tira relee la semana y avisa al libro de atrás.
+   */
+  onEditado?: () => void;
 }
 
 /**
@@ -110,6 +116,7 @@ export default function CtpSemanaDeRegistro({
   maximo,
   onAnularDia,
   anulandoDia = null,
+  onEditado,
 }: Props) {
   const hoy = hoyEnLima();
   const nombre = NOMBRE_DE_LA_TIRA[seccion];
@@ -174,6 +181,10 @@ export default function CtpSemanaDeRegistro({
   );
   const { marcados, marcar } = seleccion;
   const [resumen, setResumen] = useState<{ dias: string[]; corte: CorteResumen; duenos?: DuenosPorDia } | null>(null);
+  /** El día abierto pieza por pieza (Brandon, 2026-09-23): lo que abre «Ver qué salió ese día». */
+  const [diaAbierto, setDiaAbierto] = useState<string | null>(null);
+  /** El Anexo 04 de los días marcados, combinados. */
+  const anexo = useAnexoDeLosDias();
 
   /* El detalle flotante de un día (Brandon, 2026-09-14): especies,
      clasificación, dueño… sin abrir el resumen. Sólo en producción y sólo si
@@ -266,7 +277,7 @@ export default function CtpSemanaDeRegistro({
                 }}
                 onElegir={() => onElegir(iso)}
                 flotante={flotante}
-                onVerResumen={() => setResumen({ dias: [iso], corte: "especie" })}
+                onVerResumen={() => setDiaAbierto(iso)}
                 onAnular={onAnularDia ? () => onAnularDia(iso) : undefined}
                 anulando={anulandoDia === iso}
               />
@@ -278,7 +289,7 @@ export default function CtpSemanaDeRegistro({
               valor={valor}
               jornada={jornadaElegida}
               nombre={nombre}
-              onVerResumen={esProduccion ? () => setResumen({ dias: [valor], corte: "especie" }) : undefined}
+              onVerResumen={esProduccion ? () => setDiaAbierto(valor) : undefined}
             />
           )}
 
@@ -290,31 +301,16 @@ export default function CtpSemanaDeRegistro({
               excluidosDe={seleccion.excluidosDe}
               onAlternarDueno={seleccion.alternarDueno}
               onResumen={(corte) => setResumen({ dias: [...marcados], corte, duenos: seleccion.filtro })}
+              onAnexo={esProduccion ? () => void anexo.abrir(marcados, seleccion.filtro) : undefined}
+              anexoCargando={anexo.cargando}
+              anexoAviso={anexo.avisoDe(marcados, seleccion.filtro)}
             />
           )}
 
           {/* La ayuda de siempre sólo cuando el día elegido está libre: si ya
               tiene registros, el aviso de arriba dice lo mismo con las cifras. */}
           {(error || elegidoFuera || !jornadaElegida) && (
-            <p className="mt-1 text-xs leading-snug text-[var(--text-tertiary)]">
-              {error ? (
-                <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                  No se pudo leer lo ya producido ({error}). Elige el día igual: el registro no depende de
-                  este dato.
-                </span>
-              ) : elegidoFuera ? (
-                <>
-                  Estás viendo otra semana. El registro va al{" "}
-                  <b className="text-[var(--text-secondary)]">{etiquetaLarga(valor)}</b>.
-                </>
-              ) : (
-                <>
-                  El día que elijas es la fecha del asiento. Los que ya tienen {nombre.varios} lo dicen en pie
-                  tablar — dos {nombre.varios} el mismo día es normal, pero repetir{" "}
-                  {esProduccion ? "la misma corrida" : `el mismo ${nombre.uno}`} no.
-                </>
-              )}
-            </p>
+            <AyudaDeLaTira error={error} elegidoFuera={elegidoFuera} valor={valor} nombre={nombre} esProduccion={esProduccion} />
           )}
         </div>
       )}
@@ -327,6 +323,17 @@ export default function CtpSemanaDeRegistro({
           onClose={() => setResumen(null)}
           onCopiarAlCubicado={onCopiarAlCubicado}
         />
+      )}
+      {diaAbierto && (
+        <CtpDiaDeProduccionModal
+          dia={diaAbierto}
+          onClose={() => setDiaAbierto(null)}
+          onCopiarAlCubicado={onCopiarAlCubicado}
+          onEditado={onEditado}
+        />
+      )}
+      {anexo.abierto && (
+        <CtpAnexoDeLosDias {...anexo.abierto} onCerrar={anexo.cerrar} />
       )}
     </section>
   );

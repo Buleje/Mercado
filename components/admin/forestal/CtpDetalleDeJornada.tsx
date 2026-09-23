@@ -8,8 +8,8 @@
  * clasificación y demás detalles»*.
  *
  * Es un vistazo, no el resumen: cabe en 20 rem y responde «¿esto que voy a
- * cargar ya está?». El resumen completo (por especie y producto, con traer al
- * cubicado) sigue a un botón.
+ * cargar ya está?». El día completo —pieza por pieza, por especie y tipo,
+ * editar y traer todo al cubicado (`CtpDiaDeProduccionModal`)— sigue a un botón.
  *
  * ## En un portal, dentro del diálogo
  *

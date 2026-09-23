@@ -16,7 +16,7 @@ import { CardTitle } from "@buleje/design-system";
 import { FileText, X } from "@buleje/design-system/icons";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04, fmtAnexo } from "@/lib/forestal/anexo04-serfor";
-import { validarAnexo04, avisosDeProcedencia, anexoPresentable, type DeclaradoEnLibro, type ProcedenciaBloques } from "@/lib/forestal/anexo04-validacion";
+import { validarAnexo04, avisosDeProcedencia, anexoPresentable, type AvisoAnexo04, type DeclaradoEnLibro, type ProcedenciaBloques } from "@/lib/forestal/anexo04-validacion";
 import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Anexo04Campos from "./Anexo04Campos";
@@ -57,7 +57,7 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, declarado, abrirHistorial = false, despacho, procedencia,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, declarado, abrirHistorial = false, despacho, procedencia, avisosExtra, rotuloDeLasPiezas,
 }: {
   /** Lote abierto en el cubicador; puede venir vacío (p. ej. desde el Libro CTP). */
   rows: PiezaCubicada[];
@@ -79,6 +79,14 @@ export default function Anexo04Modal({
    * cambia ni un casillero: es un aviso para quien firma, no un campo nuevo.
    */
   procedencia?: ProcedenciaBloques | null;
+  /**
+   * Lo que quien abre el anexo sabe y el anexo no (2026-09-23): desde los días
+   * marcados, los paquetes que no tienen escuadría y por eso NO están en estas
+   * hojas. Va al checklist, al final, como lo de la procedencia.
+   */
+  avisosExtra?: readonly AvisoAnexo04[];
+  /** De dónde salen `rows` si no es el lote del cubicador («Días marcados: …»). */
+  rotuloDeLasPiezas?: string;
   /** Descarga el PDF interno detallado (el de siempre, con precios y tipos). */
   onPdfDetallado?: () => void;
   onCerrar: () => void;
@@ -256,8 +264,9 @@ export default function Anexo04Modal({
       /* Al final: es lo que hay que MIRAR, no lo que impide presentar — los
          errores del formato siguen arriba, donde se leen primero. */
       ...avisosDeProcedencia(procedencia),
+      ...(avisosExtra ?? []),
     ],
-    [datos, anexo, filasEditadas, contraste, emitidos, ctpEntryId, ficha, procedencia],
+    [datos, anexo, filasEditadas, contraste, emitidos, ctpEntryId, ficha, procedencia, avisosExtra],
   );
   const presentable = anexoPresentable(avisos);
 
@@ -456,6 +465,7 @@ export default function Anexo04Modal({
               origen={
                 <Anexo04Origen
                   piezasActuales={rows.length}
+                  rotuloActual={rotuloDeLasPiezas}
                   valor={origen}
                   despachoId={ctpEntryId}
                   onCambio={(id, piezas, registro) => {

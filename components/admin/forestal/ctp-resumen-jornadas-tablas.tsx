@@ -39,16 +39,27 @@ export const CELDA = "px-3 py-2.5 text-sm";
 export const CIFRA = `${CELDA} text-right font-mono tabular-nums`;
 const CABECERA =
   "bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] [&>th]:border-b [&>th]:border-[var(--rule-base)]";
-const FILA_TOTAL = "border-t-2 border-[var(--rule-strong)] bg-primary/10 font-bold text-[var(--text-primary)]";
+export const FILA_TOTAL = "border-t-2 border-[var(--rule-strong)] bg-primary/10 font-bold text-[var(--text-primary)]";
 
 /** PT por pieza: cuánto rinde cada pieza en promedio. Sin piezas, no hay promedio. */
 const ptPorPieza = (pt: number, piezas: number) => (piezas > 0 ? formatNumber(pt / piezas, 2) : "—");
 
 /** El marco común: scroll propio y encabezado pegado (un mes son decenas de filas). */
-function Marco({ titulo, cabecera, children }: { titulo: string; cabecera: ReactNode; children: ReactNode }) {
+export function Marco({
+  titulo,
+  cabecera,
+  children,
+  tablaClassName = "w-full min-w-[34rem]",
+}: {
+  titulo: string;
+  cabecera: ReactNode;
+  children: ReactNode;
+  /** El ancho de la tabla; por omisión, 34 rem aunque la pantalla sea más chica. */
+  tablaClassName?: string;
+}) {
   return (
     <div className="max-h-[52vh] overflow-auto rounded-xl border border-[var(--rule-base)]">
-      <table className="w-full min-w-[34rem] border-collapse">
+      <table className={`${tablaClassName} border-collapse`}>
         <caption className="sr-only">{titulo}</caption>
         <thead className="sticky top-0 z-[1]">
           <tr className={CABECERA}>{cabecera}</tr>
@@ -245,5 +256,40 @@ export function TablaPorDiaEspecieTipo({ datos }: { datos: ResumenDeJornadas }) 
         </tfoot>
       )}
     </Marco>
+  );
+}
+
+// ── La cifra de cabecera ────────────────────────────────────────────────────
+
+/** Una de las cuatro cifras de arriba del resumen (y del modal del día). */
+export function Cifra({
+  rotulo,
+  valor,
+  unidad,
+  destacado = false,
+}: {
+  rotulo: string;
+  valor: string;
+  unidad: string;
+  destacado?: boolean;
+}) {
+  return (
+    <div
+      /* `ring` y no `border` en la destacada: un borde de otro grosor le cambia
+         la caja y las cuatro tarjetas dejan de medir lo mismo. */
+      className={`rounded-xl border px-3.5 py-3 ${
+        destacado
+          ? "border-transparent bg-primary/10 ring-1 ring-[var(--accent)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+      }`}
+    >
+      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+        {rotulo}
+      </p>
+      <p className="mt-1 flex items-baseline gap-1.5 font-mono text-xl font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
+        {valor}{" "}
+        <span className="font-sans text-xs font-normal leading-none text-[var(--text-tertiary)]">{unidad}</span>
+      </p>
+    </div>
   );
 }

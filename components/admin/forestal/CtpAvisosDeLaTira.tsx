@@ -6,7 +6,7 @@
  * marcados, el resumen de todos juntos.
  */
 
-import { AlertTriangle, BarChart3, CalendarDays, Check, Layers, Lock } from "@buleje/design-system/icons";
+import { AlertTriangle, BarChart3, CalendarDays, Check, FileText, Layers, Loader2, Lock } from "@buleje/design-system/icons";
 import { nombreCortoDeDueno } from "@/lib/forestal/dueno-de-la-madera";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { etiquetaCorta, etiquetaLarga } from "@/lib/forestal/semana-de-registro";
@@ -66,6 +66,9 @@ export function DiasMarcados({
   duenosDe = {},
   excluidosDe = {},
   onAlternarDueno,
+  onAnexo,
+  anexoCargando = false,
+  anexoAviso = null,
 }: {
   marcados: readonly string[];
   onLimpiar: () => void;
@@ -76,6 +79,14 @@ export function DiasMarcados({
   onAlternarDueno?: (dia: string, dueno: string) => void;
   /** Abre el resumen de los días marcados con ese corte (el modal deja cambiarlo). */
   onResumen: (corte: CorteResumen) => void;
+  /**
+   * El Anexo 04 de los días marcados, combinados (Brandon, 2026-09-23). Sólo
+   * en producción: un consumo o un despacho no tienen piezas que detallar.
+   */
+  onAnexo?: () => void;
+  anexoCargando?: boolean;
+  /** Lo que el anexo no pudo llevar (paquetes sin escuadría) o por qué no abrió. */
+  anexoAviso?: string | null;
 }) {
   const conVarios = [...marcados].sort().filter((d) => (duenosDe[d]?.length ?? 0) > 1);
   return (
@@ -144,7 +155,30 @@ export function DiasMarcados({
         <button type="button" onClick={() => onResumen("especie")} className={BOTON_RESUMEN_OTRO}>
           <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Por especie de {marcados.length === 1 ? "ese día" : "esos días"}
         </button>
+        {/* Las piezas de TODOS los días marcados (con los dueños que quedaron
+            en los chips) en un solo Anexo 04. */}
+        {onAnexo && (
+          <button
+            type="button"
+            onClick={onAnexo}
+            disabled={anexoCargando}
+            aria-busy={anexoCargando}
+            className={`${BOTON_RESUMEN_OTRO} disabled:opacity-60`}
+          >
+            {anexoCargando ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+            ) : (
+              <FileText className="h-3.5 w-3.5" aria-hidden />
+            )}{" "}
+            Anexo 04 de {marcados.length === 1 ? "ese día" : `los ${marcados.length} días`}
+          </button>
+        )}
       </div>
+      {anexoAviso && (
+        <p role="status" className="order-last basis-full text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          {anexoAviso}
+        </p>
+      )}
       {/* Marcar muchos días es el gesto de «quiero cerrar el mes»: ese camino
           ya existe entero (revisar pendientes, cerrar, bajar el paquete
           oficial) y estaba a cinco clics sin cartel. */}
@@ -157,5 +191,46 @@ export function DiasMarcados({
         </a>
       )}
     </div>
+  );
+}
+
+/**
+ * La ayuda de debajo de la tira cuando el día elegido está libre (o no se pudo
+ * leer, o se está mirando otra semana): si el día ya tiene registros, el aviso
+ * de arriba dice lo mismo con las cifras.
+ */
+export function AyudaDeLaTira({
+  error,
+  elegidoFuera,
+  valor,
+  nombre,
+  esProduccion,
+}: {
+  error: string | null;
+  elegidoFuera: boolean;
+  valor: string;
+  nombre: NombreDeLaTira;
+  esProduccion: boolean;
+}) {
+  return (
+    <p className="mt-1 text-xs leading-snug text-[var(--text-tertiary)]">
+      {error ? (
+        <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          No se pudo leer lo ya producido ({error}). Elige el día igual: el registro no depende de
+          este dato.
+        </span>
+      ) : elegidoFuera ? (
+        <>
+          Estás viendo otra semana. El registro va al{" "}
+          <b className="text-[var(--text-secondary)]">{etiquetaLarga(valor)}</b>.
+        </>
+      ) : (
+        <>
+          El día que elijas es la fecha del asiento. Los que ya tienen {nombre.varios} lo dicen en pie
+          tablar — dos {nombre.varios} el mismo día es normal, pero repetir{" "}
+          {esProduccion ? "la misma corrida" : `el mismo ${nombre.uno}`} no.
+        </>
+      )}
+    </p>
   );
 }

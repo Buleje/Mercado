@@ -26,7 +26,7 @@ import { ActionToasts, useActionToasts } from "./cubicador-toasts";
 
 type Props = Omit<
   ComponentProps<typeof CtpSemanaDeRegistro>,
-  "seccion" | "onAnularDia" | "anulandoDia"
+  "seccion" | "onAnularDia" | "anulandoDia" | "onEditado"
 > & {
   /** Vuelve a leer la semana de la tira (`useJornadasDeProduccion().recargar`). */
   onReleer: () => void;
@@ -50,6 +50,12 @@ export default function CtpSemanaDeProduccion({ onReleer, onCambioEnElLibro, ...
     [onReleer, onCambioEnElLibro, avisar],
   );
   const { anularDia, anulando } = useAnularDiaDeProduccion({ onAnulado: alAnular });
+  /* Se corrigió una escuadría o una corrida desde «Ver qué salió ese día»:
+     la tira relee (el día puede cambiar de especie o de m³) y el libro también. */
+  const alEditar = useCallback(() => {
+    onReleer();
+    onCambioEnElLibro?.();
+  }, [onReleer, onCambioEnElLibro]);
   /* Mientras el rol no se sabe (`null`), no se ofrece: «no sé» no es «puede». */
   const puedeAnular = puedePedir("/api/admin/forestal/ctp/anular-dia", useMiRol());
 
@@ -60,6 +66,7 @@ export default function CtpSemanaDeProduccion({ onReleer, onCambioEnElLibro, ...
         seccion="produccion"
         onAnularDia={puedeAnular ? (iso) => void anularDia(iso) : undefined}
         anulandoDia={anulando}
+        onEditado={alEditar}
       />
       <ActionToasts toasts={toasts} onDismiss={quitarAviso} />
     </>

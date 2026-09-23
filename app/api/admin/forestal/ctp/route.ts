@@ -666,9 +666,15 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
             return {};
           }
         })());
-      return NextResponse.json(
-        await ForestCtpDB.resumenDeJornadas(auth.tenantId, dias, duenos.success ? duenos.data : {}),
-      );
+      const filtro = duenos.success ? duenos.data : {};
+      /* `paquetes=1` (2026-09-23): el mismo resumen MÁS cada corrida con sus
+         paquetes —escuadría, código, piezas— en la misma consulta. Lo piden
+         el modal del día (pieza por pieza, traer todo al cubicado) y el
+         Anexo 04 de los días marcados. */
+      if (url.searchParams.get("paquetes") === "1") {
+        return NextResponse.json(await ForestCtpDB.jornadasConPaquetes(auth.tenantId, dias, filtro));
+      }
+      return NextResponse.json(await ForestCtpDB.resumenDeJornadas(auth.tenantId, dias, filtro));
     }
     /* Los códigos de paquete ya usados en la planta: con ellos la pantalla
        propone el siguiente LIBRE (el índice es único por tenant, no por

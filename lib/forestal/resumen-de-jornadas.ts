@@ -117,15 +117,23 @@ interface Hoja {
  */
 export type DuenosPorDia = Readonly<Record<string, readonly string[]>>;
 
+/**
+ * ¿Esta corrida entra, con los dueños elegidos? La MISMA pregunta para el
+ * resumen y para el detalle pieza por pieza (`ForestCtpDB.jornadasConPaquetes`):
+ * si cada uno filtrara a su modo, el total de arriba y la tabla de abajo
+ * hablarían de corridas distintas.
+ */
+export function entraConDuenos(c: { dia: string; dueno: string }, soloDuenos: DuenosPorDia): boolean {
+  const elegidos = soloDuenos[c.dia];
+  return !elegidos || elegidos.includes(c.dueno);
+}
+
 export function resumirJornadas(
   dias: readonly string[],
   todas: readonly CorridaParaResumen[],
   soloDuenos: DuenosPorDia = {},
 ): ResumenDeJornadas {
-  const corridas = todas.filter((c) => {
-    const elegidos = soloDuenos[c.dia];
-    return !elegidos || elegidos.includes(c.dueno);
-  });
+  const corridas = todas.filter((c) => entraConDuenos(c, soloDuenos));
   /* día → claveEspecie → producto → piezas y m³. La hoja es la fila más chica. */
   const hojas = new Map<string, Map<string, Map<string, Hoja>>>();
   /* Cuántas corridas y piezas tiene cada día·especie: las piezas de la especie

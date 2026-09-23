@@ -34,8 +34,8 @@ export interface PaqueteConEscuadria {
   largoM: number | null;
 }
 
-/** Sólo los dos estados que piden mirar la fila llevan pastilla. */
-const PASTILLA: Partial<Record<EstadoCuadre, { texto: string; clase: string }>> = {
+/** Sólo los dos estados que piden mirar la fila llevan pastilla (la usa también el modal del día). */
+export const PASTILLA: Partial<Record<EstadoCuadre, { texto: string; clase: string }>> = {
   "no-cuadra": {
     texto: "No cuadra",
     clase:

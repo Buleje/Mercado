@@ -50,7 +50,13 @@ import { estaDisponible, type TrozaConsumible } from "@/lib/forestal/consumo-tro
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { jornadasDesdeFilas, SIN_DUENO, type JornadaDelLibro } from "@/lib/forestal/detalle-de-jornada";
-import { resumirJornadas, type DuenosPorDia, type ResumenDeJornadas } from "@/lib/forestal/resumen-de-jornadas";
+import {
+  entraConDuenos,
+  resumirJornadas,
+  type DuenosPorDia,
+  type ResumenDeJornadas,
+} from "@/lib/forestal/resumen-de-jornadas";
+import type { CorridaDelDia } from "@/lib/forestal/piezas-del-dia";
 import { agregarSinOrigen, type CorridaSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
 import { reservasVencidas, type ReservaVencida } from "@/lib/forestal/reservas-vencidas";
 import { limaDateKey } from "@/lib/utils";
@@ -558,6 +564,36 @@ export function despachoKey(
     q,
     (destino ?? "").trim().toLowerCase(),
   ].join("|");
+}
+
+/**
+ * Los días de un resumen de jornadas, limpios: `YYYY-MM-DD`, sin repetir, en
+ * orden y con tope de 31 — el caso real es una semana o un mes; sin tope, una
+ * URL armada a mano pediría dos años de golpe.
+ */
+function diasDeJornadas(dias: readonly string[]): string[] {
+  const formato = /^\d{4}-\d{2}-\d{2}$/;
+  return [...new Set(dias.filter((d) => formato.test(d)))].slice(0, 31).sort();
+}
+
+/**
+ * Las corridas vivas de producción de esos días. Un OR de días exactos y no un
+ * rango: los días marcados pueden no ser consecutivos, y un `gte/lte` traería
+ * los del medio que nadie pidió.
+ */
+function whereDeJornadas(tenantId: string, dias: readonly string[]): Prisma.ForestCtpEntryWhereInput {
+  return {
+    tenantId,
+    section: "produccion",
+    status: "registrado",
+    deletedAt: null,
+    OR: dias.map((d) => ({
+      entryDate: {
+        gte: new Date(`${d}T00:00:00.000Z`),
+        lt: new Date(new Date(`${d}T00:00:00.000Z`).getTime() + 86_400_000),
+      },
+    })),
+  };
 }
 
 export class ForestCtpDB {
@@ -1813,27 +1849,11 @@ export class ForestCtpDB {
     soloDuenos: DuenosPorDia = {},
   ): Promise<ResumenDeJornadas> {
     if (!tenantId) throw new Error("tenantId is required");
-    const formato = /^\d{4}-\d{2}-\d{2}$/;
-    /* Tope de 31: el caso real es una semana o un mes. Sin tope, una URL armada
-       a mano pediría dos años de golpe. */
-    const limpios = [...new Set(dias.filter((d) => formato.test(d)))].slice(0, 31).sort();
+    const limpios = diasDeJornadas(dias);
     if (limpios.length === 0) return resumirJornadas(limpios, []);
 
-    /* Un OR de días exactos y no un rango: los días marcados pueden no ser
-       consecutivos, y un `gte/lte` traería los del medio que nadie pidió. */
     const filas = await prisma.forestCtpEntry.findMany({
-      where: {
-        tenantId,
-        section: "produccion",
-        status: "registrado",
-        deletedAt: null,
-        OR: limpios.map((d) => ({
-          entryDate: {
-            gte: new Date(`${d}T00:00:00.000Z`),
-            lt: new Date(new Date(`${d}T00:00:00.000Z`).getTime() + 86_400_000),
-          },
-        })),
-      },
+      where: whereDeJornadas(tenantId, limpios),
       select: {
         id: true,
         lineNo: true,
@@ -1884,6 +1904,155 @@ export class ForestCtpDB {
       })),
       soloDuenos,
     );
+  }
+
+  /**
+   * Lo que salió en una o varias jornadas, PAQUETE POR PAQUETE, con el resumen
+   * de siempre al lado (Brandon, 2026-09-23: «Ver qué salió ese día» con el
+   * detalle pieza por pieza para editarlo, traer TODO el día al cubicado y el
+   * Anexo 04 de los días marcados).
+   *
+   * UNA consulta alimenta las dos cosas: el resumen sale de `resumirJornadas`
+   * sobre las mismas filas, y el detalle de `entraConDuenos` con el mismo
+   * filtro. Antes, traer un día al cubicado pedía `?entryId=` corrida por
+   * corrida — nueve pedidos para el 23/09 de QA.
+   *
+   * Cada corrida trae también lo que pide su editor (ADR-401): de qué guías
+   * hereda el permiso y si está atada. Esa regla es la de `corregirLinea`
+   * (despachos → reprocesos → lote); el servidor la vuelve a decidir al
+   * guardar, esto es sólo para no ofrecer lo que va a rechazar.
+   */
+  static async jornadasConPaquetes(
+    tenantId: string,
+    dias: readonly string[],
+    soloDuenos: DuenosPorDia = {},
+  ): Promise<ResumenDeJornadas & { detalle: CorridaDelDia[] }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const limpios = diasDeJornadas(dias);
+    if (limpios.length === 0) return { ...resumirJornadas(limpios, []), detalle: [] };
+
+    const filas = await prisma.forestCtpEntry.findMany({
+      where: whereDeJornadas(tenantId, limpios),
+      select: {
+        id: true,
+        lineNo: true,
+        entryDate: true,
+        speciesCommon: true,
+        speciesScientific: true,
+        productType: true,
+        presentacion: true,
+        lineaProduccion: true,
+        quantity: true,
+        unit: true,
+        pieces: true,
+        volumeInputM3: true,
+        observations: true,
+        materiaPrimaRef: true,
+        originCode: true,
+        gtfIngreso: true,
+        duenoMadera: true,
+        titularNombre: true,
+        duenoParteId: true,
+        paquetes: {
+          where: { deletedAt: null },
+          /* El orden en que se declararon, que es el de la pila (`ordenarDetalle`). */
+          orderBy: [{ createdAt: "asc" }, { codigo: "asc" }],
+          select: {
+            id: true,
+            codigo: true,
+            productType: true,
+            presentacion: true,
+            cantidad: true,
+            volumenM3: true,
+            espesorCm: true,
+            anchoCm: true,
+            largoM: true,
+            pieTablar: true,
+          },
+        },
+        consumos: { select: { woodEntry: { select: { gtfNumber: true, originCode: true } } } },
+        _count: { select: { salidas: true, reprocesosSalida: true, loteMiembros: true } },
+      },
+      orderBy: [{ entryDate: "asc" }, { lineNo: "asc" }],
+      take: 500,
+    });
+
+    const num = (v: Prisma.Decimal | number | null | undefined) => (v == null ? null : Number(v));
+    const detalle: CorridaDelDia[] = filas.map((f) => {
+      const unicos = (xs: (string | null | undefined)[]) => [...new Set(xs.map((x) => (x ?? "").trim()).filter(Boolean))];
+      const gtfs = unicos(f.consumos.map((x) => x.woodEntry?.gtfNumber));
+      const heredados = unicos(f.consumos.map((x) => x.woodEntry?.originCode));
+      const propio = (f.originCode ?? "").trim();
+      return {
+        id: f.id,
+        lineNo: f.lineNo,
+        dia: f.entryDate.toISOString().slice(0, 10),
+        fecha: f.entryDate.toISOString(),
+        especie: f.speciesCommon,
+        especieCientifica: f.speciesScientific,
+        producto: f.productType,
+        presentacion: f.presentacion,
+        unidad: f.unit,
+        cantidad: num(f.quantity),
+        m3: !f.unit || f.unit === "m3" ? Number(f.quantity ?? 0) : 0,
+        piezasAsiento: f.pieces ?? 0,
+        volumenConsumidoM3: num(f.volumeInputM3),
+        observaciones: f.observations,
+        materiaPrimaRef: f.materiaPrimaRef,
+        dueno:
+          etiquetaDeDueno({
+            dueno: esDuenoMadera(f.duenoMadera) ? f.duenoMadera : null,
+            titularNombre: f.titularNombre,
+          }) ?? SIN_DUENO,
+        duenoMadera: f.duenoMadera,
+        titularNombre: f.titularNombre,
+        duenoParteId: f.duenoParteId,
+        /* Los mismos criterios que «Productos disponibles» (`productosDisponibles`):
+           la guía manda; sin guía, el `gtfIngreso` a mano; el permiso del
+           asiento (ADR-402) sólo si no hay heredado. */
+        gtfOrigen: gtfs.length > 0 ? gtfs : f.gtfIngreso ? [f.gtfIngreso] : [],
+        permisos: heredados.length > 0 ? heredados : propio ? [propio] : [],
+        atadaPorque:
+          f._count.salidas > 0
+            ? "ya tiene despachos que la citan como origen"
+            : f._count.reprocesosSalida > 0
+              ? "ya alimentó un reproceso"
+              : f._count.loteMiembros > 0
+                ? "es miembro de un lote de producción"
+                : null,
+        paquetes: f.paquetes.map((q) => ({
+          id: q.id,
+          codigo: q.codigo,
+          producto: q.productType,
+          presentacion: q.presentacion,
+          cantidad: q.cantidad,
+          volumenM3: Number(q.volumenM3 ?? 0),
+          espesorCm: num(q.espesorCm),
+          anchoCm: num(q.anchoCm),
+          largoM: num(q.largoM),
+          pieTablar: num(q.pieTablar),
+        })),
+      };
+    });
+
+    const lineaDe = new Map(filas.map((f) => [f.id, f.lineaProduccion]));
+    const resumen = resumirJornadas(
+      limpios,
+      detalle.map((c) => ({
+        id: c.id,
+        lineNo: c.lineNo,
+        dia: c.dia,
+        especie: c.especie,
+        linea: lineaDe.get(c.id) ?? null,
+        dueno: c.dueno,
+        m3: c.m3,
+        piezasAsiento: c.piezasAsiento,
+        materiaPrimaRef: c.materiaPrimaRef,
+        paquetes: c.paquetes.map((q) => ({ productType: q.producto, cantidad: q.cantidad, volumenM3: q.volumenM3 })),
+      })),
+      soloDuenos,
+    );
+    return { ...resumen, detalle: detalle.filter((c) => entraConDuenos(c, soloDuenos)) };
   }
 
   static async produccionSinMateriaPrima(tenantId: string, limite = 1000) {

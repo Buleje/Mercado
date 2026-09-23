@@ -28,11 +28,13 @@ import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { etiquetaCorta, etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { acercarAEscala } from "@/lib/forestal/escala-de-medida";
+import { escuadriaEnPulgadas } from "@/lib/forestal/piezas-del-dia";
 import type { DuenosPorDia, ResumenDeJornadas } from "@/lib/forestal/resumen-de-jornadas";
 import { nombreCortoDeDueno } from "@/lib/forestal/dueno-de-la-madera";
 import {
   CELDA,
   CIFRA,
+  Cifra,
   ETIQUETA_CORTE,
   TablaPorDia,
   TablaPorDiaEspecieTipo,
@@ -53,8 +55,6 @@ interface PaqueteDelLibro {
   largoM?: number | string | null;
 }
 
-const CM_A_PULG = 2.54;
-const M_A_PIE = 0.3048;
 const n = (v: number | string | null | undefined) => (v == null ? 0 : Number(v));
 
 /* Vive en `lib/forestal/escala-de-medida.ts` (la usa también la escuadría del
@@ -66,8 +66,9 @@ export { acercarAEscala };
  *
  * El libro guarda cm y metros —como los declara el LO-CTP— y el cubicador
  * trabaja en pulgadas y pies, que es como se mide en la sierra. La vuelta es
- * exacta salvo redondeo, y el `pieTablar`/`m³` se recalcula al entrar: la
- * fórmula es siempre la del cubicador, nunca la que trae la fuente.
+ * la de `escuadriaEnPulgadas` (la misma del modal del día y del Anexo 04), y
+ * el `pieTablar`/`m³` se recalcula al entrar: la fórmula es siempre la del
+ * cubicador, nunca la que trae la fuente.
  *
  * Un paquete sin medidas no viaja: una fila de 0×0×0 no se puede editar a algo
  * útil y ensucia el lote con piezas que no existen.
@@ -78,13 +79,11 @@ export function piezasDesdePaquetes(
 ): PiezaCubicada[] {
   return paquetes
     .map((p) => {
-      /* Las escuadrías se cortan en cuartos de pulgada (1, 1½, 2, 3…) y los
-         largos en medios pies (8, 10, 10½): ésa es la grilla a la que se vuelve. */
-      const espesor = acercarAEscala(n(p.espesorCm) / CM_A_PULG, 0.25, 0.02);
-      const ancho = acercarAEscala(n(p.anchoCm) / CM_A_PULG, 0.25, 0.02);
-      const largo = acercarAEscala(n(p.largoM) / M_A_PIE, 0.5, 0.05);
+      /* La respuesta de `?entryId=` trae los Decimal como texto. */
+      const e = escuadriaEnPulgadas({ espesorCm: n(p.espesorCm), anchoCm: n(p.anchoCm), largoM: n(p.largoM) });
       const cantidad = Math.max(0, Math.round(n(p.cantidad)));
-      if (espesor <= 0 || ancho <= 0 || largo <= 0 || cantidad <= 0) return null;
+      if (!e || cantidad <= 0) return null;
+      const { espesor, ancho, largo } = e;
       const pieza: PiezaCubicada = {
         /* `agregarVarias` le pone su propio id al entrar: éste es sólo la key
            de React mientras la fila viaja. */
@@ -400,37 +399,5 @@ export default function CtpResumenDeJornadasModal({
         )}
       </div>
     </AdminModal>
-  );
-}
-
-function Cifra({
-  rotulo,
-  valor,
-  unidad,
-  destacado = false,
-}: {
-  rotulo: string;
-  valor: string;
-  unidad: string;
-  destacado?: boolean;
-}) {
-  return (
-    <div
-      /* `ring` y no `border` en la destacada: un borde de otro grosor le cambia
-         la caja y las cuatro tarjetas dejan de medir lo mismo. */
-      className={`rounded-xl border px-3.5 py-3 ${
-        destacado
-          ? "border-transparent bg-primary/10 ring-1 ring-[var(--accent)]"
-          : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
-      }`}
-    >
-      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-        {rotulo}
-      </p>
-      <p className="mt-1 flex items-baseline gap-1.5 font-mono text-xl font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
-        {valor}{" "}
-        <span className="font-sans text-xs font-normal leading-none text-[var(--text-tertiary)]">{unidad}</span>
-      </p>
-    </div>
   );
 }

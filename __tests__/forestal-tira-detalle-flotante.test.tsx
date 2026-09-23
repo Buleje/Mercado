@@ -21,6 +21,10 @@ import { render, screen, fireEvent, cleanup, act, within } from "@testing-librar
 vi.mock("@/components/admin/forestal/CtpResumenDeJornadasModal", () => ({
   default: ({ dias }: { dias: string[] }) => <div data-testid="resumen">{dias.join(",")}</div>,
 }));
+/* Desde el 23-09 «Ver qué salió ese día» abre el día pieza por pieza, no el resumen. */
+vi.mock("@/components/admin/forestal/CtpDiaDeProduccionModal", () => ({
+  default: ({ dia }: { dia: string }) => <div data-testid="dia">{dia}</div>,
+}));
 
 import CtpSemanaDeRegistro from "@/components/admin/forestal/CtpSemanaDeRegistro";
 import type { JornadaDeProduccion } from "@/components/admin/forestal/hooks/use-jornadas-produccion";
@@ -147,12 +151,13 @@ describe("el ícono del día", () => {
     expect(panel()).toBeInTheDocument();
   });
 
-  it("«Ver qué salió ese día» cierra el panel y abre el resumen de ESE día", () => {
+  it("«Ver qué salió ese día» cierra el panel y abre ESE día pieza por pieza", () => {
     tira();
     fireEvent.click(icono());
     fireEvent.click(within(panel()).getByRole("button", { name: /Ver qué salió ese día/ }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByTestId("resumen")).toHaveTextContent("2026-09-17");
+    expect(screen.getByTestId("dia")).toHaveTextContent("2026-09-17");
+    expect(screen.queryByTestId("resumen")).not.toBeInTheDocument();
   });
 });
 

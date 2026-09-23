@@ -22,10 +22,16 @@ const fecha = (iso: string) => {
 };
 
 export default function Anexo04Origen({
-  piezasActuales, valor, despachoId, onCambio,
+  piezasActuales, valor, despachoId, onCambio, rotuloActual,
 }: {
   /** Cuántas piezas tiene el lote abierto en el cubicador (0 = ninguno). */
   piezasActuales: number;
+  /**
+   * Cómo se llama lo que llegó en `rows` cuando NO es el lote del cubicador
+   * (2026-09-23: los días marcados de la tira). Sin esto, el selector decía
+   * «Lote actual del cubicador» sobre piezas que salieron del libro.
+   */
+  rotuloActual?: string;
   valor: string;
   /** Despacho del Libro desde el que se abrió: marca y auto-elige su cubicación. */
   despachoId?: string;
@@ -79,7 +85,7 @@ export default function Anexo04Origen({
         className="h-9 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
       >
         <option value={ORIGEN_ACTUAL}>
-          {piezasActuales > 0 ? `Lote actual del cubicador (${piezasActuales} medidas)` : "Lote actual del cubicador (vacío)"}
+          {`${rotuloActual ?? "Lote actual del cubicador"} (${piezasActuales > 0 ? `${piezasActuales} medidas` : "vacío"})`}
         </option>
         {guardadas.map((c) => (
           <option key={c.id} value={c.id}>
