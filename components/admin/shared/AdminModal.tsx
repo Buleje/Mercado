@@ -55,8 +55,8 @@ interface AdminModalProps {
   /**
    * Este modal se abre DESDE OTRO modal: tiene que quedar por encima.
    *
-   * Los modales escritos a mano del módulo forestal se pintan en `z-60`,
-   * mientras que un `AdminModal` vive en `z-50`. Abrir uno desde adentro de
+   * Los modales escritos a mano del módulo forestal se pintan en `z-modal-2`,
+   * mientras que un `AdminModal` vive en `z-modal` (capas con nombre: globals.css §CAPAS). Abrir uno desde adentro de
    * otro lo dejaba **detrás**: se montaba, se leía en el DOM y no se veía ni se
    * podía tocar (el catálogo de especies abierto desde «Producir sin lote» —
    * Brandon, 2026-09-11: «no funciona y se lagea el modal»).
@@ -216,9 +216,10 @@ export default function AdminModal({
           className={cn(
             "modal-backdrop",
             "data-[state=open]:animate-modal-overlay-in",
-            /* Un peldaño por encima del modal que lo abrió (z-60), para que el
+            /* Un peldaño por encima del modal que lo abrió (z-modal-2): velo y panel comparten
+             * z-modal-3 y el panel gana por orden del DOM (va después). Para que el
                fondo se oscurezca sobre ÉL y no debajo. */
-            aboveModals && "z-[69]",
+            aboveModals && "z-modal-3",
             /* Fijado = «lo dejo abierto y sigo trabajando atrás»: el velo no
                puede seguir tapando ni comiéndose los clics (regla al pie). */
             ventana.fijado && "ventana-fijada",
@@ -229,11 +230,11 @@ export default function AdminModal({
           aria-describedby={description ? undefined : undefined}
           style={{ ...panelTokens, ...ventana.estilo }}
           className={cn(
-            "fixed z-50 bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-[var(--shadow-xl)] outline-none",
+            "fixed z-modal bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-[var(--shadow-xl)] outline-none",
             ventana.activa ? POSICION_VENTANA : VARIANT_POSITION[variant],
             VARIANT_CLASSES[variant],
             "data-[state=open]:animate-modal-in",
-            aboveModals && "z-[70]",
+            aboveModals && "z-modal-3",
             className,
           )}
           /* Un `ActionMenu` (u otro menú de fila) abierto DENTRO de este

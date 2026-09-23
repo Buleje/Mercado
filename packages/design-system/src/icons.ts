@@ -462,6 +462,13 @@ export {
   FolderSync,
   NotebookText,
 
+  // ── Additional pass 8 (barrido emojis→íconos admin 2026-09-22) ──
+  Motorbike,
+  Scooter,
+  Ghost,
+  Palmtree,
+  Dog,
+
   // ── Types ────────────────────────────────────────────────────
   type LucideIcon,
   type LucideProps,

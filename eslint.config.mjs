@@ -78,12 +78,19 @@ const eslintConfig = defineConfig([
         destructuredArrayIgnorePattern: "^_",
       }],
       // React Compiler rules (eslint-plugin-react-hooks v7+).
-      // STATUS 2026-05-19: TODAS desactivadas — el codebase no está migrado
-      // al React Compiler y v7 detecta patrones legacy masivamente (refs en
-      // render, mutación, factories de componentes en render, etc.).
-      // eslint-config-next@16.1.6 requiere react-hooks ^7.0.0 transitivo
-      // → no podemos downgrade. Si en el futuro migramos al React Compiler
-      // (ADR pendiente), activar gradualmente con "warn".
+      // STATUS 2026-09-22: censadas sobre el repo entero (3.305 archivos:
+      // components/marketplace + components/admin + app). Resultado medido:
+      //   593 set-state-in-effect · 153 exhaustive-deps  → patrón, NO bloquean el compiler
+      //    79 refs · 39 purity · 20 static-components · 19 immutability
+      //    14 preserve-manual-memoization                → 171 DURAS: el compiler
+      //                                                     salta (bail out) esos componentes
+      // Las 6 duras pasan a "warn" para tener el residuo a la vista y bajarlo; las de
+      // patrón siguen en "off" porque 746 warnings enterrarían la señal.
+      // Camino a compilationMode:"infer" = bajar esas 171. Ver next.config.ts.
+      //
+      // Siguen TODAS en "off" a propósito: lint-staged corre `eslint --fix --max-warnings 0`,
+      // así que un solo "warn" bloquearía el commit en 171 archivos. El residuo se mide
+      // bajo demanda, sin tocar el gate:  npm run compiler:census
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/set-state-in-render": "off",
       "react-hooks/refs": "off",

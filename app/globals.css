@@ -3943,3 +3943,33 @@ body.tenant-storefront > nav[aria-label="Breadcrumb"] {
   color: var(--text-secondary);
   font-weight: 700;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CAPAS (z-index) — siete nombres en vez de diecinueve números (2026-09-22)
+   Medido en components/admin: 19 valores distintos de z en overlays `fixed inset-0`
+   (z-50 ×62 · z-[60] ×29 · z-[70] ×7 · z-[100] ×6 · z-40 ×6 · z-[9999] ×3 … z-9000,
+   z-[8800], z-[8200], z-[1000]) y 0 tokens. Es la raíz del «modal detrás de modal»
+   y del «se lagea» (memoria modales-anidados-z-index-radix).
+   Orden garantizado de abajo hacia arriba. sonner (toasts) queda arriba de todo (999999999).
+   ─ dropdown  velos click-afuera y menús de página (tapan el header fijo, no un modal)
+   ─ modal     AdminModal, BottomSheet y su velo
+   ─ modal-2   diálogo abierto DESDE un modal; action-menu y popovers en portal
+   ─ modal-3   AdminModal aboveModals (un peldaño sobre los modales a mano en modal-2)
+   ─ system    pantallas completas del sistema: escáner, prueba de pago, editor creativo
+   ─ tour      spotlight del onboarding (por encima de cualquier pantalla del sistema)
+   Uso: className="fixed inset-0 z-modal" · nunca z-[N] nuevo en admin (gate ds-no-z-arbitrary-admin).
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --z-dropdown: 45;
+  --z-modal: 50;
+  --z-modal-2: 60;
+  --z-modal-3: 70;
+  --z-system: 9000;
+  --z-tour: 9999;
+}
+@utility z-dropdown { z-index: var(--z-dropdown); }
+@utility z-modal { z-index: var(--z-modal); }
+@utility z-modal-2 { z-index: var(--z-modal-2); }
+@utility z-modal-3 { z-index: var(--z-modal-3); }
+@utility z-system { z-index: var(--z-system); }
+@utility z-tour { z-index: var(--z-tour); }

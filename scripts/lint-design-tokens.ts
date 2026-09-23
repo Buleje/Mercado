@@ -219,6 +219,27 @@ const RULES: Rule[] = [
     strictUpgrade: true,
   },
   {
+    id: "ds-no-inline-date-format-admin",
+    // Fecha/hora/número formateados a mano. Medido 2026-09-22: 864 llamadas en 427 archivos
+    // con 98 variantes; 64 en UTC y 209 sin zona (el mismo registro mostraba dos días).
+    // El canon vive en lib/format: formatDate/formatDateShort/formatTime/formatNumber…
+    pattern: /\.toLocale(?:Date|Time)?String\(/g,
+    message:
+      "Fecha/hora/número a mano: usá formatDate/formatDateShort/formatDateNumeric/formatTime/formatDateTime/formatNumber de @/lib/format (zona Lima, 24 h, «—» sin dato; { soloFecha: true } para columnas DATE).",
+    severity: "warning",
+    adminOnly: true,
+    strictUpgrade: true,
+  },
+  {
+    id: "ds-no-tofixed-money-admin",
+    // `S/${x.toFixed(2)}` no pone separador de miles: «S/ 12345.50» al lado de «S/ 12,345.50».
+    pattern: /S\/\.?\s*(?:\$\{|\{)[^}]*\.toFixed\(\s*2\s*\)/g,
+    message: "Monto a mano con toFixed(2): usá formatCurrency de @/lib/format («S/ 12,345.50», null-safe).",
+    severity: "warning",
+    adminOnly: true,
+    strictUpgrade: true,
+  },
+  {
     id: "ds-no-text-gray-admin",
     // text-gray-{400..900} (monocromo — saltar 100-300 que se usan para dividers/placeholders)
     pattern: /(?<![\w:-])text-gray-(400|500|600|700|800|900)(?!\w)/g,
@@ -329,6 +350,24 @@ const RULES: Rule[] = [
     adminOnly: true,
     strictUpgrade: false,
   },
+  // ── Canon de KPI cards (2026-09-22) ────────────────────────────────────────
+  // `StatCard` (@buleje/design-system) es el único KPI card. Antes de esta
+  // regla había 11 clones locales (`function KpiCard`/`KPICard`/`MetricCard`)
+  // repitiendo el mismo layout con className armadas a mano — uno de ellos
+  // (`ShrinkageTab`) escondía un color fuera de tokens (`bg-red-50
+  // dark:bg-red-950/20`) que ninguna otra regla detectaba. Warning, no error:
+  // hay excepciones legítimas (una pastilla de deuda que cuenta pendientes y
+  // FILTRA una tabla no es un KPI — ver memoria `deuda-no-es-indicador`).
+  {
+    id: "ds-no-kpi-card-clone",
+    pattern: /\b(?:function\s+(?:Kpi|KPI|Stat|Metric)Card\b|const\s+(?:Kpi|KPI|Stat|Metric)Card\s*=)/g,
+    message:
+      "Definición local de tarjeta de KPI fuera del DS. Usá <StatCard> de @buleje/design-system " +
+      "(props: label/value/delta/deltaLabel/trend/deltaPolarity/icon/emphasis/subValue/density/" +
+      "sparkline/highlight/accentBar/iconEmphasis/onClick). Si es una pastilla de deuda que cuenta " +
+      "pendientes y su onClick FILTRA una tabla, no es un KPI — dejala, pero no la llames *Card.",
+    severity: "warning",
+  },
   {
     id: "ds-no-raw-loader-block-in-admin",
     // Loader2 de bloque (h-6 w-6 o mayor) con animate-spin → usar LoadingState.
@@ -339,6 +378,86 @@ const RULES: Rule[] = [
     severity: "warning",
     adminOnly: true,
     strictUpgrade: false,
+  },
+  // ── Emoji como ícono en el panel (barrido 2026-09-22) ───────────────────────
+  // Un emoji se dibuja distinto en Windows/Android/iOS y Chrome/Firefox: 306
+  // ocurrencias censadas, 163 usadas COMO ÍCONO de la UI (⚠→AlertTriangle,
+  // ✓→Check, ★→Star…). El resto es CONTENIDO real —el texto de un WhatsApp/
+  // email/toast que el vecino o el dueño reciben tal cual, o un emoji-picker
+  // donde el propio emoji es el dato (reacciones de chat, ícono de carpeta que
+  // el dueño elige)— y ESE no se toca.
+  //
+  // Por qué el patrón exige emoji pegado a un `>`: un regateo sobre texto
+  // crudo no distingue JSX de un objeto JS. Medido (cualquier emoji del
+  // archivo, sin acotar): 103 falsos positivos SÓLO en 6 archivos de
+  // contenido (`PromotionsTab.tsx` 25, `ChatTab/MessageComposer.tsx` 24,
+  // `documentos/FolderBulkBar.tsx` 32, `PrestamosModule.tsx` 12,
+  // `ChatTab/ConversationView.tsx` 6, `ChatTab/TemplatesPanel.tsx` 4) — todos
+  // strings de `message:`/arrays de picker, nunca hijos de un elemento.
+  // Exigir que el emoji sea el primer carácter no-espacio *después* de un `>`
+  // (o de un `{` de expresión JSX) bajó eso a **0** sobre los mismos 6
+  // archivos y a sólo 2 archivos reales en todo el repo (`ReportsTab.tsx` —
+  // email, whitelisteado — y un bug real que encontró en
+  // `forestal/loth-mapa-shared.ts`) — a costa de no cazar un emoji que
+  // aparezca a mitad de una oración ya renderizada (residual conocido, igual
+  // que el hex de `ds-no-hex-in-class-admin`).
+  {
+    id: "ds-no-emoji-icon-admin",
+    pattern: /[>{]\s*["'`]?[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/gu,
+    message:
+      "Emoji como ícono de UI en vez de un componente del DS (@buleje/design-system/icons) — se dibuja distinto por SO/navegador. Mapeo semántico, no literal (⚠→AlertTriangle, ✓→Check, ★→Star, 🎉→PartyPopper…): grep del mismo emoji en una pantalla hermana antes de elegir. Si es CONTENIDO real (WhatsApp/email/toast que el cliente o el dueño reciben tal cual, o un emoji-picker donde el emoji ES el dato) agregá el archivo a WHITELIST_PATTERNS con una línea que diga por qué — no se silencia sin motivo.",
+    severity: "warning",
+    adminOnly: true,
+    strictUpgrade: true,
+  },
+  // ── z-index arbitrario en un overlay de pantalla completa (2026-09-22) ──────
+  // app/globals.css §CAPAS define 6 nombres (z-dropdown/modal/modal-2/modal-3/
+  // system/tour) con orden de abajo hacia arriba garantizado. El codemod que los
+  // introdujo migró 96 archivos + AdminModal, pero SALTÓ a propósito los overlays
+  // `fixed inset-0` con un `z-[N]`/`z-N` numérico crudo — ahí el número puede
+  // significar "otro peldaño" (colisión real que hay que resolver a mano, ver
+  // `CatalogOptionPicker`/`action-menu` — dos z distintos que colapsan al MISMO
+  // nombre son seguros sólo si el de arriba va después en el DOM) y un regex no
+  // puede decidir eso solo. Por eso esta regla es un WARNING que señala dónde
+  // mirar, no un fix automático.
+  //
+  // Acotada a `fixed inset-0` (el patrón de velo/pantalla completa) para no
+  // repetir `ds-no-kpi-card-clone`-style ruido sobre los z-index locales que NO
+  // son overlays de panel entero (sticky thead z-[1], popovers z-[61] con
+  // `fixed` sin `inset-0`, mapas Leaflet con capas propias) — esos van con otro
+  // criterio y ya tienen su propio comentario in situ.
+  //
+  // Medido 2026-09-22 (`npx tsx scripts/lint-design-tokens.ts --warn`, full
+  // scan — pasarle un directorio como arg no escanea nada: `getTargetFiles`
+  // sólo acepta archivos sueltos que terminen en .ts/.tsx, gotcha del propio
+  // script). Antes de tocar nada: 21 coincidencias en 7 archivos. Los 3 que
+  // predijo el pedido estaban (POSView.tsx ×2 `z-50`, StoreCreativeMode.tsx
+  // ×2 `z-[100]`/`z-[120]`, UbicacionDoc.tsx ×1 `z-30`), pero el censo real
+  // era más grande. Tres eran arreglo directo (mismo overlay de un solo
+  // peldaño, sin colisión que decidir) y se migraron a `z-modal` en esta
+  // misma pasada: `ActivosModule.tsx` (×2), `SimpleExpiryTab.tsx` (×1),
+  // `SimpleMovementsTab.tsx` (×1). Residuo final: **17 en 6 archivos**, todos
+  // de OTRO agente en curso (fuera de este scope): `InventoryTab.tsx` ×5,
+  // `FiadoModals.tsx` ×5, `POSView.tsx` ×3, `StoreCreativeMode.tsx` ×2,
+  // `UbicacionDoc.tsx` ×1, `LothPlanForm.tsx` ×1 (este último ni estaba en la
+  // lista predicha — apareció al medir con el scan completo).
+  {
+    id: "ds-no-z-arbitrary-admin",
+    // `fixed inset-0` seguido, dentro de la misma clase, por z-[N] o z-N crudo.
+    // El match cae sobre "fixed inset-0" (no sobre el z-) para que funcione
+    // aunque el proyecto reordene las clases; el lookahead no exige que sea lo
+    // próximo, sólo que esté en la misma cadena (tope de 120 chars ~ una clase
+    // típica de overlay+velo).
+    pattern: /\bfixed inset-0\b(?=[^"'`]{0,120}\bz-(?:\[\d+\]|\d+\b))/g,
+    message:
+      "Overlay `fixed inset-0` con z-index numérico crudo (no un nombre de app/globals.css §CAPAS: " +
+      "z-dropdown/z-modal/z-modal-2/z-modal-3/z-system/z-tour). Antes de renombrar: si este overlay " +
+      "vive con OTRO junto a él que también migraría al mismo nombre, verificá en el JSX que el que " +
+      "debe quedar arriba va DESPUÉS en el DOM (memoria modales-anidados-z-index-radix) — si no se " +
+      "puede garantizar el orden, no lo migres a ciegas.",
+    severity: "warning",
+    adminOnly: true,
+    strictUpgrade: true,
   },
 ];
 
@@ -402,6 +521,10 @@ const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
   // distinguibles, más de los 4 tokens semánticos disponibles. Es un color
   // picker, no un badge de estado.
   { file: /admin[\\/]documentos[\\/]StampModal\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
+  // ReportsTab arma el HTML de un EMAIL (Informe Mensual) que sale del panel —
+  // es contenido que el dueño lee en su bandeja, no cromo de la UI, y el email
+  // necesita hex inline porque los clientes de correo no resuelven CSS vars.
+  { file: /admin[\\/]ReportsTab\.tsx$/, allowedRules: ["ds-no-emoji-icon-admin"] },
 ];
 
 function isAdminPath(file: string): boolean {

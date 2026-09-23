@@ -35,6 +35,15 @@ const EMPHASIS_ACCENT: Record<StatCardEmphasis, string> = {
   error: "var(--data-error)",
 };
 
+/** Color de `accentBar` — el neutral usa el rule, no el texto (una barra
+ *  `--text-primary` sería casi negra; el pedido original era gris tenue). */
+const EMPHASIS_BAR: Record<StatCardEmphasis, string> = {
+  neutral: "var(--rule-soft)",
+  success: "var(--data-success)",
+  warning: "var(--data-warning)",
+  error: "var(--data-error)",
+};
+
 export type StatCardDensity = "compact" | "default" | "comfortable";
 
 export interface StatCardSparkline {
@@ -88,6 +97,37 @@ export interface StatCardProps {
    * No depende de Recharts — render SVG puro.
    */
   sparkline?: StatCardSparkline;
+  /**
+   * Ring de acento (`--accent`) para destacar el KPI que más importa en una
+   * fila (ej. "Ganancia neta" entre 5 cards, "Neto" entre 4).
+   *
+   * Absorbido del canon de clones (2026-09-22): `ActivosModule` y
+   * `SimpleMovementsTab` traían la MISMA prop `highlight` con el MISMO
+   * `ring-1 ring-[var(--accent)]/25` — código duplicado a la letra en dos
+   * archivos. Default `false`: no cambia ninguno de los 51 usos actuales.
+   */
+  highlight?: boolean;
+  /**
+   * Barra de 2px al pie del card, coloreada según `emphasis` (gris/`--rule-soft`
+   * si `emphasis` es "neutral").
+   *
+   * Absorbido de `ActivosModule`/`SimpleMovementsTab`: ahí la barra tenía un
+   * color INDEPENDIENTE del texto (`tone` vs `bar` por separado). Acá se
+   * simplifica atándola a `emphasis` — un solo eje de significado en vez de
+   * dos que podían decir cosas distintas. Default `false`: sin barra, como
+   * hoy en los 51 usos existentes.
+   */
+  accentBar?: boolean;
+  /**
+   * El ícono toma el color de `emphasis` (en vez del gris fijo
+   * `--text-tertiary`). Absorbido de `BatchStatsWidget`, `StoreAnalyticsModule`
+   * y `shared/KPICard`: los tres coloreaban el ícono según severidad — ahí lo
+   * hacían con una "chip" circular de fondo, que NO se absorbe (el rediseño
+   * 2026-06-10 de este mismo archivo eligió ícono plano, sin caja, a
+   * propósito). Sólo el color se preserva. Default `false`: ícono gris fijo,
+   * igual que hoy.
+   */
+  iconEmphasis?: boolean;
   onClick?: () => void;
   className?: string;
 }
@@ -160,6 +200,9 @@ export function StatCard({
   subValue,
   density = "default",
   sparkline,
+  highlight = false,
+  accentBar = false,
+  iconEmphasis = false,
   onClick,
   className,
 }: StatCardProps) {
@@ -219,6 +262,7 @@ export function StatCard({
         DENSITY_PADDING[density],
         "transition-colors",
         onClick && "hover:border-[var(--rule-strong)] cursor-pointer",
+        highlight && "ring-1 ring-[var(--accent)]/25",
         className,
       )}
     >
@@ -240,9 +284,19 @@ export function StatCard({
         </div>
         {/* Icono plano (sin caja redondeada) — minimalista. */}
         {Icon && (
-          <Icon className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          <Icon
+            className={cn("h-5 w-5 shrink-0", !iconEmphasis && "text-[var(--text-tertiary)]")}
+            style={iconEmphasis ? { color: EMPHASIS_ACCENT[emphasis] } : undefined}
+            aria-hidden
+          />
         )}
       </div>
+      {accentBar && (
+        <div
+          className="mt-3 h-1 rounded-full"
+          style={{ backgroundColor: EMPHASIS_BAR[emphasis] }}
+        />
+      )}
       {(typeof delta === "number" || deltaLabel) && (
         <div className="mt-3 flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold tabular-nums">
           <TrendIcon className="h-3.5 w-3.5" style={{ color: trendColor }} aria-hidden />
@@ -359,6 +413,14 @@ export interface DataTableProps extends TableHTMLAttributes<HTMLTableElement> {
   /** Sticky header al hacer scroll. */
   stickyHeader?: boolean;
   /**
+   * La tabla lleva autofiltros de cabecera estilo Excel (`FiltroColumnaMulti`/
+   * `FiltroColumnaRango` de `@/components/admin/shared/filtros-columna`): sin
+   * esto el `<th>` centra su contenido verticalmente y el control del filtro
+   * queda pegado contra el título en vez de debajo (Brandon, 2026-09-03).
+   * Default `false`: no cambia nada en los usos que no filtran desde el `<th>`.
+   */
+  filtrable?: boolean;
+  /**
    * Clases del CONTENEDOR (el div que hace el scroll horizontal), no de la
    * tabla. Para el alto máximo, el redondeo o el borde de la caja.
    */
@@ -388,6 +450,7 @@ export interface DataTableProps extends TableHTMLAttributes<HTMLTableElement> {
 export function DataTable({
   zebra,
   stickyHeader,
+  filtrable,
   className,
   wrapperClassName,
   wrapperProps,
@@ -418,6 +481,7 @@ export function DataTable({
           "[&_thead_th]:px-3 [&_thead_th]:py-2.5",
           "[&_thead_th]:font-semibold [&_thead_th]:text-[var(--text-secondary)]",
           "[&_thead_th]:text-[length:var(--ts-xs)] [&_thead_th]:uppercase [&_thead_th]:tracking-[var(--ls-wider)]",
+          filtrable && "[&_thead_th]:align-top",
           stickyHeader && "[&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10",
           "[&_tbody_tr]:border-t [&_tbody_tr]:border-[var(--rule-soft)]",
           "[&_tbody_tr:hover]:bg-[var(--surface-sunken)]",
