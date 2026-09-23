@@ -7,6 +7,13 @@
  * el orden en que llegan, y al reabrir la cubicación «como se dictó» se deja
  * tal cual. Guardar la tabla como se ve sacaba el Anexo al revés. Se guarda
  * SIEMPRE en el orden del papel (`enOrdenDelPapel`), que es el de dictado.
+ *
+ * 2026-09-23 (hallazgo #2): la whitelist se había quedado en las medidas y no
+ * dejaba viajar `dueno`/`duenoParteId` (el trato por cliente del ADR-430),
+ * `tipo` (forzado a mano) ni `observacion` — al reabrir una cubicación
+ * guardada esos tres campos volvían vacíos aunque se hubieran cargado. El
+ * `codigo` de la troza sigue afuera a propósito: es interno del cubicado, no
+ * viaja (`lib/forestal/codigo-de-troza.ts`).
  */
 import { enOrdenDelPapel, type OrdenFilas } from "./cubicador-bloques-especie";
 import type { PiezaCubicada } from "./cubicacion";
@@ -24,6 +31,10 @@ export function piezasParaGuardar(rows: PiezaCubicada[], orden: OrdenFilas) {
     uAncho: p.uAncho,
     uLargo: p.uLargo,
     especie: p.especie ?? null,
+    dueno: p.dueno ?? null,
+    duenoParteId: p.duenoParteId ?? null,
+    tipo: p.tipo ?? null,
+    observacion: p.observacion ?? null,
   }));
 }
 

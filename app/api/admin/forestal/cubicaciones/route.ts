@@ -8,6 +8,8 @@ import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { ORDEN_TIPO, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
+import { OBSERVACION_MAX } from "@/lib/forestal/observacion-de-pieza";
 
 /**
  * /api/admin/forestal/cubicaciones — historial de cubicaciones del aserradero.
@@ -30,6 +32,14 @@ const piezaSchema = z.object({
   uAncho: z.enum(["pulg", "cm", "pies", "m"]).optional(),
   uLargo: z.enum(["pulg", "cm", "pies", "m"]).optional(),
   especie: z.string().trim().max(60).nullish(),
+  /** De quién es la madera (aserrío por encargo). Texto libre, sin ficha del Directorio. */
+  dueno: z.string().trim().max(120).nullish(),
+  /** La ficha del Directorio de ese dueño (ADR-430): con ella se precia por su trato. */
+  duenoParteId: z.string().trim().max(60).nullish(),
+  /** Tipo comercial forzado a mano; `null`/ausente = lo decide la medida. */
+  tipo: z.enum(ORDEN_TIPO as [TipoComercial, ...TipoComercial[]]).nullish(),
+  /** Nota de patio de esta pieza (candado o suelta, ver observacion-de-pieza.ts). */
+  observacion: z.string().trim().max(OBSERVACION_MAX).nullish(),
 });
 
 const saveSchema = z.object({

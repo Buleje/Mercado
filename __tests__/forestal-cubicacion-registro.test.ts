@@ -62,6 +62,52 @@ describe("construirRegistro", () => {
     expect(r.createdAt).toBe(original);
     expect(r.updatedAt >= original).toBe(true);
   });
+
+  /* 2026-09-23: la whitelist de `normalizarPieza` sólo dejaba pasar la medida
+     — al reabrir una cubicación guardada, el precio pactado por cliente
+     (ADR-430, que depende de `dueno`+`duenoParteId`), el tipo forzado a mano
+     y la observación volvían vacíos. */
+  it("conserva dueno, duenoParteId, tipo y observacion de cada pieza", () => {
+    const r = construirRegistro({
+      nombre: "Lote con dueño",
+      piezas: [
+        {
+          cantidad: 1, espesor: 2, ancho: 8, largo: 10,
+          dueno: "Juan Pérez", duenoParteId: "parte-123",
+          tipo: "Comercial", observacion: "para López",
+        },
+      ],
+    });
+    expect(r.piezas[0].dueno).toBe("Juan Pérez");
+    expect(r.piezas[0].duenoParteId).toBe("parte-123");
+    expect(r.piezas[0].tipo).toBe("Comercial");
+    expect(r.piezas[0].observacion).toBe("para López");
+  });
+
+  it("un tipo que no existe en el catálogo se ignora (no rompe, no se inventa)", () => {
+    const r = construirRegistro({
+      nombre: "x",
+      piezas: [{ cantidad: 1, espesor: 2, ancho: 8, largo: 10, tipo: "Inventado" }],
+    });
+    expect(r.piezas[0].tipo).toBeUndefined();
+  });
+
+  it("dueno/observacion vacíos o de puros espacios quedan undefined, no ''", () => {
+    const r = construirRegistro({
+      nombre: "x",
+      piezas: [{ cantidad: 1, espesor: 2, ancho: 8, largo: 10, dueno: "   ", observacion: "" }],
+    });
+    expect(r.piezas[0].dueno).toBeUndefined();
+    expect(r.piezas[0].observacion).toBeUndefined();
+  });
+
+  it("NUNCA guarda el código de la troza: es interno del cubicado", () => {
+    const r = construirRegistro({
+      nombre: "x",
+      piezas: [{ cantidad: 1, espesor: 2, ancho: 8, largo: 10, codigo: "T25" }],
+    });
+    expect(r.piezas[0]).not.toHaveProperty("codigo");
+  });
 });
 
 describe("totales y búsqueda", () => {

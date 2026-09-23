@@ -39,7 +39,16 @@ describe("guardar con «más nuevas primero»", () => {
     /* Como vuelve del servidor: sin PT ni m³ (se recubica al cargar, `Anexo04Origen`). */
     const guardadas = recubicarPiezas(
       piezasParaGuardar(tabla, "recientes").map(
-        (p): PiezaCubicada => ({ ...p, especie: p.especie ?? undefined, pieTablar: 0, m3: 0 }),
+        (p): PiezaCubicada => ({
+          ...p,
+          especie: p.especie ?? undefined,
+          dueno: p.dueno ?? undefined,
+          duenoParteId: p.duenoParteId ?? undefined,
+          tipo: p.tipo ?? undefined,
+          observacion: p.observacion ?? undefined,
+          pieTablar: 0,
+          m3: 0,
+        }),
       ),
     );
     const anexo = construirAnexo04(guardadas, { unidadV: "pt", modo: "oficial" });
@@ -67,5 +76,24 @@ describe("guardar con «más nuevas primero»", () => {
     expect(piezasParaGuardar(dictado, "dictado").map((p) => p.id)).toEqual(
       dictado.map((p) => p.id),
     );
+  });
+
+  /* 2026-09-23 (hallazgo #2): la whitelist de guardar sólo dejaba pasar la
+     medida — dueño, tipo forzado y observación se perdían al guardar, aunque
+     el código NUNCA debe viajar (es interno del cubicado). */
+  it("guarda dueno, duenoParteId, tipo y observacion; nunca el codigo", () => {
+    const p: PiezaCubicada = {
+      ...pieza(9, 8),
+      dueno: "Juan Pérez",
+      duenoParteId: "parte-123",
+      tipo: "Comercial",
+      observacion: "para López",
+    };
+    const [g] = piezasParaGuardar([p], "dictado");
+    expect(g.dueno).toBe("Juan Pérez");
+    expect(g.duenoParteId).toBe("parte-123");
+    expect(g.tipo).toBe("Comercial");
+    expect(g.observacion).toBe("para López");
+    expect(g).not.toHaveProperty("codigo");
   });
 });

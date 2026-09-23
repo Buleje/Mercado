@@ -12,6 +12,8 @@
 
 import type { PiezaCubicada } from "./cubicacion";
 import { cubicarPieza, m3DesdePt } from "./cubicacion";
+import { ORDEN_TIPO, type TipoComercial } from "./cubicacion-tipo";
+import { OBSERVACION_MAX } from "./observacion-de-pieza";
 import { limaDateKey } from "@/lib/utils";
 
 export interface CubicacionTotales {
@@ -56,6 +58,10 @@ export interface CubicacionRegistro {
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/** ¿Es un tipo comercial de verdad? (`raw.tipo` llega como `unknown`, del JSON guardado.) */
+const esTipoComercial = (v: unknown): v is TipoComercial =>
+  typeof v === "string" && (ORDEN_TIPO as readonly string[]).includes(v);
 
 /** Fecha de hoy en formato date-only, sin arrastrar la hora. */
 /**
@@ -102,6 +108,17 @@ function normalizarPieza(raw: Record<string, unknown>, i: number): PiezaCubicada
     id: typeof raw.id === "string" && raw.id ? raw.id : `p-${i}`,
     ...base,
     especie: typeof raw.especie === "string" && raw.especie ? raw.especie.slice(0, 60) : undefined,
+    // Estos tres se perdían al guardar (2026-09-23): la whitelist vieja sólo
+    // dejaba pasar la medida. `codigo` sigue sin mapearse a propósito — es
+    // interno del cubicado y nunca llega al servidor (`sinCodigoDeTroza`).
+    dueno: typeof raw.dueno === "string" && raw.dueno.trim() ? raw.dueno.trim().slice(0, 120) : undefined,
+    duenoParteId:
+      typeof raw.duenoParteId === "string" && raw.duenoParteId.trim() ? raw.duenoParteId.trim().slice(0, 60) : undefined,
+    tipo: esTipoComercial(raw.tipo) ? raw.tipo : undefined,
+    observacion:
+      typeof raw.observacion === "string" && raw.observacion.trim()
+        ? raw.observacion.trim().slice(0, OBSERVACION_MAX)
+        : undefined,
     pieTablar,
     m3,
   };
