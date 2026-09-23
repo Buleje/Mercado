@@ -30,6 +30,7 @@ import {
   ClipboardList,
   Coins,
   FileSignature,
+  FileBarChart,
   FileSpreadsheet,
   FileText,
   FolderOpen,
@@ -87,6 +88,7 @@ import CtpHistoriaLoteView from "./CtpHistoriaLoteView";
 import CtpPlantaView from "./CtpPlantaView";
 import CtpAsistente from "./CtpAsistente";
 import CtpAnalisis from "./CtpAnalisis";
+import CtpReportesView from "./CtpReportesView";
 import CtpTableroControl from "./CtpTableroControl";
 import CtpHealthChip from "./CtpHealthChip";
 import CtpPendientes from "./CtpPendientes";
@@ -130,6 +132,7 @@ type CtpView =
   | "cumplimiento"
   | "cierre"
   | "eudr"
+  | "reportes"
   | "rentabilidad"
   | "analisis"
   | "fletes"
@@ -209,6 +212,9 @@ const CTP_GROUPS: LibroGroup[] = [
     id: "gestion",
     label: "Gestión",
     views: [
+      /* Primero en Gestión: es la pregunta de todos los lunes —«¿cuánto
+         sacamos y de quién era la madera?»—. La tecla es «y», la única libre. */
+      { key: "reportes", ...CTP_VISTAS_POR_KEY["reportes"], icon: FileBarChart, tecla: "y" },
       { key: "rentabilidad", ...CTP_VISTAS_POR_KEY["rentabilidad"], icon: Coins, tecla: "b" },
       { key: "analisis", ...CTP_VISTAS_POR_KEY["analisis"], icon: TrendingUp, tecla: "a" },
       { key: "fletes", ...CTP_VISTAS_POR_KEY["fletes"], icon: Truck, tecla: "j" },
@@ -250,6 +256,9 @@ const SIN_PERIODO: CtpView[] = [
   "lotes",
   "disponibles",
   "contratos",
+  /* Reportes trae su propio período (N semanas, mes o rango): el del libro al
+     lado serían dos selectores de fecha y uno no haría nada. */
+  "reportes",
 ];
 
 export default function CTPLibroOperaciones() {
@@ -687,6 +696,7 @@ export default function CTPLibroOperaciones() {
         {view === "eudr" && <CtpEudrPanel period={period} onNavigate={irA} />}
         {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
         {view === "analisis" && <CtpAnalisis />}
+        {view === "reportes" && <CtpReportesView onIr={irA} />}
         {view === "guias" && (
           <CtpGuiasEmitidasView period={period} onAbrirDespacho={() => setView("despacho")} />
         )}

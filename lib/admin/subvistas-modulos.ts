@@ -41,6 +41,7 @@ export const CTP_VISTAS: readonly SubvistaModulo[] = [
   { key: "resumenes", label: "Cuadros SERFOR", hint: "Los 3 cuadros resumen del formato oficial" },
   { key: "cumplimiento", label: "Cumplimiento", hint: "Alertas del período" },
   { key: "cierre", label: "Cierre", hint: "Cerrar mes · bloquear el acta" },
+  { key: "reportes", label: "Reportes", hint: "La producción por semanas, mes o rango: gráficos de progreso, PT por dueño de la madera, por permiso y por especie" },
   { key: "rentabilidad", label: "Rentabilidad", hint: "Margen: venta − COGS" },
   { key: "analisis", label: "Análisis", hint: "Reorden + tendencias" },
   { key: "fletes", label: "Fletes", hint: "Lo que cuesta traer la madera y a quién se le debe" },
