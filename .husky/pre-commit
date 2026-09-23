@@ -41,12 +41,17 @@ if [ -z "$STAGED_TS" ]; then
   exit 0
 fi
 
-echo "🔎 Running tsc --noEmit (TD-026 gate)..."
+echo "🔎 Running type gate con tsc 7 nativo (TD-026)..."
 echo "   Staged TS files: $(echo "$STAGED_TS" | wc -l | tr -d ' ')"
-npx tsc --noEmit || {
+# 2026-09-22: el gate pasó de `npx tsc` (5.9, JS) a `scripts/tsc7.mjs` (7.0.2, Go).
+# Medido sobre este repo: 195,5s (5.9 con tsbuildinfo caliente) → 22,5s (7 caliente),
+# 49,6s en frío. Mismo veredicto: 0 errores. El paquete `typescript` sigue en 5.9
+# porque typescript-eslint / Storybook / Next usan su API programática (estable recién en 7.1).
+node scripts/tsc7.mjs --noEmit || {
   echo ""
   echo "❌ TypeScript errors detected. Fix them before committing."
-  echo "   Run \`npx tsc --noEmit\` locally to see the full list."
+  echo "   Run \`npm run typecheck\` locally to see the full list."
+  echo "   Comparar con el compilador viejo: \`npm run typecheck:legacy\`"
   echo "   Emergency bypass: HUSKY=0 git commit ..."
   exit 1
 }

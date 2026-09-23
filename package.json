@@ -31,7 +31,7 @@
     "db:sanity": "tsx scripts/db-sanity.ts",
     "db:drift": "node -r dotenv/config scripts/check-schema-drift.mjs dotenv_config_path=.env.local",
     "dev:lucide:audit": "node scripts/audit-lucide-imports.mjs",
-    "build": "tsc -p tsconfig.build.json --noEmit && next build",
+    "build": "node scripts/tsc7.mjs -p tsconfig.build.json --noEmit && next build",
     "build:notypecheck": "next build",
     "analyze": "cross-env ANALYZE=true next build",
     "postinstall": "prisma generate && node scripts/copy-tesseract-assets.mjs",
@@ -80,8 +80,12 @@
     "claude:validate": "node scripts/claude-validate.mjs",
     "claude:dreaming": "node scripts/claude-dreaming-apply.mjs",
     "claude:dreaming:apply": "node scripts/claude-dreaming-apply.mjs --safe",
-    "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit",
-    "typecheck:fast": "node_modules/@typescript/typescript-linux-x64/lib/tsc --noEmit"
+    "typecheck": "node scripts/tsc7.mjs --noEmit",
+    "typecheck:fast": "node scripts/tsc7.mjs --noEmit",
+    "typecheck:legacy": "NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit",
+    "compiler:census": "node scripts/react-compiler-census.mjs",
+    "compiler:clean": "node scripts/react-compiler-census.mjs --clean",
+    "compiler:optin": "node scripts/compiler-optin.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.68",
@@ -191,6 +195,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
+    "@typescript/typescript-linux-x64": "^7.0.2",
     "@vitejs/plugin-react": "^5.2.0",
     "@vitest/browser-playwright": "^4.1.10",
     "@vitest/coverage-v8": "^4.0.18",

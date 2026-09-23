@@ -124,11 +124,27 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // ── React Compiler (pilot, opt-in por archivo) ───────────────────────
-  // Mode: annotation → solo compila componentes con la directiva `'use memo'`
-  // al inicio del archivo. Cero impacto sobre componentes que NO la usen.
-  // Plugin: babel-plugin-react-compiler@1.0.0 (instalado 2026-04-28).
-  // Next 16: reactCompiler salió de `experimental` y es top-level.
+  // ── React Compiler (piloto acotado por carpeta) ──────────────────────
+  // Plugin: babel-plugin-react-compiler@1.0.0. Next 16: `reactCompiler` es top-level.
+  //
+  // 2026-09-22: `annotation` estuvo activo 5 meses y lo usaba UN archivo
+  // (components/marketplace/UnifiedProductCard.tsx) — o sea, pagábamos el plugin sin
+  // cobrarlo, con 1.676 useMemo + 2.151 useCallback + 63 memo() escritos a mano.
+  //
+  // Censo previo (`npm run compiler:census`, reglas duras de react-hooks v7):
+  //   components/marketplace .... 404 archivos, 11 con violación dura → 97,3 % limpio
+  //   components/admin + app .... 2.901 archivos, 171 violaciones duras
+  // El compiler NO rompe: ante un patrón que no puede probar seguro, salta el componente.
+  //
+  // Por eso el opt-in arranca donde el residuo es 2,7 %: la tienda pública, que además
+  // es la superficie donde el render importa (cliente en 4G). Ampliar carpeta por carpeta
+  // midiendo antes con `npm run compiler:census <carpeta>`.
+  // IMPORTANTE (verificado 2026-09-22 contra node_modules/next/dist/server/config-schema.js:673):
+  // Next 16.2.10 sólo acepta `compilationMode` y `panicThreshold`. NO existe `sources`,
+  // así que no se puede acotar el compiler por carpeta desde acá — un `sources` se ignora
+  // en silencio. El acotado se hace por archivo con la directiva `"use memo"`:
+  //     npm run compiler:optin components/marketplace     (agrega la directiva a los limpios)
+  //     npm run compiler:optin -- --off components/marketplace   (la quita)
   reactCompiler: { compilationMode: "annotation" },
 
   experimental: {
