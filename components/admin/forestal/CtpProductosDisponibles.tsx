@@ -118,6 +118,8 @@ import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { alCambiarApartados } from "@/lib/forestal/apartados-evento";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
+import { useContratoActivo } from "@/contexts/contrato-activo-context";
+import { conContratoId } from "@/lib/forestal/contrato-filtro";
 
 interface PaqueteDisponible {
   id: string;
@@ -380,9 +382,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     apartadoActual: Apartado | null;
   } | null>(null);
 
+  /* «Solo este permiso»: lo que sigue en el patio de ESE contrato (filtra el servidor). */
+  const { contratoFiltro } = useContratoActivo();
   const recargar = useCallback(async () => {
     setCargando(true);
-    const qs = applyCtpPeriodParams(new URLSearchParams({ disponibles: "1" }), period);
+    const qs = conContratoId(applyCtpPeriodParams(new URLSearchParams({ disponibles: "1" }), period), contratoFiltro);
     if (verUsados) qs.set("incluirUsados", "1");
     try {
       const r = await ctpGet<{ corridas?: CorridaDisponible[] }>(`/api/admin/forestal/ctp?${qs}`);
@@ -394,7 +398,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
          una pantalla vacía tiene que poder decir por qué está vacía. Sólo
          cuando hace falta — con producto a la vista, este pedido no se hace. */
       if (lista.length === 0 && !verUsados) {
-        const qsUsados = applyCtpPeriodParams(new URLSearchParams({ disponibles: "1" }), period);
+        const qsUsados = conContratoId(applyCtpPeriodParams(new URLSearchParams({ disponibles: "1" }), period), contratoFiltro);
         qsUsados.set("incluirUsados", "1");
         try {
           const conUsados = await ctpGet<{ corridas?: CorridaDisponible[] }>(
@@ -425,7 +429,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     } finally {
       setCargando(false);
     }
-  }, [period, verUsados]);
+  }, [period, verUsados, contratoFiltro]);
 
   useEffect(() => {
     void recargar();

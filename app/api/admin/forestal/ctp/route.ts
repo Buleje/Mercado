@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { leerContratoId } from "@/lib/forestal/contrato-filtro";
 import { requireAdmin } from "@/lib/require-admin";
 import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -540,6 +541,8 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     /* Productos disponibles (ADR-349): lo aserrado que sigue en la planta, con
        sus paquetes. El saldo sale de la única fuente (ADR-316). */
     if (url.searchParams.get("disponibles") === "1") {
+      const contrato = leerContratoId(url.searchParams);
+      if (!contrato.ok) return NextResponse.json({ error: contrato.error }, { status: 400 });
       return NextResponse.json(
         await ForestCtpDB.productosDisponibles(auth.tenantId, {
           ...period,
@@ -549,6 +552,7 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
              el depósito no depende del mes que esté mirando el libro. */
           soloDelPeriodo: url.searchParams.get("soloDelPeriodo") === "1",
           incluirUsados: url.searchParams.get("incluirUsados") === "1",
+          contratoId: contrato.contratoId,
         }),
       );
     }
@@ -800,8 +804,13 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
       s && (CTP_SECTIONS as readonly string[]).includes(s)
         ? (s as (typeof CTP_SECTIONS)[number])
         : undefined;
+    /* «Solo este permiso» (ADR-421): Producción y Despacho acotados al
+       contrato activo, con la herencia de `whereCtpDelContrato`. */
+    const contrato = leerContratoId(url.searchParams);
+    if (!contrato.ok) return NextResponse.json({ error: contrato.error }, { status: 400 });
     const { entries, total, totalSinFiltro } = await ForestCtpDB.list(auth.tenantId, {
       section,
+      contratoId: contrato.contratoId,
       search: url.searchParams.get("search") ?? undefined,
       includeAnnulled: url.searchParams.get("includeAnnulled") === "1",
       ...period,

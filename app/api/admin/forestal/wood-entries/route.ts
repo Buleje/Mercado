@@ -10,6 +10,7 @@ import { withApiHandler } from "@/lib/api-handler";
 import { TIPOS_DOCUMENTO_LOCTP, UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
 import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { leerContratoId } from "@/lib/forestal/contrato-filtro";
 
 /**
  * /api/admin/forestal/wood-entries
@@ -236,6 +237,10 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
      sí son productos válidos. */
   const productos = product.map((p) => productTypeEnum.safeParse(p)).flatMap((r) => (r.success ? [r.data] : []));
 
+  /* «Solo este permiso» (ADR-421): el contrato activo de la banda. */
+  const contrato = leerContratoId(url.searchParams);
+  if (!contrato.ok) return NextResponse.json({ error: contrato.error }, { status: 400 });
+
   // Validate status if provided
   const statusParsed = status ? statusEnum.safeParse(status) : null;
   if (statusParsed && !statusParsed.success) {
@@ -258,6 +263,7 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
     search: search ?? undefined,
     providerName: providerName.length > 0 ? providerName : undefined,
     originCode: permiso.length > 0 ? permiso : undefined,
+    contratoId: contrato.contratoId,
     productType: productos.length > 0 ? productos : undefined,
     cites: cites === "1" ? true : cites === "0" ? false : undefined,
     late: late || undefined,

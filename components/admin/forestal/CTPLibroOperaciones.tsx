@@ -99,6 +99,7 @@ import CtpEntryDetailModal from "./CtpEntryDetailModal";
 import type { WoodEntry } from "./ctp-shared";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
+import SoloEstePermisoSwitch from "@/components/admin/forestal/SoloEstePermisoSwitch";
 import CtpResumenesSerfor from "./CtpResumenesSerfor";
 import CtpConsumosView from "./CtpConsumosView";
 import CtpProductosDisponibles from "./CtpProductosDisponibles";
@@ -527,7 +528,15 @@ export default function CTPLibroOperaciones() {
         /* El permiso de TRABAJO, a la izquierda del puntaje (Brandon
            2026-09-19): se elige acá y vale en todo el panel — incluso al
            registrar un gasto o un adelanto, que viven en otro módulo. */
-        contrato={<ContratoActivoChip />}
+        contrato={
+          /* «Solo este permiso» (radar 2026-09-19): prendido, Ingresos, GTF
+             ingresadas, Producción, Despacho y Disponibles se acotan al
+             contrato del chip — el filtro lo hace el servidor. */
+          <>
+            <ContratoActivoChip />
+            <SoloEstePermisoSwitch />
+          </>
+        }
         status={
           view !== "cumplimiento" ? (
             <CtpHealthChip period={period} onNavigate={() => setView("cumplimiento")} />

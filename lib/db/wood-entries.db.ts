@@ -258,6 +258,15 @@ export interface WoodEntryListFilters {
    */
   originCode?: string | readonly string[];
   /**
+   * «Solo este permiso» (ADR-421): el contrato ACTIVO de la banda, por su id.
+   *
+   * Es el vínculo interno (`WoodEntry.contratoId`), no el texto declarado: un
+   * ingreso con `originCode` escrito distinto (un typo, otra ARFFS) pero atado
+   * al mismo contrato entra igual, y uno sin atar no entra — no se adivina.
+   * Sin valor = todos los ingresos, como siempre.
+   */
+  contratoId?: string;
+  /**
    * Estado de recepción (ADR-339): `pendiente` es la bandeja del patio y
    * `cerrada` el archivo de «GTF ingresadas». Sin valor = las dos.
    */
@@ -306,6 +315,9 @@ export function buildListWhere(
     y.push({ OR: especies.map((v) => ({ speciesCommonName: { contains: v, mode: "insensitive" as const } })) });
   }
   if (filters.gtfNumber) where.gtfNumber = filters.gtfNumber;
+  /* Campo propio y no en `AND`: `stats()` recorta el `AND` por posición para
+     separar lo que agregan fuera de plazo y recepción. */
+  if (filters.contratoId) where.contratoId = filters.contratoId;
   const proveedores = valoresDe(filters.providerName);
   if (proveedores.length === 1) {
     where.providerName = { contains: proveedores[0], mode: "insensitive" };
@@ -380,6 +392,7 @@ function buildLateConditions(
     conditions.push(oR(especies.map((v) => Prisma.sql`"speciesCommonName" ILIKE ${`%${v}%`}`)));
   }
   if (filters.gtfNumber) conditions.push(Prisma.sql`"gtfNumber" = ${filters.gtfNumber}`);
+  if (filters.contratoId) conditions.push(Prisma.sql`"contratoId" = ${filters.contratoId}`);
   const proveedores = valoresDe(filters.providerName);
   if (proveedores.length > 0) {
     conditions.push(oR(proveedores.map((v) => Prisma.sql`"providerName" ILIKE ${`%${v}%`}`)));

@@ -141,6 +141,46 @@ function whereCorridaEnElPatio(
   };
 }
 
+/**
+ * «Solo este permiso» (ADR-421) para las líneas del libro: producción,
+ * despacho y lo que sigue en el patio.
+ *
+ * Una línea es del contrato si lo tiene ATADO (`contratoId`) o si la madera de
+ * la que sale lo tiene: la corrida hereda el permiso de lo que consumió —igual
+ * que `productosDisponibles` hereda el `originCode`— y el despacho el de las
+ * corridas (o trozas) que despacha. Sin la herencia, el filtro sólo vería las
+ * líneas cargadas con el chip puesto y escondería justo la producción
+ * vinculada a guías de ese permiso.
+ *
+ * Una corrida que mezcla madera de dos permisos aparece en los dos: contesta
+ * «¿esto toca este permiso?», no reparte volumen. Cada salto lleva `tenantId`
+ * aunque la FK ya lo implique: el aislamiento no descansa en la FK.
+ *
+ * Va siempre dentro de un `AND`: el `OR` de arriba es de la búsqueda libre (y
+ * del criterio de patio), y pisarlo devolvería cualquier cosa.
+ */
+export function whereCtpDelContrato(
+  tenantId: string,
+  contratoId: string,
+): Prisma.ForestCtpEntryWhereInput {
+  const ingresoDelContrato: Prisma.WoodEntryWhereInput = { tenantId, contratoId, deletedAt: null };
+  const corridaDelContrato: Prisma.ForestCtpEntryWhereInput = {
+    tenantId,
+    OR: [
+      { contratoId },
+      { consumos: { some: { tenantId, woodEntry: ingresoDelContrato } } },
+      { trozasConsumidas: { some: { tenantId, entry: ingresoDelContrato } } },
+    ],
+  };
+  return {
+    OR: [
+      ...(corridaDelContrato.OR as Prisma.ForestCtpEntryWhereInput[]),
+      { trozasDespachadas: { some: { tenantId, entry: ingresoDelContrato } } },
+      { origenes: { some: { tenantId, produccion: corridaDelContrato } } },
+    ],
+  };
+}
+
 /** Un producto agotado no es un producto disponible con cero: es uno que ya no está. */
 const tieneDisponible = (s: { disponible: number } | undefined): boolean => (s?.disponible ?? 0) > 0;
 
@@ -889,11 +929,14 @@ export class ForestCtpDB {
       includeAnnulled?: boolean;
       fromDate?: Date;
       toDate?: Date;
+      /** «Solo este permiso»: ver `whereCtpDelContrato`. Sin valor = todas. */
+      contratoId?: string;
     } = {},
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const where: Prisma.ForestCtpEntryWhereInput = { tenantId, deletedAt: null };
     if (filters.section) where.section = filters.section;
+    if (filters.contratoId) where.AND = [whereCtpDelContrato(tenantId, filters.contratoId)];
     if (!filters.includeAnnulled) where.status = "registrado";
     const range = dateRange(filters);
     if (range) where.entryDate = range;
@@ -3504,12 +3547,16 @@ export class ForestCtpDB {
        *  omisión quedan afuera — es justo lo que pide esa marca —, pero hace
        *  falta poder mirarlas para desmarcar una por error. */
       incluirUsados?: boolean;
+      /** «Solo este permiso»: ver `whereCtpDelContrato`. Sin valor = todo el patio. */
+      contratoId?: string;
     } = {},
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     /* El criterio de «está en el patio» es compartido con la campana de
        reservas vencidas: ver `whereCorridaEnElPatio`. */
     const where = whereCorridaEnElPatio(tenantId, { incluirUsados: opts.incluirUsados });
+    /* En `AND`: el `OR` de `whereCorridaEnElPatio` es el criterio de origen. */
+    if (opts.contratoId) where.AND = [whereCtpDelContrato(tenantId, opts.contratoId)];
     if (opts.soloDelPeriodo && (opts.fromDate || opts.toDate)) {
       where.entryDate = {
         ...(opts.fromDate ? { gte: opts.fromDate } : {}),
