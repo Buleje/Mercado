@@ -1,29 +1,28 @@
-# SESSION HANDOFF — 2026-09-23 (mañana): cubicador revisado y COMMITEADO · harness y PC
+# SESSION HANDOFF — 2026-09-24 (mañana): crédito de la nube + plan «patio por permiso» y rediseño de Consumos/Saldos
 
-**Estado:** árbol limpio (sólo `main-data.json` y 4 `scripts/tmp-*` viejos, no son de esta sesión). 86 commits sin subir, 0 atrasados.
+**Estado:** árbol limpio, push al día (`d09b6bfca`). Límite semanal al **99 % hasta las 16:00 del 24-09** → Brandon eligió construir AQUÍ después de esa hora.
 
-| Commit | Qué |
-|---|---|
-| `d95ebd1c3` | harness: paralelismo contado por `message.id` (real 1,20, no 1,00) · el arranque lee este archivo, no los `nextActions` de abril · `allowScripts` para npm 12 |
-| `7fafafd3c` | fix trozas: `numerosDeTroza` + `DIAMETRO_MAX_CM = 200` (413 trozas reales, máx 115) |
-| `e12a5f1ec` | feat cubicador: voz hasta 10, largo fijo, pitido, dueños que se eligen + 4 fallos del revisor (corte ajeno → pausa, calla al desmontar, fichas por `claveDueno`, audio no crea dueños) |
+**Hecho hoy:**
+- Crédito de la nube reclamado: quedan ~USD 247 de 250 y **vence el 05-11**. Se usa por la **web** (claude.ai/code → Mercado → rama); el `claude --cloud` del CLI da un falso «set up GitHub». Memoria `credito-nube-250-2026-09`.
+- 2 ramas de la nube **revisadas y con tests locales verdes, SIN mergear:** `nube/selector-permiso-activo` (`202f4406c`, 5/5) · `nube/permiso-filtra` (`cc1c8ef4f`, 15/15 + typecheck; **no toca el patio**).
+- `7a22231a9` gitignore `scripts/tmp-*.mjs` + `main-data.json` · `d09b6bfca` radar: 2 «pendientes» ya estaban hechos (gate `e6ca252cf`, reserva vencida `2c334edcd`).
 
-**Gates:** tsc ✅ · eslint 0 errores · 41 archivos 774/774 · foto del fix compilada aparte · navegador QA ✅ (pausa probada con motor simulado; **el audio real sigue sin probar**).
+**A las 16:00, en orden** (Brandon eligió las 4 opciones + texto libre = prioridad 1):
+0. Leer el informe final de la sesión de la nube «Filtro de permiso en libro CTP» (qué pantallas quedaron sin filtrar y por qué).
+1. Navegador claro/oscuro 1280/400 de las 2 ramas → merge (primero `permiso-filtra`: toca `CTPLibroOperaciones` y `wood-entries`).
+2. **TEXTO LIBRE:** «mejorar las páginas ya creadas: diseño más ordenado y distribuido, cambios de alto nivel y profundos en diseño, UX, accesibilidad». Ámbito: pestañas **Consumos** (`CtpConsumosView`, 1 184 líneas) y **Saldos** (`CtpSaldosView`, 916 líneas, 15 `useState`) del LO-CTP, ambas con más de 300 líneas. Arrancar con capturas (`node scripts/qa-capturas.mjs`) + axe + mapa de bloques; diseño con la skill `bsm-design-system`.
+3. **Resumen por permiso:** una fila por permiso (trozas · m³ · guías · especies · la más vieja); clic = filtra.
+4. **«Solo este permiso»** de la banda también en el patio (`/api/admin/forestal/trozas/patio` + `CtpPatio*`).
+5. **Filtros de alto valor:** días en el patio, rango de diámetro/largo, sin código («-»), CITES. Hoy hay 0 de 4 (`CtpPatioFiltros` trae especie, guía, permiso, proveedor, resolución, soloLibres y texto).
+6. **Exportar el patio por permiso** a Excel (`exportToExcel` = 1 archivo por llamada).
 
-**PC (medido tras reiniciar):** BIOS 305 aplicada, pero la iGPU sigue con 512 MB; 26 congelamientos DWM desde el 15-09; al arrancar ya hay 242 MB de VRAM en uso contra un presupuesto de 190 (Chrome 101). Externa a 1920×1080 @ 240 Hz. Ubuntu: 0 fallos, apt al día, npm 12.1, vercel 59.25.4, `pam_lastlog` comentado (`/etc/pam.d/login.bak-2026-09-23`).
+**Decisión de diseño que hay que validar con capturas:** «¿cuántas trozas me quedan?» hoy se responde en **Consumos** (cuya ayuda dice «Qué madera entró a la sierra»), y la edad del patio está en **Saldos**. Propuesta: el resumen por permiso va en Saldos (el balance), con salto a Consumos ya filtrado para elegir trozas. Nada de página nueva.
 
-**Tarde (misma sesión):** push `8ab5cdd28..1bf4c9498` · `77db28e17` contexto de subagentes (agrupar llamadas, QA forestal) · `036a324ed` `scripts/qa-capturas.mjs` (recorrido en 1 llamada: 187→1 llamadas) · `430c4a12a` tope DAP 4 m. PC: 120 Hz aplicado (no libera VRAM), Chrome sin aceleración por política (**falta reiniciar Chrome**), PATH sin Node de Windows (`~/.bashrc`).
+**Datos reales** (Blas, 24-09, SQL de solo lectura, `scripts/tmp-patio-por-permiso.mjs`): **77 trozas / 155,65 m³ en 2 permisos.** `10-HUA-PUE/PER-FMP-2026-007` 46 trozas / 135,59 m³ / 8 guías / 7 especies · `19-SEC/REG-PLT-2021-017` 31 trozas / 20,06 m³ / 1 guía / 1 especie · 0 sin contrato · la más vieja del 08-09. Criterio: no consumida, no despachada, sin retrozos. **NO descuenta las guías sin recepcionar**: cruzarlo contra el KPI «Trozas en el patio» antes de presentarlo como el dato.
 
-**Noche (misma sesión), COMMITEADO:** `622a7c12e` aviso + arreglo de un clic «el trato empieza después» (ADR-430; reviewer + security sin veto; auditoría que perdía 3/16 renglones bajo carga) · `3ed8de960` «Producir sin lote»: anular el día (anula, no borra), detalle sin scroll, «Más nuevas primero», sin pastillas, tira plegable, más compacto (reviewer 5 + security sin veto). Incidente: un agente dejó `SET SESSION READ ONLY` pegado en el pooler 3 min (reparado, producción sin errores) → regla en memoria `pooler-set-session-se-pega` y en el contexto de subagentes.
+**Cómo construir:** INITIATIVE (5+ archivos, 2 áreas) → workflow por fases, o `frontend` + `backend` con archivos disjuntos + `reviewer` con contexto fresco. Nunca worktree.
 
-**Cierre (misma sesión):** WASACO COBRADO (15:44 UTC: trato 14/09 → 07/09, 6 cargos N° 30–35 = S/ 1 619,60, SELECT antes 0 · después 6) · `2c334edcd` reservas vencidas en la campana del libro con Liberar/Extender (+ editar apartado, que daba 422) · el tenant QA forestal NO se activó (los 3 QA de Blas están inactivos a propósito: crons + tienda pública sobre la base de producción) · todo subido · se lanzó la compactación del vhdx (APAGA WSL; resultado en `C:\Users\Usuario\.claude-tune\2026-09-23\compactar.log`).
-
-**Para retomar (en orden):**
-1. Leer `compactar.log` (esperado: ~79,8 → ~55 GB) y confirmar `wsl.exe --version` + dev server arriba.
-2. **Avisos de plazos caídos desde el 12/09** (memoria `avisos-plazos-canal-caido`): WhatsApp 401 (token Meta) + `buleje.pe` sin verificar en Resend, y 10 días sin intentos. Necesita a Brandon; después, disparar el cron y mirar `NotificationLog`.
-3. Reserva de Juancho (N° 29 Cachimbo, vencida 22/09) visible en la campana: la decide Brandon (liberar/extender).
-4. Brandon: reiniciar Chrome (política sin aceleración) + F2 → UMA; contar DWM id 500 desde el 23-09.
-5. Probar el audio real del cubicador; el panel admin podría dejar de usar `/api/tenants/resolve` público (403 en QA inactivo).
+**Siguen del 23-09:** avisos de plazos caídos (WhatsApp 401 + Resend) · reserva de Juancho vencida (la decide Brandon) · reiniciar Chrome · probar el audio real del cubicador · «Reinicio gratis» de Opus 5.5 hasta el 22-10 (lo decide Brandon).
 
 ---
 
