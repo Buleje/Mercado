@@ -16,6 +16,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { applyCtpPeriodParams, ctpPeriodShortLabel, periodoAnterior, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { conContratoId } from "@/lib/forestal/contrato-filtro";
+import { useContratoActivo } from "@/contexts/contrato-activo-context";
 import {
   contarFiltros,
   facetasDeSeccion,
@@ -51,12 +53,16 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
   const [facetas, setFacetas] = useState<FiltrosSeccion>({});
   const activos = contarFiltros(facetas);
   const { panelId, abierto, alternar } = usePanelFiltros(activos);
+  /* «Solo este permiso»: el servidor acota; el período anterior va con el
+     MISMO contrato, o el delta compararía dos universos. */
+  const { contratoFiltro } = useContratoActivo();
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
       const p = applyCtpPeriodParams(new URLSearchParams({ section }), period);
       if (search.trim()) p.set("search", search.trim());
+      conContratoId(p, contratoFiltro);
       /**
        * `ctpGet` y no `fetch` crudo (medido 2026-09-09): abrir Producción
        * pedía la MISMA url tres veces —hasta siete con re-renders— porque cada
@@ -72,7 +78,7 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
       setTotalSinFiltro(j.totalSinFiltro);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
-  }, [section, search, period]);
+  }, [section, search, period, contratoFiltro]);
   useEffect(() => { void load(); }, [load]);
 
   /**
@@ -143,6 +149,7 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
     let vivo = true;
     const p = applyCtpPeriodParams(new URLSearchParams({ section }), previo);
     if (search.trim()) p.set("search", search.trim());
+    conContratoId(p, contratoFiltro);
     ctpGet<{ entries?: CtpEntry[] }>(`/api/admin/forestal/ctp?${p}`)
       .then((j) => { if (vivo) setEntriesPrevias(j.entries ?? []); })
       /* La comparación es un lujo, no el dato: si el período anterior no carga,
@@ -150,7 +157,7 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
          solas. Lo que no se hace es dibujar un delta contra un cero inventado. */
       .catch(() => { if (vivo) setEntriesPrevias(null); });
     return () => { vivo = false; };
-  }, [section, previo, search]);
+  }, [section, previo, search, contratoFiltro]);
 
   const kpisPrevios = useMemo(
     () => (entriesPrevias ? calcularKpisSeccion(filtrarSeccion(entriesPrevias, facetas), section) : null),

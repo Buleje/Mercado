@@ -58,11 +58,31 @@ interface ContratoActivoValue {
   fijar: (contrato: ContratoActivo | null) => void;
   /** `false` hasta leer localStorage: evita pintar «Todos» y saltar al valor. */
   listo: boolean;
+  /** El interruptor «Solo este permiso» de la banda. Apagado por omisión. */
+  soloEste: boolean;
+  setSoloEste: (v: boolean) => void;
+  /**
+   * El id por el que las listas del libro se acotan: el del permiso activo
+   * SÓLO si el interruptor está prendido. `null` = ver todo, como siempre.
+   * Es lo único que las pantallas miran: el filtro lo hace el servidor.
+   */
+  contratoFiltro: string | null;
 }
 
 const Ctx = createContext<ContratoActivoValue | null>(null);
 
 const clave = (tenant: string) => `contrato-activo-${tenant}`;
+/* Clave propia y no un campo del JSON del permiso: soltar el permiso borra
+   aquél, y la preferencia de filtrar tiene que sobrevivir a eso. */
+const claveSolo = (tenant: string) => `contrato-activo-solo-${tenant}`;
+
+function leerSolo(tenant: string): boolean {
+  try {
+    return localStorage.getItem(claveSolo(tenant)) === "1";
+  } catch {
+    return false;
+  }
+}
 
 function leer(tenant: string): ContratoActivo | null {
   try {
@@ -88,9 +108,11 @@ export function ContratoActivoProvider({
 }) {
   const [activo, setActivo] = useState<ContratoActivo | null>(null);
   const [listo, setListo] = useState(false);
+  const [soloEste, setSoloEsteState] = useState(false);
 
   useEffect(() => {
     setActivo(leer(tenant));
+    setSoloEsteState(leerSolo(tenant));
     setListo(true);
   }, [tenant]);
 
@@ -98,6 +120,10 @@ export function ContratoActivoProvider({
   // pestañas bajo permisos distintos es un accidente silencioso.
   useEffect(() => {
     const alCambiar = (e: StorageEvent) => {
+      if (e.key === claveSolo(tenant)) {
+        setSoloEsteState(leerSolo(tenant));
+        return;
+      }
       if (e.key !== clave(tenant)) return;
       setActivo(leer(tenant));
     };
@@ -119,9 +145,32 @@ export function ContratoActivoProvider({
     [tenant],
   );
 
+  const setSoloEste = useCallback(
+    (v: boolean) => {
+      setSoloEsteState(v);
+      try {
+        if (v) localStorage.setItem(claveSolo(tenant), "1");
+        else localStorage.removeItem(claveSolo(tenant));
+      } catch {
+        // Igual que `fijar`: sin storage vale para esta pantalla.
+      }
+    },
+    [tenant],
+  );
+
   const value = useMemo<ContratoActivoValue>(
-    () => ({ activo, contratoId: activo?.id ?? null, fijar, listo }),
-    [activo, fijar, listo],
+    () => ({
+      activo,
+      contratoId: activo?.id ?? null,
+      fijar,
+      listo,
+      soloEste,
+      setSoloEste,
+      /* Sin permiso fijado no hay qué acotar: el interruptor prendido y sin
+         permiso es «ver todo», nunca una lista vacía que parece un error. */
+      contratoFiltro: soloEste && activo ? activo.id : null,
+    }),
+    [activo, fijar, listo, soloEste, setSoloEste],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -140,6 +189,9 @@ export function useContratoActivo(): ContratoActivoValue {
       contratoId: null,
       fijar: () => {},
       listo: true,
+      soloEste: false,
+      setSoloEste: () => {},
+      contratoFiltro: null,
     }
   );
 }

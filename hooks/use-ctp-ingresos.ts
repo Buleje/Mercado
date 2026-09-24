@@ -17,6 +17,8 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { applyCtpPeriodParams, ctpPeriodShortLabel, periodoAnterior, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { WoodEntry, WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
+import { useContratoActivo } from "@/contexts/contrato-activo-context";
+import { conContratoId } from "@/lib/forestal/contrato-filtro";
 
 export const CTP_PAGE_SIZE = 50;
 /** Tope de la descarga: un CSV de 5000 filas ya son ~1.5 MB y varias páginas de
@@ -157,6 +159,10 @@ export function useCtpIngresos({
   const requestSeq = useRef(0);
 
   const { status, search, species, provider, product, permiso, cites, late, sinOrigen, sinCosto, recepcion } = filtros;
+  /* «Solo este permiso» de la banda: viaja como parámetro y filtra el servidor.
+     Va en `armarParams`, así tabla, KPIs, mes anterior y descarga hablan del
+     mismo conjunto. */
+  const { contratoFiltro } = useContratoActivo();
 
   /** Los parámetros del conjunto (sin paginación): los comparten la tabla y la
    *  descarga, así que "exportar" baja EXACTAMENTE lo que se está viendo. */
@@ -179,10 +185,11 @@ export function useCtpIngresos({
     if (sinOrigen) params.set("sin_origen", "1");
     if (sinCosto) params.set("sin_costo", "1");
     if (recepcion) params.set("recepcion", recepcion);
+    conContratoId(params, contratoFiltro);
     params.set("sort", sort.by);
     params.set("dir", sort.dir);
     return params;
-  }, [status, search, species, provider, product, permiso, cites, late, sinOrigen, sinCosto, recepcion, sort.by, sort.dir]);
+  }, [status, search, species, provider, product, permiso, cites, late, sinOrigen, sinCosto, recepcion, contratoFiltro, sort.by, sort.dir]);
 
   const baseParams = useMemo(() => armarParams(period), [armarParams, period]);
 
