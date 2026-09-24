@@ -29,9 +29,15 @@
  * esté EDITANDO un registro ya guardado, para no pisar un «sin contrato»
  * elegido a mano en su momento (que en el estado es indistinguible de «nunca
  * se tocó»).
+ *
+ * Y lo dice (2026-09-24): «Propuesto por el permiso activo: …», con el mismo
+ * estilo que el aviso del documento. Se recuerda QUÉ id propuso el activo, no
+ * se deduce de `value === activo`: un registro que ya traía ese contrato (o
+ * una elección a mano del mismo) no fue propuesto por nadie. Apenas el
+ * usuario toca el selector, el aviso se va.
  */
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FileText, TriangleAlert } from "@buleje/design-system/icons";
 import { normalizarCodigoContrato } from "@/lib/forestal/contratos";
 import { useContratos } from "@/hooks/use-contratos";
@@ -88,6 +94,11 @@ export default function SelectorContrato({
 
   const hayCodigoSugerido = Boolean(codigoSugerido?.trim());
 
+  /** El id que puso el contrato activo de la banda, mientras nadie lo cambie
+   *  a mano. Sólo lo escribe el efecto de abajo; el `onChange` del select lo
+   *  borra. */
+  const [propuestoPorActivo, setPropuestoPorActivo] = useState<string | null>(null);
+
   /**
    * Auto-elegir el sugerido, SÓLO si el usuario todavía no eligió nada.
    * Pisar una elección hecha a mano porque llegó la lista sería decidir por él
@@ -106,10 +117,17 @@ export default function SelectorContrato({
    */
   useEffect(() => {
     if (!sugerirActivo || value != null || hayCodigoSugerido || !activoCargado) return;
+    setPropuestoPorActivo(activoCargado.id);
     onChange(activoCargado.id);
   }, [sugerirActivo, value, hayCodigoSugerido, activoCargado, onChange]);
 
   const codigoHuerfano = Boolean(codigoSugerido?.trim()) && !sugerido && !cargando;
+
+  /** Sigue en pie lo que propuso el activo: mismo id, todavía cargado. */
+  const propuestoActivo =
+    sugerirActivo && activoCargado && propuestoPorActivo === activoCargado.id && value === activoCargado.id
+      ? activoCargado
+      : null;
 
   return (
     <div>
@@ -127,7 +145,10 @@ export default function SelectorContrato({
           id={id}
           value={value ?? ""}
           disabled={disabled || cargando}
-          onChange={(e) => onChange(e.target.value || null)}
+          onChange={(e) => {
+            setPropuestoPorActivo(null);
+            onChange(e.target.value || null);
+          }}
           className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base font-medium text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-60"
         >
           {!requerido && <option value="">Sin contrato</option>}
@@ -152,6 +173,10 @@ export default function SelectorContrato({
             El documento dice «{codigoSugerido}» y ese permiso todavía no está cargado como contrato. Se puede
             crear desde Gestión › Contratos; mientras tanto, esto queda sin imputar.
           </span>
+        </p>
+      ) : propuestoActivo ? (
+        <p className="mt-1.5 text-sm font-medium text-[var(--accent-ink)] dark:text-[var(--accent)]">
+          Propuesto por el permiso activo: {propuestoActivo.codigo}
         </p>
       ) : (
         <p className="mt-1.5 text-sm text-[var(--text-tertiary)]">

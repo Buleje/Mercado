@@ -245,7 +245,7 @@ export default function ExpensesTab() {
             id="gasto-contrato"
             value={form.contratoId}
             onChange={(contratoId) => setForm(f => ({ ...f, contratoId }))}
-            hint="No hay un permiso sugerido para un gasto: elegilo si corresponde a uno."
+            hint="No hay un permiso sugerido para un gasto: elígelo si corresponde a uno."
           />
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1">
