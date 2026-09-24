@@ -416,7 +416,7 @@ export default function CrearAdelantoModal({
             id="adelanto-contrato"
             value={contratoId}
             onChange={setContratoId}
-            hint="No hay un permiso sugerido para un adelanto: elegilo si corresponde a uno."
+            hint="No hay un permiso sugerido para un adelanto: elígelo si corresponde a uno."
           />
 
           {/* Ya se le dio plata hoy: el caso real no es el fraude, son dos
