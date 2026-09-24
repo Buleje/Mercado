@@ -145,6 +145,8 @@ build-output.txt
 # Scripts de un solo uso: se escriben para una corrida y no se vuelven a correr
 /*.tmp.ts
 /scripts/tmp-*.ts
+/scripts/tmp-*.mjs
+/main-data.json
 # Vitest JSON reports (local per-session debugging)
 /vitest-result*.json
 /vitest-full.json
