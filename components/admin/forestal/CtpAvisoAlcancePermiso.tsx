@@ -22,6 +22,7 @@
  */
 
 import { Filter } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 export interface CtpAvisoAlcancePermisoProps {
   /** Código del permiso activo, como lo muestra el chip de la banda. */
@@ -42,18 +43,21 @@ export default function CtpAvisoAlcancePermiso({ codigo, acotado, sinAcotar = []
   return (
     <div
       role="status"
-      className="flex items-start gap-3 rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-4 py-3 text-sm text-[var(--text-secondary)]"
+      className="flex items-center gap-2 rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-4 py-2 text-sm"
     >
-      <Filter className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
-      <p className="min-w-0">
-        <b className="text-[var(--text-primary)]">Solo este permiso: {codigo}.</b>{" "}
-        {acotado.length > 0 && <>Se acota{acotado.length > 1 ? "n" : ""} {enumerar(acotado)}. </>}
-        {sinAcotar.length > 0 && (
-          <>
-            {sinAcotar.length > 1 ? "Muestran" : "Muestra"} toda la planta: {enumerar(sinAcotar)}.
-          </>
-        )}
-      </p>
+      <Filter className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
+      <b className="min-w-0 text-[var(--text-primary)]">Solo este permiso: {codigo}</b>
+      {/* Qué se acota y qué no, en el ⓘ (2026-09-24): a la vista, una línea. */}
+      <InfoTip
+        title="Solo este permiso"
+        what={acotado.length > 0 ? `Se acota${acotado.length > 1 ? "n" : ""} ${enumerar(acotado)}.` : undefined}
+        affects={
+          sinAcotar.length > 0
+            ? `${sinAcotar.length > 1 ? "Muestran" : "Muestra"} toda la planta: ${enumerar(sinAcotar)}.`
+            : undefined
+        }
+        example="Se apaga con el interruptor «Solo este permiso» de la banda del libro."
+      />
     </div>
   );
 }

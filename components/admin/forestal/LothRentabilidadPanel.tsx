@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Coins, TrendingUp, TrendingDown, Award, Wallet, RefreshCw, Calculator } from "@buleje/design-system/icons";
 import { StatCard, LoadingState, ErrorAlert, WarningAlert, DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn } from "./ctp-shared";
 import type { CosteoRow, LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { buildTraceOperations } from "@/lib/forestal/loth-trace";
@@ -108,7 +109,15 @@ export default function LothRentabilidadPanel({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-[var(--text-tertiary)]">Margen por especie = precio de venta − (derecho VEN + extracción + transformación + flete). Mismos números que la Analítica.</p>
+        <p className="flex items-center gap-1 text-sm text-[var(--text-tertiary)]">
+          Margen por especie
+          <InfoTip
+            title="Cómo se calcula el margen"
+            what="Precio de venta − (derecho VEN + extracción + transformación + flete)."
+            affects="Mismos números que la pestaña Analítica: nunca deberían diferir."
+            example="Shihuahuaco vendido a S/ 850 el m³ con S/ 620 de costo deja S/ 230 de margen por m³ (27%)."
+          />
+        </p>
         <div className="flex items-center gap-2">
           {entries.length > 0 && (
             <div className="flex h-10 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
@@ -288,7 +297,7 @@ function ArbolesTabla({
           density="compact"
           label="Árboles que rindieron"
           value={`${resumen.conMovimiento}/${resumen.arboles}`}
-          subValue={resumen.sinMovilizar > 0 ? `${resumen.sinMovilizarM3.toFixed(2)} m³ tumbados sin salir` : "todos movilizados"}
+          subValue={resumen.sinMovilizar > 0 ? `${Number(resumen.sinMovilizarM3).toFixed(2)} m³ tumbados sin salir` : "todos movilizados"}
           icon={TrendingUp}
           emphasis={resumen.sinMovilizar > 0 ? "warning" : "success"}
         />
@@ -298,7 +307,7 @@ function ArbolesTabla({
           value={soles(resumen.margen)}
           subValue={
             resumen.consumidoM3 > 0
-              ? `${resumen.consumidoM3.toFixed(2)} m³ fueron al aserrío (su plata está en el producto)`
+              ? `${Number(resumen.consumidoM3).toFixed(2)} m³ fueron al aserrío (su plata está en el producto)`
               : `ingreso ${soles(resumen.ingreso)}`
           }
           icon={Coins}
@@ -308,7 +317,7 @@ function ArbolesTabla({
           density="compact"
           label="El que más dejó"
           value={resumen.mejor?.tree ?? "—"}
-          subValue={resumen.mejor ? `${soles(resumen.mejor.margen)} · ${resumen.mejor.movilizadoM3.toFixed(2)} m³` : "sin movimiento"}
+          subValue={resumen.mejor ? `${soles(resumen.mejor.margen)} · ${Number(resumen.mejor.movilizadoM3).toFixed(2)} m³` : "sin movimiento"}
           icon={Award}
           emphasis="neutral"
         />
@@ -341,12 +350,12 @@ function ArbolesTabla({
                     </span>
                   )}
                 </Td>
-                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{f.taladoM3.toFixed(2)} m³</Td>
+                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{Number(f.taladoM3).toFixed(2)} m³</Td>
                 <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                  {f.movilizadoM3 > 0 ? `${f.movilizadoM3.toFixed(2)} m³` : "—"}
+                  {f.movilizadoM3 > 0 ? `${Number(f.movilizadoM3).toFixed(2)} m³` : "—"}
                 </Td>
                 <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                  {f.rendimientoPct != null ? `${f.rendimientoPct.toFixed(1)}%` : "—"}
+                  {f.rendimientoPct != null ? `${Number(f.rendimientoPct).toFixed(1)}%` : "—"}
                 </Td>
                 <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{f.ingreso > 0 ? soles(f.ingreso) : "—"}</Td>
                 <Td className="text-right">
@@ -380,7 +389,7 @@ function ArbolesTabla({
         {resumen.consumidoM3 > 0 && (
           <p>
             Este total es <b>menor</b> que el de «Por especie» a propósito: acá sólo entra la troza <b>despachada con guía</b>. Los{" "}
-            <b className="font-mono tabular-nums">{resumen.consumidoM3.toFixed(2)} m³</b> que se consumieron en el aserrío generan su
+            <b className="font-mono tabular-nums">{Number(resumen.consumidoM3).toFixed(2)} m³</b> que se consumieron en el aserrío generan su
             ingreso como producto terminado, y el libro atribuye ese despacho por especie, no por árbol.
           </p>
         )}

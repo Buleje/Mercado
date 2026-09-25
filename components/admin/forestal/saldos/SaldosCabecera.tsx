@@ -21,6 +21,7 @@ import {
   RefreshCw,
 } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import CtpAvisoAlcancePermiso from "../CtpAvisoAlcancePermiso";
 import { Btn } from "../ctp-shared";
 
@@ -64,15 +65,18 @@ export default function SaldosCabecera({
     <div className="space-y-3">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <SectionTitle className="flex flex-wrap items-baseline gap-x-2">
-            Saldos del libro
-            <span className="font-mono text-sm font-normal tabular-nums text-[var(--text-tertiary)]">
-              {periodo}
-            </span>
-          </SectionTitle>
-          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-            Lo que declaras ante SERFOR y lo que puede salir de la planta.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <SectionTitle className="flex flex-wrap items-baseline gap-x-2">
+              Saldos del libro
+              <span className="font-mono text-sm font-normal tabular-nums text-[var(--text-tertiary)]">
+                {periodo}
+              </span>
+            </SectionTitle>
+            <InfoTip
+              title="Saldos del libro"
+              what="Lo que declaras ante SERFOR y lo que puede salir de la planta."
+            />
+          </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Btn

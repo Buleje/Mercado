@@ -19,6 +19,7 @@ import type { TraceOperation } from "@/lib/forestal/loth-trace";
 import { movilizadoDe, sinCodigoDe } from "@/lib/forestal/loth-trace-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { tonoDe } from "./loth-trace-ui";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 const pct = (v: number, total: number) => (total > 0 ? Math.min(100, (v / total) * 100) : 0);
 
@@ -84,16 +85,26 @@ export default function LothTraceEmbudo({ op }: { op: TraceOperation }) {
       </div>
       {notas.length > 0 && <p className="mt-2 text-sm text-[var(--text-secondary)]">{notas.join(" ")}</p>}
       {productoPorEspecie && productoM3 != null && (
-        <p className="mt-2 text-xs text-[var(--text-secondary)]">
-          * El producto terminado se registró sin código de troza: se atribuye por especie entre los árboles de{" "}
-          {op.species ?? "la misma especie"} que fueron al aserrío, así que esa cifra puede incluir madera de otros árboles. Para que
-          este salto sea exacto, la línea de producto tiene que declarar de qué troza salió.
+        <p className="mt-2 flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+          * Producto estimado por especie, no por troza
+          <InfoTip
+            icono="info"
+            title="Producto sin código de troza"
+            what="Se atribuye por especie entre los árboles que fueron al aserrío: esta cifra puede incluir madera de otros árboles."
+            affects={`El paso «Producto» del embudo de ${op.species ?? "esta especie"}.`}
+            example="Para que el salto sea exacto, la línea de producto tiene que declarar de qué troza salió."
+          />
         </p>
       )}
       {op.producto.length > 0 && productoM3 == null && (
-        <p className="mt-2 text-xs text-[var(--text-secondary)]">
-          El producto terminado se declaró en {Array.from(unidadesProducto).filter(Boolean).join(" y ") || "otra unidad"} — no entra al
-          embudo porque compararlo con m³ en la misma escala inventaría una caída.
+        <p className="mt-2 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
+          Producto declarado en {Array.from(unidadesProducto).filter(Boolean).join(" y ") || "otra unidad"}: no entra al embudo
+          <InfoTip
+            icono="info"
+            title="Por qué no aparece en el embudo"
+            what="Comparar unidades distintas en la misma escala (m³) inventaría una caída que no existe."
+            example="Si el producto se declaró en pies tablares y el embudo mide en m³, sumarlos daría una pérdida falsa."
+          />
         </p>
       )}
     </div>

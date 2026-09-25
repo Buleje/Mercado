@@ -21,6 +21,7 @@ import { useRef, useState } from "react";
 import { descartarEsperado } from "@/lib/errores/sin-dato";
 import { DataTable } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { MODAL_BODY } from "./ctp-shared";
 import {
   AlertCircle,
@@ -300,7 +301,23 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         {(phase === "idle" || phase === "parsing") && (
           <>
             <div>
-              <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">¿Qué importas?</p>
+              <p className="mb-1.5 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                ¿Qué importas?
+                <InfoTip
+                  icono="ayuda"
+                  title="Qué lee cada modo"
+                  what="El mismo Excel que exportas como «Formato oficial SERFOR»."
+                  example={
+                    mode === "completo"
+                      ? "Libro completo: lee las 3 hojas (Ingreso, Producción, Salida) e importa en orden — Producción resuelve la GTF del ingreso y Salida valida contra lo producido."
+                      : mode === "produccion"
+                        ? "Producción: lee las corridas de «3. Producción» y su materia prima de «2. Consumos» — importa los Ingresos primero."
+                        : mode === "salida"
+                          ? "Salida: lee los despachos de «4. Salida». Importa la Producción primero (se valida contra el stock producido)."
+                          : "Ingresos: lee los ingresos de la hoja «1. Ingreso»."
+                  }
+                />
+              </p>
               <div className="inline-flex flex-wrap gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1">
                 {(["completo", "ingresos", "produccion", "salida"] as ImportMode[]).map((m) => (
                   <button
@@ -325,16 +342,6 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               {phase === "parsing" ? <Loader2 className="h-9 w-9 animate-spin text-[var(--brand-ink)] dark:text-[var(--text-primary)]" /> : <FileSpreadsheet className="h-9 w-9 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />}
               <div>
                 <p className="text-base font-bold text-[var(--text-primary)]">{phase === "parsing" ? `Leyendo ${fileName}…` : "Elige el Excel del libro (.xlsx)"}</p>
-                <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-                  El mismo que exportas como «Formato oficial SERFOR».{" "}
-                  {mode === "completo"
-                    ? "Se leen las 3 hojas (Ingreso, Producción, Salida) y se importan en orden — Producción resuelve la GTF del ingreso y Salida valida contra lo producido."
-                    : mode === "produccion"
-                      ? "Se leen las corridas de «3. Producción» y su materia prima de «2. Consumos» — importa los Ingresos primero."
-                      : mode === "salida"
-                        ? "Se leen los despachos de «4. Salida». Importa la Producción primero (se valida contra el stock producido)."
-                        : "Se leen los ingresos de la hoja «1. Ingreso»."}
-                </p>
               </div>
             </button>
             <input ref={fileRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
@@ -350,7 +357,10 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                 Descargar plantilla
               </button>
             </div>
-            <p className="text-xs text-[var(--text-tertiary)]">Nada se guarda hasta que confirmes. Las filas inválidas se marcan y no se importan; las que ya existen se saltan (ingresos por GTF, corridas por fecha+producto+especie+cantidad).</p>
+            <p className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+              Nada se guarda hasta que confirmes.
+              <InfoTip icono="ayuda" title="Nada se guarda hasta confirmar" what="Las filas inválidas se marcan y no se importan; las que ya existen se saltan (ingresos por GTF, corridas por fecha+producto+especie+cantidad)." />
+            </p>
 
             {/* Historial de importaciones (auditable — también en Auditoría) */}
             <div className="border-t-2 border-[var(--rule-soft)] pt-3">
@@ -394,13 +404,15 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               {counts.salida > 0 && <Chip tone="info" label={`${counts.salida} despachos`} />}
             </div>
             <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
-              <p className="text-sm font-bold text-[var(--text-primary)]">Se importa el libro en orden de dependencia:</p>
+              <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                Se importa el libro en orden de dependencia:
+                <InfoTip icono="ayuda" title="Cómo se importa" what="Las filas que ya existan se saltan; las que fallen una validación (p. ej. despachar más de lo producido) se reportan sin cortar el resto." />
+              </p>
               <ol className="mt-2 space-y-1.5 text-sm text-[var(--text-secondary)]">
                 <li className="flex items-center gap-2"><StepDot n={1} on={counts.ingresos > 0} /> <span><strong className="text-[var(--text-primary)]">Ingresos</strong> — {counts.ingresos} fila{counts.ingresos === 1 ? "" : "s"}</span></li>
                 <li className="flex items-center gap-2"><StepDot n={2} on={counts.produccion > 0} /> <span><strong className="text-[var(--text-primary)]">Producción</strong> — {counts.produccion} corrida{counts.produccion === 1 ? "" : "s"} (usa las GTF recién ingresadas)</span></li>
                 <li className="flex items-center gap-2"><StepDot n={3} on={counts.salida > 0} /> <span><strong className="text-[var(--text-primary)]">Salida</strong> — {counts.salida} despacho{counts.salida === 1 ? "" : "s"} (valida contra lo producido)</span></li>
               </ol>
-              <p className="mt-3 text-xs text-[var(--text-tertiary)]">Las filas que ya existan se saltan; las que fallen una validación (p. ej. despachar más de lo producido) se reportan sin cortar el resto.</p>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
@@ -485,13 +497,13 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
             {mode === "ingresos" && duplicados.length > 0 && phase !== "done" && (
               <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
+                <span className="flex flex-wrap items-center gap-1.5">
                   <strong>
                     {duplicados.length} {duplicados.length === 1 ? "GTF viene repetida" : "GTF vienen repetidas"} en el archivo
                   </strong>{" "}
                   — {duplicados.slice(0, 3).map((d) => `${d.gtfNumber} (filas ${d.filas.join(", ")})`).join(" · ")}
-                  {duplicados.length > 3 ? ` y ${duplicados.length - 3} más` : ""}. Cada una se importa{" "}
-                  <strong>una sola vez</strong> (la primera); revisa el archivo si esperabas dos ingresos distintos.
+                  {duplicados.length > 3 ? ` y ${duplicados.length - 3} más` : ""}.
+                  <InfoTip icono="ayuda" title="GTF repetidas" what="Cada una se importa UNA SOLA VEZ (la primera); revisa el archivo si esperabas dos ingresos distintos." />
                 </span>
               </p>
             )}
@@ -499,7 +511,10 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
             {resumen.difieren > 0 && (
               <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)]">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Hay filas que ya existen con datos distintos. El importador <strong>solo agrega, no sobrescribe</strong> (un acta del libro no se pisa desde un Excel): corregilas a mano en la línea correspondiente si el archivo trae la versión buena.</span>
+                <span className="flex flex-wrap items-center gap-1.5">
+                  Hay filas que ya existen con datos distintos.
+                  <InfoTip icono="ayuda" title="No sobrescribe" what="El importador SOLO AGREGA, no sobrescribe (un acta del libro no se pisa desde un Excel): corrígelas a mano en la línea correspondiente si el archivo trae la versión buena." />
+                </span>
               </p>
             )}
 
@@ -527,6 +542,12 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                 </tbody>
               </DataTable>
             </div>
+
+            {phase !== "done" && (duplicados.length > 0 || resumen.difieren > 0) && (
+              <p className="text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                Si una guía viene repetida, solo entra la primera; las que ya están en el libro se ignoran.
+              </p>
+            )}
 
             <div className="flex flex-wrap items-center justify-between gap-3">
               {phase === "done" ? (

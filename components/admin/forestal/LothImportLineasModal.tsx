@@ -19,6 +19,7 @@ import {
   TiradorDeVentana,
 } from "@/components/admin/shared/modal-controles-ventana";
 import { DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { AlertTriangle, CheckCircle2, FileUp, Loader2, Upload, X } from "@buleje/design-system/icons";
 import { parseImportLineas, type FilaImport } from "@/lib/forestal/loth-import-lineas";
 import { SECTION_META } from "./LothEntryForm";
@@ -126,13 +127,16 @@ export default function LothImportLineasModal({
           {...ventana.asaProps}
           className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
         >
-          <div>
+          <div className="flex items-center gap-1.5">
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
               Importar · {SECTION_META[section].label}
             </p>
-            <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-              Pega el cuadro de Excel o sube un CSV. Nada se escribe hasta que lo confirmes.
-            </p>
+            <InfoTip
+              title="Cómo importar"
+              what="Pega el cuadro de Excel o sube un CSV."
+              affects="Nada se escribe en el libro hasta que confirmes en «Asentar»."
+              example="Vas a poder destildar filas de la vista previa antes de asentar."
+            />
           </div>
           {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
               esto los controles quedarían flotando en el medio. */}

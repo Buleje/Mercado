@@ -16,6 +16,7 @@ import { CardTitle } from "@buleje/design-system";
 import { ArrowRight, Circle, CheckCircle2, CircleDot } from "@buleje/design-system/icons";
 import { usePuestaEnMarcha } from "@/hooks/use-puesta-en-marcha";
 import type { Capacidad } from "@/lib/forestal/ctp-puesta-en-marcha";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 /**
  * Los tres estados con su forma, no sólo su color: en dark el ámbar y el verde
@@ -102,12 +103,19 @@ function Fila({ c, onIr }: { c: Capacidad; onIr?: (vista: string) => void }) {
     <li className="flex flex-wrap items-start gap-3 px-4 py-3">
       <t.Icono className={`mt-0.5 h-5 w-5 shrink-0 ${t.color}`} aria-label={t.rotulo} />
       <div className="min-w-0 flex-1">
-        <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
+        <p className="flex flex-wrap items-center gap-x-2 text-sm">
           <span className="font-bold text-[var(--text-primary)]">{c.titulo}</span>
+          {/* Qué te da y qué queda trabado, en el ⓘ (2026-09-24): eran dos
+              renglones por fila en una lista de doce. */}
+          <InfoTip
+            title={c.titulo}
+            ancho="w-80"
+            what={c.queDa}
+            affects={c.desbloquea && c.desbloquea.length > 0 ? `Mientras tanto no funciona: ${c.desbloquea.join(" · ")}` : undefined}
+          />
           {/* La medida al lado del nombre: sin el número esto es una opinión. */}
           <span className={`font-mono text-xs tabular-nums ${t.color}`}>{c.medida}</span>
         </p>
-        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{c.queDa}</p>
         {c.paso && <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">{c.paso}</p>}
         {c.detalle && c.detalle.length > 0 && (
           /* Qué papel sale roto y por qué campo. Sin esto, «completá la Ficha»
@@ -121,14 +129,7 @@ function Fila({ c, onIr }: { c: Capacidad; onIr?: (vista: string) => void }) {
             ))}
           </ul>
         )}
-        {c.desbloquea && c.desbloquea.length > 0 && (
-          /* Lo que queda trabado por no arrancar esto. Es la diferencia entre
-             «te falta cargar costos» y «sin eso ningún despacho puede decir
-             cuánto dejó». */
-          <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-            Mientras tanto no funciona: {c.desbloquea.join(" · ")}
-          </p>
-        )}
+
       </div>
       {c.paso && onIr && (
         <button

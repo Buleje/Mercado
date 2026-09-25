@@ -23,6 +23,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Trash2, Trees, Upload } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { especiesSinFoto } from "@/lib/forestal/especies-fotos";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
@@ -146,13 +147,17 @@ export default function EspeciesFotosBiblioteca() {
           <Trees className="h-5 w-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
-            Fotos de referencia por especie
-          </CardTitle>
-          <p className="text-sm text-[var(--text-secondary)]">
-            La foto aparece al lado del nombre en Ingresos y Trozas. Sirve para que quien recibe la madera no
-            confunda dos especies parecidas — no reemplaza la identificación del documento.
-          </p>
+          <span className="flex items-center gap-1.5">
+            <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+              Fotos de referencia por especie
+            </CardTitle>
+            <InfoTip
+              title="Fotos de referencia por especie"
+              what="La foto aparece al lado del nombre en Ingresos y Trozas."
+              affects="Sirve para que quien recibe la madera no confunda dos especies parecidas — no reemplaza la identificación del documento."
+              example="Tornillo y Shihuahuaco se confunden en trozas recién taladas: la foto de referencia ayuda a distinguirlas."
+            />
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <input

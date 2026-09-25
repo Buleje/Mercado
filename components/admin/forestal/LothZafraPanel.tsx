@@ -12,6 +12,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, CheckCircle2, TrendingUp } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ZAFRA_ESTADO_LABEL, ZAFRA_ESTADO_TONE, type ZafraAnalisis } from "@/lib/forestal/loth-zafra";
 import { BloquePlan } from "./loth-plan-ui";
 
@@ -57,9 +58,16 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
       id="loth-plan-zafra"
       titulo="Zafra · avance contra la vigencia"
       sub={
-        zafra.diasTotales > 0
-          ? `${zafra.diasTranscurridos} de ${zafra.diasTotales} días · quedan ${zafra.diasRestantes}`
-          : "Sin vigencia cargada en el plan"
+        <>
+          {zafra.diasTotales > 0
+            ? `${zafra.diasTranscurridos} de ${zafra.diasTotales} días · quedan ${zafra.diasRestantes}`
+            : "Sin vigencia cargada en el plan"}
+          <InfoTip
+            title="Cómo se calcula la meta mensual"
+            what="Es un reparto lineal del volumen autorizado sobre la vigencia: sirve de referencia."
+            affects="No reemplaza el cronograma aprobado en el plan."
+          />
+        </>
       }
       acciones={
         <span className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black uppercase tracking-wide ${TONE_CLASS[tone]}`}>
@@ -82,17 +90,17 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
         {/* Dos por fila desde el celular: de a una, las cuatro cifras se
             llevaban una pantalla entera a 400 px. */}
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          <Dato label="Saldo por movilizar" valor={`${zafra.saldoM3.toFixed(3)} m³`} />
-          <Dato label="Ritmo actual" valor={`${zafra.ritmoActualM3Dia.toFixed(3)} m³/día`} />
+          <Dato label="Saldo por movilizar" valor={`${Number(zafra.saldoM3).toFixed(3)} m³`} />
+          <Dato label="Ritmo actual" valor={`${Number(zafra.ritmoActualM3Dia).toFixed(3)} m³/día`} />
           <Dato
             label="Ritmo requerido"
-            valor={zafra.diasRestantes > 0 ? `${zafra.ritmoRequeridoM3Dia.toFixed(3)} m³/día` : "—"}
+            valor={zafra.diasRestantes > 0 ? `${Number(zafra.ritmoRequeridoM3Dia).toFixed(3)} m³/día` : "—"}
             sub={zafra.diasRestantes > 0 ? `para los ${zafra.diasRestantes} días que quedan` : "vigencia cerrada"}
           />
           <Dato
             label="Proyección al cierre"
-            valor={`${zafra.proyeccionCierreM3.toFixed(2)} m³`}
-            sub={zafra.riesgoNoMovilizadoM3 > 0 ? `${zafra.riesgoNoMovilizadoM3.toFixed(2)} m³ en riesgo` : "sin saldo en riesgo"}
+            valor={`${Number(zafra.proyeccionCierreM3).toFixed(2)} m³`}
+            sub={zafra.riesgoNoMovilizadoM3 > 0 ? `${Number(zafra.riesgoNoMovilizadoM3).toFixed(2)} m³ en riesgo` : "sin saldo en riesgo"}
             tone={zafra.riesgoNoMovilizadoM3 > 0 ? "warning" : "success"}
           />
         </div>
@@ -118,8 +126,8 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
                     className={`border-t border-[var(--rule-subtle)] ${m.actual ? "bg-[var(--brand-ink)]/8 font-bold" : ""}`}
                   >
                     <td className="px-3 py-1.5 capitalize text-[var(--text-primary)]">{m.label}</td>
-                    <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{m.metaMesM3.toFixed(3)}</td>
-                    <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{m.metaAcumuladaM3.toFixed(3)}</td>
+                    <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{Number(m.metaMesM3).toFixed(3)}</td>
+                    <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{Number(m.metaAcumuladaM3).toFixed(3)}</td>
                     <td className="px-3 py-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
                       {m.actual ? "En curso" : m.transcurrido ? "Transcurrido" : "Por venir"}
                     </td>
@@ -140,10 +148,6 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
           )}
           </>
         )}
-        <p className="text-xs text-[var(--text-tertiary)]">
-          La meta mensual es un reparto lineal del volumen autorizado sobre la vigencia — sirve de referencia, no reemplaza el
-          cronograma aprobado en el plan.
-        </p>
       </div>
     </BloquePlan>
   );

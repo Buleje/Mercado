@@ -13,6 +13,7 @@
  */
 
 import { AlertTriangle, Boxes, Clock, PackageOpen, Truck } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { TrazaGrafo } from "@/lib/db/forest-ctp.db";
 import {
   fechaCorta,
@@ -107,12 +108,15 @@ export default function CtpRadarCronologia({
       {/* Anomalías accionables */}
       {t.anomalias.length > 0 && (
         <div className="rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 dark:bg-[var(--data-error-500)]/12">
-          <p className="mb-1 flex items-center gap-2 font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          <p className="mb-3 flex items-center gap-2 font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             {t.anomalias.length === 1 ? "Una fecha imposible" : `${t.anomalias.length} fechas imposibles`}
-          </p>
-          <p className="mb-3 text-sm text-[var(--text-secondary)]">
-            Un eslabón no puede ser anterior a aquel del que sale. Suele ser un error de tipeo en la fecha, pero es exactamente lo que una fiscalización cruza contra las guías.
+            <InfoTip
+              icono="ayuda"
+              title="Fecha imposible"
+              what="Un eslabón no puede ser anterior a aquel del que sale."
+              affects="Suele ser un error de tipeo en la fecha, pero es exactamente lo que una fiscalización cruza contra las guías."
+            />
           </p>
           <ul className="space-y-2">
             {t.anomalias.map((a, i) => (
@@ -132,6 +136,15 @@ export default function CtpRadarCronologia({
       )}
 
       {/* Eje */}
+      <div className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        Línea de tiempo
+        <InfoTip
+          icono="ayuda"
+          title="Cómo se lee la cronología"
+          what="Cada punto es una línea del libro en su fecha."
+          affects="Una línea roja punteada va hacia atrás en el tiempo: el eslabón de destino es anterior al de origen."
+        />
+      </div>
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3">
         <svg viewBox={`0 0 ${W} ${H}`} width={W} className="max-w-none" style={{ minWidth: "100%" }} role="img" aria-label="Cronología de la cadena de custodia">
           {CARRILES.map((c, i) => (
@@ -170,9 +183,6 @@ export default function CtpRadarCronologia({
           ))}
         </svg>
       </div>
-      <p className="text-xs text-[var(--text-tertiary)]">
-        Cada punto es una línea del libro en su fecha. Una línea roja punteada va hacia atrás en el tiempo: el eslabón de destino es anterior al de origen.
-      </p>
     </div>
   );
 }

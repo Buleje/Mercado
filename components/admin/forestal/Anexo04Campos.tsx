@@ -30,6 +30,7 @@ import {
   TiradorDeVentana,
 } from "@/components/admin/shared/modal-controles-ventana";
 import { ArrowRight, Check, ImageIcon, List, MessageSquare, Trash2, UserPlus, X } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   fmtAnexo, siguienteCorrelativo, type Anexo04, type DatosAnexo04, type EmisorGuardado,
 } from "@/lib/forestal/anexo04-serfor";
@@ -202,13 +203,11 @@ function ObservacionesModal({
           {...ventana.asaProps}
           className="flex items-start justify-between gap-3"
         >
-          <div>
+          <div className="flex items-center gap-2">
             <h4 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
               <MessageSquare className="h-4 w-4 text-[var(--accent)]" /> (12) Observaciones
             </h4>
-            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-              Es una declaración jurada: lo que dice acá lo escribe quien firma. Vacío no imprime nada.
-            </p>
+            <InfoTip icono="ayuda" title="(12) Observaciones" what="Es una declaración jurada: lo que dice acá lo escribe quien firma." example="Vacío no imprime nada." />
           </div>
           {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
               esto los controles quedarían flotando en el medio. */}
@@ -439,16 +438,20 @@ export default function Anexo04Campos({
                 <option value="m3">m³</option>
               </select>
             </label>
-            <label className="block"><span className={LABEL}>Filas por bloque</span>
-              <select value={datos.modo} onChange={(e) => onChange({ modo: e.target.value as DatosAnexo04["modo"] })} className={`mt-1 ${INPUT}`}>
-                <option value="oficial">35 (oficial)</option>
-                <option value="compacto">Solo las usadas</option>
-              </select>
-            </label>
+            <div className="block">
+              <div className={`${LABEL} flex items-center gap-1`}>
+                <span aria-hidden="true">Filas por bloque</span>
+                <InfoTip icono="ayuda" title="Filas por bloque" what="Un bloque por especie + tipo de producto, sin mezclarse." example="Si una combinación pasa de 35 piezas, sigue en el bloque siguiente." />
+              </div>
+              <label className="block">
+                <span className="sr-only">Filas por bloque</span>
+                <select value={datos.modo} onChange={(e) => onChange({ modo: e.target.value as DatosAnexo04["modo"] })} className={`mt-1 ${INPUT}`}>
+                  <option value="oficial">35 (oficial)</option>
+                  <option value="compacto">Solo las usadas</option>
+                </select>
+              </label>
+            </div>
           </div>
-          <p className="text-[length:var(--ts-2xs)] leading-relaxed text-[var(--text-tertiary)]">
-            Un bloque por especie + tipo de producto, sin mezclarse. Si una combinación pasa de 35 piezas, sigue en el bloque siguiente.
-          </p>
         </>
       )}
 
@@ -498,14 +501,14 @@ export default function Anexo04Campos({
       {tab === "papeleria" && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <span className={LABEL}>Logo, firma y sello del emisor</span>
+            <span className={`${LABEL} flex items-center gap-1`}>
+              Logo, firma y sello del emisor
+              <InfoTip icono="ayuda" title="Logo, firma y sello" what="Se guardan en este equipo y salen en todos los anexos que emitas." example="PNG con fondo transparente es lo que mejor imprime." />
+            </span>
             <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
               {[datos.logo, datos.firma, datos.sello].filter(Boolean).length}/3 guardados
             </span>
           </div>
-          <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">
-            Se guardan en este equipo y salen en todos los anexos que emitas. PNG con fondo transparente es lo que mejor imprime.
-          </p>
           <div className="mt-2 grid grid-cols-3 gap-2">
             <ImagenGuardada
               src={datos.logo}

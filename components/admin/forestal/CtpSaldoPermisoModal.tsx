@@ -34,6 +34,7 @@ import {
   RefreshCw,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn } from "./ctp-shared";
 import { useSaldoPermisos } from "./hooks/use-saldo-permisos";
 import AsignarPermisoMasivo from "./ctp-saldo-asignar-permiso";
@@ -192,10 +193,19 @@ export default function CtpSaldoPermisoModal({
           <>
             {/* Elegir permiso y con qué rolliza se compara */}
             <div className="flex flex-wrap items-end gap-2">
-              <label className="min-w-56 flex-1">
-                <span className="mb-1 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                  N° de permiso (título habilitante)
-                </span>
+              <div className="min-w-56 flex-1">
+<div className="mb-1 flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+<span aria-hidden="true" className="contents">N° de permiso (título habilitante)</span>
+<InfoTip
+                    icono="ayuda"
+                    title="Cómo se arma este cálculo"
+                    what="La rolliza sale de las trozas cuya guía declara este permiso. El 56 % es el techo de rendimiento de la plaza (ADR-358): «aserrable» es un máximo, nunca lo que la sierra va a sacar."
+                    affects="Sólo se resta la producción declarada SIN LOTE que cita este permiso: una corrida que ya consumió trozas descontó su madera del patio, y restarla otra vez la contaría dos veces. No escribe nada en el libro: es una simulación."
+                    example={`«${SIN_PERMISO}» junta lo que no declaró título habilitante — se corrige en la guía o en el asiento.`}
+                  />
+</div>
+<label className="block">
+<span className="sr-only">N° de permiso (título habilitante)</span>
                 <select
                   value={saldo?.permiso ?? ""}
                   onChange={(e) => setElegido(e.target.value)}
@@ -212,6 +222,7 @@ export default function CtpSaldoPermisoModal({
                   ))}
                 </select>
               </label>
+</div>
               <div
                 role="group"
                 aria-label="Qué rolliza se mira"
@@ -280,16 +291,18 @@ export default function CtpSaldoPermisoModal({
                 </div>
 
                 {saldo.hayExceso && (
-                  <p className="flex items-start gap-2 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-3 py-2 text-sm text-[var(--text-secondary)]">
+                  <p className="flex items-center gap-2 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-3 py-2 text-sm text-[var(--text-secondary)]">
                     <AlertTriangle
-                      className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-error-500)]"
+                      className="h-4 w-4 shrink-0 text-[var(--data-error-500)]"
                       aria-hidden
                     />
-                    <span>
-                      Hay especies con <b>sobrante negativo</b>: se declaró sin lote más producto
-                      del que esta rolliza puede dar al 56 %. O falta cargar la madera que lo
-                      respalda, o esa producción pertenece a otro permiso.
-                    </span>
+                    <b className="text-[var(--text-primary)]">Hay especies con sobrante negativo</b>
+                    <InfoTip
+                      icono="ayuda"
+                      title="Sobrante negativo"
+                      what="Se declaró sin lote más producto del que esta rolliza puede dar al 56 %."
+                      affects="Falta cargar la madera que lo respalda, o esa producción pertenece a otro permiso."
+                    />
                   </p>
                 )}
 
@@ -347,34 +360,33 @@ export default function CtpSaldoPermisoModal({
                 )}
 
                 {saldo.sinUnidadM3.length > 0 && (
-                  <p className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--text-secondary)]">
-                    {saldo.sinUnidadM3.length} corrida(s) de este permiso no declaran en m³ (pt, kg
-                    o unidad):
-                    <b> no se restan</b>. Convertirlas acá sería inventar un volumen que el libro no
-                    dice.
+                  <p className="flex items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--text-secondary)]">
+                    <b className="text-[var(--text-primary)]">
+                      {saldo.sinUnidadM3.length} corrida(s) sin m³: no se restan
+                    </b>
+                    <InfoTip
+                      icono="ayuda"
+                      title="Sin unidad en m³"
+                      what="Declaran en pt, kg u otra unidad, no en m³."
+                      affects="Convertirlas acá sería inventar un volumen que el libro no dice."
+                    />
                   </p>
                 )}
               </>
             )}
 
             {datos.patio.truncado && (
-              <p className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--text-secondary)]">
-                El patio tiene {fmtPiezas(datos.patio.total)} piezas y esta lectura trajo{" "}
-                {fmtPiezas(datos.patio.leidas)}: la rolliza que se ve acá es la de esas piezas, no
-                la del patio entero.
+              <p className="flex items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--text-secondary)]">
+                <b className="text-[var(--text-primary)]">
+                  Lectura parcial: {fmtPiezas(datos.patio.leidas)} de {fmtPiezas(datos.patio.total)} piezas
+                </b>
+                <InfoTip
+                  icono="ayuda"
+                  title="Patio truncado"
+                  what="La rolliza que se ve acá es la de las piezas que se leyeron, no la del patio entero."
+                />
               </p>
             )}
-
-            <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
-              <b>Cómo se arma.</b> La rolliza sale de las trozas cuya guía declara este permiso. El{" "}
-              <b>56 % es el techo de rendimiento de la plaza</b> (ADR-358): «aserrable» es un
-              máximo, no lo que la sierra va a sacar. Se resta{" "}
-              <b>sólo la producción declarada sin lote</b> que cita este permiso — una corrida que
-              consumió trozas ya descontó su madera del patio, y restarla otra vez contaría dos
-              veces lo mismo. Nada de esto escribe en el libro: es un apartado de simulación.
-              {saldo?.permiso == null &&
-                ` «${SIN_PERMISO}» junta lo que no declaró título habilitante: eso se corrige en la guía o en el asiento.`}
-            </p>
           </>
         )}
       </div>

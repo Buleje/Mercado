@@ -10,6 +10,7 @@
  * tiene. Lo que ya tiene especie nunca se pisa: eso era lo que perdía la real.
  */
 import { AlertTriangle } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtPiezas } from "@/lib/forestal/cubicacion-formato";
 
 export default function CtpAvisoSinEspecie({
@@ -32,15 +33,16 @@ export default function CtpAvisoSinEspecie({
       />
       {/* El `role="alert"` va en el texto, no en la caja: con el selector adentro,
           el lector anunciaba las catorce especies de la lista como parte del aviso. */}
-      <div role="alert" className="min-w-0 flex-1 basis-[16rem] text-sm text-[var(--text-primary)]">
+      <div role="alert" className="flex min-w-0 flex-1 basis-[16rem] items-start gap-1.5 text-sm text-[var(--text-primary)]">
         <p className="font-bold">
           {piezas === 1 ? "1 pieza" : `${fmtPiezas(piezas)} piezas`} ({medidas}{" "}
           {medidas === 1 ? "medida" : "medidas"}) sin especie: así no se puede registrar.
         </p>
-        <p className="mt-0.5 text-[var(--text-secondary)]">
-          Vuelve a cubicar y pónsela en la columna <b>Especie</b> de la tabla, o elige acá la de
-          esas piezas (las que ya tienen especie no cambian).
-        </p>
+        <InfoTip
+          title="Piezas sin especie"
+          what="Vuelve a cubicar y pónsela en la columna Especie de la tabla."
+          affects="O elige acá la especie para esas piezas: las que ya tienen especie no cambian."
+        />
       </div>
       <select
         value=""

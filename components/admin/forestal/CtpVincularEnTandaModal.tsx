@@ -23,6 +23,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, Layers, Loader2, X } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -231,12 +232,18 @@ export default function CtpVincularEnTandaModal({
       >
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="min-w-0">
-            <h3 className="flex items-center gap-2 font-display text-lg text-[var(--text-primary)]">
-              <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Ponerles el lote
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="flex items-center gap-2 font-display text-lg text-[var(--text-primary)]">
+                <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Ponerles el lote
+              </h3>
+              <InfoTip
+                title="Ponerles el lote"
+                what="Las corridas no cambian: siguen siendo las mismas, sólo pasan a decir de qué madera salieron."
+                affects="Se escribe de a una y en orden. Si una falla, se para ahí y se dice cuántas alcanzaron a quedar."
+              />
+            </div>
             <p className="text-xs text-[var(--text-tertiary)]">
               {corridas.length} producci{corridas.length === 1 ? "ón marcada" : "ones marcadas"} sin materia prima.
-              Siguen siendo las mismas: sólo pasan a decir de qué madera salieron.
             </p>
           </div>
           <button
@@ -251,10 +258,15 @@ export default function CtpVincularEnTandaModal({
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5 sm:px-6">
           {especies.length > 1 && (
-            <p className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--text-secondary)]">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
-              Marcaste {especies.length} especies distintas y un lote es de una sola. Las que no
-              coincidan van a quedar afuera — destildalas o hacelas en otra tanda.
+            <p className="flex items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--text-secondary)]">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
+              Marcaste {especies.length} especies distintas: un lote es de una sola. Las que no coincidan con el
+              lote van a quedar afuera.
+              <InfoTip
+                icono="ayuda"
+                title="Especies mezcladas"
+                what="Destíldalas, o hazlas en otra tanda."
+              />
             </p>
           )}
 

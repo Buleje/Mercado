@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Pencil, Undo2, Check, X, Layers, MapPin, Loader2, Maximize, Minimize, Edit3, Trash2, Locate, Tag, Route, Navigation, Download } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { BRAND_GEO } from "@/lib/geo";
 import { geodesicAreaM2, haversineM, formatDist } from "@/lib/cacao/geo-area";
 import { pointInPolygon } from "@/lib/forestal/loth-geo";
@@ -777,8 +778,14 @@ export default function CtpPlantaMapa({
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="max-w-xs rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">
               <span className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Pencil className="h-6 w-6" /></span>
-              <p className="text-sm font-bold text-[var(--text-primary)]">Dibuja la primera zona de tu aserradero</p>
-              <p className="mt-1 text-xs text-[var(--text-secondary)]">Toca “Dibujar zona”, marca el contorno del patio de trozas, la sierra o el despacho, y asígnale su tipo. Aparecerá coloreada en el mapa.</p>
+              <p className="flex items-center justify-center gap-1 text-sm font-bold text-[var(--text-primary)]">
+                Dibuja la primera zona de tu aserradero
+                <InfoTip
+                  title="Dibujar una zona"
+                  what="Toca «Dibujar zona», marca el contorno del patio de trozas, la sierra o el despacho, y asígnale su tipo."
+                  affects="Aparecerá coloreada en el mapa."
+                />
+              </p>
               <button type="button" onClick={startDraw} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Pencil className="h-4 w-4" /><span className="hidden sm:inline">Dibujar zona</span></button>
             </div>
           </div>
@@ -867,8 +874,15 @@ function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; 
     >
       <ModalBody className="space-y-4">
         <div>
-          <p className="mb-1 text-sm font-bold text-[var(--text-primary)]">Crear zona por coordenadas</p>
-          <p className="mb-2 text-xs text-[var(--text-tertiary)]">Pega los vértices, una coordenada por línea: <span className="font-mono">latitud, longitud</span>. Se cierra el polígono solo.</p>
+          <p className="mb-2 flex items-center gap-1 text-sm font-bold text-[var(--text-primary)]">
+            Crear zona por coordenadas
+            <InfoTip
+              title="Zona por coordenadas"
+              what="Pega los vértices, una coordenada por línea: latitud, longitud."
+              affects="Se cierra el polígono solo."
+              example={"-8.38200, -74.53100\n-8.38150, -74.52950"}
+            />
+          </p>
           <textarea value={text} onChange={(e) => { setText(e.target.value); setError(null); }} rows={6} placeholder={"-8.38200, -74.53100\n-8.38150, -74.52950\n-8.38300, -74.52980"} className={`${I} h-auto py-2 font-mono`} />
         </div>
         <div className="border-t border-[var(--rule-base)] pt-4">
@@ -948,6 +962,7 @@ function AsignarZonaModal({ poligono, suggest, onClose, onSaved }: { poligono: [
         </div>
         <CampoGrid>
           <Field label="Código" required span={6}>
+            {/* eslint-disable-next-line jsx-a11y/no-autofocus -- primer campo al abrir el formulario de zona, foco intencional */}
             <input value={f.codigo} onChange={(e) => setF((s) => ({ ...s, codigo: e.target.value }))} placeholder="PT-01" className={`${I} font-mono uppercase`} autoFocus />
           </Field>
           <Field label="Nombre" span={6}>

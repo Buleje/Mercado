@@ -13,7 +13,8 @@
  * atribución que después sostiene el certificado de trazabilidad (I4/I5).
  */
 
-import { Boxes, Info, Ruler, Trash2, TreePine } from "@buleje/design-system/icons";
+import { Boxes, Ruler, Trash2, TreePine } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   leyendaDeVenta,
   piezasTotales,
@@ -91,10 +92,11 @@ export default function CtpListaProductosTab({
               <Ruler className="h-4 w-4" /> Cubicar madera
             </Btn>
           )}
-          <p className="flex items-start gap-1.5 text-xs text-[var(--text-tertiary)]">
-            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Cada renglón guarda de dónde salió —la corrida o la guía de ingreso—: eso es lo que después permite emitir el certificado.
-          </p>
+          <InfoTip
+            title="Lista de trozas / productos"
+            what="Cada renglón guarda de dónde salió —la corrida o la guía de ingreso—."
+            affects="Eso es lo que después permite emitir el certificado."
+          />
         </div>
       </Bloque>
 
@@ -165,7 +167,7 @@ export default function CtpListaProductosTab({
                   className={CELDA_NUM}
                 />
                 <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                  {f.trozaId ? "mide" : "saldo"} {f.disponibleCorrida.toFixed(4)}
+                  {f.trozaId ? "mide" : "saldo"} {Number(f.disponibleCorrida).toFixed(4)}
                 </div>
               </td>
               <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{MEDIDA[f.unidad] ?? f.unidad}</td>
@@ -251,7 +253,7 @@ export default function CtpListaProductosTab({
                 <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie}</td>
                 <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">{productLabel(r.producto)}</td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(r.cantidad)}</td>
-                <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{r.volumen.toFixed(4)}</td>
+                <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{Number(r.volumen).toFixed(4)}</td>
               </tr>
             ))}
           </TbodyCtp>

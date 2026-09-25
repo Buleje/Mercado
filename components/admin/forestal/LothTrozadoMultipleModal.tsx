@@ -19,6 +19,7 @@ import {
   TiradorDeVentana,
 } from "@/components/admin/shared/modal-controles-ventana";
 import { DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { AlertTriangle, Loader2, Plus, Scissors, Trash2, X } from "@buleje/design-system/icons";
 import { smalianVolume, type LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -154,13 +155,16 @@ export default function LothTrozadoMultipleModal({
           {...ventana.asaProps}
           className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
         >
-          <div>
+          <div className="flex items-center gap-1.5">
             <p className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
               <Scissors className="h-4 w-4" /> Trozar un árbol
             </p>
-            <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-              Todas las trozas del mismo fuste, de una vez. El código y el volumen salen solos.
-            </p>
+            <InfoTip
+              title="Trozar un árbol"
+              what="Todas las trozas del mismo fuste, de una vez."
+              affects="El código (A, B, C…) y el volumen (Smalian) salen solos por renglón."
+              example="Eliges el árbol 001-TOR y cargas sus 5 trozas sin volver a tipear especie ni fecha."
+            />
           </div>
           {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
               esto los controles quedarían flotando en el medio. */}

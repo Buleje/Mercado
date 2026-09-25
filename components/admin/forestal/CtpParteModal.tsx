@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Copy, Download, Loader2, MessageCircle, Save, Users } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { logger } from "@/lib/logger";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
 import { ubigeoDeNombres } from "@/lib/peru-ubigeo";
@@ -680,8 +681,17 @@ export default function CtpParteModal({
 
           {parecidas.length > 0 && (
             <div className="col-span-12 rounded-xl border border-[var(--data-warning-500)]/50 bg-[var(--data-warning-100)] px-3 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
-              <p className="font-bold">
+              <p className="flex items-center gap-1 font-bold">
                 {parecidas.length === 1 ? "Ya hay una ficha parecida" : `Ya hay ${parecidas.length} fichas parecidas`}
+                <InfoTip
+                  title="Ficha parecida"
+                  what={
+                    onUsarExistente
+                      ? "Si es la misma, toca el botón y seguimos con esa."
+                      : "Si es la misma, cancela y edita la que ya existe."
+                  }
+                  affects="Si de verdad son dos, sigue cargando: esto es sólo un aviso."
+                />
               </p>
               <ul className="mt-1 space-y-0.5">
                 {parecidas.slice(0, 3).map((p) => (
@@ -705,11 +715,6 @@ export default function CtpParteModal({
                   ))}
                 </div>
               )}
-              <p className="mt-1 opacity-90">
-                {onUsarExistente
-                  ? "Si es la misma, tocá el botón y seguimos con esa. Si de verdad son dos, seguí cargando: esto es sólo un aviso."
-                  : "Si es la misma, cancela y edita la que ya existe. Si de verdad son dos, sigue: esto es sólo un aviso."}
-              </p>
             </div>
           )}
         </Seccion>
@@ -764,7 +769,14 @@ export default function CtpParteModal({
             {esProveedor && (
               <>
                 <div className="sm:col-span-12">
-                  <span className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">Categoría</span>
+                  <span className="mb-1.5 flex items-center gap-1 text-xs font-bold text-[var(--text-secondary)]">
+                    Categoría
+                    <InfoTip
+                      title="Categoría"
+                      what="Decide qué pide este bloque."
+                      affects="Una CCNN extrae con título habilitante; un aserradero tiene su propio Código de CTP."
+                    />
+                  </span>
                   <div className="flex flex-wrap gap-2">
                     {CATEGORIAS_PARTE.map((cat) => {
                       const on = categoriaProveedor === cat;
@@ -785,9 +797,6 @@ export default function CtpParteModal({
                       );
                     })}
                   </div>
-                  <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    Decide qué pide este bloque: una CCNN extrae con título habilitante, un aserradero tiene su propio Código de CTP.
-                  </p>
                 </div>
                 {categoriaProveedor === "ccnn" && (
                   <>

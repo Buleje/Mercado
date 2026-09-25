@@ -19,6 +19,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, Target, TreePine } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ModuleActionMenu, type ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
@@ -1824,9 +1825,13 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         )}
 
         {bloques.length === 0 ? (
-          <p className="py-3 text-center text-sm text-[var(--text-tertiary)]">
-            Carga la rolliza que entró (GTF, lote o troza) para distribuirla sobre lo que salió aserrado — o, si la
-            madera ya vino aserrada, agrega un bloque de <b>Madera ya aserrada</b> y pon directamente su m³ y sus piezas.
+          <p className="flex items-center justify-center gap-1.5 py-3 text-center text-sm text-[var(--text-tertiary)]">
+            Carga la rolliza que entró, o un bloque ya aserrado.
+            <InfoTip
+              title="Bloques del reparto"
+              what="Carga la rolliza que entró (GTF, lote o troza) para distribuirla sobre lo que salió aserrado."
+              affects="Si la madera ya vino aserrada, agrega un bloque de «Madera ya aserrada» y pon directamente su m³ y sus piezas."
+            />
           </p>
         ) : (
           <div className="overflow-x-auto">

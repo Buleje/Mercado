@@ -50,6 +50,7 @@ import { printCumplimiento } from "@/lib/forestal/ctp-cumplimiento-print";
 import { ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
 import { formatNumber } from "@/lib/format";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 type ComplianceNavTarget = "ingresos" | "saldos" | "despacho" | "produccion" | "ficha";
 type Severity = "error" | "warning";
@@ -615,9 +616,11 @@ function ProblemCard({ check, onNavigate }: { check: CheckDescriptor; onNavigate
     <AlertComp
       icon={check.icon}
       title={check.title}
+      /* A la vista, qué hay que hacer; el porqué (la norma, las GTF
+         afectadas) en el ⓘ — Brandon 2026-09-24, «mucho texto». */
       description={
         <>
-          {check.description} <strong>{check.action}</strong>
+          <strong>{check.action}</strong> <InfoTip title={check.title} ancho="w-80" what={check.description} />
         </>
       }
       action={

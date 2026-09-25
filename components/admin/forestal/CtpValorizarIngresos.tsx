@@ -23,6 +23,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardTitle, StatCard } from "@buleje/design-system";
 import { AlertCircle, CheckCircle2, Coins, Loader2, PackageOpen, Percent } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { formatDateShort, formatNumber } from "@/lib/format";
 
@@ -288,10 +289,12 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
        */}
       {porProveedor.length > 0 && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
-          <p className="text-sm font-bold text-[var(--text-primary)]">Cargar un precio por m³ a todo un proveedor</p>
-          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-            Se multiplica por el volumen de cada ingreso y se guarda el total, como si lo cargaras uno
-            por uno.
+          <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+            Cargar un precio por m³ a todo un proveedor
+            <InfoTip
+              title="Precio por proveedor"
+              what="Se multiplica por el volumen de cada ingreso y se guarda el total, como si lo cargaras uno por uno."
+            />
           </p>
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <label className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-sm">

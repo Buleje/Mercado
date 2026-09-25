@@ -172,6 +172,7 @@ export default function CtpConsumosPatio({
             filtros={<NotaFiltrosKpi nota={nota} onLimpiar={patio.limpiar} />}
             trabajoActivo={trabajando}
             cargando={lotes.cargando}
+            acotadoA={loteElegido?.speciesCommon ?? undefined}
           />
         }
       />
@@ -258,7 +259,7 @@ export default function CtpConsumosPatio({
             ahora={patio.ahora}
             accion={accion}
             barra={barra}
-            descripcion={
+            ayuda={
               lotesAbiertos.length > 0
                 ? "Para llevar piezas a la sierra, elige un lote en «Consumir en un lote…»: la tabla se acota a su especie y se tildan las piezas."
                 : undefined

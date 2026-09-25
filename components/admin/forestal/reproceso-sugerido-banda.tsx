@@ -20,6 +20,7 @@
  */
 
 import { RefreshCw, X } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { BorradorDeReproceso } from "@/lib/forestal/reproceso-borrador";
 
@@ -119,10 +120,13 @@ export default function ReprocesoSugeridoBanda({
       ) : (
         /* Sin candidata no se inventa una: el reproceso se declara contra una
            corrida que existe y tiene saldo, o no se declara. */
-        <p className="mt-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
-          Ninguna corrida con saldo declara <b>{borrador.desdeTipo}</b>. Reprocesa desde la corrida
-          que corresponda —el botón de la fila— y el producto que sale ya viene puesto; si esa madera
-          no está en el Libro, primero hay que declarar su producción.
+        <p className="mt-1.5 flex flex-wrap items-center gap-1 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
+          Ninguna corrida con saldo declara <b>{borrador.desdeTipo}</b>.
+          <InfoTip
+            title="Sin candidata"
+            what="Reprocesa desde la corrida que corresponda — el botón de su fila — y el producto que sale ya viene puesto."
+            affects="Si esa madera no está en el Libro, primero hay que declarar su producción."
+          />
         </p>
       )}
     </div>

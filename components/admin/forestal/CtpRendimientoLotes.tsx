@@ -23,6 +23,7 @@
 
 import { AlertTriangle, CheckCircle2, TrendingDown } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   RENDIMIENTO_META,
   RENDIMIENTO_PLAUSIBLE_MAX,
@@ -73,26 +74,26 @@ export default function CtpRendimientoLotes({ filas }: { filas: ReadonlyArray<Fi
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-          Rendimiento de cada lote, contra su referencia
-        </CardTitle>
+        <span className="flex items-center gap-1.5">
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+            Rendimiento de cada lote, contra su referencia
+          </CardTitle>
+          <InfoTip
+            title="Rendimiento de cada lote"
+            what={`La franja es el rango creíble de un aserrío (${RENDIMIENTO_PLAUSIBLE_MIN}–${RENDIMIENTO_PLAUSIBLE_MAX} %) y la marca es la meta de la planta (${META_PCT.toFixed(0)} %).`}
+            affects="Fuera de la franja, el número casi siempre es un error de carga antes que un problema de sierra."
+            example="Un lote al 82 % de rendimiento no es una sierra genial: es una troza mal medida."
+          />
+        </span>
         <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           Lectura · no va en el formato
         </span>
       </div>
-      <p className="mb-3 text-xs text-[var(--text-tertiary)]">
-        La franja es el rango creíble de un aserrío ({RENDIMIENTO_PLAUSIBLE_MIN}–{RENDIMIENTO_PLAUSIBLE_MAX} %) y la
-        marca es la meta de la planta ({META_PCT.toFixed(0)} %). Fuera de la franja, el número casi siempre es un
-        error de carga antes que un problema de sierra.
-        {fuera > 0 && (
-          <>
-            {" "}
-            <strong className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-              {fuera} {fuera === 1 ? "lote está" : "lotes están"} fuera de rango.
-            </strong>
-          </>
-        )}
-      </p>
+      {fuera > 0 && (
+        <p className="mb-3 text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          {fuera} {fuera === 1 ? "lote está" : "lotes están"} fuera de rango.
+        </p>
+      )}
 
       <ul className="space-y-3">
         {conDato.map((f) => {

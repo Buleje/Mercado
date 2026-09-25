@@ -24,6 +24,7 @@
 import { useCallback, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Boxes, Gauge, Layers, Loader2 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { guardarProduccionDeCorrida, mensajeCobroAserrio, paquetesYaDeclarados } from "./hooks/guardar-produccion-corrida";
 import {
   RENDIMIENTO_TOPE_PCT,
@@ -174,30 +175,25 @@ export default function CtpProduccionPendiente({
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           {titulo}
         </CardTitle>
-        <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-          Ya declararon producción y su madera todavía admite más. Si al otro día salió el resto de esa misma
-          corrida, se agrega acá — <b>sin volver a elegir trozas</b>: esa materia prima ya entró a la sierra.
-        </p>
+        <InfoTip
+          title="Producción a medio declarar"
+          what="Ya declararon producción y su madera todavía admite más: si al otro día salió el resto de esa misma corrida, se agrega acá, sin volver a elegir trozas — esa materia prima ya entró a la sierra."
+          affects={`El ${RENDIMIENTO_TOPE_PCT} % es un techo, no una meta: agrega sólo lo que de verdad salió de la sierra. Llenarlo "por las dudas" es lo que un fiscalizador lee como madera metida de otro lado.`}
+          example="Entraron 3 trozas ayer, salieron 2 paquetes y hoy sale el resto: se completa la misma corrida N°, sin tocar el consumo."
+        />
       </header>
 
       {/**
-       * El techo NO es una meta (ADR-358). Dicho acá, donde se ve el margen: una
-       * corrida que rindió 40 % puede estar perfecta, y llenar hasta el 56 % «por
-       * las dudas» es exactamente lo que un fiscalizador lee como madera metida
-       * de otro lado.
+       * El techo NO es una meta (ADR-358). Dicho en el ⓘ; acá sólo queda la
+       * instrucción de qué hacer con lo que le sobra al lote.
        */}
-      <p className="px-1 text-sm text-[var(--text-tertiary)]">
-        El {RENDIMIENTO_TOPE_PCT} % es un <b>techo, no una meta</b>: agrega sólo lo que de verdad salió de la
-        sierra.
-        {piezasLibres > 0 && (
-          <>
-            {" "}
-            {piezasLibres === 1 ? "La troza que le queda" : `Las ${piezasLibres} trozas que le quedan`} al lote
-            {piezasLibres === 1 ? " va" : " van"} a una corrida nueva —{piezasLibres === 1 ? "tíldala" : "tíldalas"}{" "}
-            abajo—: sumarle madera a una corrida ya declarada le cambiaría el rendimiento que ya quedó escrito.
-          </>
-        )}
-      </p>
+      {piezasLibres > 0 && (
+        <p className="px-1 text-sm text-[var(--text-tertiary)]">
+          {piezasLibres === 1 ? "La troza que le queda" : `Las ${piezasLibres} trozas que le quedan`} al lote
+          {piezasLibres === 1 ? " va" : " van"} a una corrida nueva —{piezasLibres === 1 ? "tíldala" : "tíldalas"}{" "}
+          abajo—: sumarle madera a una corrida ya declarada le cambiaría el rendimiento que ya quedó escrito.
+        </p>
+      )}
 
       <ul className="space-y-2">
         {corridas.map((c) => (

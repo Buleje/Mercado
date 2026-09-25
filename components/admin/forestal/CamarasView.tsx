@@ -25,6 +25,7 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   buscarCapturas, EVENTO_LABEL, estaCallada, horasSinVerse, type AvisosCamara, type Captura,
 } from "@/lib/camaras/camaras";
@@ -266,15 +267,17 @@ export default function CamarasView() {
           <Camera className="h-5 w-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
-            Cámaras del patio
-          </CardTitle>
-          <p className="text-sm text-[var(--text-secondary)]">
-            La cámara manda la foto cuando detecta algo y acá queda con su hora. Y si el panel la
-            alcanza por la red, además se la puede ver ahora mismo: «Conectar», en su tarjeta. Con
-            panel solar y datos móviles el camino bueno sigue siendo el primero: transmitir todo el
-            día vacía la batería.
-          </p>
+          <span className="flex items-center gap-1.5">
+            <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+              Cámaras del patio
+            </CardTitle>
+            <InfoTip
+              title="Cámaras del patio"
+              what="La cámara manda la foto cuando detecta algo, con su hora."
+              affects="Si el panel la alcanza por la red, además se la puede ver ahora mismo con «Conectar», en su tarjeta."
+              example="Con panel solar y datos móviles conviene lo primero: transmitir todo el día vacía la batería."
+            />
+          </span>
         </div>
         <button
           type="button"

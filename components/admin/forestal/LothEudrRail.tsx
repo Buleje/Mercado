@@ -19,6 +19,7 @@
  */
 
 import { CheckCircle2, XCircle, MapPin, Download, FileText, Loader2, Trees } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { EUDR_CUTOFF_DATE, type EudrReadiness, type LothParcela } from "@/lib/forestal/loth-geo";
 import EudrGauge from "./EudrGauge";
 
@@ -84,11 +85,13 @@ export default function LothEudrRail({
         <div className="flex items-start gap-4">
           <EudrGauge value={score} tone={tonoEudr(readiness)} />
           <div className="min-w-0 flex-1">
-            <p className="text-base font-bold leading-tight text-[var(--text-primary)]">
+            <p className="flex items-center gap-1.5 text-base font-bold leading-tight text-[var(--text-primary)]">
               {listo ? "Tu madera resiste el Reglamento UE Antideforestación" : "Faltan pasos para acreditar el EUDR"}
-            </p>
-            <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-              Geolocalización de la parcela + libre de deforestación posterior al {EUDR_CUTOFF_DATE}.
+              <InfoTip
+                title="Cumplimiento EUDR"
+                what="Se acredita con la geolocalización de la parcela y la declaración de libre de deforestación."
+                example={`Posterior al ${EUDR_CUTOFF_DATE}, fecha de corte del Reglamento UE 2023/1115.`}
+              />
             </p>
           </div>
         </div>

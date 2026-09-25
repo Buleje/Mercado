@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { FileText, Loader2, X, AlertTriangle, Check, AlertCircle, Plus, Trash2, ShieldAlert } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { estadoVencimiento, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
@@ -170,8 +171,15 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
               <FileText className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div className="min-w-0">
-              <CardTitle as="h2" className="truncate text-base font-bold text-[var(--text-primary)]">Carátula del libro</CardTitle>
-              <p className="truncate text-xs text-[var(--text-tertiary)]">Datos del titular y documento de gestión (Anexo 1 SERFOR)</p>
+              <span className="flex items-center gap-1.5">
+                <CardTitle as="h2" className="truncate text-base font-bold text-[var(--text-primary)]">Carátula del libro</CardTitle>
+                <InfoTip
+                  title="Carátula del libro"
+                  what="Los datos del titular y del documento de gestión (Anexo 1 SERFOR): se imprimen en cada hoja del LO-TH."
+                  affects="El encabezado de toda GTF y del acta de cierre que salen de este libro."
+                  example="Titular, RUC, título habilitante 17-CPO/C-J-001-02 y N° de tomo."
+                />
+              </span>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
@@ -253,10 +261,18 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
           {/* Permisos CITES — acreditan la legalidad de las especies protegidas (ADR-305). */}
           <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:col-span-2">
             <div className="flex items-center justify-between gap-3">
-              <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-                <ShieldAlert className="h-4 w-4 text-[var(--data-error-600)]" />
-                Permisos CITES <span className="font-normal text-[var(--text-tertiary)]">(especies protegidas)</span>
-              </CardTitle>
+              <span className="flex items-center gap-2">
+                <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+                  <ShieldAlert className="h-4 w-4 text-[var(--data-error-600)]" />
+                  Permisos CITES <span className="font-normal text-[var(--text-tertiary)]">(especies protegidas)</span>
+                </CardTitle>
+                <InfoTip
+                  title="Permisos CITES"
+                  what="Una especie CITES (caoba, cedro, shihuahuaco) es legal con su permiso archivado — el booleano de cada línea no alcanza."
+                  affects="Acredita el origen de esas especies ante OSINFOR."
+                  example="Carga el N° de permiso y su vencimiento por cada especie protegida que aprovechas."
+                />
+              </span>
               <button
                 type="button"
                 onClick={addPermiso}
@@ -265,10 +281,6 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
                 <Plus className="h-3.5 w-3.5" /> Agregar
               </button>
             </div>
-            <p className="text-xs text-[var(--text-tertiary)]">
-              Una especie CITES (caoba, cedro, shihuahuaco) es legal con su permiso archivado. Carga el N° y su
-              vencimiento para acreditar el origen ante OSINFOR — el booleano de cada línea no alcanza.
-            </p>
             {permisos.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[var(--rule-base)] px-3 py-2.5 text-sm text-[var(--text-tertiary)]">
                 Sin permisos cargados. Agrega uno si aprovechas especies CITES.

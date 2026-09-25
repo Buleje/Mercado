@@ -23,6 +23,7 @@ import {
   type VersionTarifa,
   type VersionTarifaInput,
 } from "@/lib/forestal/tarifa-aserrio";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn, Field, CampoGrid, formatDate, ModalFooter } from "./ctp-shared";
 import { borradorDesde, borradorDesdeProduccion, inputDesde, tiposDelBorrador, type BorradorTarifa } from "./ctp-tarifa-aserrio-shared";
 import { formatNumber } from "@/lib/format";
@@ -242,8 +243,14 @@ export default function CtpTarifaAserrioForm({
           planta (el catálogo), los mismos que usa el precio de cada cliente. */}
       <div>
         <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+          <p className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
             Precio por grupo de especies (S/ por PT)
+            <InfoTip
+              title="Grupo de especies"
+              what="Precio por PT para un grupo de especies parecidas (ADR-430), en vez de cargar cada una."
+              affects="Especie propia → grupo → general: se usa cuando la especie no tiene precio propio, antes de caer al precio general."
+              example="Un grupo «Tornillo y afines» a S/ 3.20 cubre 5 especies sin escribir cada una."
+            />
           </p>
           <button
             type="button"
@@ -255,9 +262,9 @@ export default function CtpTarifaAserrioForm({
           </button>
         </div>
         {grupos.length === 0 ? (
-          <p className="text-sm text-[var(--text-tertiary)]">
-            La planta todavía no tiene grupos de especies. Ármalos una vez y sirven para esta tarifa y
-            para el precio de cada cliente.
+          <p className="flex flex-wrap items-center gap-1 text-sm text-[var(--text-tertiary)]">
+            La planta todavía no tiene grupos de especies.
+            <InfoTip title="Grupos de especies" what="Ármalos una vez y sirven para esta tarifa y para el precio de cada cliente." />
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">

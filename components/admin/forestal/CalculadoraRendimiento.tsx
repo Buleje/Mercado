@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Gauge, Percent, Download } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
@@ -101,12 +102,16 @@ export default function CalculadoraRendimiento() {
 
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-      <CardTitle as="h3" className="mb-1 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-        <Gauge className="h-4 w-4 text-[var(--accent)]" /> Coeficiente de rendimiento
-      </CardTitle>
-      <p className="mb-3 text-xs text-[var(--text-tertiary)]">
-        Cuánto producto salió de la troza consumida — el porcentaje que va en cada registro de transformación del Libro CTP.
-      </p>
+      <span className="mb-3 flex items-center gap-2">
+        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+          <Gauge className="h-4 w-4 text-[var(--accent)]" /> Coeficiente de rendimiento
+        </CardTitle>
+        <InfoTip
+          title="Coeficiente de rendimiento"
+          what="Cuánto producto salió de la troza consumida."
+          affects="El porcentaje que va en cada registro de transformación del Libro CTP."
+        />
+      </span>
 
       {/* Cerrar el loop: traer lo cubicado en las otras herramientas de un toque */}
       {hayCubicado && (

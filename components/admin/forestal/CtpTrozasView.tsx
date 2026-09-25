@@ -27,6 +27,7 @@
 import { useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import { AlertTriangle, RefreshCw, Search } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { EstadoTroza } from "@/lib/forestal/trozas-patio";
 import CtpApartarEnLoteModal from "./CtpApartarEnLoteModal";
 import CtpCodigosDuplicados from "./CtpCodigosDuplicados";
@@ -67,12 +68,13 @@ export default function CtpTrozasView() {
   return (
     <div data-vista-trozas className="space-y-2.5">
       <header className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-1.5">
           <SectionTitle>El patio, troza por troza</SectionTitle>
-          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-            Qué hay parado hoy, qué se puede llevar a la sierra y qué lleva demasiado tiempo esperando.
-            Consumos cuenta m³ por guía; acá la unidad es la pieza.
-          </p>
+          <InfoTip
+            title="El patio, troza por troza"
+            what="Qué hay parado hoy, qué se puede llevar a la sierra y qué lleva demasiado tiempo esperando."
+            affects="Consumos cuenta m³ por guía; acá la unidad es la pieza."
+          />
         </div>
         <button
           type="button" onClick={() => void recargar()} disabled={cargando}

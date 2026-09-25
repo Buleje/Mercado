@@ -23,6 +23,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
 import {
@@ -47,6 +48,7 @@ import LothGpsField from "./LothGpsField";
 import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { formatNumber } from "@/lib/format";
+import { logger } from "@/lib/logger";
 
 interface Props {
   section: LothSection;
@@ -325,7 +327,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         // strings crudos avisaba «no autorizada» sobre una especie que sí lo está.
         setAuthorizedSpecies(new Set(rows.map((s) => claveEspecie(s.speciesCommon))));
       })
-      .catch(() => { /* best-effort: sin lista, no se muestra el aviso */ });
+      .catch((err) => logger.error("[LothEntryForm] especies del plan failed", { error: String(err) }));
     return () => { cancel = true; };
   }, [planId]);
 
@@ -489,7 +491,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     setDiamMayor(derivados.diamMayorM != null ? String(derivados.diamMayorM) : "");
     setDiamMenor(derivados.diamMenorM != null ? String(derivados.diamMenorM) : "");
     setLengthM(derivados.longitudM != null ? String(derivados.longitudM) : "");
-    setVolumeM3(derivados.volumenM3 != null ? derivados.volumenM3.toFixed(4) : "");
+    setVolumeM3(derivados.volumenM3 != null ? Number(derivados.volumenM3).toFixed(4) : "");
   }, [section, derivados]);
 
   /** Qué exige la norma para ESTA línea de tala (Art. 4 + notas items 6/7/9). */
@@ -840,8 +842,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                       {it.cites && <CitesPill />}
                     </span>
                     <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                      {it.dapM ? `Ø ${it.dapM.toFixed(2)}m ` : ""}
-                      {it.vol != null ? `${fmtM3(it.vol)} m³` : it.quantity != null ? `${it.quantity.toFixed(2)} ${it.unit ?? ""}` : ""}
+                      {it.dapM ? `Ø ${Number(it.dapM).toFixed(2)}m ` : ""}
+                      {it.vol != null ? `${fmtM3(it.vol)} m³` : it.quantity != null ? `${Number(it.quantity).toFixed(2)} ${it.unit ?? ""}` : ""}
                     </span>
                   </button>
                 ))
@@ -1316,15 +1318,34 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
 function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
+  const rotulo = (
+    <>
+      {label}
+      {required && <span className="text-[var(--data-error-600)]">*</span>}
+    </>
+  );
+  if (!hint) {
+    return (
+      <label className="block">
+        <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{rotulo}</span>
+        {children}
+      </label>
+    );
+  }
+  /* Con ayuda, el ⓘ va FUERA del <label>: adentro, el campo se anunciaba
+     «Código de troza Información: Código de troza» y buscarlo por su rótulo
+     encontraba el botón. El <label> conserva el nombre para el lector. */
   return (
-    <label className="block">
-      <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">
-        {label}
-        {required && <span className="text-[var(--data-error-600)]">*</span>}
-      </span>
-      {children}
-      {hint && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{hint}</span>}
-    </label>
+    <div className="block">
+      <div className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">
+        <span aria-hidden="true" className="flex items-center gap-1">{rotulo}</span>
+        <InfoTip icono="ayuda" title={label} what={hint} />
+      </div>
+      <label className="block">
+        <span className="sr-only">{label}</span>
+        {children}
+      </label>
+    </div>
   );
 }
 

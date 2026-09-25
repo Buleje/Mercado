@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, CheckCircle2, XCircle, Download, FileText, Globe, Loader2, MapPin, Package, PenTool, ShieldAlert, ShieldCheck } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import EudrGauge from "./EudrGauge";
 import CtpEudrMap from "./CtpEudrMap";
 import CtpOriginPolygonModal from "./CtpOriginPolygonModal";
@@ -241,8 +242,16 @@ export default function CtpEudrPanel({
         <div className="flex items-start gap-3">
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Globe className="h-5 w-5" /></span>
           <div className="min-w-0">
-            <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Geolocalización de orígenes (EUDR)</CardTitle>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">La UE exige la geolocalización de la parcela de cosecha (Reg. 2023/1115). Carga las coordenadas de cada concesión/predio del que compraste — se reusan en todos sus ingresos.{origins ? ` ${geolocalizados}/${origins.length} orígenes geolocalizados.` : ""}</p>
+            <div className="flex items-center gap-1.5">
+              <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Geolocalización de orígenes (EUDR)</CardTitle>
+              <InfoTip
+                title="Geolocalización de orígenes"
+                what="La UE exige la geolocalización de la parcela de cosecha (Reg. 2023/1115)."
+                affects="Carga las coordenadas de cada concesión o predio del que compraste madera: se reusan en todos sus ingresos."
+                example="Geolocalizas una vez la concesión CON-25-UCA-0207 y sirve para todas las guías que traigan ese código."
+              />
+            </div>
+            {origins && <p className="mt-1 text-sm text-[var(--text-secondary)]">{geolocalizados}/{origins.length} orígenes geolocalizados.</p>}
           </div>
         </div>
 
@@ -250,9 +259,13 @@ export default function CtpEudrPanel({
           <p className="mt-4 flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</p>
         ) : origins.length === 0 ? (
           <div className="mt-4 rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center">
-            <p className="text-sm text-[var(--text-tertiary)]">
-              No hay orígenes con código en los ingresos: sin el código de la concesión o predio no hay
-              parcela que geolocalizar, y la UE no acepta el embarque sin eso (Reg. 2023/1115).
+            <p className="flex items-center justify-center gap-1.5 text-sm text-[var(--text-tertiary)]">
+              Ningún ingreso tiene código de origen
+              <InfoTip
+                title="Sin código de origen"
+                what="Sin el código de la concesión o predio no hay parcela que geolocalizar, y la UE no acepta el embarque sin eso (Reg. 2023/1115)."
+                affects="Se corrige en cada ingreso pendiente con «Corregir»; los ya validados, anulando y volviendo a registrar."
+              />
             </p>
             {onNavigate && (
               <button
@@ -264,9 +277,6 @@ export default function CtpEudrPanel({
                 Ver los ingresos sin código de origen
               </button>
             )}
-            <p className="mt-2 text-xs text-[var(--text-tertiary)]">
-              Se corrige en cada ingreso pendiente con «Corregir» (los validados, anulando y volviendo a registrar).
-            </p>
           </div>
         ) : (
           <div className="mt-4 space-y-2">
@@ -304,8 +314,16 @@ export default function CtpEudrPanel({
 
       {/* DDS por despacho */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><FileText className="h-4 w-4" /> Generar Declaración de Diligencia Debida (DDS)</CardTitle>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">Elige un despacho del período: el DDS camina su cadena de custodia, adjunta la geolocalización de cada origen y evalúa el riesgo (solo «negligible» si traza + geo + sin-deforestación).</p>
+        <div className="flex items-center gap-1.5">
+          <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><FileText className="h-4 w-4" /> Generar Declaración de Diligencia Debida (DDS)</CardTitle>
+          <InfoTip
+            title="Declaración de Diligencia Debida"
+            what="El DDS camina la cadena de custodia del despacho elegido, adjunta la geolocalización de cada origen y evalúa el riesgo."
+            affects="Sólo sale «negligible» si hay trazabilidad completa + geolocalización + sin deforestación."
+            example="El despacho #12 a España sale «negligible» si sus orígenes están geolocalizados y sin deforestación."
+          />
+        </div>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">Elige un despacho del período.</p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <select value={selDesp} onChange={(e) => setSelDesp(e.target.value)} aria-label="Elegir despacho para generar la DDS" className="h-12 min-w-[16rem] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-bold text-[var(--text-primary)] focus:border-[var(--accent)]">
             <option value="">Elige un despacho…</option>

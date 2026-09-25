@@ -20,6 +20,7 @@ import {
   Printer,
 } from "@buleje/design-system/icons";
 import { LoadingState, ErrorAlert, CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn } from "./ctp-shared";
 import { estaFueraDePlazo, type LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { resumirPeriodo } from "@/lib/forestal/loth-cierre-resumen";
@@ -144,13 +145,16 @@ export default function LothCierrePanel({
 
       {/* Cerrar un período */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="mb-1 flex items-center gap-2">
+        <div className="mb-3 flex items-center gap-2">
           <Lock className="h-4 w-4 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
           <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Cerrar un período</CardTitle>
+          <InfoTip
+            title="Cerrar un período"
+            what="Vuelve sus líneas inmutables: no se podrán registrar ni anular hasta reabrirlo."
+            affects="Es lo que exige OSINFOR de un libro de operaciones ante una fiscalización."
+            example="Cierras setiembre: desde ese momento ninguna línea de setiembre se puede editar ni anular sin reabrir el mes."
+          />
         </div>
-        <p className="mb-3 text-sm text-[var(--text-tertiary)]">
-          Cerrar el mes vuelve sus líneas <b className="text-[var(--text-secondary)]">inmutables</b>: no se podrán registrar ni anular hasta reabrirlo. Es lo que exige OSINFOR de un libro de operaciones.
-        </p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Mes a cerrar</span>

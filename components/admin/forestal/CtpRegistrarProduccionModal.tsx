@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Boxes, ChevronDown, Copy, Gauge, Loader2, Pencil, Plus, Trash2, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import CtpSemanaDeProduccion from "./CtpSemanaDeProduccion";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
 import { esIsoValido } from "@/lib/forestal/semana-de-registro";
@@ -1079,8 +1080,13 @@ export default function CtpRegistrarProduccionModal({
           {/* Reparto entre títulos habilitantes (ADR-358). */}
           {reparto.length > 1 ? (
             <div className="mt-3 overflow-hidden rounded-xl border border-[var(--rule-base)]">
-              <div className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <div className="flex items-center gap-1.5 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Cómo se reparte entre los títulos habilitantes
+                <InfoTip
+                  title="Reparto entre títulos"
+                  what="Proporcional al volumen que puso cada uno: de una tabla no se puede decir de qué árbol salió."
+                  affects="Pero sí en qué proporción entró cada título."
+                />
               </div>
               <ul className="divide-y divide-[var(--rule-soft)]">
                 {reparto.map((o) => (
@@ -1097,10 +1103,6 @@ export default function CtpRegistrarProduccionModal({
                   </li>
                 ))}
               </ul>
-              <p className="px-3 py-1.5 text-xs text-[var(--text-tertiary)]">
-                Proporcional al volumen que puso cada uno: de una tabla no se puede decir de qué árbol salió, pero sí
-                en qué proporción entró cada título.
-              </p>
             </div>
           ) : (
             material.permisos.length > 0 && (

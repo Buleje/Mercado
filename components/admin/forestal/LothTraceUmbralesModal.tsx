@@ -21,6 +21,7 @@ import {
 } from "@/components/admin/shared/modal-controles-ventana";
 import { RotateCcw, Save, X } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   acotarUmbral,
   LIMITE_UMBRAL,
@@ -134,11 +135,13 @@ export default function LothTraceUmbralesModal({
           {...ventana.asaProps}
           className="flex items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-3"
         >
-          <div>
+          <div className="flex items-center gap-1.5">
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Umbrales de merma</p>
-            <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-              Cuánta madera puede perderse entre el tocón y las trozas antes de que la pantalla lo marque
-            </p>
+            <InfoTip
+              title="Umbrales de merma"
+              what="Cuánta madera puede perderse entre el tocón y las trozas antes de que la pantalla marque la fila."
+              example="Una especie de copa ancha pierde legítimamente más volumen que una de fuste recto: por eso se ajusta por especie."
+            />
           </div>
           {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
               esto los controles quedarían flotando en el medio. */}

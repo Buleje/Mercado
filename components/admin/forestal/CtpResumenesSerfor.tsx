@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2, RefreshCw, Scale } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { pedirJsonCtp, pedirOpcionalCtp } from "@/lib/forestal/ctp-fetch";
@@ -193,12 +194,13 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
           <Scale className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-extrabold text-[var(--text-primary)]">
+          <p className="flex items-center gap-1.5 text-sm font-extrabold text-[var(--text-primary)]">
             Cuadros resumen del formato oficial · {period.label}
-          </p>
-          <p className="text-xs text-[var(--text-secondary)]">
-            Los tres cuadros que exige la RDE D000025-2023 con su numeración. Un casillero en «—» es
-            un dato que el libro no registra: se completa a mano en el formato.
+            <InfoTip
+              title="Cuadros resumen"
+              what="Los tres cuadros que exige la RDE D000025-2023, con su numeración."
+              affects="Un casillero en «—» es un dato que el libro no registra: se completa a mano en el formato."
+            />
           </p>
         </div>
         <button
@@ -236,19 +238,21 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
                 producción: El módulo no está habilitado. Los volúmenes…» — dos
                 puntos seguidos y una explicación que se lee como continuación
                 del error. */}
-            <p>
+            <p className="flex items-center gap-1">
               {incompleto.length === 1 ? "Una columna de apoyo quedó" : `${incompleto.length} columnas de apoyo quedaron`}{" "}
               sin llenar:
+              <InfoTip
+                icono="ayuda"
+                title="Columnas sin llenar"
+                what="Los tres cuadros se arman igual con los ingresos, las corridas y los despachos, que son los datos obligatorios."
+                affects="Los volúmenes, los saldos y el rendimiento no cambian."
+              />
             </p>
             <ul className="ml-4 mt-1 list-disc space-y-0.5">
               {incompleto.map((motivo) => (
                 <li key={motivo}>{motivo}</li>
               ))}
             </ul>
-            <p className="mt-1.5">
-              Los tres cuadros se arman igual con los ingresos, las corridas y los despachos, que son los datos
-              obligatorios: los volúmenes, los saldos y el rendimiento no cambian.
-            </p>
           </div>
         </div>
       )}

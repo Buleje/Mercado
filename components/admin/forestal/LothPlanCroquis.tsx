@@ -1,6 +1,7 @@
 /** Croquis de la parcela: los árboles del censo por coordenadas UTM, sin dependencias. */
 
 import { AlertTriangle, MapPin } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import type { Tree } from "./loth-plan-shared";
 import { BloquePlan } from "./loth-plan-ui";
@@ -38,7 +39,17 @@ export default function LothPlanCroquis({ trees, authorizedSpecies }: { trees: T
     <BloquePlan
       id="loth-plan-croquis"
       titulo="Croquis de la parcela"
-      sub={<><span className="font-mono tabular-nums">{pts.length}</span> de <span className="font-mono tabular-nums">{trees.length}</span> árboles georreferenciados (UTM)</>}
+      sub={
+        <>
+          <span className="font-mono tabular-nums">{pts.length}</span> de <span className="font-mono tabular-nums">{trees.length}</span> árboles georreferenciados (UTM)
+          <InfoTip
+            title="Cómo leer el croquis"
+            what="Opacidad = estado del árbol (lleno: en pie · medio: talado · tenue: descartado)."
+            affects="Borde rojo punteado = especie fuera del plan autorizado."
+            example="Un círculo tenue con borde rojo es un árbol descartado de una especie que la resolución no autoriza."
+          />
+        </>
+      }
     >
       <div className="p-4">
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
@@ -68,9 +79,6 @@ export default function LothPlanCroquis({ trees, authorizedSpecies }: { trees: T
           </span>
         ))}
       </div>
-      <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
-        Opacidad = estado (lleno: en pie · medio: talado · tenue: descartado). Borde rojo punteado = especie fuera del plan.
-      </p>
       </div>
     </BloquePlan>
   );

@@ -10,9 +10,21 @@
  * acá está la aritmética, que es lo que se puede probar.
  */
 
-/** Las opciones del selector. «Todas» es 0 — hay tablas que se imprimen. */
-export const FILAS_POR_PAGINA = [25, 50, 100, 0] as const;
+/**
+ * Las opciones del selector. «Todas» es 0 — hay tablas que se imprimen. El 10
+ * es el arranque en el celular (2026-09-24): a 400 px cada fila es una tarjeta
+ * y 25 tarjetas de trozas medían 7 000 px — casi 8 pantallas de una tabla.
+ */
+export const FILAS_POR_PAGINA = [10, 25, 50, 100, 0] as const;
 export const FILAS_POR_PAGINA_DEFAULT = 25;
+/** Filas con que arranca una tabla en pantalla angosta (tarjetas). */
+export const FILAS_POR_PAGINA_MOVIL = 10;
+
+/** ¿Pantalla de celular? Sólo en el cliente; en el servidor, escritorio. */
+export function esPantallaAngosta(): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function"
+    && window.matchMedia("(max-width: 639px)").matches;
+}
 
 export function etiquetaFilasPorPagina(n: number): string {
   return n === 0 ? "Todas" : `${n} por página`;

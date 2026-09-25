@@ -16,6 +16,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, NotebookPen, ScanText, X } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { DetalleProduccionSniffs } from "@/lib/forestal/sniffs-produccion-parse";
 import {
@@ -164,9 +165,9 @@ export function PanelCotejoSniffs({
         )}
         <div className="min-w-0 flex-1">
           {cotejo.filas.length === 0 ? (
-            <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-4 text-sm text-[var(--text-tertiary)]">
-              Sin la tabla de productos de la captura no hay nada que comparar contra lo cubicado.
-              Lo que sí se leyó —especie, fechas y consumido— está arriba.
+            <p className="flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-4 text-sm text-[var(--text-tertiary)]">
+              Sin tabla de productos en la captura.
+              <InfoTip icono="ayuda" title="Sin tabla que comparar" what="No hay nada que comparar contra lo cubicado." example="Lo que sí se leyó —especie, fechas y consumido— está arriba." />
             </p>
           ) : (
             <TablaCtp altoMax="max-h-[26vh]">
@@ -254,21 +255,29 @@ export function PanelCotejoSniffs({
         </div>
       </div>
 
-      <p className="border-t border-[var(--rule-soft)] px-3 py-2 text-xs leading-snug text-[var(--text-secondary)]">
-        Se registra <b>lo cubicado</b>: la captura no agrega paquetes ni corrige números — el
-        resumen del SNIFFS es por producto y no trae piezas ni medidas, y acá los m³ salen del pie
-        tablar de cada una.{" "}
+      {/* Lo que se registra y de dónde sale el consumido quedan a la vista: son
+          la consecuencia de guardar y la procedencia de un número (regla
+          verificacion-de-verdad §2). El porqué largo, en el ⓘ. */}
+      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-[var(--rule-soft)] px-3 py-2 text-xs leading-snug text-[var(--text-secondary)]">
+        Se registra <b>lo cubicado</b>: la captura no agrega paquetes.
         {cotejo.rendimiento ? (
           <>
-            Rendimiento declarado: <b>{cotejo.rendimiento.pct} %</b> sobre los{" "}
-            {fmtM3(cotejo.rendimiento.consumidoM3)} m³ consumidos <b>que dice la captura</b> —bajo
-            el tope del 56 % entrarían {fmtM3(cotejo.rendimiento.topeM3)} m³—. Ese consumido no
-            tiene contra qué cotejarse en el Libro: esta corrida nace sin consumos, así que el
-            número sale de la captura y no del patio.
+            {" "}Rendimiento declarado: <b>{cotejo.rendimiento.pct} %</b> sobre {fmtM3(cotejo.rendimiento.consumidoM3)} m³
+            consumidos <b>que dice la captura</b> — esta corrida nace sin consumos.
           </>
         ) : (
-          <>La captura no trae el volumen consumido, así que no hay rendimiento que calcular.</>
+          <> La captura no trae el volumen consumido: no hay rendimiento que calcular.</>
         )}
+        <InfoTip
+          icono="ayuda"
+          title="Lo que se registra"
+          what="La captura no corrige números: el resumen del SNIFFS es por producto y no trae piezas ni medidas — acá los m³ salen del pie tablar de cada pieza."
+          example={
+            cotejo.rendimiento
+              ? <>Bajo el tope del 56 % entrarían {fmtM3(cotejo.rendimiento.topeM3)} m³. Ese consumido no tiene con qué cotejarse en el Libro, así que el número sale de la captura y no del patio.</>
+              : undefined
+          }
+        />
       </p>
     </div>
   );

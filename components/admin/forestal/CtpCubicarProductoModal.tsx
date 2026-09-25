@@ -36,6 +36,7 @@ import { CeldaNum, useTecladoGrilla } from "./celdas-excel";
 import { TipoSelect } from "./tipo-badge";
 import Anexo04Modal from "./Anexo04Modal";
 import { Btn, I, ModalBody, ModalFooter } from "./ctp-shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 import { formatNumber } from "@/lib/format";
 
@@ -513,9 +514,14 @@ export default function CtpCubicarProductoModal({
           </TablaCtp>
         </div>
 
-        <p className="px-1 text-sm text-[var(--text-tertiary)]">
-          <b>Enter</b> agrega una fila · <b>↑↓ ←→</b> se mueven por la grilla · <b>Ctrl+D</b> duplica ·{" "}
-          <b>Ctrl+Supr</b> borra. El dictado por voz y la importación de Excel están en Herramientas → Cubicador.
+        <p className="flex items-center gap-1.5 px-1 text-sm text-[var(--text-tertiary)]">
+          Atajos de teclado
+          <InfoTip
+            icono="ayuda"
+            title="Atajos de teclado"
+            what="Enter agrega una fila · ↑↓ ←→ se mueven por la grilla · Ctrl+D duplica · Ctrl+Supr borra."
+            affects="El dictado por voz y la importación de Excel están en Herramientas → Cubicador."
+          />
         </p>
       </ModalBody>
 

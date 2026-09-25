@@ -23,6 +23,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, Loader2, ScanText, Upload } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import {
@@ -358,9 +359,9 @@ export default function CtpImportarProgramacionesModal({
         </TablaCtp>
 
         {hayFilas && (
-          <p className="text-sm text-[var(--text-tertiary)]">
-            Se crean como <b>programación</b>: el consumo queda declarado y la producción, pendiente. Después se declara
-            desde la tabla de Producción o pegando el detalle de cada lote.
+          <p className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]">
+            Se crean como <b>programación</b>.
+            <InfoTip icono="ayuda" title="Qué es una programación" what="El consumo queda declarado y la producción, pendiente." example="Después se declara desde la tabla de Producción o pegando el detalle de cada lote." />
           </p>
         )}
       </ModalBody>

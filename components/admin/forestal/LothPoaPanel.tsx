@@ -17,6 +17,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, BarChart3, Check, Info, Loader2, Printer, Save, Settings2, TreePine, XCircle } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   CATEGORIA_COLOR,
   CATEGORIA_LABEL,
@@ -66,13 +67,23 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
   const [kpisAbiertos, setKpisAbiertos] = useLocalStorage<boolean>(CLAVE_INDICADORES_POA, false);
   const { especies, totales, intensidad } = analisis;
   const alertas = useMemo(() => ordenarAlertas(analisis.alertas), [analisis.alertas]);
-  const intensidadTxt = intensidad.m3PorHa != null ? `${intensidad.m3PorHa.toFixed(2)} m³/ha` : "—";
+  const intensidadTxt = intensidad.m3PorHa != null ? `${Number(intensidad.m3PorHa).toFixed(2)} m³/ha` : "—";
 
   return (
     <BloquePlan
       id="loth-plan-poa"
       titulo="Plan Operativo · aprovechable según DMC"
-      sub={`Diámetro mínimo de corta (RJ 458-2002-INRENA, editable por plan) + ${config.semillerosPct}% de semilleros en pie`}
+      sub={
+        <>
+          DMC + {config.semillerosPct}% de semilleros en pie
+          <InfoTip
+            title="Diámetro Mínimo de Corta"
+            what="Sale de la RJ 458-2002-INRENA por especie, editable por plan."
+            affects="Un árbol bajo el DMC de su especie no es madera aprovechable: es infracción."
+            example="Tornillo con DMC 40 cm: un árbol de 35 cm de diámetro queda «bajo DMC», no «aprovechable»."
+          />
+        </>
+      }
       acciones={
         <>
           <BotonPlegar
@@ -135,7 +146,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
             intensidad.arbolesPorHa != null
               ? // En áreas grandes el ratio por hectárea es < 0,01: sin decimales
                 // extra parecería "cero árboles", que es falso.
-                `${intensidad.arbolesPorHa.toFixed(intensidad.arbolesPorHa < 0.01 ? 4 : 2)} árb/ha · ${intensidad.areaHa} ha`
+                `${Number(intensidad.arbolesPorHa).toFixed(intensidad.arbolesPorHa < 0.01 ? 4 : 2)} árb/ha · ${intensidad.areaHa} ha`
               : "sin área declarada"
           }
           tone="info"
@@ -189,7 +200,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
                 <td className={`${NUM} text-[var(--accent-ink)] dark:text-[var(--accent)]`}>{e.semilleros || "—"}</td>
                 <td className={`${NUM} font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]`}>{e.aprovechables}</td>
                 <td className={`${NUM} font-bold`}>{fmtM3(e.volumenAprovechableM3)}</td>
-                <td className={NUM}>{e.volumenAutorizadoM3 != null ? e.volumenAutorizadoM3.toFixed(2) : "—"}</td>
+                <td className={NUM}>{e.volumenAutorizadoM3 != null ? Number(e.volumenAutorizadoM3).toFixed(2) : "—"}</td>
               </tr>
             ))}
             {especies.length === 0 && (
@@ -212,7 +223,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
                 <td className={NUM}>{totales.semilleros}</td>
                 <td className={NUM}>{totales.aprovechables}</td>
                 <td className={NUM}>{fmtM3(totales.volumenAprovechableM3)}</td>
-                <td className={NUM}>{totales.volumenAutorizadoM3.toFixed(2)}</td>
+                <td className={NUM}>{Number(totales.volumenAutorizadoM3).toFixed(2)}</td>
               </tr>
             </tfoot>
           )}
@@ -252,15 +263,22 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
         </ul>
       )}
 
-      <p className="border-t border-[var(--rule-subtle)] px-4 py-2 text-xs text-[var(--text-tertiary)]">
-        Leyenda del censo:{" "}
-        {(["aprovechable", "semillero", "bajo_dmc", "talado"] as const).map((c) => (
-          <span key={c} className="mr-3 inline-flex items-center gap-1">
-            <span className="inline-block h-2 w-2 rounded-full" style={{ background: CATEGORIA_COLOR[c] }} aria-hidden="true" />
-            {CATEGORIA_LABEL[c]}
-          </span>
-        ))}
-      </p>
+      <div className="flex items-center gap-1.5 border-t border-[var(--rule-subtle)] px-4 py-2">
+        <span className="text-xs text-[var(--text-tertiary)]">Leyenda del censo</span>
+        <InfoTip
+          title="Leyenda del censo"
+          what={
+            <>
+              {(["aprovechable", "semillero", "bajo_dmc", "talado"] as const).map((c) => (
+                <span key={c} className="mr-3 inline-flex items-center gap-1">
+                  <span className="inline-block h-2 w-2 rounded-full" style={{ background: CATEGORIA_COLOR[c] }} aria-hidden="true" />
+                  {CATEGORIA_LABEL[c]}
+                </span>
+              ))}
+            </>
+          }
+        />
+      </div>
     </BloquePlan>
   );
 }

@@ -16,6 +16,7 @@
 
 import { CheckCircle2, ListChecks, Pencil } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { completitudFichaCtp, type CtpFicha, type RequisitoFichaCtp } from "@/lib/forestal/ctp-ficha-types";
 
 const GRUPO_LABEL: Record<RequisitoFichaCtp["grupo"], string> = {
@@ -58,21 +59,26 @@ export default function CtpFichaCompletitud({
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-            {completo ? (
-              <CheckCircle2
-                className="h-4 w-4 text-[var(--data-success-600)] dark:text-[var(--data-success-500)]"
-                aria-hidden
-              />
-            ) : (
-              <ListChecks className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-            )}
-            Datos de la Ficha
-          </CardTitle>
+          <div className="flex items-center gap-1.5">
+            <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              {completo ? (
+                <CheckCircle2
+                  className="h-4 w-4 text-[var(--data-success-600)] dark:text-[var(--data-success-500)]"
+                  aria-hidden
+                />
+              ) : (
+                <ListChecks className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+              )}
+              Datos de la Ficha
+            </CardTitle>
+            <InfoTip
+              title="Datos de la Ficha"
+              what="Son los que pide el Libro y los papeles del centro."
+              affects="La carátula es lo que la ARFFS recibe al frente de los Cuadros Resumen cada mes."
+            />
+          </div>
           <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
-            {completo
-              ? `Los ${total.total} datos que piden el Libro y los papeles del centro están cargados.`
-              : `Faltan ${total.faltan.length} de ${total.total}. La carátula es lo que la ARFFS recibe al frente de los Cuadros Resumen cada mes.`}
+            {completo ? `Los ${total.total} datos están cargados.` : `Faltan ${total.faltan.length} de ${total.total}.`}
           </p>
         </div>
         <span className="flex shrink-0 items-baseline gap-1.5">
@@ -111,8 +117,11 @@ export default function CtpFichaCompletitud({
                 key={r.label}
                 className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2"
               >
-                <p className="text-sm font-bold text-[var(--text-primary)]">{r.label}</p>
-                <p className="text-sm text-[var(--text-tertiary)]">{r.comoSeLlena}</p>
+                {/* Qué falta, a la vista; cómo se llena, en el ⓘ (2026-09-24). */}
+                <p className="flex items-center gap-1 text-sm font-bold text-[var(--text-primary)]">
+                  {r.label}
+                  <InfoTip icono="ayuda" title={r.label} what={r.comoSeLlena} />
+                </p>
               </li>
             ))}
           </ul>

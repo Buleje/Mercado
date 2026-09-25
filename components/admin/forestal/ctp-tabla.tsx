@@ -184,7 +184,7 @@ export function CtpPaginacion({
   /* Elegir «cuántas por página» sólo tiene sentido si hay más de una pantalla
      de datos. Con ocho despachos y un mínimo de 25 por página, ese desplegable
      no puede cambiar nada de lo que se ve. */
-  const puedePaginar = rango.total > FILAS_POR_PAGINA[0];
+  const puedePaginar = rango.total > Math.min(porPagina || Infinity, FILAS_POR_PAGINA_DEFAULT);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-1">

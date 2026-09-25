@@ -14,6 +14,7 @@
 
 import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { AlertTriangle, Printer } from "@buleje/design-system/icons";
 import {
   metaDeDias,
@@ -60,8 +61,12 @@ export default function LothPlanTalaPanel({
       titulo="Qué talar para no perder saldo"
       sub={
         <>
-          Al ritmo que pide la zafra (<span className="font-mono tabular-nums">{n3(ritmoRequeridoM3Dia)}</span> m³/día), esto es lo que hay que tumbar.
-          Es una propuesta: no registra nada hasta que la tala ocurra.
+          Al ritmo que pide la zafra: <span className="font-mono tabular-nums">{n3(ritmoRequeridoM3Dia)}</span> m³/día
+          <InfoTip
+            title="Qué talar para no perder saldo"
+            what="Es una propuesta: no registra nada en el libro hasta que la tala ocurra de verdad."
+            example="Se imprime y se va al monte con eso; la tala se asienta con su fecha y su acta cuando pasa."
+          />
         </>
       }
       acciones={

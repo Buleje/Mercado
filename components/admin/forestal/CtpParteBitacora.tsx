@@ -15,6 +15,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { MessageSquare } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { NotaBitacora } from "@/lib/forestal/directorio";
 import { I } from "./ctp-shared";
 
@@ -43,9 +44,16 @@ export default function CtpParteBitacora({
 }) {
   return (
     <div className="sm:col-span-12">
-      <label htmlFor="bitacora-nueva" className="mb-1.5 block text-sm font-semibold text-[var(--text-primary)]">
-        Agregar a la bitácora
-      </label>
+      <div className="mb-1.5 flex items-center gap-1">
+        <label htmlFor="bitacora-nueva" className="text-sm font-semibold text-[var(--text-primary)]">
+          Agregar a la bitácora
+        </label>
+        <InfoTip
+          title="Bitácora"
+          what="Se guarda con tu usuario y la fecha al guardar la ficha."
+          affects="Lo anterior no se pisa."
+        />
+      </div>
       <div className="flex items-start gap-2">
         <MessageSquare className="mt-3 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
         <input
@@ -57,9 +65,6 @@ export default function CtpParteBitacora({
           placeholder="Pidió que la próxima guía salga a nombre de la comunidad"
         />
       </div>
-      <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-        Se guarda con tu usuario y la fecha al guardar la ficha. Lo anterior no se pisa.
-      </p>
 
       {notas.length > 0 && (
         <div className="mt-3">

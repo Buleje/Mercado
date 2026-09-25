@@ -24,6 +24,7 @@
 
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { History, Check, AlertTriangle } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Th, n2 } from "../ctp-section-shared";
 import type { Concil } from "@/hooks/use-ctp-saldos";
 
@@ -74,17 +75,20 @@ export default function TablaConciliacion({
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <CardTitle
-          as="h3"
-          id="saldos-conciliacion-titulo"
-          className="text-base font-bold text-[var(--text-primary)]"
-        >
-          Conciliación del período · apertura → cierre
-        </CardTitle>
-        <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-          Existencia de apertura {FUENTE[concil.fuenteApertura](concil.aperturaLabel)} + movimientos
-          del período = existencia final. Así el saldo cuadra con el stock heredado.
-        </p>
+        <div className="flex items-center gap-1.5">
+          <CardTitle
+            as="h3"
+            id="saldos-conciliacion-titulo"
+            className="text-base font-bold text-[var(--text-primary)]"
+          >
+            Conciliación del período · apertura → cierre
+          </CardTitle>
+          <InfoTip
+            title="Conciliación"
+            what={`Existencia de apertura ${FUENTE[concil.fuenteApertura](concil.aperturaLabel)} + movimientos del período = existencia final.`}
+            affects="Así el saldo cuadra con el stock heredado."
+          />
+        </div>
       </div>
       <DataTable
         className="w-full text-sm"
@@ -227,16 +231,18 @@ export default function TablaConciliacion({
         </p>
 
         {negativas.length > 0 && (
-          <p className="mt-2 text-xs text-[var(--data-error-ink)]">
+          <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--data-error-ink)]">
             <strong>
               {negativas.length === 1
                 ? `${negativas[0].especie} cierra en negativo`
                 : `${negativas.length} especies cierran en negativo`}
-              :
-            </strong>{" "}
-            el libro consumió madera que todavía no tiene ingreso que la respalde. No es un error de
-            cálculo — es una fecha mal puesta o una guía sin cargar. Abre el Kardex de la especie y
-            compara la fecha de cada corrida contra la de su guía.
+            </strong>
+            <InfoTip
+              icono="ayuda"
+              title="Cierra en negativo"
+              what="El libro consumió madera que todavía no tiene ingreso que la respalde."
+              affects="No es un error de cálculo — es una fecha mal puesta o una guía sin cargar. Abre el Kardex de la especie y compara la fecha de cada corrida contra la de su guía."
+            />
           </p>
         )}
       </div>

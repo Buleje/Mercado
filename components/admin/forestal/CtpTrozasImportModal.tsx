@@ -14,6 +14,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, ClipboardList } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   compararConDeclarado,
   filasDesdeTexto,
@@ -87,9 +88,9 @@ export default function CtpTrozasImportModal({
       }
     >
       <ModalBody className="space-y-3">
-        <p className="text-sm text-[var(--text-secondary)]">
-          Pega la lista tal como está en el Excel o en el papel de la guía. Se aceptan tabuladores, comas, punto y coma o
-          columnas separadas por espacios. Si trae encabezados, se leen solos.
+        <p className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+          Pega la lista tal como está en el Excel o en el papel de la guía.
+          <InfoTip icono="ayuda" title="Cómo pegarla" what="Se aceptan tabuladores, comas, punto y coma o columnas separadas por espacios." example="Si trae encabezados, se leen solos." />
         </p>
 
         <textarea

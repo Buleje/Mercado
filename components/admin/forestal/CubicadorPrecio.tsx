@@ -21,6 +21,7 @@
 import { useState } from "react";
 import { AlertTriangle, UserCheck, ChevronDown, ChevronUp, Coins, Link2 } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { ETIQUETA_MODO_PRECIO, MODOS_PRECIO, type ModoPrecio } from "@/lib/forestal/precio-de-pieza";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
@@ -111,6 +112,15 @@ export default function CubicadorPrecio({
         <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
           <Coins className="h-4 w-4 text-[var(--accent)]" aria-hidden /> Precio
         </span>
+        <InfoTip
+          title="Precio del lote"
+          what={QUE_HACE[modo]}
+          affects={
+            modo !== "manual"
+              ? <>Vigente el {etiquetaLarga(fecha)} (la fecha del lote); lo que el trato no cubre y las piezas sin dueño del Directorio van al precio a mano.</>
+              : undefined
+          }
+        />
         <SegmentedControl
           value={modo}
           onChange={precios.setModo}
@@ -166,15 +176,6 @@ export default function CubicadorPrecio({
         )}
       </div>
 
-      <p className="mt-2 text-xs leading-snug text-[var(--text-secondary)]">
-        {QUE_HACE[modo]}
-        {modo !== "manual" && (
-          <>
-            {" "}vigente el {etiquetaLarga(fecha)} (la fecha del lote); lo que su trato no cubre y las piezas sin dueño del Directorio, al precio a mano.
-          </>
-        )}
-      </p>
-
       {modo !== "manual" && precios.calculando && (
         <p className="mt-1 text-xs text-[var(--text-tertiary)]" aria-live="polite">
           Leyendo el precio pactado de {precios.clientes.length === 1 ? nombreDe(precios.clientes[0]!) : `${precios.clientes.length} clientes`}…
@@ -218,7 +219,15 @@ export default function CubicadorPrecio({
       {verEspecies && especiesLote.length > 0 && (
         <div className="mt-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-xs font-bold text-[var(--text-secondary)]">Precio a mano por especie (S/ por pie tablar)</span>
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--text-secondary)]">
+              Precio a mano por especie (S/ por pie tablar)
+              <InfoTip
+                icono="ayuda"
+                title="Precio a mano por especie"
+                what="Vacío = usa el general."
+                affects="Se aplica al resumen, la liquidación, WhatsApp, PDF y Excel."
+              />
+            </span>
             {hayPreciosEspecie && (
               <button
                 type="button"
@@ -248,9 +257,6 @@ export default function CubicadorPrecio({
               </label>
             ))}
           </div>
-          <p className="mt-2 text-xs text-[var(--text-tertiary)]">
-            Vacío = usa el general. Se aplica al resumen, la liquidación, WhatsApp, PDF y Excel.
-          </p>
         </div>
       )}
 

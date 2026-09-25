@@ -54,7 +54,9 @@ for (const tema of ["light", "dark"] as const) {
     const screen = await montar(tema);
     // El total dispara el reparto entre los 2 asientos: sin eso el modal se ve
     // a medias y la baseline no probaría lo que importa.
-    const total = screen.getByLabelText(/Total pagado/i);
+    /* Por rol: el ⓘ de al lado se llama «Información: Total pagado» y un
+       getByLabelText encontraba los dos (2026-09-24). */
+    const total = screen.getByRole("spinbutton", { name: /Total pagado/i });
     await total.fill("9900");
     await expect
       .element(screen.getByText(/Se reparte entre los 2 asientos/i))

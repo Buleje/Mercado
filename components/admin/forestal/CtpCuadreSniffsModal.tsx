@@ -19,6 +19,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { cuadreSniffs, type CuadreSniffs, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { corridaAcompletar } from "./CtpDeclararDesdeSniffs";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 
@@ -107,12 +108,14 @@ export default function CtpCuadreSniffsModal({
     >
       <ModalBody className="space-y-3">
         {filas.length > 0 && (
-          <p className="flex items-start gap-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
-            <span>
-              Una diferencia no es un error todavía: puede ser producción que falta declarar acá, o una captura de otro
-              lote. Lo que no puede quedar es sin mirar.
-            </span>
+          <p className="flex items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
+            <span>Una diferencia no es un error todavía: lo que no puede quedar es sin mirar.</span>
+            <InfoTip
+              icono="ayuda"
+              title="Por qué no cuadra"
+              what="Puede ser producción que falta declarar acá, o una captura de otro lote."
+            />
           </p>
         )}
 

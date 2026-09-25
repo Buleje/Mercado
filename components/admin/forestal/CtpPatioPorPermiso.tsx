@@ -23,6 +23,7 @@
 import { useId } from "react";
 import { FileDown, Inbox } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { FilaPermisoPatio, TotalesPermisoPatio } from "@/lib/forestal/patio-resumen";
 import { SEVERIDAD_TRAMO_DIAS, TONO_TRAMO_DIAS, tramoDeDias } from "@/lib/forestal/patio-dias";
 import { diaConNombre, fechaCorta } from "@/lib/forestal/plazo-de-apartado";
@@ -53,8 +54,8 @@ export interface CtpPatioPorPermisoProps {
   titulo?: string;
   /**
    * Consumos (2026-09-24): la tabla va DENTRO de la tarjeta «Qué queda en el
-   * patio», que ya pone el título y el Excel. Sin cabecera propia, la nota de
-   * qué miden las cifras pasa a pie de tabla — no se pierde, se muda.
+   * patio», que ya pone el título, el Excel y el ⓘ con la nota de qué miden
+   * las cifras.
    */
   sinCabecera?: boolean;
 }
@@ -150,10 +151,12 @@ export default function CtpPatioPorPermiso({
       {!sinCabecera && (
       <header className="flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-0">
-          <CardTitle as="h3" id={idTitulo} className="text-base font-bold text-[var(--text-primary)]">
-            {titulo}
-          </CardTitle>
-          <p className="text-sm text-[var(--text-secondary)]">{NOTA}</p>
+          <div className="flex items-center gap-1.5">
+            <CardTitle as="h3" id={idTitulo} className="text-base font-bold text-[var(--text-primary)]">
+              {titulo}
+            </CardTitle>
+            <InfoTip title={titulo} what={NOTA} />
+          </div>
         </div>
         {onDescargar && (
           <button
@@ -292,7 +295,6 @@ export default function CtpPatioPorPermiso({
           </tfoot>
         )}
       </TablaCtp>
-      {sinCabecera && <p className="text-sm text-[var(--text-secondary)]">{NOTA}</p>}
     </section>
   );
 }

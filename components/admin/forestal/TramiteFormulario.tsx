@@ -31,6 +31,7 @@ import {
   SlidersHorizontal,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { buildTramiteHtml, imprimirTramite, TRAMITE_PREVIEW_CSS } from "@/lib/forestal/tramites-print";
 import { archivarEnDrive, carpetaAnidada, existeEnDrive } from "@/lib/forestal/ctp-archivar-documento";
 import { nombreArchivoTramite, tramiteDocumentoAPdf } from "@/lib/forestal/tramites-documento-pdf";
@@ -610,8 +611,10 @@ export default function TramiteFormulario({
                 </span>
               )}
             </div>
-            <CardTitle as="h3" className="font-display mt-2 text-2xl leading-tight text-[var(--text-primary)]">{formato.nombre}</CardTitle>
-            <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">{formato.proposito}</p>
+            <span className="mt-2 flex items-center gap-1.5">
+              <CardTitle as="h3" className="font-display text-2xl leading-tight text-[var(--text-primary)]">{formato.nombre}</CardTitle>
+              <InfoTip title={formato.nombre} what={formato.proposito} />
+            </span>
           </div>
           <Btn variant="secondary" onClick={onCerrar}>
             <ArrowLeft className="h-4 w-4" />

@@ -37,6 +37,7 @@ import { Boxes, Calculator, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { fmtPiezas } from "@/lib/forestal/cubicacion-formato";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import {
@@ -190,14 +191,16 @@ export default function CtpProducirSinLoteModal({
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-[var(--accent-ink)] max-sm:hidden dark:text-[var(--accent)]">
             <Calculator className="h-4 w-4" aria-hidden />
           </span>
-          <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
             <CardTitle as="h3" className="font-display text-lg leading-tight text-[var(--text-primary)]">
               Producir sin lote
             </CardTitle>
-            <p className="text-xs leading-snug text-[var(--text-tertiary)]">
-              Cubica acá y decláralo en el Libro; la materia prima se vincula después.{" "}
-              <b>No toca el lote del cubicador.</b>
-            </p>
+            <InfoTip
+              title="Producir sin lote"
+              what="Cubica acá y decláralo en el Libro; la materia prima se vincula después."
+              affects="No toca el lote del cubicador."
+              example="La sierra cortó el sábado, el parte llega el lunes y el lote con sus trozas se arma después."
+            />
           </div>
           <ControlesDeVentana ventana={ventana} />
           <button

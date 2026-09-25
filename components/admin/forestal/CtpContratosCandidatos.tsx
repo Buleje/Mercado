@@ -18,6 +18,7 @@
 
 import { AlertTriangle, Leaf, Loader2, Wand2 } from "@buleje/design-system/icons";
 import { BlockTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { CandidatoContrato } from "@/hooks/use-contratos";
@@ -62,19 +63,21 @@ export default function CtpContratosCandidatos({
         <section className="rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--accent)]/[0.06] p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <BlockTitle as="h3" className="flex items-center gap-2">
-                <Leaf
-                  className="h-4 w-4 shrink-0 text-[var(--accent-dark)] dark:text-[var(--accent)]"
-                  aria-hidden
+              <div className="flex flex-wrap items-center gap-1.5">
+                <BlockTitle as="h3" className="flex items-center gap-2">
+                  <Leaf
+                    className="h-4 w-4 shrink-0 text-[var(--accent-dark)] dark:text-[var(--accent)]"
+                    aria-hidden
+                  />
+                  Hay {reales.length} {reales.length === 1 ? "permiso escrito" : "permisos escritos"}{" "}
+                  en tu libro que todavía no {reales.length === 1 ? "es contrato" : "son contrato"}
+                </BlockTitle>
+                <InfoTip
+                  title="Permisos sin contrato"
+                  what="Al crearlos, cada ingreso, corrida y lote que ya trae ese código queda atado al contrato — y recién ahí puedes ver su balance."
+                  affects="No se toca nada de lo ya registrado: el código sigue escrito igual en el libro que se presenta a SERFOR."
                 />
-                Hay {reales.length} {reales.length === 1 ? "permiso escrito" : "permisos escritos"}{" "}
-                en tu libro que todavía no {reales.length === 1 ? "es contrato" : "son contrato"}
-              </BlockTitle>
-              <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-                Al crearlos, cada ingreso, corrida y lote que ya trae ese código queda atado al
-                contrato — y recién ahí puedes ver su balance. No se toca nada de lo ya registrado:
-                el código sigue escrito igual en el libro que se presenta a SERFOR.
-              </p>
+              </div>
             </div>
             <button
               type="button"
@@ -123,19 +126,21 @@ export default function CtpContratosCandidatos({
 
       {dudosos.length > 0 && (
         <section className="rounded-2xl border border-[var(--data-warning-500)]/50 bg-[var(--data-warning-500)]/[0.08] p-4">
-          <BlockTitle as="h3" className="flex items-center gap-2">
-            <AlertTriangle
-              className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-              aria-hidden
+          <div className="flex flex-wrap items-center gap-1.5">
+            <BlockTitle as="h3" className="flex items-center gap-2">
+              <AlertTriangle
+                className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                aria-hidden
+              />
+              {dudosos.length} {dudosos.length === 1 ? "código no parece" : "códigos no parecen"} un
+              permiso de verdad
+            </BlockTitle>
+            <InfoTip
+              title="Códigos que no parecen un permiso"
+              what="Tienen forma de prueba o de error de tipeo, así que quedan fuera del alta en tanda."
+              affects="Lo que hay que hacer con ellos es corregir el código en el registro donde está escrito, no crearles un contrato."
             />
-            {dudosos.length} {dudosos.length === 1 ? "código no parece" : "códigos no parecen"} un
-            permiso de verdad
-          </BlockTitle>
-          <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-            Tienen forma de prueba o de error de tipeo, así que quedan fuera del alta en tanda. Lo
-            que hay que hacer con ellos es corregir el código en el registro donde está escrito, no
-            crearles un contrato.
-          </p>
+          </div>
           <ul className="mt-3 space-y-2">
             {dudosos.map((c) => (
               <li

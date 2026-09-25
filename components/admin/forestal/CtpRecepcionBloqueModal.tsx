@@ -16,6 +16,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, Coins, Loader2, PackageCheck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   avisoDeCuadre,
@@ -149,10 +150,15 @@ export default function CtpRecepcionBloqueModal({
               className={CAMPO}
             />
           </label>
-          <p className="self-center text-sm text-[var(--text-secondary)]">
-            Esa fecha queda declarada en el libro para todas las guías que marques, y es la que llevan sus trozas.
-            Marca sólo las que miraste: ninguna viene marcada, el tilde es tu declaración y queda firmada a tu
-            nombre en el rastro del libro.
+          <p className="flex flex-wrap items-center gap-1.5 self-center text-sm text-[var(--text-secondary)]">
+            Esa fecha queda declarada para todas las guías que marques. El tilde es tu declaración, firmada a tu
+            nombre.
+            <InfoTip
+              icono="ayuda"
+              title="Qué declara el tilde"
+              what="Es la fecha que llevan sus trozas. Marca sólo las que miraste: ninguna viene marcada."
+              affects="Queda en el rastro del libro."
+            />
           </p>
         </div>
 
@@ -171,7 +177,7 @@ export default function CtpRecepcionBloqueModal({
                   m.marcada ? "border-[var(--accent)] bg-primary/5" : "border-[var(--rule-base)]"
                 }`}
               >
-                <label className="flex cursor-pointer items-start gap-3">
+                <label className="flex cursor-pointer items-start gap-3" aria-label={`Marcar guía ${g.gtfNumber}`}>
                   <input
                     type="checkbox"
                     checked={m.marcada}
@@ -243,9 +249,9 @@ export default function CtpRecepcionBloqueModal({
           })}
         </ul>
 
-        <p className="text-xs text-[var(--text-tertiary)]">
-          Recibir fecha el ingreso y sus trozas, y valida los asientos que estuvieran pendientes. Recién ahí la
-          madera aparece en Consumos para llevarla a la sierra.
+        <p className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+          Recién recibida, la madera aparece en Consumos.
+          <InfoTip icono="ayuda" title="Qué hace «Recibir»" what="Fecha el ingreso y sus trozas, y valida los asientos que estuvieran pendientes. Recién ahí la madera aparece en Consumos para llevarla a la sierra." />
         </p>
       </ModalBody>
     </AdminModal>

@@ -25,6 +25,7 @@ import {
   Trash2,
   Truck,
 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   filaDesdeGtfLoth,
   filaDesdeGuiaEmitida,
@@ -182,10 +183,14 @@ export default function TramiteRelacionGuias({
             <Truck className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
           )}
           <div className="min-w-0">
-            <h4 className="text-base font-bold leading-tight text-[var(--text-primary)]">Guías de transporte forestal</h4>
-            <p className="text-xs text-[var(--text-tertiary)]">
-              Cada fila es una GTF con su lista de trozas. Traelas del libro o agregalas a mano.
-            </p>
+            <span className="flex items-center gap-1.5">
+              <h4 className="text-base font-bold leading-tight text-[var(--text-primary)]">Guías de transporte forestal</h4>
+              <InfoTip
+                title="Guías de transporte forestal"
+                what="Cada fila es una GTF con su lista de trozas."
+                affects="Tráelas del libro o agrégalas a mano."
+              />
+            </span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

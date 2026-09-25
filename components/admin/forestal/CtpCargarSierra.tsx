@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Flame, PackageOpen } from "@buleje/design-system/icons";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
-import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { pieTablarAserrableDe } from "@/lib/forestal/cubicacion";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { labelProductoConsumible } from "@/lib/forestal/lote-programacion";
@@ -22,6 +22,7 @@ import CtpConsumirLoteModal, { type ConfirmacionConsumo } from "./CtpConsumirLot
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import CtpBarraSeleccion from "./ctp-barra-seleccion";
 import { Btn } from "./ctp-shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
@@ -163,7 +164,16 @@ export default function CtpCargarSierra({
   return (
     <section className="space-y-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-raised)] p-4">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm text-[var(--text-secondary)]">
+        <p className="flex flex-wrap items-center gap-x-1 text-sm text-[var(--text-secondary)]">
+          {/* "Revisar y consumir" adjunta Y consume junto; "Adjuntar sin
+              consumir" deja reserva (Brandon, 2026-09-01). El cómo va en el ⓘ. */}
+          <InfoTip
+            icono="ayuda"
+            title="Cargar la sierra"
+            what="«Revisar y consumir» cierra el lote con lo que tildaste."
+            affects="«Adjuntar sin consumir» deja las piezas apartadas en el lote: sigue abierto y lo vuelves a elegir otro día."
+            example="Tildas 12 trozas, consumes 8 hoy y dejas 4 adjuntadas para mañana."
+          />
           Cargando el lote <b className="font-mono text-[var(--text-primary)]">{lote.code}</b> ·{" "}
           <b className="text-[var(--text-primary)]">{lote.speciesCommon}</b>
           {yaEnElLote.length > 0 && (
@@ -179,16 +189,6 @@ export default function CtpCargarSierra({
         </span>
       </header>
 
-      {/* "Revisar y consumir" adjunta Y consume junto; "Adjuntar sin consumir"
-          deja reserva sin salir de esta pantalla (Brandon, 2026-09-01). */}
-      {yaEnElLote.length === 0 && (
-        <p className="text-sm text-[var(--text-secondary)]">
-          &ldquo;Revisar y consumir&rdquo; cierra el lote con lo que tildaste. Si quieres
-          tildar de más y dejar una parte apartada para otro día, usa{" "}
-          <b className="text-[var(--text-primary)]">Adjuntar sin consumir</b> — el lote
-          sigue abierto y vuelves a elegirlo la próxima vez.
-        </p>
-      )}
 
       {/* La tabla del patio es la MISMA que se mira sin lote elegido: acá sólo
           se le encienden los tildes y llega acotada a la especie del lote
@@ -235,7 +235,8 @@ export default function CtpCargarSierra({
           cifras={[
             { label: "Trozas", valor: `${alConsumo.length}` },
             { label: "Volumen", valor: `${fmtM3(volumen)} m³`, fuerte: true },
-            { label: "Pie tablar", valor: `${formatNumber(pieTablarDe(volumen))} pt` },
+            /* Rolliza: ≈ aserrable al 56 %, como toda la vista (m³ × 424 es de madera ya aserrada). */
+            { label: "≈pt aserr.", valor: `≈${formatNumber(pieTablarAserrableDe(volumen, RENDIMIENTO_META))}` },
             ...(yaEnElLote.length > 0
               ? [{ label: "Del lote", valor: `${elegidas.filter((t) => idsYaEnElLote.has(t.id)).length}` }]
               : []),

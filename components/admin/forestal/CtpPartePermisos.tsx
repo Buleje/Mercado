@@ -30,6 +30,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, FileText, Link2, Loader2, Plus, Trash2, X as XIcon } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { crearPermiso, usePermisosForestal, type UsosDelPermiso } from "@/hooks/use-permisos-forestal";
 import { TIPOS_CONTRATO, type Contrato, type ContratoInput, type TipoContrato } from "@/lib/forestal/contratos";
 import {
@@ -324,10 +325,13 @@ export default function CtpPartePermisos({
                 {total}
               </span>
             )}
+            <InfoTip
+              title="Permisos y áreas de manejo"
+              what="Un mismo titular puede manejar varios permisos."
+              affects="Cada uno con su área, su resolución y su vigencia propias."
+              example="COMUNIDAD SANTA ROSA con un permiso 10-HUA-PUE/PER-FMP-2026-007 de 800 ha y otro más chico en trámite."
+            />
           </span>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-            Un mismo titular puede manejar varios: cada uno con su área, su resolución y su vigencia.
-          </p>
         </div>
         {!edicion && (
           <Btn
@@ -466,9 +470,14 @@ export default function CtpPartePermisos({
 
         {candidatos.length > 0 && (
           <div className="rounded-lg border border-[var(--data-info-100)] bg-[var(--data-info-50)] p-2 dark:bg-[var(--data-info-500)]/10">
-            <p className="px-1 text-xs text-[var(--text-secondary)]">
-              Estos permisos están a nombre de alguien que se llama parecido y no cuelgan de ninguna ficha. Si son de este titular,
-              atalos: el libro lo escribe distinto de como lo escribe el Directorio.
+            <p className="flex flex-wrap items-center gap-1 px-1 text-xs text-[var(--text-secondary)]">
+              Se llaman parecido y no cuelgan de ninguna ficha.
+              <InfoTip
+                title="Candidatos"
+                what="Están a nombre de alguien que se llama parecido a este titular."
+                affects="Si son de este titular, átalos: el libro lo escribe distinto de como lo escribe el Directorio."
+                example="«COMUNIDAD SANTA ROSA» en la ficha y «COMUNIDAD NATIVA SANTA ROSA» en el papel."
+              />
             </p>
             <div className="mt-1.5 space-y-1.5">
               {candidatos.map((c) => (
@@ -488,9 +497,12 @@ export default function CtpPartePermisos({
         )}
 
         {!cargando && total === 0 && candidatos.length === 0 && !edicion && (
-          <p className="text-xs text-[var(--text-tertiary)]">
-            Todavía no hay permisos a nombre de este titular. Agregá el primero: sin él, el plan de manejo y la guía piden el
-            título habilitante tipeado a mano cada vez.
+          <p className="flex flex-wrap items-center gap-1 text-xs text-[var(--text-tertiary)]">
+            Todavía no hay permisos a nombre de este titular.
+            <InfoTip
+              title="Agrega el primero"
+              what="Sin él, el plan de manejo y la guía piden el título habilitante tipeado a mano cada vez."
+            />
           </p>
         )}
       </div>

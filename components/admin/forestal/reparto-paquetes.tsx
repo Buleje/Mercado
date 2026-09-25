@@ -25,6 +25,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Loader2, Ruler, Search, X } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { fmtM3, fmtPiezas } from "@/lib/forestal/cubicacion-formato";
 import type { CorridaDisponible } from "@/lib/forestal/despacho-lista";
@@ -145,16 +146,16 @@ export default function RepartoPaquetesPicker({
         <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
           <Ruler className="h-4 w-4 text-[var(--accent)]" aria-hidden />
           Paquetes ya declarados en el Libro
+          <InfoTip
+            title="Paquetes ya declarados"
+            what="Entran como bloques de madera ya aserrada: su m³ y sus piezas bajan tal como los declaró el Libro, sin retipear."
+            affects="El N° de permiso queda en blanco: esta lista no trae el título habilitante, y ponerle la GTF sería declarar como permiso algo que no lo es."
+          />
         </span>
         <button type="button" onClick={onCerrar} aria-label="Cerrar el buscador de paquetes" className="rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
           <X className="h-4 w-4" aria-hidden />
         </button>
       </div>
-      <p className="mb-2 text-xs text-[var(--text-tertiary)]">
-        Entran como bloques de <b>madera ya aserrada</b>: su m³ y sus piezas bajan tal como los declaró el Libro, sin retipear.
-        El <b>N° de permiso</b> queda en blanco — esta lista no trae el título habilitante, y ponerle la GTF sería declarar
-        como permiso algo que no lo es.
-      </p>
 
       <label className="relative mb-2 block">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />

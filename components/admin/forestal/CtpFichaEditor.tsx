@@ -24,6 +24,7 @@ import CtpFichaFormIdentidad, { type EstadoPadron } from "./CtpFichaFormIdentida
 import CtpFichaFormTitulos from "./CtpFichaFormTitulos";
 import CtpFichaFormUbicacion from "./CtpFichaFormUbicacion";
 import { emptyCtpFicha, type CtpFicha } from "@/lib/forestal/ctp-ficha-types";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 export default function CtpFichaEditor() {
   const [ficha, setFicha] = useState<CtpFicha>(emptyCtpFicha());
@@ -110,9 +111,12 @@ export default function CtpFichaEditor() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-[var(--text-tertiary)] max-w-2xl">
-          Identidad legal del Centro de Transformación Primaria ante <strong className="text-[var(--text-secondary)]">SERFOR / ARFFS</strong>. Es la carátula del Libro de Operaciones y encabeza el certificado de trazabilidad y la GTF de salida.
-        </p>
+        {/* Qué es la Ficha, en el ⓘ (2026-09-24): era un párrafo de 29 palabras. */}
+        <InfoTip
+          title="Ficha del CTP"
+          what="La identidad legal del Centro de Transformación Primaria ante SERFOR / ARFFS."
+          affects="Es la carátula del Libro de Operaciones y encabeza el certificado de trazabilidad y la GTF de salida."
+        />
         {!editing && (
           <button type="button" onClick={abrirEdicion} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
             <Pencil className="h-4 w-4" /> Editar ficha

@@ -25,6 +25,7 @@
 
 import { useMemo } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { BulejeDonutChart, BulejeStackedBar, BulejeWaterfallChart } from "@/components/ui-system/charts";
 import {
   composicionPiezas,
@@ -160,17 +161,16 @@ export default function CtpSaldosGraficos({
             <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Composición
             </p>
-            <CardTitle as="h3" className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-              {enPiezas ? "De qué especie son las trozas paradas" : "De qué especie está hecho el saldo"}
-            </CardTitle>
-            {enPiezas && (
-              /* Decir la unidad y por qué cambió. Un anillo que dice «57» donde
-                 antes decía «m³» sin avisar es peor que no dibujarlo. */
-              <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                El saldo en m³ no tiene nada positivo que repartir, así que acá va el conteo físico del patio —las
-                mismas piezas que se ven en Antigüedad—.
-              </p>
-            )}
+            <div className="flex items-center gap-1.5">
+              <CardTitle as="h3" className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                {enPiezas ? "De qué especie son las trozas paradas" : "De qué especie está hecho el saldo"}
+              </CardTitle>
+              <InfoTip
+                title="Composición del patio"
+                what="De qué especie está hecho el saldo, en m³. Si no hay nada positivo que repartir, se muestra en su lugar el conteo físico de trozas paradas (las mismas que Antigüedad)."
+                affects="Con una sola especie o permiso en el patio, un problema con ese título habilitante afecta a toda la planta."
+              />
+            </div>
 
             {rebanadas.length === 1 ? (
               /* Una sola rebanada es un anillo del 100 %: la forma no compara
@@ -189,10 +189,6 @@ export default function CtpSaldosGraficos({
                     {rotuloUnidad}, {rebanadas[0].especies > 1 ? "repartidas entre" : "todas de"}{" "}
                     <strong className="font-bold text-[var(--text-primary)]">{rebanadas[0].name}</strong>
                     {rebanadas[0].especies > 1 ? ` (${rebanadas[0].especies} especies)` : " — una sola especie"}.
-                  </p>
-                  <p className="mt-2 text-xs text-[var(--text-tertiary)]">
-                    Todo el patio cuelga de un mismo permiso: un problema con ese título habilitante para la planta
-                    entera.
                   </p>
                 </div>
               </div>
@@ -268,18 +264,26 @@ export default function CtpSaldosGraficos({
           <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Estado del volumen
           </p>
-          <CardTitle as="h3" className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-            Cada especie, tramo por tramo (m³)
-          </CardTitle>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-            La barra completa es la madera que entró físicamente.
+          <div className="flex items-center gap-1.5">
+            <CardTitle as="h3" className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+              Cada especie, tramo por tramo (m³)
+            </CardTitle>
             {/* El pie explicaba «Disponible» aunque ese tramo no estuviera en
                 ninguna barra: con el patio en cero, describía un color que no
-                existe en el dibujo. */}
-            {hayDisponible && " Cuanto más largo el tramo «Disponible», más queda por aserrar."}
-            {haySinValidar && " «Sin validar» está en el patio pero todavía no cuenta como saldo."}
-            {haySobreconsumo && " «Sobreconsumo» es volumen transformado sin ingreso que lo respalde: hay que corregirlo."}
-          </p>
+                existe en el dibujo — por eso el ⓘ sólo nombra los tramos que
+                hay. */}
+            <InfoTip
+              title="Estado del volumen"
+              what="La barra completa es la madera que entró físicamente, repartida por estado."
+              affects={[
+                hayDisponible && "Cuanto más largo el tramo «Disponible», más queda por aserrar.",
+                haySinValidar && "«Sin validar» está en el patio pero todavía no cuenta como saldo.",
+                haySobreconsumo && "«Sobreconsumo» es volumen transformado sin ingreso que lo respalde: hay que corregirlo.",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            />
+          </div>
 
           {/* Los dos tramos que obligan a hacer algo, con su cifra y su nombre.
               En la barra son un color y un largo: para saber que Shihuahuaco

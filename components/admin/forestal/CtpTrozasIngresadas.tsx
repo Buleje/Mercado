@@ -18,9 +18,11 @@
 import { Fragment, useId, useMemo, useState } from "react";
 import { ChevronRight, PackageOpen } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { agruparTrozas, type AgrupacionPatio, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { pieTablarAserrableDe } from "@/lib/forestal/cubicacion";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
+import { FILAS_POR_PAGINA_MOVIL, esPantallaAngosta } from "@/lib/forestal/tabla-paginacion";
 import type { FacetaOpcion, Rango } from "@/components/admin/shared/filtros-columna";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
@@ -78,7 +80,7 @@ export default function CtpTrozasIngresadas({
   menuAgrupar,
   accion,
   barra,
-  descripcion,
+  ayuda,
   filtrosColumna,
   ahora,
 }: {
@@ -113,8 +115,8 @@ export default function CtpTrozasIngresadas({
   accion?: React.ReactNode;
   /** La búsqueda y los filtros, DENTRO de la tarjeta que filtran (ley de Brandon, regla 5). */
   barra?: React.ReactNode;
-  /** Una línea bajo el título: qué se hace con esta tabla. */
-  descripcion?: React.ReactNode;
+  /** Cómo se usa esta tabla: va en el ⓘ del título, no como renglón (2026-09-24). */
+  ayuda?: React.ReactNode;
   filtrosColumna?: FiltrosPatioColumna;
   /** La fecha con la que se cuentan los días (la misma que la de los KPI). */
   ahora?: Date;
@@ -131,7 +133,10 @@ export default function CtpTrozasIngresadas({
   const volumenElegido = elegidas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0);
   const todasElegidas = libres.length > 0 && libres.every((t) => seleccion.has(t.id));
   /* Se pagina sobre lo YA filtrado (ADR-344). Agrupado no pagina. */
-  const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(filas);
+  /* En el celular cada troza es una tarjeta: arranca con 10 (medido 2026-09-24:
+     25 tarjetas = 7 000 px). El selector sigue ofreciendo 25, 50, 100 y todas. */
+  const [porPaginaInicial] = useState(() => (esPantallaAngosta() ? FILAS_POR_PAGINA_MOVIL : undefined));
+  const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(filas, { porPaginaInicial });
   const grupos = useMemo(() => agruparTrozas(filas, agrupar), [filas, agrupar]);
   const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
 
@@ -158,14 +163,24 @@ export default function CtpTrozasIngresadas({
     <section aria-labelledby={idTitulo} className="space-y-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="min-w-0">
-          <CardTitle as="h3" id={idTitulo} className="flex flex-wrap items-center gap-2 text-base font-bold text-[var(--text-primary)]">
-            <PackageOpen className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
-            {titulo ?? "Trozas en el patio"}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <CardTitle as="h3" id={idTitulo} className="flex flex-wrap items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+              <PackageOpen className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
+              {titulo ?? "Trozas en el patio"}
+            </CardTitle>
+            {/* Cómo se usa y qué dicen los íconos de la guía: en el ⓘ, no en
+                dos renglones sobre la tabla (Brandon 2026-09-24). */}
+            <InfoTip
+              title={titulo ?? "Trozas en el patio"}
+              ancho="w-80"
+              what={ayuda ?? "Lo que las guías recepcionadas dejaron en el patio y todavía no entró a la sierra."}
+              body={<LeyendaOrigenDato />}
+              example="Filtra por guía, permiso, especie o días desde el encabezado de cada columna, como en Excel."
+            />
             {acotadaA && (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-sm font-bold text-[var(--text-primary)]">solo {acotadaA}</span>
             )}
-          </CardTitle>
-          {descripcion && <p className="text-sm text-[var(--text-secondary)]">{descripcion}</p>}
+          </div>
         </div>
         {(accion || menuAgrupar) && (
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -188,7 +203,6 @@ export default function CtpTrozasIngresadas({
       </header>
 
       {barra}
-      <LeyendaOrigenDato />
       {/* Qué se está mirando y qué quedó afuera (ADR-343). */}
       {filtrando && (
         <p className="text-sm text-[var(--text-secondary)]">

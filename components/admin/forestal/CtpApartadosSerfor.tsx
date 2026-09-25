@@ -16,6 +16,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Scissors, Trees } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import {
   derivarFuentes,
@@ -198,8 +199,12 @@ export default function CtpApartadosSerfor({ period }: { period: CtpPeriod }) {
         <span className="inline-flex items-center gap-1.5">
           <Scissors className="h-4 w-4" aria-hidden /> {retrozos.length} pedazo(s) retrozados
           {descartado > 0 && ` · ${descartado} marcado(s) como descarte`}
+          <InfoTip
+            icono="ayuda"
+            title="Descarte"
+            what="Ocupa volumen de la troza madre pero no cuenta como producto disponible."
+          />
         </span>
-        <span>El descarte ocupa volumen de la troza madre pero no cuenta como producto disponible.</span>
       </p>
     </div>
   );

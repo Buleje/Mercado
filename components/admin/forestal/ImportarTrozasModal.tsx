@@ -13,6 +13,7 @@ import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, Camera, Check, Download, FileSpreadsheet, Loader2, Sparkles, Upload } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { parsearFilasTrozas, interpretarOcrTrozas, type TrozaImportada, type ResultadoImportTrozas } from "@/lib/forestal/cubicacion-trozas-import";
@@ -141,12 +142,24 @@ export default function ImportarTrozasModal({
         />
 
         {modo === "excel" ? (
-          <p className="mb-3 text-sm text-[var(--text-secondary)]">
-            El archivo tiene que tener las columnas <b>Especie · D1 (cm) · D2 (cm) · Largo (m)</b> (Especie y D2 opcionales — sin D2 se asume troza pareja). D1/D2 en centímetros, largo en metros. La plantilla trae, al lado, un <b>resumen por especie en vivo</b> (trozas · m³) que se calcula solo mientras vas llenando.
+          <p className="mb-3 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            Sube un Excel con <b>Especie · D1 (cm) · D2 (cm) · Largo (m)</b>.
+            <InfoTip
+              icono="ayuda"
+              title="Importar trozas desde Excel"
+              what="Especie y D2 son opcionales — sin D2 se asume troza pareja. D1/D2 en centímetros, largo en metros."
+              example="La plantilla trae al lado un resumen por especie en vivo (trozas · m³) que se calcula solo mientras la vas llenando."
+            />
           </p>
         ) : (
-          <p className="mb-3 text-sm text-[var(--text-secondary)]">
-            Sácale una foto (o sube una) a la planilla de trozas escrita a mano en patio — con diámetro menor, diámetro mayor y largo por fila. La IA lee la letra y arma la lista; <b>tú la revisas</b> contra la foto antes de sumarla al patio. Las filas donde la IA no estuvo segura salen resaltadas.
+          <p className="mb-3 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            Sácale una foto a la planilla de trozas escrita a mano en patio.
+            <InfoTip
+              icono="ayuda"
+              title="Escanear planilla de trozas"
+              what="La IA lee la letra y arma la lista con diámetro menor, diámetro mayor y largo por fila."
+              example="Tú la revisas contra la foto antes de sumarla al patio; las filas donde la IA no estuvo segura salen resaltadas."
+            />
           </p>
         )}
 

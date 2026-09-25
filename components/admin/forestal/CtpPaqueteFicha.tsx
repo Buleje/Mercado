@@ -18,9 +18,10 @@
  */
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Boxes, Copy, Loader2, PackageOpen, TreePine } from "@buleje/design-system/icons";
+import { AlertCircle, Boxes, Copy, Loader2, PackageOpen } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { ModalBody } from "./ctp-shared";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
@@ -99,13 +100,29 @@ function Dato({ label, valor, fuerte }: { label: string; valor: string; fuerte?:
   );
 }
 
-function Bloque({ titulo, meta, children }: { titulo: string; meta?: string; children: React.ReactNode }) {
+function Bloque({
+  titulo,
+  meta,
+  info,
+  children,
+}: {
+  titulo: string;
+  meta?: string;
+  /** ⓘ al lado del título del bloque: la nota de cómo se lee esta sección. */
+  info?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <section className="rounded-xl border border-[var(--rule-base)]">
-      <CardTitle as="h3" className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
-        <span className="text-sm font-bold text-[var(--text-primary)]">{titulo}</span>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
+        <span className="flex items-center gap-1.5">
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+            {titulo}
+          </CardTitle>
+          {info}
+        </span>
         {meta && <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>}
-      </CardTitle>
+      </div>
       <div className="p-3">{children}</div>
     </section>
   );
@@ -189,12 +206,16 @@ export default function CtpPaqueteFicha({
         )}
 
         {!cargando && !error && resultados.length === 0 && (
-          <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-6 text-center text-sm text-[var(--text-secondary)]">
-            <p className="font-bold text-[var(--text-primary)]">Ningún paquete se llama así.</p>
-            <p className="mt-1">
-              El código se pinta al declarar la producción. Si el atado es viejo puede estar cargado con otro
-              código —prueba con una parte, se busca por pedazo— o pertenecer a una corrida anulada.
-            </p>
+          <div className="flex flex-col items-center gap-1 rounded-xl bg-[var(--surface-sunken)] px-3 py-6 text-center text-sm text-[var(--text-secondary)]">
+            <span className="flex items-center gap-1.5 font-bold text-[var(--text-primary)]">
+              Ningún paquete se llama así.
+              <InfoTip
+                icono="ayuda"
+                title="Por qué no aparece"
+                what="El código se pinta al declarar la producción."
+                affects="Si el atado es viejo puede estar cargado con otro código —prueba con una parte, se busca por pedazo— o pertenecer a una corrida anulada."
+              />
+            </span>
           </div>
         )}
 
@@ -277,6 +298,14 @@ export default function CtpPaqueteFicha({
             <Bloque
               titulo="Salió de esta corrida"
               meta={`N° ${p.corrida.lineNo} · ${fmtDia(p.corrida.entryDate)}`}
+              info={
+                <InfoTip
+                  icono="ayuda"
+                  title="De qué corrida salió"
+                  what="Esas cifras son de la corrida entera, no de este atado: el libro registra cuántos m³ salieron de la planta, no cuál de los paquetes."
+                  affects="Si la corrida todavía tiene disponible, este paquete puede seguir en la pila."
+                />
+              }
             >
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Dato label="Especie" valor={p.corrida.speciesCommon ?? "—"} />
@@ -293,12 +322,6 @@ export default function CtpPaqueteFicha({
                 <Dato label="Reprocesado" valor={n(p.saldoCorrida.reprocesado)} />
                 <Dato label="Disponible" valor={n(p.saldoCorrida.disponible)} fuerte />
               </div>
-              {/* Lo que el libro NO sabe, dicho antes de que alguien lo suponga. */}
-              <p className="mt-3 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-                Esas cifras son de la <b>corrida entera</b>, no de este atado: el libro registra cuántos m³
-                salieron de la planta, no cuál de los paquetes. Si la corrida todavía tiene disponible, este
-                paquete puede seguir en la pila.
-              </p>
               {onIrA && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
@@ -325,6 +348,14 @@ export default function CtpPaqueteFicha({
             <Bloque
               titulo="La madera que lo formó"
               meta={`${trozas.length} troza${trozas.length === 1 ? "" : "s"} · ${n(p.corrida.volumeInputM3)} m³ a la sierra`}
+              info={
+                <InfoTip
+                  icono="ayuda"
+                  title="De qué madera está hecho"
+                  what="De una tabla no se puede decir de qué árbol salió."
+                  affects="Lo que el libro afirma es que este paquete salió de esta corrida, y que esta corrida se hizo con estas trozas."
+                />
+              }
             >
               {guias.length > 0 && (
                 <ul className="mb-3 divide-y divide-[var(--rule-soft)] overflow-hidden rounded-xl border border-[var(--rule-base)]">
@@ -376,11 +407,6 @@ export default function CtpPaqueteFicha({
                   ))}
                 </TbodyCtp>
               </TablaCtp>
-              <p className="mt-2 flex items-start gap-2 px-1 text-sm text-[var(--text-tertiary)]">
-                <TreePine className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                De una tabla no se puede decir de qué árbol salió: lo que el libro afirma es que este paquete
-                salió de esta corrida, y que esta corrida se hizo con estas trozas.
-              </p>
             </Bloque>
           </>
         )}

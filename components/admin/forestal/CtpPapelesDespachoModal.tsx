@@ -33,6 +33,7 @@ import {
   type TipoDocumentoDespacho,
 } from "@/lib/forestal/documento-clasificar";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 interface Papel {
   id: string;
@@ -349,11 +350,14 @@ export default function CtpPapelesDespachoModal({
           </ul>
         )}
 
-        <p className="px-1 text-sm text-[var(--text-tertiary)]">
-          El tipo sale del <b>contenido</b>: la capa de texto del PDF y, si viene vacía (un escaneo) o es una foto,
-          el sistema lo <b>mira</b> y transcribe lo que se lee. Cuando ni así se puede, cae al nombre del archivo y
-          se marca «revisa». Se archiva en el Drive, en «Papeles de despacho (CTP)», con su etiqueta y la GTF, que
-          es como se lo busca después.
+        <p className="flex items-center gap-1.5 px-1 text-sm text-[var(--text-tertiary)]">
+          El tipo se detecta solo, por el contenido
+          <InfoTip
+            icono="ayuda"
+            title="Cómo se clasifica"
+            what="La capa de texto del PDF y, si viene vacía (un escaneo) o es una foto, el sistema lo mira y transcribe lo que se lee. Cuando ni así se puede, cae al nombre del archivo y se marca «revisa»."
+            affects="Se archiva en el Drive, en «Papeles de despacho (CTP)», con su etiqueta y la GTF — así se lo busca después."
+          />
         </p>
       </ModalBody>
     </AdminModal>

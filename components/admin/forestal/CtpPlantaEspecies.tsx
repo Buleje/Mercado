@@ -18,6 +18,7 @@
 import { useMemo } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Boxes, PackageCheck, TreePine } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   fmtSubtotales,
   normalizarUnidad,
@@ -68,13 +69,24 @@ export default function CtpPlantaEspecies({ items, ubicados }: { items: Item[]; 
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-          <TreePine className="h-4 w-4 text-[var(--accent)]" /> Qué madera hay, por especie
-        </CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+            <TreePine className="h-4 w-4 text-[var(--accent)]" /> Qué madera hay, por especie
+          </CardTitle>
+          <InfoTip
+            title="Qué madera hay"
+            what="El % es la existencia disponible en el libro, no el saldo del período de arriba."
+          />
+        </div>
         <span className="text-xs font-bold text-[var(--text-tertiary)]">
           {ubicados} de {items.length} con lugar en el mapa
         </span>
       </div>
+      <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+        % sobre {formatNumber(enM3.total, { max: 2 })} m³
+        {otrasUnidades.length > 0 &&
+          ` · aparte hay ${otrasUnidades.map((u) => `${formatNumber(u.cantidad, { max: 2 })} ${u.unidad}`).join(" y ")}, que no se suman por ser otra unidad`}
+      </p>
 
       {/* Las dos cifras que importan, en una fila: la troza que espera sierra y
           la aserrada que espera camión. */}
@@ -132,13 +144,11 @@ export default function CtpPlantaEspecies({ items, ubicados }: { items: Item[]; 
               );
             })}
           </ul>
-          <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-            % sobre <strong className="text-[var(--text-secondary)]">{formatNumber(enM3.total, { max: 2 })} m³</strong> · es la existencia <strong className="text-[var(--text-secondary)]">disponible en el libro</strong>, no el saldo del período de arriba
-            {otrasUnidades.length > 0 && (
-              <> · aparte hay {otrasUnidades.map((u) => `${formatNumber(u.cantidad, { max: 2 })} ${u.unidad}`).join(" y ")}, que no se suman a los m³ porque son otra unidad</>
-            )}
-            {resumen.cites && <> · <strong className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">hay especies CITES</strong></>}
-          </p>
+          {resumen.cites && (
+            <p className="mt-2 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+              Hay especies CITES.
+            </p>
+          )}
         </>
       ) : (
         <p className="text-xs text-[var(--text-tertiary)]">

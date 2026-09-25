@@ -31,6 +31,7 @@ import {
   type CandidatoDeCapacidad,
 } from "@/lib/forestal/capacidad-a-bloques";
 import { abrirResumenesDelCubicador, sembrarBloques } from "@/lib/forestal/sembrar-reparto";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 export default function LlevarAlCubicadorModal({
   candidatos,
@@ -197,19 +198,20 @@ export default function LlevarAlCubicadorModal({
                     {fmtM3(totales.aserrada)} m³
                   </b>
                 </span>
-                <span className="ml-auto">
+                <span className="ml-auto flex items-center gap-1">
                   Ampararía{" "}
                   <b className="font-mono tabular-nums text-[var(--text-primary)]">
                     {fmtM3(totales.amparaM3)} m³
                   </b>
+                  {/* Los dos volúmenes no se suman entre sí: troza y tabla no se
+                      miden igual. Decirlo acá evita el «¿y el total?». */}
+                  <InfoTip
+                    icono="ayuda"
+                    title="Cómo se lee el amparo"
+                    what={`La rolliza y la madera ya aserrada no se suman entre sí: la primera pasa por el ${pct} % antes de amparar.`}
+                    affects="Esto no descuenta ni reserva nada del Libro: la distribución es un papel de respaldo."
+                  />
                 </span>
-              </p>
-              {/* Los dos volúmenes no se suman entre sí: troza y tabla no se
-                  miden igual. Decirlo acá evita el «¿y el total?». */}
-              <p className="mt-1 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-                La rolliza y la madera ya aserrada no se suman entre sí: la primera pasa por el{" "}
-                {pct} % antes de amparar. Esto no descuenta ni reserva nada del Libro — la
-                distribución es un papel de respaldo.
               </p>
             </div>
           </>

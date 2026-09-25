@@ -10,6 +10,7 @@
  */
 
 import { Hash } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatDate } from "@/lib/format";
 
@@ -114,9 +115,13 @@ export default function CtpCodigosDuplicadosGrupos({
         ))}
       </ul>
 
-      <p className="mt-2 text-xs text-[var(--text-tertiary)]">
-        Se propone conservar el código de la pieza que ya se aserró —su marca viajó a una corrida— y, si ninguna,
-        el de la primera que sigue viva. Las piezas de un mes cerrado no se tocan: hay que reabrir el período.
+      <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+        Se propone conservar el código de la pieza que ya se aserró.
+        <InfoTip
+          title="Cómo se elige"
+          what="Se conserva el código de la pieza que ya se aserró —su marca viajó a una corrida— y, si ninguna, el de la primera que sigue viva."
+          affects="Las piezas de un mes cerrado no se tocan: hay que reabrir el período."
+        />
       </p>
     </>
   );

@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { AlertTriangle, ArrowDownRight, Check, ClipboardList, FileText, Loader2, PackageCheck, PackageOpen, Pencil, Scissors, Search } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import CtpRetrozarModal, { type TrozaParaCortar } from "./CtpRetrozarModal";
 import CtpRecepcionTrozas from "./CtpRecepcionTrozas";
@@ -217,9 +218,9 @@ export default function CtpTrozasDeIngreso({
     return (
       <>
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3">
-          <p className="text-sm text-[var(--text-secondary)]">
-            Este ingreso no tiene lista de piezas. Sin ella no se puede consumir por troza ni cruzar
-            contra el POA.
+          <p className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            Este ingreso no tiene lista de piezas.
+            <InfoTip icono="ayuda" title="Sin lista de piezas" what="Sin ella no se puede consumir por troza ni cruzar contra el POA." />
           </p>
           <button
             type="button"
@@ -459,10 +460,10 @@ export default function CtpTrozasDeIngreso({
                     <td className="px-4 py-2.5 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-[var(--text-tertiary)]">{t.dimensiones ?? "—"}</td>
                     <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                      {t.largoM != null ? `${t.largoM.toFixed(2)} m` : "—"}
+                      {t.largoM != null ? `${Number(t.largoM).toFixed(2)} m` : "—"}
                     </td>
                     <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                      {t.diametroCm != null ? `${t.diametroCm.toFixed(1)} cm` : "—"}
+                      {t.diametroCm != null ? `${Number(t.diametroCm).toFixed(1)} cm` : "—"}
                     </td>
                     <td className="px-4 py-2.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                       {t.volumenM3 != null ? `${fmtM3(t.volumenM3)} m³` : "—"}
@@ -503,10 +504,10 @@ export default function CtpTrozasDeIngreso({
                       <td className="px-4 py-2 text-xs text-[var(--text-tertiary)]">{r.observaciones ?? ""}</td>
                       <td className="px-4 py-2 font-mono text-xs text-[var(--text-tertiary)]">{r.dimensiones ?? "—"}</td>
                       <td className="px-4 py-2 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                        {r.largoM != null ? `${r.largoM.toFixed(2)} m` : "—"}
+                        {r.largoM != null ? `${Number(r.largoM).toFixed(2)} m` : "—"}
                       </td>
                       <td className="px-4 py-2 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                        {r.diametroCm != null ? `${r.diametroCm.toFixed(1)} cm` : "—"}
+                        {r.diametroCm != null ? `${Number(r.diametroCm).toFixed(1)} cm` : "—"}
                       </td>
                       <td className="px-4 py-2 text-right font-mono text-xs font-bold tabular-nums text-[var(--text-secondary)]">
                         {r.volumenM3 != null ? `${fmtM3(r.volumenM3)} m³` : "—"}

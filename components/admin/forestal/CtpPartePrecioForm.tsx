@@ -10,6 +10,7 @@
 
 import { useId } from "react";
 import { Layers, Plus } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ORDEN_TIPO, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import type { BorradorPrecio, ModoPrecio } from "@/lib/forestal/precio-cliente-borrador";
 import type { GrupoEspecies } from "@/lib/forestal/precio-cliente";
@@ -84,9 +85,9 @@ export default function CtpPartePrecioForm({
       ) : (
         <div className="space-y-2">
           {grupos.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-3 text-sm text-[var(--text-secondary)]">
-              La planta todavía no tiene grupos de especies. Ármalos una vez y sirven para todos los
-              clientes.
+            <div className="flex flex-wrap items-center gap-1 rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-3 text-sm text-[var(--text-secondary)]">
+              La planta todavía no tiene grupos de especies.
+              <InfoTip title="Grupos de especies" what="Ármalos una vez y sirven para todos los clientes." />
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">

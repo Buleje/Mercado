@@ -63,6 +63,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Layers, Share2 } from "@buleje/design-system/icons";
 import { DataTable, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn } from "./ctp-shared";
 import { abrirResumenesDelCubicador, sembrarBloques } from "@/lib/forestal/sembrar-reparto";
 import { FilaSeleccionable, SeccionObjetivo, SeccionResumenPermiso } from "./ctp-resumen-permiso-secciones";
@@ -484,10 +485,14 @@ export default function CtpResumenPermisoModal({
 
               {lotesConSobra.length > 0 && (
                 <SeccionResumenPermiso titulo="Lotes con volumen restante">
-                  <p className="text-xs text-[var(--text-tertiary)]">
-                    De inventario o de trozas — cualquiera de los dos, o ambos. Un lote de inventario nunca tuvo
-                    trozas reales: su sobrante es aserrada YA producida (cuenta como «ya disponible», candado si su
-                    tipo no es del objetivo); uno de trozas es rolliza sin aserrar (se distribuye abajo).
+                  <p className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
+                    De inventario o de trozas
+                    <InfoTip
+                      icono="ayuda"
+                      title="Lotes con volumen restante"
+                      what="Un lote de inventario nunca tuvo trozas reales: su sobrante es aserrada YA producida."
+                      affects="Cuenta como «ya disponible» (candado si su tipo no es del objetivo); uno de trozas es rolliza sin aserrar y se distribuye abajo."
+                    />
                   </p>
                   <ul className="overflow-hidden rounded-xl border border-[var(--rule-base)]">
                     {lotesConSobra.map((x) => {
@@ -518,9 +523,18 @@ export default function CtpResumenPermisoModal({
 
               {disponiblesOrdenados.length > 0 && (
                 <SeccionResumenPermiso titulo="Productos disponibles (aserrados, ya producidos)">
-                  <p className="text-xs text-[var(--text-tertiary)]">
-                    No se suman a la distribución de rolliza — es aserrada YA hecha. Tilda para compararla contra el
-                    objetivo de arriba{objetivo ? " (con candado si el tipo no es del objetivo)" : ""}.
+                  <p className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
+                    Aserrada ya hecha, no se suma a la rolliza
+                    <InfoTip
+                      icono="ayuda"
+                      title="Productos disponibles"
+                      what="No se suman a la distribución de rolliza: es aserrada YA hecha."
+                      affects={
+                        objetivo
+                          ? "Tilda para compararla contra el objetivo de arriba, con candado si el tipo no es del objetivo."
+                          : "Tilda para compararla contra el objetivo, cuando lo cargues arriba."
+                      }
+                    />
                   </p>
                   <ul className="max-h-56 overflow-y-auto overflow-x-hidden rounded-xl border border-[var(--rule-base)]">
                     {disponiblesOrdenados.map((c) => (
@@ -732,11 +746,18 @@ export default function CtpResumenPermisoModal({
             )}
 
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
-              <p className="mb-3 text-sm text-[var(--text-secondary)]">
-                <b className="text-[var(--text-primary)]">Distribución de rolliza sobre lo aserrado:</b> abre
-                Herramientas → Resúmenes → Rolliza con un bloque por cada guía de este permiso
-                {lotesElegidos.size > 0 ? " y por cada lote tildado arriba" : ""} ya cargado (etiqueta y m³), listo
-                para poner días y % aprovechable.
+              <p className="mb-3 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+                <b className="text-[var(--text-primary)]">Distribución de rolliza sobre lo aserrado</b>
+                <InfoTip
+                  icono="ayuda"
+                  title="Distribuir esta rolliza"
+                  what="Abre Herramientas → Resúmenes → Rolliza con un bloque por cada guía de este permiso, ya cargado (etiqueta y m³), listo para poner días y % aprovechable."
+                  affects={
+                    lotesElegidos.size > 0
+                      ? "También trae un bloque por cada lote tildado arriba."
+                      : undefined
+                  }
+                />
               </p>
               <Btn variant="primary" onClick={distribuirPermisoActual} className="w-full sm:w-auto">
                 <Share2 className="h-4 w-4" aria-hidden /> Distribuir esta rolliza sobre lo aserrado

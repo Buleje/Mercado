@@ -18,6 +18,7 @@ import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, Scale } from "@buleje/
 import { CardTitle } from "@buleje/design-system";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import { Btn } from "./ctp-shared";
 import { TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
@@ -124,20 +125,21 @@ export default function CtpDescuadresPanel() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Scale className="h-4 w-4 text-[var(--data-warning-600)]" />
-          <CardTitle className="text-sm font-bold">
+          <CardTitle className="flex items-center gap-1.5 text-sm font-bold">
             Guías que no cuadran{" "}
             {filas != null && <span className="text-[var(--text-tertiary)]">({filas.length})</span>}
           </CardTitle>
+          {/* La explicación del panel pasó al ⓘ (2026-09-24). */}
+          <InfoTip
+            title="Guías que no cuadran"
+            what="Lo que cruza un fiscalizador al entrar: si un asiento declara un volumen y su lista de trozas suma otro."
+            affects="Se barre todo el libro, no sólo el período — una guía vieja sin cuadrar traba el consumo de hoy."
+          />
         </div>
         <Btn variant="secondary" onClick={() => void barrer()} disabled={cargando}>
           <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Rebarrer
         </Btn>
       </div>
-
-      <p className="text-sm text-[var(--text-secondary)]">
-        Lo que cruza un fiscalizador al entrar: si un asiento declara un volumen y su lista de trozas suma otro. Se
-        barre <b>todo el libro</b>, no sólo el período — una guía vieja sin cuadrar traba el consumo de hoy.
-      </p>
 
       {error && (
         <p className="flex items-start gap-2 rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">

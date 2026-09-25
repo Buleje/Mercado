@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, PackageCheck, ThumbsDown, ThumbsUp } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import BulkActionsBar from "@/components/admin/shared/BulkActionsBar";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useGuardarPrefs, usePrefsIniciales } from "@/hooks/use-ctp-ingresos-prefs";
@@ -380,7 +381,7 @@ export default function CtpIngresosView({
         }),
       },
     ]);
-  }, [period]);
+  }, [period, logoDe]);
 
   /**
    * Validar deja la guía en el expediente, sin que nadie apriete nada.
@@ -918,7 +919,7 @@ export default function CtpIngresosView({
       {porRecibir.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-3">
           <PackageCheck className="h-5 w-5 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
-          <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
+          <p className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-sm text-[var(--text-secondary)]">
             <b className="text-[var(--text-primary)]">
               {porRecibir.length} guía{porRecibir.length === 1 ? "" : "s"} sin recibir
             </b>{" "}
@@ -926,7 +927,8 @@ export default function CtpIngresosView({
             <span className="font-mono tabular-nums">
               {porRecibir.reduce((a, g) => a + Math.max(0, g.trozasCount - g.trozasDecididas), 0)} trozas
             </span>{" "}
-            sin fechar. Hasta que se reciban, esa madera no aparece en Consumos.
+            sin fechar.
+            <InfoTip icono="ayuda" title="Guías sin recibir" what="Hasta que se reciban, esa madera no aparece en Consumos." />
           </p>
           <button
             type="button"
@@ -1026,6 +1028,7 @@ export default function CtpIngresosView({
             onChange={(e) => setBulkReason(e.target.value)}
             placeholder="Ej: volumen no coincide con la guía (mín. 3 caracteres)"
             className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- único campo del motivo de rechazo masivo, foco intencional
             autoFocus
           />
           <button

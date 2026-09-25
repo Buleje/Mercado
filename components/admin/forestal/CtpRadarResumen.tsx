@@ -24,6 +24,7 @@ import {
   X as XIcon,
 } from "@buleje/design-system/icons";
 import type { TrazaGrafo } from "@/lib/db/forest-ctp.db";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { RadarAnalisis } from "@/lib/forestal/ctp-radar";
 import { alertasRendimiento, type RendimientoCorrida } from "@/lib/forestal/ctp-radar-rendimiento";
 import type { AnalisisTiempo } from "@/lib/forestal/ctp-radar-tiempo";
@@ -215,15 +216,18 @@ export default function CtpRadarResumen({
               libro los admite; el certificado exige cadena completa. */}
           {totalHuecos > 0 && (
             <div className="rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 dark:bg-[var(--data-warning-500)]/12">
-              <div className="mb-1 flex items-center gap-2">
+              <div className="mb-3 flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />
                 <p className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                   {totalHuecos} {totalHuecos === 1 ? "eslabón sin cerrar" : "eslabones sin cerrar"}
                 </p>
+                <InfoTip
+                  icono="ayuda"
+                  title="Eslabón sin cerrar"
+                  what="No trazan (o trazan sólo en parte) hasta su GTF de ingreso."
+                  affects="El libro los admite, pero el certificado exige cadena completa — toca para completarlos."
+                />
               </div>
-              <p className="mb-3 text-sm text-[var(--text-secondary)]">
-                Estos eslabones no trazan (o trazan sólo en parte) hasta su GTF de ingreso. El libro los admite, pero el certificado exige cadena completa — toca para completarlos.
-              </p>
               {/*
                 Con tope y no la lista entera. Cada fila mide ~54 px: cuatro
                 huecos ya empujaban el GRAFO —el punto de esta pestaña— fuera de

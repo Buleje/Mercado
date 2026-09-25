@@ -12,6 +12,7 @@
  */
 
 import { ScanText, X } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   interpretarDetalleProduccionSniffs,
@@ -57,6 +58,7 @@ export default function CtpPegarSniffsLote({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <ScanText className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
           <b className="text-[var(--text-primary)]">Leído del SNIFFS</b>
+          <InfoTip icono="ayuda" title="Leído del SNIFFS" what="Los campos de abajo se llenaron con lo leído; corrige lo que haga falta." />
           <span className="min-w-0 flex-1 font-mono text-xs tabular-nums text-[var(--text-secondary)]">{partes.join(" · ")}</span>
           <button
             type="button"
@@ -69,8 +71,7 @@ export default function CtpPegarSniffsLote({
         <p className="mt-1 text-xs text-[var(--text-secondary)]">
           {productos.length > 0
             ? `${productos.length} producto${productos.length === 1 ? "" : "s"} (${fmtM3(totalM3)} m³) van al paso siguiente, listos para revisar y agregar.`
-            : "La captura no trae productos: se declaran en el paso siguiente."}{" "}
-          Los campos de abajo se llenaron con lo leído; corrige lo que haga falta.
+            : "La captura no trae productos: se declaran en el paso siguiente."}
         </p>
       </div>
     );

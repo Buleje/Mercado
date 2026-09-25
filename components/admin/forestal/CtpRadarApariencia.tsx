@@ -14,6 +14,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Bookmark, Check, Palette, RotateCcw, SlidersHorizontal, X as XIcon } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { LARGO_NOMBRE, MAX_VISTAS, type VistaRadar } from "./ctp-radar-vistas";
 import {
   acotar,
@@ -67,11 +68,11 @@ function hexDe(color: string, contexto: Element | null): string {
   return css ? aHex(css) : "#666666";
 }
 
-/** Casilla con su explicación debajo: cada opción cambia lo que el dibujo AFIRMA. */
+/** Casilla con su explicación en el ⓘ: cada opción cambia lo que el dibujo AFIRMA. */
 function Interruptor({ activo, onCambio, titulo, nota }: { activo: boolean; onCambio: (v: boolean) => void; titulo: string; nota: string }) {
   return (
-    <div>
-      <label className="flex cursor-pointer items-start gap-2.5">
+    <div className="flex items-center gap-1">
+      <label className="flex flex-1 cursor-pointer items-start gap-2.5">
         <input
           type="checkbox"
           checked={activo}
@@ -80,7 +81,7 @@ function Interruptor({ activo, onCambio, titulo, nota }: { activo: boolean; onCa
         />
         <span className="min-w-0 text-xs font-bold text-[var(--text-primary)]">{titulo}</span>
       </label>
-      <p className="pl-[1.625rem] text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">{nota}</p>
+      <InfoTip icono="ayuda" title={titulo} what={nota} />
     </div>
   );
 }
@@ -228,9 +229,17 @@ export default function CtpRadarApariencia({
 
           {/* ── Color ────────────────────────────────────────────────── */}
           <section className="space-y-2 border-t-2 border-[var(--rule-soft)] pt-3">
-            <h4 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Color de cada columna
-            </h4>
+            <div className="flex items-center gap-1">
+              <h4 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Color de cada columna
+              </h4>
+              <InfoTip
+                icono="ayuda"
+                title="Color de cada columna"
+                what="Un color elegido a mano es el mismo en claro y en oscuro; las paletas de arriba sí se adaptan al tema."
+                affects="El ámbar y el rojo no se tocan: en este dibujo significan «hueco en la cadena» y «CITES»."
+              />
+            </div>
             <div className="grid grid-cols-2 gap-1.5">
               {PALETAS.map((p) => (
                 <button
@@ -280,15 +289,7 @@ export default function CtpRadarApariencia({
                   )}
                 </div>
               ))}
-              {aMedida && (
-                <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-                  Un color elegido a mano es el mismo en claro y en oscuro; las paletas de arriba sí se adaptan al tema.
-                </p>
-              )}
             </div>
-            <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-              El ámbar y el rojo no se tocan: en este dibujo significan «hueco en la cadena» y «CITES».
-            </p>
           </section>
 
           {/* ── Vistas guardadas ─────────────────────────────────────── */}

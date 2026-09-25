@@ -21,6 +21,7 @@
 
 import { useState } from "react";
 import { ChevronDown, Coins } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ESTADOS_CONTRATO } from "@/lib/forestal/contratos";
 import { Field, cls } from "./loth-plan-ui";
 
@@ -53,23 +54,33 @@ export default function LothPlanFormCosteo({
 
   return (
     <section className="space-y-2">
-      <button
-        type="button"
-        onClick={() => setAbierto((v) => !v)}
-        aria-expanded={abierto}
-        className="flex w-full items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-left transition-colors hover:border-[var(--rule-strong)]"
-      >
-        <Coins className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-bold text-[var(--text-primary)]">Costeo, estado y observaciones</span>
-          {/* Plegado también dice lo que trae: plegar no es esconder el dato. */}
-          <span className="block text-xs text-[var(--text-tertiary)]">
-            UIT S/ {valores.uitRef || "—"} · {cargados === 0 ? "sin costos por m³" : `${cargados} de 3 costos por m³`} ·{" "}
-            {ESTADO_LABEL[valores.estado] ?? "Vigente"}
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => setAbierto((v) => !v)}
+          aria-expanded={abierto}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-left transition-colors hover:border-[var(--rule-strong)]"
+        >
+          <Coins className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-[var(--text-primary)]">
+              Costeo, estado y observaciones
+            </span>
+            {/* Plegado también dice lo que trae: plegar no es esconder el dato. */}
+            <span className="block text-xs text-[var(--text-tertiary)]">
+              UIT S/ {valores.uitRef || "—"} · {cargados === 0 ? "sin costos por m³" : `${cargados} de 3 costos por m³`} ·{" "}
+              {ESTADO_LABEL[valores.estado] ?? "Vigente"}
+            </span>
           </span>
-        </span>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden="true" />
-      </button>
+          <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
+        <InfoTip
+          title="Costeo, estado y observaciones"
+          what="Los tres costos son los que usa Analítica para el margen por m³."
+          affects="Se pueden dejar vacíos y cargarlos después ahí mismo: es el mismo dato."
+          example="No completar Extracción ahora y cargarla luego desde Analítica no crea un valor distinto."
+        />
+      </div>
 
       {abierto && (
         <div className="grid grid-cols-2 gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 lg:grid-cols-4">
@@ -141,10 +152,6 @@ export default function LothPlanFormCosteo({
               className={`${cls} h-auto py-2`}
             />
           </Field>
-          <p className="col-span-2 self-end text-xs text-[var(--text-tertiary)] lg:col-span-2">
-            Los tres costos son los que usa <strong className="text-[var(--text-secondary)]">Analítica</strong> para el margen por
-            m³. Se pueden dejar vacíos y cargarlos después ahí mismo: es el mismo dato.
-          </p>
         </div>
       )}
     </section>

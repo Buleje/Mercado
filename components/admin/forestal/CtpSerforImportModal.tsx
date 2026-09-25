@@ -22,6 +22,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { AlertTriangle, CheckCircle, Download, FileText, Upload, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { logger } from "@/lib/logger";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -378,20 +379,31 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
   };
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+    >
       <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Importar el libro"
         className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         <div className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
-          <div>
-            <SectionTitle as="h2" className="text-lg font-extrabold text-[var(--text-primary)]">Importar el libro</SectionTitle>
-            <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
-              El Excel que baja del SNIFFS, o la plantilla. Reconozco las cinco secciones por sus columnas.
-            </p>
+          <div className="flex items-center gap-1.5">
+            <SectionTitle as="h2" className="text-lg font-extrabold text-[var(--text-primary)]">
+              Importar el libro
+            </SectionTitle>
+            <InfoTip
+              title="Importar el libro"
+              what="El Excel que baja del SNIFFS, o la plantilla."
+              example="Reconozco las cinco secciones por sus columnas — no hace falta elegirlas de una lista ni acertar el orden."
+            />
           </div>
           <button
             onClick={onClose}
@@ -518,10 +530,10 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
               {ignoradas.length > 0 && (
                 <p className="flex items-start gap-2 rounded-lg bg-[var(--data-warning)]/10 px-3 py-2 text-sm font-semibold text-[var(--data-warning)]">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  <span>
+                  <span className="flex flex-wrap items-center gap-1.5">
                     {ignoradas.length === 1 ? "Esta hoja tiene datos" : "Estas hojas tienen datos"} pero no reconozco su
-                    formato: <strong>{ignoradas.join(", ")}</strong>. No se van a importar — revisa que los nombres de
-                    las columnas sean los del SNIFFS.
+                    formato: <strong>{ignoradas.join(", ")}</strong>. No se van a importar.
+                    <InfoTip icono="ayuda" title="Hoja sin reconocer" what="Revisa que los nombres de las columnas sean los del SNIFFS." />
                   </span>
                 </p>
               )}
@@ -569,9 +581,9 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
               </dl>
               {/* El número contra el que hay que cuadrarlo: sin decir de dónde
                   sale, el operador no sabe si su inventario está bien. */}
-              <p className="text-sm text-[var(--text-secondary)]">
-                Cuadra esto contra el «Saldo Inicial» del Cuadro Resumen 2 del SNIFFS (aserrada) y el saldo de trozas
-                del Cuadro 1. Si no coinciden, falta o sobra algo en el conteo.
+              <p className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+                Cotéjalo contra el SNIFFS.
+                <InfoTip icono="ayuda" title="Contra qué se cuadra" what="Contra el «Saldo Inicial» del Cuadro Resumen 2 del SNIFFS (aserrada) y el saldo de trozas del Cuadro 1. Si no coinciden, falta o sobra algo en el conteo." />
               </p>
             </div>
           )}
@@ -613,17 +625,22 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                 ))}
               </dl>
               {estado.aperturaNecesariaM3 > 0 && (
-                <p className="rounded-lg bg-[var(--data-warning)]/10 px-3 py-2 text-base font-semibold text-[var(--text-primary)]">
-                  Este libro arranca a mitad: despacha producto aserrado antes de la primera corrida que declara, así
-                  que el depósito no puede empezar en cero.{" "}
+                <p className="flex flex-wrap items-center gap-1.5 rounded-lg bg-[var(--data-warning)]/10 px-3 py-2 text-base font-semibold text-[var(--text-primary)]">
+                  Este libro arranca a mitad: faltan al menos{" "}
+                  <strong className="tabular-nums">
+                    {formatNumber(estado.aperturaNecesariaM3, { max: 3 })} m³
+                  </strong>{" "}
+                  de existencia inicial{" "}
                   <span className="font-normal text-[var(--text-secondary)]">
-                    Por el detalle harían falta al menos{" "}
-                    <strong className="tabular-nums">
-                      {formatNumber(estado.aperturaNecesariaM3, { max: 3 })} m³
-                    </strong>{" "}
-                    de existencia inicial, pero el número exacto NO se estima: lo declara el «Saldo Inicial» del Cuadro
-                    Resumen 2 del SNIFFS. Baja ese cuadro y cárgalo como existencia de apertura.
+                    (mínimo estimado — el real lo declara el Saldo Inicial del Cuadro 2)
                   </span>
+                  .
+                  <InfoTip
+                    icono="ayuda"
+                    title="Libro que arranca a mitad"
+                    what="Despacha producto aserrado antes de la primera corrida que declara, así que el depósito no puede empezar en cero."
+                    example="Baja el «Saldo Inicial» del Cuadro Resumen 2 del SNIFFS y cárgalo como existencia de apertura."
+                  />
                 </p>
               )}
               {estado.rendimientoPct != null && (

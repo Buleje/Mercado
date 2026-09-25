@@ -24,6 +24,7 @@ import {
   X,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -194,10 +195,14 @@ function ListaCifrasImposibles({
 }) {
   return (
     <>
-      <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-        El volumen y las piezas que declaran no pueden ir juntos. No se bloquea nada —el libro
-        registra lo que pasó—, pero estas líneas ya están en el libro que se presenta: conviene
-        anular la corrida y volver a declararla con lo que realmente salió.
+      <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+        El volumen y las piezas que declaran no pueden ir juntos.
+        <InfoTip
+          icono="ayuda"
+          title="Cifras que no cierran"
+          what="No se bloquea nada —el libro registra lo que pasó—, pero estas líneas ya están en el libro que se presenta."
+          example="Conviene anular la corrida y volver a declararla con lo que realmente salió."
+        />
       </p>
       <ul className="space-y-1.5">
         {filas.slice(0, 12).map((f) => (
@@ -297,9 +302,9 @@ function ChipsSinOrigen({
   return (
     <>
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-          Marca las que salieron del mismo lote y pónselo a todas de una vez, o toca una para
-          elegir sus trozas a mano. De mayor a menor volumen.
+        <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+          De mayor a menor volumen.
+          <InfoTip icono="ayuda" title="Cómo usar la lista" what="Marca las que salieron del mismo lote y pónselo a todas de una vez, o toca una para elegir sus trozas a mano." />
         </p>
         {visiblesIds.length > 1 && (
           <button
@@ -379,7 +384,7 @@ function ChipsSinOrigen({
 
 const SECTION_META: Record<
   CtpSection,
-  { label: string; icon: typeof Boxes; cta: string; empty: string }
+  { label: string; icon: typeof Boxes; cta: string; empty: string; ayudaVacio: string }
 > = {
   /* El CTA de Producción ya no abre un formulario en blanco (ADR-349): la
      producción se registra DESDE UN LOTE, con sus trozas a la vista. El lote se
@@ -388,14 +393,15 @@ const SECTION_META: Record<
     label: "Producción",
     icon: Boxes,
     cta: "Declarar producción",
-    empty:
-      "Sin transformaciones registradas. Elige un lote en «Declarar producción»: salen sus trozas para elegir cuáles entran a la sierra.",
+    empty: "Sin transformaciones registradas.",
+    ayudaVacio: "Elige un lote en «Declarar producción»: salen sus trozas para elegir cuáles entran a la sierra.",
   },
   despacho: {
     label: "Despacho",
     icon: Truck,
     cta: "Nuevo despacho",
-    empty: "Sin despachos registrados. Registra la salida de producto con su GTF.",
+    empty: "Sin despachos registrados.",
+    ayudaVacio: "Registra la salida de producto con su GTF.",
   },
 };
 
@@ -1448,6 +1454,7 @@ export function CtpEntriesView({
     idsAmpliables,
     sinOrigen,
     marcadasSinOrigen,
+    referenciasPorPieza,
     sinAnexo,
     soloSinAnexo,
     setSoloSinAnexo,
@@ -2305,8 +2312,9 @@ export function CtpEntriesView({
         {!loading && entries.length === 0 && (
           <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
             <Icon className="mx-auto mb-3 h-10 w-10 opacity-30" />
-            <p className="text-base font-medium">
+            <p className="flex items-center justify-center gap-1.5 text-base font-medium">
               {search.trim() ? "Ninguna línea coincide con la búsqueda." : meta.empty}
+              {!search.trim() && <InfoTip icono="ayuda" title={meta.label} what={meta.ayudaVacio} />}
             </p>
             {!search.trim() && period.from && (
               <p className="mt-1 text-sm">
@@ -2446,10 +2454,14 @@ export function CtpEntriesView({
         <div
           className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/40 p-4"
           onClick={() => setAnnulId(null)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setAnnulId(null);
+          }}
         >
           <div
             className="w-full max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
             <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
               Anular línea
@@ -2458,6 +2470,7 @@ export function CtpEntriesView({
               Indica el motivo (queda en el historial, no se borra).
             </p>
             <input
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- único campo del modal de anular, foco intencional
               autoFocus
               value={annulReason}
               onChange={(e) => setAnnulReason(e.target.value)}

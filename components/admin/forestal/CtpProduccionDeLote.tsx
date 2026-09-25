@@ -17,6 +17,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Archive, Boxes, Layers, Loader2, PackageOpen, X } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import type { ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
@@ -530,6 +531,7 @@ export default function CtpProduccionDeLote({
             pendiente. Lo que ya se aserró queda en el libro.
           </p>
           <input
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- único campo del motivo de cierre, foco intencional
             autoFocus
             value={motivoCierre}
             onChange={(e) => setMotivoCierre(e.target.value)}
@@ -592,10 +594,13 @@ export default function CtpProduccionDeLote({
       {/* La regla, dicha antes de la tabla y no descubierta por accidente: el
           lote NO tiene que entrar entero. */}
       {yaEnElLote.length > 1 && (
-        <p className="px-1 text-sm text-[var(--text-tertiary)]">
-          No hace falta que entre el lote entero:{" "}
-          <b className="text-[var(--text-secondary)]">destilda las que no van hoy</b> y se quedan apartadas
-          para la corrida siguiente.
+        <p className="flex flex-wrap items-center gap-1 px-1 text-sm text-[var(--text-tertiary)]">
+          No hace falta que entre el lote entero.
+          <InfoTip
+            title="Entrar de a partes"
+            what="Destilda las que no van hoy: se quedan apartadas para la corrida siguiente."
+            example="Un lote de 6 trozas: tildas 3 para hoy y dejas 3 para mañana."
+          />
         </p>
       )}
 

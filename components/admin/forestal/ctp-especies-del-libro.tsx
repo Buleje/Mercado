@@ -21,6 +21,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, Check, Combine, Loader2, TreePine } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { EspecieEnElLibro } from "@/lib/forestal/especies-catalogo";
 
 const CAJA =
@@ -44,10 +45,17 @@ export function EspeciesQueFaltan({
     <div className={CAJA}>
       <div className="flex flex-wrap items-center gap-2">
         <TreePine className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
-        <p className={`mr-auto ${TITULO}`}>
-          Tu libro ya usa {faltan.length} especie{faltan.length === 1 ? "" : "s"} que no está
-          {faltan.length === 1 ? "" : "n"} en la lista
-        </p>
+        <span className="mr-auto flex min-w-0 items-center gap-1.5">
+          <p className={TITULO}>
+            Tu libro ya usa {faltan.length} especie{faltan.length === 1 ? "" : "s"} que no está
+            {faltan.length === 1 ? "" : "n"} en la lista
+          </p>
+          <InfoTip
+            title="Especies que faltan en el catálogo"
+            what="Salen de tus ingresos, trozas, asientos y lotes. El número es en cuántas filas del libro aparece cada una."
+            affects="Agregarlas al catálogo no cambia nada de lo ya cargado: sólo las ofrece de acá en adelante."
+          />
+        </span>
         <button
           type="button"
           onClick={() =>
@@ -82,11 +90,6 @@ export function EspeciesQueFaltan({
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-        Salen de tus ingresos, trozas, asientos y lotes. El número es en cuántas filas del libro
-        aparece cada una. Agregarlas al catálogo <b>no cambia nada de lo ya cargado</b>: sólo las
-        ofrece de acá en adelante.
-      </p>
     </div>
   );
 }
@@ -118,6 +121,11 @@ export function EspeciesDuplicadas({
           {duplicadas.length} especie{duplicadas.length === 1 ? " está escrita" : "s están escritas"}{" "}
           de más de una forma
         </p>
+        <InfoTip
+          title="Especies escritas de más de una forma"
+          what="Para el libro, «Tornillo» y «TORNILLO» son dos maderas distintas: se separan en los totales por especie y en el saldo por permiso."
+          affects="Elegir una forma reescribe esas filas —sólo el texto del nombre, nunca volúmenes, fechas ni de qué guía salió— y queda auditado."
+        />
       </div>
 
       <ul className="mt-2 space-y-2">
@@ -180,12 +188,6 @@ export function EspeciesDuplicadas({
           </li>
         ))}
       </ul>
-
-      <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-        Para el libro, <b>«Tornillo» y «TORNILLO» son dos maderas distintas</b>: se separan en los
-        totales por especie y en el saldo por permiso. Elegir una forma <b>reescribe esas filas</b>{" "}
-        —sólo el texto del nombre, nunca volúmenes, fechas ni de qué guía salió— y queda auditado.
-      </p>
     </div>
   );
 }

@@ -20,6 +20,7 @@ import { useMemo } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "@buleje/design-system/icons";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatDateShort, formatMonthYear } from "@/lib/format";
 
 export interface PuntoCurva {
@@ -175,10 +176,14 @@ export default function CurvaDeSaldo({
       </dl>
 
       {valleEnRojo && (
-        <p className="mt-3 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-ink)] dark:bg-transparent">
-          El saldo estuvo bajo cero durante el período: hubo consumo declarado antes de que
-          ingresara la madera que lo respalda. Revisa las fechas de las corridas contra las de sus
-          guías.
+        <p className="mt-3 flex items-center gap-1.5 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-ink)] dark:bg-transparent">
+          <b>El saldo estuvo bajo cero durante el período</b>
+          <InfoTip
+            icono="ayuda"
+            title="Saldo bajo cero"
+            what="Hubo consumo declarado antes de que ingresara la madera que lo respalda."
+            affects="Revisa las fechas de las corridas contra las de sus guías."
+          />
         </p>
       )}
 
@@ -279,16 +284,19 @@ function Encabezado({
       <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         Tendencia · {periodoLabel}
       </p>
-      <CardTitle
-        as="h3"
-        className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
-      >
-        Cómo se movió el patio, {NOMBRE_PASO[paso]}
-      </CardTitle>
-      <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-        La línea es la existencia de materia prima acumulada; las barras, lo que entró y lo que se
-        aserró en cada fecha. Sube cuando llegan guías, baja cuando la sierra trabaja.
-      </p>
+      <div className="flex items-center gap-1.5">
+        <CardTitle
+          as="h3"
+          className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
+        >
+          Cómo se movió el patio, {NOMBRE_PASO[paso]}
+        </CardTitle>
+        <InfoTip
+          title="Cómo se movió el patio"
+          what="La línea es la existencia de materia prima acumulada; las barras, lo que entró y lo que se aserró en cada fecha."
+          affects="Sube cuando llegan guías, baja cuando la sierra trabaja."
+        />
+      </div>
     </>
   );
 }

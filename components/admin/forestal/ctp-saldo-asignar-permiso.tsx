@@ -20,6 +20,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, Loader2, Tag } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -117,13 +118,16 @@ export default function AsignarPermisoMasivo({
 
   return (
     <div className="space-y-2 rounded-xl border border-[var(--accent)]/40 bg-[var(--surface-sunken)] p-3">
-      <p className="text-sm font-bold text-[var(--text-primary)]">
-        Asignar un permiso a producciones sin lote
-      </p>
-      <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
-        Se escribe en el asiento (ADR-402). Las que ya tienen materia prima no se tocan: ahí el
-        permiso lo pone la guía de ingreso.
-      </p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-sm font-bold text-[var(--text-primary)]">
+          Asignar un permiso a producciones sin lote
+        </p>
+        <InfoTip
+          title="Asignar un permiso"
+          what="Se escribe en el asiento (ADR-402)."
+          affects="Las que ya tienen materia prima no se tocan: ahí el permiso lo pone la guía de ingreso."
+        />
+      </div>
 
       <div className="flex flex-wrap items-end gap-2">
         <label className="min-w-56 flex-1">

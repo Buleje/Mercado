@@ -19,6 +19,7 @@
 import { AlertTriangle, ChevronRight, Layers } from "@buleje/design-system/icons";
 import { piezasLibres, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { Btn } from "./ctp-shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { pieTablarAserrableDe } from "@/lib/forestal/cubicacion";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
@@ -74,9 +75,13 @@ export default function CtpLotesTira({
     >
       <Layers className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
       {lotes.length === 0 ? (
-        <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-          No hay lotes armados. En <b className="text-[var(--text-primary)]">Lotes</b> se aparta la madera que entra
-          junta a la sierra: después la corrida se declara eligiendo el lote, no tipeando el volumen.
+        <p className="flex min-w-0 flex-1 items-center gap-1 text-sm text-[var(--text-primary)]">
+          <b>No hay lotes armados</b>
+          <InfoTip
+            title="Lotes"
+            what="En Lotes se aparta la madera que entra junta a la sierra."
+            affects="Después la corrida se declara eligiendo el lote, no tipeando el volumen."
+          />
         </p>
       ) : piezas === 0 ? (
         /* «3 lotes esperando la sierra · 0 pza · 0.000 m³» se contradecía
@@ -86,7 +91,13 @@ export default function CtpLotesTira({
           <b className="text-[var(--text-primary)]">
             {n} lote{n === 1 ? "" : "s"} abierto{n === 1 ? "" : "s"} sin piezas por cargar
           </b>{" "}
-          · {codigos} · se llenan en Lotes, o eligiéndolo en «Consumir en un lote…»
+          · {codigos}
+          <InfoTip
+            className="ml-1"
+            title="Lote sin piezas"
+            what="El lote está abierto pero no tiene trozas libres para cargar."
+            affects="Se llena en Lotes, o eligiéndolo en «Consumir en un lote…» y tildando las piezas."
+          />
         </p>
       ) : (
         <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">

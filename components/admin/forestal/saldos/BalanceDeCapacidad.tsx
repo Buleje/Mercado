@@ -27,6 +27,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { ChevronRight, Ruler } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
@@ -93,17 +94,19 @@ export default function BalanceDeCapacidad({
       <p className="mb-1 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         Capacidad de la planta
       </p>
-      <CardTitle
-        as="h3"
-        className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
-      >
-        Cuánto producto puede salir de todo lo que hay hoy
-      </CardTitle>
-      <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-        Suma las cuatro fuentes de la planta. La rolliza se convierte al{" "}
-        {Math.round(RENDIMIENTO_META * 100)} %, que es el <strong>techo</strong> del rendimiento —
-        el total es un máximo, no una promesa.
-      </p>
+      <div className="flex items-center gap-1.5">
+        <CardTitle
+          as="h3"
+          className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
+        >
+          Cuánto producto puede salir de todo lo que hay hoy
+        </CardTitle>
+        <InfoTip
+          title="Capacidad de la planta"
+          what="Suma las cuatro fuentes de la planta."
+          affects={`La rolliza se convierte al ${Math.round(RENDIMIENTO_META * 100)} %, que es el techo del rendimiento — el total es un máximo, no una promesa.`}
+        />
+      </div>
 
       {onFiltros && opciones && (
         <div className="mt-3 flex flex-wrap items-center gap-3">

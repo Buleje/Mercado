@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Trash2,
 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { I } from "./ctp-shared";
 import { type CamposFichaProps } from "./ctp-ficha-form";
 import {
@@ -103,6 +104,11 @@ export default function CtpFichaFormTitulos({
           <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <ShieldCheck className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
             Títulos habilitantes (origen de la materia prima)
+            <InfoTip
+              title="Títulos habilitantes"
+              what="El primero es el que cada guía de salida propone (casilleros 5, 6, 8 y 9); en el formulario de la guía se puede elegir otro."
+              affects={<>Usa <ArrowUp className="inline h-3.5 w-3.5" aria-hidden /> para cambiar el predeterminado.</>}
+            />
           </span>
           <BotonAgregar onClick={addTitulo}>Agregar</BotonAgregar>
         </div>
@@ -110,14 +116,6 @@ export default function CtpFichaFormTitulos({
           {draft.titulos.length === 0 && (
             <p className="text-sm text-[var(--text-tertiary)]">
               Sin títulos cargados. Agrega las concesiones/permisos que abastecen el CTP.
-            </p>
-          )}
-          {draft.titulos.length > 1 && (
-            <p className="text-sm text-[var(--text-tertiary)]">
-              El <strong className="text-[var(--text-secondary)]">primero</strong> es el que cada
-              guía de salida propone (casilleros 5, 6, 8 y 9); en el formulario de la guía se puede
-              elegir otro. Usa <ArrowUp className="inline h-3.5 w-3.5" aria-hidden /> para cambiar el
-              predeterminado.
             </p>
           )}
           {draft.titulos.map((t, i) => (

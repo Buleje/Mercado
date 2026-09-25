@@ -14,6 +14,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { MODAL_BODY } from "./ctp-shared";
 import { AlertCircle, ArrowDownRight, ArrowUpRight, Scale } from "@buleje/design-system/icons";
 import { LoadingState, DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatDate } from "@/lib/format";
@@ -103,9 +104,14 @@ export default function CtpKardexModal({
                 <Stat label="Ingresado" value={`${n4(k.ingresoTotal)} m³`} tone="ok" />
                 <Stat label="Consumido" value={`${n4(k.consumoTotal)} m³`} />
                 <Stat label="Saldo" value={`${n4(k.saldo)} m³`} tone={k.saldo < 0 ? "bad" : "ok"} />
-                <p className="text-xs text-[var(--text-tertiary)]">
-                  El saldo final coincide con la pestaña Saldos. Consumo = m³ declarados en las
-                  corridas de producción de esta especie.
+                <p className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
+                  Cómo se lee
+                  <InfoTip
+                    icono="ayuda"
+                    title="Cómo se lee el kardex"
+                    what="El saldo final coincide con la pestaña Saldos."
+                    affects="Consumo = m³ declarados en las corridas de producción de esta especie."
+                  />
                 </p>
               </div>
 

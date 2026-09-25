@@ -19,12 +19,12 @@ import {
   ArrowLeft,
   Boxes,
   Coins,
-  PackageOpen,
   RefreshCw,
   Scale,
   TreePine,
 } from "@buleje/design-system/icons";
 import { Kicker, SectionTitle, StatCard, WarningAlert } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3, fmtPct } from "@/lib/forestal/cubicacion-formato";
 import { useBalanceContrato } from "@/hooks/use-contratos";
 import CtpContratoCuentas from "./CtpContratoCuentas";
@@ -144,9 +144,16 @@ export default function CtpContratoBalance({
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Todos los contratos
             </button>
-            <SectionTitle as="h2" className="font-mono break-all">
-              {contrato.codigo}
-            </SectionTitle>
+            <div className="flex items-center gap-1.5">
+              <SectionTitle as="h2" className="font-mono break-all">
+                {contrato.codigo}
+              </SectionTitle>
+              <InfoTip
+                title="Balance del contrato"
+                what="Todo se calcula al leer: nada se guarda como saldo."
+                affects="Un movimiento entra a este balance cuando se registra con este contrato."
+              />
+            </div>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               {contrato.alias ? `${contrato.alias} · ` : ""}
               <b className="text-[var(--text-primary)]">{contrato.titularNombre}</b>
@@ -257,12 +264,6 @@ export default function CtpContratoBalance({
 
       {/* ── El detalle, bloque por bloque ── */}
       <CtpContratoCuentas balance={balance} resumen={resumen} />
-
-      <p className="flex items-start gap-1.5 px-1 text-xs text-[var(--text-tertiary)]">
-        <PackageOpen className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-        Todo lo de arriba se calcula al leer: nada se guarda como saldo. Un movimiento entra a este
-        balance cuando se registra con este contrato.
-      </p>
     </div>
   );
 }

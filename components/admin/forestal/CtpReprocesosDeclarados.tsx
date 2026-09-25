@@ -31,6 +31,7 @@ import {
   Scissors,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { fmtM3, fmtPiezas } from "@/lib/forestal/cubicacion-formato";
@@ -109,12 +110,14 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-8 text-center">
         <Scissors className="mx-auto h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
-        <p className="mt-2 text-sm font-bold text-[var(--text-primary)]">
+        <p className="mt-2 flex flex-wrap items-center justify-center gap-1 text-sm font-bold text-[var(--text-primary)]">
           En este período no volvió madera a la sierra.
-        </p>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Un reproceso se declara desde <b>Productos disponibles</b>: es el producto terminado que
-          vuelve a producción y sale como otro. Acá se ve todo junto cuando lo haya.
+          <InfoTip
+            title="Reprocesos"
+            what="Un reproceso se declara desde Productos disponibles: es el producto terminado que vuelve a producción y sale como otro."
+            affects="Acá se ve todo junto cuando lo haya."
+            example="Comercial que se recorta en paquetería corta."
+          />
         </p>
       </div>
     );
@@ -162,7 +165,15 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
       {/* 2 · Qué se convirtió en qué, sumado. Lo raro primero. */}
       <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-          <span className="text-sm font-bold text-[var(--text-primary)]">Qué salió de qué</span>
+          <span className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+            Qué salió de qué
+            <InfoTip
+              title="Qué se puede reprocesar"
+              what={FRASE_REGLA}
+              affects="Lo que no es habitual no está prohibido —el libro registra lo que pasó— pero tiene que quedar explicado; esa explicación es la que se muestra en la tabla de abajo."
+              example="Un reproceso se declara desde Productos disponibles."
+            />
+          </span>
           <span className="text-xs text-[var(--text-tertiary)]">
             {pares.length} {pares.length === 1 ? "conversión" : "conversiones"} distintas
           </span>
@@ -359,12 +370,6 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
           </table>
         </div>
       </div>
-
-      <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-        <b>Qué se puede reprocesar:</b> {FRASE_REGLA} Lo que no es habitual no está prohibido —el
-        libro registra lo que pasó— pero tiene que quedar explicado: esa explicación es la que se
-        muestra acá. Un reproceso se declara desde <b>Productos disponibles</b>.
-      </p>
     </div>
   );
 }

@@ -27,6 +27,7 @@ import { leerJson } from "@/lib/errores/sin-dato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { AlertTriangle, Check, Loader2, Lock, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { esCampoSinDato, marcadorDeAusencia } from "@/lib/forestal/campo-sin-dato";
 import { PRESENTACIONES_LOCTP, TIPOS_PRODUCTO_SALIDA } from "@/lib/forestal/loctp-catalogos";
@@ -346,12 +347,19 @@ export default function CtpEditarLineaModal({
       >
         <div className="mb-1 flex items-start justify-between gap-3">
           <div>
-            <SectionTitle className="text-base font-extrabold text-[var(--text-primary)]">
-              Editar la corrida N° {linea.lineNo ?? "—"}
-            </SectionTitle>
+            <div className="flex items-center gap-1.5">
+              <SectionTitle className="text-base font-extrabold text-[var(--text-primary)]">
+                Editar la corrida N° {linea.lineNo ?? "—"}
+              </SectionTitle>
+              {/* La explicación general del modal pasó al ⓘ (2026-09-24). */}
+              <InfoTip
+                title="Editar la corrida"
+                what="Corrige o completa los campos con lo que hoy dice el asiento. Queda registrado qué decía antes de cada cambio."
+                affects="El N° de permiso se hereda de la madera: su formulario escribe en la guía, no en la corrida. La fecha no se toca desde acá."
+              />
+            </div>
             <p className="text-sm text-[var(--text-tertiary)]">
-              {formatDateNumeric(linea.fecha, { soloFecha: true })} · queda registrado qué
-              decía antes de cada cambio
+              {formatDateNumeric(linea.fecha, { soloFecha: true })}
             </p>
           </div>
           <button
@@ -365,13 +373,15 @@ export default function CtpEditarLineaModal({
         </div>
 
         {linea.atadaPorque && (
-          <p className="mt-3 flex items-start gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>
-              Esta corrida {linea.atadaPorque}, así que especie, producto, cantidad, unidad y volumen quedan
-              fijos: cambiarlos dejaría un despacho citando madera que el libro ahora dice que era otra. Para
-              cambiarlos hay que anularla con motivo y registrarla de nuevo.
-            </span>
+          <p className="mt-3 flex items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            <span>Esta corrida {linea.atadaPorque}: especie, producto, cantidad, unidad y volumen quedan fijos.</span>
+            <InfoTip
+              icono="ayuda"
+              title="Por qué quedan fijos"
+              what="Cambiarlos dejaría un despacho citando madera que el libro ahora dice que era otra."
+              affects="Para cambiarlos hay que anularla con motivo y registrarla de nuevo."
+            />
           </p>
         )}
 
@@ -401,8 +411,23 @@ export default function CtpEditarLineaModal({
             madera. Por eso su formulario escribe en la guía y lo dice — y por
             eso, sin guía de la que heredarlo, no hay dónde escribirlo. */}
         <div className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
-          <label className="block">
-            <span className="text-xs font-bold text-[var(--text-secondary)]">N° de permiso</span>
+          <div className="block">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
+              <span aria-hidden="true">N° de permiso</span>
+              {/* La explicación de dónde se guarda pasó al ⓘ (2026-09-24); el caso
+                  ambiguo, que cambia lo que hace Guardar, se queda visible abajo. */}
+              <InfoTip
+                title="N° de permiso"
+                what="Una corrida no tiene permiso propio: lo hereda de la madera que consumió."
+                affects={
+                  permisoEnAsiento
+                    ? "Sin guía de origen —una existencia de apertura— se guarda en el propio asiento y vale sólo para ella."
+                    : `Se guarda en ${guias.length === 1 ? `la guía ${guias[0]}` : `las guías ${guias.join(", ")}`} y lo heredan todas sus corridas, no sólo ésta.`
+                }
+              />
+            </div>
+            <label className="block">
+              <span className="sr-only">N° de permiso</span>
             <input
               type="text"
               value={permiso}
@@ -411,40 +436,35 @@ export default function CtpEditarLineaModal({
               className={`${INPUT} bg-[var(--surface-raised)]`}
             />
           </label>
-          <p className="mt-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-            {permisoAmbiguo ? (
-              <>
-                Esta corrida consumió madera de <b>{permisos.length} permisos distintos</b> (
-                {permisos.join(" · ")}). Lo que escribas acá los <b>unifica</b>: queda el mismo en{" "}
-                {guias.join(", ")} y en todas sus corridas. Si de verdad son dos títulos, corrige cada guía
-                desde Ingresos.
-              </>
-            ) : permisoEnAsiento ? (
-              <>
-                Esta corrida no consumió madera de ninguna guía —es una existencia de apertura—, así que el
-                permiso se guarda <b>en el propio asiento</b> y vale sólo para ella.
-              </>
-            ) : (
-              <>
-                Una corrida no tiene permiso propio: lo hereda de la madera que consumió. Esto se guarda en{" "}
-                {guias.length === 1 ? `la guía ${guias[0]}` : `las guías ${guias.join(", ")}`} y lo heredan{" "}
-                <b>todas</b> sus corridas, no sólo ésta.
-              </>
-            )}
-          </p>
+          </div>
+          {!permisoEnAsiento && guias.length > 0 && (
+            <p className="mt-1.5 text-[length:var(--ts-2xs)] font-semibold leading-snug text-[var(--text-tertiary)]">
+              Se guarda en {guias.length === 1 ? `la guía ${guias[0]}` : `las guías ${guias.join(", ")}`} y lo
+              heredan todas sus corridas.
+            </p>
+          )}
+          {permisoAmbiguo && (
+            <p className="mt-1.5 text-[length:var(--ts-2xs)] font-semibold leading-snug text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              Consumió madera de {permisos.length} permisos distintos ({permisos.join(" · ")}): lo que escribas
+              acá los <b>unifica</b> en {guias.join(", ")}. Si de verdad son dos títulos, corrige cada guía
+              desde Ingresos.
+            </p>
+          )}
         </div>
 
         {/* La fecha se muestra y no se toca: mover un asiento de mes cambia el
             rendimiento, el movimiento del libro y dos conciliaciones a la vez. */}
-        <div className="mt-3 flex items-start gap-2 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-          <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-          <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-            <b className="text-[var(--text-secondary)]">
-              Fecha: {formatDateNumeric(linea.fecha, { soloFecha: true })}
-            </b>{" "}
-            — no se corrige desde acá. Cambiarla mueve la producción de un mes a otro y con eso el rendimiento
-            y los cuadros de los dos períodos. Una fecha mal puesta se anula con motivo y se registra de nuevo.
+        <div className="mt-3 flex items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
+          <Lock className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
+            <b>Fecha: {formatDateNumeric(linea.fecha, { soloFecha: true })}</b> — no se corrige desde acá.
           </p>
+          <InfoTip
+            icono="ayuda"
+            title="Por qué la fecha no se toca"
+            what="Cambiarla mueve la producción de un mes a otro y con eso el rendimiento y los cuadros de los dos períodos."
+            affects="Una fecha mal puesta se anula con motivo y se registra de nuevo."
+          />
         </div>
 
         {reparto.vaciados.length > 0 && (

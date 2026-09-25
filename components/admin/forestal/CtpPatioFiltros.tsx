@@ -187,9 +187,7 @@ export default function CtpPatioFiltros({ filtro }: { filtro: EstadoFiltroPatio 
             opciones={facetas.resoluciones.map((f) => ({ value: f.value, count: f.count }))} />
           <Multi etiqueta="Proveedor" todos="Todos los proveedores" valor={filtro.proveedor} onCambio={set.proveedor}
             opciones={facetas.proveedores.map((f) => ({ value: f.value, count: f.count }))} />
-          <p className="hidden text-sm text-[var(--text-secondary)] sm:block sm:col-span-2 lg:col-span-4">
-            Guía, permiso, especie, días en el patio y medidas se filtran <b className="text-[var(--text-primary)]">desde su encabezado en la tabla</b>.
-          </p>
+
         </div>
       )}
 

@@ -11,6 +11,7 @@
 
 import { useCallback, useId, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpApartados, { CtpApartadoPanel, useApartado, type Apartado } from "./ctp-apartados";
 import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
@@ -48,8 +49,10 @@ export default function CtpConsumosView({
   const irAlPatio = useCallback(() => ir("patio"), [ir]);
   const s2 = useConsumosSeccion2(period);
   const p = usePatioConsumos({ pushToast: push, presetLoteId, onPresetLoteUsado, alAplicarPreset: irAlPatio });
-  /* El contador del Patio sale del MISMO número que la KPI «Trozas en el patio». */
-  const enPatio = p.patio.resumen.enPatioPiezas;
+  /* El contador de la pestaña es el patio ENTERO (mismo criterio que «Por
+     permiso»: libres + en lote). Salía de las cifras filtradas y, con un lote
+     elegido, decía «Patio 0 trozas» con 44 en el patio (medido 2026-09-24). */
+  const enPatio = p.porPermiso.totales.enPatio.trozas;
   const apartados: Apartado[] = [
     {
       id: "patio",
@@ -72,9 +75,16 @@ export default function CtpConsumosView({
       {/* Título y apartados en UNA fila (2026-09-24): las pestañas eran un
           renglón propio entre el subtítulo y el contenido. */}
       <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-        <div className="min-w-0 space-y-1">
+        {/* El subtítulo pasó al ⓘ (Brandon 2026-09-24: «mucho texto por todos
+            lados»): a la vista queda el título; la explicación, a un toque. */}
+        <div className="flex min-w-0 items-center gap-1.5">
           <SectionTitle as="h2">Consumos</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)]">Qué queda en el patio y qué entró a la sierra</p>
+          <InfoTip
+            title="Consumos"
+            what="Qué madera queda en el patio y qué entró a la sierra en el período."
+            affects="Patio: de acá se eligen las trozas que se cargan en un lote. Sección 2: el cuadro oficial del libro."
+            example="Patio con 44 trozas esperando; en Sección 2, los 6 consumos del mes tal como van al formato de SERFOR."
+          />
         </div>
         <CtpApartados apartados={apartados} activo={activo} onIr={ir} idBase={idBase} etiqueta="Apartados de Consumos" />
       </header>

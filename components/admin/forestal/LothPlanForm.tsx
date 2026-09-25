@@ -39,6 +39,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, ChevronDown, Copy, FileText, Loader2, Plus, X as XIcon } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
 import DirectorioPicker from "./DirectorioPicker";
@@ -515,7 +516,18 @@ export default function LothPlanForm({
       </Bloque>
 
       {/* 4 · Dónde y hasta cuándo */}
-      <Bloque n={4} titulo="Área y vigencia">
+      <Bloque
+        n={4}
+        titulo="Área y vigencia"
+        ayuda={
+          meta.vigenciaTipicaAnios != null
+            ? {
+                what: `Un ${meta.sigla} suele aprobarse por ${meta.vigenciaTipicaAnios} año${meta.vigenciaTipicaAnios === 1 ? "" : "s"}.`,
+                example: "Carga las fechas de tu resolución, no las típicas.",
+              }
+            : undefined
+        }
+      >
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <LothPlanFormUbicacion
             valores={{ region: f.region, provincia: f.provincia, distrito: f.distrito, sector: f.sector, cuenca: f.cuenca }}
@@ -536,12 +548,6 @@ export default function LothPlanForm({
             <input type="date" value={f.vigenciaHasta} onChange={(e) => set("vigenciaHasta", e.target.value)} className={cls} />
           </Field>
         </div>
-        {meta.vigenciaTipicaAnios != null && (
-          <p className="mt-2 text-xs text-[var(--text-tertiary)]">
-            Un {meta.sigla} suele aprobarse por {meta.vigenciaTipicaAnios} año
-            {meta.vigenciaTipicaAnios === 1 ? "" : "s"}. Carga las fechas de tu resolución, no las típicas.
-          </p>
-        )}
       </Bloque>
 
       {/* 5 · Lo que el plan ya guardaba y nadie preguntaba */}
@@ -589,22 +595,28 @@ function Bloque({
   titulo,
   children,
   accion,
+  ayuda,
 }: {
   n: number;
   titulo: string;
   children: React.ReactNode;
   /** Algo a la derecha del título (por ejemplo, traer datos del Directorio). */
   accion?: React.ReactNode;
+  /** Consejo del bloque, en el ⓘ junto al título (Brandon 2026-09-24: nada de párrafos sueltos). */
+  ayuda?: { what: React.ReactNode; example?: React.ReactNode };
 }) {
   return (
     <section className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
-            {n}
-          </span>
-          {titulo}
-        </CardTitle>
+        <span className="flex items-center gap-2">
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+            <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
+              {n}
+            </span>
+            {titulo}
+          </CardTitle>
+          {ayuda && <InfoTip icono="ayuda" title={titulo} what={ayuda.what} example={ayuda.example} />}
+        </span>
         {accion}
       </div>
       {children}

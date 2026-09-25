@@ -18,6 +18,7 @@ import {
 } from "@/lib/forestal/anexo04-registro";
 import { fmtAnexo } from "@/lib/forestal/anexo04-serfor";
 import { exportarBandejaAnexos } from "@/lib/forestal/anexo04-excel";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatDate } from "@/lib/format";
 
 const fecha = (iso: string) => {
@@ -74,8 +75,9 @@ export default function Anexo04Historial({
 
   if (lista.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-4 text-center text-xs text-[var(--text-tertiary)]">
-        Todavía no emitiste ningún anexo. Al descargar el PDF queda registrado acá para re-imprimirlo igual.
+      <p className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-4 text-center text-xs text-[var(--text-tertiary)]">
+        Todavía no emitiste ningún anexo.
+        <InfoTip icono="ayuda" title="Bandeja de anexos" what="Al descargar el PDF queda registrado acá para re-imprimirlo igual." />
       </p>
     );
   }

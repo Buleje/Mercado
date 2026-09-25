@@ -24,6 +24,7 @@
 
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertTriangle, Clock } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { DIAS_LOTE_ANEJO } from "@/lib/forestal/lotes-aserrio";
 import type { LoteDeReporte } from "@/lib/forestal/saldos-reporte";
 import { formatNumber } from "@/lib/format";
@@ -125,17 +126,20 @@ export default function LotesConSaldo({
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <div>
-          <CardTitle
-            as="h3"
-            id={ID_TITULO}
-            className="text-base font-bold text-[var(--text-primary)]"
-          >
-            Lo que resta en cada lote
-          </CardTitle>
-          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-            Madera apartada en un lote: mientras esté ahí no se ofrece para otra corrida. El plazo
-            es el que el lote declaró al SNIFFS.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <CardTitle
+              as="h3"
+              id={ID_TITULO}
+              className="text-base font-bold text-[var(--text-primary)]"
+            >
+              Lo que resta en cada lote
+            </CardTitle>
+            <InfoTip
+              title="Lo que resta en cada lote"
+              what="Madera apartada en un lote: mientras esté ahí no se ofrece para otra corrida."
+              affects="El plazo es el que el lote declaró al SNIFFS."
+            />
+          </div>
         </div>
         <p className="text-right text-sm text-[var(--text-secondary)]">
           Apartado en lotes{" "}

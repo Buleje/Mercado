@@ -15,6 +15,7 @@
  */
 
 import { AlertTriangle, Eye, Gauge, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   alertasRendimiento,
   DESVIO_PCT,
@@ -69,17 +70,26 @@ export default function CtpRadarRendimiento({
     <div className="space-y-3">
       {alertas.length > 0 ? (
         <div className="rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 dark:bg-[var(--data-warning-500)]/12">
-          <p className="mb-1 flex items-center gap-2 font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          <p className="flex items-center gap-2 font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             {alertas.length === 1 ? "Una corrida se sale de lo normal" : `${alertas.length} corridas se salen de lo normal`}
-          </p>
-          <p className="text-sm text-[var(--text-secondary)]">
-            Comparadas contra la mediana de las corridas de su mismo producto y unidad. Un desvío de más del {DESVIO_PCT}% se marca; con menos de {MIN_GRUPO} corridas del tipo no se compara nada.
+            <InfoTip
+              icono="ayuda"
+              title="Cómo se compara"
+              what={`Comparadas contra la mediana de las corridas de su mismo producto y unidad. Un desvío de más del ${DESVIO_PCT}% se marca.`}
+              affects={`Con menos de ${MIN_GRUPO} corridas del tipo no se compara nada. Rendimientos en unidades distintas (m³, pies tablares, kg) nunca se comparan entre sí.`}
+            />
           </p>
         </div>
       ) : (
-        <p className="rounded-2xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm font-semibold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
+        <p className="flex items-center gap-2 rounded-2xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm font-semibold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
           Ninguna corrida se desvía de sus pares en más del {DESVIO_PCT}%.
+          <InfoTip
+            icono="ayuda"
+            title="Cómo se compara"
+            what={`Comparadas contra la mediana de las corridas de su mismo producto y unidad. Con menos de ${MIN_GRUPO} corridas del tipo no se compara nada.`}
+            affects="Rendimientos en unidades distintas (m³, pies tablares, kg) nunca se comparan entre sí."
+          />
         </p>
       )}
 
@@ -145,9 +155,6 @@ export default function CtpRadarRendimiento({
             );
           })}
       </ul>
-      <p className="text-xs text-[var(--text-tertiary)]">
-        La marca vertical es la mediana de las corridas del mismo producto y unidad. Rendimientos en unidades distintas (m³, pies tablares, kg) nunca se comparan entre sí.
-      </p>
     </div>
   );
 }

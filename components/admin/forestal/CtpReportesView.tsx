@@ -32,6 +32,7 @@ import {
   RefreshCw,
   TrendingUp,
 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { exportSheetsToExcel } from "@/lib/export-excel";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
@@ -154,7 +155,14 @@ export default function CtpReportesView({ onIr }: { onIr?: (vista: string) => vo
           la bajada al lado, a 400 px los botones caían solos a otra fila. */}
       <header>
         <div className="flex items-start justify-between gap-2">
-          <SectionTitle as="h2">Reportes de producción</SectionTitle>
+          <div className="flex items-center gap-1.5">
+            <SectionTitle as="h2">Reportes de producción</SectionTitle>
+            <InfoTip
+              title="Reportes de producción"
+              what="Lo que salió de la sierra, en PT, m³ y piezas."
+              affects="Por semana, por dueño de la madera, por permiso y por especie."
+            />
+          </div>
           <div className="flex shrink-0 items-center gap-2">
             <Btn
               variant="secondary"
@@ -178,9 +186,6 @@ export default function CtpReportesView({ onIr }: { onIr?: (vista: string) => vo
             </Btn>
           </div>
         </div>
-        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-          Lo que salió de la sierra, en PT, m³ y piezas: por semana, por dueño de la madera, por permiso y por especie.
-        </p>
       </header>
 
       <ReportesFiltros

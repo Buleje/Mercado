@@ -19,6 +19,7 @@
 import { useMemo } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { History, Minus, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { BulejeLineChart } from "@/components/ui-system/charts";
 import { useCtpComplianceSerie, type ComplianceSnapshot } from "@/hooks/use-ctp-compliance-serie";
 import { densificarPorDia, queCambio, tramosSinMedir } from "@/lib/forestal/compliance-historia";
@@ -73,9 +74,7 @@ export default function CtpComplianceHistoria({
       <section className="rounded-2xl border border-dashed border-[var(--rule-base)] p-4">
         <Cabecera periodLabel={periodLabel} />
         <p className="mt-2 text-sm text-[var(--text-secondary)]">
-          {error
-            ? "No se pudo leer la historia del cumplimiento."
-            : "Todavía no hay historia: la serie arranca hoy. Se guarda un punto cada día que abres el libro — los días que nadie entra no tienen punto, y eso también dice algo."}
+          {error ? "No se pudo leer la historia del cumplimiento." : "Todavía no hay historia: la serie arranca hoy."}
         </p>
       </section>
     );
@@ -179,10 +178,8 @@ export default function CtpComplianceHistoria({
             <b className="text-[var(--text-secondary)]">
               {huecos} {huecos === 1 ? "tramo" : "tramos"} sin medir
             </b>
-    : la línea se corta ahí porque nadie miró esos días
           </>
         )}
-        . Se guarda un punto por cada día que se abre el libro.
       </p>
     </section>
   );
@@ -196,6 +193,12 @@ function Cabecera({ periodLabel }: { periodLabel: string }) {
         Cómo viene el cumplimiento{" "}
         <span className="font-normal text-[var(--text-tertiary)]">· {periodLabel}</span>
       </CardTitle>
+      <InfoTip
+        title="Cómo viene el cumplimiento"
+        what="Se guarda un punto por cada día que abres el libro: los días que nadie entra no tienen punto, y la línea se corta ahí."
+        affects="Compara la medición de hoy contra la anterior, y dice qué categoría movió el número."
+        example="85/100 hoy contra 70/100 hace tres semanas: subió porque bajaron los ingresos fuera de plazo."
+      />
     </div>
   );
 }

@@ -17,6 +17,7 @@
 import { useState } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Minus } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import type { ReporteDeProduccion, SemanaReporte } from "@/lib/forestal/reportes-produccion";
 import { formatNumber } from "@/lib/format";
@@ -63,13 +64,15 @@ export default function ReportesSemanas({ reporte }: { reporte: ReporteDeProducc
 
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <div className="mb-3">
+      <div className="mb-3 flex items-center gap-1.5">
         <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
           Resumen por semana
         </CardTitle>
-        <p className="text-sm text-[var(--text-secondary)]">
-          De lunes a domingo, la más nueva arriba. La variación compara con los mismos días de la semana anterior.
-        </p>
+        <InfoTip
+          title="Resumen por semana"
+          what="Una fila por semana de lunes a domingo, la más nueva arriba."
+          affects="La variación compara con los mismos días de la semana anterior — a mitad de semana no se compara contra los 7 días completos."
+        />
       </div>
       <DataTable className="w-full text-sm" wrapperClassName="hidden sm:block">
         <thead>

@@ -14,6 +14,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { ChevronRight, ShieldAlert } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { fechaLegible } from "@/lib/forestal/capacidad-de-planta";
 import {
@@ -66,16 +67,20 @@ export default function OrigenIncompleto({
             <ShieldAlert className="h-3.5 w-3.5" aria-hidden />
             Origen incompleto
           </p>
-          <CardTitle
-            as="h3"
-            className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
-          >
-            {fmtM3(m3SinCertificar)} m³ del depósito no se pueden certificar
-          </CardTitle>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-            Es el {pct} % de lo disponible hoy. El libro lo admite; el certificado de origen no.
-            Cada fila dice por qué y dónde se arregla.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <CardTitle
+              as="h3"
+              className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
+            >
+              {fmtM3(m3SinCertificar)} m³ del depósito no se pueden certificar
+            </CardTitle>
+            <InfoTip
+              title="Origen incompleto"
+              what="El libro admite huecos; el certificado de origen no."
+              affects="Cada fila dice por qué y dónde se arregla."
+            />
+          </div>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Es el {pct} % de lo disponible hoy.</p>
         </div>
         <dl className="grid grid-cols-2 gap-x-4 text-right text-xs">
           {(Object.keys(porMotivo) as (keyof typeof porMotivo)[])
@@ -176,13 +181,15 @@ function ListaApertura({
   if (apertura.length === 0) return null;
   return (
     <div className="mt-4 rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5">
-      <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+      <p className="flex items-center gap-1 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         Existencia de apertura · {fmtM3(m3Apertura)} m³ en {apertura.length}{" "}
         {apertura.length === 1 ? "corrida" : "corridas"}
-      </p>
-      <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-        Madera anterior al libro: no hay guía ni piezas que atar. No es un hueco a corregir, pero
-        tampoco se puede certificar desde este libro (ADR-394).
+        <InfoTip
+          icono="ayuda"
+          title="Existencia de apertura"
+          what="Madera anterior al libro: no hay guía ni piezas que atar."
+          affects="No es un hueco a corregir, pero tampoco se puede certificar desde este libro (ADR-394)."
+        />
       </p>
       <ul className="mt-2 divide-y divide-[var(--rule-soft)]">
         {apertura.map((c) => (

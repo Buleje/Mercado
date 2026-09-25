@@ -17,6 +17,7 @@
  */
 
 import { Scale } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { RENDIMIENTO_PLAUSIBLE_MIN } from "@/lib/forestal/loctp-catalogos";
 import { TOPE_RENDIMIENTO_PCT } from "@/lib/forestal/vincular-produccion";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
@@ -238,9 +239,12 @@ export default function CtpBalanceProduccion({
             declarada: si coinciden, repetirlo es ruido; si difieren, callarlo
             es lo que hacía parecer que el sistema se contradecía. */}
         {hayEntrada && mermaSobre > 0 && Math.abs(resto - merma) >= 0.01 && (
-          <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-            La barra reparte los {n2(consumido)} m³ del período entero ({n2(resto)} m³ sin declarar como
-            producto); la merma de arriba se mide sólo donde hay entrada y salida en m³. Por eso no dan lo mismo.
+          <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
+            {n2(resto)} m³ del período no están en la merma medida.
+            <InfoTip
+              title="Por qué no coinciden"
+              what={`La barra reparte los ${n2(consumido)} m³ del período entero; la merma de arriba se mide sólo donde hay entrada y salida en m³.`}
+            />
           </p>
         )}
       </div>

@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { RotateCcw } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 
@@ -130,11 +131,16 @@ export default function TablaDeTrabajo({ filas }: {
   return (
     <div className="rounded-xl border-2 border-dashed border-[var(--rule-strong)] bg-[var(--surface-canvas)] p-3">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <div>
+        <div className="flex items-center gap-1.5">
           <span className="font-display text-lg text-[var(--text-primary)]">Tabla de trabajo</span>
-          <span className="ml-2 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+          <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
             borrador
           </span>
+          <InfoTip
+            title="Tabla de trabajo"
+            what="Tantea acá: cambia piezas, m³, pie tablar o el precio por pie y mira el importe moverse."
+            affects="No toca nada —ni el lote del cubicador, ni el reparto, ni el papel—. Se guarda en este equipo hasta que lo reinicies."
+          />
         </div>
         {cambiadas > 0 && (
           <button
@@ -147,12 +153,6 @@ export default function TablaDeTrabajo({ filas }: {
           </button>
         )}
       </div>
-      <p className="mb-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-        Tantea acá: cambia piezas, m³, pie tablar o el <b>precio por pie</b> y mira el importe.{" "}
-        <b>No toca nada</b> — ni el lote del cubicador, ni el reparto, ni el papel. Se guarda en este
-        equipo hasta que lo reinicies.
-      </p>
-
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
         <DataTable className="w-full min-w-[600px] text-sm">
           <caption className="sr-only">Tabla de trabajo por especie y tipo (borrador, no afecta al lote)</caption>

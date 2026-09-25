@@ -12,6 +12,7 @@
 import { AlertTriangle } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 export default function CtpAvisoSinOrigen({
   corridas,
@@ -36,11 +37,13 @@ export default function CtpAvisoSinOrigen({
         {formatNumber(n)} corrida{n === 1 ? "" : "s"} produjeron sin declarar de qué guía salió la madera
         {producidoSinOrigen > 0 ? ` · ${fmtM3(producidoSinOrigen)} m³ sin respaldo` : ""}
       </span>
-      <span className="text-[var(--text-secondary)]">
-        {corridas.slice(0, 3).map((c) => c.label).join(" · ")}
-        {n > 3 ? ` y ${formatNumber(n - 3)} más` : ""}
-        {" — no tienen fila en el cuadro; se atribuyen desde Producción."}
-      </span>
+      {/* Cuáles y por qué, en el ⓘ: la lista de productos ocupaba dos renglones. */}
+      <InfoTip
+        title="Corridas sin origen"
+        ancho="w-96"
+        what={`${corridas.slice(0, 5).map((c) => c.label).join(" · ")}${n > 5 ? ` y ${formatNumber(n - 5)} más` : ""}.`}
+        affects="No tienen fila en el cuadro de la Sección 2 hasta que se diga de qué guía salió la madera. Se atribuyen desde Producción."
+      />
       {onIrAProduccion && (
         <button
           type="button"

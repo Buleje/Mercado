@@ -17,6 +17,7 @@
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, FileSignature, RefreshCw } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   useContratos,
   type CandidatoContrato,
@@ -60,14 +61,17 @@ export default function CtpContratosView() {
     <div className="space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <SectionTitle as="h2" className="flex items-center gap-2">
-            <FileSignature className="h-5 w-5 shrink-0 text-[var(--accent)]" aria-hidden />
-            Contratos ({contratos.length})
-          </SectionTitle>
-          <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-            El permiso, la concesión o el contrato bajo el que se trabaja. Todo lo que se registra
-            con uno —madera, gastos, fletes, adelantos y cuenta corriente— suma en su balance.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <SectionTitle as="h2" className="flex items-center gap-2">
+              <FileSignature className="h-5 w-5 shrink-0 text-[var(--accent)]" aria-hidden />
+              Contratos ({contratos.length})
+            </SectionTitle>
+            <InfoTip
+              title="Contratos"
+              what="El permiso, la concesión o el contrato bajo el que se trabaja."
+              affects="Todo lo que se registra con uno —madera, gastos, fletes, adelantos y cuenta corriente— suma en su balance."
+            />
+          </div>
         </div>
         <button
           type="button"

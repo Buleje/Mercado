@@ -11,6 +11,7 @@
 
 import { forwardRef, memo, useEffect } from "react";
 import { Camera, MapPin } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { arbolesEnFaja } from "@/lib/forestal/loth-faja";
 import LothMapaCanvasRaw from "./LothMapaCanvas";
 import LothMapaChrome from "./LothMapaChrome";
@@ -179,10 +180,14 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center p-6">
             <div className="pointer-events-auto max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-5 text-center shadow-lg backdrop-blur">
               <MapPin className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" aria-hidden="true" />
-              <p className="text-sm font-bold text-[var(--text-primary)]">Todavía no hay geolocalización</p>
-              <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-                Dibuja la <b>parcela de aprovechamiento</b> (Dibujar → Área de aprovechamiento), carga el <b>censo</b> con sus
-                coordenadas UTM y captura el <b>GPS</b> al registrar cada tala. Los tres alimentan el plano y el cumplimiento EUDR.
+              <p className="flex items-center justify-center gap-1 text-sm font-bold text-[var(--text-primary)]">
+                Todavía no hay geolocalización
+                <InfoTip
+                  title="Cómo se completa el plano"
+                  what="Dibuja la parcela de aprovechamiento (Dibujar → Área de aprovechamiento)."
+                  affects="Carga el censo con sus coordenadas UTM y captura el GPS al registrar cada tala."
+                  example="Los tres alimentan el plano y el cumplimiento EUDR."
+                />
               </p>
             </div>
           </div>
@@ -191,8 +196,12 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
 
       {!fullscreen && (
         <p className="flex items-center gap-1.5 border-t border-[var(--rule-soft)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
-          <Camera className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Toca un punto para ver su coordenada UTM, la especie y la foto de
-          campo.
+          <Camera className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Toca un punto del mapa
+          <InfoTip
+            icono="ayuda"
+            title="Tocar un punto del mapa"
+            what="Muestra su coordenada UTM, la especie del árbol y la foto de campo, si la tiene."
+          />
         </p>
       )}
     </section>

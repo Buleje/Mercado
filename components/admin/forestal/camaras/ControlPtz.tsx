@@ -22,6 +22,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { ArrowUp, Square, ZoomIn, ZoomOut } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 /**
  * Cuánto de los 100 posibles.
@@ -165,12 +166,13 @@ export default function ControlPtz({ onMover, disabled }: Props) {
 
       {/* En celular la ayuda baja a su propia fila: al lado de la cruceta y el
           zoom quedaba en una columna de seis letras (medido a 400 px). */}
-      <p className="basis-full flex-1 text-xs text-[var(--text-secondary)] sm:min-w-[10rem] sm:basis-auto">
+      <p className="flex basis-full flex-1 items-center gap-1.5 text-xs text-[var(--text-secondary)] sm:min-w-[10rem] sm:basis-auto">
         Mantén apretado para mover; al soltar, la cámara frena.
-        <span className="mt-0.5 block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          Con el teclado: las flechas mueven y las teclas + y − hacen el zoom, mientras las tengas
-          apretadas.
-        </span>
+        <InfoTip
+          icono="ayuda"
+          title="Mover con el teclado"
+          what="Las flechas mueven y las teclas + y − hacen el zoom, mientras las tengas apretadas."
+        />
       </p>
     </div>
   );

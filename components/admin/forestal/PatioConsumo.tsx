@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Loader2, Boxes } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { URL_TROZAS_CONSUMO, escribirDelPatio } from "@/lib/forestal/patio-cola";
 import { antiguedad, guardar as guardarCache, leer } from "@/lib/forestal/patio-cache";
 import { cn } from "@/lib/utils";
@@ -164,15 +165,19 @@ export default function PatioConsumo() {
 
   return (
     <section className="space-y-3">
-      <SectionTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">
-        Cargar piezas a una corrida
-      </SectionTitle>
+      <span className="flex items-center gap-1.5">
+        <SectionTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">
+          Cargar piezas a una corrida
+        </SectionTitle>
+        <InfoTip
+          title="Cargar piezas a una corrida"
+          what="Elige la corrida que está aserrando."
+          affects="Se abre en la oficina; acá se le suman los palos."
+        />
+      </span>
 
       {!elegida ? (
         <>
-          <p className="text-base text-[var(--text-secondary)]">
-            Elige la corrida que está aserrando. Se abre en la oficina; acá se le suman los palos.
-          </p>
           {corridas === null ? (
             <p className="flex items-center gap-2 py-4 text-base text-[var(--text-tertiary)]">
               <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Buscando las corridas abiertas…

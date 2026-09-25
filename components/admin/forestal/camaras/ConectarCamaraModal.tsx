@@ -33,9 +33,10 @@
 
 import { useState } from "react";
 import {
-  AlertTriangle, CheckCircle2, Eye, EyeOff, HelpCircle, Loader2, Server, Wifi, WifiOff,
+  AlertTriangle, CheckCircle2, Eye, EyeOff, Loader2, Server, Wifi, WifiOff,
 } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { textoDeFalla, type CamaraPublica, type ConexionCamaraPublica } from "@/lib/camaras/camaras";
 
 /**
@@ -249,6 +250,12 @@ export default function ConectarCamaraModal({ camara, onCerrar, onConectar, onDe
           )}
         </div>
 
+        <div className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)]">
+          <Server className="h-4 w-4 shrink-0" aria-hidden />
+          Datos del aparato, no de Hik-Connect
+          <InfoTip icono="ayuda" side="bottom" ancho="w-96" title="¿Y si la veo en Hik-Connect?" body={<AyudaHikConnect />} />
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
           <label className="block">
             <span className={ETIQUETA}>Dirección IP o dominio de la cámara</span>
@@ -326,47 +333,48 @@ export default function ConectarCamaraModal({ camara, onCerrar, onConectar, onDe
             </span>
           </label>
         </div>
-
-        {/* La ayuda honesta. Vive acá y no en un manual: quien llena esto tiene
-            esta pantalla abierta y la cámara adelante. */}
-        <details className="rounded-xl border border-[var(--rule-base)] px-3 py-2">
-          <summary className="flex cursor-pointer items-center gap-2 text-sm font-bold text-[var(--text-secondary)]">
-            <HelpCircle className="h-4 w-4 shrink-0" aria-hidden /> ¿Y si la veo en Hik-Connect?
-          </summary>
-          <div className="mt-2 space-y-2 text-sm text-[var(--text-secondary)]">
-            <p>
-              <b>Esto no pasa por Hik-Connect.</b> Esa app habla con la nube de Hikvision, y esa nube
-              sólo abre su puerta a los socios del fabricante: no hay forma de entrar desde acá. El
-              panel le habla a la cámara <b>directo</b>, así que funciona desde la red del negocio (la
-              PC y la cámara en el mismo WiFi o el mismo cable) o con una dirección pública.
-            </p>
-            <p>
-              Por eso el usuario y la clave son los <b>del aparato</b> —normalmente <code>admin</code> y
-              la clave que le pusiste al configurarla—, no los de tu cuenta de Hik-Connect.
-            </p>
-            {/* Lo pide el propio módulo de video: para traer el video, ffmpeg
-                recibe la clave en la línea de comandos, y eso lo puede leer
-                cualquier usuario de esa computadora mientras dura. Con una
-                cuenta de sólo-ver, lo que quede expuesto no puede tocar nada. */}
-            <p>
-              <b>Mejor todavía:</b> créale a la cámara un usuario aparte de <b>sólo ver</b> (en
-              Hikvision, <code>Usuario</code> u <code>Operador</code>) y pon ése acá. Si esa clave
-              alguna vez se filtra, no sirve para reconfigurar la cámara.
-            </p>
-            <p>
-              Si la cámara está con SIM 4G o con fibra detrás de CGNAT (lo normal en Perú), no tiene
-              dirección propia y esto no va a llegar: ahí el camino sigue siendo el de arriba, que la
-              cámara <b>mande</b> la foto al panel. Los dos conviven; conectar acá no apaga aquello.
-            </p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-              Para saber la dirección IP: en Hik-Connect, en los datos del aparato, o desde el router
-              en la lista de equipos conectados. Si la cámara está en otra red, primero hay que
-              abrirle un puerto en el router de allá.
-            </p>
-          </div>
-        </details>
       </div>
     </AdminModal>
+  );
+}
+
+/**
+ * La ayuda honesta del ⓘ de arriba. Vive acá y no en un manual: quien llena
+ * el formulario tiene esta pantalla abierta y la cámara adelante.
+ */
+function AyudaHikConnect() {
+  return (
+    <span className="block space-y-2 text-xs font-normal leading-snug text-[var(--text-secondary)]">
+      <span className="block">
+        <b className="text-[var(--text-primary)]">Esto no pasa por Hik-Connect.</b> Esa app habla con la nube de
+        Hikvision, y esa nube sólo abre su puerta a los socios del fabricante: no hay forma de entrar desde acá. El
+        panel le habla a la cámara <b className="text-[var(--text-primary)]">directo</b>, así que funciona desde la
+        red del negocio (la PC y la cámara en el mismo WiFi o el mismo cable) o con una dirección pública.
+      </span>
+      <span className="block">
+        Por eso el usuario y la clave son los <b className="text-[var(--text-primary)]">del aparato</b> —normalmente{" "}
+        <code>admin</code> y la clave que le pusiste al configurarla—, no los de tu cuenta de Hik-Connect.
+      </span>
+      {/* Lo pide el propio módulo de video: para traer el video, ffmpeg recibe la
+          clave en la línea de comandos, y eso lo puede leer cualquier usuario de
+          esa computadora mientras dura. Con una cuenta de sólo-ver, lo que quede
+          expuesto no puede tocar nada. */}
+      <span className="block">
+        <b className="text-[var(--text-primary)]">Mejor todavía:</b> créale a la cámara un usuario aparte de{" "}
+        <b className="text-[var(--text-primary)]">sólo ver</b> (en Hikvision, <code>Usuario</code> u{" "}
+        <code>Operador</code>) y pon ése acá. Si esa clave alguna vez se filtra, no sirve para reconfigurar la cámara.
+      </span>
+      <span className="block">
+        Si la cámara está con SIM 4G o con fibra detrás de CGNAT (lo normal en Perú), no tiene dirección propia y
+        esto no va a llegar: ahí el camino sigue siendo que la cámara{" "}
+        <b className="text-[var(--text-primary)]">mande</b> la foto al panel. Los dos conviven; conectar acá no
+        apaga aquello.
+      </span>
+      <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+        Para saber la dirección IP: en Hik-Connect, en los datos del aparato, o desde el router en la lista de
+        equipos conectados. Si la cámara está en otra red, primero hay que abrirle un puerto en el router de allá.
+      </span>
+    </span>
   );
 }
 

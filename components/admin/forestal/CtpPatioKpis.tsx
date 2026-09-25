@@ -43,8 +43,14 @@ export default function CtpPatioKpis({
   filtrosActivos = 0,
   trabajoActivo = false,
   cargando = false,
+  acotadoA,
 }: {
   resumen: ResumenPatio;
+  /**
+   * La especie del lote elegido: las cifras son de lo que ESE lote puede
+   * tomar. Sin decirlo, «Sin madera esperando» se leía como patio vacío.
+   */
+  acotadoA?: string;
   /**
    * Lo que va DENTRO del panel, arriba de las tarjetas: desde ADR-431 sólo la
    * nota de qué recortó las cifras. Los controles viven pegados a la tabla.
@@ -90,8 +96,11 @@ export default function CtpPatioKpis({
         cargando && r.piezas === 0
           ? "Leyendo el patio…"
           : r.enPatioPiezas === 0
-            ? "Sin madera esperando"
-            : `${nf(r.enPatioPiezas)} trozas · ${fmtM3(r.enPatioM3)} m³ · ${nf(r.libres)} libres` +
+            ? acotadoA
+              ? `Ninguna troza de ${acotadoA} para este lote`
+              : "Sin madera esperando"
+            : (acotadoA ? `Para el lote (${acotadoA}): ` : "") +
+              `${nf(r.enPatioPiezas)} trozas · ${fmtM3(r.enPatioM3)} m³ · ${nf(r.libres)} libres` +
               (r.anejas > 0 ? ` · ${nf(r.anejas)} añejas (${DIAS_PATIO_ANEJO} días o más)` : "")
       }
       tarjetas={[

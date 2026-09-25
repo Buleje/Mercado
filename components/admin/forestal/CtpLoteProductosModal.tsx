@@ -20,6 +20,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Boxes, Loader2, PackageOpen, Truck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -164,11 +165,12 @@ export default function CtpLoteProductosModal({
         ) : !resumen ? (
           <div className="rounded-xl border border-dashed border-[var(--rule-base)] px-4 py-8 text-center">
             <Boxes className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
-            <p className="mt-2 text-sm font-bold text-[var(--text-primary)]">
+            <p className="mt-2 flex items-center justify-center gap-1 text-sm font-bold text-[var(--text-primary)]">
               Este lote todavía no declaró producción.
-            </p>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Cuando se declare la corrida que lo consume, sus productos aparecen acá con su saldo.
+              <InfoTip
+                title="Sin producción"
+                what="Cuando se declare la corrida que lo consume, sus productos aparecen acá con su saldo."
+              />
             </p>
           </div>
         ) : (

@@ -11,6 +11,7 @@
 
 import { useId } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 
@@ -113,9 +114,11 @@ export function Cuadro({
     >
       <header className="space-y-3 border-b border-[var(--rule-base)] px-4 py-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
+          {/* El subtítulo va en el ⓘ (2026-09-24): en los seis cuadros era un
+              renglón de explicación encima de la tabla oficial. */}
+          <div className="flex min-w-0 items-center gap-1.5">
             <CardTitle as="h3" id={idTitulo} className="text-base font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
-            <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitulo}</p>
+            <InfoTip title={titulo} what={subtitulo} />
           </div>
           {accion}
         </div>

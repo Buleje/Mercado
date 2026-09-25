@@ -7,6 +7,7 @@
  * o con alguna rechazada. Un cartel permanente de "estás online" es ruido.
  */
 import { AlertTriangle, Loader2, RefreshCw, Trash2, Upload, WifiOff } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { borrar } from "@/lib/forestal/patio-cola";
 import type { PatioColaState } from "@/hooks/use-patio-cola";
 import { formatDateTimeShort } from "@/lib/format";
@@ -30,6 +31,12 @@ export default function CtpPatioBandeja({ cola }: { cola: PatioColaState }) {
         <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           {online ? <Upload className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
           {online ? "Anotaciones del patio por subir" : "Sin señal — se está anotando en el equipo"}
+          <InfoTip
+            icono="ayuda"
+            title="Cómo funciona"
+            what="Lo anotado acá todavía no está en el libro: se sube solo cuando vuelve la señal."
+            affects="El libro puede rechazarlo (saldo insuficiente, mes cerrado) — si pasa, se avisa acá con el motivo."
+          />
         </span>
         <span className="flex items-center gap-2">
           <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
@@ -46,11 +53,6 @@ export default function CtpPatioBandeja({ cola }: { cola: PatioColaState }) {
           </button>
         </span>
       </div>
-
-      <p className="mb-2 text-xs text-[var(--text-secondary)]">
-        Lo anotado acá todavía <strong>no está en el libro</strong>: se sube solo cuando vuelve la señal.
-        El libro puede rechazarlo (saldo insuficiente, mes cerrado) — si pasa, se avisa acá con el motivo.
-      </p>
 
       <ul className="space-y-1.5">
         {lista.map((a) => (

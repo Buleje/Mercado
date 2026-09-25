@@ -63,14 +63,14 @@ function OrigenDelDato({ origen }: { origen?: "serfor" | "manual" }) {
 /** La leyenda del ícono que acompaña a cada guía (de dónde salió el dato). */
 export function LeyendaOrigenDato() {
   return (
-    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--text-secondary)]">
+    <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--text-secondary)]">
       <span className="inline-flex items-center gap-1">
         <FileCheck className="h-4 w-4 text-[var(--text-primary)]" aria-hidden /> bajó de SERFOR (SNIFFS)
       </span>
       <span className="inline-flex items-center gap-1">
         <PenLine className="h-4 w-4 text-[var(--text-primary)]" aria-hidden /> cargada a mano
       </span>
-    </p>
+    </span>
   );
 }
 

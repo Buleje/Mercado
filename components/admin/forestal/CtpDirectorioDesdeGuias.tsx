@@ -17,6 +17,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, Check, Loader2, Plus, Users } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import {
   candidatoAInputParte,
@@ -142,18 +143,17 @@ export default function CtpDirectorioDesdeGuias({
           <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
             Traer contactos de las guías
           </CardTitle>
+          <InfoTip
+            title="Traer contactos de las guías"
+            what="Cada guía ya trae su titular, su destinatario y su chofer con DNI. Acá se listan los que todavía no están en la libreta."
+            affects="No se dan de alta solos: el nombre viene como lo tipeó quien emitió la guía, y cargarlos a ciegas llena el directorio de duplicados."
+          />
         </div>
         <Btn variant="secondary" onClick={() => void buscar()} disabled={buscando}>
           {buscando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
           {guias == null ? "Buscar en las guías" : "Volver a buscar"}
         </Btn>
       </div>
-
-      <p className="mt-2 text-sm text-[var(--text-secondary)]">
-        Cada guía ya trae su titular, su destinatario y su chofer con DNI. Acá se listan los que{" "}
-        <b>todavía no están en la libreta</b>. No se dan de alta solos: el nombre viene como lo tipeó quien emitió la
-        guía, y cargarlos a ciegas llena el directorio de duplicados.
-      </p>
 
       {error && (
         <p className="mt-2 rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">

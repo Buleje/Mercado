@@ -40,6 +40,7 @@ import {
 } from "@buleje/design-system/icons";
 import { applyCtpPeriodParams, ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { VistaHeader } from "@/components/admin/shared/module-primitives";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { printCadenaCustodia } from "@/lib/forestal/ctp-traza-print";
 import {
   analizarRadar,
@@ -796,9 +797,14 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
 
             {/* Cómo se maneja el lienzo. En el celu la cadena no entra a lo ancho;
                 en desktop el zoom y el arrastre no se descubren solos. */}
-            <p className="flex flex-wrap items-center gap-x-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
-              <span className="sm:hidden">Desliza para ver toda la cadena <span aria-hidden>→</span> · toca un nodo para el detalle</span>
-              <span className="hidden sm:inline">Arrastra para moverte · Ctrl + rueda para acercar · <kbd className="font-mono">+</kbd> <kbd className="font-mono">−</kbd> <kbd className="font-mono">0</kbd> <kbd className="font-mono">F</kbd> (ajustar)</span>
+            <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+              Cómo moverte
+              <InfoTip
+                icono="ayuda"
+                title="Cómo moverte"
+                what="En el celular: desliza para ver toda la cadena, toca un nodo para el detalle."
+                affects="En escritorio: arrastra para moverte, Ctrl + rueda para acercar, + − 0 F para ajustar el zoom."
+              />
             </p>
             <CtpRadarLienzo
               layout={layout}

@@ -17,6 +17,7 @@
  */
 import { ExternalLink, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { corridasDelTipo, type CorridaParaReproceso } from "@/hooks/use-corridas-para-reproceso";
 
@@ -83,10 +84,14 @@ export default function DeclararReprocesoPicker({
           </p>
         ) : candidatas.length > 0 ? (
           <>
-            <p className="text-xs text-[var(--text-secondary)]">
+            <p className="flex flex-wrap items-center gap-1 text-xs text-[var(--text-secondary)]">
               {candidatas.length} {candidatas.length === 1 ? "corrida declara" : "corridas declaran"}{" "}
-              <b>{desdeTipo}</b> con saldo. El volumen que sale ya viene puesto — lo que eliges acá es
-              de dónde <b>entra</b> la madera a la sierra.
+              <b>{desdeTipo}</b> con saldo.
+              <InfoTip
+                title="Qué eliges acá"
+                what="El volumen que sale ya viene puesto."
+                affects="Lo que eliges es de dónde ENTRA la madera a la sierra."
+              />
             </p>
             <ul className="max-h-64 space-y-1.5 overflow-y-auto">
               {candidatas.map((c) => (
@@ -116,10 +121,15 @@ export default function DeclararReprocesoPicker({
           <p className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm leading-snug text-[var(--text-secondary)]">
             {disponible ? (
               <>
-                Ninguna corrida con saldo declara <b>{desdeTipo}</b>
-                {especie ? <> de <b>{especie}</b></> : null}. Si esa madera está en el Libro con otro
-                producto, reprocésala desde su fila; si todavía no está declarada, primero hay que
-                registrar su producción.
+                <span className="flex flex-wrap items-center gap-1">
+                  Ninguna corrida con saldo declara <b>{desdeTipo}</b>
+                  {especie ? <> de <b>{especie}</b></> : null}.
+                  <InfoTip
+                    title="Sin candidata"
+                    what="Si esa madera está en el Libro con otro producto, reprocésala desde su fila."
+                    affects="Si todavía no está declarada, primero hay que registrar su producción."
+                  />
+                </span>
               </>
             ) : (
               <>

@@ -21,6 +21,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, ChevronDown, Clock } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { ResumenAntiguedad } from "@/lib/forestal/antiguedad-por-guia";
 import type { EstadoFuente } from "@/lib/forestal/capacidad-de-planta";
@@ -63,14 +64,17 @@ export default function CtpPatioAging({
       className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
     >
       <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <CardTitle as="h3" id={idTitulo} className="flex items-center gap-2 text-base font-bold">
-          <Clock className="h-4 w-4 shrink-0" aria-hidden /> Antigüedad por guía · m³ del libro (no
-          piezas)
-        </CardTitle>
-        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-          Guías con saldo sin consumir, de la más vieja a la más nueva. Es el m³ del libro por guía:
-          no cuadra con el patio pieza por pieza de «Patio por permiso», y no se suman.
-        </p>
+        <div className="flex items-center gap-1.5">
+          <CardTitle as="h3" id={idTitulo} className="flex items-center gap-2 text-base font-bold">
+            <Clock className="h-4 w-4 shrink-0" aria-hidden /> Antigüedad por guía · m³ del libro (no
+            piezas)
+          </CardTitle>
+          <InfoTip
+            title="Antigüedad por guía"
+            what="Guías con saldo sin consumir, de la más vieja a la más nueva."
+            affects="Es el m³ del libro por guía: no cuadra con el patio pieza por pieza de «Patio por permiso», y no se suman."
+          />
+        </div>
         {filas.length > 0 && (
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
             <span className="font-bold text-[var(--text-primary)]">Inmovilizado: {m3(totM3)}</span>
@@ -125,14 +129,20 @@ export default function CtpPatioAging({
 
           {m3SinCosto > 0.01 && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--rule-soft)] bg-[var(--data-warning-500)]/10 px-4 py-2 text-sm text-[var(--data-warning-ink)]">
-              <p className="min-w-0 flex-1">
+              <p className="flex min-w-0 flex-1 items-center gap-1.5">
                 <strong>
-                  {m3(m3SinCosto)} ({formatNumber(100 - cobertura, 0)} %) no tienen costo cargado
-                </strong>{" "}
-                — {guiasSinCosto} {guiasSinCosto === 1 ? "guía" : "guías"} con factura pendiente.
-                {totValor > 0
-                  ? " El importe de arriba es un piso: lo parado vale más, no menos."
-                  : " Por eso no hay importe: sin costo no se inventa uno."}
+                  {m3(m3SinCosto)} ({formatNumber(100 - cobertura, 0)} %) sin costo cargado
+                </strong>
+                <InfoTip
+                  icono="ayuda"
+                  title="Sin costo cargado"
+                  what={`${guiasSinCosto} ${guiasSinCosto === 1 ? "guía" : "guías"} con factura pendiente.`}
+                  affects={
+                    totValor > 0
+                      ? "El importe de arriba es un piso: lo parado vale más, no menos."
+                      : "Por eso no hay importe: sin costo no se inventa uno."
+                  }
+                />
               </p>
               {onValorizar && (
                 <button

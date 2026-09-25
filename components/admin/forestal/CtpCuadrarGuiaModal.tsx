@@ -26,6 +26,7 @@ import {
   type PropuestaDeCuadre,
 } from "@/lib/forestal/guia-descuadre";
 import { verificarLista, type ResumenVerificacion } from "@/lib/forestal/cubicacion-verificacion";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 
@@ -262,15 +263,18 @@ export default function CtpCuadrarGuiaModal({
           </p>
         ) : (
           <div className="space-y-4">
-            <p className="rounded-xl bg-[var(--surface-sunken)] p-3 text-sm text-[var(--text-secondary)]">
-              La guía trae el volumen <b>dos veces</b> y no coinciden. El documento no se corrige solo:
-              mira el papel y di cuál de los dos lados es el bueno. Queda registrado con tu motivo.
-            </p>
-
-            <label className="block">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">
-                Motivo del cuadre <span className="text-[var(--data-error-600)]">*</span>
-              </span>
+            <div className="block">
+<div className="flex items-center gap-1.5 text-sm font-semibold text-[var(--text-primary)]">
+<span aria-hidden="true" className="contents">Motivo del cuadre <span className="text-[var(--data-error-600)]">*</span></span>
+<InfoTip
+                  title="Cuadrar la guía"
+                  what="La guía trae el volumen dos veces y no coinciden. El documento no se corrige solo: mira el papel y di cuál de los dos lados es el bueno."
+                  affects="Va al registro de auditoría del libro: es lo que contesta «¿por qué cambió este número?»."
+                  example="La GTF de SERFOR publica la pieza 20/A con cantidad 3 y su propio total dice 1."
+                />
+</div>
+<label className="block">
+<span className="sr-only">Motivo del cuadre (obligatorio)</span>
               <input
                 type="text"
                 value={motivo}
@@ -278,10 +282,8 @@ export default function CtpCuadrarGuiaModal({
                 placeholder="Ej: la GTF de SERFOR publica la pieza 20/A con cantidad 3 y su propio total dice 1"
                 className="mt-1 h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-base text-[var(--text-primary)]"
               />
-              <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
-                Va al registro de auditoría del libro: es lo que contesta «¿por qué cambió este número?».
-              </span>
             </label>
+</div>
 
             {asientos.map((a) => (
               <section key={a.entryId} className="rounded-xl border border-[var(--rule-base)]">

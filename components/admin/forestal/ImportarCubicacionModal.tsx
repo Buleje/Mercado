@@ -12,6 +12,7 @@ import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, Camera, Check, Download, FileSpreadsheet, Loader2, Mic, Sparkles, Upload } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { parsearFilasImportadas, interpretarOcrPiezas, interpretarDictadoAudio, PLANTILLA_IMPORT, type PiezaImportada, type ResultadoImport } from "@/lib/forestal/cubicacion-import";
@@ -196,26 +197,36 @@ export default function ImportarCubicacionModal({
         />
 
         {modo === "excel" ? (
-          <p className="mb-3 text-sm text-[var(--text-secondary)]">
-            El archivo tiene que tener las columnas <b>Especie · Cantidad · Espesor · Ancho · Largo</b> (Cantidad opcional; por defecto 1). El espesor y el ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad. La plantilla trae, al lado, un <b>resumen en vivo</b> (piezas · pie tablar · m³ · especies distintas) que se calcula solo mientras vas llenando — para ver qué se va a importar sin salir del Excel.
+          <p className="mb-3 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            Sube un Excel con <b>Especie · Cantidad · Espesor · Ancho · Largo</b>.
+            <InfoTip
+              icono="ayuda"
+              title="Importar desde Excel"
+              what="Cantidad es opcional (por defecto 1). Espesor y ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad."
+              example="La plantilla trae al lado un resumen en vivo (piezas · pie tablar · m³ · especies distintas) que se calcula solo mientras la vas llenando, para ver qué se va a importar sin salir del Excel."
+            />
           </p>
         ) : modo === "foto" ? (
-          <p className="mb-3 text-sm text-[var(--text-secondary)]">
-            Sácale una foto (o sube una) a la planilla de cubicación escrita a mano — cantidad, espesor, ancho y largo por fila. La IA lee la letra y arma la lista; <b>tú la revisas</b> contra la foto antes de sumarla al lote. Las filas donde la IA no estuvo segura salen resaltadas.
+          <p className="mb-3 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            Sácale una foto a la planilla de cubicación escrita a mano.
+            <InfoTip
+              icono="ayuda"
+              title="Escanear planilla de cubicación"
+              what="La IA lee la letra y arma la lista de piezas: cantidad, espesor, ancho y largo por fila."
+              example="Tú la revisas contra la foto antes de sumarla al lote; las filas donde la IA no estuvo segura salen resaltadas."
+            />
           </p>
         ) : (
-          <div className="mb-3 text-sm text-[var(--text-secondary)]">
-            <p>
-              Sube un audio donde dictaste las medidas tabla por tabla — espesor, ancho y largo (&ldquo;dos ocho once, dos ocho diez…&rdquo;). Se transcribe y se separa en piezas automáticamente; <b>tú revisas</b> el transcript y la lista antes de sumarla al lote.
-            </p>
-            <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--text-tertiary)]">
-              <span>Igual que el micrófono en vivo, entiende:</span>
-              <span><b className="text-[var(--text-secondary)]">&ldquo;cinco tablas de dos por ocho por diez&rdquo;</b> (cantidad)</span>
-              <span><b className="text-[var(--text-secondary)]">&ldquo;especie cedro&rdquo;</b></span>
-              <span><b className="text-[var(--text-secondary)]">&ldquo;pon fijo el largo a diez&rdquo;</b> / <b className="text-[var(--text-secondary)]">&ldquo;quita el fijo&rdquo;</b></span>
-              <span><b className="text-[var(--text-secondary)]">&ldquo;elimina el último&rdquo;</b> si te corregiste al dictar</span>
-            </p>
-          </div>
+          <p className="mb-3 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            Sube un audio con las medidas dictadas tabla por tabla.
+            <InfoTip
+              icono="ayuda"
+              title="Importar dictado de audio"
+              what={<>Se transcribe y se separa en piezas automáticamente — espesor, ancho y largo (&ldquo;dos ocho once, dos ocho diez…&rdquo;); tú revisas el transcript y la lista antes de sumarla al lote.</>}
+              example={<>Igual que el micrófono en vivo: &ldquo;cinco tablas de dos por ocho por diez&rdquo; (cantidad), &ldquo;especie cedro&rdquo;, &ldquo;pon fijo el largo a diez&rdquo; / &ldquo;quita el fijo&rdquo;, &ldquo;elimina el último&rdquo; si te corregiste al dictar.</>}
+              ancho="w-80"
+            />
+          </p>
         )}
 
         {filasActuales > 0 && (

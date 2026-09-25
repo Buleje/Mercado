@@ -25,6 +25,7 @@
  */
 import { useMemo, useState } from "react";
 import { Ruler } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtAnexo, fmtMedida } from "@/lib/forestal/anexo04-serfor";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import {
@@ -146,6 +147,12 @@ export default function Anexo04Cuadre({
           <Ruler className="h-4 w-4 shrink-0" aria-hidden />
           {sobra ? "Sobran" : "Faltan"}{" "}
           <span className="font-mono tabular-nums">{fmtAnexo(Math.abs(delta))} m³</span>
+          <InfoTip
+            icono="ayuda"
+            title="Cómo funciona el cuadre"
+            what="El volumen se recalcula solo (PT ÷ 424)."
+            affects="La corrección vive en este anexo: no toca el lote del cubicador ni la cubicación guardada."
+          />
         </p>
         <p className="text-xs text-[var(--text-secondary)]">
           declaras <span className="font-mono font-bold tabular-nums">{fmtAnexo(objetivoM3)}</span> y las
@@ -289,10 +296,6 @@ export default function Anexo04Cuadre({
         </p>
       )}
 
-      <p className="mt-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-        El volumen se recalcula solo (PT ÷ 424). La corrección vive en este anexo: no toca el lote del
-        cubicador ni la cubicación guardada.
-      </p>
     </div>
   );
 }

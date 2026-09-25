@@ -18,6 +18,7 @@ import {
   TiradorDeVentana,
 } from "@/components/admin/shared/modal-controles-ventana";
 import { AlertTriangle, Check, Upload, X } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { polygonAreaHa, type LatLng } from "@/lib/forestal/loth-geo";
 import { parseCoordText, parseGeometryFile, type ParseResult } from "@/lib/forestal/loth-coords-io";
 import { perimeterM, formatDistance } from "@/lib/forestal/loth-utm";
@@ -127,11 +128,13 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
           {...ventana.asaProps}
           className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
         >
-          <div>
+          <div className="flex items-center gap-1.5">
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Importar coordenadas</p>
-            <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-              Pega el cuadro del plan de manejo o sube el KML / GeoJSON del expediente
-            </p>
+            <InfoTip
+              title="Importar coordenadas"
+              what="Pega el cuadro del plan de manejo o sube el KML / GeoJSON del expediente."
+              example="El cuadro con columnas Vértice · Este · Norte que trae el plano oficial de la ARFFS."
+            />
           </div>
           {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
               esto los controles quedarían flotando en el medio. */}
@@ -212,7 +215,14 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
           )}
 
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Lectura</p>
+            <p className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+              Lectura
+              <InfoTip
+                icono="ayuda"
+                title="Qué se acepta"
+                what="Al menos 3 vértices. Columnas Este / Norte (UTM), lat/lng decimales, o un archivo KML/GeoJSON."
+              />
+            </p>
             {listo ? (
               <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
                 {FORMATO_LABEL[result.formato]}
@@ -222,9 +232,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
                 <b className="font-mono tabular-nums text-[var(--text-primary)]">{formatDistance(perim)}</b>
               </p>
             ) : (
-              <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-                Pega al menos 3 vértices. Se aceptan columnas <b>Este / Norte</b> (UTM), lat/lng decimales, o un archivo KML/GeoJSON.
-              </p>
+              <p className="mt-1 text-sm text-[var(--text-tertiary)]">Todavía no hay 3 vértices para dibujar el polígono.</p>
             )}
             {result.ignoradas.length > 0 && (
               <p className="mt-2 flex items-start gap-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">

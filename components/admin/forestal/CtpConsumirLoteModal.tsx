@@ -39,7 +39,9 @@ import {
   totalesSeleccion,
   type TrozaConsumible,
 } from "@/lib/forestal/consumo-trozas";
-import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import { pieTablarAserrableDe } from "@/lib/forestal/cubicacion";
+import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -195,7 +197,7 @@ export default function CtpConsumirLoteModal({
           nota={
             <span className="font-mono tabular-nums">
               {totales.piezas} pza · {fmtM3(totales.volumenM3)} m³ ·{" "}
-              {formatNumber(pieTablarDe(totales.volumenM3))} pt · {totales.guias} guía
+              ≈{formatNumber(pieTablarAserrableDe(totales.volumenM3, RENDIMIENTO_META))} pt aserr. · {totales.guias} guía
               {totales.guias === 1 ? "" : "s"}
             </span>
           }
@@ -223,7 +225,7 @@ export default function CtpConsumirLoteModal({
                 : `${yaEnElLote.size} ya en el lote`
             }
           />
-          <Cifra icon={TreePine} label="Volumen" valor={`${fmtM3(totales.volumenM3)} m³`} detalle={`${formatNumber(pieTablarDe(totales.volumenM3))} pt`} />
+          <Cifra icon={TreePine} label="Volumen" valor={`${fmtM3(totales.volumenM3)} m³`} detalle={`≈${formatNumber(pieTablarAserrableDe(totales.volumenM3, RENDIMIENTO_META))} pt aserrables (al 56 %)`} />
           <Cifra icon={Layers} label="Especies" valor={String(totales.especies)} detalle={lote.speciesCommon} />
           <Cifra
             icon={CalendarDays}

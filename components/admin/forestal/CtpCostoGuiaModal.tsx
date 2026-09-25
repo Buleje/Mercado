@@ -20,6 +20,7 @@
 import { useMemo, useState } from "react";
 import { Coins, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import {
   sugerirCostoPorM3,
@@ -158,9 +159,19 @@ export default function CtpCostoGuiaModal({
         )}
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm">
-            <span className="mb-1 block font-bold text-[var(--text-secondary)]">Total pagado (S/)</span>
+          <div className="block text-sm">
+<div className="mb-1 flex items-center gap-1.5 font-bold text-[var(--text-secondary)]">
+<span aria-hidden="true" className="contents">Total pagado (S/)</span>
+<InfoTip
+                title="Total pagado"
+                what="Sin costo, lo que salga de esta madera no puede mostrar margen — el libro no lo inventa."
+                affects="Se puede cargar después desde Gestión → Rentabilidad."
+              />
+</div>
+<label className="block">
+<span className="sr-only">Total pagado (S/)</span>
             <input
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- primer campo al abrir el modal de costo, foco intencional
               autoFocus
               type="number"
               min={0}
@@ -174,6 +185,7 @@ export default function CtpCostoGuiaModal({
               className={CAMPO}
             />
           </label>
+</div>
           <label className="block text-sm">
             <span className="mb-1 block font-bold text-[var(--text-secondary)]">Precio por m³ (S/)</span>
             <input
@@ -212,11 +224,6 @@ export default function CtpCostoGuiaModal({
             </ul>
           </div>
         )}
-
-        <p className="text-xs text-[var(--text-tertiary)]">
-          Sin costo, lo que salga de esta madera no puede mostrar margen — el libro no lo inventa. Se puede cargar
-          después desde <b className="text-[var(--text-secondary)]">Gestión → Rentabilidad</b>.
-        </p>
       </ModalBody>
     </AdminModal>
   );

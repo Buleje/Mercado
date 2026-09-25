@@ -13,6 +13,7 @@ import {
   AlertTriangle, ArrowDown, CheckCircle2, ChevronRight, ShieldAlert, type LucideIcon,
 } from "@buleje/design-system/icons";
 import { CardTitle, BlockTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type {
   FlujoAprovechamiento, NodoTipo, RankingItem, Veredicto, VeredictoNivel,
 } from "@/lib/forestal/loth-analitica";
@@ -136,15 +137,20 @@ export function FlujoPanel({ f }: { f: FlujoAprovechamiento }) {
   const merma = (key: string) => f.mermas.find((m) => m.key === key);
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)]">
-      <header className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <CardTitle as="h3" className="text-base text-[var(--text-primary)]">¿Dónde terminó cada m³ del bosque?</CardTitle>
+      <header className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <CardTitle as="h3" className="text-base text-[var(--text-primary)]">¿Dónde terminó cada m³ del bosque?</CardTitle>
+          <InfoTip
+            title="Cómo se lee el flujo"
+            what="Las trozas se bifurcan: una parte se vende en rollo y otra entra a planta."
+            affects="Los porcentajes de cada rama son sobre lo trozado, no sobre el total talado."
+            example="Si 60 de 100 m³ trozados van a planta, esa rama muestra 60%, aunque sean 48% de lo talado."
+          />
+        </div>
         <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-tertiary)]">
           {fm(f.totalM3, 4)} m³ talados
         </span>
       </header>
-      <p className="mb-4 text-xs text-[var(--text-tertiary)]">
-        Las trozas se bifurcan: una parte se vende en rollo y otra entra a planta. Los porcentajes de cada rama son sobre lo trozado, no sobre el total.
-      </p>
 
       <ol className="space-y-1">
         {f.nodos.map((n) => {

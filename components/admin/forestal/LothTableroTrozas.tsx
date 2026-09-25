@@ -20,6 +20,7 @@
 
 import { useMemo, useState } from "react";
 import { SectionTitle, CardTitle, DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Search, AlertTriangle, FileText } from "@buleje/design-system/icons";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import {
@@ -100,12 +101,13 @@ export default function LothTableroTrozas({
     <div className="space-y-4">
       {/* El riel de arriba ya dice cómo se llama la vista; el título de la
           pantalla suma lo que contesta, en vez de repetir el nombre. */}
-      <header className="space-y-0.5">
+      <header className="flex items-center gap-1.5">
         <SectionTitle className="text-[var(--text-primary)]">Control del permiso</SectionTitle>
-        <p className="text-sm text-[var(--text-tertiary)]">
-          Qué pasó con cada troza amparada por este título habilitante: la que sigue en el patio, la que ya salió
-          con GTF y la que se consumió adentro.
-        </p>
+        <InfoTip
+          title="Control del permiso"
+          what="Qué pasó con cada troza amparada por este título habilitante."
+          affects="La que sigue en el patio, la que ya salió con GTF y la que se consumió adentro."
+        />
       </header>
 
       {/* Los códigos que amparan todo lo de abajo */}

@@ -30,6 +30,7 @@ import { BulejeComposedChart, BulejeLineChart, BulejeDonutChart, BulejeSparkline
 import { SERIES_PALETTE } from "@/components/ui-system/charts/palette";
 import { Btn } from "./ctp-shared";
 import type { ReordenProyeccion, TendenciaMes } from "@/lib/db/forest-ctp.db";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 const n2 = (v: number) => v.toFixed(2);
 const r2 = (v: number) => Math.round(v * 100) / 100;
@@ -123,7 +124,11 @@ export default function CtpAnalisis() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="max-w-2xl text-sm text-[var(--text-tertiary)]">Reorden predictivo (¿cuándo me quedo sin madera?) y tendencias de los últimos 6 meses. Derivado del libro, sin configurar nada.</p>
+        <InfoTip
+          title="Análisis"
+          what="Reorden predictivo (¿cuándo me quedo sin madera?) y tendencias de los últimos 6 meses."
+          affects="Se deriva del libro, sin configurar nada."
+        />
         <Btn variant="secondary" size="md" onClick={() => void load()} disabled={loading} className="shrink-0"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</Btn>
       </div>
 
@@ -135,15 +140,21 @@ export default function CtpAnalisis() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <DeltaStat label="Ingresado" hint={`suma últimos ${resumen.monthsRecent}m`} value={n2(resumen.ingresado)} unit="m³" icon={Layers} delta={resumen.ingresadoDelta} deltaSuffix="%" priorLabel={`${resumen.monthsPrior}m previos`} tone="directional" spark={spark.ingreso} />
           <DeltaStat label="Producido" hint={`suma últimos ${resumen.monthsRecent}m`} value={n2(resumen.producido)} unit="" icon={Boxes} delta={resumen.producidoDelta} deltaSuffix="%" priorLabel={`${resumen.monthsPrior}m previos`} tone="directional" spark={spark.producido} />
-          <DeltaStat label="Rendimiento prom." hint={`ponderado últimos ${resumen.monthsRecent}m`} value={resumen.rendimiento.toFixed(1)} unit="%" icon={Scale} delta={resumen.rendimientoDelta} deltaSuffix=" pts" priorLabel={`${resumen.monthsPrior}m previos`} tone="neutral" spark={spark.rendimiento} />
+          <DeltaStat label="Rendimiento prom." hint={`ponderado últimos ${resumen.monthsRecent}m`} value={Number(resumen.rendimiento).toFixed(1)} unit="%" icon={Scale} delta={resumen.rendimientoDelta} deltaSuffix=" pts" priorLabel={`${resumen.monthsPrior}m previos`} tone="neutral" spark={spark.rendimiento} />
         </div>
       )}
 
       {reorden && (
         <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
-            <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><TrendingUp className="h-4 w-4" /> Reorden predictivo de materia prima</CardTitle>
-            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Días de stock al ritmo de consumo de los últimos 90 días. Repone antes de que llegue a cero.</p>
+            <div className="flex items-center gap-1.5">
+              <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><TrendingUp className="h-4 w-4" /> Reorden predictivo de materia prima</CardTitle>
+              <InfoTip
+                title="Reorden predictivo"
+                what="Días de stock al ritmo de consumo de los últimos 90 días."
+                example="Tornillo: 42 m³ en patio y se consumen 1,5 m³ por día → 28 días. Repone antes de que llegue a cero."
+              />
+            </div>
           </div>
           {reorden.length > 0 && reordenInsight && (() => {
             const b = reordenBanner(reordenInsight);
@@ -195,7 +206,7 @@ export default function CtpAnalisis() {
               el stock?". */}
           <ChartCard
             title="Flujo mensual de materia prima (m³)"
-            subtitle="Ingresado vs. consumido, y el balance del mes: si la línea cae bajo 0, consumes más de lo que entra."
+            ayuda="Ingresado vs. consumido, y el balance del mes: si la línea cae bajo 0, consumes más de lo que entra."
           >
             <BulejeComposedChart
               data={chartData}
@@ -214,7 +225,7 @@ export default function CtpAnalisis() {
               la lectura. */}
           <ChartCard
             title="Rendimiento promedio por mes (%)"
-            subtitle="Salida / entrada ponderado por volumen. Un salto brusco hacia arriba puede ser sobre-declaración (revisa Cumplimiento)."
+            ayuda="Salida / entrada ponderado por volumen. Un salto brusco hacia arriba puede ser sobre-declaración (revisa Cumplimiento)."
           >
             <BulejeLineChart
               data={chartData}
@@ -236,7 +247,7 @@ export default function CtpAnalisis() {
           {tendencias && tendencias.length > 0 && (
             <ChartCard
               title="Producción vs. despacho por mes"
-              subtitle="Lo transformado vs. lo que salió, en unidades de producto declaradas — va aparte del flujo (m³) para no mezclar unidades."
+              ayuda="Lo transformado vs. lo que salió, en unidades de producto declaradas — va aparte del flujo (m³) para no mezclar unidades."
             >
               <BulejeComposedChart
                 data={chartData}
@@ -368,15 +379,22 @@ function DeltaStat({
 }
 
 /** Marco de chart con título + leyenda opcional (dataviz: ≥2 series ⇒ leyenda). */
-function ChartCard({ title, subtitle, legend, children }: {
-  title: string; subtitle?: string;
+function ChartCard({ title, subtitle, ayuda, legend, children }: {
+  title: string;
+  /** Un DATO bajo el título (m³ en patio hoy). */
+  subtitle?: string;
+  /** Cómo se lee el gráfico: va en el ⓘ, no como renglón (2026-09-24). */
+  ayuda?: string;
   legend?: { label: string; color: string }[];
   children: ReactNode;
 }) {
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-1 flex items-start justify-between gap-3">
-        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{title}</CardTitle>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{title}</CardTitle>
+          {ayuda && <InfoTip title={title} what={ayuda} />}
+        </div>
         {legend && (
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1">
             {legend.map((l) => (

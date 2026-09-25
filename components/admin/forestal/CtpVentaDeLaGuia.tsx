@@ -35,6 +35,7 @@ import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { parteDelDestinatario } from "@/lib/forestal/cliente-de-la-guia";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn } from "./ctp-shared";
 import { formatCurrency } from "@/lib/format";
 
@@ -168,14 +169,19 @@ export default function CtpVentaDeLaGuia({
             </span>
           )}
         </p>
+        {/* Cómo se comporta el cobro (no descuenta stock, una vez por guía) y de
+            dónde sale el precio pactado: pasó al ⓘ (2026-09-24). */}
+        <InfoTip
+          title="Cobro de la guía"
+          what="Se anota en su cuenta corriente con el número de guía — no descuenta stock (de eso ya se ocupó el libro)."
+          affects="Se puede anotar una sola vez por guía."
+          example={
+            conSuPrecio > 0
+              ? `${conSuPrecio === filas.length ? "Todo" : `${conSuPrecio} de ${filas.length} productos`} con el precio pactado con ${cliente.parte?.nombre ?? cliente.nombre}.`
+              : undefined
+          }
+        />
       </div>
-
-      {conSuPrecio > 0 && (
-        <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          {conSuPrecio === filas.length ? "Todo" : `${conSuPrecio} de ${filas.length} productos`} con el precio
-          pactado con {cliente.parte?.nombre ?? cliente.nombre}.
-        </p>
-      )}
 
       {sinPrecio > 0 && (
         <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
@@ -229,16 +235,12 @@ export default function CtpVentaDeLaGuia({
         </Btn>
       </div>
 
-      <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
+      <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
         {saldo > 0 ? (
-          <>
-            Va a quedar debiendo <b className="text-[var(--text-secondary)]">{soles(saldo)}</b>.{" "}
-          </>
+          <>Va a quedar debiendo <b>{soles(saldo)}</b>.</>
         ) : (
-          <>La guía queda saldada. </>
+          <>La guía queda saldada.</>
         )}
-        Se anota en su cuenta corriente con el número de guía — <b>no</b> descuenta stock (de eso ya
-        se ocupó el libro) y se puede anotar una sola vez por guía.
       </p>
 
       {error && (

@@ -16,6 +16,7 @@
 import { useMemo } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Layers, MapPin, Truck } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   zonaTipoMeta,
   type Item,
@@ -66,9 +67,16 @@ export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona, onDespa
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-          <Layers className="h-4 w-4 text-[var(--accent)]" /> Zonas de la planta
-        </CardTitle>
+        <span className="flex items-center gap-2">
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+            <Layers className="h-4 w-4 text-[var(--accent)]" /> Zonas de la planta
+          </CardTitle>
+          <InfoTip
+            title="Zonas de la planta"
+            what="El % es sobre el área dibujada, no sobre el terreno real."
+            affects="Toca una zona en el mapa para ver o editar su ficha."
+          />
+        </span>
         <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
           {zonas.length} zonas · {fmtArea(filas.total)} mapeados
         </span>
@@ -78,7 +86,7 @@ export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona, onDespa
       {filas.total > 0 && (
         <div className="mb-2 flex h-3 w-full overflow-hidden rounded-full border border-[var(--rule-base)]">
           {filas.list.map((f) => (
-            <div key={f.z.id} style={{ width: `${f.pct}%`, background: f.meta.ring }} title={`${f.z.codigo} · ${f.pct.toFixed(0)}%`} />
+            <div key={f.z.id} style={{ width: `${f.pct}%`, background: f.meta.ring }} title={`${f.z.codigo} · ${Number(f.pct).toFixed(0)}%`} />
           ))}
         </div>
       )}
@@ -107,7 +115,7 @@ export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona, onDespa
                   {f.area > 0 ? fmtArea(f.area) : "—"}
                 </span>
                 {f.area > 0 && (
-                  <span className="block font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{f.pct.toFixed(0)}%</span>
+                  <span className="block font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{Number(f.pct).toFixed(0)}%</span>
                 )}
               </span>
               <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
@@ -126,9 +134,6 @@ export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona, onDespa
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-        El % es sobre el área dibujada, no sobre el terreno real · toca una zona en el mapa para su ficha.
-      </p>
     </div>
   );
 }

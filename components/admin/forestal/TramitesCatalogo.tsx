@@ -46,6 +46,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { staggerContainer, staggerChild } from "@/components/ui-system/motion";
 import {
   AUTORIDADES,
@@ -218,11 +219,11 @@ export default function TramitesCatalogo({
             const meta = AUTORIDADES[aut];
             return (
               <section key={aut} className="space-y-3">
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b-2 border-[var(--rule-soft)] pb-2">
+                <div className="flex flex-wrap items-center gap-1.5 border-b-2 border-[var(--rule-soft)] pb-2">
                   <SectionTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
                     {meta.label}
                   </SectionTitle>
-                  <p className="text-sm text-[var(--text-tertiary)]">{meta.detalle}</p>
+                  <InfoTip title={meta.label} what={meta.detalle} />
                 </div>
                 <motion.div
                   variants={staggerContainer}

@@ -15,6 +15,7 @@
 import { useMemo, useState } from "react";
 import { m as motion } from "framer-motion";
 import { Clock, Copy, Inbox, RefreshCw, Search, Trash2 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { staggerContainer, staggerChild } from "@/components/ui-system/motion";
 import { AUTORIDADES, type AutoridadTramite } from "@/lib/forestal/tramites-catalogo";
 import {
@@ -158,12 +159,14 @@ export default function TramitesExpediente({
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[var(--data-warning-500)]/50 bg-[var(--data-warning-50)] p-4 dark:bg-[var(--data-warning-500)]/12">
           <Clock className="h-6 w-6 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            <p className="flex items-center gap-1.5 font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
               {esperando.length} {esperando.length === 1 ? "trámite lleva" : "trámites llevan"} más de 15 días sin respuesta
-            </p>
-            <p className="text-sm text-[var(--text-secondary)]">
-              No es un plazo legal (cada procedimiento tiene el suyo en el TUPA): es el recordatorio de ir a
-              preguntar por el expediente, que es lo que en la práctica lo mueve.
+              <InfoTip
+                icono="ayuda"
+                title="15 días sin respuesta"
+                what="No es un plazo legal — cada procedimiento tiene el suyo en el TUPA."
+                affects="Es el recordatorio de ir a preguntar por el expediente, que es lo que en la práctica lo mueve."
+              />
             </p>
           </div>
           <Btn variant="secondary" size="sm" onClick={() => setFiltro("presentado")}>

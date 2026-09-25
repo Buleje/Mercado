@@ -21,6 +21,7 @@
 import { useMemo, useState } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { PackageCheck, Truck, ArrowUpDown } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn } from "../ctp-shared";
 import { Th, Td } from "../ctp-section-shared";
 import { formatNumber } from "@/lib/format";
@@ -131,16 +132,22 @@ export default function TablaProductos({
       className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <CardTitle
-          as="h3"
-          id="saldos-productos-titulo"
-          className="text-base font-bold text-[var(--text-primary)]"
-        >
-          Stock de productos transformados
-        </CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle
+            as="h3"
+            id="saldos-productos-titulo"
+            className="text-base font-bold text-[var(--text-primary)]"
+          >
+            Stock de productos transformados
+          </CardTitle>
+          <InfoTip
+            title="Stock de productos"
+            what="Las cantidades van en la unidad declarada por cada corrida."
+          />
+        </div>
         <p className="text-xs text-[var(--text-tertiary)]">
           {conStock} de {filas.length} {filas.length === 1 ? "línea" : "líneas"} con stock listo
-          para despachar · las cantidades van en la unidad declarada por cada corrida
+          para despachar
         </p>
       </div>
 

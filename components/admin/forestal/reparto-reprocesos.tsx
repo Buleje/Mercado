@@ -39,6 +39,7 @@ import { AlertTriangle, Check, ChevronRight, ExternalLink, Info, RefreshCw } fro
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { ptDesdeM3 } from "@/lib/forestal/cubicacion";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
 import { declararColaEnElLibro, declararEnElLibro } from "@/lib/forestal/reproceso-borrador";
 import { FRASE_REGLA } from "@/lib/forestal/reproceso-reglas";
@@ -453,6 +454,11 @@ function RespaldosImposibles({ imposibles }: { imposibles: AmparoImposible[] }) 
           {" · "}
           <span className="font-mono tabular-nums">{fmtM3(totalM3)} m³</span>
         </span>
+        <InfoTip
+          title="Cómo se arregla"
+          what="Marca el bloque con «Lleva sólo» para que no ampare ese tipo."
+          affects="O trae un producto de origen del que sí salga esa conversión, o corrige el tipo de esas piezas si la medida está mal cargada."
+        />
       </p>
       <ul className="mt-2 space-y-1.5">
         {imposibles.map((i) => (
@@ -493,11 +499,6 @@ function RespaldosImposibles({ imposibles }: { imposibles: AmparoImposible[] }) 
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
-        <b>Cómo se arregla:</b> marca el bloque con «Lleva sólo» para que no ampare ese tipo, trae un
-        producto de origen del que sí salga, o corrige el tipo de esas piezas si la medida está mal
-        cargada.
-      </p>
     </div>
   );
 }

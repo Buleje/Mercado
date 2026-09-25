@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { CheckCircle2, Gauge, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   RENDIMIENTO_TOPE_PCT,
   corridasSobreTope,
@@ -59,21 +60,21 @@ export default function CtpSobreTopePanel({ onNavigate }: { onNavigate?: () => v
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Gauge className="h-4 w-4 text-[var(--data-warning-600)]" />
-          <CardTitle as="h3" className="text-sm font-bold">
+          <CardTitle as="h3" className="flex items-center gap-1.5 text-sm font-bold">
             Corridas por encima del tope{" "}
             {filas != null && <span className="text-[var(--text-tertiary)]">({filas.length})</span>}
           </CardTitle>
+          {/* La explicación del panel pasó al ⓘ (2026-09-24). */}
+          <InfoTip
+            title="Corridas por encima del tope"
+            what={`De 1 m³ de troza no salen más de ${RENDIMIENTO_TOPE_PCT} % de tabla. Estas corridas declaran más: el tope frena las nuevas, pero éstas ya estaban cargadas.`}
+            affects="Se corrigen anulando la corrida y volviéndola a declarar con lo que realmente salió."
+          />
         </div>
         <Btn variant="secondary" onClick={() => void barrer()} disabled={cargando}>
           <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Rebarrer
         </Btn>
       </div>
-
-      <p className="text-sm text-[var(--text-secondary)]">
-        De 1 m³ de troza no salen más de <b>{RENDIMIENTO_TOPE_PCT} %</b> de tabla. Estas corridas declaran más: el
-        tope frena las nuevas, pero éstas ya estaban cargadas. Se corrigen anulando la corrida y volviéndola a
-        declarar con lo que realmente salió.
-      </p>
 
       {error && (
         <p className="rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">

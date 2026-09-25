@@ -28,6 +28,7 @@ import {
   X as XIcon,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { formatDate, productLabel, StatusBadge, type WoodEntry } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -145,10 +146,14 @@ export default function CtpBuscarGtf({
       aria-modal="true"
       aria-label="Buscar en el libro"
       onClick={onCerrar}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onCerrar();
+      }}
     >
       <div
         className="w-full max-w-[42rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Barra de búsqueda: el foco entra acá y Enter busca. */}
         <div className="flex items-center gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-4 sm:px-6">
@@ -185,23 +190,27 @@ export default function CtpBuscarGtf({
 
           {!buscado && !error && (
             <div className="px-2 py-6 text-center">
-              <p className="text-sm text-[var(--text-secondary)]">
+              <p className="flex items-center justify-center gap-1.5 text-sm text-[var(--text-secondary)]">
                 Escribe el número y aprieta <strong>Enter</strong>.
-              </p>
-              <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                Busca en los tres registros a la vez: la guía con la que <strong>entró</strong> la madera, la
-                que el CTP <strong>emitió</strong> al despachar y el <strong>código del paquete</strong> pintado
-                en la pila. Ingresos y paquetes se buscan en todo el histórico, no sólo en el período elegido.
+                <InfoTip
+                  icono="ayuda"
+                  title="Qué busca"
+                  what={<>Busca en los tres registros a la vez: la guía con la que <b>entró</b> la madera, la que el CTP <b>emitió</b> al despachar y el <b>código del paquete</b> pintado en la pila.</>}
+                  example="Ingresos y paquetes se buscan en todo el histórico, no sólo en el período elegido."
+                />
               </p>
             </div>
           )}
 
           {sinResultados && (
             <div className="px-2 py-6 text-center">
-              <p className="text-sm font-bold text-[var(--text-primary)]">Eso no está en el libro.</p>
-              <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                Si es una guía de salida, fíjate que el período elegido la incluya. Si es de ingreso y la madera
-                ya llegó, todavía no está registrada.
+              <p className="flex items-center justify-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                Eso no está en el libro.
+                <InfoTip
+                  icono="ayuda"
+                  title="Si no aparece"
+                  what="Si es una guía de salida, fíjate que el período elegido la incluya. Si es de ingreso y la madera ya llegó, todavía no está registrada."
+                />
               </p>
             </div>
           )}

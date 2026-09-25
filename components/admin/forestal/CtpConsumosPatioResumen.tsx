@@ -22,7 +22,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { ChevronDown, FileDown } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { esPantallaAngosta } from "@/lib/forestal/tabla-paginacion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import CtpPatioPorPermiso from "./CtpPatioPorPermiso";
@@ -47,7 +49,10 @@ export default function CtpConsumosPatioResumen({
   const { lotes, carga, porPermiso } = estado;
   const idTitulo = useId();
   const idTabla = useId();
-  const [abierta, setAbierta] = useLocalStorage<boolean>("ctp-consumos-por-permiso", true);
+  /* En el celular arranca plegada: cada permiso es una tarjeta de ~200 px y la
+     tabla de trozas quedaba a 2 700 px (medido a 400 px, 2026-09-24). La línea
+     plegada igual dice cuántos permisos, la más vieja y lo por recepcionar. */
+  const [abierta, setAbierta] = useLocalStorage<boolean>("ctp-consumos-por-permiso", !esPantallaAngosta());
   /* Plegada por el trabajo, no por el operador: no se guarda. */
   const [plegadaPorTrabajo, setPlegadaPorTrabajo] = usePlegadoPorTrabajo(trabajando);
   const verTabla = abierta && !plegadaPorTrabajo;
@@ -89,23 +94,29 @@ export default function CtpConsumosPatioResumen({
       {indicadores}
 
       <div className="space-y-2">
-        <button
-          type="button"
-          onClick={alternar}
-          aria-expanded={verTabla}
-          aria-controls={idTabla}
-          className="flex min-h-10 w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-xl px-1 text-left text-sm transition-colors hover:bg-[var(--surface-sunken)]"
-        >
-          <ChevronDown
-            className={`h-4 w-4 shrink-0 text-[var(--text-secondary)] transition-transform ${verTabla ? "" : "-rotate-90"}`}
-            aria-hidden
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={alternar}
+            aria-expanded={verTabla}
+            aria-controls={idTabla}
+            className="flex min-h-10 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-xl px-1 text-left text-sm transition-colors hover:bg-[var(--surface-sunken)]"
+          >
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-[var(--text-secondary)] transition-transform ${verTabla ? "" : "-rotate-90"}`}
+              aria-hidden
+            />
+            <span className="font-bold text-[var(--text-primary)]">Por permiso</span>
+            {/* Plegada, la línea sigue diciendo lo que la tabla tiene: plegar no es esconder el dato. */}
+            {!verTabla && <span className="text-[var(--text-secondary)]">{resumenPlegado}</span>}
+          </button>
+          <InfoTip
+            title="Por permiso"
+            what="Cuántas trozas quedan de cada permiso: las libres más las apartadas en un lote. Lo anotado cuya guía no se recepcionó va en «Por recepcionar»."
+            affects="Clic en un permiso: la tabla de trozas de abajo muestra solo las suyas. Los m³ son del patio pieza por pieza, no el saldo que se declara; el ≈pt es un derivado al 56 %."
+            example="10-HUA-PUE/PER-FMP-2026-007 · 46 trozas · 135.587 m³ · la más vieja 08/09 (16 días, añeja)."
           />
-          <span className="font-bold text-[var(--text-primary)]">Por permiso</span>
-          {/* Plegada, la línea sigue diciendo lo que la tabla tiene: plegar no es esconder el dato. */}
-          <span className="text-[var(--text-secondary)]">
-            {verTabla ? "Clic en un permiso para ver solo sus trozas" : resumenPlegado}
-          </span>
-        </button>
+        </div>
         {verTabla && (
           <div id={idTabla}>
             <CtpPatioPorPermiso

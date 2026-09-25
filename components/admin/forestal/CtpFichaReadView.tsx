@@ -16,6 +16,7 @@ import {
   AlertCircle, AlertTriangle, Building2, CheckCircle2, FileText, MapPin, Pencil, ShieldCheck,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import CtpFichaPreviewGtf from "./CtpFichaPreviewGtf";
 import CtpFichaCompletitud from "./CtpFichaCompletitud";
 import Carnet from "./CtpFichaCarnet";
@@ -48,8 +49,15 @@ function PanelAvisos({ avisos, onEditar }: { avisos: AvisoFicha[]; onEditar?: ()
               ? <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" aria-hidden />
               : <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />}
             <div className="min-w-0 flex-1">
-              <p className={`text-sm font-bold ${critico ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}`}>{a.titulo}</p>
-              <p className={`mt-0.5 text-sm ${critico ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}`}>{a.detalle}</p>
+              <p className={`flex flex-wrap items-center gap-1 text-sm font-bold ${critico ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}`}>
+                {a.titulo}
+                {/* Un aviso es una línea; el detalle (qué campos, qué norma) en el
+                    ⓘ. El crítico lo sigue diciendo entero: bloquea un papel. */}
+                {!critico && <InfoTip title={a.titulo} ancho="w-80" what={a.detalle} />}
+              </p>
+              {critico && (
+                <p className="mt-0.5 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{a.detalle}</p>
+              )}
             </div>
             {onEditar && (
               <button
@@ -161,10 +169,17 @@ export default function CtpFichaReadView({ ficha: f, onEditar }: { ficha: CtpFic
       <CtpFichaCompletitud ficha={f} onEditar={onEditar} />
 
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <div className="mb-1 flex flex-wrap items-start justify-between gap-3">
-          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-            <ShieldCheck className="h-4 w-4" aria-hidden /> Títulos habilitantes
-          </CardTitle>
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-1.5">
+            <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              <ShieldCheck className="h-4 w-4" aria-hidden /> Títulos habilitantes
+            </CardTitle>
+            <InfoTip
+              title="Títulos habilitantes"
+              what="El origen legal de la materia prima."
+              affects="Los casilleros (5), (6), (8) y (9) de la guía salen del título marcado, salvo que en esa guía se elija otro."
+            />
+          </div>
           <button
             type="button"
             onClick={() => setVerGtf(true)}
@@ -173,9 +188,6 @@ export default function CtpFichaReadView({ ficha: f, onEditar }: { ficha: CtpFic
             <FileText className="h-4 w-4" aria-hidden /> Ver cómo sale la guía
           </button>
         </div>
-        <p className="mb-3 text-sm text-[var(--text-tertiary)]">
-          El origen legal de la materia prima. Los casilleros (5), (6), (8) y (9) de la guía salen del título marcado, salvo que en esa guía se elija otro.
-        </p>
         {f.titulos.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">Sin títulos cargados. Sin uno, la guía de salida sale sin declarar el origen.</p>
         ) : (

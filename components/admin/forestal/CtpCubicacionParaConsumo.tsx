@@ -20,6 +20,7 @@
 import { useMemo, useState } from "react";
 import { CalendarDays, ChevronDown, Layers, Ruler, Scale } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { recubicarPiezas } from "@/lib/forestal/cubicacion";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
@@ -130,12 +131,7 @@ export default function CtpCubicacionParaConsumo({
           <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
             Cubicación de lo aserrado
           </CardTitle>
-          {expandido ? (
-            <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-              Mide lo que salió de la sierra y úsalo al cargar el consumo: el reparto dice qué le toca a cada
-              troza y a cada día.
-            </p>
-          ) : (
+          {!expandido && (
             <span className="min-w-0 flex-1 truncate text-sm text-[var(--text-tertiary)]">
               {cubicacion ? `${cubicacion.nombre} · ${fmtM3(totales.m3)} m³` : "Ninguna — sólo consumir"}
             </span>
@@ -145,6 +141,15 @@ export default function CtpCubicacionParaConsumo({
             aria-hidden
           />
         </button>
+        {/* Fuera del botón de plegar: un <button> del InfoTip no puede anidarse
+            dentro de otro <button>. */}
+        {expandido && (
+          <InfoTip
+            title="Cubicación de lo aserrado"
+            what="Mide lo que salió de la sierra y úsalo al cargar el consumo."
+            affects="El reparto dice qué le toca a cada troza y a cada día."
+          />
+        )}
         <Btn variant="primary" onClick={() => setAbierto(true)}>
           <Ruler className="h-4 w-4" /> Cubicar madera
         </Btn>

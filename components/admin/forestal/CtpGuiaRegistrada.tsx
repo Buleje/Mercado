@@ -28,6 +28,7 @@ import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
 import { Btn } from "./ctp-shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export default function CtpGuiaRegistrada({
@@ -121,9 +122,9 @@ export default function CtpGuiaRegistrada({
           <Check className="h-5 w-5 shrink-0" />
           Guía {gtfNumber} registrada — {lineas} {lineas === 1 ? "línea" : "líneas"} en el libro
         </p>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          {fmtM3(total)} m³ con su cadena de custodia declarada. Ya se puede emitir el anexo 04 y el
-          certificado desde la ficha de cada despacho.
+        <p className="mt-1 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+          {fmtM3(total)} m³ con su cadena de custodia declarada.
+          <InfoTip icono="ayuda" title="Qué sigue" what="Ya se puede emitir el anexo 04 y el certificado desde la ficha de cada despacho." />
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">

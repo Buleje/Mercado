@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, AlertTriangle, ArrowLeft, Check, CheckCircle2, Circle, Loader2 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useForestPlantaciones } from "@/hooks/use-forest-plantaciones";
 import { ESTADOS_PLANTACION } from "@/lib/forestal/plantacion-catalogo";
 import {
@@ -193,13 +194,23 @@ export default function PlantacionWizard({
               {registro && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[length:var(--ts-2xs)] font-black text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   {registro.codigoInterno}
+                  <InfoTip
+                    icono="ayuda"
+                    title="Código interno"
+                    what="Es de uso administrativo interno."
+                    affects="No es el código oficial que asigna SERFOR al inscribir la plantación."
+                  />
                 </span>
               )}
             </div>
-            <CardTitle as="h3" className="mt-2 text-2xl font-bold leading-tight text-[var(--text-primary)]">Registro de Plantación Forestal</CardTitle>
-            <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-              {datos.tipoTramite === "actualizacion" ? "Actualización" : "Inscripción"} ante SERFOR — titular, predio, bloques y especies, hasta el Formato N°01.
-            </p>
+            <span className="mt-2 flex items-center gap-1.5">
+              <CardTitle as="h3" className="text-2xl font-bold leading-tight text-[var(--text-primary)]">Registro de Plantación Forestal</CardTitle>
+              <InfoTip
+                title="Registro de Plantación Forestal"
+                what={`${datos.tipoTramite === "actualizacion" ? "Actualización" : "Inscripción"} ante SERFOR.`}
+                affects="Titular, predio, bloques y especies, hasta el Formato N°01."
+              />
+            </span>
           </div>
           <Btn variant="secondary" onClick={onCerrar}>
             <ArrowLeft className="h-4 w-4" />
@@ -246,12 +257,6 @@ export default function PlantacionWizard({
             </select>
           </Field>
         </div>
-
-        {registro && (
-          <p className="mt-3 text-xs text-[var(--text-secondary)]">
-            El código de arriba es de <span className="font-bold text-[var(--text-primary)]">uso administrativo interno</span> — no es el código oficial que asigna SERFOR al inscribir.
-          </p>
-        )}
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <div className="h-2 w-40 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
