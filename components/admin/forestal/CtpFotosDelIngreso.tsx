@@ -9,6 +9,12 @@
  * que las **24 de 24 guías del tenant real están sin una sola foto**. No era una
  * decisión: faltaba la pieza de UI.
  *
+ * 2026-09-25: dejó de vivir SÓLO en el alta. La misma pieza se monta también al
+ * recibir una guía (`CtpRecepcionTrozas.tsx`, patio y modo offline) y en el
+ * detalle de un ingreso ya cargado (`CtpEntryDetailModal.tsx`) — ahí el `onCambio`
+ * de este componente dispara `guardarFotosDeGuia` (`lib/forestal/fotos-guia.ts`)
+ * en vez de esperar al submit del formulario entero.
+ *
  * Para qué sirven: ante una fiscalización, la foto del rollizo con su
  * codificación es lo que sostiene lo que dice el papel; y puertas adentro, es
  * cómo se discute un faltante con el proveedor sin tener que ir a mirar la pila.

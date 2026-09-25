@@ -33,6 +33,7 @@ const guia = (id: string, p: Partial<GuiaEntrada> = {}): GuiaEntrada => ({
   m3: 10,
   piezas: 1,
   proveedor: "Comunidad",
+  fotos: [],
   ...p,
 });
 
@@ -545,5 +546,26 @@ describe("armarVolumenDelPermiso — orden y totales", () => {
     const vacio = armarVolumenDelPermiso(entrada({ corridas: [corrida("c1", { cantidad: 3.814 })] }));
     expect(vacio.totales.rendimientoPct).toBeNull();
     expect(vacio.totales.saldoPt).toBe(-1617);
+  });
+});
+
+describe("armarVolumenDelPermiso — fotos de la guía", () => {
+  it("sin fotos, la guía sale con [] — nunca null (una guía vieja no tiene por qué tener foto)", () => {
+    const v = armarVolumenDelPermiso(entrada({ guias: [guia("g1")] }));
+    expect(v.guias[0].fotos).toEqual([]);
+  });
+
+  it("las fotos de la guía pasan tal cual, cada una a su fila", () => {
+    const v = armarVolumenDelPermiso(
+      entrada({
+        guias: [
+          guia("g1", { fotos: ["https://x.supabase.co/a.jpg", "https://x.supabase.co/b.jpg"] }),
+          guia("g2", { fotos: [] }),
+        ],
+      }),
+    );
+    const porId = new Map(v.guias.map((g) => [g.id, g]));
+    expect(porId.get("g1")?.fotos).toEqual(["https://x.supabase.co/a.jpg", "https://x.supabase.co/b.jpg"]);
+    expect(porId.get("g2")?.fotos).toEqual([]);
   });
 });

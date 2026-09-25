@@ -170,6 +170,27 @@ describe("Guías que no cuadran", () => {
     }
   });
 
+  it("dos productos con el mismo nombre: cada troza va a UNO, el de su científico (ADR-435)", () => {
+    const r = repartirGtfEnIngresos(
+      ficha({
+        productos: [
+          { cientifico: "Virola sebifera", comun: "Cumala", tipoProducto: null, presentacion: null, cantidad: 1, unidad: null, volumen: 2 },
+          { cientifico: "Iryanthera juruensis", comun: "Cumala", tipoProducto: null, presentacion: null, cantidad: 1, unidad: null, volumen: 3 },
+        ],
+        volumenTotal: 5,
+        trozas: [
+          { cientifico: "Virola sebifera", comun: "CUMALA", tipoProducto: null, presentacion: null, cantidad: 1, unidad: null, volumen: 2, codificacion: "V-1", dimensiones: null },
+          { cientifico: "Iryanthera juruensis", comun: "Cumala", tipoProducto: null, presentacion: null, cantidad: 1, unidad: null, volumen: 3, codificacion: "I-1", dimensiones: null },
+        ],
+      }),
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      // Antes las dos trozas se copiaban a los DOS ingresos: 4 filas de trozas para 2 piezas.
+      expect(r.ingresos.map((i) => i.trozas.map((t) => t.codificacion))).toEqual([["V-1"], ["I-1"]]);
+    }
+  });
+
   it("matchea especies aunque SERFOR cambie mayúsculas y tildes", () => {
     const r = repartirGtfEnIngresos(
       ficha({

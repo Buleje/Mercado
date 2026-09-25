@@ -1,5 +1,6 @@
 import type { GtfSerfor, TrozaGtf } from "./serfor-gtf";
 import { descuadreDeEspecie, explicarDescuadre, type DescuadreDeGuia } from "./guia-descuadre";
+import { filaDeEspecie } from "./acomodar-trozas";
 
 /**
  * Convierte una GTF de SERFOR en los ingresos que le corresponden en el libro
@@ -44,15 +45,6 @@ export type TrozaDeIngreso = {
 export type ReparteGtf =
   | { ok: true; ingresos: IngresoDesdeGtf[]; avisos: string[]; descuadres: DescuadreDeGuia[] }
   | { ok: false; motivo: string };
-
-/** Compara nombres de especie sin tildes ni mayúsculas: SERFOR mezcla las dos. */
-function clave(v: string | null | undefined): string {
-  return (v ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toUpperCase();
-}
 
 /**
  * Rompe las dimensiones que publica SERFOR en largo y diámetro.
@@ -133,16 +125,19 @@ export function repartirGtfEnIngresos(gtf: GtfSerfor): ReparteGtf {
   const avisos: string[] = [];
   const trozas = (gtf.trozas ?? []).map(aTroza);
 
-  // Cada troza se asigna a la especie que declara. Las que no matchean con
-  // ninguna se enganchan al primer ingreso —la guía es un solo embarque— pero
-  // CONSERVAN su especie: el dato del documento no se pierde por una heurística
-  // nuestra, y así la discrepancia queda a la vista en vez de taparse.
-  const porEspecie = new Map<string, TrozaDeIngreso[]>();
+  // Cada troza se asigna a la especie que declara, con el MISMO criterio que
+  // acomoda las trozas ya cargadas (ADR-435, `filaDeEspecie`): nombre común sin
+  // tildes ni mayúsculas, y el científico desempata dos productos con el mismo
+  // nombre — antes esas trozas se copiaban a LOS DOS ingresos. Las que no
+  // matchean con ninguna se enganchan al primer ingreso —la guía es un solo
+  // embarque— pero CONSERVAN su especie: el dato del documento no se pierde por
+  // una heurística nuestra, y así la discrepancia queda a la vista.
+  const filasDeProducto = productos.map((p, i) => ({ id: String(i), especie: p.comun ?? null, cientifico: p.cientifico ?? null }));
+  const porProducto = new Map<number, TrozaDeIngreso[]>();
   const sueltas: TrozaDeIngreso[] = [];
   for (const t of trozas) {
-    const k = clave(t.especieComun) || clave(t.especieCientifica);
-    const matchea = productos.some((p) => clave(p.comun) === k || clave(p.cientifico) === k);
-    if (k && matchea) porEspecie.set(k, [...(porEspecie.get(k) ?? []), t]);
+    const d = filaDeEspecie(t, filasDeProducto);
+    if (d.fila) porProducto.set(Number(d.fila.id), [...(porProducto.get(Number(d.fila.id)) ?? []), t]);
     else sueltas.push(t);
   }
   if (sueltas.length > 0 && productos.length > 1) {
@@ -154,8 +149,7 @@ export function repartirGtfEnIngresos(gtf: GtfSerfor): ReparteGtf {
   const ingresos: IngresoDesdeGtf[] = [];
   const descuadres: DescuadreDeGuia[] = [];
   for (const [i, p] of productos.entries()) {
-    const k = clave(p.comun) || clave(p.cientifico);
-    const mias = [...(porEspecie.get(k) ?? []), ...(i === 0 ? sueltas : [])];
+    const mias = [...(porProducto.get(i) ?? []), ...(i === 0 ? sueltas : [])];
 
     // El volumen sale de lo que DECLARA la guía. Si el producto no lo trae, se
     // cae a la suma de sus trozas. Lo que no se hace nunca es repartir el total

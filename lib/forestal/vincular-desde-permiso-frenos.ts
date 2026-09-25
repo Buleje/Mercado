@@ -79,7 +79,7 @@ export function lineasDeFreno(g: GrupoAVincular): LineaDeFreno[] {
   for (const [fila, ts] of otraFila) {
     lineas.push({
       clave: `otra-fila-${fila}`,
-      texto: `${nTrozas(ts.length)} de ${g.especie} ${ts.length === 1 ? "está anotada" : "están anotadas"} en la fila de ${fila} de su guía: hay que acomodarlas en Ingresos antes de descontarlas.`,
+      texto: `${nTrozas(ts.length)} de ${g.especie} ${ts.length === 1 ? "está anotada" : "están anotadas"} en la fila de ${fila} de su guía: acomódalas con «Acomodar trozas» en Ingresos antes de descontarlas.`,
       detalle: ts.map(detalleDeTroza),
     });
   }

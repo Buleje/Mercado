@@ -71,6 +71,11 @@ const txt = (v: string | null | undefined): string | null => {
 };
 const iso = (d: Date | null): string | null => (d ? d.toISOString() : null);
 const num = (v: Prisma.Decimal | null): number | null => (v == null ? null : Number(v));
+/** `WoodEntry.photos` es un `Json?` sin forma garantizada por la DB: sólo un
+ *  array de strings cuenta, cualquier otra cosa (viejo dato corrupto, `null`)
+ *  se lee como sin fotos — nunca revienta la ficha del permiso. */
+const fotosDe = (v: Prisma.JsonValue | null): string[] =>
+  Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 
 function aContrato(r: ContratoRow): Contrato {
   return {
@@ -737,6 +742,7 @@ export class ForestContratoDB {
           volumeM3: true,
           pieces: true,
           providerName: true,
+          photos: true,
         },
       }),
       WoodEntriesDB.trozasComoConsumibles(tenantId, { contratoId }),
@@ -845,6 +851,7 @@ export class ForestContratoDB {
         m3: Number(g.volumeM3 ?? 0),
         piezas: g.pieces,
         proveedor: txt(g.providerName),
+        fotos: fotosDe(g.photos),
       })),
       trozas,
       consumos: [

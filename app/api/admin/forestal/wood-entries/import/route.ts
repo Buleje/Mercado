@@ -7,6 +7,7 @@ import { WoodEntriesDB, type WoodOriginType, type WoodProductType } from "@/lib/
 import { ForestCtpDB, produccionKey, produccionKeyBase, despachoKey } from "@/lib/db/forest-ctp.db";
 import { ActivityLogDB } from "@/lib/db/activity-log.db";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { fraseDeColocacion } from "@/lib/forestal/acomodar-trozas";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -656,7 +657,22 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         if (id) {
           try {
             const r = await WoodEntriesDB.agregarTrozas(auth.tenantId, id, piezas, auth.username ?? "import", { desdeImportacion: true });
-            if (r.agregadas > 0) completado = ` · se completaron ${r.agregadas} troza${r.agregadas === 1 ? "" : "s"} que faltaban`;
+            if (r.agregadas > 0) {
+              /* La guía de varias especies son varias filas: cada troza fue a
+                 la de su especie (ADR-435), y lo que no tenía fila se dice. */
+              completado =
+                ` · se completaron ${r.agregadas} troza${r.agregadas === 1 ? "" : "s"} que faltaban` +
+                fraseDeColocacion(
+                  r.porFila ?? [],
+                  r.fueraDeSuFila ?? [],
+                  r.porFila?.find((f) => f.woodEntryId === id)?.especie ?? d.speciesCommonName,
+                ) +
+                /* La deduplicación es de la GUÍA entera: lo que ya estaba en
+                   cualquiera de sus filas no se vuelve a cargar. */
+                (r.repetidas.length > 0
+                  ? ` · ${r.repetidas.length} ya estaba${r.repetidas.length === 1 ? "" : "n"} en la guía: no se duplicaron`
+                  : "");
+            }
             else if (r.bloqueado === "ya-tiene-lista") completado = " · ya tiene su lista de piezas";
             else if (r.repetidas.length > 0) completado = " · sus piezas ya estaban";
           } catch (e) {
@@ -744,7 +760,22 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         action: "creado",
         message:
           (validado ? "Importado y validado (libro oficial)" : "Importado (pendiente de validar)") +
-          (piezas > 0 ? ` · ${piezas} troza${piezas === 1 ? "" : "s"}` : ""),
+          (piezas > 0 ? ` · ${piezas} troza${piezas === 1 ? "" : "s"}` : "") +
+          /* Una guía nueva que trae trozas de otra especie: sin fila de esa
+             especie se quedan en ésta, y se dice (ADR-435). */
+          fraseDeColocacion(
+            creado.acomodo.aOtrasFilas.length > 0
+              ? [
+                  { especie: creado.speciesCommonName, agregadas: piezas - creado.acomodo.aOtrasFilas.reduce((a, f) => a + f.trozas, 0) },
+                  ...creado.acomodo.aOtrasFilas.map((f) => ({ especie: f.especie, agregadas: f.trozas })),
+                ]
+              : [],
+            creado.acomodo.fueraDeSuFila,
+            creado.speciesCommonName,
+          ) +
+          (creado.acomodo.yaEstabanEnSuFila.length > 0
+            ? ` · AVISO: ${creado.acomodo.yaEstabanEnSuFila.length} troza(s) ya estaban en la fila de su especie: no se duplicaron`
+            : ""),
       });
     } catch (e) {
       errores++;

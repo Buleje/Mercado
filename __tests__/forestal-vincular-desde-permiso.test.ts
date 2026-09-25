@@ -203,7 +203,7 @@ describe("FRENA por la fila de la guía (I2 es por fila)", () => {
     expect(g.ofrecibles).toEqual([]);
     expect(g.fuera.map((t) => t.motivo)).toEqual(["otra-fila"]);
     expect(lineasDeFreno(g).map((l) => l.texto)).toEqual([
-      "1 troza de Cachimbo está anotada en la fila de Copal de su guía: hay que acomodarlas en Ingresos antes de descontarlas.",
+      "1 troza de Cachimbo está anotada en la fila de Copal de su guía: acomódalas con «Acomodar trozas» en Ingresos antes de descontarlas.",
     ]);
   });
 

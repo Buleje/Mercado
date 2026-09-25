@@ -11,6 +11,7 @@ import { TIPOS_DOCUMENTO_LOCTP, UNIDADES_LOCTP } from "@/lib/forestal/loctp-camp
 import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { leerContratoId } from "@/lib/forestal/contrato-filtro";
+import { fotosDelTenantSchema } from "@/lib/storage-url";
 
 /**
  * /api/admin/forestal/wood-entries
@@ -73,7 +74,12 @@ const sortDirEnum = z.enum(["asc", "desc"]);
 const docTypeEnum = z.enum(TIPOS_DOCUMENTO_LOCTP.map((t) => t.valor) as [string, ...string[]]);
 const unidadEnum = z.enum(UNIDADES_LOCTP.map((u) => u.valor) as [string, ...string[]]);
 
-const createSchema = z.object({
+/**
+ * Función y no `const`: `photos` necesita el `tenantId` de quien hace el
+ * pedido para exigir que cada URL sea del storage de ESE tenant (ver
+ * `lib/storage-url.ts` — el candado real no es "es una URL", es "es nuestra").
+ */
+const buildCreateSchema = (tenantId: string) => z.object({
   entryDate: z.coerce.date().optional(),
   docType: docTypeEnum.optional(),
   // La ficha de SERFOR viaja tal cual: es un documento de ellos, no se re-valida
@@ -130,7 +136,7 @@ const createSchema = z.object({
    */
   costoTotal: z.coerce.number().min(0).max(99_999_999.99).nullable().optional(),
   moneda: z.enum(["PEN", "USD"]).optional(),
-  photos: z.array(z.string().url()).max(10).nullable().optional(),
+  photos: fotosDelTenantSchema(tenantId, 10).nullable().optional(),
   /** Lista de trozas cargada a mano o desde un Excel (ADR-320). Tope 500: una
    *  guía real no trae más y sin tope un pegado accidental tumba la request. */
   trozas: z
@@ -383,7 +389,23 @@ const corregirGuiaSchema = z.object({
     }),
 });
 
-const patchBodySchema = z.union([recepcionGuiaSchema, completarGuiaSchema, corregirGuiaSchema]);
+/**
+ * Fotos de una GUÍA completa: la pila que bajó del camión, no un asiento (ADR-434).
+ *
+ * Reemplaza la lista entera (lo que ya sube `CtpFotosDelIngreso` a `/api/upload`),
+ * no un PATCH por URL — subir/quitar es raro y la lista completa entra sin
+ * problema en el body. `fotosDelTenantSchema` es el mismo candado que
+ * `buildCreateSchema.photos`: sólo fotos DE ESTE TENANT, no cualquier URL.
+ */
+const buildFotosGuiaSchema = (tenantId: string) =>
+  z.object({
+    action: z.literal("fotos_guia"),
+    gtfNumber: z.string().trim().min(1).max(60),
+    fotos: fotosDelTenantSchema(tenantId, 10),
+  });
+
+const buildPatchBodySchema = (tenantId: string) =>
+  z.union([recepcionGuiaSchema, completarGuiaSchema, corregirGuiaSchema, buildFotosGuiaSchema(tenantId)]);
 
 export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
@@ -399,7 +421,7 @@ export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: N
 
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
-  const parsed = patchBodySchema.safeParse(body);
+  const parsed = buildPatchBodySchema(auth.tenantId).safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
   }
@@ -420,6 +442,16 @@ export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: N
         parsed.data.gtfNumber,
         parsed.data.campos,
         auth.username ?? "unknown",
+      );
+      return NextResponse.json(r);
+    }
+    if (parsed.data.action === "fotos_guia") {
+      const r = await WoodEntriesDB.fotosGuia(
+        auth.tenantId,
+        parsed.data.gtfNumber,
+        parsed.data.fotos,
+        auth.username ?? "unknown",
+        auth.role,
       );
       return NextResponse.json(r);
     }
@@ -466,7 +498,7 @@ export const POST = withApiHandler("forestal-wood-entries-post", async (req: Nex
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const parsed = createSchema.safeParse(body);
+  const parsed = buildCreateSchema(auth.tenantId).safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "validation_error", issues: parsed.error.issues },

@@ -30,6 +30,8 @@ export interface PedidoDeGuia {
   /** Su costo ya repartido entre los asientos; vacío = no se carga. */
   costos: { id: string; costoTotal: number }[];
   observacion?: string;
+  /** `AAAA-MM-DD` en que llegó ESTA guía (ADR-434): cada una con la suya, no un «hoy» para todas. */
+  fecha: string;
 }
 
 export interface FalloDeGuia {
@@ -53,7 +55,7 @@ export function useRecepcionBloque() {
   const [hechas, setHechas] = useState(0);
 
   const recibir = useCallback(
-    async (pedidos: readonly PedidoDeGuia[], fecha: string): Promise<ResultadoBloque> => {
+    async (pedidos: readonly PedidoDeGuia[]): Promise<ResultadoBloque> => {
       setEnviando(true);
       setHechas(0);
       const salida: ResultadoBloque = { recibidas: [], fallaron: [], sinCosto: [] };
@@ -67,7 +69,7 @@ export function useRecepcionBloque() {
               body: JSON.stringify({
                 action: "recepcionar_guia",
                 ids: p.ids,
-                fecha,
+                fecha: p.fecha,
                 ...(p.observacion?.trim() ? { observacion: p.observacion.trim() } : {}),
               }),
             });

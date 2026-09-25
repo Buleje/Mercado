@@ -53,6 +53,8 @@ import { logger } from "@/lib/logger";
 /** Lo que el endpoint de trozas devuelve: lo usan el papel y la ficha. */
 interface TrozaDeGuia {
   id: string;
+  /** La fila de la guía de la que cuelga (la pone `piezasDeGuia`). */
+  woodEntryId?: string | null;
   codificacion?: string | null;
   codigoPlanta?: string | null;
   especieComun?: string | null;
@@ -72,8 +74,14 @@ import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import CtpGuiasTable, { COLUMNAS_GUIAS_OPCIONALES } from "./CtpGuiasTable";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import CtpGuiaFichaModal from "./CtpGuiaFichaModal";
+import CtpAcomodarTrozasModal from "./CtpAcomodarTrozasModal";
+import type { AlcanceAcomodoCliente } from "@/hooks/use-acomodar-trozas";
 import CtpCostoGuiaModal, { type GuiaACostear } from "./CtpCostoGuiaModal";
+import CtpPonerPrecioModal from "./CtpPonerPrecioModal";
 import CtpRecepcionBloqueModal, { type GuiaParaBloque } from "./CtpRecepcionBloqueModal";
+import CtpCorregirRecepcionModal from "./CtpCorregirRecepcionModal";
+import CtpAvisoLlegadaTardia from "./CtpAvisoLlegadaTardia";
+import { ddmm, yaRecibida } from "@/lib/forestal/fecha-de-llegada";
 import CtpTrozasIndividuales from "./CtpTrozasIndividuales";
 import CtpIngresosKpis from "./CtpIngresosKpis";
 import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros";
@@ -202,12 +210,18 @@ export default function CtpIngresosView({
    * patio valorizado**, con la pantalla para cargarlo existiendo desde agosto.
    */
   const [costoGuia, setCostoGuia] = useState<GuiaACostear | null>(null);
+  /** «Poner precio a la madera» en tanda (Opciones). */
+  const [ponerPrecio, setPonerPrecio] = useState(false);
   const [fichaTrozas, setFichaTrozas] = useState<TrozaDeGuia[] | null>(null);
   const [fichaError, setFichaError] = useState<string | null>(null);
+  /** «Acomodar trozas en su especie» (ADR-435): de la ficha (una guía) o de Opciones (todas). */
+  const [acomodar, setAcomodar] = useState<{ alcance: AlcanceAcomodoCliente; descripcion: string; desdeFicha: boolean } | null>(null);
   /** La guía que se está CUADRANDO: declara un volumen y sus piezas suman otro (ADR-353). */
   const [cuadreGuia, setCuadreGuia] = useState<GuiaIngreso<WoodEntry> | null>(null);
   /** Recibir varias guías en un acto: el caso real son 10 esperando hace días. */
   const [bloqueAbierto, setBloqueAbierto] = useState(false);
+  /** Corregir la fecha de llegada de guías ya recibidas (ADR-434); `inicial` = la fila desde la que se abrió. */
+  const [corregirRecepcion, setCorregirRecepcion] = useState<{ inicial: string | null } | null>(null);
   const [guiaHoja, setGuiaHoja] = useState(0);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -638,7 +652,10 @@ export default function CtpIngresosView({
       guia.lineas.map((l) =>
         ctpGet<{ trozas?: TrozaDeGuia[] }>(
           `/api/admin/forestal/trozas?woodEntryId=${encodeURIComponent(l.id)}`,
-        ).then((r) => r.trozas ?? []),
+        /* Cada pieza sabe de qué fila vino (ADR-435): el endpoint no manda
+           `woodEntryId`, y sin él la ficha no puede contar las trozas de cada
+           especie ni marcar las que cuelgan de la fila de otra. */
+        ).then((r) => (r.trozas ?? []).map((t) => ({ ...t, woodEntryId: l.id }))),
       ),
     );
     return listas.flat();
@@ -766,6 +783,9 @@ export default function CtpIngresosView({
    * nunca digan cosas distintas; si hay más, se llega paginando o filtrando.
    */
   const porRecibir = useMemo(() => guias.filter((g) => faltaRecibirMadera(g)), [guias]);
+  /** Las guías EN PANTALLA que ya se recibieron: las que se pueden corregir (ADR-434). */
+  const recibidas = useMemo(() => guias.filter((g) => yaRecibida(g)), [guias]);
+  const gtfsRecibidas = useMemo(() => recibidas.map((g) => g.gtfNumber), [recibidas]);
 
   /** Saca TODO lo que filtra. El período no: ése se ve arriba y es otra decisión. */
   const limpiarFiltros = useCallback(() => {
@@ -833,9 +853,11 @@ export default function CtpIngresosView({
       descargando={descargando}
       totalFiltrado={total}
       onLegajo={() => void armarLegajo()}
+      onAcomodar={() => setAcomodar({ alcance: { todas: true }, descripcion: "Todas las guías de varias especies", desdeFicha: false })}
       legajoCount={selectedIds.length || total}
       legajoDeTodo={selectedIds.length === 0}
       armandoLegajo={armandoLegajo}
+      onPonerPrecio={() => setPonerPrecio(true)}
     />
   );
 
@@ -951,6 +973,9 @@ export default function CtpIngresosView({
           </button>
         </div>
       )}
+
+      {/* ADR-434: recibidas después de que la sierra ya cortaba su permiso. */}
+      <CtpAvisoLlegadaTardia gtfs={gtfsRecibidas} onCorregir={() => setCorregirRecepcion({ inicial: null })} />
 
       {error && (
         <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
@@ -1137,6 +1162,7 @@ export default function CtpIngresosView({
         onVerFicha={(g) => void verFicha(g)}
         onCuadrar={setCuadreGuia}
         onCostear={(g) => setCostoGuia(costeableDeGuia(g))}
+        onCorregirRecepcion={(g) => setCorregirRecepcion({ inicial: g.clave })}
         sort={sort}
         onSort={ordenar}
       />
@@ -1224,6 +1250,35 @@ export default function CtpIngresosView({
         />
       )}
 
+      {corregirRecepcion && (
+        <CtpCorregirRecepcionModal
+          guias={recibidas}
+          inicial={corregirRecepcion.inicial}
+          onClose={() => setCorregirRecepcion(null)}
+          onListo={(r) => {
+            setCorregirRecepcion(null);
+            invalidarCtp("wood-entries");
+            void reload();
+            if (r.corregidas.length > 0) {
+              pushToast({
+                tono: "success",
+                msg: `Recepción corregida — ${r.corregidas.length} guía${r.corregidas.length === 1 ? "" : "s"}`,
+                detail: r.corregidas
+                  .map((c) => `${c.gtfNumber}: ${c.antes ? ddmm(c.antes) : "—"} → ${ddmm(c.despues)}`)
+                  .join(" · "),
+              });
+            }
+            if (r.fallaron.length > 0) {
+              pushToast({
+                tono: "error",
+                msg: `${r.fallaron.length} no se corrigi${r.fallaron.length === 1 ? "ó" : "eron"}`,
+                detail: r.fallaron.map((f) => `${f.gtfNumber}: ${f.motivo}`).join(" · "),
+              });
+            }
+          }}
+        />
+      )}
+
       {costoGuia && (
         <CtpCostoGuiaModal
           guia={costoGuia}
@@ -1231,6 +1286,10 @@ export default function CtpIngresosView({
           onGuardar={guardarCostoGuia}
           onClose={() => setCostoGuia(null)}
         />
+      )}
+
+      {ponerPrecio && (
+        <CtpPonerPrecioModal onClose={() => setPonerPrecio(false)} onGuardado={() => void reload()} />
       )}
 
       {fichaGuia && (
@@ -1266,7 +1325,29 @@ export default function CtpIngresosView({
             setFichaTrozas(null);
             setCuadreGuia(g);
           }}
+          onAcomodar={() =>
+            setAcomodar({ alcance: { woodEntryId: fichaGuia.lineas[0]!.id }, descripcion: `Guía ${fichaGuia.gtfNumber}`, desdeFicha: true })
+          }
           onClose={() => { setFichaGuia(null); setFichaTrozas(null); setFichaError(null); }}
+        />
+      )}
+
+      {acomodar && (
+        <CtpAcomodarTrozasModal
+          alcance={acomodar.alcance}
+          descripcion={acomodar.descripcion}
+          aboveModals={acomodar.desdeFicha}
+          onClose={() => setAcomodar(null)}
+          onAcomodado={() => {
+            /* La ficha de abajo relee sus trozas: al cerrar, cada especie ya
+               muestra las suyas. La lista, por el conteo de piezas por fila. */
+            if (fichaGuia) {
+              piezasDeGuia(fichaGuia)
+                .then(setFichaTrozas)
+                .catch((err) => logger.warn("[ingresos] no se pudieron releer las piezas", { error: String(err) }));
+            }
+            void reload();
+          }}
         />
       )}
 

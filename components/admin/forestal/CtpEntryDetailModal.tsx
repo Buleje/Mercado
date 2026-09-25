@@ -10,12 +10,15 @@
  * fiscalización.
  */
 
-import { Children, isValidElement, type ReactElement } from "react";
+import { Children, isValidElement, useEffect, useState, type ReactElement } from "react";
+import { toast } from "sonner";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
 import CtpHistorial from "./CtpHistorial";
 import TrazaForwardSection from "./CtpTrazaForward";
 import CtpTrozasDeIngreso from "./CtpTrozasDeIngreso";
+import CtpFotosDelIngreso from "./CtpFotosDelIngreso";
+import { guardarFotosDeGuia } from "@/lib/forestal/fotos-guia";
 import {
   AlertCircle,
   FileText,
@@ -59,7 +62,35 @@ interface CtpEntryDetailModalProps {
 export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCambio }: CtpEntryDetailModalProps) {
   const dias = diasDeRegistro(entry); // para mostrar
   const fueraDePlazo = estaFueraDePlazo(entry); // para decidir — matchea el SQL
-  const photos = Array.isArray(entry.photos) ? entry.photos : [];
+  /**
+   * Estado propio (no leer `entry.photos` directo): "Tomar foto" tiene que
+   * verse al toque, sin esperar el viaje redondo de `onCambio` (recarga la
+   * lista de atrás + este mismo ingreso). Se resincroniza cuando llega un
+   * `entry` fresco —tras guardar desde el panel de recepción, más abajo en
+   * esta misma ficha— para que las dos puertas nunca queden mostrando cosas
+   * distintas.
+   */
+  const [fotos, setFotos] = useState<string[]>(() => (Array.isArray(entry.photos) ? entry.photos : []));
+  const [guardandoFotos, setGuardandoFotos] = useState(false);
+  useEffect(() => {
+    setFotos(Array.isArray(entry.photos) ? entry.photos : []);
+  }, [entry.id, entry.photos]);
+
+  const guardarFotos = async (nuevas: string[]) => {
+    const previas = fotos;
+    setFotos(nuevas);
+    setGuardandoFotos(true);
+    try {
+      const guardadas = await guardarFotosDeGuia(entry.gtfNumber, nuevas);
+      setFotos(guardadas);
+      onCambio?.();
+    } catch (e) {
+      setFotos(previas);
+      toast.error(e instanceof Error ? e.message : "No se pudieron guardar las fotos.");
+    } finally {
+      setGuardandoFotos(false);
+    }
+  };
   /** Los que IMPIDEN presentar el libro — misma fuente que el aviso de arriba. */
   const faltanObligatorios = faltantesIngresoPorTipo(entry as unknown as Record<string, unknown>).obligatorios.length;
   // Permiso CITES vinculado (estructurado, leído de notes) — visible si es CITES.
@@ -266,26 +297,21 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
 
           <Section title="Observaciones" icon={FileText} opcional>
             <Field label="Notas" value={entry.notes} span2 />
-            {photos.length > 0 && (
-              <div className="col-span-2">
-                <FieldLabel>Fotos ({photos.length})</FieldLabel>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {photos.map((url) => (
-                    <a
-                      key={url}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block h-20 w-20 overflow-hidden rounded-xl border border-[var(--rule-base)] hover:border-[var(--brand-ink)]"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt="Foto del ingreso" className="h-full w-full object-cover" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
           </Section>
+
+          {/* Aparte de `Section`: esa auto-esconde lo que no tiene `value`, y acá
+              la pieza SIEMPRE se muestra —aunque haya cero fotos— porque es
+              donde se agregan. Editable, no sólo la ficha de sólo-lectura de
+              antes: sube y guarda sin abrir "Corregir el ingreso". */}
+          <section className="break-inside-avoid border-t border-[var(--rule-base)] pt-3">
+            <div className="mb-2.5 flex items-center gap-2">
+              <FileText className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" strokeWidth={1.75} />
+              <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Fotos de la guía
+              </CardTitle>
+            </div>
+            <CtpFotosDelIngreso fotos={fotos} onCambio={(u) => void guardarFotos(u)} disabled={guardandoFotos} />
+          </section>
         </div>
 
         {/* La lista de trozas va a ANCHO COMPLETO: es una tabla que un
@@ -300,6 +326,7 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
           status={entry.status}
           especie={entry.speciesCommonName}
           especieCientifica={entry.speciesScientificName}
+          fotos={fotos}
           onIngresoCambiado={onCambio}
         />
 

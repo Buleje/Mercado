@@ -11,10 +11,11 @@
  * FICHA (ADR-350) —se revisa y se recibe en la misma pantalla—; en un bloque no
  * se pueden abrir diez fichas, así que la garantía la dan estas tres reglas:
  *
- * 1. **Una fecha, explícita y nunca futura.** El servidor por defecto pone hoy
- *    (ADR-339), y para el caso que motivó esto —esperaron una semana— eso
- *    fecharía diez documentos oficiales con un día que no es. El bloque la pide
- *    a la vista, con hoy propuesto.
+ * 1. **Una fecha POR GUÍA, explícita y nunca futura** (ADR-434). El bloque
+ *    empezó con una sola fecha para todas, con hoy propuesto: en Blas dejó 7
+ *    guías recibidas el 23/09 cuando la sierra las usaba desde el 07/09, y T3
+ *    trabó 18 corridas. Ahora cada guía propone la suya (la de su papel) y la
+ *    revisa `revisarLlegada` (`fecha-de-llegada.ts`).
  * 2. **Tilde por guía, y el bloque arranca en cero.** Sin «marcar todas»: el
  *    tilde es la declaración, y una casilla que viene puesta no declara nada.
  * 3. **Observación obligatoria cuando la guía no cuadra.** Si el papel declara
@@ -24,6 +25,7 @@
  * PURO y client-safe: lo usa el modal y se prueba sin navegador.
  */
 
+import { limaDateKey } from "@/lib/utils";
 import { cuadreDeIngreso, descuadra } from "./cuadre-trozas";
 
 /** Lo mínimo de una guía para poder ofrecerla en el bloque. */
@@ -44,9 +46,11 @@ export interface MarcaDeGuia {
   observacion: string;
   /** Total pagado por la guía, como se tipea (S/). Vacío = no se carga costo. */
   costoTotal: string;
+  /** `AAAA-MM-DD` en que llegó ESTA guía (ADR-434). Se llena con la propuesta al marcarla. */
+  fecha: string;
 }
 
-export const MARCA_VACIA: MarcaDeGuia = { marcada: false, observacion: "", costoTotal: "" };
+export const MARCA_VACIA: MarcaDeGuia = { marcada: false, observacion: "", costoTotal: "", fecha: "" };
 
 export type Marcas = Readonly<Record<string, MarcaDeGuia>>;
 
@@ -63,18 +67,15 @@ export function avisoDeCuadre(g: GuiaDelBloque): string | null {
   return descuadra(c) ? c.aviso : null;
 }
 
-const HOY_LOCAL = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-
 /**
- * Qué le pasa a la fecha del bloque. `null` = sirve.
+ * Lo mínimo que se le pide a una fecha de llegada, sin saber nada de la guía.
+ * `null` = sirve. La revisión completa (antes de la guía, corridas, plazo) es
+ * `revisarLlegada`, y el modal la pasa a `problemasDelBloque`.
  *
- * Fecha del día del equipo y no `toISOString()`: en Lima (UTC-5) el ISO de la
- * noche ya es el día siguiente, y la recepción quedaría fechada mañana.
+ * El «hoy» es el de Lima y no `toISOString()`: a las 19:00 de Pucallpa el ISO
+ * ya es el día siguiente, y la recepción quedaría fechada mañana.
  */
-export function problemaDeFecha(fecha: string, hoy: string = HOY_LOCAL()): string | null {
+export function problemaDeFecha(fecha: string, hoy: string = limaDateKey()): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return "Falta la fecha en que bajó la madera.";
   if (fecha > hoy) return "La recepción no puede ser de un día que todavía no llegó.";
   return null;
@@ -99,10 +100,14 @@ export interface ProblemaDeGuia {
 export function problemasDelBloque(
   guias: readonly GuiaDelBloque[],
   marcas: Marcas,
+  /** Qué frena la fecha de ESA guía (ADR-434). Por defecto, sólo formato y futuro. */
+  bloqueoDeFecha: (g: GuiaDelBloque, fecha: string) => string | null = (_g, fecha) => problemaDeFecha(fecha),
 ): ProblemaDeGuia[] {
   const problemas: ProblemaDeGuia[] = [];
   for (const g of marcadas(guias, marcas)) {
     const m = marcaDe(marcas, g.clave);
+    const deFecha = bloqueoDeFecha(g, m.fecha);
+    if (deFecha) problemas.push({ clave: g.clave, gtfNumber: g.gtfNumber, motivo: deFecha });
     if (noCuadra(g) && m.observacion.trim().length < 3) {
       problemas.push({
         clave: g.clave,

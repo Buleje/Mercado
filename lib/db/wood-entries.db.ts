@@ -19,8 +19,11 @@ import type {
   DocumentType,
 } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { exigirFotosPropias } from "@/lib/storage-url";
+import { detalleDeFotosGuia, diffFotosGuia, motivoSiNoPuedeGuardar } from "@/lib/forestal/fotos-guia-diff";
 import { ForestEspeciesDB } from "./forest-especies.db";
 import { mismaEspecie } from "@/lib/forestal/loth-constants";
+import { colocarAlCargar, type FilaQueRecibe, type NotaDeColocacion } from "@/lib/forestal/acomodar-trozas";
 import { PLAZO_REGISTRO_DIAS, estaFueraDePlazo } from "@/lib/forestal/ctp-compliance";
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
 import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
@@ -28,7 +31,11 @@ import type { CambioRecepcion } from "@/lib/forestal/recepcion-trozas";
 import { guiaRecibida, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { CtpInvariantError, exigirIngresoAntesDeLaCorrida } from "./forest-ctp-consumo.db";
+import { exigirCostoNoCongelado } from "./costo-congelado.db";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
+import { ForestRecepcionDB } from "./forest-recepcion.db";
+import { problemaDeLlegada } from "@/lib/forestal/fecha-de-llegada";
+import { limaDateKey } from "@/lib/utils";
 
 /**
  * Alta de una GTF de SERFOR completa (ADR-312): la cabecera es del documento y
@@ -793,6 +800,14 @@ export class WoodEntriesDB {
     if (!input.providerName?.trim()) throw new Error("providerName is required");
     if (!input.speciesCommonName?.trim()) throw new Error("speciesCommonName is required");
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
+    // Defensa en profundidad además del Zod de la ruta (auditoría 2026-09-25,
+    // ver `lib/storage-url.ts`): una foto sólo puede ser del storage de ESTE
+    // tenant, nunca una URL externa ni la de otro negocio.
+    try {
+      exigirFotosPropias(tenantId, input.photos);
+    } catch (e) {
+      throw new CtpInvariantError(e instanceof Error ? e.message : String(e), "VALIDACION");
+    }
 
     const volumeDecimal = new Prisma.Decimal(input.volumeM3);
     if (volumeDecimal.lte(0)) throw new Error("volumeM3 must be > 0");
@@ -828,6 +843,29 @@ export class WoodEntriesDB {
        escritas distinto el libro las cuenta como dos. Va antes de la
        transacción: es un KV cacheado. */
     const especie = await ForestEspeciesDB.resolverEspecie(tenantId, input.speciesCommonName);
+
+    /* Las hermanas de la MISMA guía que aceptarían piezas por sí solas
+       (pendientes, de un mes abierto): una troza de otra especie va a la fila de
+       la suya (ADR-435). Antes de la tx, por lo mismo que la especie. */
+    const hermanasQueReciben: FilaQueRecibe[] = [];
+    if (input.trozas?.length) {
+      const serie = (input.gtfSeries ?? "").trim();
+      const pendientes = await prisma.woodEntry.findMany({
+        where: { tenantId, deletedAt: null, status: "pendiente", gtfNumber: input.gtfNumber.trim() },
+        select: { id: true, gtfSeries: true, speciesCommonName: true, speciesScientificName: true, entryDate: true },
+      });
+      for (const h of pendientes) {
+        if ((h.gtfSeries ?? "").trim() !== serie) continue;
+        if (await ForestCtpCierreDB.closedPeriodOf(tenantId, h.entryDate)) continue;
+        hermanasQueReciben.push({ id: h.id, especie: h.speciesCommonName, cientifico: h.speciesScientificName, puedeRecibir: true });
+      }
+    }
+    let acomodo: {
+      aOtrasFilas: { woodEntryId: string; especie: string; trozas: number }[];
+      fueraDeSuFila: { codigo: string | null; especie: string | null; nota: NotaDeColocacion }[];
+      /** Iban a una fila hermana que ya las tenía (misma codificación): no entraron. */
+      yaEstabanEnSuFila: { codigo: string | null; especie: string | null }[];
+    } = { aOtrasFilas: [], fueraDeSuFila: [], yaEstabanEnSuFila: [] };
 
     // MISMA transacción: si se calcula fuera, dos ingresos simultáneos se llevan
     // el mismo número y el libro queda con folios repetidos — lo primero que
@@ -887,17 +925,73 @@ export class WoodEntriesDB {
       // La lista de trozas viaja con su guía y en la misma tx (ADR-312/320): si
       // falla, no queda un ingreso al que después haya que pegarle las piezas.
       if (input.trozas?.length) {
+        /* Cada troza a la fila de SU especie (ADR-435); lo que no tiene fila
+           de su especie se queda en ésta, como antes, y se dice. `orden` es la
+           posición en la lista de la GTF y viaja igual: reimprimir la guía
+           junta las filas y sale en el orden del papel. */
+        const colocadas = colocarAlCargar(
+          input.trozas,
+          [
+            { id: creado.id, especie: creado.speciesCommonName, cientifico: creado.speciesScientificName, puedeRecibir: true },
+            ...hermanasQueReciben,
+          ],
+          creado.id,
+        );
+        /* Una pieza que va a una fila hermana se compara por codificación
+           contra lo que esa fila YA tiene: la lista es de la guía, y cargarla
+           dos veces duplicaría madera. La repetida no entra y se dice. */
+        const codigo = (c: string | null | undefined) => {
+          const k = (c ?? "").trim().toUpperCase();
+          return k === "-" ? "" : k;
+        };
+        const hermanasUsadas = [...new Set(colocadas.map((c) => c.filaId).filter((f) => f !== creado.id))];
+        const yaEnHermana = new Set(
+          hermanasUsadas.length === 0
+            ? []
+            : (
+                await tx.woodEntryTroza.findMany({
+                  where: { tenantId, woodEntryId: { in: hermanasUsadas } },
+                  select: { woodEntryId: true, codificacion: true },
+                })
+              )
+                .filter((t) => codigo(t.codificacion))
+                .map((t) => `${t.woodEntryId}|${codigo(t.codificacion)}`),
+        );
+        const repetidas = colocadas.filter(
+          (c) => c.filaId !== creado.id && codigo(c.troza.codificacion) && yaEnHermana.has(`${c.filaId}|${codigo(c.troza.codificacion)}`),
+        );
+        const saltear = new Set(repetidas.map((c) => c.troza));
         // El código de planta es único en el centro (ADR-336). Se valida DENTRO
-        // de la tx: fuera, dos tablets numerando a la vez pasan las dos.
+        // de la tx: fuera, dos tablets numerando a la vez pasan las dos. Sobre
+        // lo que de verdad entra: la repetida que se saltea ya tiene el suyo.
         await guardCodigoPlantaUnico(
           tx,
           tenantId,
-          input.trozas.map((t) => t.codigoPlanta),
+          input.trozas.filter((t) => !saltear.has(t)).map((t) => t.codigoPlanta),
         );
+        const filaDe = new Map(colocadas.map((c) => [c.troza, c.filaId]));
+        const otras = new Map<string, number>();
+        for (const c of colocadas) {
+          if (c.filaId !== creado.id && !saltear.has(c.troza)) otras.set(c.filaId, (otras.get(c.filaId) ?? 0) + 1);
+        }
+        acomodo = {
+          yaEstabanEnSuFila: repetidas.map((c) => ({
+            codigo: c.troza.codificacion,
+            especie: hermanasQueReciben.find((h) => h.id === c.filaId)?.especie ?? c.troza.especieComun,
+          })),
+          aOtrasFilas: [...otras].map(([woodEntryId, trozas]) => ({
+            woodEntryId,
+            especie: hermanasQueReciben.find((h) => h.id === woodEntryId)?.especie ?? "",
+            trozas,
+          })),
+          fueraDeSuFila: colocadas.flatMap((c) =>
+            c.nota ? [{ codigo: c.troza.codificacion, especie: c.troza.especieComun, nota: c.nota }] : [],
+          ),
+        };
         await tx.woodEntryTroza.createMany({
-          data: input.trozas.map((t) => ({
+          data: input.trozas.filter((t) => !saltear.has(t)).map((t) => ({
             tenantId,
-            woodEntryId: creado.id,
+            woodEntryId: filaDe.get(t) ?? creado.id,
             orden: t.orden,
             codificacion: t.codificacion,
             /* La troza se escribe como la cabecera: la especie del ingreso ya
@@ -939,13 +1033,19 @@ export class WoodEntriesDB {
       entityId: entry.id,
       detail:
         `Registró el ingreso ${entry.gtfNumber} · ${entry.speciesCommonName} · ${m3(Number(entry.volumeM3))} · ${entry.providerName}` +
-        (estaFueraDePlazo(entry) ? ` · FUERA DE PLAZO (${PLAZO_REGISTRO_DIAS} días)` : ""),
+        (estaFueraDePlazo(entry) ? ` · FUERA DE PLAZO (${PLAZO_REGISTRO_DIAS} días)` : "") +
+        acomodo.aOtrasFilas.map((f) => ` · ${f.trozas} troza(s) a la fila de ${f.especie} de la misma guía`).join("") +
+        (acomodo.yaEstabanEnSuFila.length > 0
+          ? ` · ${acomodo.yaEstabanEnSuFila.length} troza(s) ya estaban en la fila de su especie: no se duplicaron`
+          : ""),
       user: input.createdBy,
     });
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
-    return entry;
+    /* `acomodo` dice a qué otra fila fue cada troza y cuáles quedaron fuera de
+       la suya (ADR-435): el importador lo muestra en su resultado. */
+    return { ...entry, acomodo };
   }
 
   /**
@@ -3625,6 +3725,92 @@ export class WoodEntriesDB {
     return { ok: aplicados.length > 0, asientos: asientos.length, aplicados, omitidos };
   }
 
+  /**
+   * Las fotos de una GUÍA completa (la pila que bajó del camión).
+   *
+   * Hasta esto, `CtpFotosDelIngreso` sólo se llenaba al CREAR el ingreso — las
+   * 24 guías del tenant real quedaban sin una sola foto porque nadie recibe una
+   * guía sacando fotos EN el formulario de alta, las saca al pie de la pila.
+   *
+   * Va por `gtfNumber`, no por asiento, y escribe en **todas** las filas de esa
+   * GTF (mismo criterio que `completarGuia`/`corregirGuia`): una guía con tres
+   * especies son tres asientos del MISMO documento, y la foto de la pila es de
+   * la guía entera, no de una especie — cualquier fila que se abra después
+   * tiene que poder mostrarla.
+   *
+   * A propósito SIN el guard de período cerrado ni de asiento vivo que sí
+   * exigen completar/corregir: una foto no reescribe un dato oficial del
+   * formato, es evidencia que se puede agregar en cualquier momento — incluso
+   * a un ingreso ya anulado, para documentar qué pasó con esa madera.
+   *
+   * Dos candados de la auditoría de seguridad (2026-09-25):
+   *  1. `exigirFotosPropias` — defensa en profundidad además del Zod de la
+   *     ruta: nunca confiar en que el único llamador de hoy sea esa ruta.
+   *  2. **Sólo agregar no reescribe la lista entera sin rastro**: un
+   *     `almacenero` puede agregar fotos, pero no QUITAR una que otro puso —
+   *     eso es evidencia (lo que sostiene el papel ante SERFOR), no una nota
+   *     que cualquiera borra. `admin`/`owner` sí pueden sacar una foto mala
+   *     (borrosa, repetida). El rastro narra lo agregado Y lo quitado — antes
+   *     esto decía sólo «Guardó 0 fotos» aunque borrara las 10 que había.
+   */
+  static async fotosGuia(
+    tenantId: string,
+    gtfNumber: string,
+    fotos: string[],
+    user = "unknown",
+    role?: string,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtf = (gtfNumber ?? "").trim();
+    if (!gtf) throw new Error("gtfNumber is required");
+    try {
+      exigirFotosPropias(tenantId, fotos);
+    } catch (e) {
+      throw new CtpInvariantError(e instanceof Error ? e.message : String(e), "VALIDACION");
+    }
+
+    const asientos = await prisma.woodEntry.findMany({
+      where: { tenantId, gtfNumber: gtf, deletedAt: null },
+      select: { id: true, photos: true },
+    });
+    if (asientos.length === 0) {
+      throw new CtpInvariantError(`No hay ingresos con la guía ${gtf}.`, "VALIDACION");
+    }
+
+    /* Las filas de una misma GTF SIEMPRE deberían tener las mismas fotos (se
+       escriben todas juntas): la primera manda para calcular el «antes». */
+    const previas = Array.isArray(asientos[0]!.photos)
+      ? (asientos[0]!.photos as unknown[]).filter((x): x is string => typeof x === "string")
+      : [];
+    const nuevas = fotos.slice(0, 10);
+    const diff = diffFotosGuia(previas, nuevas);
+
+    const motivoDenegado = motivoSiNoPuedeGuardar(diff.quitadas, role);
+    if (motivoDenegado) throw new CtpInvariantError(motivoDenegado, "VALIDACION");
+    if (diff.agregadas.length === 0 && diff.quitadas.length === 0) {
+      // Sin cambio real: no se escribe ni se audita (mismo criterio que
+      // `corregirGuia` con un valor idéntico al que ya tenía).
+      return { ok: true, asientos: asientos.length, fotos: previas };
+    }
+
+    await prisma.woodEntry.updateMany({
+      where: { tenantId, gtfNumber: gtf, deletedAt: null },
+      data: { photos: nuevas as Prisma.InputJsonValue },
+    });
+    auditCtp({
+      tenantId,
+      action: "ctp_ingreso_update",
+      entity: "WoodEntry",
+      entityId: asientos[0]!.id,
+      detail: detalleDeFotosGuia(gtf, asientos.length, previas, nuevas, diff),
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
+    return { ok: true, asientos: asientos.length, fotos: nuevas };
+  }
+
   static async update(tenantId: string, id: string, input: WoodEntryUpdateInput, user: string) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!id) throw new Error("id is required");
@@ -3815,7 +4001,11 @@ export class WoodEntriesDB {
 
     const actual = await prisma.woodEntry.findFirst({ where: { id, tenantId, deletedAt: null } });
     if (!actual) throw new Error("Ingreso no encontrado");
-    if (actual.status !== "pendiente" && actual.status !== "validado") {
+    /* Mismo criterio que `ForestContratoDB.balance()`: rechazado y anulado no
+       cuentan. `procesado` SÍ — es madera ya aserrada, justo la que más
+       necesita costo para el margen; antes se rechazaba y quedaba contada
+       como «sin precio» en la ficha del permiso sin forma de cargarlo. */
+    if (actual.status === "rechazado" || actual.status === "anulado") {
       throw new CtpInvariantError(
         `Un ingreso ${actual.status} no lleva costo: no cuenta en el balance.`,
         "ESTADO_NO_EDITABLE",
@@ -3823,6 +4013,9 @@ export class WoodEntriesDB {
       );
     }
     await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "valorizar");
+    /* Reabrir el mes no descongela: si una corrida ya copió el costo de esta
+       guía a su acta, cambiarlo acá la contradice. Mismo freno que la tanda. */
+    await exigirCostoNoCongelado(prisma, tenantId, id, actual.gtfNumber);
 
     const entry = await prisma.woodEntry.update({
       where: { id },
@@ -3884,6 +4077,10 @@ export class WoodEntriesDB {
     repetidas: string[];
     m3Agregados: number;
     bloqueado?: "ya-tiene-lista";
+    /** Cuántas fueron a cada fila de la guía (ADR-435): cada troza a la de su especie. */
+    porFila?: { woodEntryId: string; especie: string; agregadas: number; m3: number }[];
+    /** Las que quedaron en esta fila sin ser de su especie, con el porqué. */
+    fueraDeSuFila?: { codigo: string | null; especie: string | null; nota: NotaDeColocacion }[];
   }> {
     if (!tenantId) throw new Error("tenantId is required");
     if (!id) throw new Error("id is required");
@@ -3891,11 +4088,24 @@ export class WoodEntriesDB {
 
     const actual = await prisma.woodEntry.findFirst({ where: { id, tenantId, deletedAt: null } });
     if (!actual) throw new Error("Ingreso no encontrado");
+    /* Las filas vivas de la MISMA guía (ADR-435). Una GTF de varias especies
+       son varias filas, y la importación llega por UNA (`idByGtf`): colgarle
+       todo a ésa dejó 29 de 46 trozas de Blas en la fila de otra especie. La
+       lista de la guía, y su deduplicación, son de la guía entera. */
+    const hermanas = (
+      await prisma.woodEntry.findMany({
+        where: { tenantId, deletedAt: null, gtfNumber: actual.gtfNumber, status: { notIn: ["rechazado", "anulado"] } },
+        select: { id: true, gtfSeries: true, speciesCommonName: true, speciesScientificName: true, status: true, entryDate: true },
+      })
+    ).filter((h) => h.id === id || (h.gtfSeries ?? "").trim() === (actual.gtfSeries ?? "").trim());
+    const idsGuia = [...new Set([id, ...hermanas.map((h) => h.id)])];
+    const guiaSinLista =
+      opts.desdeImportacion === true &&
+      (await prisma.woodEntryTroza.count({ where: { tenantId, woodEntryId: { in: idsGuia } } })) === 0;
     if (actual.status !== "pendiente") {
-      const yaTiene =
-        opts.desdeImportacion && actual.status === "validado"
-          ? (await prisma.woodEntryTroza.count({ where: { tenantId, woodEntryId: id } })) > 0
-          : null;
+      /* «Ya tiene su lista» es de la GUÍA: con la lista en otra fila, completar
+         ésta por su cuenta la duplicaba (la dedup era por fila). */
+      const yaTiene = opts.desdeImportacion && actual.status === "validado" ? !guiaSinLista : null;
       /* Validado y CON lista: no es un error, no hay nada que completar. Re-subir
          el mismo archivo tiene que decir «ya está», no gritar un invariante.
          Cuál de las dos listas vale no lo decide un importador. */
@@ -3911,12 +4121,30 @@ export class WoodEntriesDB {
     }
     await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "agregarle piezas");
 
+    /* Qué hermana RECIBIRÍA piezas por sí sola — la misma regla de arriba, por
+       fila: pendiente, o validada completando una guía sin lista desde la
+       importación; y nunca de un mes cerrado. Repartir por especie no abre una
+       puerta que estaba cerrada: lo que su fila no aceptaría se queda en ésta
+       (como antes) y se dice. */
+    const filasQueReciben: FilaQueRecibe[] = await Promise.all(
+      hermanas.map(async (h) => ({
+        id: h.id,
+        especie: h.speciesCommonName,
+        cientifico: h.speciesScientificName,
+        puedeRecibir:
+          h.id === id ||
+          ((h.status === "pendiente" || (h.status === "validado" && guiaSinLista)) &&
+            !(await ForestCtpCierreDB.closedPeriodOf(tenantId, h.entryDate))),
+      })),
+    );
+    const especieDeFila = new Map(hermanas.map((h) => [h.id, h.speciesCommonName]));
+
     const resultado = await prisma.$transaction(async (tx) => {
       // Dentro de la tx: entre el chequeo y el insert, otra tablet puede haber
       // cargado las mismas piezas.
       const existentes = await tx.woodEntryTroza.findMany({
-        where: { tenantId, woodEntryId: id },
-        select: { codificacion: true, orden: true },
+        where: { tenantId, woodEntryId: { in: idsGuia } },
+        select: { codificacion: true, orden: true, woodEntryId: true },
       });
 
       const clave = (c: string | null | undefined) => (c ?? "").trim().toUpperCase();
@@ -3936,25 +4164,33 @@ export class WoodEntriesDB {
         nuevas.push(t);
       }
 
-      if (nuevas.length === 0) return { agregadas: 0, repetidas, m3Agregados: 0 };
+      if (nuevas.length === 0) return { agregadas: 0, repetidas, m3Agregados: 0, porFila: [], fueraDeSuFila: [] };
 
-      if (existentes.length + nuevas.length > TOPE_TROZAS_POR_INGRESO) {
-        throw new CtpInvariantError(
-          `Un ingreso admite hasta ${TOPE_TROZAS_POR_INGRESO} piezas y esto lo llevaría a ${existentes.length + nuevas.length}.`,
-          "TOPE_TROZAS",
-          { actuales: existentes.length, nuevas: nuevas.length },
-        );
+      /* Cada troza a la fila de SU especie dentro de la guía (ADR-435). */
+      const colocadas = colocarAlCargar(nuevas, filasQueReciben, id);
+      const porFila = new Map<string, WoodEntryTrozaInput[]>();
+      for (const c of colocadas) porFila.set(c.filaId, [...(porFila.get(c.filaId) ?? []), c.troza]);
+
+      /* Tope y numeración, POR FILA: el tope es de un ingreso, y `orden` es la
+         columna del papel — reiniciarla en 1 dejaría dos piezas «número 1». */
+      const desdePorFila = new Map<string, number>();
+      for (const [filaId, suyas] of porFila) {
+        const previas = existentes.filter((t) => t.woodEntryId === filaId);
+        if (previas.length + suyas.length > TOPE_TROZAS_POR_INGRESO) {
+          throw new CtpInvariantError(
+            `Un ingreso admite hasta ${TOPE_TROZAS_POR_INGRESO} piezas y esto lo llevaría a ${previas.length + suyas.length}.`,
+            "TOPE_TROZAS",
+            { actuales: previas.length, nuevas: suyas.length },
+          );
+        }
+        desdePorFila.set(filaId, previas.reduce((max, t) => Math.max(max, t.orden ?? 0), 0));
       }
 
-      // La numeración sigue donde quedó: `orden` es la columna del papel y
-      // reiniciarla en 1 dejaría dos piezas "número 1" en la misma lista.
-      const desde = existentes.reduce((max, t) => Math.max(max, t.orden ?? 0), 0);
-
       await tx.woodEntryTroza.createMany({
-        data: nuevas.map((t, i) => ({
+        data: [...porFila].flatMap(([filaId, suyas]) => suyas.map((t, i) => ({
           tenantId,
-          woodEntryId: id,
-          orden: desde + i + 1,
+          woodEntryId: filaId,
+          orden: (desdePorFila.get(filaId) ?? 0) + i + 1,
           codificacion: t.codificacion,
           especieComun: t.especieComun,
           especieCientifica: t.especieCientifica,
@@ -3968,7 +4204,7 @@ export class WoodEntriesDB {
           codigoPlanta: t.codigoPlanta ?? null,
           parcela: t.parcela ?? null,
           noRecepcionada: t.noRecepcionada ?? false,
-        })),
+        }))),
       });
 
       return {
@@ -3977,22 +4213,35 @@ export class WoodEntriesDB {
         // Los m³ que de verdad entraron, no los del archivo: si la mitad eran
         // repetidas, auditar el total del Excel diría que entró el doble.
         m3Agregados: nuevas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0),
+        porFila: [...porFila].map(([filaId, suyas]) => ({
+          woodEntryId: filaId,
+          especie: especieDeFila.get(filaId) ?? actual.speciesCommonName,
+          agregadas: suyas.length,
+          m3: suyas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0),
+        })),
+        fueraDeSuFila: colocadas.flatMap((c) =>
+          c.nota ? [{ codigo: c.troza.codificacion, especie: c.troza.especieComun, nota: c.nota }] : [],
+        ),
       };
     });
 
     if (resultado.agregadas > 0) {
-      const m3Agregados = resultado.m3Agregados;
-      auditCtp({
-        tenantId,
-        action: "ctp_ingreso_trozas_add",
-        entity: "WoodEntry",
-        entityId: id,
-        detail:
-          `Agregó ${resultado.agregadas} pieza${resultado.agregadas === 1 ? "" : "s"} a la lista del ingreso ${actual.gtfNumber}` +
-          (m3Agregados > 0 ? ` · ${m3(m3Agregados)}` : "") +
-          (resultado.repetidas.length > 0 ? ` · ${resultado.repetidas.length} ya estaban` : ""),
-        user,
-      });
+      /* Un renglón por fila que recibió piezas: el historial de cada ingreso
+         tiene que decir cuándo apareció cada una de SUS piezas. */
+      for (const f of resultado.porFila ?? []) {
+        auditCtp({
+          tenantId,
+          action: "ctp_ingreso_trozas_add",
+          entity: "WoodEntry",
+          entityId: f.woodEntryId,
+          detail:
+            `Agregó ${f.agregadas} pieza${f.agregadas === 1 ? "" : "s"} a la lista del ingreso ${actual.gtfNumber} · ${f.especie}` +
+            (f.m3 > 0 ? ` · ${m3(f.m3)}` : "") +
+            (f.woodEntryId !== id ? " · a la fila de su especie" : "") +
+            (resultado.repetidas.length > 0 && f.woodEntryId === id ? ` · ${resultado.repetidas.length} ya estaban` : ""),
+          user,
+        });
+      }
       try {
         invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
       } catch {}
@@ -4064,7 +4313,7 @@ export class WoodEntriesDB {
     if (!tenantId) throw new Error("tenantId is required");
     const actual = await prisma.woodEntry.findFirst({
       where: { id, tenantId, deletedAt: null },
-      select: { id: true, status: true, fechaRecepcion: true, gtfNumber: true },
+      select: { id: true, status: true, fechaRecepcion: true, gtfNumber: true, gtfDate: true },
     });
     if (!actual) return null;
     if (actual.status === "anulado" || actual.status === "rechazado") {
@@ -4074,11 +4323,18 @@ export class WoodEntriesDB {
 
     /* La fecha viaja como texto hasta el `::date` de Postgres: convertirla a
        `Date` acá la interpretaría en la zona del servidor y correría un día en
-       Lima (el mismo off-by-one de `entryDate`). */
-    const dia =
-      fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : new Date().toISOString().slice(0, 10);
+       Lima (el mismo off-by-one de `entryDate`). Sin fecha, HOY de Lima: el
+       `toISOString()` de las 19:00 ya es mañana (ADR-434). */
+    const dia = fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : limaDateKey();
+    /* ADR-434: ni futura ni anterior a la guía — la misma regla que la fila del modal. */
+    const fechaImposible = problemaDeLlegada(dia, actual.gtfDate, limaDateKey());
+    if (fechaImposible) {
+      throw new CtpInvariantError(`Guía ${actual.gtfNumber}: ${fechaImposible}`, "VALIDACION", { fecha: dia });
+    }
 
     const { piezas } = await prisma.$transaction(async (tx) => {
+      /* T3 al revés (ADR-434): una troza sin fecha que ya se aserró no queda fechada después de su corrida. */
+      await ForestRecepcionDB.exigirLlegadaCompatible(tx, tenantId, [id], dia, actual.gtfNumber);
       const marcadas = await tx.$executeRaw`
         UPDATE "WoodEntryTroza"
         SET "fechaRecepcion" = ${dia}::timestamp
@@ -4146,10 +4402,12 @@ export class WoodEntriesDB {
     fallo: { id: string; motivo: string } | null;
   }> {
     if (!tenantId) throw new Error("tenantId is required");
-    const dia =
-      fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : new Date().toISOString().slice(0, 10);
+    const dia = fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : limaDateKey();
     let recepcionados = 0;
     let piezas = 0;
+    /* ADR-434: la guía entera se revisa ANTES del primer asiento (fecha posible,
+       mes abierto, trozas ya aserradas): frenar en el segundo la dejaría a medias. */
+    await ForestRecepcionDB.revisarAntesDeRecibir(tenantId, ids, dia);
 
     /* En serie y ordenado: los asientos de una guía tocan las mismas filas de
        `WoodEntryTroza` y en paralelo se pisan los locks. Son dos o cinco, no

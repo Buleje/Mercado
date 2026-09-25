@@ -301,6 +301,8 @@ export interface FilaGuiaExport {
   saldoM3: number;
   trozasTexto: string;
   corridasTexto: string;
+  /** URLs de las fotos de la pila (`WoodEntry.photos`). Siempre un array. */
+  fotos: string[];
 }
 
 /** «12 libres · 3 en lote · 2 consumidas» — sólo las cubetas con algo, en el
@@ -341,6 +343,7 @@ export function filasDeGuias(volumen: VolumenDelPermiso): FilaGuiaExport[] {
     saldoM3: g.saldoM3,
     trozasTexto: trozasPorEstadoTexto(g.trozas),
     corridasTexto: corridasDeGuiaTexto(g),
+    fotos: g.fotos,
   }));
 }
 
@@ -535,6 +538,12 @@ function hojaGuias(volumen: VolumenDelPermiso): HojaExcel {
       "Saldo m³": r3(g.saldoM3),
       "Trozas por estado": g.trozasTexto,
       "Corridas que comieron": g.corridasTexto,
+      /* Una columna por foto sería un ancho de tabla que depende de cuánta
+         madera saca fotos ese día; acá alcanza con cuántas hay y los links
+         para abrirlas — el Excel no es donde se MIRA la foto, es de dónde se
+         llega a ella. */
+      Fotos: g.fotos.length,
+      "Links de fotos": g.fotos.length > 0 ? g.fotos.join(" ") : GUION,
     })),
   };
 }
@@ -703,11 +712,30 @@ function tablaTipoHtml(volumen: VolumenDelPermiso): string {
   </table>`;
 }
 
+/** Hasta 4 miniaturas por guía: el papel es para mostrarle al fiscalizador que
+ *  la foto EXISTE, no un álbum — la foto grande sigue viviendo en la URL. */
+const MAX_FOTOS_PAPEL = 4;
+
+function fotosHtml(fotos: string[], gtf: string): string {
+  if (fotos.length === 0) return GUION;
+  const miniaturas = fotos
+    .slice(0, MAX_FOTOS_PAPEL)
+    .map(
+      (url) =>
+        `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;width:30px;height:30px;border-radius:6px;overflow:hidden;border:1px solid #cfe0d7;margin:0 3px 3px 0">
+          <img src="${esc(url)}" alt="Foto de la guía ${esc(gtf)}" style="width:100%;height:100%;object-fit:cover" />
+        </a>`,
+    )
+    .join("");
+  const resto = fotos.length > MAX_FOTOS_PAPEL ? ` <span class="muted">+${fotos.length - MAX_FOTOS_PAPEL}</span>` : "";
+  return `${miniaturas}${resto}`;
+}
+
 function tablaGuiasHtml(volumen: VolumenDelPermiso): string {
   const filas = filasDeGuias(volumen);
   if (filas.length === 0) return `<p class="sub2">Ninguna guía de ingreso bajo este permiso.</p>`;
   return `<table class="tbl-compact">
-    <thead><tr><th>GTF</th><th>Fecha</th><th>Especie</th><th class="num">Ingresado m³</th><th>Trozas por estado</th><th class="num">Saldo m³</th><th>Corridas que comieron</th></tr></thead>
+    <thead><tr><th>GTF</th><th>Fecha</th><th>Especie</th><th class="num">Ingresado m³</th><th>Trozas por estado</th><th class="num">Saldo m³</th><th>Corridas que comieron</th><th>Fotos</th></tr></thead>
     <tbody>${filas
       .map(
         (g) => `<tr>
@@ -718,6 +746,7 @@ function tablaGuiasHtml(volumen: VolumenDelPermiso): string {
         <td>${esc(g.trozasTexto)}</td>
         <td class="num">${neg(fmtM3(g.saldoM3), g.saldoM3 < -0.0005)}</td>
         <td>${esc(g.corridasTexto)}</td>
+        <td>${fotosHtml(g.fotos, g.gtf)}</td>
       </tr>`,
       )
       .join("")}</tbody>

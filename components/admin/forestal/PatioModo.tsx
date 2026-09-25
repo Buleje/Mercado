@@ -42,6 +42,7 @@ interface GuiaPatio {
   speciesCommonName: string;
   volumeM3: number | string;
   entryDate: string;
+  photos?: string[] | null;
 }
 
 
@@ -136,6 +137,8 @@ export default function PatioModo() {
           trozas={recibiendo.trozas}
           volumenDelIngreso={Number(recibiendo.guia.volumeM3) || null}
           offline
+          gtfNumber={recibiendo.guia.gtfNumber}
+          fotosIniciales={recibiendo.guia.photos ?? []}
           onCerrar={() => setRecibiendo(null)}
           onGuardado={(encolada) => {
             setRecibiendo(null);

@@ -7,8 +7,10 @@
  * los que salió lo aserrado. Es el hilo guía → corrida → despacho.
  */
 
-import { ChevronRight, Axe, Truck } from "@buleje/design-system/icons";
+import { useCallback, useRef, useState } from "react";
+import { ChevronRight, Axe, Camera, Truck, X } from "@buleje/design-system/icons";
 import { fmtPiezas } from "@/lib/forestal/cubicacion-formato";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type {
   CorridaDelPermiso,
   DespachoDelPermiso,
@@ -70,6 +72,73 @@ export function MarcaDeCorrida({
 }
 
 export const nLinea = (n: number | null | undefined) => (n == null ? "Sin N°" : `N° ${n}`);
+
+/**
+ * Miniaturas de las fotos de la guía + lightbox al tocarlas.
+ *
+ * Vive AFUERA del `<button>` que alterna la fila (abajo): ese botón ya cubre
+ * toda la fila para expandir/colapsar, y un botón de miniatura anidado dentro
+ * de otro botón es HTML inválido y le rompe el foco a un lector de pantalla.
+ * Por eso las fotos van en su propia franja, debajo del encabezado.
+ */
+function FotosDeGuia({ fotos, gtf }: { fotos: string[]; gtf: string }) {
+  const [ampliada, setAmpliada] = useState<string | null>(null);
+  const cerrar = useCallback(() => setAmpliada(null), []);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(dialogRef, { onCerrar: cerrar, activo: ampliada != null });
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--rule-soft)] px-3 py-2">
+        <Camera className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+        {fotos.map((url, i) => (
+          <button
+            key={url}
+            type="button"
+            onClick={() => setAmpliada(url)}
+            aria-label={`Ampliar foto ${i + 1} de la GTF ${gtf}`}
+            className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-[var(--rule-base)] transition-colors hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- subida del tenant, sin dominio fijo */}
+            <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+          </button>
+        ))}
+      </div>
+
+      {ampliada && (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-system bg-black/85 backdrop-blur-sm"
+          onClick={(e) => e.target === e.currentTarget && cerrar()}
+        >
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Foto de la GTF ${gtf}`}
+            tabIndex={-1}
+            className="pointer-events-none absolute inset-0 flex items-center justify-center p-4"
+          >
+            <button
+              type="button"
+              aria-label="Cerrar"
+              className="pointer-events-auto absolute right-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              onClick={(e) => { e.stopPropagation(); cerrar(); }}
+            >
+              <X className="h-5 w-5" strokeWidth={2} />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={ampliada}
+              alt={`Foto de la GTF ${gtf}`}
+              className="pointer-events-auto max-h-[90vh] max-w-full rounded-2xl object-contain shadow-[var(--shadow-xl)]"
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export default function CtpPermisoTrazaGuia({
   guia: g,
@@ -134,6 +203,8 @@ export default function CtpPermisoTrazaGuia({
           </span>
         </span>
       </button>
+
+      {g.fotos.length > 0 && <FotosDeGuia fotos={g.fotos} gtf={g.gtf} />}
 
       {abierta && (
         <div id={panel} className="border-t border-[var(--rule-soft)] px-3 py-2.5 text-sm">

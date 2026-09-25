@@ -29,8 +29,9 @@ const guia = (clave: string, over: Partial<GuiaDelBloque> = {}): GuiaDelBloque =
   lineas: [{ id: `${clave}-a`, volumeM3: 6 }, { id: `${clave}-b`, volumeM3: 4 }],
   ...over,
 });
+/* Marcar una guía la llena con su fecha de llegada (ADR-434): cada guía lleva la suya. */
 const marcar = (clave: string, over: Partial<Marcas[string]> = {}): Marcas => ({
-  [clave]: { ...MARCA_VACIA, marcada: true, ...over },
+  [clave]: { ...MARCA_VACIA, marcada: true, fecha: "2026-09-15", ...over },
 });
 
 describe("la fecha en que bajó la madera", () => {
@@ -66,6 +67,13 @@ describe("lo que el bloque no deja pasar", () => {
     expect(problemasDelBloque([guia("1")], marcar("1", { costoTotal: "0" }))).toHaveLength(1);
     expect(problemasDelBloque([guia("1")], marcar("1", { costoTotal: "" }))).toHaveLength(0);
     expect(problemasDelBloque([guia("1")], marcar("1", { costoTotal: "1500.50" }))).toHaveLength(0);
+  });
+
+  it("cada guía marcada necesita SU fecha, y la revisa quien la conoce (ADR-434)", () => {
+    expect(problemasDelBloque([guia("1")], marcar("1", { fecha: "" }))[0]?.motivo).toContain("Falta la fecha");
+    const antesDeLaGuia = (_g: unknown, f: string) => (f < "2026-09-10" ? "antes de su guía" : null);
+    expect(problemasDelBloque([guia("1")], marcar("1", { fecha: "2026-09-02" }), antesDeLaGuia)[0]?.motivo).toBe("antes de su guía");
+    expect(problemasDelBloque([guia("1")], marcar("1", { fecha: "2026-09-12" }), antesDeLaGuia)).toHaveLength(0);
   });
 
   it("una guía sin marcar no se revisa: el tilde es la declaración", () => {

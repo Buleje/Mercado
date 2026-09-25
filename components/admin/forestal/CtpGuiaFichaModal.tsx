@@ -14,10 +14,12 @@
  */
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, FileText, Loader2, PackageCheck, Scale } from "@buleje/design-system/icons";
+import { AlertTriangle, ArrowLeftRight, FileText, Loader2, PackageCheck, Scale } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
+import { nTrozas, trozasPorFila } from "@/lib/forestal/acomodar-trozas";
 import { completitudFicha, seccionesDeGuia, type LineaConGuia } from "@/lib/forestal/guia-ficha";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
@@ -30,9 +32,12 @@ import { formatDateNumeric, formatNumber } from "@/lib/format";
 /** Una pieza de la guía, como la devuelve el endpoint de trozas. */
 export interface TrozaDeFicha {
   id: string;
+  /** La fila (asiento por especie) de la que cuelga. */
+  woodEntryId?: string | null;
   codificacion?: string | null;
   codigoPlanta?: string | null;
   especieComun?: string | null;
+  especieCientifica?: string | null;
   d1Cm?: number | null;
   d2Cm?: number | null;
   largoM?: number | null;
@@ -68,6 +73,7 @@ export default function CtpGuiaFichaModal({
   onRecepcionar,
   onVerDocumento,
   onCuadrar,
+  onAcomodar,
   onClose,
 }: {
   guia: GuiaIngreso<WoodEntry>;
@@ -81,6 +87,8 @@ export default function CtpGuiaFichaModal({
   onVerDocumento: () => void;
   /** Abre el cuadre cuando el documento se contradice a sí mismo (ADR-353). */
   onCuadrar?: () => void;
+  /** Lleva cada troza a la fila de su especie (ADR-435). */
+  onAcomodar?: () => void;
   onClose: () => void;
 }) {
   const [verTodas, setVerTodas] = useState(false);
@@ -95,6 +103,16 @@ export default function CtpGuiaFichaModal({
      todo el libro, o la ficha diría que cuadra lo que el listado marca en rojo. */
   const cuadre = cuadreDeIngreso(guia.volumenM3, guia.trozasM3, guia.trozasCount);
   const piezas = trozas ?? [];
+  /* Cada fila con SUS trozas (ADR-435): cuántas cuelgan de cada especie y
+     cuáles están en la fila de otra que la guía sí tiene. */
+  const porFila = useMemo(
+    () =>
+      trozasPorFila(
+        guia.lineas.map((l) => ({ id: l.id, especie: l.speciesCommonName, cientifico: l.speciesScientificName ?? null })),
+        trozas ?? [],
+      ),
+    [guia.lineas, trozas],
+  );
   const { visibles, rango, porPagina, setPorPagina, ir } = usePaginacion(piezas);
   const recibidas = piezas.filter((t) => t.fechaRecepcion || t.noRecepcionada).length;
   /** Una guía ya recibida no se vuelve a recibir: el botón lo dice, no lo esconde. */
@@ -180,6 +198,30 @@ export default function CtpGuiaFichaModal({
           </div>
         )}
 
+        {/* Trozas colgadas de la fila de otra especie de esta misma guía
+            (ADR-435): el consumo y el descuento del permiso le suman a la
+            especie equivocada hasta que se acomodan. */}
+        {porFila.enOtraFila.size > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="flex-1">
+              <b>{nTrozas(porFila.enOtraFila.size)}</b> {porFila.enOtraFila.size === 1 ? "está" : "están"} en la fila de otra
+              especie.
+            </span>
+            <InfoTip
+              icono="ayuda"
+              title="Trozas en otra fila"
+              what="Esta guía tiene una fila por especie. Cada troza tiene que colgar de la fila de SU especie: si no, el consumo y el descuento del permiso le suman a otra."
+              affects="«Acomodar» sólo las cambia de fila dentro de esta guía. No toca lo declarado ni lo ya consumido."
+            />
+            {onAcomodar && (
+              <Btn variant="secondary" onClick={onAcomodar} disabled={recepcionando}>
+                <ArrowLeftRight className="h-4 w-4" /> Acomodar trozas
+              </Btn>
+            )}
+          </div>
+        )}
+
         {completitud.faltan.length > 0 && (
           <p className="flex items-start gap-2 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
@@ -232,6 +274,9 @@ export default function CtpGuiaFichaModal({
                 <th className="px-3 py-2 font-bold">Especie</th>
                 <th className="px-3 py-2 font-bold">Producto</th>
                 <th className="px-3 py-2 text-right font-bold">Piezas</th>
+                <th className="px-3 py-2 text-right font-bold" title="Las trozas que cuelgan de esta fila, contra las piezas que declara">
+                  Trozas
+                </th>
                 <th className="px-3 py-2 text-right font-bold">Volumen</th>
                 <th className="px-3 py-2 font-bold">Estado</th>
               </tr>
@@ -254,6 +299,15 @@ export default function CtpGuiaFichaModal({
                   <td className="px-3 py-2 text-[var(--text-secondary)]">{productLabel(l.productType)}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                     {l.pieces ?? "—"}
+                  </td>
+                  <td
+                    className={`px-3 py-2 text-right font-mono tabular-nums ${
+                      trozas != null && (porFila.cuantas.get(l.id) ?? 0) !== (l.pieces ?? 0)
+                        ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                        : "text-[var(--text-secondary)]"
+                    }`}
+                  >
+                    {trozas == null ? "…" : (porFila.cuantas.get(l.id) ?? 0)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                     {n4(l.volumeM3)}
@@ -354,7 +408,14 @@ export default function CtpGuiaFichaModal({
                         {t.codificacion ?? "—"}
                       </td>
                       <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>
-                      <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
+                      <td className="px-3 py-2 text-[var(--text-secondary)]">
+                        {t.especieComun ?? "—"}
+                        {porFila.enOtraFila.has(t.id) && (
+                          <span className="ml-1.5 rounded-full bg-[var(--data-warning-500)]/12 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                            en fila {porFila.enOtraFila.get(t.id)}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
                         {t.d1Cm && t.d2Cm && t.largoM ? `${t.d1Cm} × ${t.d2Cm} cm · ${t.largoM} m` : "—"}
                       </td>

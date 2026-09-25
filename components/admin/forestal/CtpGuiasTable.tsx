@@ -19,6 +19,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  CalendarClock,
   CheckCheck,
   ChevronRight,
   Copy,
@@ -39,6 +40,7 @@ import type { CtpSort, CtpSortField } from "@/hooks/use-ctp-ingresos";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import { faltaRecibirMadera, loQueFaltaRecibir } from "@/lib/forestal/recepcion-guias";
+import { yaRecibida } from "@/lib/forestal/fecha-de-llegada";
 import { tieneCosto } from "@/lib/forestal/costo-sugerido";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { PROVEEDOR_INVENTARIO_APERTURA } from "@/lib/forestal/ctp-serfor-a-libro";
@@ -214,6 +216,8 @@ export interface CtpGuiasTableProps {
   onCuadrar: (guia: GuiaIngreso<WoodEntry>) => void;
   /** Carga lo que se pagó por la guía, sin pasar por Rentabilidad (ADR-135). */
   onCostear: (guia: GuiaIngreso<WoodEntry>) => void;
+  /** Corrige la fecha de llegada de una guía ya recibida (ADR-434). Sin esto, no hay entrada en el menú. */
+  onCorregirRecepcion?: (guia: GuiaIngreso<WoodEntry>) => void;
   sort: CtpSort;
   onSort: (field: CtpSortField) => void;
 }
@@ -370,6 +374,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                     onValidarGuia={props.onValidarGuia}
                     onRecepcionarGuia={props.onRecepcionarGuia}
                     onCostear={props.onCostear}
+                    onCorregirRecepcion={props.onCorregirRecepcion}
                     onAlternarDetalle={() => alternarDetalle(g.clave)}
                     onAlternarMarca={(v) => alternarGuia(g, v)}
                     onDetail={onDetail}
@@ -501,6 +506,7 @@ function FilaGuia({
   onValidarGuia,
   onRecepcionarGuia,
   onCostear,
+  onCorregirRecepcion,
   onAlternarDetalle,
   onAlternarMarca,
   onDetail,
@@ -522,6 +528,7 @@ function FilaGuia({
   onValidarGuia: (g: GuiaIngreso<WoodEntry>) => void;
   onRecepcionarGuia: (g: GuiaIngreso<WoodEntry>) => void;
   onCostear: (g: GuiaIngreso<WoodEntry>) => void;
+  onCorregirRecepcion?: (g: GuiaIngreso<WoodEntry>) => void;
   onAlternarDetalle: () => void;
   onAlternarMarca: (v: boolean) => void;
   onDetail: (e: WoodEntry) => void;
@@ -580,6 +587,16 @@ function FilaGuia({
       icon: Coins,
       onSelect: () => onCostear(guia),
     },
+    /* La fecha real de llegada (ADR-434): «Recibir en bloque» fechaba con HOY. */
+    ...(onCorregirRecepcion && yaRecibida(guia)
+      ? [{
+          id: "corregir-recepcion",
+          label: "Corregir la recepción",
+          hint: "La fecha real en que llegó la madera, con motivo",
+          icon: CalendarClock,
+          onSelect: () => onCorregirRecepcion(guia),
+        } satisfies MenuAccion]
+      : []),
     ...(!unaSola
       ? [{
           id: "asientos",

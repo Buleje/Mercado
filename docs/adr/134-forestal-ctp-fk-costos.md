@@ -483,3 +483,26 @@ y el nuevo conviven. **Zero downtime por construcción, no por coreografía.**
 - `components/admin/forestal/WoodEntryForm.tsx:209` — 1 ítem de GTF ⇒ 1 `WoodEntry`
 - ADR-127 — Libro CTP completo
 - CLAUDE.md reglas 1 (nunca `prisma.*` directo), 2 (`safeParse`), 3 (`tenantId` 1er arg), 11 (raw SQL con `$1`), 12 (ADR), 14 (DIRECT_URL)
+
+---
+
+## Nota 2026-09-25 — precio en tanda (contrato de API, sin cambio de regla)
+
+Medido en el tenant real: 0 de 23 guías vivas con `costoTotal`. El precio se acuerda por proveedor y
+especie («S/ 180 el m³»), así que se agregó una segunda puerta de escritura del costo **que respeta las
+mismas reglas** de D6 (`costoTotal` se sigue almacenando por guía; el costo unitario sigue derivado):
+
+| | |
+|---|---|
+| Ruta | `GET/POST /api/admin/forestal/wood-entries/precio` (admin/owner, CSRF, rate limit `GENEROUS·ctp`) |
+| GET | `{ filas, grupos, referencias, truncada }` — guías con `status ∉ {rechazado, anulado}` (= `ForestContratoDB.balance()`) agrupadas proveedor × especie |
+| POST | `{ precios: [{proveedor, especie, precioM3 > 0}], vistos: [{id, antes}], tambienConPrecio, confirmarAvisos }` → 200 `{ cambios, saltadas, totales }` · 409 `precio_fuera_de_rango` |
+| Regla | `lib/forestal/precio-en-tanda.ts` (pura): `costoTotal = precio × volumeM3` al céntimo (enteros, mitad hacia arriba), PEN. Sólo las guías de `vistos` y sólo si su costo sigue siendo `antes`. Salta mes cerrado (ADR-139), consumo con costo **congelado** (D6: el snapshot ya salió de ese costo) y volumen 0 |
+| Escritura | `WoodEntriesPrecioDB.ponerPrecio`: una `$transaction` con `FOR UPDATE … ORDER BY id`, `updateMany` con `tenantId` en el WHERE; si una no se escribe, tira. Audita `ctp_ingreso_costo_tanda` (esperado) + `ctp_ingreso_costo` por guía |
+| Dedazo | Referencia = lo pagado por la especie > plan de manejo de la especie > lo pagado por otras > plan de otras; aviso fuera de `[ref/√10, ref·√10]`, debajo del VEN o arriba de 56 % × 424 pt × S/ por pt de venta. Avisar no impide: pide `confirmarAvisos` |
+
+De paso, `setCosto` dejó de rechazar ingresos `procesado`: `balance()` los cuenta como «sin precio» y no
+había forma de cargarles costo. Revisión + seguridad (mismo día): el freno del costo **congelado** vive en
+`lib/db/costo-congelado.db.ts` y lo usan las DOS puertas (`setCosto` y la tanda); el precio mínimo es
+S/ 0,01 (`PRECIO_MINIMO_M3`: menos se redondea a 0 = madera regalada); la auditoría por guía se espera
+antes de responder y una tanda sin cambios no deja renglón.

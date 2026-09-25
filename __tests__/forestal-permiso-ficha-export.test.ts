@@ -16,6 +16,7 @@ import {
 } from "@/lib/forestal/volumen-del-permiso";
 import {
   avisosDelPermiso,
+  filasDeGuias,
   hojasDelFichaDePermiso,
   kpisDelPermiso,
   nombreArchivoPermiso,
@@ -39,6 +40,7 @@ const guia = (id: string, p: Partial<GuiaEntrada> = {}): GuiaEntrada => ({
   m3: 10,
   piezas: 4,
   proveedor: "Comunidad",
+  fotos: [],
   ...p,
 });
 
@@ -251,6 +253,22 @@ describe("hojasDelFichaDePermiso — 7 hojas, totales = Σ filas, null → «—
     expect(guias.filas[0]["Trozas por estado"]).toBe("—");
     expect(guias.filas[0].GTF).toBe("GTF-g1");
     expect(typeof guias.filas[0]["Ingresado m³"]).toBe("number");
+    // Sin fotos: 0 (número, no «—» — «—» es «no medible», 0 fotos SÍ se sabe).
+    expect(guias.filas[0].Fotos).toBe(0);
+    expect(guias.filas[0]["Links de fotos"]).toBe("—");
+  });
+
+  it("«Guías»: con fotos, el Excel trae la cantidad y los links; el papel las miniaturiza", () => {
+    const g1 = guia("g1", { fotos: ["https://x.supabase.co/a.jpg", "https://x.supabase.co/b.jpg"] });
+    const v = armarVolumenDelPermiso(entrada({ guias: [g1] }));
+    const hojas = hojasDelFichaDePermiso({ contrato, volumen: v }, AHORA);
+    const guias = hojas.find((h) => h.nombre === "Guías")!;
+    expect(guias.filas[0].Fotos).toBe(2);
+    expect(guias.filas[0]["Links de fotos"]).toBe("https://x.supabase.co/a.jpg https://x.supabase.co/b.jpg");
+    // `filasDeGuias` es lo que consume el papel (`tablaGuiasHtml`): la lista
+    // de fotos llega intacta, sin recortar — recortar a 4 miniaturas es del
+    // HTML, no del dato.
+    expect(filasDeGuias(v)[0].fotos).toEqual(g1.fotos);
   });
 
   it("«Corridas» y «Despachos»: los números van como número", () => {

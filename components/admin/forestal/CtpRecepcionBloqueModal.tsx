@@ -8,52 +8,62 @@
  * no se podían llevar a la sierra. De a una son diez fichas y diez
  * confirmaciones; en bloque es un acto.
  *
- * Las reglas del bloque —fecha explícita, tilde por guía que arranca en cero,
- * observación obligatoria cuando el papel no cuadra— y su por qué viven en
- * `lib/forestal/recepcion-bloque.ts`. Acá sólo se dibujan.
+ * Cada guía lleva SU fecha de llegada (ADR-434). Antes había una sola, con hoy
+ * propuesto: en Blas dejó 7 guías de 10-HUA recibidas el 23/09 cuando la sierra
+ * las usaba desde el 07/09, y T3 trabó 18 corridas. Ahora cada fila propone la
+ * fecha de su guía y dice, antes de guardar, qué implica (`revisarLlegada`).
+ *
+ * Las reglas del bloque —tilde por guía que arranca en cero, observación
+ * obligatoria cuando el papel no cuadra— viven en
+ * `lib/forestal/recepcion-bloque.ts`; las de la fecha, en `fecha-de-llegada.ts`.
  */
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Coins, Loader2, PackageCheck } from "@buleje/design-system/icons";
+import { Loader2, PackageCheck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
-  avisoDeCuadre,
   marcaDe,
-  noCuadra,
-  problemaDeFecha,
   problemasDelBloque,
   repartirCosto,
   resumenDelBloque,
   type GuiaDelBloque,
+  type MarcaDeGuia,
   type Marcas,
 } from "@/lib/forestal/recepcion-bloque";
-import { loQueFaltaRecibir } from "@/lib/forestal/recepcion-guias";
+import {
+  diaDelLibro,
+  problemaDeLlegada,
+  propuestaDeLlegada,
+  revisarLlegada,
+  type PropuestaDeLlegada,
+  type RevisionDeLlegada,
+} from "@/lib/forestal/fecha-de-llegada";
 import { useRecepcionBloque, type ResultadoBloque } from "@/hooks/use-recepcion-bloque";
-import { Btn, ModalBody, ModalFooter, formatDate } from "./ctp-shared";
+import { useContextoDeLlegada } from "@/hooks/use-contexto-de-llegada";
+import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { formatCurrency } from "@/lib/format";
+import CtpRecepcionBloqueFila from "./CtpRecepcionBloqueFila";
 
 /** Una guía como la ve este modal: la del libro más su papel y su fecha. */
 export interface GuiaParaBloque extends GuiaDelBloque {
   providerName: string;
   entryDate: string | Date;
+  /** La fecha del papel: de ella sale la propuesta y antes de ella no pudo llegar. */
+  gtfDate?: string | Date | null;
   status: string;
   trozasCount: number;
   trozasDecididas: number;
   lineas: readonly { id: string; volumeM3?: number | string | null; fechaRecepcion?: string | null }[];
 }
 
-const CAMPO =
-  "h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
-
-const hoyLocal = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-
-const soles = (n: number) =>
-  `${formatCurrency(n)}`;
+/** La recepción que ya tiene la guía (una a medio recibir): la más vieja de sus asientos. */
+const recepcionDe = (g: GuiaParaBloque): string | null =>
+  g.lineas
+    .map((l) => diaDelLibro(l.fechaRecepcion))
+    .filter((d): d is string => Boolean(d))
+    .sort()[0] ?? null;
 
 export default function CtpRecepcionBloqueModal({
   guias,
@@ -66,21 +76,36 @@ export default function CtpRecepcionBloqueModal({
   onListo: (r: ResultadoBloque) => void;
   onClose: () => void;
 }) {
-  const [fecha, setFecha] = useState(hoyLocal());
   const [marcas, setMarcas] = useState<Marcas>({});
   const [intentado, setIntentado] = useState(false);
   const { enviando, hechas, recibir } = useRecepcionBloque();
+  const { hoy, contextoDe, cargando } = useContextoDeLlegada(useMemo(() => guias.map((g) => g.gtfNumber), [guias]));
 
-  const tocar = (clave: string, parche: Partial<(typeof marcas)[string]>) =>
-    setMarcas((prev) => ({
-      ...prev,
-      [clave]: { ...marcaDe(prev, clave), ...parche },
-    }));
+  const tocar = (clave: string, parche: Partial<MarcaDeGuia>) =>
+    setMarcas((prev) => ({ ...prev, [clave]: { ...marcaDe(prev, clave), ...parche } }));
+
+  const propuestas = useMemo(
+    () =>
+      new Map<string, PropuestaDeLlegada | null>(
+        guias.map((g) => [
+          g.clave,
+          propuestaDeLlegada({ guia: g.gtfDate, asiento: g.entryDate, recepcion: recepcionDe(g) }, hoy),
+        ]),
+      ),
+    [guias, hoy],
+  );
+
+  /** La misma revisión que hace el servidor; sin contexto todavía, lo que se sabe sin él. */
+  const revisar = (g: GuiaDelBloque & { gtfDate?: string | Date | null }, fecha: string): RevisionDeLlegada => {
+    const ctx = contextoDe(g.gtfNumber);
+    if (ctx) return revisarLlegada(fecha, ctx, hoy, "recibir");
+    const p = problemaDeLlegada(fecha, g.gtfDate, hoy);
+    return { bloqueo: p ? { codigo: "VALIDACION", mensaje: p } : null, avisos: [] };
+  };
 
   const resumen = useMemo(() => resumenDelBloque(guias, marcas), [guias, marcas]);
-  const problemas = useMemo(() => problemasDelBloque(guias, marcas), [guias, marcas]);
-  const errorFecha = problemaDeFecha(fecha);
-  const listo = resumen.guias > 0 && problemas.length === 0 && !errorFecha;
+  const problemas = problemasDelBloque(guias, marcas, (g, f) => revisar(g, f).bloqueo?.mensaje ?? null);
+  const listo = resumen.guias > 0 && problemas.length === 0;
 
   async function enviar() {
     setIntentado(true);
@@ -96,9 +121,10 @@ export default function CtpRecepcionBloqueModal({
           ids: g.lineas.map((l) => l.id),
           costos: Number.isFinite(total) && total > 0 ? repartirCosto(g, total) : [],
           observacion: m.observacion,
+          fecha: m.fecha,
         };
       });
-    onListo(await recibir(pedidos, fecha));
+    onListo(await recibir(pedidos));
   }
 
   return (
@@ -112,18 +138,16 @@ export default function CtpRecepcionBloqueModal({
       footer={
         <ModalFooter
           error={
-            intentado && errorFecha
-              ? errorFecha
-              : intentado && problemas.length > 0
-                ? `Falta resolver ${problemas.length}: ${problemas.map((p) => `${p.gtfNumber} — ${p.motivo}`).join(" · ")}`
-                : null
+            intentado && problemas.length > 0
+              ? `Falta resolver ${problemas.length}: ${problemas.map((p) => `${p.gtfNumber} — ${p.motivo}`).join(" · ")}`
+              : null
           }
           nota={
             <span className="font-mono tabular-nums">
               {enviando
                 ? `Enviando ${hechas} de ${resumen.guias}…`
                 : `${resumen.guias} guía${resumen.guias === 1 ? "" : "s"} · ${resumen.asientos} asiento${resumen.asientos === 1 ? "" : "s"} · ${fmtM3(resumen.m3)} m³ · ${resumen.trozasAFechar} troza${resumen.trozasAFechar === 1 ? "" : "s"} a fechar` +
-                  (resumen.conCosto > 0 ? ` · ${soles(resumen.soles)} en ${resumen.conCosto}` : "")}
+                  (resumen.conCosto > 0 ? ` · ${formatCurrency(resumen.soles)} en ${resumen.conCosto}` : "")}
             </span>
           }
         >
@@ -138,113 +162,33 @@ export default function CtpRecepcionBloqueModal({
       }
     >
       <ModalBody className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-[14rem_1fr] sm:items-start">
-          <label className="block text-sm">
-            <span className="mb-1 block font-bold text-[var(--text-secondary)]">¿Qué día bajó la madera?</span>
-            <input
-              type="date"
-              value={fecha}
-              max={hoyLocal()}
-              onChange={(e) => setFecha(e.target.value)}
-              disabled={enviando}
-              className={CAMPO}
-            />
-          </label>
-          <p className="flex flex-wrap items-center gap-1.5 self-center text-sm text-[var(--text-secondary)]">
-            Esa fecha queda declarada para todas las guías que marques. El tilde es tu declaración, firmada a tu
-            nombre.
-            <InfoTip
-              icono="ayuda"
-              title="Qué declara el tilde"
-              what="Es la fecha que llevan sus trozas. Marca sólo las que miraste: ninguna viene marcada."
-              affects="Queda en el rastro del libro."
-            />
-          </p>
-        </div>
+        <p className="flex flex-wrap items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+          Marca las que miraste: cada guía lleva su propia fecha de llegada.
+          <InfoTip
+            icono="ayuda"
+            title="Qué declara el tilde"
+            what="Que la madera de esa guía bajó en la planta el día que dice su fila. Se propone la fecha de la guía; cámbiala si llegó otro día."
+            affects="Sus trozas quedan con esa fecha: una corrida anterior no puede usarlas. Queda en el rastro del libro, a tu nombre."
+            example="Guía del 02/09 que bajó el 03/09: marca y pon 03/09."
+          />
+          {cargando && <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" aria-label="Leyendo las corridas del permiso" />}
+        </p>
 
         <ul className="space-y-2">
           {guias.map((g) => {
             const m = marcaDe(marcas, g.clave);
-            const aviso = avisoDeCuadre(g);
-            const falta = loQueFaltaRecibir(g);
-            const total = Number(m.costoTotal.trim());
-            const porM3 = Number.isFinite(total) && total > 0 && g.volumenM3 > 0 ? total / g.volumenM3 : null;
-            const pideObs = m.marcada && noCuadra(g) && m.observacion.trim().length < 3;
             return (
-              <li
+              <CtpRecepcionBloqueFila
                 key={g.clave}
-                className={`rounded-xl border-2 p-3 transition-colors ${
-                  m.marcada ? "border-[var(--accent)] bg-primary/5" : "border-[var(--rule-base)]"
-                }`}
-              >
-                <label className="flex cursor-pointer items-start gap-3" aria-label={`Marcar guía ${g.gtfNumber}`}>
-                  <input
-                    type="checkbox"
-                    checked={m.marcada}
-                    disabled={enviando}
-                    onChange={(e) => tocar(g.clave, { marcada: e.target.checked })}
-                    className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--brand-ink)]"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                      <span className="font-mono text-base font-bold text-[var(--text-primary)]">{g.gtfNumber}</span>
-                      <span className="truncate text-sm text-[var(--text-secondary)]">{g.providerName}</span>
-                      <span className="text-sm text-[var(--text-tertiary)]">{formatDate(g.entryDate)}</span>
-                    </span>
-                    <span className="mt-0.5 block font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-                      {fmtM3(g.volumenM3)} m³ · {g.lineas.length} asiento{g.lineas.length === 1 ? "" : "s"}
-                      {falta.length > 0 && (
-                        <span className="font-sans text-[var(--text-tertiary)]"> · {falta.join(" · ")}</span>
-                      )}
-                    </span>
-                  </span>
-                </label>
-
-                {aviso && (
-                  <p className="mt-2 flex items-start gap-1.5 rounded-lg bg-[var(--data-warning-500)]/15 px-2 py-1 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                    <span>
-                      No cuadra: {aviso}. Se puede recibir igual —la madera ya bajó— pero escribe qué viste.
-                    </span>
-                  </p>
-                )}
-
-                {m.marcada && (
-                  <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_11rem]">
-                    <label className="block text-sm">
-                      <span className="mb-1 block font-bold text-[var(--text-secondary)]">
-                        Observación de la recepción {noCuadra(g) ? "(obligatoria acá)" : "(si hace falta)"}
-                      </span>
-                      <input
-                        type="text"
-                        value={m.observacion}
-                        disabled={enviando}
-                        onChange={(e) => tocar(g.clave, { observacion: e.target.value })}
-                        placeholder="ej: bajaron 4 de 6 trozas, el resto quedó en el monte"
-                        aria-invalid={intentado && pideObs}
-                        className={`${CAMPO} ${intentado && pideObs ? "border-[var(--data-error-500)]" : ""}`}
-                      />
-                    </label>
-                    <label className="block text-sm">
-                      <span className="mb-1 block font-bold text-[var(--text-secondary)]">Total pagado (S/)</span>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={m.costoTotal}
-                        disabled={enviando}
-                        onChange={(e) => tocar(g.clave, { costoTotal: e.target.value })}
-                        placeholder="0.00"
-                        className={`${CAMPO} tabular-nums`}
-                      />
-                      <span className="mt-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-                        <Coins className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                        {porM3 ? `${soles(porM3)} por m³` : "opcional — si no, queda sin valorizar"}
-                      </span>
-                    </label>
-                  </div>
-                )}
-              </li>
+                guia={g}
+                marca={m}
+                propuesta={propuestas.get(g.clave) ?? null}
+                revision={m.marcada ? revisar(g, m.fecha) : null}
+                hoy={hoy}
+                enviando={enviando}
+                intentado={intentado}
+                onTocar={(parche) => tocar(g.clave, parche)}
+              />
             );
           })}
         </ul>

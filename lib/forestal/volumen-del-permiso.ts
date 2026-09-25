@@ -111,6 +111,11 @@ export interface GuiaDelPermiso {
   trozas: TrozasDeGuia | null;
   /** Las corridas que comieron de esta guía, en orden de fecha. */
   consumos: ConsumoDeGuia[];
+  /** URLs de las fotos de la pila (`WoodEntry.photos`, compartidas por TODAS las
+   *  filas de esta GTF — ver `fotosGuia` en `wood-entries.db.ts`). Siempre un
+   *  array, nunca `null`: sin fotos es `[]`, no un hueco que haya que chequear
+   *  en cada pantalla. */
+  fotos: string[];
 }
 
 /** atada = `contratoId` es este permiso · heredada = sin contrato y comió de guías de este permiso. */
@@ -273,6 +278,8 @@ export interface GuiaEntrada {
   m3: number;
   piezas: number;
   proveedor: string | null;
+  /** Ver `GuiaDelPermiso.fotos`. Siempre un array. */
+  fotos: string[];
 }
 
 /** Un `ForestCtpConsumo` de una corrida VIVA (sin baja, no anulada). */
@@ -622,6 +629,7 @@ export function armarVolumenDelPermiso(e: EntradaVolumenDelPermiso): VolumenDelP
       saldoM3: r4(m3 - consumido - despachado),
       trozas: trozasPorGuia.get(g.id) ?? null,
       consumos,
+      fotos: g.fotos,
     };
   });
   guias.sort((a, b) => tiempo(a.fecha) - tiempo(b.fecha) || texto(a.gtf, b.gtf) || texto(a.id, b.id));

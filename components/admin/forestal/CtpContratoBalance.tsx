@@ -160,8 +160,8 @@ export default function CtpContratoBalance({
           title={`${sinValorizar} de ${m.documentos} ingresos de madera no tienen precio cargado`}
           description={
             todoSinPrecio
-              ? "Este balance suma gastos, fletes y adelantos, pero NO lo que costó la madera: el costo por m³ queda incompleto. El precio se carga en Ingresos, en el costo de cada guía."
-              : "El costo por m³ está calculado sólo con los ingresos que sí tienen precio. El resto se carga en Ingresos, en el costo de cada guía."
+              ? "Este balance suma gastos, fletes y adelantos, pero NO lo que costó la madera: el costo por m³ queda incompleto. Cárgalo en Ingresos → Opciones → Poner precio: por proveedor y especie, a todas sus guías de una vez."
+              : "El costo por m³ está calculado sólo con los ingresos que sí tienen precio. El resto se carga en Ingresos → Opciones → Poner precio."
           }
         />
       )}

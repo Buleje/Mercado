@@ -10,7 +10,7 @@
  * con su volumen), así que ningún filtro devuelve vacío por adivinar mal.
  */
 
-import { BarChart3, Download, FileStack, Plus, RefreshCw, Search, X } from "@buleje/design-system/icons";
+import { ArrowLeftRight, BarChart3, Coins, Download, FileStack, Plus, RefreshCw, Search, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import CtpFiltrosPanel, { BotonFiltros, BTN_FILTRO, usePanelFiltros } from "./ctp-filtros-panel";
 import { STATUS_META, productLabel, type WoodEntryStats, type WoodEntryStatus } from "./ctp-shared";
@@ -91,6 +91,10 @@ export interface CtpIngresosFiltrosProps {
   enCabecera?: boolean;
   /** Lo que va primero en la fila del buscador (el botón «Indicadores»). */
   antes?: React.ReactNode;
+  /** Abre «Poner precio a la madera» (precio por m³ en tanda). Sin esto no se ofrece. */
+  onPonerPrecio?: () => void;
+  /** Abre «Acomodar trozas en su especie» para todas las guías (ADR-435). Sin esto no se ofrece. */
+  onAcomodar?: () => void;
 }
 
 export default function CtpIngresosFiltros({
@@ -117,6 +121,8 @@ export default function CtpIngresosFiltros({
   columnas,
   enCabecera = false,
   antes,
+  onPonerPrecio,
+  onAcomodar,
 }: CtpIngresosFiltrosProps) {
   /* Una COLUMNA acotada cuenta 1, tenga uno o cinco valores elegidos. */
   const puesto = (v: string | readonly string[] | undefined) => (Array.isArray(v) ? v.length > 0 : !!v);
@@ -141,6 +147,35 @@ export default function CtpIngresosFiltros({
       activo: dashboardOn,
       onSelect: onDashboard,
     },
+    /* La plata de la madera (2026-09-25): antes sólo se cargaba desde Gestión →
+       Rentabilidad, y en el tenant real 0 de 23 guías tenían precio. */
+    ...(onPonerPrecio
+      ? [
+          {
+            id: "precio",
+            label: "Poner precio a la madera",
+            hint: stats?.sinCostoCount
+              ? `${stats.sinCostoCount} ${stats.sinCostoCount === 1 ? "ingreso" : "ingresos"} del período sin precio · un precio por m³ para todas las guías de un proveedor`
+              : "Un precio por m³ para todas las guías de un proveedor y especie",
+            icon: Coins,
+            onSelect: onPonerPrecio,
+          } satisfies MenuAccion,
+        ]
+      : []),
+    /* ADR-435: en Blas, 29 de 46 trozas del permiso de Huánuco colgaban de la
+       fila de otra especie de su guía. Primero se ve qué se mueve; después se
+       confirma. */
+    ...(onAcomodar
+      ? [
+          {
+            id: "acomodar",
+            label: "Acomodar trozas en su especie",
+            hint: "En las guías de varias especies, cada troza a la fila de su especie · primero ves qué se mueve",
+            icon: ArrowLeftRight,
+            onSelect: onAcomodar,
+          } satisfies MenuAccion,
+        ]
+      : []),
     {
       id: "descargar",
       label: "Descargar en Excel",

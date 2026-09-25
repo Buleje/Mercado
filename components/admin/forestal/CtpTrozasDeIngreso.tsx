@@ -67,6 +67,7 @@ export default function CtpTrozasDeIngreso({
   status = null,
   especie = null,
   especieCientifica = null,
+  fotos = null,
   onIngresoCambiado,
 }: {
   entryId: string;
@@ -84,6 +85,9 @@ export default function CtpTrozasDeIngreso({
   /** Con qué especie se precargan las piezas que se importen. */
   especie?: string | null;
   especieCientifica?: string | null;
+  /** Fotos ya cargadas de esta GTF (`WoodEntry.photos`): se le pasan al panel de
+   *  recepción para que "Tomar foto" arranque de lo que ya hay, no de cero. */
+  fotos?: string[] | null;
   /** Recargar la lista del libro: corregir el volumen cambia la fila de la tabla. */
   onIngresoCambiado?: () => void;
 }) {
@@ -254,6 +258,9 @@ export default function CtpTrozasDeIngreso({
         volumenDelIngreso={volumenDelIngreso}
         onCerrar={() => setRecibiendo(false)}
         onGuardado={() => { setRecibiendo(false); void cargar(); }}
+        gtfNumber={gtfNumber}
+        fotosIniciales={fotos ?? []}
+        onFotosGuardadas={() => onIngresoCambiado?.()}
       />
     );
   }

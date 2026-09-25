@@ -157,10 +157,18 @@ export type CtpAuditAction =
   // llega la factura —con el ingreso ya validado— y porque el costo es lo que
   // sostiene el COGS: quién lo puso y cuándo es media auditoría del margen.
   | "ctp_ingreso_costo"
+  /** Un precio por m³ aplicado a todas las guías de un proveedor × especie
+   *  (2026-09-25). Un renglón por tanda —cuántas, cuántos m³, cuánta plata y
+   *  qué se saltó—, además del `ctp_ingreso_costo` de cada guía. */
+  | "ctp_ingreso_costo_tanda"
   // Piezas agregadas a la lista de trozas de un ingreso ya registrado (ADR-320).
   // Va aparte de `update` porque no corrige un campo: suma madera al detalle que
   // ampara el ingreso, y el fiscalizador pregunta cuándo apareció cada pieza.
   | "ctp_ingreso_trozas_add"
+  /* Trozas de una guía de varias especies llevadas a la fila de SU especie
+     (ADR-435). Va aparte de `trozas_add`: no suma madera, la cambia de fila
+     dentro del mismo documento — y lo declarado no se toca. */
+  | "ctp_ingreso_trozas_acomodar"
   /* Cuadre de una guía que se contradice a sí misma (ADR-353): la cabecera por
      especie (37) y la lista de trozas (35) declaran volúmenes distintos y el
      operador dijo cuál vale. Va aparte de `update` porque no es corregir un
@@ -169,6 +177,8 @@ export type CtpAuditAction =
   | "ctp_ingreso_validate"
   /** Recepción de la guía en el patio: fecha + piezas + validación (ADR-339). */
   | "ctp_ingreso_recepcion"
+  /** Corrigió la fecha de llegada de una guía ya recibida, con motivo: antes → después (ADR-434). */
+  | "ctp_ingreso_recepcion_corregida"
   | "ctp_ingreso_reject"
   | "ctp_ingreso_annul"
   | "ctp_ingreso_delete"

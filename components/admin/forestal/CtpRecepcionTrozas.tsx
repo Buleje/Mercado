@@ -14,9 +14,10 @@
 
 import { useMemo, useState } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
-import { AlertTriangle, CalendarClock, Check, Hash, Loader2, PackageCheck, X } from "@buleje/design-system/icons";
+import { AlertTriangle, CalendarClock, Camera, Check, Hash, Loader2, PackageCheck, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { URL_TROZAS_RECEPCION, escribirDelPatio } from "@/lib/forestal/patio-cola";
+import { guardarFotosDeGuia } from "@/lib/forestal/fotos-guia";
 import {
   avisosRecepcion,
   balanceRecepcion,
@@ -31,6 +32,7 @@ import {
   numerarTrozas,
 } from "@/lib/forestal/trozas-recepcion";
 import CtpRecepcionTrozaCard from "./CtpRecepcionTrozaCard";
+import CtpFotosDelIngreso from "./CtpFotosDelIngreso";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export interface TrozaEditable extends TrozaRecepcion {
@@ -51,6 +53,9 @@ export default function CtpRecepcionTrozas({
   onCerrar,
   onGuardado,
   offline = false,
+  gtfNumber,
+  fotosIniciales = [],
+  onFotosGuardadas,
 }: {
   entryId: string;
   trozas: TrozaEditable[];
@@ -64,7 +69,38 @@ export default function CtpRecepcionTrozas({
    * que ayuda: ahí se quiere el error y reintentar.
    */
   offline?: boolean;
+  /**
+   * GTF de la guía que se está recibiendo: sin esto, "Tomar foto" no tiene
+   * dónde guardar (`WoodEntriesDB.fotosGuia` va por `gtfNumber`, no por
+   * asiento). Si no llega, la sección de fotos no se dibuja — ni un botón
+   * roto que guarde en el vacío.
+   */
+  gtfNumber?: string | null;
+  fotosIniciales?: string[];
+  /** Avisa al padre que refresque el ingreso (la ficha, el detalle) tras guardar. */
+  onFotosGuardadas?: (fotos: string[]) => void;
 }) {
+  const [fotos, setFotos] = useState<string[]>(fotosIniciales);
+  const [guardandoFotos, setGuardandoFotos] = useState(false);
+  const [errorFotos, setErrorFotos] = useState<string | null>(null);
+
+  const cambiarFotos = async (nuevas: string[]) => {
+    if (!gtfNumber) return;
+    const previas = fotos;
+    setFotos(nuevas); // optimista: la foto ya subió a `/api/upload`, sólo falta anotarla.
+    setGuardandoFotos(true);
+    setErrorFotos(null);
+    try {
+      const guardadas = await guardarFotosDeGuia(gtfNumber, nuevas);
+      setFotos(guardadas);
+      onFotosGuardadas?.(guardadas);
+    } catch (e) {
+      setFotos(previas);
+      setErrorFotos(e instanceof Error ? e.message : "No se pudieron guardar las fotos.");
+    } finally {
+      setGuardandoFotos(false);
+    }
+  };
   /** Sólo las madres: un pedazo retrozado no se recibe aparte de su troza. */
   const madres = useMemo(() => trozas.filter((t) => !t.trozaOrigenId), [trozas]);
   const [edit, setEdit] = useState<Record<string, CambioRecepcion>>({});
@@ -188,6 +224,24 @@ export default function CtpRecepcionTrozas({
           <b className="text-[var(--text-primary)]">{fmtM3(balance.volumenRecibido)}</b> m³ recibidos
         </span>
       </div>
+
+      {/* Lo primero que se puede hacer al pie de la pila, antes de marcar nada:
+          en el celular "Tomar foto" abre la cámara directo. Ante el
+          fiscalizador, esta foto es lo que sostiene lo que dice el papel. */}
+      {gtfNumber && (
+        <div className="border-b border-[var(--rule-soft)] px-4 py-3">
+          <div className="mb-1.5 flex items-center gap-2">
+            <Camera className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+            <CardTitle as="h4" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+              Fotos de la guía
+            </CardTitle>
+          </div>
+          <CtpFotosDelIngreso fotos={fotos} onCambio={(u) => void cambiarFotos(u)} disabled={guardandoFotos} />
+          {errorFotos && (
+            <p className="mt-1.5 text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{errorFotos}</p>
+          )}
+        </div>
+      )}
 
       {/* Las mismas tres acciones del alta, sobre TODAS las piezas: recibir una
           guía de sesenta y corregirla de a una son el mismo trabajo. */}
