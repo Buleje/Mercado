@@ -147,7 +147,7 @@ export default function CategoryImagesClient() {
           type="button"
           onClick={handleSave}
           disabled={!dirty || saving}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-semibold text-white transition-colors hover:bg-[var(--data-success-600)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-dark)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Save className="h-4 w-4" />
           {saving ? "Guardando…" : "Guardar"}

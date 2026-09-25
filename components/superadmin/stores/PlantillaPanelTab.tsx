@@ -949,13 +949,14 @@ export function PlantillaPanelTab() {
                                       if (e.key === "Enter") commitEditLabel();
                                       if (e.key === "Escape") { setEditingLabel(null); setLabelDraft(""); }
                                     }}
+                                    // eslint-disable-next-line jsx-a11y/no-autofocus -- el campo aparece para editar la etiqueta de inmediato
                                     autoFocus
                                     className="flex-1 min-w-0 h-9 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                                   />
                                   <button
                                     type="button"
                                     onClick={commitEditLabel}
-                                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--data-success-500)] text-white hover:opacity-90"
+                                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--accent-dark)] text-white hover:opacity-90"
                                     aria-label="Guardar etiqueta"
                                   >
                                     <Save className="h-4 w-4" />

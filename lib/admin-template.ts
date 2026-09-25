@@ -244,7 +244,11 @@ export const SIDEBAR_STYLE_PRESETS: Record<
   SidebarStylePreset
 > = {
   buleje: { theme: "buleje", accent: "teal" },
-  ejecutivo: { theme: "dark", accent: "amber" },
+  /* Barra oscura (la tinta del logo) + turquesa del logo (Brandon 2026-09-24:
+     «los colores de acuerdo a mi logo»). Traía acento coral, que no está en
+     el logo, y pintaba el `<html>` entero: el coral se colaba en los portales
+     y en la escala del acento en modo oscuro. */
+  ejecutivo: { theme: "dark", accent: "teal" },
   sereno: { theme: "light", accent: "sky" },
   vibrante: { theme: "light", accent: "rose" },
 };

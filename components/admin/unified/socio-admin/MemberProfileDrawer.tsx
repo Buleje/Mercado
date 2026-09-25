@@ -101,6 +101,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
     <div
       className="fixed inset-0 z-modal flex items-stretch justify-end bg-black/40"
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
         ref={panelRef}
@@ -110,11 +111,12 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
         tabIndex={-1}
         className="bg-[var(--surface-raised)] w-full max-w-md h-full shadow-[var(--shadow-xl)] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="sticky top-0 bg-[var(--surface-raised)] z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--data-success-500)] text-white flex items-center justify-center font-bold">
+            <div className="h-10 w-10 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white flex items-center justify-center font-bold">
               {member.name.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -240,7 +242,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
                 </button>
                 <button
                   onClick={handleExtend}
-                  className="flex-1 py-2 rounded-xl text-xs font-semibold text-white bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]"
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold text-white bg-[var(--accent-dark)] hover:brightness-110"
                 >
                   Confirmar
                 </button>

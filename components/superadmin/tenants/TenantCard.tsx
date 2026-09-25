@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 import {
   ExternalLink,
   Mail,
@@ -163,9 +164,9 @@ export function TenantCard({
     }
     return {
       text: `${daysLeft} días de prueba`,
-      bg: "bg-emerald-50 dark:bg-emerald-950/40",
-      border: "border-emerald-300 dark:border-emerald-800",
-      fg: "text-[var(--data-success-700)] dark:text-emerald-300",
+      bg: "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/40",
+      border: "border-[var(--data-success-500)] dark:border-[var(--data-success-700)]",
+      fg: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
       Icon: Clock,
     };
   })();
@@ -189,7 +190,7 @@ export function TenantCard({
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider ring-1 ${
                 healthProp === "healthy"
-                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-500/30"
+                  ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] ring-[var(--data-success-500)]/30"
                   : healthProp === "warning"
                     ? "bg-teal-500/15 text-teal-700 dark:text-teal-300 ring-teal-500/30"
                     : "bg-rose-500/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] ring-rose-500/30"
@@ -205,7 +206,7 @@ export function TenantCard({
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
                   healthProp === "healthy"
-                    ? "bg-emerald-500 animate-pulse"
+                    ? "bg-[var(--data-success-500)] animate-pulse"
                     : healthProp === "warning"
                       ? "bg-teal-500"
                       : "bg-rose-500"
@@ -302,7 +303,7 @@ export function TenantCard({
                       body: JSON.stringify({ days }),
                     });
                     if (!r.ok) {
-                      const data = await r.json().catch((_e) => null);
+                      const data = await r.json().catch((err) => { logger.warn("[tenant-card] extend-trial response parse failed", { error: String(err) }); return null; });
                       window.alert(`Error: ${data?.error ?? r.statusText}`);
                       return;
                     }

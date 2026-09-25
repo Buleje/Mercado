@@ -210,7 +210,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
                 <div className="flex items-center gap-1.5 mt-2 pl-8">
                   <button
                     onClick={() => mandarPorWhatsApp(f)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--data-success-500)] hover:opacity-90 transition-opacity"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold text-white bg-[var(--accent-dark)] hover:opacity-90 transition-opacity"
                   >
                     <MessageCircle className="h-3.5 w-3.5" /> Mandar por WhatsApp
                   </button>

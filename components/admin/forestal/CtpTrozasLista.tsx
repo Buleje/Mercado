@@ -193,7 +193,7 @@ export default function CtpTrozasLista({
           <button
             type="button"
             onClick={() => onApartar(piezasElegidas)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
           >
             <Layers className="h-4 w-4" /> Apartar en un lote
           </button>

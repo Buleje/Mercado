@@ -76,7 +76,7 @@ const TONE_GRADIENT: Record<NonNullable<PlatformCardProps["tone"]>, string> = {
   sky: "from-sky-500/15 to-blue-500/5 text-sky-600 dark:text-sky-300 ring-sky-500/30",
   rose: "from-[var(--data-error-500)]/15 to-[var(--data-error-500)]/5 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] ring-[var(--data-error-500)]/30",
   emerald:
-    "from-emerald-500/15 to-green-500/5 text-emerald-600 dark:text-emerald-300 ring-emerald-500/30",
+    "from-[var(--data-success-500)]/15 to-[var(--data-success-500)]/5 text-[var(--data-success-600)] dark:text-[var(--data-success-500)] ring-[var(--data-success-500)]/30",
   slate: "from-slate-500/15 to-zinc-500/5 text-[var(--text-secondary)] ring-slate-500/30",
 };
 

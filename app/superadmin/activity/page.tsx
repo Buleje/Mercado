@@ -44,15 +44,15 @@ interface Pagination {
 
 // ── Tonos semánticos por tipo de acción ───────────────────────────────────
 const ACTION_TONES: Record<string, { bg: string; text: string; ring: string; label: string }> = {
-  create:           { bg: "bg-emerald-500/12 dark:bg-emerald-500/20",   text: "text-emerald-700 dark:text-emerald-300",   ring: "ring-emerald-500/30",  label: "Creación" },
+  create:           { bg: "bg-[var(--data-success-500)]/12 dark:bg-[var(--data-success-500)]/20",   text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",   ring: "ring-[var(--data-success-500)]/30",  label: "Creación" },
   update:           { bg: "bg-sky-500/12 dark:bg-sky-500/20",           text: "text-sky-700 dark:text-sky-300",           ring: "ring-sky-500/30",      label: "Actualización" },
   delete:           { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",         ring: "ring-rose-500/30",     label: "Eliminación" },
-  login_success:    { bg: "bg-emerald-500/12 dark:bg-emerald-500/20",   text: "text-emerald-700 dark:text-emerald-300",   ring: "ring-emerald-500/30",  label: "Login OK" },
+  login_success:    { bg: "bg-[var(--data-success-500)]/12 dark:bg-[var(--data-success-500)]/20",   text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",   ring: "ring-[var(--data-success-500)]/30",  label: "Login OK" },
   login_failed:     { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",         ring: "ring-rose-500/30",     label: "Login falló" },
   impersonate:      { bg: "bg-teal-500/15 dark:bg-teal-500/25",       text: "text-teal-700 dark:text-teal-300",       ring: "ring-teal-500/40",    label: "Suplantación" },
   plan_change:      { bg: "bg-primary/10 bg-primary/10",     text: "text-[var(--accent-ink)] dark:text-[var(--accent)]",     ring: "ring-violet-500/30",   label: "Cambio plan" },
   suspend:          { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",         ring: "ring-rose-500/30",     label: "Suspensión" },
-  activate:         { bg: "bg-emerald-500/12 dark:bg-emerald-500/20",   text: "text-emerald-700 dark:text-emerald-300",   ring: "ring-emerald-500/30",  label: "Activación" },
+  activate:         { bg: "bg-[var(--data-success-500)]/12 dark:bg-[var(--data-success-500)]/20",   text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",   ring: "ring-[var(--data-success-500)]/30",  label: "Activación" },
   logout:           { bg: "bg-slate-500/12 dark:bg-slate-500/20",       text: "text-[var(--text-primary)] ",       ring: "ring-slate-500/30",    label: "Logout" },
 };
 

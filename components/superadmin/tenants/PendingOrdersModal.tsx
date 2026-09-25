@@ -158,11 +158,13 @@ export function PendingOrdersModal({
       aria-labelledby="pending-orders-title"
       className="fixed inset-0 z-[60] flex justify-end"
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" />
       <aside
         className="relative w-full max-w-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-200"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <header className="sticky top-0 z-10 px-6 py-5 bg-[var(--surface-canvas)]/95 backdrop-blur border-b border-[var(--rule-base)]">
@@ -210,7 +212,7 @@ export function PendingOrdersModal({
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[var(--data-success-500)] text-white text-xs font-bold hover:bg-[var(--data-success-600)] transition-colors"
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[var(--accent-dark)] text-white text-xs font-bold hover:brightness-110 transition-colors"
                 >
                   <Phone className="h-3.5 w-3.5" />
                   Avisar al dueño
@@ -401,7 +403,7 @@ export function PendingOrdersModal({
                                 )}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--data-success-500)] text-white text-xs font-bold hover:bg-[var(--data-success-600)]"
+                                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--accent-dark)] text-white text-xs font-bold hover:brightness-110"
                               >
                                 <Phone className="h-3.5 w-3.5" />
                                 WhatsApp cliente

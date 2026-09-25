@@ -2083,7 +2083,7 @@ export default function StoreCustomizer() {
                           <p className="truncate text-xs font-medium text-[var(--text-secondary)]">
                             {theme.storeName || "Mi Bodega"}
                           </p>
-                          <p className="truncate text-xs text-[var(--data-success-700,#047857)] dark:text-emerald-400">
+                          <p className="truncate text-xs text-[var(--data-success-700,#047857)] dark:text-[var(--data-success-500)]">
                             buleje.com › t › {activeTenantSlug}
                           </p>
                         </div>

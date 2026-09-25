@@ -37,12 +37,12 @@ export function StatusBadge({ active }: { active: boolean }) {
       className={[
         "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold",
         active
-          ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+          ? "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]"
           : "bg-red-100 text-[var(--data-error-600)] dark:bg-red-900/40 dark:text-red-300",
       ].join(" ")}
     >
       <span
-        className={["w-1.5 h-1.5 rounded-full", active ? "bg-green-500" : "bg-[var(--data-error-500)]"].join(" ")}
+        className={["w-1.5 h-1.5 rounded-full", active ? "bg-[var(--data-success-500)]" : "bg-[var(--data-error-500)]"].join(" ")}
       />
       {active ? "Activo" : "Suspendido"}
     </span>

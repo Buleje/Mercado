@@ -69,7 +69,7 @@ export const PLATFORM_CONFIG_DEFAULTS: PlatformConfig = {
     tagline: null,
     logoUrl: "/brand/buleje-logo.png",
     faviconUrl: "/brand/buleje-favicon.png",
-    primaryColor: "#00A0A0",
+    primaryColor: "#00A29C", // turquesa del logo (medido 2026-09-24)
     secondaryColor: "#f4a261",
   },
   support: {

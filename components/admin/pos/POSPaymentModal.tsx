@@ -217,6 +217,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
             onChange={e => setFilter(e.target.value)}
             placeholder="Buscar por nombre o teléfono..."
             className="w-full pl-12 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- el buscador de clientes se abre para tipear de inmediato
             autoFocus
           />
         </div>
@@ -963,6 +964,7 @@ export default function POSPaymentModal({
                               ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)] cursor-not-allowed"
                               : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                           )}
+                          // eslint-disable-next-line jsx-a11y/no-autofocus -- la primera línea de pago recibe el foco al abrir el modal
                           autoFocus={idx === 0 && !isFiado}
                         />
                       </div>
@@ -1227,7 +1229,7 @@ export default function POSPaymentModal({
                       } catch { /* ignore */ }
                       setSavingCustomer(false);
                     }}
-                    className="flex-1 min-h-11 rounded-xl bg-[var(--data-success-500)] text-white text-base font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--data-success-500)]/90 transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 min-h-11 rounded-xl bg-[var(--accent-dark)] text-white text-base font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-colors flex items-center justify-center gap-2"
                   >
                     {savingCustomer ? (
                       <>

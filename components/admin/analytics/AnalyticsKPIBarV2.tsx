@@ -252,7 +252,7 @@ export default function AnalyticsKPIBarV2() {
   }
 
   const borderColor: Record<string, string> = {
-    green: "border-l-emerald-500",
+    green: "border-l-[var(--data-success-500)]",
     yellow: "border-l-amber-500",
     red: "border-l-red-500",
   };

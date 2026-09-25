@@ -1310,6 +1310,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); cargarGuia(); } }}
                     aria-label="N° de la guía de transporte forestal"
                     placeholder="0001234"
+                    // eslint-disable-next-line jsx-a11y/no-autofocus -- el campo del N° de guía es lo primero que se escribe
                     autoFocus
                     required
                     className={`${I} w-full font-mono`}
@@ -1318,7 +1319,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     type="button"
                     onClick={() => void cargarGuia()}
                     disabled={loadingGtf || !data.gtfNumber.trim()}
-                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loadingGtf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     Cargar guía
@@ -1444,6 +1445,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     value={speciesQuery}
                     onChange={(e) => setSpeciesQuery(e.target.value)}
                     placeholder="Buscar por nombre común o científico..."
+                    // eslint-disable-next-line jsx-a11y/no-autofocus -- el buscador de especies se abre para tipear de inmediato
                     autoFocus
                     className={`${I} mb-2`}
                   />
@@ -2155,7 +2157,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 )}
                 {serforGtf?.volumenTotal != null && (
                   <div className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    Declarado en la guía: {serforGtf.volumenTotal.toFixed(3)} m³
+                    Declarado en la guía: {Number(serforGtf.volumenTotal).toFixed(3)} m³
                   </div>
                 )}
               </div>
@@ -2294,7 +2296,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                         <li key={i} className="flex items-baseline justify-between gap-2 text-xs">
                           <span className="truncate text-[var(--text-secondary)]">{pr.comun ?? pr.cientifico ?? "—"}</span>
                           <span className="shrink-0 font-mono tabular-nums text-[var(--text-primary)]">
-                            {pr.volumen != null ? pr.volumen.toFixed(3) : "—"} m³
+                            {pr.volumen != null ? Number(pr.volumen).toFixed(3) : "—"} m³
                           </span>
                         </li>
                       ))}

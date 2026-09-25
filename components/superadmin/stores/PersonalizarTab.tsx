@@ -62,7 +62,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
         <div
           className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-lg transition-all ${
             toast.ok
-              ? "bg-[var(--data-success-50)] text-[var(--data-success-500)] border border-[var(--data-success-500)] dark:bg-green-950/80 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]"
+              ? "bg-[var(--data-success-50)] text-[var(--data-success-500)] border border-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/80 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]"
               : "bg-[var(--data-error-50)] text-[var(--data-error-500)] border border-[var(--data-error-500)] dark:bg-red-950/80 dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
           }`}
         >

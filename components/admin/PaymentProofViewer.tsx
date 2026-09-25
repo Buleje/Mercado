@@ -81,7 +81,7 @@ const STATUS_BADGE: Record<
   },
   approved: {
     label: "Aprobado",
-    bg: "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300/40",
+    bg: "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/40 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/40",
     text: "emerald",
     Icon: CheckCircle2,
   },

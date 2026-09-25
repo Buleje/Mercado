@@ -151,7 +151,7 @@ function buildColumns(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors disabled:opacity-50",
               row.isPublished
                 ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-rose-100 dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--data-error-500)]"
-                : "border-emerald-200 bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
+                : "border-[var(--data-success-500)]/30 bg-[var(--data-success-50)] text-[var(--data-success-700)] hover:bg-[var(--data-success-100)] dark:border-[var(--data-success-500)]/40 dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
             ].join(" ")}
             title={row.isPublished ? "Ocultar del marketplace" : "Publicar en marketplace"}
           >
@@ -438,7 +438,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
                     "w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-50",
                     row.isPublished
                       ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-rose-100 dark:border-[var(--data-error-500)] dark:bg-rose-950/30"
-                      : "border-emerald-200 bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
+                      : "border-[var(--data-success-500)]/30 bg-[var(--data-success-50)] text-[var(--data-success-700)] hover:bg-[var(--data-success-100)] dark:border-[var(--data-success-500)]/40 dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
                   ].join(" ")}
                   aria-label={
                     row.isPublished

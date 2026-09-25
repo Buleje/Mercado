@@ -29,6 +29,7 @@ import {
   Paperclip, Share2, AlertCircle, Lock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import type { DbDocument } from "@/lib/types/documents";
 import { createShare } from "@/hooks/use-documents";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -222,7 +223,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
         }
         setContacts(list);
       })
-      .catch(() => { /* sin contactos: solo entrada manual */ });
+      .catch((err) => logger.error("[send-whatsapp] fetch contacts failed", { error: String(err) }));
     return () => { alive = false; };
   }, []);
 
@@ -333,7 +334,11 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
   const deshabilitado = enviando || (via === "enlace" ? creating || listos === 0 : false);
 
   return (
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    >
       <div
         ref={panelRef}
         role="dialog"
@@ -342,6 +347,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
         tabIndex={-1}
         className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
@@ -601,7 +607,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
             <button
               onClick={accion}
               disabled={deshabilitado}
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 min-h-11 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 min-h-11 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--accent)]"
             >
               {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : via === "enlace" ? <Send className="h-4 w-4" /> : <Paperclip className="h-4 w-4" />}
               {enviando ? "Mandando…" : textoBoton}

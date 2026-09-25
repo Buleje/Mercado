@@ -197,7 +197,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
       >
         <form onSubmit={add} className="space-y-4 px-5 py-5 sm:px-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Código del árbol *"><input value={f.treeCode} onChange={(e) => set("treeCode", e.target.value)} placeholder="85-TOR" autoFocus className={cls} /></Field>
+            <Field label="Código del árbol *"><input value={f.treeCode} onChange={(e) => set("treeCode", e.target.value)} placeholder="85-TOR" autoFocus /* eslint-disable-line jsx-a11y/no-autofocus -- el modal se abre para escribir el código del árbol de inmediato */ className={cls} /></Field>
             <Field label="Especie *"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" className={cls} /></Field>
             <Field label="DAP — diámetro a la altura del pecho (m)">
               <input
@@ -236,7 +236,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
           <p className="text-xs text-[var(--text-tertiary)]">El volumen sale de DAP² × π/4 × altura comercial × factor de forma. Si el árbol está por debajo del DMC de su especie, el libro va a bloquear su tala.</p>
           <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
             <button type="button" onClick={() => setOpen(false)} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-            <button type="submit" disabled={busy || !f.treeCode.trim() || !f.speciesCommon.trim() || dapFueraDeTope} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
+            <button type="submit" disabled={busy || !f.treeCode.trim() || !f.speciesCommon.trim() || dapFueraDeTope} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Agregar al censo
             </button>
           </div>

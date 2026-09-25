@@ -352,7 +352,7 @@ export default function AICommandCenter() {
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors",
                 autoplay
-                  ? "bg-[var(--data-success-500)] text-white border-[var(--data-success-500)]"
+                  ? "bg-[var(--accent-dark)] text-white border-[var(--accent-dark)]"
                   : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
               )}
             >

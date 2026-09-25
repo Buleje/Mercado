@@ -301,7 +301,7 @@ export default function SuppliersQueueClient() {
                 className={cn(
                   "px-4 py-2.5 rounded-xl text-sm font-semibold transition min-h-[44px]",
                   active
-                    ? "bg-[var(--surface-raised)] text-emerald-700 dark:text-emerald-300 shadow-sm"
+                    ? "bg-[var(--surface-raised)] text-[var(--data-success-700)] dark:text-[var(--data-success-500)] shadow-sm"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
                 )}
               >
@@ -310,7 +310,7 @@ export default function SuppliersQueueClient() {
                   className={cn(
                     "ml-1 inline-flex items-center justify-center min-w-[1.4rem] h-5 px-1.5 rounded-full text-xs font-bold",
                     active
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      ? "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]"
                       : "bg-[var(--rule-base)] text-[var(--text-secondary)]",
                   )}
                 >
@@ -330,7 +330,7 @@ export default function SuppliersQueueClient() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar  ( / )"
-              className="h-12 w-full sm:w-64 pl-9 pr-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              className="h-12 w-full sm:w-64 pl-9 pr-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/30 focus:border-[var(--data-success-500)]"
             />
           </div>
           <button
@@ -448,7 +448,7 @@ export default function SuppliersQueueClient() {
                                 })
                               }
                               disabled={busyId === r.id}
-                              className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-sm font-semibold bg-[var(--accent-dark)] hover:brightness-110 text-white disabled:opacity-50"
                             >
                               <CheckCircle2 className="h-4 w-4" />
                               {busyId === r.id ? "…" : "Aprobar"}
@@ -531,7 +531,7 @@ export default function SuppliersQueueClient() {
                         })
                       }
                       disabled={busyId === r.id}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-xl text-sm font-semibold bg-[var(--accent-dark)] hover:brightness-110 text-white disabled:opacity-50"
                     >
                       <CheckCircle2 className="h-4 w-4" /> Aprobar
                     </button>
@@ -575,7 +575,7 @@ export default function SuppliersQueueClient() {
             <button
               type="button"
               onClick={() => doApprove(confirmApprove.id, confirmApprove.name)}
-              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-semibold bg-[var(--accent-dark)] hover:brightness-110 text-white"
             >
               <CheckCircle2 className="h-4 w-4" /> Aprobar y generar key
             </button>
@@ -597,15 +597,15 @@ export default function SuppliersQueueClient() {
             . Copiala ahora y entregásela por un canal seguro: no se volverá a
             mostrar.
           </p>
-          <div className="flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-black border-2 border-slate-700 p-3 font-mono text-sm text-emerald-400 break-all">
-            <KeyRound className="h-4 w-4 shrink-0 text-emerald-500" />
+          <div className="flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-black border-2 border-slate-700 p-3 font-mono text-sm text-[var(--data-success-500)] break-all">
+            <KeyRound className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" />
             {approvedKey.apiKey}
           </div>
           <div className="mt-4 flex justify-end gap-2">
             <button
               type="button"
               onClick={() => void copyKey(approvedKey.apiKey)}
-              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-semibold bg-[var(--accent-dark)] hover:brightness-110 text-white"
             >
               <Copy className="h-4 w-4" /> Copiar API key
             </button>
@@ -683,7 +683,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}
@@ -772,10 +772,12 @@ function Modal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
         className="w-full max-w-md rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] p-6"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 mb-3">
           <Building2 className="h-5 w-5 text-[var(--text-secondary)]" />

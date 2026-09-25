@@ -48,9 +48,9 @@ interface KanbanColumn {
 // -- Columnas --
 
 const COLUMNS: KanbanColumn[] = [
-  { stage: "trial", label: "Trial", icon: Clock, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-[var(--data-success-700)]" },
-  { stage: "onboarded", label: "Onboarded", icon: CheckCircle, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", borderColor: "border-emerald-200 dark:border-[var(--data-success-700)]" },
-  { stage: "active", label: "Activo", icon: Users, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bgColor: "bg-green-50 dark:bg-green-900/20", borderColor: "border-green-200 dark:border-green-700" },
+  { stage: "trial", label: "Trial", icon: Clock, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bgColor: "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/20", borderColor: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-700)]" },
+  { stage: "onboarded", label: "Onboarded", icon: CheckCircle, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bgColor: "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/20", borderColor: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-700)]" },
+  { stage: "active", label: "Activo", icon: Users, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bgColor: "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/20", borderColor: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-700)]" },
   { stage: "at_risk", label: "En Riesgo", icon: AlertTriangle, color: "text-teal-500 dark:text-teal-500", bgColor: "bg-teal-50 dark:bg-teal-900/20", borderColor: "border-teal-200 dark:border-teal-700" },
   { stage: "churned", label: "Churned", icon: XCircle, color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bgColor: "bg-red-50 dark:bg-red-900/20", borderColor: "border-red-200 dark:border-[var(--data-error-700)]" },
 ];

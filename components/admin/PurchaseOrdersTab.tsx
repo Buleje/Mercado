@@ -121,7 +121,7 @@ function KPICardOC({
   const cfg = {
     danger:  { text: "text-[var(--data-error-500)]",   iconBg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15",     border: "border-[var(--data-error-500)]/30" },
     warning: { text: "text-[var(--data-warning-500)]", iconBg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15", border: "border-[var(--data-warning-500)]/30" },
-    success: { text: "text-[var(--data-success-500)]", iconBg: "bg-emerald-100 dark:bg-[var(--data-success-500)]/15",               border: "border-[var(--data-success-500)]/30" },
+    success: { text: "text-[var(--data-success-500)]", iconBg: "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/15",               border: "border-[var(--data-success-500)]/30" },
     neutral: { text: "text-[var(--text-primary)]",     iconBg: "bg-[var(--surface-sunken)]",                                        border: "border-[var(--rule-base)]" },
   }[accent];
   return (
@@ -1847,7 +1847,7 @@ export default function PurchaseOrdersTab() {
                     <button
                       type="button"
                       onClick={() => setRecepcionOC(o)}
-                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--data-success-500)] text-white text-sm font-semibold hover:bg-emerald-600 transition-colors shadow-sm"
+                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--accent-dark)] text-white text-sm font-semibold hover:brightness-110 transition-colors shadow-sm"
                       title="Registrar recepción"
                     >
                       <PackageCheck className="h-4 w-4" />

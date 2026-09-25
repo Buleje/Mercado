@@ -126,7 +126,7 @@ export default function CacaoLoteCardMobile({
           <span>{pagoBadge}</span>
           {!anulado && (
             <span className="flex items-center gap-1">
-              {pendiente && <IconAction icon={Wallet} tone="success" label="Pagar al productor" onClick={onPagar} />}
+              {pendiente && <IconAction icon={Wallet} tone="accent" label="Pagar al productor" onClick={onPagar} />}
               <IconAction icon={Ban} tone="danger" label="Anular el lote" onClick={onAnular} />
             </span>
           )}

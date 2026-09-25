@@ -26,7 +26,7 @@ const ICON_BG: Record<KPITone, string> = {
   sky: "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300",
   // Brandon 2026-06-16: "no me gustan los naranjas" — el tone "amber" (legacy,
   // usado por "Tiendas activas") ahora renderiza VERDE esmeralda, sin naranja.
-  amber: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
+  amber: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/50 dark:text-[var(--data-success-500)]",
   purple: "bg-primary/10 text-[var(--accent)] bg-primary/10 dark:text-[var(--accent)]",
   rose: "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
 };

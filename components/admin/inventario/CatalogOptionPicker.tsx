@@ -163,6 +163,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar item, plantilla o categoría…"
                 className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- el buscador se abre para tipear de inmediato
                 autoFocus
               />
             </div>
@@ -279,9 +280,9 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                         <span className={cn(
                           "shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-full transition-all",
                           inGroup
-                            ? "bg-[var(--data-success-500)] text-white"
+                            ? "bg-[var(--accent-dark)] text-white"
                             : recent
-                              ? "bg-[var(--data-success-500)] text-white"
+                              ? "bg-[var(--accent-dark)] text-white"
                               : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-primary group-hover:text-white",
                         )}>
                           {inGroup || recent ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}

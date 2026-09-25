@@ -160,10 +160,12 @@ export default function TenantAddProductModal({
       aria-label={`Agregar producto a ${tenantName}`}
       className="fixed inset-0 z-[8000] flex items-end sm:items-center justify-center bg-black/55 backdrop-blur-sm p-0 sm:p-4"
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
         className="relative w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--rule-soft)] px-5 py-4">
@@ -396,7 +398,7 @@ export default function TenantAddProductModal({
             </div>
           )}
           {success && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-[var(--data-success-700)] flex items-center gap-2">
+            <div className="rounded-lg border border-[var(--data-success-500)]/30 bg-[var(--data-success-50)] px-4 py-2.5 text-sm text-[var(--data-success-700)] flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" /> Producto creado en {tenantName}.
             </div>
           )}

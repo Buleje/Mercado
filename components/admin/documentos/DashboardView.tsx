@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { FileText, HardDrive, AlarmClock, Receipt, Tag as TagIcon, TrendingUp, FileSpreadsheet } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { BulejeDonutChart } from "@/components/ui-system/charts";
@@ -106,12 +107,12 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
           <p className="text-sm font-semibold text-[var(--text-secondary)]">
             {stats.facturasCount} comprobante(s) detectado(s) por IA — {money(stats.facturado)} en total
           </p>
-          <a
+          <Link
             href="/api/admin/documents/export/comprobantes"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3 py-2 text-sm font-bold text-white hover:opacity-90 dark:bg-[var(--data-success-500)]"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-sm font-bold text-white hover:opacity-90 dark:bg-[var(--accent)]"
           >
             <FileSpreadsheet className="h-4 w-4" /> Exportar a Excel
-          </a>
+          </Link>
         </div>
       )}
 

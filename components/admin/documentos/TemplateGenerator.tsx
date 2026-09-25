@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { X, Sparkles, ChevronRight, FileText, Check, User, Search, MessageCircle } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { fetchTemplates, generateFromTemplate } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentTemplate } from "@/lib/types/documents";
@@ -49,7 +50,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
           .filter((c) => c.phone)
           .map((c) => ({ nombre: c.name || c.phone || "Cliente", telefono: c.phone ?? "", documento: c.documentNumber, direccion: c.address })));
       })
-      .catch(() => { /* sin clientes: se llena a mano, como antes */ });
+      .catch((err) => logger.error("[template-generator] fetch customers failed", { error: String(err) }));
   }, []);
 
   const clientesFiltrados = useMemo(() => {
@@ -121,7 +122,11 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    >
       <div
         ref={panelRef}
         role="dialog"
@@ -129,6 +134,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
         aria-labelledby={tituloId}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
       >
         <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
@@ -201,14 +207,14 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                   {generado && (
                     <button
                       onClick={() => setEnviando(true)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 min-h-11 text-sm font-semibold text-white transition-opacity hover:opacity-90 dark:bg-[var(--data-success-500)]"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 min-h-11 text-sm font-semibold text-white transition-opacity hover:opacity-90 dark:bg-[var(--accent)]"
                     >
                       <MessageCircle className="h-4 w-4" /> Mandarlo por WhatsApp
                     </button>
                   )}
                   <button
                     onClick={onClose}
-                    className="rounded-xl border-2 border-emerald-300 px-4 py-2.5 text-sm font-bold text-emerald-800 hover:bg-emerald-100"
+                    className="rounded-xl border-2 border-[var(--data-success-500)] px-4 py-2.5 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-100)]"
                   >
                     Listo
                   </button>

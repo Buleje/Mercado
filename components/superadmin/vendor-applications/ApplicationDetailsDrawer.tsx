@@ -155,7 +155,7 @@ export function ApplicationDetailsDrawer({
 
   const statusStyles = {
     pendiente: "bg-teal-100 text-teal-800 dark:bg-teal-500/15 dark:text-teal-200",
-    aprobada: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
+    aprobada: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]/30",
     rechazada: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     info_solicitada: "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
   } as const;
@@ -184,7 +184,7 @@ export function ApplicationDetailsDrawer({
         {/* Header */}
         <div className="sticky top-0 bg-[var(--surface-raised)] z-10 flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-[var(--rule-soft)] ">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-11 w-11 rounded-xl bg-linear-to-br from-[var(--accent)] to-emerald-500 text-white flex items-center justify-center shrink-0">
+            <div className="h-11 w-11 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white flex items-center justify-center shrink-0">
               <Building2 className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -333,7 +333,7 @@ export function ApplicationDetailsDrawer({
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
                   {application.hasDelivery && (
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-bold bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]/30">
                       Delivery
                     </span>
                   )}
@@ -497,7 +497,7 @@ export function ApplicationDetailsDrawer({
           <div className="sticky bottom-0 bg-[var(--surface-raised)] border-t border-[var(--rule-soft)] p-4 sm:p-5 space-y-2">
             <button
               onClick={() => onApprove(application.id)}
-              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-semibold text-white bg-[var(--accent-dark)] hover:brightness-110 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
             >
               <CheckCircle className="h-5 w-5" />
               Aprobar solicitud

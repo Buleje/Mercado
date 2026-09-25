@@ -449,7 +449,7 @@ export function NavegacionTab() {
               <div className="flex gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
                 <span className="h-2.5 w-2.5 rounded-full bg-teal-400" />
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]" />
               </div>
               <div className="flex-1 rounded-md bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate">
                 buleje.pe{scopeLinks[0]?.href ?? "/"}

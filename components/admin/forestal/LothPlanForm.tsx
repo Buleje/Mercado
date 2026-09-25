@@ -579,7 +579,7 @@ export default function LothPlanForm({
         <button
           type="submit"
           disabled={!puedeGuardar}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editando ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {editando ? "Guardar cambios" : `Crear ${meta.sigla}`}

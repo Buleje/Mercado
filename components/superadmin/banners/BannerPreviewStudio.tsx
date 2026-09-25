@@ -59,6 +59,7 @@ import {
   Search,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import PromoBannerRenderer, { type PromoBanner } from "@/components/marketplace/PromoBannerRenderer";
 import ImageUploader from "@/components/superadmin/_shared/ImageUploader";
 import type { ImageAdjust, PromoItem, Anchor as PromoAnchor } from "@/lib/promo-banners";
@@ -2232,9 +2233,11 @@ function ProductCatalogModal({
       aria-label="Catálogo de productos"
       className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-8 bg-black/70"
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
         onClick={stopPropagation}
+        onKeyDown={(e) => e.stopPropagation()}
         className={cn(
           "w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden",
           dark ? "bg-[#0c1015] border border-[rgb(var(--st-fg)/0.1)]" : "bg-[var(--surface-raised)] border border-black/10",
@@ -2287,6 +2290,7 @@ function ProductCatalogModal({
                 onChange={(e) => setStoreSearch(e.target.value)}
                 placeholder="Buscar por nombre, categoría o zona…"
                 className={cn("flex-1 bg-transparent outline-none text-sm font-semibold", dark ? "text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.4)]" : "text-[var(--text-primary)] placeholder-black/40")}
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- el buscador de tiendas se abre para tipear de inmediato
                 autoFocus
               />
             ) : (
@@ -2295,6 +2299,7 @@ function ProductCatalogModal({
                 onChange={(e) => setProductSearch(e.target.value)}
                 placeholder="Buscar producto…"
                 className={cn("flex-1 bg-transparent outline-none text-sm font-semibold", dark ? "text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.4)]" : "text-[var(--text-primary)] placeholder-black/40")}
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- el buscador de productos se abre para tipear de inmediato
                 autoFocus
               />
             )}
@@ -2497,7 +2502,7 @@ function StateTab({
     fetch("/api/superadmin/banners/stats", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => { if (!cancel && j?.stats) setStats(j.stats[banner.id] ?? { impressions: 0, clicks: 0 }); })
-      .catch(() => { /* sin stats */ });
+      .catch((err) => logger.error("[banner-preview] fetch stats failed", { error: String(err) }));
     return () => { cancel = true; };
   }, [banner.id]);
   const ctr = stats && stats.impressions > 0 ? Math.round((stats.clicks / stats.impressions) * 1000) / 10 : 0;
@@ -3099,7 +3104,7 @@ function DraggableHandle({
 
   const palette =
     color === "emerald"
-      ? { bg: "bg-[var(--data-success-500)]", ring: "ring-emerald-300" }
+      ? { bg: "bg-[var(--data-success-500)]", ring: "ring-[var(--data-success-500)]" }
       : color === "rose"
         ? { bg: "bg-rose-500", ring: "ring-rose-300" }
         : { bg: "bg-sky-500", ring: "ring-sky-300" };

@@ -190,8 +190,8 @@ const STATUS_META: Record<
 > = {
  paid: {
  label: "Pago",
- pill: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
- dot: "bg-emerald-500",
+ pill: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]/30",
+ dot: "bg-[var(--data-success-500)]",
  },
  trial: {
  label: "Trial",
@@ -233,7 +233,7 @@ function Kpi({
 }) {
  const ring = {
  default: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
- success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+ success: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
  warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
  danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
  info: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
@@ -683,7 +683,7 @@ export default function BillingDashboard() {
                   ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
                   : (r.trialDaysLeft ?? 99) <= 7
                     ? "text-teal-700 dark:text-teal-300"
-                    : "text-emerald-700 dark:text-emerald-300",
+                    : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
               )}
             >
               {r.trialDaysLeft != null ? `${r.trialDaysLeft}d` : "—"}
@@ -1074,7 +1074,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}

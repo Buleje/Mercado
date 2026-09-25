@@ -92,8 +92,8 @@ const STATUS_META: Record<
   pass: {
     label: "Cumple",
     icon: ShieldCheck,
-    cls: "border-emerald-300/60 bg-emerald-50 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-500/15 dark:text-emerald-300",
-    dot: "bg-emerald-500",
+    cls: "border-[var(--data-success-500)]/60 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:border-[var(--data-success-700)]/40 dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
+    dot: "bg-[var(--data-success-500)]",
   },
   partial: {
     label: "Parcial",
@@ -180,7 +180,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}
@@ -340,7 +340,7 @@ export function ComplianceTab() {
               </div>
             </div>
             <p className="text-sm text-[var(--text-secondary)]">
-              <strong className="text-emerald-700 dark:text-emerald-300">
+              <strong className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                 {overall.pass}
               </strong>{" "}
               de <strong>{overall.total}</strong> controles cumplen.{" "}
@@ -354,7 +354,7 @@ export function ComplianceTab() {
             </p>
             <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)] flex">
               <div
-                className="bg-emerald-500 transition-all duration-500"
+                className="bg-[var(--data-success-500)] transition-all duration-500"
                 style={{ width: `${(overall.pass / overall.total) * 100}%` }}
                 title={`${overall.pass} cumplen`}
               />
@@ -371,7 +371,7 @@ export function ComplianceTab() {
             </div>
             <div className="flex flex-wrap items-center gap-3 text-xs">
               <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]" />
                 {overall.pass} cumplen
               </span>
               <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">

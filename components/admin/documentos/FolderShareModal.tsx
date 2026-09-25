@@ -66,8 +66,12 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
   useModalAccesible(modalRef, { onCerrar: onClose, cerrarConEscape: false });
 
   return (
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="w-full max-w-[32rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    >
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="w-full max-w-[32rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><FolderArchive className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
@@ -145,7 +149,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
 
         <div className="flex items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-4">
           <button onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cerrar</button>
-          <button onClick={whatsapp} disabled={creating || !link} className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 min-h-11 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]">
+          <button onClick={whatsapp} disabled={creating || !link} className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 min-h-11 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--accent)]">
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </button>
         </div>

@@ -42,6 +42,7 @@ import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import Image from "next/image";
 import { m } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { categories } from "@/data/products";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import dynamic from "next/dynamic";
@@ -163,7 +164,7 @@ function PromoBadge({ productId, quantity, unitPrice }: { productId: number; qua
           setPromo(null);
         }
       })
-      .catch(() => { /* ignore silently */ });
+      .catch((err) => logger.error("[pos-promo] fetch promo failed", { error: String(err) }));
     return () => { cancelled = true; };
   }, [productId]);
 
@@ -374,7 +375,7 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
           </button>
         ))}
         <button onClick={() => abonar(fiado.saldo)} disabled={paying}
-          className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white transition-colors disabled:opacity-50">
+          className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent-dark)] hover:text-white transition-colors disabled:opacity-50">
           Todo {formatCurrency(Number(fiado.saldo))}
         </button>
         <button onClick={() => setFiado(null)} className="px-4 py-2 rounded-xl text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">No, gracias</button>
@@ -583,7 +584,7 @@ function SaleCompleteModal({
                 href={buildWhatsAppUrl(hasCustomerPhone)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3 rounded-xl bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/90 text-white font-semibold text-base transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-[var(--accent-dark)] hover:brightness-110 text-white font-semibold text-base transition-colors flex items-center justify-center gap-2"
               >
                 <MessageCircle className="h-5 w-5" />
                 <span className="truncate">Enviar a {customerName || hasCustomerPhone}</span>
@@ -605,7 +606,7 @@ function SaleCompleteModal({
                     href={buildWhatsAppUrl(manualPhone)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-5 py-3 rounded-xl bg-[var(--data-success-500)] text-white font-semibold text-base hover:bg-[var(--data-success-500)]/90 transition-colors flex items-center gap-2 shrink-0"
+                    className="px-5 py-3 rounded-xl bg-[var(--accent-dark)] text-white font-semibold text-base hover:brightness-110 transition-colors flex items-center gap-2 shrink-0"
                   >
                     <Send className="h-4 w-4" />
                     Enviar
@@ -1255,7 +1256,7 @@ export default function POSView() {
           setTimeout(() => setStockAlert(curr => curr?.message?.includes('vence') ? null : curr), 8000);
         }
       })
-      .catch(() => { /* ignore */ });
+      .catch((err) => logger.error("[pos-stock-alert] fetch failed", { error: String(err) }));
 
     playDing();
     // Mejora P-1: Flash verde al agregar
@@ -1788,7 +1789,11 @@ export default function POSView() {
                   z-dropdown; el panel va después en el DOM, por eso queda encima. */}
               {showMoreTools && (
                 <>
-                  <div className="fixed inset-0 z-dropdown" onClick={() => setShowMoreTools(false)} />
+                  <div
+                    className="fixed inset-0 z-dropdown"
+                    onClick={() => setShowMoreTools(false)}
+                    onKeyDown={(e) => { if (e.key === "Escape") setShowMoreTools(false); }}
+                  />
                   <div className="absolute right-0 top-full mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-2 z-dropdown min-w-[220px] space-y-1 shadow-[var(--shadow-lg)]">
                     <button
                       onClick={() => { setShowWhatsAppOrder(true); setShowMoreTools(false); }}
@@ -2304,8 +2309,13 @@ export default function POSView() {
           aria-label={turnoAbierto === false && cashRegisterOpen === false ? "Turno y caja sin abrir" : turnoAbierto === false ? "Turno sin abrir" : "Caja sin abrir"}
           className="modal-backdrop p-4"
           onClick={(e) => e.target === e.currentTarget && setShowNoCajaWarning(false)}
+          onKeyDown={(e) => { if (e.key === "Escape") setShowNoCajaWarning(false); }}
         >
-          <div className="bg-[var(--surface-raised)] rounded-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="bg-[var(--surface-raised)] rounded-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start gap-3 mb-4">
               <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning-500)]">
                 <AlertTriangle className="h-5 w-5" aria-hidden />
@@ -2393,6 +2403,7 @@ export default function POSView() {
               placeholder={"Ej: 2 arroz, 3 leche gloria, 1 aceite\no: dame 5 huevos y 2 gaseosas"}
               rows={4}
               className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 resize-none font-mono"
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- se abre para pegar el mensaje de WhatsApp de inmediato
               autoFocus
             />
 

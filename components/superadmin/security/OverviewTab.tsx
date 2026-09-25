@@ -192,7 +192,7 @@ function HealthRing({ score }: { score: number }) {
   const offset = circumference - (score / 100) * circumference;
   const tone =
     score >= 90
-      ? { stroke: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400" }
+      ? { stroke: "stroke-[var(--data-success-500)]", text: "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" }
       : score >= 70
         ? { stroke: "stroke-teal-500", text: "text-teal-600 dark:text-teal-400" }
         : { stroke: "stroke-rose-500", text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" };
@@ -255,12 +255,12 @@ function LoginSparkline({
   return (
     <div className="w-full">
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-12">
-        <path d={path("succeeded")} fill="none" className="stroke-emerald-500" strokeWidth="1.5" />
+        <path d={path("succeeded")} fill="none" className="stroke-[var(--data-success-500)]" strokeWidth="1.5" />
         <path d={path("failed")} fill="none" className="stroke-rose-500" strokeWidth="1.5" />
       </svg>
       <div className="mt-1 flex items-center justify-between text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="h-2 w-2 rounded-full bg-[var(--data-success-500)]" />
           Exitosos
         </span>
         <span className="inline-flex items-center gap-1">
@@ -305,7 +305,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}
@@ -753,7 +753,7 @@ export function OverviewTab() {
                 className={cn(
                   "h-full rounded-full transition-all",
                   totpPct === 100
-                    ? "bg-emerald-500"
+                    ? "bg-[var(--data-success-500)]"
                     : totpPct >= 50
                       ? "bg-teal-500"
                       : "bg-rose-500",
@@ -889,8 +889,8 @@ function PostureCheck({
 }) {
   const meta = {
     ok: {
-      cls: "text-emerald-700 dark:text-emerald-300",
-      dot: "bg-emerald-500",
+      cls: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+      dot: "bg-[var(--data-success-500)]",
       txt: "Activo",
     },
     warning: {

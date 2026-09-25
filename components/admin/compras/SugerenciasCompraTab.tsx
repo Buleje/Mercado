@@ -95,7 +95,7 @@ const URGENCY_CONFIG: Record<Urgency, {
     border: "border-[var(--data-success-500)]/40",
     bg: "bg-primary/10 dark:bg-[var(--data-success-500)]/10",
     text: "text-[var(--data-success-500)]",
-    iconBg: "bg-emerald-100 dark:bg-[var(--data-success-500)]/20",
+    iconBg: "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/20",
     ring: "ring-[var(--data-success-500)]/40",
     icon: Package,
   },
@@ -481,7 +481,7 @@ export default function SugerenciasCompraTab() {
 
       {nadaQueComprar && !sinStockMinimo && (
         <div className="rounded-2xl border-2 border-dashed border-[var(--data-success-500)]/30 bg-primary/10 px-6 py-10 text-center dark:bg-[var(--data-success-500)]/5">
-          <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-[var(--data-success-500)]/20">
+          <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/20">
             <Check className="h-8 w-8 text-[var(--data-success-ink)]" strokeWidth={2.5} />
           </span>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Nada que reponer</SectionTitle>

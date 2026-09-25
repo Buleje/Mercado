@@ -65,6 +65,7 @@ export function useConfirm() {
       <div
         className="w-full max-w-sm rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] p-6"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         role="alertdialog"
         aria-modal="true"
         aria-label={state.title}
@@ -74,14 +75,14 @@ export function useConfirm() {
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
               state.danger
                 ? "bg-[var(--data-error-50)] dark:bg-rose-950/40"
-                : "bg-emerald-100 dark:bg-emerald-950/40"
+                : "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/40"
             }`}
           >
             <AlertTriangle
               className={`h-5 w-5 ${
                 state.danger
                   ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
-                  : "text-emerald-600 dark:text-emerald-400"
+                  : "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]"
               }`}
             />
           </div>
@@ -104,12 +105,13 @@ export function useConfirm() {
           </button>
           <button
             type="button"
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- el diálogo de confirmación enfoca la acción por defecto al abrir
             autoFocus
             onClick={() => close(true)}
             className={`h-11 px-4 rounded-xl text-sm font-semibold text-white ${
               state.danger
                 ? "bg-rose-600 hover:bg-rose-700"
-                : "bg-emerald-600 hover:bg-emerald-700"
+                : "bg-[var(--data-success-600)] hover:bg-[var(--data-success-700)]"
             }`}
           >
             {state.confirmLabel ?? "Confirmar"}

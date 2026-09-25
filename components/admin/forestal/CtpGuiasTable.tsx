@@ -1081,7 +1081,7 @@ function BotonGuia({
       title={title ?? texto}
       className={`inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border-2 px-2 text-xs font-bold transition-colors disabled:opacity-40 ${
         tono === "accion"
-          ? "border-[var(--data-success-600)] bg-[var(--data-success-600)] text-white hover:opacity-90"
+          ? "border-[var(--accent-dark)] bg-[var(--accent-dark)] text-white hover:opacity-90"
           : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
       }`}
     >

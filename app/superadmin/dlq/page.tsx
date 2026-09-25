@@ -149,7 +149,7 @@ async function DLQBody() {
         </header>
         {crons.length === 0 ? (
           <div className="px-5 py-8 flex items-center justify-center gap-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" />
             Sin crons fallidos recientes
           </div>
         ) : (
@@ -197,7 +197,7 @@ async function DLQBody() {
         </header>
         {mpWebhooks.length === 0 ? (
           <div className="px-5 py-8 flex items-center justify-center gap-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" />
             Sin webhooks pendientes
           </div>
         ) : (

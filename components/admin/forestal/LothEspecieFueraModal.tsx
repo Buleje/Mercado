@@ -164,7 +164,9 @@ export default function LothEspecieFueraModal({
                 <span className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">Volumen autorizado (m³) *</span>
                 <input
                   type="number" step="0.0001" value={vol} onChange={(e) => setVol(e.target.value)}
-                  placeholder="según la resolución" autoFocus
+                  placeholder="según la resolución"
+                  // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir el volumen autorizado de inmediato
+                  autoFocus
                   className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
                 />
               </label>
@@ -184,7 +186,7 @@ export default function LothEspecieFueraModal({
               <button type="button" onClick={() => setModo("elegir")} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Volver</button>
               <button
                 type="button" onClick={() => void agregarAlPlan()} disabled={busy}
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Agregar al plan
               </button>

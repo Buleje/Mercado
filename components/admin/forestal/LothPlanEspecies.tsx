@@ -200,7 +200,7 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
       >
         <form onSubmit={add} className="space-y-4 px-5 py-5 sm:px-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Especie *"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" autoFocus className={cls} /></Field>
+            <Field label="Especie *"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" autoFocus /* eslint-disable-line jsx-a11y/no-autofocus -- el modal se abre para escribir la especie de inmediato */ className={cls} /></Field>
             <Field label="Volumen autorizado (m³) *"><input type="number" step="0.0001" value={f.volumenAutorizadoM3} onChange={(e) => set("volumenAutorizadoM3", e.target.value)} placeholder="120.5" className={cls} /></Field>
             <Field label="N° de árboles autorizados"><input type="number" value={f.arbolesAutorizados} onChange={(e) => set("arbolesAutorizados", e.target.value)} placeholder="45" className={cls} /></Field>
             <Field label="Precio de venta (S/ por m³)"><input type="number" step="0.01" value={f.precioVentaSoles} onChange={(e) => set("precioVentaSoles", e.target.value)} placeholder="850.00" className={cls} /></Field>
@@ -209,7 +209,7 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
           <p className="text-xs text-[var(--text-tertiary)]">El VEN es la base del derecho de aprovechamiento que se paga al Estado; el precio de venta alimenta la rentabilidad del libro.</p>
           <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
             <button type="button" onClick={() => setOpen(false)} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-            <button type="submit" disabled={busy || !f.speciesCommon.trim() || !(Number(f.volumenAutorizadoM3) > 0)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
+            <button type="submit" disabled={busy || !f.speciesCommon.trim() || !(Number(f.volumenAutorizadoM3) > 0)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Agregar especie
             </button>
           </div>

@@ -349,6 +349,7 @@ export default function HealthFillAllModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div className="w-full max-w-3xl my-4 rounded-2xl bg-[var(--surface-canvas)] shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
@@ -403,9 +404,9 @@ export default function HealthFillAllModal({
               >
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                    <span className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                       Logo
-                    </label>
+                    </span>
                     <ImageUploader
                       value={form.logo || null}
                       onChange={(url) => update("logo", url ?? "")}
@@ -415,9 +416,9 @@ export default function HealthFillAllModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                    <span className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                       Banner
-                    </label>
+                    </span>
                     <ImageUploader
                       value={form.banner || null}
                       onChange={(url) => update("banner", url ?? "")}
@@ -609,7 +610,7 @@ export default function HealthFillAllModal({
                 <div
                   className={`rounded-lg border p-3 text-sm ${
                     saveResult.failed.length === 0
-                      ? "bg-emerald-50 border-emerald-200 text-[var(--data-success-700)]"
+                      ? "bg-[var(--data-success-50)] border-[var(--data-success-500)]/30 text-[var(--data-success-700)]"
                       : "bg-teal-50 border-teal-200 text-teal-800"
                   }`}
                 >
@@ -720,7 +721,7 @@ function Section({
               <span
                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider ${
                   isComplete
-                    ? "bg-emerald-100 text-[var(--data-success-700)]"
+                    ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
                     : scorePct >= 50
                       ? "bg-teal-100 text-teal-700"
                       : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"

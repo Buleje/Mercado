@@ -196,6 +196,7 @@ export default function HealthCheckActionModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div className="w-full max-w-lg rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden">
         {/* Header */}

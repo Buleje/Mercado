@@ -229,6 +229,7 @@ export function OrdersDetailPanel({
     <div ref={cajaRef} tabIndex={-1}
       className="fixed inset-0 z-modal flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
       role="dialog"
       aria-modal="true"
       aria-label={`Detalle del pedido de ${order.customer.name}`}
@@ -238,6 +239,7 @@ export function OrdersDetailPanel({
         tabIndex={-1}
         className="relative w-full max-w-3xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[calc(100vh-3rem)] overflow-hidden focus:outline-none"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* ─── 1. HEADER — patrón estándar admin (CardTitle DS, sin italic) ── */}
         <header className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)] shrink-0 bg-[var(--surface-raised)]">

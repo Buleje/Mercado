@@ -196,7 +196,7 @@ function customerWaLink(phone: string | null | undefined, message?: string): str
 }
 
 const SLA_CLS: Record<"good" | "warn" | "bad", string> = {
-  good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  good: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
   warn: "bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
   bad: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
 };
@@ -213,7 +213,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}
@@ -876,7 +876,11 @@ function OrderCard({ order, onOpen, onCopy }: { order: OrderRow; onOpen: () => v
             S/{Number(order.total).toFixed(2)}
           </p>
         </div>
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="flex items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
           <RowActions order={order} onCopy={onCopy} />
           <span className="ml-1 inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)]">
             Ver detalle <ChevronRight className="w-3.5 h-3.5" />

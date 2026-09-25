@@ -147,7 +147,7 @@ const STATUS_STYLES: Record<VendorApplication["status"], string> = {
   pendiente:
     "bg-teal-100 text-teal-800 dark:bg-teal-500/15 dark:text-teal-200",
   aprobada:
-    "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
+    "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]/30",
   rechazada:
     "bg-[var(--data-error-100)] text-[var(--data-error)]",
   info_solicitada:
@@ -162,7 +162,7 @@ const STATUS_LABELS: Record<VendorApplication["status"], string> = {
 };
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
-  good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
+  good: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/10 dark:text-[var(--data-success-500)]",
   warn: "bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300",
   bad: "bg-[var(--data-error-50)] text-[var(--data-error)]",
 };
@@ -186,7 +186,7 @@ function StatCard({
     warning:
       "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
     success:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+      "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]",
     danger:
       "bg-[var(--data-error-100)] text-[var(--data-error)]",
     info: "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300",
@@ -736,7 +736,7 @@ export default function VendorApplicationsModule() {
             className={cn(
               "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
               t.tone === "success" &&
-                "bg-emerald-600 text-white",
+                "bg-[var(--data-success-600)] text-white",
               t.tone === "error" && "bg-rose-600 text-white",
               t.tone === "info" && "bg-slate-800 text-white",
             )}
@@ -957,7 +957,7 @@ export default function VendorApplicationsModule() {
               <button
                 onClick={bulkApprove}
                 disabled={bulkBusy}
-                className="h-10 px-3.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="h-10 px-3.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 {bulkBusy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1120,7 +1120,7 @@ export default function VendorApplicationsModule() {
                             onClick={() => handleApprove(a.id)}
                             title="Aprobar"
                             aria-label="Aprobar"
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white bg-emerald-600 hover:bg-emerald-700"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white bg-[var(--accent-dark)] hover:brightness-110"
                           >
                             <Check className="h-5 w-5" />
                           </button>
@@ -1270,7 +1270,7 @@ export default function VendorApplicationsModule() {
                                 <button
                                   onClick={() => handleApprove(a.id)}
                                   aria-label="Aprobar"
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-emerald-100 hover:text-emerald-700 dark:hover:bg-emerald-500/15 dark:hover:text-emerald-300"
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--data-success-100)] hover:text-[var(--data-success-700)] dark:hover:bg-[var(--data-success-500)]/15 dark:hover:text-[var(--data-success-500)]"
                                   title="Aprobar"
                                 >
                                   <Check className="h-4 w-4" />

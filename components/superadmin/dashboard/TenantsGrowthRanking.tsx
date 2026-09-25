@@ -61,7 +61,7 @@ const PLAN_COLORS: Record<string, { bg: string; text: string; label: string }> =
   free: { bg: "bg-[var(--rule-soft)] ", text: "text-[var(--text-primary)] ", label: "Free" },
   pro: { bg: "bg-teal-100 dark:bg-teal-950/40", text: "text-teal-800 dark:text-teal-300", label: "Pro" },
   business: { bg: "bg-sky-100 dark:bg-sky-950/40", text: "text-sky-800 dark:text-sky-300", label: "Business" },
-  enterprise: { bg: "bg-emerald-100 dark:bg-emerald-950/40", text: "text-emerald-800 dark:text-emerald-300", label: "Enterprise" },
+  enterprise: { bg: "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/40", text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Enterprise" },
 };
 
 const fmtSoles = (n: number) =>
@@ -94,7 +94,7 @@ function DeltaPill({ value }: { value: number }) {
   return (
     <span
       className={`inline-flex items-center gap-1 text-sm font-bold ${
-        positive ? "text-[var(--data-success-600)] dark:text-emerald-400" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+        positive ? "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
       }`}
     >
       {positive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}

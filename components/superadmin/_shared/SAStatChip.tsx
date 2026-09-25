@@ -48,9 +48,9 @@ const SA_STAT_TONES: Record<SAStatTone, { bg: string; text: string; border: stri
     border: "border-[var(--data-error-500)]",
   },
   emerald: {
-    bg: "bg-emerald-500/10 dark:bg-emerald-500/15",
-    text: "text-emerald-700 dark:text-emerald-300",
-    border: "border-emerald-500/30",
+    bg: "bg-[var(--data-success-500)]/10 dark:bg-[var(--data-success-500)]/15",
+    text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+    border: "border-[var(--data-success-500)]/30",
   },
   slate: {
     bg: "bg-slate-500/10 dark:bg-slate-500/15",

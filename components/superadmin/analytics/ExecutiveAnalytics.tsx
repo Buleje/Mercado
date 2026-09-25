@@ -89,7 +89,7 @@ function maskPhone(p: string): string {
 
 function InsightBadge({ tone, text }: { tone: "positive" | "negative" | "neutral"; text: string }) {
   const styles = {
-    positive: "bg-emerald-50 text-[var(--data-success-700)] border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40",
+    positive: "bg-[var(--data-success-50)] text-[var(--data-success-700)] border-[var(--data-success-500)]/30 dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-700)]/40",
     negative: "bg-[var(--data-error-50)] text-[var(--data-error-500)] border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)]",
     neutral: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-[var(--accent)]/30",
   };
@@ -211,7 +211,7 @@ export default function ExecutiveAnalytics({
               return (
                 <li key={step.status}>
                   <div className="flex items-center justify-between gap-3 mb-1">
-                    <span className={`inline-flex items-center gap-2 text-base font-bold ${isOK ? "text-[var(--data-success-700)] dark:text-emerald-300" : isBad ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]"}`}>
+                    <span className={`inline-flex items-center gap-2 text-base font-bold ${isOK ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : isBad ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]"}`}>
                       <span className={`h-2.5 w-2.5 rounded-full ${isOK ? "bg-[var(--data-success-500)]" : isBad ? "bg-rose-500" : "bg-[var(--accent)]"}`} />
                       {step.label}
                     </span>
@@ -237,7 +237,7 @@ export default function ExecutiveAnalytics({
           </ul>
           <div className="mt-4 pt-4 border-t border-[var(--rule-soft)] grid grid-cols-2 gap-3">
             <div className="text-center">
-              <p className="text-3xl font-extrabold text-[var(--data-success-600)] dark:text-emerald-400 tabular-nums">
+              <p className="text-3xl font-extrabold text-[var(--data-success-600)] dark:text-[var(--data-success-500)] tabular-nums">
                 {Number(data.completionRate).toFixed(0)}%
               </p>
               <p className="text-sm text-[var(--text-secondary)]">Tasa de entrega</p>

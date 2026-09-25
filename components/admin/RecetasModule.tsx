@@ -126,7 +126,7 @@ function RecetasDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
               <XAxis dataKey="semana" tick={{ fontSize: 11 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={((v: number) => [`${v} lotes`, "Producción"]) as any} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
+              <Tooltip formatter={(v) => [`${Number(v)} lotes`, "Producción"]} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
               <Bar dataKey="lotes" fill="#2563EB" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -694,7 +694,7 @@ export default function RecetasModule() {
                           <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] flex gap-2">
                             <button
                               onClick={(e) => { e.stopPropagation(); setSelected(r); setShowProducir(true); setProducirCantidad(""); setProducirNotas(""); }}
-                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] transition-colors"
+                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-dark)] hover:brightness-110 transition-colors"
                             >
                               Producir
                             </button>
@@ -934,7 +934,7 @@ export default function RecetasModule() {
                       {/* Producir button */}
                       <button
                         onClick={() => { setShowProducir(true); setProducirError(null); }}
-                        className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] transition-colors"
+                        className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-dark)] hover:brightness-110 transition-colors"
                       >
                         <Layers className="h-4 w-4" />
                         Producir Lote
@@ -1113,7 +1113,7 @@ export default function RecetasModule() {
                   {step < 3 ? (
                     <button
                       onClick={() => setStep(s => s + 1)}
-                      className="px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] rounded-xl transition-colors"
+                      className="px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-dark)] hover:brightness-110 rounded-xl transition-colors"
                     >
                       Siguiente
                     </button>
@@ -1121,7 +1121,7 @@ export default function RecetasModule() {
                     <button
                       onClick={handleCreate}
                       disabled={creating}
-                      className="flex items-center justify-center gap-2 px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] disabled:opacity-50 rounded-xl transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 rounded-xl transition-colors"
                     >
                       {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                       Crear Receta
@@ -1280,7 +1280,7 @@ export default function RecetasModule() {
                   <button
                     onClick={handleProducir}
                     disabled={producing}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[var(--data-success-700)] disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 transition-colors"
                   >
                     {producing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
                     Producir

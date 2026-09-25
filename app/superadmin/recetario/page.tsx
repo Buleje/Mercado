@@ -414,7 +414,7 @@ export default function SuperAdminRecetarioPage() {
             type="button"
             onClick={openCreate}
             title="Nueva receta (N)"
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-[var(--shadow-sm)]"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-[var(--accent-dark)] hover:brightness-110 text-white text-sm font-semibold transition-colors shadow-[var(--shadow-sm)]"
           >
             <Plus className="w-4 h-4" />
             Nueva Receta
@@ -659,8 +659,9 @@ export default function SuperAdminRecetarioPage() {
 
               {/* Descripcion */}
               <div>
-                <label className={labelCls}>Descripcion</label>
+                <label className={labelCls} htmlFor="rec-descripcion">Descripcion</label>
                 <textarea
+                  id="rec-descripcion"
                   value={form.descripcion}
                   onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
                   placeholder="Descripcion breve de la receta..."
@@ -672,8 +673,9 @@ export default function SuperAdminRecetarioPage() {
               {/* Row: Categoria + Dificultad */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>Categoria</label>
+                  <label className={labelCls} htmlFor="rec-categoria">Categoria</label>
                   <select
+                    id="rec-categoria"
                     value={form.categoria}
                     onChange={(e) => setForm({ ...form, categoria: e.target.value })}
                     className={selectCls}
@@ -687,8 +689,9 @@ export default function SuperAdminRecetarioPage() {
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Dificultad</label>
+                  <label className={labelCls} htmlFor="rec-dificultad">Dificultad</label>
                   <select
+                    id="rec-dificultad"
                     value={form.dificultad}
                     onChange={(e) => setForm({ ...form, dificultad: e.target.value })}
                     className={selectCls}
@@ -709,8 +712,9 @@ export default function SuperAdminRecetarioPage() {
                   3 cols solo desde sm+ (640px+). */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className={labelCls}>Tiempo (min)</label>
+                  <label className={labelCls} htmlFor="rec-tiempo">Tiempo (min)</label>
                   <input
+                    id="rec-tiempo"
                     type="number"
                     value={form.tiempoMinutos}
                     onChange={(e) => setForm({ ...form, tiempoMinutos: e.target.value })}
@@ -720,8 +724,9 @@ export default function SuperAdminRecetarioPage() {
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Porciones</label>
+                  <label className={labelCls} htmlFor="rec-porciones">Porciones</label>
                   <input
+                    id="rec-porciones"
                     type="number"
                     value={form.porciones}
                     onChange={(e) => setForm({ ...form, porciones: e.target.value })}
@@ -731,8 +736,9 @@ export default function SuperAdminRecetarioPage() {
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Icono (texto)</label>
+                  <label className={labelCls} htmlFor="rec-emoji">Icono (texto)</label>
                   <input
+                    id="rec-emoji"
                     type="text"
                     value={form.emoji}
                     onChange={(e) => setForm({ ...form, emoji: e.target.value })}
@@ -745,12 +751,13 @@ export default function SuperAdminRecetarioPage() {
 
               {/* Image URL */}
               <div>
-                <label className={labelCls}>
+                <label className={labelCls} htmlFor="rec-image-url">
                   <span className="flex items-center gap-1">
                     <ImageIcon className="w-3.5 h-3.5" /> URL de imagen
                   </span>
                 </label>
                 <input
+                  id="rec-image-url"
                   type="url"
                   value={form.imageUrl}
                   onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
@@ -817,7 +824,7 @@ export default function SuperAdminRecetarioPage() {
                 type="button"
                 onClick={() => void handleSave()}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 min-h-10 rounded-xl bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)] text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-5 min-h-10 rounded-xl bg-[var(--accent-dark)] hover:brightness-110 text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {editingId ? "Guardar cambios" : "Crear receta"}

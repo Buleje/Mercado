@@ -1305,7 +1305,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting} className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50">
               Guardar y otro
             </button>
-            <button type="submit" form="loth-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="submit" form="loth-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
               {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" />Guardando</>) : "Registrar línea"}
             </button>
           </div>

@@ -188,7 +188,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
                       )}
                       {l.estado === "hecho"
                         ? <button type="button" disabled={busy === `estado-${l.id}`} onClick={() => setEstado(l, "pendiente")} title="Reabrir" className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{busy === `estado-${l.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}</button>
-                        : <button type="button" disabled={busy === `estado-${l.id}`} onClick={() => setEstado(l, "hecho")} title="Marcar hecha" className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--data-success-500)] text-white hover:opacity-90 disabled:opacity-50">{busy === `estado-${l.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</button>}
+                        : <button type="button" disabled={busy === `estado-${l.id}`} onClick={() => setEstado(l, "hecho")} title="Marcar hecha" className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--accent-dark)] text-white hover:opacity-90 disabled:opacity-50">{busy === `estado-${l.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</button>}
                       <button type="button" disabled={busy === `del-${l.id}`} onClick={() => del(l)} title="Eliminar" className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)] disabled:opacity-50">{busy === `del-${l.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</button>
                     </div>
                   </li>
@@ -286,7 +286,7 @@ function DuplicarParcelaModal({ parcela, onClose, onDone }: { parcela: Parcela; 
   return (
     <AdminModal open onClose={onClose} variant="centered-sm" icon={Copy} title="Duplicar sección" description={`Copia los datos de ${parcela.codigo} en una sección nueva (sin labores ni polígono).`}>
       <form onSubmit={submit} className="space-y-4 px-5 py-5 sm:px-6">
-        <label className="block text-sm font-bold text-[var(--text-primary)]">Código de la nueva sección<input value={codigo} onChange={(e) => setCodigo(e.target.value)} className={`mt-1 ${I}`} autoFocus /></label>
+        <label className="block text-sm font-bold text-[var(--text-primary)]">Código de la nueva sección<input value={codigo} onChange={(e) => setCodigo(e.target.value)} className={`mt-1 ${I}`} autoFocus /* eslint-disable-line jsx-a11y/no-autofocus -- el modal se abre para escribir el código de inmediato */ /></label>
         <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se copian nombre, área, variedad, año y plantas. Dibuja su polígono y registra sus labores aparte.</p>
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2">
@@ -325,7 +325,7 @@ function CosechaAcopioModal({ labor, onClose, onSent }: { labor: Labor; onClose:
       <div className="space-y-4 px-5 py-5 sm:px-6">
         <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se creará un lote en <strong className="text-[var(--text-primary)]">Acopio</strong> con estos {kg} kg y el origen de esta sección (trazabilidad NTP 208.040). Puedes ajustarlo luego en Acopio.</p>
         <div className="grid grid-cols-2 gap-3">
-          <label className="text-sm font-bold text-[var(--text-primary)]">Precio S/ por kg<input type="number" step="0.01" min="0" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="opcional" className={`mt-1 ${I}`} autoFocus /></label>
+          <label className="text-sm font-bold text-[var(--text-primary)]">Precio S/ por kg<input type="number" step="0.01" min="0" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="opcional" className={`mt-1 ${I}`} autoFocus /* eslint-disable-line jsx-a11y/no-autofocus -- el modal se abre para escribir el precio de inmediato */ /></label>
           <label className="text-sm font-bold text-[var(--text-primary)]">Productor<input value={productor} onChange={(e) => setProductor(e.target.value)} placeholder="opcional" className={`mt-1 ${I}`} /></label>
         </div>
         {precio && <p className="text-sm text-[var(--text-secondary)]">Liquidación estimada: <strong className="text-[var(--text-primary)]">S/ {money(total)}</strong></p>}

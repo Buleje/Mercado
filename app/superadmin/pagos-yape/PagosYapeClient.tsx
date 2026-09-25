@@ -183,7 +183,7 @@ function exportCSV(rows: PaymentApproval[]) {
 }
 
 const DELTA_CLASS: Record<string, string> = {
-  exact: "text-emerald-700 dark:text-emerald-300 font-extrabold",
+  exact: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] font-extrabold",
   near: "text-[var(--accent)] font-extrabold",
   far: "text-[var(--data-error)] font-extrabold",
   unknown: "text-[var(--text-tertiary)]",
@@ -197,7 +197,7 @@ const DELTA_ICON: Record<string, React.ReactNode> = {
 };
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
-  good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
+  good: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/10 dark:text-[var(--data-success-500)]",
   warn: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   bad: "bg-[var(--data-error-50)] text-[var(--data-error)]",
 };
@@ -735,7 +735,7 @@ export default function PagosYapeClient(_: Props) {
             <button
               onClick={bulkApprove}
               disabled={bulkBusy}
-              className="h-10 px-3.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+              className="h-10 px-3.5 rounded-xl text-xs font-extrabold text-white bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 inline-flex items-center gap-1.5"
             >
               {bulkBusy ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -974,10 +974,12 @@ export default function PagosYapeClient(_: Props) {
             aria-label="Detalle del pago"
             className="fixed inset-0 z-[70] flex items-stretch justify-center bg-black/60 backdrop-blur-sm"
             onClick={closeDetails}
+            onKeyDown={(e) => { if (e.key === "Escape") closeDetails(); }}
           >
             <div
               className="w-full h-full overflow-y-auto bg-[var(--surface-canvas)]"
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
             >
               <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] px-5 py-3 sm:px-6">
                 <p className="font-extrabold text-base text-[var(--text-primary)] truncate">
@@ -1015,9 +1017,11 @@ export default function PagosYapeClient(_: Props) {
           aria-labelledby="reject-dialog-title"
           className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           onClick={() => setRejectOpen(false)}
+          onKeyDown={(e) => { if (e.key === "Escape") setRejectOpen(false); }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] p-5 sm:p-6 shadow-[var(--shadow-xl)]"
           >
             <h2
@@ -1034,6 +1038,7 @@ export default function PagosYapeClient(_: Props) {
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Ej: El monto no coincide con el pedido. Por favor, subí la captura correcta."
               rows={4}
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- se abre para escribir el motivo del rechazo de inmediato
               autoFocus
               className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm resize-none outline-none focus:border-[var(--accent)] transition-colors"
               aria-label="Motivo del rechazo"
@@ -1071,6 +1076,7 @@ export default function PagosYapeClient(_: Props) {
           aria-label="Captura ampliada"
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90"
           onClick={() => setZoomOpen(false)}
+          onKeyDown={(e) => { if (e.key === "Escape") setZoomOpen(false); }}
         >
           <button
             type="button"
@@ -1083,6 +1089,7 @@ export default function PagosYapeClient(_: Props) {
           <div
             className="relative w-full max-w-lg max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
             <Image
               src={selected.imageUrl}
@@ -1277,7 +1284,7 @@ function DetailPanel({
                   {approval.yapeLast4 ? (
                     <span className="font-extrabold text-[var(--text-primary)]">
                       {approval.yapeLast4}
-                      <CheckCircle className="w-3.5 h-3.5 inline ml-1 text-emerald-600 dark:text-emerald-400" />
+                      <CheckCircle className="w-3.5 h-3.5 inline ml-1 text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" />
                     </span>
                   ) : (
                     <span className="text-[var(--text-tertiary)]">—</span>
@@ -1319,7 +1326,7 @@ function DetailPanel({
                     className={cn(
                       "px-3 sm:px-4 py-2.5 font-extrabold",
                       conf >= 0.85
-                        ? "text-emerald-700 dark:text-emerald-300"
+                        ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                         : conf >= 0.7
                           ? "text-[var(--accent)]"
                           : "text-[var(--data-error)]",
@@ -1359,7 +1366,7 @@ function DetailPanel({
             onClick={onApprove}
             disabled={actioning}
             title="Aprobar (A)"
-            className="inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold uppercase tracking-wider disabled:opacity-40 transition focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+            className="inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--accent-dark)] hover:brightness-110 text-white text-sm font-extrabold uppercase tracking-wider disabled:opacity-40 transition focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
           >
             {actioning ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -1402,7 +1409,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}

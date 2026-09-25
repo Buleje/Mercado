@@ -58,7 +58,7 @@ const STATUS_LABEL: Record<Status, string> = {
 
 const STATUS_COLORS: Record<AdminReview["status"], string> = {
   pending:  "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  approved: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+  approved: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
   rejected: "bg-rose-100 text-[var(--data-error-500)] dark:bg-rose-900/30 dark:text-[var(--data-error-500)]",
   hidden:   "bg-[var(--rule-base)] text-[var(--text-primary)] ",
 };
@@ -315,7 +315,7 @@ export default function StoreReviewsAdminModule() {
                   type="button"
                   onClick={() => act(r.id, "approve")}
                   disabled={acting === r.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success-600)] text-white text-xs font-bold hover:bg-[var(--data-success-700)] disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-dark)] text-white text-xs font-bold hover:brightness-110 disabled:opacity-40"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.25} />
                   Aprobar

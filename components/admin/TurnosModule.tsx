@@ -1076,6 +1076,7 @@ export default function TurnosModule() {
                       min="0"
                       value={metaInput}
                       onChange={e => setMetaInput(e.target.value)}
+                      // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir la meta del turno de inmediato
                       autoFocus
                       aria-label="Meta del turno en soles"
                       className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-lg font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -1295,7 +1296,7 @@ export default function TurnosModule() {
                     "Hora inicio": formatTime(t.abrioEn),
                     "Hora fin": t.cerroEn ? formatTime(t.cerroEn) : "—",
                     "Duracion (hrs)": duracion,
-                    "Ventas total (S/)": Number(t.ventasTotal.toFixed(2)),
+                    "Ventas total (S/)": Number(Number(t.ventasTotal).toFixed(2)),
                     "Diferencia caja (S/)": Number(diferencia.toFixed(2)),
                   };
                 });
@@ -1460,6 +1461,7 @@ export default function TurnosModule() {
                     value={newCajeroName}
                     onChange={e => { setNewCajeroName(e.target.value); if (createCajeroError) setCreateCajeroError(null); }}
                     placeholder="Ej. María Quispe"
+                    // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir el nombre del cajero de inmediato
                     autoFocus
                     className="w-full h-12 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
@@ -1620,7 +1622,7 @@ export default function TurnosModule() {
                               <span className={cn(
                                 "inline-flex items-center justify-center text-xs font-bold rounded-md px-2 py-0.5 w-16 shrink-0",
                                 d.tipo === "billete"
-                                  ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                  ? "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                   : "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300"
                               )}>
                                 {d.label}
@@ -1857,6 +1859,7 @@ export default function TurnosModule() {
                       onChange={e => { setNotaDiffAnormal(e.target.value); if (closeError) setCloseError(null); }}
                       placeholder="Ej: Falta S/30 por devolución no registrada de pollo broaster a las 18:30"
                       rows={3}
+                      // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir la causa de la diferencia de inmediato
                       autoFocus
                       className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                     />

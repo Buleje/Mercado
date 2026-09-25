@@ -136,7 +136,7 @@ export function ThreatsTab() {
     <div className="space-y-6">
       {/* Estado del WAF */}
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]">
           <ShieldCheck className="h-6 w-6" strokeWidth={1.9} aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
@@ -315,7 +315,7 @@ export function ThreatsTab() {
                   {SEV_META[e.maxSeverity].label}
                 </span>
                 {e.blockedInline && (
-                  <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]">
                     <ShieldCheck className="h-3 w-3" /> 403
                   </span>
                 )}
@@ -337,7 +337,7 @@ function StatCell({ icon: Icon, tone, label, value, subtitle }: {
 }) {
   const iconBg = {
     info: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
-    success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    success: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
     warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
     danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
   }[tone];

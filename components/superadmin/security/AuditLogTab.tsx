@@ -53,8 +53,8 @@ const ACTION_META: Record<
 > = {
   login_success: {
     label: "login_success",
-    cls: "border-emerald-300/60 bg-emerald-50 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-500/15 dark:text-emerald-300",
-    dot: "bg-emerald-500",
+    cls: "border-[var(--data-success-500)]/60 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:border-[var(--data-success-700)]/40 dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
+    dot: "bg-[var(--data-success-500)]",
   },
   login_failed: {
     label: "login_failed",
@@ -142,7 +142,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}
@@ -667,7 +667,7 @@ function MiniStat({
 }) {
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-    success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    success: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
     warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
     danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",

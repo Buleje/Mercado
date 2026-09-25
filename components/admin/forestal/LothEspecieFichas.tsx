@@ -127,7 +127,7 @@ export default function LothEspecieFichas({
               <button
                 type="button"
                 onClick={onAgregar}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3 text-xs font-bold text-white hover:opacity-90"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent-dark)] px-3 text-xs font-bold text-white hover:opacity-90"
               >
                 + Agregar
               </button>
@@ -179,7 +179,7 @@ export default function LothEspecieFichas({
                       Ejecutado
                     </span>
                     <span className={`font-mono text-sm font-bold tabular-nums ${f.pctEjecutado > 100 ? TONO.danger.texto : "text-[var(--text-primary)]"}`}>
-                      {f.pctEjecutado.toFixed(0)}%
+                      {Number(f.pctEjecutado).toFixed(0)}%
                     </span>
                   </div>
                   <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]">

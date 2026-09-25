@@ -130,7 +130,7 @@ export default function CacaoCampoSanidad({ parcelas, onOpenParcela, onChanged }
                   <p className="mt-0.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Detectado {fdate(f.fecha)}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  {nextE && <button type="button" disabled={busy === `e-${f.id}`} onClick={() => setEstado(f, nextE)} title={NEXT_LABEL[f.estado]} className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--data-success-500)] text-white hover:opacity-90 disabled:opacity-50">{busy === `e-${f.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</button>}
+                  {nextE && <button type="button" disabled={busy === `e-${f.id}`} onClick={() => setEstado(f, nextE)} title={NEXT_LABEL[f.estado]} className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--accent-dark)] text-white hover:opacity-90 disabled:opacity-50">{busy === `e-${f.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</button>}
                   <button type="button" disabled={busy === `d-${f.id}`} onClick={() => del(f)} title="Eliminar" className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)] disabled:opacity-50">{busy === `d-${f.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</button>
                 </div>
               </li>

@@ -464,6 +464,7 @@ export default function CacaoVentas() {
                     Monto cobrado (S/)
                   </span>
                   <input
+                    // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir el monto cobrado de inmediato
                     autoFocus
                     type="number"
                     step="0.01"
@@ -495,7 +496,7 @@ export default function CacaoVentas() {
                     type="button"
                     disabled={cobroBusy}
                     onClick={doCobro}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
                   >
                     {cobroBusy ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

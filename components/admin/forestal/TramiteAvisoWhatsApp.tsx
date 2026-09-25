@@ -98,7 +98,7 @@ export default function TramiteAvisoWhatsApp({
         type="button"
         onClick={() => void enviar()}
         disabled={enviando}
-        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3 text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"
+        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent-dark)] px-3 text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-50 dark:bg-[var(--accent)]"
       >
         {enviando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
         {enviando ? "Mandando…" : "Mandar"}

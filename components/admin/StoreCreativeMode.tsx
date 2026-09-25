@@ -165,7 +165,7 @@ interface StoreCreativeModeProps {
 }
 
 const INPUT_CLASS =
-  "rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm px-3 py-2.5 w-full focus:outline-none focus:border-[var(--data-success-500)]/40 transition-colors placeholder:text-[var(--text-secondary)]";
+  "rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm px-3 py-2.5 w-full focus:outline-none focus:border-[var(--accent)]/40 transition-colors placeholder:text-[var(--text-secondary)]";
 const LABEL_CLASS =
   "block text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] mb-1";
 
@@ -3131,7 +3131,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <button
             onClick={handleApply}
             disabled={saving}
-            className="ml-1 flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--data-success-500)] text-white text-sm font-bold hover:bg-[var(--data-success-500)]/90 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="ml-1 flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--accent-dark)] text-white text-sm font-bold hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
           >
             {saving ? <Sparkles className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
             {saving ? "Aplicando..." : "Aplicar y guardar"}
@@ -3185,7 +3185,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     "relative w-full flex items-center gap-3 pl-3.5 pr-2.5 h-10 rounded-xl text-sm transition-colors text-left",
                     // Activo minimalista: barra fina + texto blanco, sin caja.
                     active
-                      ? "font-semibold text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-[3px] before:rounded-full before:bg-[var(--data-success-500)]"
+                      ? "font-semibold text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-[3px] before:rounded-full before:bg-[var(--accent)]"
                       : "font-medium text-[var(--text-tertiary)] hover:text-white hover:bg-white/[0.03]",
                   )}
                 >
@@ -4218,7 +4218,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                   <p className="text-lg font-black text-white leading-tight" style={{ fontFamily: EDITOR_FONT_MAP[draft.fontFamily]?.stack }}>Bodega Buleje</p>
                   <p className="text-xs text-[var(--text-tertiary)] mt-1" style={{ fontFamily: EDITOR_FONT_MAP[draft.bodyFontFamily || draft.fontFamily]?.stack }}>Frutas frescas, abarrotes y delivery rápido a tu puerta.</p>
-                  <span className="mt-2.5 inline-block bg-[var(--data-success-500)] text-white text-xs font-bold px-3 py-1.5" style={{ borderRadius: draft.borderRadius }}>Comprar ahora</span>
+                  <span className="mt-2.5 inline-block bg-[var(--accent-dark)] text-white text-xs font-bold px-3 py-1.5" style={{ borderRadius: draft.borderRadius }}>Comprar ahora</span>
                 </div>
 
                 <Field
@@ -4727,7 +4727,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <p className={LABEL_CLASS}>Guardar versión con nombre</p>
                   <div className="flex items-center gap-1.5">
                     <input className={INPUT_CLASS} value={versionName} onChange={(e) => setVersionName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") saveNamedVersion(); }} placeholder="Ej. Versión Navidad" maxLength={40} />
-                    <button type="button" onClick={saveNamedVersion} disabled={!versionName.trim()} className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-[var(--data-success-500)] px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40">
+                    <button type="button" onClick={saveNamedVersion} disabled={!versionName.trim()} className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40">
                       <Save className="h-3.5 w-3.5" /> Guardar
                     </button>
                   </div>

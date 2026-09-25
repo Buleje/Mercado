@@ -70,6 +70,7 @@ export default function CtpEntryActions({
           placeholder={e.status === "validado" ? "Motivo de anulación (min 3)" : "Motivo (min 3 chars)"}
           aria-label={e.status === "validado" ? "Motivo de la anulación" : "Motivo del rechazo"}
           className="h-9 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm outline-none focus:border-[var(--data-error-500)] sm:w-48"
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- el campo de motivo aparece para escribirlo de inmediato
           autoFocus
         />
         <div className="flex gap-2">
@@ -134,7 +135,7 @@ export default function CtpEntryActions({
               disabled={busy === `${e.id}:validate`}
               onClick={() => onValidate(e.id)}
               title="Validar ingreso"
-              className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-success-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
             >
               <ThumbsUp className="h-3.5 w-3.5" />
               Validar
@@ -207,7 +208,7 @@ export default function CtpEntryActions({
             disabled={busy === `${e.id}:validate`}
             onClick={() => onValidate(e.id)}
             title="Validar ingreso"
-            className={`inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-success-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 ${btn}`}
+            className={`inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 ${btn}`}
           >
             <ThumbsUp className="h-3 w-3" />
             Validar

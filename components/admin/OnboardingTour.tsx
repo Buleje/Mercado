@@ -225,7 +225,7 @@ export function OnboardingTour({
 
           <button
             onClick={isLastStep ? onComplete : onNext}
-            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[var(--accent-ink)]/90 transition-colors"
+            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-dark)] hover:brightness-110 transition-colors"
           >
             {isLastStep ? (
               <>

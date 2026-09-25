@@ -64,7 +64,7 @@
      anterior se veía opaco/sin vida y NO matcheaba la marca.
      Regla de contraste: #00A0A0 para FILLS/CTAs/íconos (AA UI 3.2:1);
      para TEXTO sobre fondo claro usar --color-primary-dark #007F7F (AA 4.8:1). */
-  --brand-primary: #00A0A0;
+  --brand-primary: #00A29C; /* turquesa del logo */
   --brand-primary-light: #00BDBD;
   --brand-primary-bg: rgba(0, 160, 160, 0.04);
   --brand-secondary: #FF6B5B; /* coral — ofertas/CTAs calientes (paleta B) */
@@ -2159,23 +2159,24 @@ button,
   --rule-base: #e5e5e5;
   --rule-strong: #171717;
 
-  /* Accent editorial (turquesa Buleje) — Brandon 2026-06-05 paleta B:
-     turquesa REAL del logo #00A0A0. Texto sobre claro → usar --accent-600/dark.
-     Soft/muted/glow con menos alpha → presencia más sutil en toda la UI. */
-  --accent: #00A0A0;
-  --accent-soft: rgba(0, 160, 160, 0.06);
-  --accent-muted: rgba(0, 160, 160, 0.13);
+  /* Accent editorial (turquesa Buleje) — Brandon 2026-06-05 paleta B;
+     2026-09-24 medido en los píxeles de public/brand/buleje-logo.png:
+     turquesa #00A29C (oklch 0.643 0.111 190) + tinta #12181E. Texto sobre
+     claro → usar --accent-600/dark/ink. */
+  --accent: #00A29C;
+  --accent-soft: rgba(0, 162, 156, 0.06);
+  --accent-muted: rgba(0, 162, 156, 0.13);
   /* Escala hover/pressed/glow — antes UNDEFINED → causaba bug "hover blanco"
      (hover:bg-[var(--accent-dark)] resolvía a transparent y mostraba el card
      blanco bajo el texto blanco). Usado en 70+ archivos. -600=hover, -dark=
      pressed/énfasis (AA sobre blanco), -glow=sombra de realce. */
-  --accent-600: #008787;
-  --accent-dark: #007575;
+  --accent-600: #008B86;
+  --accent-dark: #007F7A;
   /* Teal de TINTA — para texto sobre un tinte claro (`bg-primary/10`), donde
      --accent-dark se queda en 3.9:1. Sobre ese tinte da ~5.7:1 y sobre blanco
      ~6.3:1, así que sirve en ambos fondos sin cambiar la identidad. */
-  --accent-ink: #006B6B;
-  --accent-glow: rgba(0, 160, 160, 0.28);
+  --accent-ink: #00706B;
+  --accent-glow: rgba(0, 162, 156, 0.28);
 
   /* Data viz monochrome + 1 accent */
   --data-1: #0a0a0a;
@@ -2292,7 +2293,7 @@ button,
   /* ─── Brand System v4 (Ola 1) — signature + heros ─── */
   --brand-ink: #060a0d;
   --brand-cream: #FAFAF7;
-  --brand-accent: #00A0A0;
+  --brand-accent: #00A29C;
 
   /* ─── Elevation v4 — 4 niveles editoriales ─── */
   --elev-1: 0 1px 2px rgba(9, 9, 11, 0.04);
@@ -2421,19 +2422,20 @@ button,
   /* ── Accent (teal-400 azulado — bright en dark, AA holgado) ──
      Brandon 2026-06-05 paleta B: turquesa logo aclarado #14C2C2 + glow/soft con
      menos alpha para una presencia más sutil, alineado con el light mode. */
-  --accent: #14C2C2;
-  --accent-soft: rgba(20, 194, 194, 0.10);
-  --accent-muted: rgba(20, 194, 194, 0.20);
+  --accent: #2EC4BA; /* turquesa del logo aclarado (7.4:1 sobre el canvas oscuro) */
+  --accent-soft: rgba(46, 196, 186, 0.10);
+  --accent-muted: rgba(46, 196, 186, 0.20);
   /* Escala hover/pressed/glow en dark (ver nota en :root). Más profundos que
      --accent para dar feedback de hover sin perder contraste sobre canvas. */
-  --accent-600: #0FAFAF;
-  --accent-dark: #0C9C9C;
+  /* Fondos con texto blanco (botones): profundos también en oscuro (AA). */
+  --accent-600: #008B86;
+  --accent-dark: #007F7A;
   /* En dark el texto sobre tinte usa el accent brillante (ver :root). */
-  --accent-ink: #14C2C2;
-  --accent-glow: rgba(20, 194, 194, 0.24);
+  --accent-ink: #2EC4BA;
+  --accent-glow: rgba(46, 196, 186, 0.24);
 
   /* ── Brand bridge (mantiene cohesión con --color-* tokens del bloque legacy) ── */
-  --brand-accent: #14C2C2;
+  --brand-accent: #2EC4BA;
 
   /* ── Dark mode contrast lift para brand colors muteados ─────────────
      Algunos tenants eligen marcas desaturadas (ej. mi-pollo #5f7777). En

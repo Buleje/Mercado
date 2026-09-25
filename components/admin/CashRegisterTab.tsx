@@ -17,6 +17,7 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { logger } from "@/lib/logger";
 import { diaLocal, ultimosDiasLocales } from "@/lib/fechas/dia-local";
 import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, formatDateTimeShort, formatTime, formatWeekday } from "@/lib/format";
 
@@ -268,7 +269,7 @@ export default function CashRegisterTab() {
         const v = Number(d?.cashAlertMax);
         if (active && Number.isFinite(v) && v > 0) setCashAlertMax(v);
       })
-      .catch(() => { /* mantiene el default si falla */ });
+      .catch((err) => logger.error("[cash-alert-max] fetch settings failed", { error: String(err) }));
     return () => { active = false; };
   }, []);
 
@@ -1504,8 +1505,8 @@ export default function CashRegisterTab() {
 
       {/* Open register modal */}
       {showOpen && (
-        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowOpen(false)}>
-          <div ref={openModalRef} role="dialog" aria-modal="true" aria-labelledby={openTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowOpen(false)} onKeyDown={e => { if (e.key === "Escape") setShowOpen(false); }}>
+          <div ref={openModalRef} role="dialog" aria-modal="true" aria-labelledby={openTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1538,6 +1539,7 @@ export default function CashRegisterTab() {
                         onChange={e => setOpenAmount(e.target.value)}
                         placeholder="0.00"
                         className="w-full pl-12 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir el monto de inmediato
                         autoFocus
                       />
                     </div>
@@ -1630,8 +1632,8 @@ export default function CashRegisterTab() {
         };
         
         return (
-        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowClose(false)}>
-          <div ref={closeModalRef} role="dialog" aria-modal="true" aria-labelledby={closeTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowClose(false)} onKeyDown={e => { if (e.key === "Escape") setShowClose(false); }}>
+          <div ref={closeModalRef} role="dialog" aria-modal="true" aria-labelledby={closeTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1752,6 +1754,7 @@ export default function CashRegisterTab() {
                         onChange={e => setCloseAmount(e.target.value)}
                         placeholder="0.00"
                         className="w-full pl-10 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir el monto de inmediato
                         autoFocus
                       />
                     </div>
@@ -1802,8 +1805,8 @@ export default function CashRegisterTab() {
 
       {/* Add movement modal */}
       {showMovement && (
-        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowMovement(false)}>
-          <div ref={movementModalRef} role="dialog" aria-modal="true" aria-labelledby={movementTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowMovement(false)} onKeyDown={e => { if (e.key === "Escape") setShowMovement(false); }}>
+          <div ref={movementModalRef} role="dialog" aria-modal="true" aria-labelledby={movementTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1844,6 +1847,7 @@ export default function CashRegisterTab() {
                       onChange={e => setMvAmount(e.target.value)}
                       placeholder="0.00"
                       className="w-full pl-12 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir el monto de inmediato
                       autoFocus
                     />
                   </div>
@@ -1940,8 +1944,8 @@ export default function CashRegisterTab() {
         const difference = countedCash - expectedCash;
         
         return (
-          <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueo(false)}>
-            <div ref={arqueoModalRef} role="dialog" aria-modal="true" aria-labelledby={arqueoTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
+          <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueo(false)} onKeyDown={e => { if (e.key === "Escape") setShowArqueo(false); }}>
+            <div ref={arqueoModalRef} role="dialog" aria-modal="true" aria-labelledby={arqueoTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
               {/* Header */}
               <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -2029,6 +2033,7 @@ export default function CashRegisterTab() {
                         onChange={e => setArqueoAmount(e.target.value)}
                         placeholder="0.00"
                         className="w-full pl-10 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir el monto de inmediato
                         autoFocus
                       />
                     </div>
@@ -2105,7 +2110,7 @@ export default function CashRegisterTab() {
                   <button
                     onClick={handleArqueoExpress}
                     disabled={addingArqueo || !arqueoAmount}
-                    className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-semibold text-white bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/90 disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-semibold text-white bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 transition-colors"
                   >
                     {addingArqueo ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
                     Registrar arqueo
@@ -2119,8 +2124,8 @@ export default function CashRegisterTab() {
 
       {/* Arqueo Guiado modal */}
       {showArqueoGuiado && currentRegister && (
-        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueoGuiado(false)}>
-          <div ref={arqueoGuiadoModalRef} role="dialog" aria-modal="true" aria-labelledby={arqueoGuiadoTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueoGuiado(false)} onKeyDown={e => { if (e.key === "Escape") setShowArqueoGuiado(false); }}>
+          <div ref={arqueoGuiadoModalRef} role="dialog" aria-modal="true" aria-labelledby={arqueoGuiadoTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -2418,8 +2423,8 @@ export default function CashRegisterTab() {
 
       {/* Detail register modal (history) */}
       {detailRegister && (
-        <div className="modal-backdrop p-4" onClick={() => setDetailRegister(null)}>
-          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" onClick={() => setDetailRegister(null)} onKeyDown={e => { if (e.key === "Escape") setDetailRegister(null); }}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
             <div className="px-2 sm:px-4 py-2 sm:py-3 border-b flex items-center justify-between">
               <div>
                 <CardTitle id={detailTitleId} className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de caja</CardTitle>

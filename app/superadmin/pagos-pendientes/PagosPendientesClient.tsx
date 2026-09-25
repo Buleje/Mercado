@@ -112,8 +112,8 @@ const STATUS_META = {
   },
   approved: {
     label: "Aprobado",
-    pill: "border-emerald-300 bg-emerald-100/80 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
-    dot: "bg-emerald-500",
+    pill: "border-[var(--data-success-500)] bg-[var(--data-success-100)]/80 text-[var(--data-success-700)] dark:border-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/50 dark:text-[var(--data-success-500)]",
+    dot: "bg-[var(--data-success-500)]",
   },
   rejected: {
     label: "Rechazado",
@@ -123,7 +123,7 @@ const STATUS_META = {
 } as const;
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
-  good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
+  good: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/10 dark:text-[var(--data-success-500)]",
   warn: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   bad: "bg-[var(--data-error-50)] text-[var(--data-error)]",
 };
@@ -543,12 +543,14 @@ export default function PagosPendientesClient() {
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-md"
           onClick={() => setNewCreds(null)}
+          onKeyDown={(e) => { if (e.key === "Escape") setNewCreds(null); }}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Credenciales de la nueva tienda"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
             className="w-full max-w-md overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
           >
             <div className="bg-[var(--accent)] px-5 py-4 text-white">
@@ -775,7 +777,7 @@ export default function PagosPendientesClient() {
               <button
                 onClick={bulkApprove}
                 disabled={bulkBusy}
-                className="h-10 px-3.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="h-10 px-3.5 rounded-xl text-xs font-extrabold text-white bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 {bulkBusy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -881,7 +883,7 @@ function StatPill({
 }) {
   const cls =
     accent === "success"
-      ? "border-emerald-300/50 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-950/30 dark:text-emerald-300"
+      ? "border-[var(--data-success-500)]/50 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:border-[var(--data-success-700)]/40 dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]"
       : accent === "warning"
         ? "border-[var(--accent)]/60 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)]";
@@ -1104,9 +1106,11 @@ function ProofModal({
       aria-labelledby="proof-modal-title"
       className="fixed inset-0 z-[80] flex items-stretch sm:items-center justify-center bg-black/65 sm:p-4 backdrop-blur-sm"
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         className="flex w-full max-w-full sm:max-w-4xl h-full sm:h-auto sm:max-h-[92vh] flex-col overflow-hidden sm:rounded-3xl border-0 sm:border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         {/* Header */}
@@ -1271,7 +1275,7 @@ function ProofModal({
                 <button
                   disabled={actioning}
                   onClick={onApprove}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 h-12 px-4 text-sm font-extrabold uppercase tracking-wider text-white shadow-md transition hover:bg-emerald-700 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent-dark)] h-12 px-4 text-sm font-extrabold uppercase tracking-wider text-white shadow-md transition hover:brightness-110 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                 >
                   {actioning ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1284,7 +1288,7 @@ function ProofModal({
                   href={`https://wa.me/51${proof.ownerPhone.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] h-12 px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] h-12 px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--data-success-500)] hover:text-[var(--data-success-600)] dark:hover:text-[var(--data-success-500)]"
                 >
                   <MessageCircle
                     className="h-4 w-4"
@@ -1320,6 +1324,7 @@ function ProofModal({
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
                     placeholder="Ej: La captura no coincide con el monto del plan…"
+                    // eslint-disable-next-line jsx-a11y/no-autofocus -- el textarea se abre para escribir el motivo de inmediato
                     autoFocus
                     className="mt-1.5 h-20 w-full rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--surface-raised)] px-3 py-2 text-sm outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 dark:border-[var(--data-error-500)]"
                   />
@@ -1432,7 +1437,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}

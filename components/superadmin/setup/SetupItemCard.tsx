@@ -36,7 +36,7 @@ export default function SetupItemCard({
       className={[
         "bg-[var(--surface-canvas)] border rounded-xl p-5 transition-all",
         isDone
-          ? "border-emerald-200 dark:border-emerald-900/40 opacity-60"
+          ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/40 opacity-60"
           : isBlocked
             ? "border-teal-200 dark:border-teal-900/40"
             : "border-[var(--rule-base)] hover:border-teal-300 dark:hover:border-[var(--accent-dark)]",

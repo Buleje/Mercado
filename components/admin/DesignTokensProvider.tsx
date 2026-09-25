@@ -59,6 +59,28 @@ const VARS_DE_SUPERFICIE = [
 const PREFIJOS_SEMANTICOS = ["--data-success", "--data-warning", "--data-error", "--data-info"] as const;
 
 /**
+ * La escala del acento en modo oscuro con un preset CLARO (2026-09-24): el
+ * tinte suave (#E6F6F5) y el texto de acento oscurecido son para fondo blanco;
+ * sobre el canvas oscuro no se leían. Se REDEFINEN desde el mismo tono (no se
+ * borran: borradas, heredaban del `<html>`, donde el selector de acento del
+ * sidebar escribe su color y el coral de «ejecutivo» se colaba).
+ */
+function escalaAcentoOscura(accent: string, accentDark: string): Record<string, string> {
+  return {
+    /* `-600` y `-dark` son FONDOS con texto blanco (botones): se quedan
+       profundos también en oscuro (#007F7A = 4,86:1). Como texto casi siempre
+       llevan su `dark:text-…` propio (71 de 72). */
+    "--accent-600": `color-mix(in oklab, ${accent} 88%, black)`,
+    "--accent-dark": accentDark,
+    /* `-ink` es TEXTO de acento: en oscuro, brillante. Por eso ningún botón
+       con texto blanco usa `hover:bg-[var(--accent-ink)]` (2,3:1 en oscuro). */
+    "--accent-ink": `color-mix(in oklab, ${accent} 75%, white)`,
+    "--accent-soft": `color-mix(in oklab, ${accent} 10%, transparent)`,
+    "--accent-muted": `color-mix(in oklab, ${accent} 20%, transparent)`,
+  };
+}
+
+/**
  * ¿El preset ya es oscuro? Si el superadmin eligió un preset dark, sus
  * superficies mandan y no hay nada que corregir.
  *
@@ -120,6 +142,7 @@ export default function DesignTokensProvider({
     const vars = tokensToCssVars(tokens);
     if (resolved === "dark" && !presetEsOscuro(tokens.colors.surface)) {
       for (const v of VARS_DE_SUPERFICIE) delete vars[v];
+      Object.assign(vars, escalaAcentoOscura(tokens.colors.accent, tokens.colors.accentDark));
       for (const k of Object.keys(vars)) {
         if (PREFIJOS_SEMANTICOS.some((p) => k.startsWith(p))) delete vars[k];
       }

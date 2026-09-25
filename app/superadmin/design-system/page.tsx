@@ -587,7 +587,7 @@ function PresetCard({
         {/* Acciones — patrón superadmin */}
         <div className="flex items-center gap-2 pt-1">
           {isActive ? (
-            <span className="flex-1 inline-flex items-center justify-center gap-2 h-11 px-4 rounded-2xl bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-emerald-300 text-sm font-extrabold uppercase tracking-wider border-2 border-[var(--data-success-500)]/30">
+            <span className="flex-1 inline-flex items-center justify-center gap-2 h-11 px-4 rounded-2xl bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-sm font-extrabold uppercase tracking-wider border-2 border-[var(--data-success-500)]/30">
               <Check className="h-4 w-4" strokeWidth={3} /> Activo
             </span>
           ) : (

@@ -18,6 +18,8 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { esc } from "@/lib/forestal/ctp-documento-print";
 import VerificarGtfSerfor from "./VerificarGtfSerfor";
 import { formatDateNumeric } from "@/lib/format";
+import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
+import { CampoDeFiltro } from "./ctp-filtros-panel";
 
 interface GtfItem {
   code?: string | null; species?: string | null; scientific?: string | null; cites?: boolean;
@@ -36,6 +38,8 @@ const smalian = (dM: number, dm: number, L: number) =>
   dM > 0 && dm > 0 && L > 0 ? Math.round(0.7854 * Math.pow((dM + dm) / 2, 2) * L * 10000) / 10000 : 0;
 const fmtDate = (iso: string | null) =>
   iso ? formatDateNumeric(iso, { soloFecha: true }) : "—";
+const ETIQUETA_TIPO: Record<string, string> = { trozas: "Trozas", producto: "Producto" };
+const ETIQUETA_ESTADO: Record<string, string> = { emitida: "Emitida", anulada: "Anulada", sin_ingresar: "Sin ingresar al CTP" };
 
 export default function LothGtfView({
   focusGtf,
@@ -54,8 +58,11 @@ export default function LothGtfView({
   // mismo conjunto que la bandeja del lado planta (single source: ?sinIngresar=1).
   const [sinIngresar, setSinIngresar] = useState<Set<string>>(new Set());
   const [busqueda, setBusqueda] = useState("");
-  const [estado, setEstado] = useState<"todas" | "emitida" | "anulada" | "sin_ingresar">("todas");
-  const [tipo, setTipo] = useState<"todos" | "trozas" | "producto">("todos");
+  // Tipo y Estado son columnas de la tabla: su filtro vive en el propio `<th>`
+  // (multi-selección, OR adentro — Brandon, 2026-09-24). El buscador de texto
+  // es lo único que no es una columna sola y se queda arriba.
+  const [estadoFiltro, setEstadoFiltro] = useState<string[]>([]);
+  const [tipoFiltro, setTipoFiltro] = useState<string[]>([]);
   const [pagina, setPagina] = useState(0);
   /** Guías que el LIBRO declara y que no están emitidas acá (se piden aparte). */
   const [declaradasSinEmitir, setDeclaradasSinEmitir] = useState<string[]>([]);
@@ -163,6 +170,31 @@ export default function LothGtfView({
     };
   }, [gtfs, sinIngresar]);
 
+  /** Las claves de estado que aplican a una guía — una puede ser "emitida" Y
+   *  "sin_ingresar" a la vez, no son excluyentes entre sí. */
+  const clavesEstado = useCallback(
+    (g: Gtf): string[] => {
+      const claves = [g.status === "anulada" ? "anulada" : "emitida"];
+      if (g.tipo !== "producto" && g.status !== "anulada" && sinIngresar.has(g.gtfNumber)) claves.push("sin_ingresar");
+      return claves;
+    },
+    [sinIngresar],
+  );
+
+  /** Opciones del autofiltro de Tipo/Estado, con cuántas guías trae cada una —
+   *  de TODA la lista, no de lo ya acotado por la otra columna. */
+  const opcionesColumna = useMemo(() => {
+    const contar = (clave: (g: Gtf) => string[]): FacetaOpcion[] => {
+      const map = new Map<string, number>();
+      for (const g of gtfs) for (const k of clave(g)) map.set(k, (map.get(k) ?? 0) + 1);
+      return [...map.entries()].map(([value, count]) => ({ value, count }));
+    };
+    return {
+      tipo: contar((g) => [g.tipo === "producto" ? "producto" : "trozas"]),
+      estado: contar(clavesEstado),
+    };
+  }, [gtfs, clavesEstado]);
+
   /** Lo que se está viendo, tras búsqueda y filtros. */
   const filtradas = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -174,14 +206,11 @@ export default function LothGtfView({
           .toLowerCase();
         if (!heno.includes(q)) return false;
       }
-      if (tipo === "trozas" && g.tipo === "producto") return false;
-      if (tipo === "producto" && g.tipo !== "producto") return false;
-      if (estado === "emitida" && g.status === "anulada") return false;
-      if (estado === "anulada" && g.status !== "anulada") return false;
-      if (estado === "sin_ingresar" && !(g.tipo !== "producto" && g.status !== "anulada" && sinIngresar.has(g.gtfNumber))) return false;
+      if (tipoFiltro.length > 0 && !tipoFiltro.includes(g.tipo === "producto" ? "producto" : "trozas")) return false;
+      if (estadoFiltro.length > 0 && !clavesEstado(g).some((k) => estadoFiltro.includes(k))) return false;
       return true;
     });
-  }, [gtfs, busqueda, tipo, estado, sinIngresar]);
+  }, [gtfs, busqueda, tipoFiltro, estadoFiltro, clavesEstado]);
 
   const POR_PAGINA = 25;
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
@@ -189,7 +218,7 @@ export default function LothGtfView({
   const enPagina = filtradas.slice(pagActual * POR_PAGINA, (pagActual + 1) * POR_PAGINA);
   const volumenFiltrado = filtradas.filter((g) => g.status !== "anulada").reduce((a, g) => a + Number(g.volumenTotalM3 ?? 0), 0);
 
-  useEffect(() => setPagina(0), [busqueda, tipo, estado]);
+  useEffect(() => setPagina(0), [busqueda, tipoFiltro, estadoFiltro]);
 
   return (
     <div className="space-y-5">
@@ -235,36 +264,33 @@ export default function LothGtfView({
         </div>
       )}
 
-      {/* Buscar y filtrar: la lista no tenía ninguna de las dos cosas. */}
+      {/* Buscar: Tipo y Estado son columnas de la tabla, se filtran desde su
+          propio <th> más abajo. */}
       {!loading && gtfs.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex h-11 min-w-[16rem] flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
-            <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-            <input
-              type="text"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por N° de guía, titular, destino, transportista o placa…"
-              className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
-            />
+        <div className="flex h-11 min-w-[16rem] flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
+          <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+          <input
+            type="text"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por N° de guía, titular, destino, transportista o placa…"
+            className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
+          />
+        </div>
+      )}
+
+      {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
+          <thead>): Tipo y Estado se repiten acá, sólo visibles ahí. */}
+      {!loading && gtfs.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:hidden">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Tipo</span>
+            <CampoDeFiltro label="Tipo" value={tipoFiltro} options={opcionesColumna.tipo} etiqueta={(v) => ETIQUETA_TIPO[v] ?? v} onChange={setTipoFiltro} placeholder="Todos" />
           </div>
-          <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
-            <span className="text-[var(--text-tertiary)]">Tipo</span>
-            <select value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} className="bg-transparent font-bold text-[var(--text-primary)] outline-none">
-              <option value="todos">Todos</option>
-              <option value="trozas">Trozas</option>
-              <option value="producto">Producto</option>
-            </select>
-          </label>
-          <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
-            <span className="text-[var(--text-tertiary)]">Estado</span>
-            <select value={estado} onChange={(e) => setEstado(e.target.value as typeof estado)} className="bg-transparent font-bold text-[var(--text-primary)] outline-none">
-              <option value="todas">Todas</option>
-              <option value="emitida">Emitidas</option>
-              <option value="sin_ingresar">Sin ingresar al CTP</option>
-              <option value="anulada">Anuladas</option>
-            </select>
-          </label>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Estado</span>
+            <CampoDeFiltro label="Estado" value={estadoFiltro} options={opcionesColumna.estado} etiqueta={(v) => ETIQUETA_ESTADO[v] ?? v} onChange={setEstadoFiltro} placeholder="Todos" />
+          </div>
         </div>
       )}
 
@@ -280,7 +306,7 @@ export default function LothGtfView({
       {!loading && gtfs.length > 0 && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <ResumenChip valor={resumen.emitidas} label="Guías emitidas" />
-          <ResumenChip valor={resumen.volumen.toFixed(3)} sufijo="m³" label="Volumen movilizado" />
+          <ResumenChip valor={Number(resumen.volumen).toFixed(3)} sufijo="m³" label="Volumen movilizado" />
           <ResumenChip valor={resumen.pendientes} label="Sin ingresar al CTP" tono={resumen.pendientes > 0 ? "warning" : undefined} />
           <ResumenChip valor={resumen.anuladas} label="Anuladas" tono={resumen.anuladas > 0 ? "danger" : undefined} />
         </div>
@@ -314,9 +340,38 @@ export default function LothGtfView({
 
       {!loading && (
         <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <DataTable className="w-full text-sm">
-            <thead className="bg-[var(--surface-sunken)] text-left">
-              <tr>{["N° GTF", "Fecha", "Tipo", "Titular", "Destino", "Vol. m³", "Estado", "Acciones"].map((h, i) => <th key={i} className={`px-4 py-2.5 font-bold text-[var(--text-primary)] ${i === 5 ? "text-right" : ""}`}>{h}</th>)}</tr>
+          <DataTable filtrable className="w-full text-sm">
+            <thead className="bg-[var(--surface-sunken)] text-left align-top">
+              <tr>
+                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">N° GTF</th>
+                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Fecha</th>
+                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
+                  <span className="block">Tipo</span>
+                  <FiltroColumnaMulti
+                    label="Tipo"
+                    value={tipoFiltro}
+                    options={opcionesColumna.tipo}
+                    etiqueta={(v) => ETIQUETA_TIPO[v] ?? v}
+                    onChange={setTipoFiltro}
+                    placeholder="Todos"
+                  />
+                </th>
+                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Titular</th>
+                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Destino</th>
+                <th className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)]">Vol. m³</th>
+                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
+                  <span className="block">Estado</span>
+                  <FiltroColumnaMulti
+                    label="Estado"
+                    value={estadoFiltro}
+                    options={opcionesColumna.estado}
+                    etiqueta={(v) => ETIQUETA_ESTADO[v] ?? v}
+                    onChange={setEstadoFiltro}
+                    placeholder="Todos"
+                  />
+                </th>
+                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Acciones</th>
+              </tr>
             </thead>
             <tbody>
               {enPagina.map((g) => (
@@ -448,7 +503,6 @@ function AnularGtfForm({ gtf, onConfirm, onCancel }: { gtf: Gtf; onConfirm: (r: 
           value={r}
           onChange={(e) => setR(e.target.value)}
           rows={3}
-          autoFocus
           placeholder="Ej.: error en la placa del vehículo; se reemplaza por la GTF 001-0000126."
           className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
         />
@@ -533,7 +587,8 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
     fetch("/api/admin/forestal/plan?active=1", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => { const p = j?.active; if (p) setF((s) => ({ ...s, titularName: p.titularName ?? "", tituloHabilitante: p.tituloHabilitante ?? "", parcelaCorta: p.parcelaCorta ?? "" })); })
-      .catch(() => { /* prefill best-effort: si no hay plan activo, el usuario completa a mano */ });
+      // Prefill best-effort: si no hay plan activo, el usuario completa a mano.
+      .catch((err) => console.warn("[loth-gtf] no se pudo precargar el plan activo", err));
   }, []);
 
   const autoVol = smalian(Number(it.diamMayorM), Number(it.diamMenorM), Number(it.lengthM));
@@ -642,7 +697,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
           <Field label="Ø mayor"><input type="number" step="0.001" value={it.diamMayorM} onChange={(e) => setItem("diamMayorM", e.target.value)} className={I} /></Field>
           <Field label="Ø menor"><input type="number" step="0.001" value={it.diamMenorM} onChange={(e) => setItem("diamMenorM", e.target.value)} className={I} /></Field>
           <Field label={`Long. ${autoVol > 0 ? `→ ${fmtM3(autoVol)}` : ""}`}><input type="number" step="0.01" value={it.lengthM} onChange={(e) => setItem("lengthM", e.target.value)} className={I} /></Field>
-          <button type="button" onClick={addItem} className="h-10 rounded-xl bg-[var(--data-success-700)] text-sm font-semibold text-white hover:opacity-90">+ Agregar</button>
+          <button type="button" onClick={addItem} className="h-10 rounded-xl bg-[var(--accent-dark)] text-sm font-semibold text-white hover:brightness-110">+ Agregar</button>
         </div>
         {items.length > 0 && (
           <div className="mt-3 overflow-x-auto">
@@ -660,9 +715,9 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
                       )}
                     </td>
                     <td>{x.species ?? "—"}{x.cites && <span className="ml-1 rounded bg-[var(--data-error-100)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}</td>
-                    <td className="text-right font-mono tabular-nums">{x.diamMayorM?.toFixed(2) ?? "—"}</td>
-                    <td className="text-right font-mono tabular-nums">{x.diamMenorM?.toFixed(2) ?? "—"}</td>
-                    <td className="text-right font-mono tabular-nums">{x.lengthM?.toFixed(2) ?? "—"}</td>
+                    <td className="text-right font-mono tabular-nums">{x.diamMayorM != null ? Number(x.diamMayorM).toFixed(2) : "—"}</td>
+                    <td className="text-right font-mono tabular-nums">{x.diamMenorM != null ? Number(x.diamMenorM).toFixed(2) : "—"}</td>
+                    <td className="text-right font-mono tabular-nums">{x.lengthM != null ? Number(x.lengthM).toFixed(2) : "—"}</td>
                     <td className="text-right font-mono tabular-nums font-bold">{x.volumeM3 != null ? fmtM3(x.volumeM3) : "—"}</td>
                     <td className="text-right"><button aria-label="Eliminar" type="button" onClick={() => setItems((arr) => arr.filter((_, j) => j !== i))} className="text-[var(--data-error-600)]"><Trash2 className="h-3.5 w-3.5" /></button></td>
                   </tr>
@@ -689,7 +744,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         </span>
         <div className="flex gap-2">
           <button type="button" onClick={onClose} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems || hasMissingRequired} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />} Emitir GTF</button>
+          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems || hasMissingRequired} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />} Emitir GTF</button>
         </div>
       </div>
     </form>
@@ -730,7 +785,7 @@ function printGtfOficial(g: Gtf, caratula: LothGtfCaratula | null) {
 
 async function printGtf(g: Gtf) {
   const items = Array.isArray(g.items) ? g.items : [];
-  const rows = items.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.code)}</td><td>${esc(x.species)}${x.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${x.diamMayorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.diamMenorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.lengthM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.volumeM3 != null ? fmtM3(x.volumeM3) : ""}</td></tr>`).join("");
+  const rows = items.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.code)}</td><td>${esc(x.species)}${x.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${x.diamMayorM != null ? Number(x.diamMayorM).toFixed(2) : ""}</td><td style="text-align:right">${x.diamMenorM != null ? Number(x.diamMenorM).toFixed(2) : ""}</td><td style="text-align:right">${x.lengthM != null ? Number(x.lengthM).toFixed(2) : ""}</td><td style="text-align:right">${x.volumeM3 != null ? fmtM3(x.volumeM3) : ""}</td></tr>`).join("");
   const vol = g.volumenTotalM3 ? Number(g.volumenTotalM3).toFixed(4) : "0";
 
   // QR real: codifica una cadena de verificación interna escaneable
@@ -785,7 +840,7 @@ async function printGtf(g: Gtf) {
   if (w) { w.document.write(html); w.document.close(); }
 }
 
-const I = "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-600)] focus:ring-1 focus:ring-[var(--data-success-600)]/20 placeholder:text-[var(--text-tertiary)]";
+const I = "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] placeholder:text-[var(--text-tertiary)]";
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <label className="block"><span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">{label}</span>{children}</label>;
 }

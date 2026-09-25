@@ -592,7 +592,7 @@ export function OperationsTab() {
                       href={wa}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--data-success-500)] text-white transition hover:brightness-110"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-dark)] text-white transition hover:brightness-110"
                       aria-label={`WhatsApp ${t.tenantName}`}
                       title={`WhatsApp al dueño de ${t.tenantName}`}
                     >

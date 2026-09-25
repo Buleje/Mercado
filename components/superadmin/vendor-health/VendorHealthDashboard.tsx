@@ -132,7 +132,7 @@ function HealthRing({ score }: { score: number }) {
   const offset = circumference - (score / 100) * circumference;
   const tone =
     score >= 95
-      ? { stroke: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400" }
+      ? { stroke: "stroke-[var(--data-success-500)]", text: "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" }
       : score >= 80
         ? { stroke: "stroke-teal-500", text: "text-teal-600 dark:text-teal-400" }
         : { stroke: "stroke-rose-500", text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" };
@@ -184,7 +184,7 @@ function Kpi({
 }) {
   const tone = {
     neutral: "text-[var(--text-primary)]",
-    success: "text-emerald-600 dark:text-emerald-400",
+    success: "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]",
     warning: "text-teal-600 dark:text-teal-400",
     error: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     info: "text-sky-600 dark:text-sky-400",
@@ -629,16 +629,16 @@ export function VendorHealthDashboard() {
 
       {/* ── Empty success ─────────────────────────────────── */}
       {summary.alerts.length === 0 && (summary.graces?.length ?? 0) === 0 && (
-        <div className="rounded-2xl border-2 border-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 dark:border-emerald-500/30 p-5 flex items-start sm:items-center gap-3">
+        <div className="rounded-2xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/10 dark:border-[var(--data-success-500)]/30 p-5 flex items-start sm:items-center gap-3">
           <ShieldCheck
-            className="h-6 w-6 text-emerald-600 dark:text-emerald-300 shrink-0"
+            className="h-6 w-6 text-[var(--data-success-600)] dark:text-[var(--data-success-500)] shrink-0"
             aria-hidden
           />
           <div>
-            <p className="text-base font-extrabold text-emerald-900 dark:text-emerald-100">
+            <p className="text-base font-extrabold text-[var(--data-success-500)]/20 dark:text-[var(--data-success-100)]">
               Todo limpio
             </p>
-            <p className="text-sm text-emerald-800 dark:text-emerald-200/90">
+            <p className="text-sm text-[var(--data-success-700)] dark:text-[var(--data-success-500)]/90">
               Todos los vendors aprobados están al día con RENIEC + SUNAT.
             </p>
           </div>
@@ -906,7 +906,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}

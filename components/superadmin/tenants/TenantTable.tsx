@@ -234,7 +234,7 @@ export function TenantTable({
                         className={`p-1.5 rounded-xl transition-colors disabled:opacity-40 ${
                           tenant.active
                             ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30"
-                            : "text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-green-950/30"
+                            : "text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/30"
                         }`}
                       >
                         {actionLoading === `${tenant.slug}-active` ? (
@@ -288,7 +288,7 @@ export function TenantTable({
                         type="button"
                         onClick={() => onInvite(tenant.slug, tenant.name)}
                         title="Invitar usuario"
-                        className="p-1.5 rounded-xl text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-emerald-950/30 transition-colors"
+                        className="p-1.5 rounded-xl text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/30 transition-colors"
                       >
                         <Users className="w-4 h-4" />
                       </button>

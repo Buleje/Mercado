@@ -415,7 +415,9 @@ export default function ActionMenu({
   const BotonIcono = Icono ?? MoreHorizontal;
   const piel =
     variant === "primary"
-      ? "bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white shadow-sm hover:brightness-110"
+      ? /* Del -600 al -dark: el turquesa del logo con texto blanco legible
+           (#00A29C daba 3,2:1; esta mezcla, 4,2–4,9:1). */
+        "bg-linear-to-br from-[var(--accent-600)] to-[var(--accent-dark)] text-white shadow-sm hover:brightness-110"
       : variant === "accent"
         ? "border-2 border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] hover:bg-primary/15 dark:text-[var(--accent)]"
         : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]";

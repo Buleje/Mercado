@@ -19,6 +19,8 @@ import { CardTitle, DataTable, LoadingState, SectionTitle, WarningAlert, BlockTi
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
+import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import type { Rango } from "@/lib/admin/filtros-columna";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
@@ -589,15 +591,16 @@ export default function PrestamosModule() {
   // Búsqueda mejorada (mejora 10)
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filtro avanzado colapsable (mejora 7)
+  // Filtro avanzado colapsable (mejora 7). Monto y Sistema son columnas de la
+  // tabla (Monto, Sys): viven en su `<th>` (autofiltro tipo Excel, Brandon
+  // 2026-09-24). Lo que no es columna (fecha, tipo, dirección) se queda afuera.
   const [showFilters, setShowFilters] = useState(false);
   const [filterFechaFrom, setFilterFechaFrom] = useState("");
   const [filterFechaTo, setFilterFechaTo] = useState("");
-  const [filterMontoMin, setFilterMontoMin] = useState("");
-  const [filterMontoMax, setFilterMontoMax] = useState("");
+  const [montoRango, setMontoRango] = useState<Rango<number>>({ min: null, max: null });
   const [filterTipo, setFilterTipo] = useState<"" | PrestamoTipo>("");
   const [filterDireccion, setFilterDireccion] = useState<"" | PrestamoDireccion>("");
-  const [filterSistema, setFilterSistema] = useState<"" | SistemaAmortizacion>("");
+  const [filterSistema, setFilterSistema] = useState<SistemaAmortizacion[]>([]);
 
   // Sort por columnas (mejora 8)
   const [sortKey, setSortKey] = useState<"monto" | "tasaInteres" | "numeroCuotas" | "createdAt" | "">("");
@@ -999,14 +1002,14 @@ export default function PrestamosModule() {
         (p.nroOperacion || "").toLowerCase().includes(q)
       );
     }
-    // Filtros avanzados (mejora 7)
+    // Filtros avanzados (mejora 7) + autofiltro de columna (Monto, Sys)
     if (filterFechaFrom) list = list.filter(p => p.createdAt >= filterFechaFrom);
     if (filterFechaTo) list = list.filter(p => p.createdAt <= filterFechaTo + "T23:59:59");
-    if (filterMontoMin) list = list.filter(p => p.monto >= parseFloat(filterMontoMin));
-    if (filterMontoMax) list = list.filter(p => p.monto <= parseFloat(filterMontoMax));
+    if (montoRango.min != null) list = list.filter(p => p.monto >= (montoRango.min as number));
+    if (montoRango.max != null) list = list.filter(p => p.monto <= (montoRango.max as number));
     if (filterTipo) list = list.filter(p => p.tipo === filterTipo);
     if (filterDireccion) list = list.filter(p => p.direccion === filterDireccion);
-    if (filterSistema) list = list.filter(p => p.sistemaAmortizacion === filterSistema);
+    if (filterSistema.length > 0) list = list.filter(p => filterSistema.includes(p.sistemaAmortizacion));
     // Sort (mejora 8)
     if (sortKey) {
       list = [...list].sort((a, b) => {
@@ -1017,13 +1020,18 @@ export default function PrestamosModule() {
     }
     return list;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prestamos, activeTab, prestamoStatusFilter, searchQuery, filterFechaFrom, filterFechaTo, filterMontoMin, filterMontoMax, filterTipo, filterDireccion, filterSistema, sortKey, sortDir]);
+  }, [prestamos, activeTab, prestamoStatusFilter, searchQuery, filterFechaFrom, filterFechaTo, montoRango, filterTipo, filterDireccion, filterSistema, sortKey, sortDir]);
 
-  const activeFilterCount = [filterFechaFrom, filterFechaTo, filterMontoMin, filterMontoMax, filterTipo, filterDireccion, filterSistema].filter(Boolean).length;
+  // Cuenta TODO lo que el panel «Filtros» muestra: Monto y Sistema viven ahí
+  // también (ocultos salvo < sm, el mismo atajo del `<th>`), así que el
+  // número del botón sigue siendo "lo que este panel puede acotar".
+  const activeFilterCount = [filterFechaFrom, filterFechaTo, filterTipo, filterDireccion].filter(Boolean).length
+    + (montoRango.min != null || montoRango.max != null ? 1 : 0)
+    + (filterSistema.length > 0 ? 1 : 0);
 
   const clearFilters = () => {
-    setFilterFechaFrom(""); setFilterFechaTo(""); setFilterMontoMin(""); setFilterMontoMax("");
-    setFilterTipo(""); setFilterDireccion(""); setFilterSistema(""); setSearchQuery("");
+    setFilterFechaFrom(""); setFilterFechaTo(""); setMontoRango({ min: null, max: null });
+    setFilterTipo(""); setFilterDireccion(""); setFilterSistema([]); setSearchQuery("");
   };
 
   const totalPages = Math.max(1, Math.ceil(displayList.length / PER_PAGE));
@@ -1190,13 +1198,24 @@ export default function PrestamosModule() {
               <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                 <div className="bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)] p-4">
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {/* Monto y Sistema ya se filtran en su `<th>` (Monto, Sys) — acá sólo
+                        lo que no es una columna de la tabla: período y tipo/dirección.
+                        Monto y Sistema se repiten abajo, ocultos salvo < sm: en el
+                        celular la tabla es tarjetas y `.admin-mobile-cards` esconde el
+                        `<thead>` ENTERO (no sólo lo que tiene `hidden sm:table-cell`),
+                        así que su único `<th>` deja de ser alcanzable ahí (mismo
+                        estado, no lógica nueva). */}
                     <Field label="Desde" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
                     <Field label="Hasta" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
-                    <Field label="Monto mín." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="number" value={filterMontoMin} onChange={e => { setFilterMontoMin(e.target.value); setPage(1); }} placeholder="0" className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
-                    <Field label="Monto máx." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="number" value={filterMontoMax} onChange={e => { setFilterMontoMax(e.target.value); setPage(1); }} placeholder="∞" className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
                     <Field label="Tipo" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></Field>
                     <Field label="Dirección" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></Field>
-                    <Field label="Sistema amort." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterSistema} onChange={e => { setFilterSistema(e.target.value as ""|SistemaAmortizacion); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></Field>
+                    <Field label="Monto (S/)" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1" className="sm:hidden">
+                      <div className="flex items-center gap-1.5">
+                        <input type="number" step={10} min={0} value={montoRango.min ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, min: v })); setPage(1); }} placeholder="Desde" aria-label="Monto desde" className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+                        <input type="number" step={10} min={0} value={montoRango.max ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, max: v })); setPage(1); }} placeholder="Hasta" aria-label="Monto hasta" className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+                      </div>
+                    </Field>
+                    <Field label="Sistema amort." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1" className="sm:hidden"><select value={filterSistema[0] ?? ""} onChange={e => { setFilterSistema(e.target.value ? [e.target.value as SistemaAmortizacion] : []); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></Field>
                     <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] bg-[var(--surface-sunken)] hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
                   </div>
                 </div>
@@ -1249,12 +1268,15 @@ export default function PrestamosModule() {
               <p className="text-sm text-[var(--data-error-500)]">{error}</p>
               <button onClick={fetchPrestamos} className="text-xs text-[var(--accent)] hover:underline font-semibold">Reintentar</button>
             </div>
-          ) : displayList.length === 0 ? (
+          ) : (activeTab === "activos" ? activos : historial).length === 0 ? (
+            // El vacío de "no hay nada" se decide por el total SIN filtrar de esta
+            // pestaña — si sólo el filtro dejó `displayList` en 0, la tabla (con su
+            // `<thead>` y los filtros) sigue abajo, con una fila que ofrece quitarlos.
             <div className="text-center py-16 px-4">
               <Landmark className="h-16 w-16 mb-4 text-[var(--text-tertiary)] mx-auto" />
               <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin préstamos</CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Registra préstamos a clientes con cuotas</p>
-              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[var(--accent-600,var(--accent))] text-white px-6 min-h-11 rounded-xl font-medium hover:bg-[var(--data-success-500)]">Crear préstamo</button>
+              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[var(--accent-600,var(--accent))] text-white px-6 min-h-11 rounded-xl font-medium hover:brightness-110">Crear préstamo</button>
             </div>
           ) : (
             <>
@@ -1266,9 +1288,25 @@ export default function PrestamosModule() {
                         <input type="checkbox" checked={selectedIds.size > 0 && selectedIds.size === paginated.length} onChange={toggleSelectAll} aria-label="Seleccionar todos" className="rounded accent-blue-600 cursor-pointer" />
                       </th>
                       <th>Cliente</th>
-                      <th className="text-center hidden sm:table-cell">Sys</th>
+                      <th className="text-center hidden sm:table-cell">
+                        <span className="block">Sys</span>
+                        <FiltroColumnaMulti
+                          label="Sistema"
+                          value={filterSistema}
+                          options={(["FRANCES", "ALEMAN", "AMERICANO"] as SistemaAmortizacion[]).map((s) => ({ value: s, count: prestamos.filter((p) => p.sistemaAmortizacion === s).length }))}
+                          etiqueta={(v) => SISTEMA_LABELS[v as SistemaAmortizacion] ?? v}
+                          onChange={(v) => { setFilterSistema(v as SistemaAmortizacion[]); setPage(1); }}
+                          placeholder="Todos"
+                          className="mx-auto"
+                        />
+                      </th>
                       <th className="text-right cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("monto")}>
                         <span className="flex items-center justify-end gap-1">Monto {sortKey === "monto" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                        {/* `role="presentation"` corta la burbuja del click del filtro antes
+                            de que llegue al onClick de ordenar del `<th>` padre. */}
+                        <div role="presentation" onClick={(e) => e.stopPropagation()}>
+                          <FiltroColumnaRango label="Monto" unidad="S/" paso={10} valor={montoRango} onChange={(r) => { setMontoRango(r as Rango<number>); setPage(1); }} placeholder="Todos" className="ml-auto" />
+                        </div>
                       </th>
                       <th className="text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("tasaInteres")}>
                         <span className="flex items-center justify-end gap-1">Tasa {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
@@ -1281,6 +1319,17 @@ export default function PrestamosModule() {
                     </tr>
                   </thead>
                   <tbody>
+                    {displayList.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="text-center py-12">
+                          <p className="text-sm font-semibold text-[var(--text-primary)]">Ningún préstamo coincide con el filtro.</p>
+                          {/* `clearFilters` no toca la pastilla de Status (mejora 9,
+                              estado propio) — acá sí, para garantizar que el botón
+                              realmente vacíe la tabla de filtros. */}
+                          <button onClick={() => { clearFilters(); setPrestamoStatusFilter(""); }} className="mt-2 text-xs font-bold text-[var(--accent)] hover:underline">Quitar filtros</button>
+                        </td>
+                      </tr>
+                    )}
                     {paginated.map(p => {
                       const meta = STATUS_META[p.status];
                       const StatusIcon = meta.icon;
@@ -1558,10 +1607,10 @@ export default function PrestamosModule() {
             <div className="flex flex-wrap gap-2">
               {amortizacion.length > 0 && (
                 <>
-                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] transition-colors">
+                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
-                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold  transition-colors border", showComparador ? "bg-primary/10 text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
+                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold  transition-colors border", showComparador ? "bg-primary/10 text-white border-[var(--accent)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/30 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]")}>
                     <Scale className="h-4 w-4" /> Comparar sistemas
                   </button>
                 </>
@@ -2162,7 +2211,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 onClick={handlePagoMultiple}
                                 disabled={payingMultiple}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50 transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 disabled:opacity-50 transition-colors"
                               >
                                 {payingMultiple ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                                 Pagar {selectedCuotaIds.size} cuota{selectedCuotaIds.size > 1 ? "s" : ""} ({formatCurrency(selected.cuotas.filter(c => selectedCuotaIds.has(c.id)).reduce((s, c) => s + c.monto, 0))})
@@ -2173,7 +2222,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   const next = selected.cuotas.find(c => !c.pagadoEn);
                                   if (next) { setPagoCuotaId(next.id); setPagoMonto(String(next.monto)); setPagoError(null); setShowPago(true); }
                                 }}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 transition-colors"
                               >
                                 <DollarSign className="h-4 w-4" /> Pagar siguiente cuota
                               </button>
@@ -2190,7 +2239,7 @@ ${cuotas.map(c => { const row = `<tr>
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30">
+                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-muted)] border border-[var(--accent)]/30">
                               <RotateCcw className="h-3.5 w-3.5" /> Refinanciar
                             </button>
                             <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)]">
@@ -2359,7 +2408,7 @@ ${cuotas.map(c => { const row = `<tr>
                   <button
                     onClick={handlePago}
                     disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 disabled:opacity-50 transition-colors"
                   >
                     {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Pagar
@@ -2561,7 +2610,7 @@ ${cuotas.map(c => { const row = `<tr>
                       </button>
                       <button
                         onClick={() => { setCreateError(null); setCreateStep(2); }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 transition-colors"
                       >
                         Siguiente
                         <ChevronRight className="h-4 w-4" />
@@ -2727,7 +2776,7 @@ ${cuotas.map(c => { const row = `<tr>
                       <button
                         onClick={handleCreate}
                         disabled={creating}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 disabled:opacity-50 transition-colors"
                       >
                         {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                         Crear Préstamo

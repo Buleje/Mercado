@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon, vehicleKind, vehicleLabel, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
 import { Field } from "@/components/admin/shared/Field";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { formatCurrency } from "@/lib/format";
 
@@ -89,13 +90,12 @@ function PartnerModal({
   return (
     <div
       className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
-      onClick={onClose}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
       role="presentation"
     >
       <div
         ref={panelRef}
         className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-md shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="partner-modal-title"
@@ -131,7 +131,6 @@ function PartnerModal({
                   onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                   placeholder="Juan Pérez"
                   className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  autoFocus
                 />
               </Field>
             </div>
@@ -324,9 +323,11 @@ export function RepartidoresTab() {
   // - filtros zona + vehículo + estado
   // - selección múltiple para bulk activar/desactivar
   const [query, setQuery] = useState("");
-  const [zoneFilter, setZoneFilter] = useState<string>("todas");
-  const [vehicleFilter, setVehicleFilter] = useState<string>("todos");
-  const [statusFilter, setStatusFilter] = useState<"todos" | "activos" | "inactivos">("todos");
+  // Zona, Vehículo y Estado son columnas de la tabla (autofiltro tipo Excel en
+  // su `<th>`, Brandon 2026-09-24): `[]` = todos/todas, admite varios a la vez.
+  const [zoneFilter, setZoneFilter] = useState<string[]>([]);
+  const [vehicleFilter, setVehicleFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
@@ -436,10 +437,9 @@ export function RepartidoresTab() {
   const uniqueVehicles = Array.from(new Set(partners.map((p) => vehicleKind(p.vehicleType)))).sort();
 
   const filtered = partners.filter((p) => {
-    if (zoneFilter !== "todas" && p.zone !== zoneFilter) return false;
-    if (vehicleFilter !== "todos" && vehicleKind(p.vehicleType) !== vehicleFilter) return false;
-    if (statusFilter === "activos" && !p.isActive) return false;
-    if (statusFilter === "inactivos" && p.isActive) return false;
+    if (zoneFilter.length > 0 && !zoneFilter.includes(p.zone)) return false;
+    if (vehicleFilter.length > 0 && !vehicleFilter.includes(vehicleKind(p.vehicleType))) return false;
+    if (statusFilter.length > 0 && !statusFilter.includes(p.isActive ? "Activo" : "Inactivo")) return false;
     if (query.trim()) {
       const q = query.toLowerCase().trim();
       const hit =
@@ -458,9 +458,9 @@ export function RepartidoresTab() {
 
   function clearFilters() {
     setQuery("");
-    setZoneFilter("todas");
-    setVehicleFilter("todos");
-    setStatusFilter("todos");
+    setZoneFilter([]);
+    setVehicleFilter([]);
+    setStatusFilter([]);
   }
 
   return (
@@ -582,11 +582,17 @@ export function RepartidoresTab() {
             )}
           </div>
 
+          {/* Zona, Vehículo y Estado ya tienen su autofiltro en el `<th>` — pero
+              en el celular la tabla es tarjetas y `.admin-mobile-cards` esconde
+              el `<thead>` ENTERO (no sólo las columnas con `hidden sm:table-cell`):
+              los tres necesitan este atajo, mismo estado, un solo valor a la vez.
+              (El comentario anterior decía que Estado no lo necesitaba porque su
+              `<th>` "siempre se ve" — falso, el `<thead>` completo desaparece.) */}
           <select
             aria-label="Filtrar por zona"
-            value={zoneFilter}
-            onChange={(e) => setZoneFilter(e.target.value)}
-            className="h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            value={zoneFilter[0] ?? "todas"}
+            onChange={(e) => setZoneFilter(e.target.value === "todas" ? [] : [e.target.value])}
+            className="sm:hidden h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             <option value="todas">Todas las zonas</option>
             {uniqueZones.map((z) => (
@@ -596,9 +602,9 @@ export function RepartidoresTab() {
 
           <select
             aria-label="Filtrar por vehículo"
-            value={vehicleFilter}
-            onChange={(e) => setVehicleFilter(e.target.value)}
-            className="h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            value={vehicleFilter[0] ?? "todos"}
+            onChange={(e) => setVehicleFilter(e.target.value === "todos" ? [] : [e.target.value])}
+            className="sm:hidden h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             <option value="todos">Todo vehículo</option>
             {uniqueVehicles.map((v) => (
@@ -606,24 +612,16 @@ export function RepartidoresTab() {
             ))}
           </select>
 
-          <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 gap-0.5">
-            {(["todos", "activos", "inactivos"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStatusFilter(s)}
-                aria-pressed={statusFilter === s}
-                className={cn(
-                  "h-10 px-3 rounded-xl text-xs font-extrabold transition-colors capitalize",
-                  statusFilter === s
-                    ? "bg-[var(--accent)] text-white"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
-                )}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+          <select
+            aria-label="Filtrar por estado"
+            value={statusFilter[0] ?? "todos"}
+            onChange={(e) => setStatusFilter(e.target.value === "todos" ? [] : [e.target.value])}
+            className="sm:hidden h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          >
+            <option value="todos">Todos los estados</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
 
           <button
             type="button"
@@ -649,7 +647,7 @@ export function RepartidoresTab() {
               type="button"
               disabled={bulkBusy}
               onClick={() => handleBulkSetActive(true)}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--data-success-500)] text-white text-xs font-extrabold hover:opacity-90 transition-opacity disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--accent-dark)] text-white text-xs font-extrabold hover:brightness-110 transition-colors disabled:opacity-40"
             >
               <CheckCircle className="h-3.5 w-3.5" />
               Activar todos
@@ -731,10 +729,42 @@ export function RepartidoresTab() {
                     />
                   </th>
                   <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Repartidor</th>
-                  <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Zona / Vehículo</th>
+                  <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">
+                    <span className="block">Zona / Vehículo</span>
+                    <div className="mt-1.5 flex flex-col gap-1">
+                      <FiltroColumnaMulti
+                        label="Zona"
+                        value={zoneFilter}
+                        options={uniqueZones.map((z) => ({ value: z, count: partners.filter((p) => p.zone === z).length }))}
+                        onChange={setZoneFilter}
+                        placeholder="Todas"
+                      />
+                      <FiltroColumnaMulti
+                        label="Vehículo"
+                        value={vehicleFilter}
+                        options={uniqueVehicles.map((v) => ({ value: v, count: partners.filter((p) => vehicleKind(p.vehicleType) === v).length }))}
+                        etiqueta={vehicleLabel}
+                        onChange={setVehicleFilter}
+                        placeholder="Todos"
+                      />
+                    </div>
+                  </th>
                   <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Tarifa</th>
                   <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Rating</th>
-                  <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Estado</th>
+                  <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <span className="block">Estado</span>
+                    <FiltroColumnaMulti
+                      label="Estado"
+                      value={statusFilter}
+                      options={[
+                        { value: "Activo", count: partners.filter((p) => p.isActive).length },
+                        { value: "Inactivo", count: partners.filter((p) => !p.isActive).length },
+                      ]}
+                      onChange={setStatusFilter}
+                      placeholder="Todos"
+                      className="mx-auto"
+                    />
+                  </th>
                   <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acciones</th>
                 </tr>
               </thead>
@@ -895,11 +925,13 @@ export function RepartidoresTab() {
       {confirmDelete && (
         <div
           className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
-          onClick={() => setConfirmDelete(null)}
+          onClick={(e) => e.target === e.currentTarget && setConfirmDelete(null)}
+          role="presentation"
         >
           <div
             className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-sm p-6 border border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">

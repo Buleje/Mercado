@@ -41,7 +41,7 @@ import { cn } from "@/lib/utils";
 const ACCESS_META: Record<RbacAccess, { icon: typeof Check; cls: string; label: string }> = {
   full: {
     icon: Check,
-    cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    cls: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
     label: "Acceso total",
   },
   write: {
@@ -284,7 +284,7 @@ export function PermissionsTab() {
             </p>
             <div className="mt-1.5 flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               <span className="inline-flex items-center gap-0.5" title={`${s.full} acceso total`}>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
                 {s.full}
               </span>
               <span className="inline-flex items-center gap-0.5" title={`${s.write} read+write`}>

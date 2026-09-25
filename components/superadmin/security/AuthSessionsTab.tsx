@@ -158,7 +158,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}
@@ -604,13 +604,13 @@ export function AuthSessionsTab() {
                               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
                               s.isCurrent
                                 ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                                : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+                                : "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
                             )}
                           >
                             <span
                               className={cn(
                                 "h-1.5 w-1.5 rounded-full",
-                                s.isCurrent ? "bg-[var(--accent)]" : "bg-emerald-500",
+                                s.isCurrent ? "bg-[var(--accent)]" : "bg-[var(--data-success-500)]",
                               )}
                             />
                             {s.isCurrent ? "Tú" : "Activa"}
@@ -661,7 +661,7 @@ export function AuthSessionsTab() {
                       className={cn(
                         "inline-flex h-8 w-8 items-center justify-center rounded-lg",
                         u.totpEnabled
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                          ? "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]"
                           : "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
                       )}
                     >
@@ -682,14 +682,14 @@ export function AuthSessionsTab() {
                     className={cn(
                       "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
                       u.totpEnabled
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                        ? "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]"
                         : "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
                     )}
                   >
                     <span
                       className={cn(
                         "h-1.5 w-1.5 rounded-full",
-                        u.totpEnabled ? "bg-emerald-500" : "bg-teal-500",
+                        u.totpEnabled ? "bg-[var(--data-success-500)]" : "bg-teal-500",
                       )}
                     />
                     {u.totpEnabled ? "Habilitado" : "Pendiente"}
@@ -836,7 +836,7 @@ function MiniKpi({
 }) {
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-    success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    success: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
     warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
     danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
@@ -927,7 +927,7 @@ function LoginFailuresChart({
               >
                 <div className="relative w-full flex-1 flex items-end gap-1">
                   <div
-                    className="flex-1 rounded-t-md bg-emerald-500/30 transition-all group-hover:bg-emerald-500/60"
+                    className="flex-1 rounded-t-md bg-[var(--data-success-500)]/30 transition-all group-hover:bg-[var(--data-success-500)]/60"
                     style={{ height: `${successH}%` }}
                     title={`${d.succeeded} éxitos`}
                   />
@@ -957,7 +957,7 @@ function LoginFailuresChart({
       {/* Legend */}
       <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[var(--rule-soft)]">
         <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-          <span className="h-3 w-3 rounded bg-emerald-500/30" />
+          <span className="h-3 w-3 rounded bg-[var(--data-success-500)]/30" />
           Éxitos
         </span>
         <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">

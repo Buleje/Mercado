@@ -692,14 +692,14 @@ export default function CtpPlantaMapa({
             <span className="inline-flex h-9 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-700)]">Toca el mapa para marcar la zona ({nVerts}){drawPerim > 0 ? ` · ${formatDist(drawPerim)}` : ""}{drawArea > 0 ? ` · ${fmtArea(drawArea)}` : ""}</span>
             <button type="button" onClick={addGpsPoint} disabled={locating} title="Agregar un vértice en mi ubicación GPS (caminar la planta)" className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Punto GPS</span></button>
             <button type="button" onClick={undo} disabled={nVerts === 0} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
-            <button type="button" onClick={finishDraw} disabled={nVerts < 3} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Terminar ({nVerts})</button>
+            <button type="button" onClick={finishDraw} disabled={nVerts < 3} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Terminar ({nVerts})</button>
             <button type="button" onClick={cancelDraw} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
           </>
         ) : editing ? (
           editSel ? (
             <>
               <span className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)]"><Edit3 className="h-4 w-4" />Moviendo {editSel.codigo} · {fmtArea(editArea)}</span>
-              <button type="button" onClick={saveEdit} disabled={savingEdit} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar</button>
+              <button type="button" onClick={saveEdit} disabled={savingEdit} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar</button>
               <button type="button" onClick={exitEdit} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Salir</button>
             </>
           ) : (

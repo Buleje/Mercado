@@ -1387,9 +1387,9 @@ function PromoEmbedFields({
   onChange: (patch: Partial<PromoEmbed>) => void;
 }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 p-4 space-y-3">
+    <div className="rounded-xl border-2 border-[var(--accent)]/30 bg-[var(--accent)]/5 p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-dark)] text-white">
           <ShoppingBag className="h-3.5 w-3.5" />
         </span>
         <div>

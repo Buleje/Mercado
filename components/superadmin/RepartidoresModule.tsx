@@ -687,7 +687,7 @@ function PartnerRow({
                 onClick={onApprove}
                 disabled={!kycCheck.ok}
                 title={kycCheck.ok ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
-                className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-xl bg-[var(--data-success-500)] text-xs font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+                className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-xl bg-[var(--accent-dark)] text-xs font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
               >
                 Aprobar
               </button>
@@ -805,11 +805,16 @@ function DetailDrawer({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex justify-end"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <aside
         className="relative w-full max-w-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <header className="sticky top-0 z-10 px-6 py-5 bg-[var(--surface-canvas)]/95 backdrop-blur border-b border-[var(--rule-base)]">
@@ -859,7 +864,7 @@ function DetailDrawer({
                 href={`https://wa.me/51${waPhone}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-8 px-2.5 rounded-lg bg-[var(--data-success-500)] text-xs font-bold text-white inline-flex items-center gap-1.5"
+                className="h-8 px-2.5 rounded-lg bg-[var(--accent-dark)] text-xs font-bold text-white inline-flex items-center gap-1.5"
               >
                 <WhatsAppIcon className="h-3.5 w-3.5" />
                 WhatsApp
@@ -913,7 +918,7 @@ function DetailDrawer({
                 onClick={onApprove}
                 disabled={actioning || !kycCheck.ok}
                 title={kycCheck.ok ? "Aprobar" : `Falta: ${kycCheck.missing.join(", ")}`}
-                className="flex-[2] h-11 rounded-xl bg-[var(--data-success-500)] text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                className="flex-[2] h-11 rounded-xl bg-[var(--accent-dark)] text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
               >
                 {actioning ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Aprobar repartidor"}
               </button>
@@ -1191,13 +1196,18 @@ function Modal({
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: onClose });
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"
         className="relative w-full max-w-md rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <header className="px-5 py-4 border-b border-[var(--rule-base)] flex items-start gap-3">
           <div
@@ -1285,7 +1295,7 @@ function ApproveModal({
           type="button"
           onClick={() => onConfirm(notes.trim() || undefined)}
           disabled={actioning}
-          className="flex-[2] h-11 rounded-xl bg-[var(--data-success-500)] text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+          className="flex-[2] h-11 rounded-xl bg-[var(--accent-dark)] text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
         >
           {actioning ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Aprobar y notificar"}
         </button>

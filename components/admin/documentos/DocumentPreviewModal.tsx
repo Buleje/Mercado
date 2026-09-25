@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useId } from "react";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { esHojaEditable, esHojaLegible } from "@/lib/documentos/hoja-calculo";
@@ -218,7 +219,11 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
 
   if (!doc) {
     return (
-      <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+        onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      >
         <div role="dialog" aria-modal="true" aria-label={loading ? "Cargando" : "No disponible"} className="bg-[var(--surface-raised)] rounded-3xl p-8 text-sm text-[var(--text-tertiary)]">{loading ? "Cargando…" : "No disponible"}</div>
       </div>
     );
@@ -240,6 +245,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
     <div
       className="fixed inset-0 z-modal flex items-center justify-center p-2 sm:p-3 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       {/* Casi toda la pantalla: un contrato o una planilla se leen mejor
           grandes, y la barra de herramientas de la derecha necesita su lugar
@@ -251,6 +257,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
         aria-labelledby={titleId}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         className="flex h-[96vh] w-full max-w-[1800px] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         {/* Header — en un celular los botones bajan a una segunda línea en vez
@@ -840,6 +847,7 @@ function RelatedSection({ doc, allDocs, onChanged }: { doc: DbDocument; allDocs:
 
       {adding ? (
         <select
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- el selector aparece para elegir el documento a vincular de inmediato
           autoFocus
           aria-label="Elegir documento para vincular"
           defaultValue=""
@@ -913,7 +921,7 @@ function ApprovalSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d: D
         <>
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" className="mb-2 h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
           <div className="flex gap-2">
-            <button onClick={() => act("approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3 min-h-10 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"><Check className="h-4 w-4" /> Aprobar</button>
+            <button onClick={() => act("approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3 min-h-10 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 dark:bg-[var(--accent)]"><Check className="h-4 w-4" /> Aprobar</button>
             <button onClick={() => act("reject")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--data-error-500)]/40 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 dark:text-[var(--data-error-500)]"><X className="h-4 w-4" /> Rechazar</button>
           </div>
         </>
@@ -1003,14 +1011,14 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             .filter((c: EntityOpt) => c.id)
         );
       })
-      .catch(() => {/* picker opcional: si falla, queda sin opciones de cliente */});
+      .catch((err) => logger.error("[document-preview] fetch customers failed", { error: String(err) }));
     fetch("/api/suppliers", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => {
         const arr = Array.isArray(data) ? data : data?.suppliers ?? [];
         setSuppliers(arr.map((s: { id: string; name: string }) => ({ id: s.id, name: s.name })));
       })
-      .catch(() => {/* picker opcional: si falla, queda sin opciones de proveedor */});
+      .catch((err) => logger.error("[document-preview] fetch suppliers failed", { error: String(err) }));
   }, []);
 
   async function save(field: string, body: Record<string, unknown>) {

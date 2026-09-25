@@ -43,9 +43,9 @@ export function formatBytes(b: number): string {
 export const ICONO_POR_FAMILIA: Record<FamiliaArchivo, { Icon: typeof FileIcon; tint: string; bg: string }> = {
   imagen: { Icon: ImageIcon, tint: "text-[var(--accent)]", bg: "bg-pink-50 dark:bg-pink-500/15" },
   video: { Icon: Film, tint: "text-[var(--accent)]", bg: "bg-violet-50 dark:bg-violet-500/15" },
-  audio: { Icon: Music, tint: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/15" },
+  audio: { Icon: Music, tint: "text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/15" },
   pdf: { Icon: FileText, tint: "text-red-500", bg: "bg-red-50 dark:bg-red-500/15" },
-  planilla: { Icon: FileSpreadsheet, tint: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/15" },
+  planilla: { Icon: FileSpreadsheet, tint: "text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/15" },
   texto: { Icon: FileText, tint: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/15" },
   presentacion: { Icon: Presentation, tint: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/15" },
   comprimido: { Icon: FileArchive, tint: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/15" },
