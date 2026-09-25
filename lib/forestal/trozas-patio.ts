@@ -16,6 +16,21 @@
  * PURO y client-safe.
  */
 
+import { esSinCodigo } from "./consumo-trozas";
+import {
+  ETIQUETA_TRAMO_DIAS,
+  TONO_TRAMO_DIAS,
+  TRAMOS_DIAS,
+  TRAMOS_DIAS_PATIO,
+  diasEnPatio,
+  diasParada,
+  tramoDeDias,
+  type TramoDias,
+} from "./patio-dias";
+
+/* La antigüedad se cuenta con UNA función para todo el libro (ADR-431). */
+export { diasParada };
+
 /** Lo que esta lib necesita de una troza. Es un subconjunto de `/trozas/patio`. */
 export interface TrozaPatio {
   id: string;
@@ -29,6 +44,11 @@ export interface TrozaPatio {
   consumidaEnId: string | null;
   despachadaEnId: string | null;
   noRecepcionada: boolean;
+  /**
+   * `false` = su GUÍA sigue en la bandeja (ADR-339): está anotada, no en la
+   * pila. Opcional porque no todo llamador la trae; `/trozas/patio` sí.
+   */
+  guiaRecepcionada?: boolean;
   descarte: boolean;
   /** Cuántos pedazos salieron de ella: si tiene, es una madre retrozada. */
   retrozos: number;
@@ -46,6 +66,7 @@ export interface TrozaPatio {
 export type EstadoTroza =
   | "libre"
   | "apartada"
+  | "por_recepcionar"
   | "consumida"
   | "despachada"
   | "retrozada"
@@ -55,6 +76,11 @@ export type EstadoTroza =
 export const ESTADO_META: Record<EstadoTroza, { label: string; hint: string; tono: "ok" | "info" | "warn" | "muted" }> = {
   libre: { label: "Libre en patio", hint: "Se puede llevar a la sierra hoy", tono: "ok" },
   apartada: { label: "Apartada en un lote", hint: "Reservada para una corrida; no se puede usar en otra", tono: "info" },
+  por_recepcionar: {
+    label: "Por recepcionar",
+    hint: "Su guía sigue en la bandeja: está anotada, todavía no en el patio",
+    tono: "warn",
+  },
   consumida: { label: "Ya aserrada", hint: "Entró a una corrida de producción", tono: "muted" },
   despachada: { label: "Salió sin aserrar", hint: "Se fue entera con su guía (ADR-363)", tono: "muted" },
   retrozada: { label: "Partida en pedazos", hint: "No se consume: van sus retrozos, contarla sería duplicar", tono: "muted" },
@@ -64,7 +90,7 @@ export const ESTADO_META: Record<EstadoTroza, { label: string; hint: string; ton
 
 /** El orden en que se muestran: primero lo accionable. */
 export const ORDEN_ESTADOS: EstadoTroza[] = [
-  "libre", "apartada", "no_recepcionada", "consumida", "despachada", "retrozada", "descarte",
+  "libre", "apartada", "por_recepcionar", "no_recepcionada", "consumida", "despachada", "retrozada", "descarte",
 ];
 
 /**
@@ -73,6 +99,11 @@ export const ORDEN_ESTADOS: EstadoTroza[] = [
  * Se evalúa de la marca más determinante a la menos: una pieza descartada no es
  * «libre» aunque nadie la haya consumido, y una madre retrozada no es «libre»
  * aunque su volumen siga en la base.
+ *
+ * «Por recepcionar» (ADR-431): la pieza de una guía que sigue en la bandeja no
+ * es «Libre en patio · Se puede llevar a la sierra hoy». En Blas (24-09) esta
+ * pestaña decía 77 libres cuando sólo 46 habían bajado del camión: las 31 de
+ * 19-SEC estaban anotadas, no en la pila. Mismo criterio que Consumos y Saldos.
  */
 export function estadoDeTroza(t: TrozaPatio): EstadoTroza {
   if (t.descarte) return "descarte";
@@ -80,6 +111,7 @@ export function estadoDeTroza(t: TrozaPatio): EstadoTroza {
   if (t.despachadaEnId) return "despachada";
   if (t.consumidaEnId) return "consumida";
   if (t.noRecepcionada) return "no_recepcionada";
+  if (t.guiaRecepcionada === false) return "por_recepcionar";
   if (t.loteAserrioCode) return "apartada";
   return "libre";
 }
@@ -149,7 +181,8 @@ export function resumirPatio(trozas: readonly TrozaPatio[]): ResumenPatio {
       if (!(t.permiso ?? "").trim()) sinTitulo = { piezas: sinTitulo.piezas + 1, m3: r3(sinTitulo.m3 + v) };
     }
     if (e === "apartada") apartadas += 1;
-    if (!(t.codificacion ?? "").trim()) sinCodificar += 1;
+    /* «-» también es sin código (49 trozas de una guía de Blas lo guardaban). */
+    if (esSinCodigo(t)) sinCodificar += 1;
 
     const ge = porEstado.get(e) ?? { piezas: 0, m3: 0 };
     porEstado.set(e, { piezas: ge.piezas + 1, m3: r3(ge.m3 + v) });
@@ -180,30 +213,28 @@ export function resumirPatio(trozas: readonly TrozaPatio[]): ResumenPatio {
 // ─── Antigüedad ────────────────────────────────────────────────────────────
 
 /**
- * Días que lleva parada una pieza. Cuenta desde que BAJÓ DEL CAMIÓN si se sabe;
- * si no, desde el asiento de la guía. Comparar por día UTC y no por hora local:
- * Lima es UTC−5 y a las 20:00 la resta local adelanta un día
- * (`ctp-radar-tiempo` aprendió lo mismo).
+ * Tramos de antigüedad: la escala ÚNICA del patio (`TRAMOS_DIAS_PATIO`,
+ * ADR-431) — 0-14 · 15-29 · 30-59 · 60 o más, siempre con `>=`. La madera
+ * tropical en troza se mancha y se raja; esta pestaña, Consumos y el Aging de
+ * Saldos pintaban el mismo tronco con escalas distintas. Las claves son las de
+ * `TramoDias`: el filtro de esta pestaña y el de Consumos hablan igual.
  */
-export function diasParada(t: TrozaPatio, hoy: Date): number | null {
-  const iso = t.fechaRecepcion ?? t.fechaIngreso;
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  const diaUtc = (x: Date) => Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate());
-  return Math.max(0, Math.round((diaUtc(hoy) - diaUtc(d)) / 86_400_000));
+export interface DefTramoAntiguedad {
+  key: TramoDias;
+  label: string;
+  /** Días, bordes incluidos. */
+  desde: number;
+  hasta: number;
+  tono: "ok" | "warn" | "danger";
 }
 
-/**
- * Tramos de antigüedad. La madera tropical en troza se mancha y se raja: los
- * cortes son los mismos que ya usa el patio por guía (`CtpPatioAging`), para
- * que las dos pantallas no digan cosas distintas del mismo tronco.
- */
-export const TRAMOS_ANTIGUEDAD = [
-  { key: "fresca", label: "Menos de 30 días", desde: 0, hasta: 29, tono: "ok" as const },
-  { key: "atencion", label: "30 a 59 días", desde: 30, hasta: 59, tono: "warn" as const },
-  { key: "riesgo", label: "60 días o más", desde: 60, hasta: Number.POSITIVE_INFINITY, tono: "danger" as const },
-];
+export const TRAMOS_ANTIGUEDAD: readonly DefTramoAntiguedad[] = TRAMOS_DIAS.map((key, i) => ({
+  key,
+  label: ETIQUETA_TRAMO_DIAS[key],
+  desde: i === 0 ? 0 : TRAMOS_DIAS_PATIO[i - 1],
+  hasta: i < TRAMOS_DIAS_PATIO.length ? TRAMOS_DIAS_PATIO[i] - 1 : Number.POSITIVE_INFINITY,
+  tono: TONO_TRAMO_DIAS[key],
+}));
 
 export interface TramoAntiguedad {
   key: string;
@@ -228,21 +259,19 @@ export function antiguedadDelPatio(
 
   for (const t of trozas) {
     if (!estaEnPatio(estadoDeTroza(t))) continue;
-    const d = diasParada(t, hoy);
+    const d = diasEnPatio(t, hoy);
     if (d == null) { sinFecha += 1; continue; }
     masVieja = masVieja == null ? d : Math.max(masVieja, d);
-    const i = TRAMOS_ANTIGUEDAD.findIndex((x) => d >= x.desde && d <= x.hasta);
-    const tramo = tramos[i < 0 ? tramos.length - 1 : i];
+    const tramo = tramos.find((x) => x.key === tramoDeDias(d)) ?? tramos[tramos.length - 1];
     tramo.piezas += 1;
     tramo.m3 = r3(tramo.m3 + vol(t));
   }
   return { tramos, sinFecha, masVieja };
 }
 
-/** En qué tramo cae una antigüedad concreta. `null` si no hay fecha. */
-export function tramoDe(dias: number | null): string | null {
-  if (dias == null) return null;
-  return (TRAMOS_ANTIGUEDAD.find((x) => dias >= x.desde && dias <= x.hasta) ?? TRAMOS_ANTIGUEDAD[TRAMOS_ANTIGUEDAD.length - 1]).key;
+/** En qué tramo cae una antigüedad concreta. `null` si no hay fecha. Es `tramoDeDias`. */
+export function tramoDe(dias: number | null): TramoDias | null {
+  return tramoDeDias(dias);
 }
 
 // ─── Buscar en el patio ────────────────────────────────────────────────────
@@ -264,7 +293,7 @@ export interface FiltroTrozas {
   texto?: string;
   estado?: EstadoTroza | readonly EstadoTroza[] | null;
   especie?: string | readonly string[] | null;
-  /** `key` de `TRAMOS_ANTIGUEDAD`. */
+  /** `key` de `TRAMOS_ANTIGUEDAD` (= `TramoDias`). */
   tramo?: string | readonly string[] | null;
   /**
    * N° de GTF con la que entró la pieza.
@@ -355,7 +384,8 @@ export function filtrarPatio<T extends TrozaPatio>(trozas: readonly T[], f: Filt
     /* Sin fecha no hay tramo, y una pieza sin tramo NO entra en un tramo
        pedido: la lista afirmaría de ella algo que el libro no sabe. */
     if (tramos.length > 0) {
-      const suyo = tramoDe(diasParada(t, hoy));
+      /* Lo por recepcionar no tiene días EN EL PATIO (ADR-431, C7). */
+      const suyo = tramoDeDias(diasEnPatio(t, hoy));
       if (suyo == null || !tramos.includes(suyo)) return false;
     }
     if (guias.length > 0 && !guias.includes((t.gtfNumber ?? "").trim())) return false;

@@ -1374,15 +1374,19 @@ export class WoodEntriesDB {
    *
    * `loteId` acota al lote: un lote tiene decenas de piezas, así que pedirlo
    * scopeado devuelve SIEMPRE la lista completa, sin depender del tope.
+   *
+   * `contratoId` es «Solo este permiso» (ADR-421/431): el vínculo interno de la
+   * GUÍA (`WoodEntry.contratoId`, indexado con `tenantId`), no el texto del
+   * permiso. `tenantId` va en la raíz del `where`, así que un id de contrato de
+   * otro negocio no trae nada. Se combina con `loteId` (AND).
    */
-  static async trozasDelPatio(tenantId: string, opts: { limite?: number; loteId?: string } = {}) {
+  static async trozasDelPatio(
+    tenantId: string,
+    opts: { limite?: number; loteId?: string; contratoId?: string } = {},
+  ) {
     if (!tenantId) throw new Error("tenantId is required");
     return prisma.woodEntryTroza.findMany({
-      where: {
-        tenantId,
-        ...(opts.loteId ? { loteAserrioId: opts.loteId } : {}),
-        entry: { deletedAt: null, status: { notIn: ["anulado", "rechazado"] } },
-      },
+      where: WoodEntriesDB.wherePatio(tenantId, opts),
       orderBy: [{ createdAt: "desc" }, { orden: "asc" }],
       /* 5000 y no 1000: es el máximo que la consulta ya admitía, y el default
          viejo dejaba fuera cuatro quintos de lo que el sistema podía traer. */
@@ -1403,6 +1407,9 @@ export class WoodEntriesDB {
             // cuando entra la carga de un permiso entero (ADR-342).
             originCode: true,
             originSourceNumber: true,
+            /* ¿La GUÍA declara especie CITES? (ADR-431). Es de la guía, no de
+               la troza: el filtro del patio lo rotula «guía CITES». */
+            speciesCites: true,
             /* De dónde salió el DATO de esta pieza (Brandon, 2026-09-02:
                «importados o puestos»). No hay un campo que lo declare, pero
                el hecho sí está guardado: una guía traída del SNIFFS deja su
@@ -1446,7 +1453,7 @@ export class WoodEntriesDB {
    */
   static async trozasComoConsumibles(
     tenantId: string,
-    opts: { limite?: number; loteId?: string } = {},
+    opts: { limite?: number; loteId?: string; contratoId?: string } = {},
   ): Promise<TrozaConsumible[]> {
     const filas = await WoodEntriesDB.trozasDelPatio(tenantId, opts);
     const consumido = await WoodEntriesDB.consumidoPorIngreso(
@@ -1465,6 +1472,9 @@ export class WoodEntriesDB {
       dimensiones: t.dimensiones,
       d1Cm: num(t.d1Cm),
       d2Cm: num(t.d2Cm),
+      /* El diámetro declarado de la pieza: la columna existía y no se mapeaba,
+         así que el filtro por diámetro no tenía de dónde leer (ADR-431). */
+      diametroCm: num(t.diametroCm),
       largoM: num(t.largoM),
       volumenM3: num(t.volumenM3),
       gtfNumber: t.entry.gtfNumber,
@@ -1481,6 +1491,8 @@ export class WoodEntriesDB {
       }),
       permiso: t.entry.originCode,
       resolucion: t.entry.originSourceNumber,
+      /* DERIVADO de la guía, no de la troza (ver `TrozaConsumible.guiaCites`). */
+      guiaCites: t.entry.speciesCites === true,
       /* DERIVADO, y se dice que lo es: «serfor» = la guía trae su constancia
          del SNIFFS, así que la troza bajó del documento oficial; «manual» =
          se cargó a mano. No es un campo declarado en la troza. */
@@ -1551,16 +1563,34 @@ export class WoodEntriesDB {
     return { piezas: Number(f?.piezas ?? 0), m3: Number(f?.m3 ?? 0) };
   }
 
-  /** Cuántas piezas tiene el patio DE VERDAD: el tope de arriba no puede mentir. */
-  static async contarTrozasDelPatio(tenantId: string, opts: { loteId?: string } = {}) {
+  /**
+   * Cuántas piezas tiene el patio DE VERDAD: el tope de arriba no puede mentir.
+   * Mismo `where` que `trozasDelPatio` (`wherePatio`): si el conteo y la lista
+   * filtraran distinto, «hay N y estás viendo M» mentiría.
+   */
+  static async contarTrozasDelPatio(tenantId: string, opts: { loteId?: string; contratoId?: string } = {}) {
     if (!tenantId) throw new Error("tenantId is required");
-    return prisma.woodEntryTroza.count({
-      where: {
-        tenantId,
-        ...(opts.loteId ? { loteAserrioId: opts.loteId } : {}),
-        entry: { deletedAt: null, status: { notIn: ["anulado", "rechazado"] } },
+    return prisma.woodEntryTroza.count({ where: WoodEntriesDB.wherePatio(tenantId, opts) });
+  }
+
+  /**
+   * El `where` del patio, UNA vez para la lista y el conteo. `tenantId` en la
+   * raíz siempre; `loteId` y `contratoId` sólo si vienen (AND entre ellos).
+   */
+  static wherePatio(
+    tenantId: string,
+    opts: { loteId?: string; contratoId?: string } = {},
+  ): Prisma.WoodEntryTrozaWhereInput {
+    if (!tenantId) throw new Error("tenantId is required");
+    return {
+      tenantId,
+      ...(opts.loteId ? { loteAserrioId: opts.loteId } : {}),
+      entry: {
+        deletedAt: null,
+        status: { notIn: ["anulado", "rechazado"] },
+        ...(opts.contratoId ? { contratoId: opts.contratoId } : {}),
       },
-    });
+    };
   }
 
   /**

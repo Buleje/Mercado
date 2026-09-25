@@ -74,9 +74,23 @@ const PATIO: TrozaConsumible[] = [
   troza({ id: "B", permiso: "P-1", especieComun: "CAPIRONA", gtfNumber: "G-2", volumenM3: 4 }),
   troza({ id: "C", permiso: "P-2", especieComun: "TORNILLO", gtfNumber: "G-3", volumenM3: 6 }),
   // Anotada, todavía no bajó del camión.
-  troza({ id: "D", permiso: "P-1", especieComun: "TORNILLO", gtfNumber: "G-4", volumenM3: 5, guiaRecepcionada: false }),
+  troza({
+    id: "D",
+    permiso: "P-1",
+    especieComun: "TORNILLO",
+    gtfNumber: "G-4",
+    volumenM3: 5,
+    guiaRecepcionada: false,
+  }),
   // Ya está en un lote: no es patio libre.
-  troza({ id: "E", permiso: "P-1", especieComun: "TORNILLO", gtfNumber: "G-1", volumenM3: 3, loteAserrioId: "L1" }),
+  troza({
+    id: "E",
+    permiso: "P-1",
+    especieComun: "TORNILLO",
+    gtfNumber: "G-1",
+    volumenM3: 3,
+    loteAserrioId: "L1",
+  }),
 ];
 
 const ENTRADA: EntradaCapacidad = {
@@ -88,7 +102,13 @@ const ENTRADA: EntradaCapacidad = {
   /* Tres corridas con saldo: una de un solo permiso, una con dos adentro y una
      sin origen. El libro del período firma más de lo que hay (usados). */
   corridas: [
-    corrida({ id: "c1", disponible: 10, titularOrigen: ["P-1"], gtfOrigen: ["G-1"], especie: "TORNILLO" }),
+    corrida({
+      id: "c1",
+      disponible: 10,
+      titularOrigen: ["P-1"],
+      gtfOrigen: ["G-1"],
+      especie: "TORNILLO",
+    }),
     corrida({ id: "c2", disponible: 3, titularOrigen: ["P-1", "P-2"], gtfOrigen: ["G-1", "G-3"] }),
     corrida({ id: "c3", disponible: 2, titularOrigen: [], gtfOrigen: [] }),
   ],
@@ -127,7 +147,9 @@ describe("filtros encadenados", () => {
   });
 
   it("un permiso cuya madera entera está sin recibir se puede elegir igual", () => {
-    const soloSinRecibir = [troza({ id: "X", permiso: "P-9", guiaRecepcionada: false, volumenM3: 2 })];
+    const soloSinRecibir = [
+      troza({ id: "X", permiso: "P-9", guiaRecepcionada: false, volumenM3: 2 }),
+    ];
     expect(opcionesDeCapacidad(soloSinRecibir, {}).permisos.map((p) => p.valor)).toEqual(["P-9"]);
   });
 });
@@ -174,14 +196,19 @@ describe("el balance bajo filtros", () => {
   });
 
   it("una corrida en otra unidad no se suma y se avisa", () => {
-    const b = armarBalance({ ...ENTRADA, corridas: [corrida({ id: "x", unidad: "pt", disponible: 400 })] }, {});
+    const b = armarBalance(
+      { ...ENTRADA, corridas: [corrida({ id: "x", unidad: "pt", disponible: 400 })] },
+      {},
+    );
     const prod = b.fuentes.find((x) => x.clave === "productos")!;
     expect(prod.m3).toBe(0);
     expect(prod.detalle).toMatch(/1 corrida en pt no se suman/);
   });
 
   it("el permiso que sólo existe ya aserrado se puede elegir igual", () => {
-    const { permisos } = opcionesDeCapacidad([], {}, [corrida({ id: "y", disponible: 4, titularOrigen: ["P-9"] })]);
+    const { permisos } = opcionesDeCapacidad([], {}, [
+      corrida({ id: "y", disponible: 4, titularOrigen: ["P-9"] }),
+    ]);
     expect(permisos).toEqual([{ valor: "P-9", piezas: 1, m3: 4 }]);
   });
 
@@ -194,7 +221,9 @@ describe("el balance bajo filtros", () => {
 
   it("los lotes SÍ honran permiso y especie", () => {
     expect(lotesDeFuente(ENTRADA.lotes, { permiso: ["P-2"] }).map((l) => l.code)).toEqual(["L-2"]);
-    expect(lotesDeFuente(ENTRADA.lotes, { especie: ["tornillo"] }).map((l) => l.code)).toEqual(["L-1"]);
+    expect(lotesDeFuente(ENTRADA.lotes, { especie: ["tornillo"] }).map((l) => l.code)).toEqual([
+      "L-1",
+    ]);
   });
 
   it("el total es la suma de lo convertido, no de los m³ crudos", () => {
@@ -225,7 +254,10 @@ describe("las filas del detalle", () => {
   });
 
   it("la especie del filtro no distingue mayúsculas", () => {
-    expect(trozasDeFuente("patio", PATIO, { especie: ["tornillo"] }).map((t) => t.id)).toEqual(["A", "C"]);
+    expect(trozasDeFuente("patio", PATIO, { especie: ["tornillo"] }).map((t) => t.id)).toEqual([
+      "A",
+      "C",
+    ]);
   });
 });
 
@@ -238,16 +270,19 @@ describe("la fecha de la pieza", () => {
   it("la recepción es un instante y se lee en hora de Lima", async () => {
     const { fechaDeTroza } = await import("@/lib/forestal/capacidad-de-planta");
     // 2026-09-01T13:00Z = 08:00 en Lima, el mismo día.
-    expect(fechaDeTroza(troza({ id: "F2", fechaRecepcion: "2026-09-01T13:00:50.312Z" }))).toMatch(/01/);
+    expect(fechaDeTroza(troza({ id: "F2", fechaRecepcion: "2026-09-01T13:00:50.312Z" }))).toMatch(
+      /01/,
+    );
     // 2026-09-02T02:00Z = 21:00 del 1 en Lima: la fecha del negocio es el 1.
-    expect(fechaDeTroza(troza({ id: "F3", fechaRecepcion: "2026-09-02T02:00:00.000Z" }))).toMatch(/01/);
+    expect(fechaDeTroza(troza({ id: "F3", fechaRecepcion: "2026-09-02T02:00:00.000Z" }))).toMatch(
+      /01/,
+    );
   });
 
   it("sin ninguna fecha no inventa una", () => {
     expect(filaDeTroza(troza({ id: "F4" })).fecha).toBe("—");
   });
 });
-
 
 describe("las filas del detalle (tabla)", () => {
   it("un lote trae sus piezas como filas hijas, con la guía", () => {
@@ -257,14 +292,28 @@ describe("las filas del detalle (tabla)", () => {
         lote({
           code: "L-9",
           permisos: ["P-1"],
-          trozas: [{ id: "t1", codigo: "T-1", especie: "TORNILLO", m3: 1.5, permiso: "P-1", guia: "G-1", consumida: false }],
+          trozas: [
+            {
+              id: "t1",
+              codigo: "T-1",
+              especie: "TORNILLO",
+              m3: 1.5,
+              permiso: "P-1",
+              guia: "G-1",
+              consumida: false,
+            },
+          ],
         }),
       ],
     };
     const fuente = armarBalance(entrada, {}).fuentes.find((f) => f.clave === "lotes")!;
     const t = tablaDeFuente(fuente, entrada, {});
     expect(t.filas[0].celdas.Lote).toBe("L-9");
-    expect(t.filas[0].hijas?.filas[0]).toMatchObject({ Código: "T-1", Guía: "G-1", Estado: "sin aserrar" });
+    expect(t.filas[0].hijas?.filas[0]).toMatchObject({
+      Código: "T-1",
+      Guía: "G-1",
+      Estado: "sin aserrar",
+    });
   });
 
   it("productos = una fila por corrida, con su permiso o «mezclados»", () => {
@@ -281,6 +330,8 @@ describe("la URL de Saldos", () => {
     expect(leerParams("?seccion=capacidad&permiso=P-1&guia=G-1", SECC)).toEqual({
       seccion: "capacidad",
       filtros: { permiso: ["P-1"], guia: ["G-1"] },
+      /* La especie de los KPIs va en su propio parámetro (2026-09-24). */
+      especieKpi: "",
     });
     expect(leerParams("?seccion=otra", SECC).seccion).toBeNull();
   });
@@ -299,7 +350,11 @@ describe("la URL de Saldos", () => {
   });
 
   it("escribe lo que hay y borra lo vacío", () => {
-    const url = escribirParams(new URL("http://x/admin?tab=ctp&vista=saldos&especie=VIEJA"), "capacidad", { permiso: ["P-1", "P-2"] });
+    const url = escribirParams(
+      new URL("http://x/admin?tab=ctp&vista=saldos&especie=VIEJA"),
+      "capacidad",
+      { permiso: ["P-1", "P-2"] },
+    );
     expect(url.searchParams.get("seccion")).toBe("capacidad");
     expect(url.searchParams.get("permiso")).toBe("P-1,P-2");
     expect(url.searchParams.has("especie")).toBe(false);
@@ -338,7 +393,6 @@ describe("la conciliación con el libro", () => {
   });
 });
 
-
 describe("las reglas del patio mandan sobre qué es «libre»", () => {
   it("una pieza despachada en rollo, un descarte o una madre retrozada no son patio libre", () => {
     const patio = [
@@ -357,11 +411,19 @@ describe("las reglas del patio mandan sobre qué es «libre»", () => {
 
 describe("cuánto admite un lote (cota máxima)", () => {
   it("consumió y no declaró: el techo entero por delante, no cero", () => {
-    expect(admiteDelLote(lote({ code: "a", consumidoM3: 10, esperado56M3: 5.6, producidoM3: null, restaM3: null }))).toBe(5.6);
+    expect(
+      admiteDelLote(
+        lote({ code: "a", consumidoM3: 10, esperado56M3: 5.6, producidoM3: null, restaM3: null }),
+      ),
+    ).toBe(5.6);
   });
 
   it("ya pasó el techo: aporta cero, no un negativo que reste", () => {
-    expect(admiteDelLote(lote({ code: "b", consumidoM3: 10, esperado56M3: 5.6, producidoM3: 7, restaM3: -1.4 }))).toBe(0);
+    expect(
+      admiteDelLote(
+        lote({ code: "b", consumidoM3: 10, esperado56M3: 5.6, producidoM3: 7, restaM3: -1.4 }),
+      ),
+    ).toBe(0);
   });
 
   it("sin consumo ni producción: nada que admitir", () => {
@@ -373,7 +435,23 @@ describe("las cinco fuentes", () => {
   it("la madera apartada en lotes sin aserrar es una fuente, convertida al 56 %", () => {
     const entrada: EntradaCapacidad = {
       ...ENTRADA,
-      lotes: [lote({ code: "L-9", apartadoM3: 10, trozas: [{ id: "t", codigo: "T", especie: "TORNILLO", m3: 10, permiso: "", guia: "", consumida: false }] })],
+      lotes: [
+        lote({
+          code: "L-9",
+          apartadoM3: 10,
+          trozas: [
+            {
+              id: "t",
+              codigo: "T",
+              especie: "TORNILLO",
+              m3: 10,
+              permiso: "",
+              guia: "",
+              consumida: false,
+            },
+          ],
+        }),
+      ],
     };
     const f = armarBalance(entrada, {}).fuentes.find((x) => x.clave === "apartado")!;
     expect(f).toMatchObject({ m3: 10, enProducto: 5.6, convertido: true, filas: 1 });
@@ -383,8 +461,22 @@ describe("las cinco fuentes", () => {
     const entrada: EntradaCapacidad = {
       ...ENTRADA,
       lotes: [
-        lote({ code: "M", permisos: ["P-1", "P-2"], consumidoM3: 10, esperado56M3: 5.6, producidoM3: 0, restaM3: 5.6 }),
-        lote({ code: "U", permisos: ["P-1"], consumidoM3: 10, esperado56M3: 5.6, producidoM3: 0, restaM3: 5.6 }),
+        lote({
+          code: "M",
+          permisos: ["P-1", "P-2"],
+          consumidoM3: 10,
+          esperado56M3: 5.6,
+          producidoM3: 0,
+          restaM3: 5.6,
+        }),
+        lote({
+          code: "U",
+          permisos: ["P-1"],
+          consumidoM3: 10,
+          esperado56M3: 5.6,
+          producidoM3: 0,
+          restaM3: 5.6,
+        }),
       ],
     };
     const f = armarBalance(entrada, { permiso: ["P-1"] }).fuentes.find((x) => x.clave === "lotes")!;
@@ -404,9 +496,14 @@ describe("las cinco fuentes", () => {
 describe("cuando una fuente no llegó", () => {
   it("el patio cargando o fallado no vale cero: lo dice y no suma", () => {
     const cargando = armarBalance({ ...ENTRADA, estado: { patio: "cargando" } }, {});
-    expect(cargando.fuentes.find((f) => f.clave === "patio")).toMatchObject({ m3: 0, noAtribuible: "Cargando el patio…" });
+    expect(cargando.fuentes.find((f) => f.clave === "patio")).toMatchObject({
+      m3: 0,
+      noAtribuible: "Cargando el patio…",
+    });
     const fallo = armarBalance({ ...ENTRADA, estado: { patio: "error" } }, {});
-    expect(fallo.fuentes.find((f) => f.clave === "patio")?.noAtribuible).toMatch(/No se pudo leer el patio/);
+    expect(fallo.fuentes.find((f) => f.clave === "patio")?.noAtribuible).toMatch(
+      /No se pudo leer el patio/,
+    );
     expect(fallo.fuentes.find((f) => f.clave === "porRecepcionar")?.m3).toBe(0);
   });
 
@@ -420,7 +517,9 @@ describe("cuando una fuente no llegó", () => {
 
   it("un patio recortado por el endpoint avisa que el techo es parcial", () => {
     const b = armarBalance({ ...ENTRADA, patioTruncado: { devueltas: 5000, total: 6120 } }, {});
-    expect(b.fuentes.find((f) => f.clave === "patio")?.detalle).toMatch(/sólo llegaron 5,?000|sólo llegaron 5\.000/);
+    expect(b.fuentes.find((f) => f.clave === "patio")?.detalle).toMatch(
+      /sólo llegaron 5,?000|sólo llegaron 5\.000/,
+    );
   });
 });
 
@@ -465,7 +564,12 @@ describe("los filtros se cruzan en las dos direcciones (Brandon, 2026-09-08)", (
   });
 
   it("las corridas con DOS permisos adentro no se reparten entre ellos", () => {
-    const mezcla = corrida({ id: "m", disponible: 3, titularOrigen: ["P-1", "P-2"], especie: "TORNILLO" });
+    const mezcla = corrida({
+      id: "m",
+      disponible: 3,
+      titularOrigen: ["P-1", "P-2"],
+      especie: "TORNILLO",
+    });
     const { permisos } = opcionesDeCapacidad([], { especie: ["TORNILLO"] }, [mezcla]);
     expect(permisos).toEqual([]);
   });

@@ -76,9 +76,25 @@ describe("estado de una troza", () => {
   it("sólo libre y apartada siguen ocupando lugar en el patio", () => {
     expect(estaEnPatio("libre")).toBe(true);
     expect(estaEnPatio("apartada")).toBe(true);
-    for (const e of ["consumida", "despachada", "retrozada", "descarte", "no_recepcionada"] as const) {
+    for (const e of ["consumida", "despachada", "retrozada", "descarte", "no_recepcionada", "por_recepcionar"] as const) {
       expect(estaEnPatio(e)).toBe(false);
     }
+  });
+
+  it("⭐ la guía sin recepcionar NO es «Libre en patio» (ADR-431: 77 «libres» en Blas eran 46)", () => {
+    expect(estadoDeTroza(t_({ guiaRecepcionada: false }))).toBe("por_recepcionar");
+    expect(estadoDeTroza(t_({ guiaRecepcionada: true }))).toBe("libre");
+    expect(estadoDeTroza(t_({ guiaRecepcionada: undefined }))).toBe("libre");
+    // Lo que no llegó nunca y lo ya aserrado mandan sobre la bandeja.
+    expect(estadoDeTroza(t_({ guiaRecepcionada: false, noRecepcionada: true }))).toBe("no_recepcionada");
+    expect(estadoDeTroza(t_({ guiaRecepcionada: false, consumidaEnId: "c1" }))).toBe("consumida");
+    // Ni «apartada»: si la guía no se recibió, la pieza no está en la pila.
+    expect(estadoDeTroza(t_({ guiaRecepcionada: false, loteAserrioCode: "LA-1" }))).toBe("por_recepcionar");
+  });
+
+  it("«-» cuenta como sin código, igual que en Consumos", () => {
+    const r = resumirPatio([t_({ id: "a", codificacion: "-" }), t_({ id: "b", codificacion: "25" })]);
+    expect(r.sinCodificar).toBe(1);
   });
 });
 
@@ -158,14 +174,14 @@ describe("antigüedad", () => {
     expect(diasParada(t_({ fechaIngreso: "no es fecha" }), hoy)).toBeNull();
   });
 
-  it("reparte en los tres tramos", () => {
+  it("reparte en los cuatro tramos de la escala única (ADR-431)", () => {
     const { tramos } = antiguedadDelPatio([
       t_({ id: "a", fechaIngreso: "2026-08-05T00:00:00.000Z", volumenM3: 1 }),   // 5 días
       t_({ id: "b", fechaIngreso: "2026-07-05T00:00:00.000Z", volumenM3: 2 }),   // 36
       t_({ id: "c", fechaIngreso: "2026-05-05T00:00:00.000Z", volumenM3: 3 }),   // 97
     ], hoy);
     expect(tramos.map((t) => [t.key, t.piezas, t.m3])).toEqual([
-      ["fresca", 1, 1], ["atencion", 1, 2], ["riesgo", 1, 3],
+      ["hasta15", 1, 1], ["16a30", 0, 0], ["31a60", 1, 2], ["mas60", 1, 3],
     ]);
   });
 
@@ -189,14 +205,26 @@ describe("antigüedad", () => {
     expect(antiguedadDelPatio([], hoy).masVieja).toBeNull();
   });
 
-  it("tramoDe ubica cada antigüedad, y sin fecha no ubica ninguna", () => {
-    expect(tramoDe(0)).toBe("fresca");
-    expect(tramoDe(29)).toBe("fresca");
-    expect(tramoDe(30)).toBe("atencion");
-    expect(tramoDe(59)).toBe("atencion");
-    expect(tramoDe(60)).toBe("riesgo");
-    expect(tramoDe(9999)).toBe("riesgo");
+  it("tramoDe ubica cada antigüedad con los bordes de Consumos (>=), y sin fecha no ubica ninguna", () => {
+    expect(tramoDe(0)).toBe("hasta15");
+    expect(tramoDe(14)).toBe("hasta15");
+    expect(tramoDe(15)).toBe("16a30");
+    expect(tramoDe(29)).toBe("16a30");
+    expect(tramoDe(30)).toBe("31a60");
+    expect(tramoDe(59)).toBe("31a60");
+    expect(tramoDe(60)).toBe("mas60");
+    expect(tramoDe(9999)).toBe("mas60");
     expect(tramoDe(null)).toBeNull();
+  });
+
+  it("⭐ la pieza por recepcionar no envejece en el patio: su fecha es la del asiento", () => {
+    const { tramos, masVieja, sinFecha } = antiguedadDelPatio(
+      [t_({ id: "a", fechaIngreso: "2026-05-01T00:00:00.000Z", guiaRecepcionada: false })],
+      hoy,
+    );
+    expect(tramos.every((t) => t.piezas === 0)).toBe(true);
+    expect(masVieja).toBeNull();
+    expect(sinFecha).toBe(0);
   });
 });
 
@@ -230,7 +258,7 @@ describe("buscar en el patio", () => {
   it("filtra por estado, por especie y por tramo", () => {
     expect(filtrarPatio(patio, { estado: "consumida" }, hoy).map((t) => t.id)).toEqual(["c"]);
     expect(filtrarPatio(patio, { especie: "Capirona" }, hoy).map((t) => t.id)).toEqual(["b"]);
-    expect(filtrarPatio(patio, { tramo: "fresca" }, hoy).map((t) => t.id)).toEqual(["a"]);
+    expect(filtrarPatio(patio, { tramo: "hasta15" }, hoy).map((t) => t.id)).toEqual(["a"]);
   });
 
   it("los criterios se acumulan, no se reemplazan", () => {

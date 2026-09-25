@@ -33,7 +33,8 @@
 
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
-import { estaDisponible, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { estaLibreEnPatio } from "@/lib/forestal/patio-resumen";
 
 export type ClaveFuente = "porRecepcionar" | "patio" | "apartado" | "lotes" | "productos";
 
@@ -207,10 +208,12 @@ export interface EntradaCapacidad {
 
 /** Rolliza libre: sin lote, sin corrida y de una guía ya recibida (ADR-339). */
 export function esLibre(t: TrozaConsumible): boolean {
-  /* DISPONIBLE según las reglas del patio (`estaDisponible`): no consumida, no
-     despachada en rollo, no descarte, no una madre ya retrozada, con volumen.
-     Reimplementar esa lista acá contaba madera que ya salió de la planta. */
-  return !t.loteAserrioId && t.guiaRecepcionada !== false && estaDisponible(t);
+  /* El MISMO predicado que la tabla y la KPI de Consumos (ADR-431):
+     `estaLibreEnPatio` = en el patio (guía recibida + `estaDisponible`: no
+     consumida, no despachada en rollo, no descarte, no madre retrozada, con
+     volumen) y sin lote. Eran dos copias equivalentes; una copia que se queda
+     corta es la que un día cuenta madera que ya salió de la planta. */
+  return estaLibreEnPatio(t);
 }
 
 /** Anotada pero todavía no bajó del camión. */

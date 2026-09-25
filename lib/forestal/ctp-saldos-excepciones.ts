@@ -17,6 +17,15 @@
  */
 
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import {
+  EPS,
+  avisosDeOperacion,
+  cubrePendiente,
+  detalleNegativo,
+  fechaCorta,
+  m3,
+  plural,
+} from "@/lib/forestal/ctp-saldos-avisos";
 
 export type TonoExcepcion = "error" | "warning" | "info";
 
@@ -26,7 +35,23 @@ export type ClaveExcepcion =
   | "valle-negativo"
   | "sin-declarar"
   | "sin-validar"
-  | "por-agotarse";
+  | "por-agotarse"
+  | "origen-incompleto"
+  | "lotes-vencidos"
+  | "guias-varadas"
+  | "sin-costo";
+
+/** Las pestañas del libro a las que un aviso puede mandar. */
+export type DestinoExcepcion =
+  | "ingresos"
+  | "produccion"
+  | "despacho"
+  | "lotes"
+  | "consumos"
+  | "rentabilidad";
+
+/** Las secciones de la MISMA pantalla de Saldos donde vive un bloque. */
+export type SeccionExcepcion = "estado" | "capacidad";
 
 export interface Excepcion {
   clave: ClaveExcepcion;
@@ -40,7 +65,14 @@ export interface Excepcion {
   /** Magnitud en m³ (o unidades de producto); `null` cuando no aplica. */
   magnitud: number | null;
   /** A dónde lleva el aviso. `null` = se resuelve en esta misma pantalla. */
-  ir: "ingresos" | "produccion" | "despacho" | null;
+  ir: DestinoExcepcion | null;
+  /**
+   * La sección de Saldos donde está el bloque que lo explica, cuando el
+   * trabajo empieza acá mismo (Origen incompleto vive en «Qué puede salir»).
+   * Un aviso que manda a otra pestaña cuando la tabla está a un clic en ésta
+   * obliga a volver.
+   */
+  seccion?: SeccionExcepcion;
   /**
    * Con qué filtro abrir esa vista.
    *
@@ -61,7 +93,12 @@ export interface EntradaExcepciones {
     consumoSinDeclararM3?: number;
     consumoSinDeclararCount?: number;
   };
-  porEspecie: ReadonlyArray<{ especie: string; saldoM3: number; ingresoM3: number; consumidoM3: number }>;
+  porEspecie: ReadonlyArray<{
+    especie: string;
+    saldoM3: number;
+    ingresoM3: number;
+    consumidoM3: number;
+  }>;
   productos: ReadonlyArray<{ producto: string; stock: number }>;
   /**
    * Existencia FINAL por especie —apertura heredada + movimiento del período—,
@@ -83,17 +120,25 @@ export interface EntradaExcepciones {
    * y eso es exactamente lo que un fiscalizador reconstruye.
    */
   valleDelPeriodo?: { fecha: string; saldo: number } | null;
+  /*
+   * Los cuatro avisos que vivían escondidos detrás de una pestaña (2026-09-24):
+   * se veían sólo si alguien abría «Qué puede salir» o bajaba hasta
+   * Antigüedad. Un aviso que obliga a buscarlo no avisa.
+   */
+  /** Corridas con saldo que no se pueden certificar (Origen incompleto, ADR-394). */
+  origenIncompleto?: { corridas: number; m3: number };
+  /** Lotes abiertos que pasaron su fin de proceso, y los que llevan días sin aserrar. */
+  lotes?: { vencidos: readonly string[]; anejos: readonly string[]; diasAnejo: number };
+  /** Guías del libro con saldo parado desde hace `dias` o más (Antigüedad). */
+  guiasVaradas?: { guias: number; m3: number; dias: number };
+  /** m³ con saldo cuyas guías no tienen costo cargado. */
+  sinCosto?: { m3: number; guias: number };
 }
 
-/** Debajo de esto un volumen es ruido de coma flotante, no un problema. */
-const EPS = 1e-4;
 /** Con más de esto consumido, la especie se agota antes de lo que uno cree. */
 const UMBRAL_AGOTARSE = 90;
 /** Cuántos nombres se listan antes de resumir en «y N más». */
 export const TOPE_NOMBRES = 6;
-
-const m3 = (v: number) => `${v.toFixed(2)} m³`;
-const plural = (n: number, uno: string, varios: string) => (n === 1 ? uno : varios);
 
 /**
  * Las excepciones del período, de la más grave a la más leve.
@@ -211,7 +256,12 @@ export function excepcionesDeSaldo(input: EntradaExcepciones): Excepcion[] {
 
   // ── Las que se están por acabar ─────────────────────────────────────────
   const agotarse = input.porEspecie
-    .filter((e) => e.saldoM3 > EPS && e.ingresoM3 > 0 && (e.consumidoM3 / e.ingresoM3) * 100 >= UMBRAL_AGOTARSE)
+    .filter(
+      (e) =>
+        e.saldoM3 > EPS &&
+        e.ingresoM3 > 0 &&
+        (e.consumidoM3 / e.ingresoM3) * 100 >= UMBRAL_AGOTARSE,
+    )
     .sort((a, b) => a.saldoM3 - b.saldoM3);
   if (agotarse.length > 0) {
     fuera.push({
@@ -225,68 +275,16 @@ export function excepcionesDeSaldo(input: EntradaExcepciones): Excepcion[] {
     });
   }
 
+  fuera.push(...avisosDeOperacion(input));
+
   const peso: Record<TonoExcepcion, number> = { error: 0, warning: 1, info: 2 };
   return fuera.sort((a, b) => peso[a.tono] - peso[b.tono] || (b.magnitud ?? 0) - (a.magnitud ?? 0));
 }
 
-/**
- * `YYYY-MM-DD` a "23 jul". En UTC a propósito: las fechas del libro son
- * date-only guardadas a medianoche UTC y leerlas en hora de Lima las corre un
- * día para atrás.
- */
-function fechaCorta(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  return Number.isNaN(d.getTime())
-    ? iso
-    : d.toLocaleDateString("es-PE", { day: "numeric", month: "short", timeZone: "UTC" });
-}
-
 /** Los nombres visibles y cuántos quedaron afuera — sin cortar en silencio. */
-export function nombresVisibles(items: readonly string[], tope = TOPE_NOMBRES): { visibles: string[]; resto: number } {
+export function nombresVisibles(
+  items: readonly string[],
+  tope = TOPE_NOMBRES,
+): { visibles: string[]; resto: number } {
   return { visibles: items.slice(0, tope), resto: Math.max(0, items.length - tope) };
-}
-
-/**
- * Por qué el saldo quedó negativo, con el número que lo explica cuando se sabe.
- *
- * «O falta validar un ingreso, o una corrida cargó de más» es cierto y no sirve:
- * describe el universo de causas. Con el desglose del consumo se puede decir
- * cuántos m³ se transformaron sin ninguna guía atribuida, que es donde vive el
- * faltante en la práctica.
- */
-/**
- * ¿Lo que espera recepción alcanza para explicar el faltante?
- *
- * Medido en el tenant real (2026-09-12): el libro estaba en −125.709 m³ con
- * 142.262 consumidos sin guía atribuida… y 181.093 m³ en guías cargadas pero
- * sin recepcionar. El ingreso ya estaba; lo que faltaba era cerrar la recepción.
- */
-function cubrePendiente(mp: EntradaExcepciones["materiaPrima"], faltante: number): boolean {
-  return (mp.pendienteM3 ?? 0) > EPS && (mp.pendienteM3 ?? 0) >= faltante - EPS;
-}
-
-function detalleNegativo(
-  mp: EntradaExcepciones["materiaPrima"],
-  conApertura: boolean,
-  faltante = 0,
-): string {
-  const base = conApertura
-    ? "La existencia final —lo heredado del cierre anterior más el movimiento del período— quedó bajo cero."
-    : "Se transformó más volumen del que ingresó validado.";
-  const sinOrigen = mp.consumoSinOrigenM3 ?? 0;
-  const cuantas = mp.consumoSinOrigenCount ?? 0;
-  /* El desenlace cambia si la madera que falta YA está cargada esperando
-     recepción: mandar a «cargar el ingreso» sería pedir de nuevo algo hecho. */
-  const pendiente = mp.pendienteM3 ?? 0;
-  const alcanza = cubrePendiente(mp, faltante);
-  const causa =
-    sinOrigen > EPS && cuantas > 0
-      ? ` ${m3(sinOrigen)} salieron de ${cuantas} ${plural(cuantas, "corrida", "corridas")} que declararon consumo sin ninguna guía atribuida: ahí está el faltante.`
-      : " O falta validar un ingreso, o una corrida cargó de más.";
-  const salida = alcanza
-    ? ` Tienes ${m3(pendiente)} cargados en guías que todavía no se recepcionaron: alcanzan para cubrirlo. Recepciónalas y el saldo se acomoda solo.`
-    : pendiente > EPS
-      ? ` Hay ${m3(pendiente)} esperando recepción, pero no alcanzan: recepciónalos y revisa el volumen que consumieron esas corridas.`
-      : " Carga el ingreso que las respalda, o corrige el volumen que consumieron.";
-  return `${base}${causa}${salida} Hasta corregirlo, el libro no cuadra ante SERFOR.`;
 }

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { excepcionesDeSaldo, nombresVisibles, TOPE_NOMBRES } from "@/lib/forestal/ctp-saldos-excepciones";
+import {
+  excepcionesDeSaldo,
+  nombresVisibles,
+  TOPE_NOMBRES,
+} from "@/lib/forestal/ctp-saldos-excepciones";
 
 /** Un patio sano: nada que avisar. */
 const LIMPIO = {
@@ -58,18 +62,27 @@ describe("excepcionesDeSaldo · qué se avisa", () => {
   it("un valle bajo cero es noticia; uno positivo no", () => {
     // El saldo de hoy puede cerrar en verde habiendo estado en rojo el martes:
     // eso es lo que reconstruye un fiscalizador y sólo lo sabe la curva.
-    const conRojo = excepcionesDeSaldo({ ...LIMPIO, valleDelPeriodo: { fecha: "2026-07-23", saldo: -4.7074 } });
+    const conRojo = excepcionesDeSaldo({
+      ...LIMPIO,
+      valleDelPeriodo: { fecha: "2026-07-23", saldo: -4.7074 },
+    });
     expect(conRojo.map((e) => e.clave)).toContain("valle-negativo");
     expect(conRojo[0].titulo).toContain("23 jul");
 
-    const sinRojo = excepcionesDeSaldo({ ...LIMPIO, valleDelPeriodo: { fecha: "2026-07-23", saldo: 12.5 } });
+    const sinRojo = excepcionesDeSaldo({
+      ...LIMPIO,
+      valleDelPeriodo: { fecha: "2026-07-23", saldo: 12.5 },
+    });
     expect(sinRojo.map((e) => e.clave)).not.toContain("valle-negativo");
   });
 
   it("la fecha del valle se lee en UTC (si no, se corre un día en Lima)", () => {
     // Las fechas del libro son date-only a medianoche UTC; leerlas en hora de
     // Lima (UTC−5) devolvería el día anterior.
-    const [e] = excepcionesDeSaldo({ ...LIMPIO, valleDelPeriodo: { fecha: "2026-01-01", saldo: -1 } });
+    const [e] = excepcionesDeSaldo({
+      ...LIMPIO,
+      valleDelPeriodo: { fecha: "2026-01-01", saldo: -1 },
+    });
     expect(e.titulo).toContain("1 ene");
   });
 
@@ -122,7 +135,9 @@ describe("excepcionesDeSaldo · qué se avisa", () => {
     // por redondeo enseñan a ignorar la lista entera.
     const fuera = excepcionesDeSaldo({
       ...LIMPIO,
-      porEspecie: [{ especie: "Tornillo", saldoM3: -0.00001, ingresoM3: 10, consumidoM3: 10.00001 }],
+      porEspecie: [
+        { especie: "Tornillo", saldoM3: -0.00001, ingresoM3: 10, consumidoM3: 10.00001 },
+      ],
     });
     expect(fuera.map((e) => e.clave)).not.toContain("mp-negativa");
   });
@@ -183,5 +198,60 @@ describe("saldo negativo: qué hacer cuando la madera ya está cargada", () => {
     });
     expect(e.filtro).toBeUndefined();
     expect(e.detalle).toContain("Carga el ingreso");
+  });
+});
+
+/* Los cuatro avisos que vivían escondidos detrás de una pestaña (2026-09-24):
+   Origen incompleto y los lotes en «Qué puede salir», la madera varada y la sin
+   costo al fondo de Antigüedad. Ahora van a «Qué revisar», cada uno con adónde
+   se corrige. */
+describe("excepcionesDeSaldo · avisos de operación", () => {
+  const OPERACION = {
+    ...LIMPIO,
+    origenIncompleto: { corridas: 3, m3: 12.5 },
+    lotes: { vencidos: ["17-2026"], anejos: ["18-2026", "19-2026"], diasAnejo: 7 },
+    guiasVaradas: { guias: 4, m3: 20.061, dias: 60 },
+    sinCosto: { m3: 81.8, guias: 13 },
+  };
+
+  it("con los cuatro datos aparecen las cuatro excepciones, cada una con destino", () => {
+    const fuera = excepcionesDeSaldo(OPERACION);
+    const por = (c: string) => fuera.find((e) => e.clave === c);
+    expect(fuera).toHaveLength(4);
+
+    expect(por("origen-incompleto")?.seccion).toBe("capacidad");
+    expect(por("origen-incompleto")?.titulo).toContain("3 corridas");
+
+    expect(por("lotes-vencidos")?.ir).toBe("lotes");
+    expect(por("lotes-vencidos")?.items).toEqual(["17-2026", "18-2026", "19-2026"]);
+    expect(por("lotes-vencidos")?.titulo).toContain("1 pasó su fin de proceso");
+    expect(por("lotes-vencidos")?.titulo).toContain("2 llevan más de 7 días sin aserrar");
+
+    expect(por("guias-varadas")?.ir).toBe("consumos");
+    expect(por("guias-varadas")?.titulo).toContain("60 días o más");
+
+    expect(por("sin-costo")?.ir).toBe("rentabilidad");
+    expect(por("sin-costo")?.tono).toBe("info");
+  });
+
+  it("todo en cero no enciende ninguno", () => {
+    expect(
+      excepcionesDeSaldo({
+        ...LIMPIO,
+        origenIncompleto: { corridas: 0, m3: 0 },
+        lotes: { vencidos: [], anejos: [], diasAnejo: 7 },
+        guiasVaradas: { guias: 0, m3: 0, dias: 60 },
+        sinCosto: { m3: 0, guias: 0 },
+      }),
+    ).toEqual([]);
+  });
+
+  it("los errores del saldo siguen yendo primero", () => {
+    const fuera = excepcionesDeSaldo({
+      ...OPERACION,
+      productos: [{ producto: "Madera aserrada · Tornillo", stock: -0.81 }],
+    });
+    expect(fuera[0].clave).toBe("stock-negativo");
+    expect(fuera.at(-1)?.clave).toBe("sin-costo");
   });
 });

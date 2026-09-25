@@ -6,6 +6,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
+import { leerContratoId } from "@/lib/forestal/contrato-filtro";
 
 /**
  * /api/admin/forestal/trozas/patio — las piezas que están en el patio (ADR-326).
@@ -13,6 +14,8 @@ import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
  * GET  — todas las trozas vivas del tenant, con su guía y su estado de consumo.
  *        Vienen TODAS, también las bloqueadas: el operador tiene que ver por qué
  *        una pieza que sabe que está ahí no se puede elegir.
+ *        `?contratoId=` = «Solo este permiso» (ADR-431): el filtro lo hace el
+ *        servidor, con `tenantId` en cada salto; malformado = 400, nunca «todo».
  * POST — declara qué piezas se comió una corrida. `trozaIds: []` las suelta.
  *
  * El VOLUMEN del consumo no pasa por acá: sigue viviendo en `ForestCtpConsumo`
@@ -49,16 +52,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ dias, ...(await WoodEntriesDB.contarTrozasVaradas(auth.tenantId, dias)) });
     }
 
+    /* «Solo este permiso» (ADR-421/431). Se valida ANTES de tocar la base: un
+       valor malformado es un 400 y no «sin filtro» — quien prendió el
+       interruptor cree estar viendo un solo permiso, y devolverle todo el patio
+       sería mostrarle madera ajena como si fuera de ese papel. */
+    const contrato = leerContratoId(sp);
+    if (!contrato.ok) return NextResponse.json({ error: contrato.error }, { status: 400 });
+    const contratoId = contrato.contratoId;
+
     /* `loteId` acota al lote (decenas de piezas): esa lista viene SIEMPRE
-       completa y no depende del tope del patio. */
+       completa y no depende del tope del patio. Se combina con el contrato. */
     const loteId = sp.get("loteId")?.trim() || undefined;
     /* El mapeo a `TrozaConsumible` (whitelist completa + cuánto se consumió ya
        de cada guía, ADR-353) vive en `WoodEntriesDB.trozasComoConsumibles` —
        single source: un segundo llamador (el planificador de consumo) no
        reinventa el whitelist. */
     const [trozas, total] = await Promise.all([
-      WoodEntriesDB.trozasComoConsumibles(auth.tenantId, { loteId }),
-      WoodEntriesDB.contarTrozasDelPatio(auth.tenantId, { loteId }),
+      WoodEntriesDB.trozasComoConsumibles(auth.tenantId, { loteId, contratoId }),
+      WoodEntriesDB.contarTrozasDelPatio(auth.tenantId, { loteId, contratoId }),
     ]);
     return NextResponse.json({
       trozas,
@@ -71,6 +82,9 @@ export async function GET(req: NextRequest) {
       total,
       devueltas: trozas.length,
       truncado: trozas.length < total,
+      /* Qué alcance tiene esta respuesta: la pantalla lo dice («Solo este
+         permiso: …») en vez de suponerlo. */
+      contratoId: contratoId ?? null,
     });
   } catch (e) {
     return ctpErrorResponse(e, "forestal.trozas.patio.GET", auth.tenantId);

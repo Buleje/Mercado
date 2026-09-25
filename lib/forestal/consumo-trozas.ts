@@ -30,8 +30,20 @@ export interface TrozaConsumible {
   /** Los dos extremos y el largo — como los publica SERFOR y como se cubica. */
   d1Cm?: number | null;
   d2Cm?: number | null;
+  /**
+   * El diámetro que la pieza declara como UN número (cubicación por diámetro
+   * medio). Si falta, `diametroDe` promedia `d1Cm`/`d2Cm`; si tampoco hay, no
+   * hay diámetro — no se inventa.
+   */
+  diametroCm?: number | null;
   largoM?: number | null;
   volumenM3: number | null;
+  /**
+   * La GUÍA declara especie CITES (`WoodEntry.speciesCites`). **Es un DERIVADO
+   * de la guía, no de la troza**: una guía «Huayruro» puede traer trozas de
+   * Panguana, así que el filtro se rotula «guía CITES», nunca «troza CITES».
+   */
+  guiaCites?: boolean;
   /** La guía por la que entró — para agrupar y para el filtro. */
   gtfNumber?: string | null;
   proveedor?: string | null;
@@ -133,6 +145,36 @@ export const LABEL_BLOQUEO: Record<MotivoBloqueo, string> = {
 
 export function estaDisponible(t: TrozaConsumible): boolean {
   return motivoBloqueo(t) === null;
+}
+
+/**
+ * La pieza no tiene código del bosque: vacío o sólo rayas/puntos.
+ *
+ * En Blas, 49 trozas de una guía guardaban «-» como codificación: un
+ * `<> ''` las contaba como codificadas y una búsqueda por código ofrecía 49
+ * «-» idénticos. «A-1» sí es un código.
+ */
+export function esSinCodigo(t: { codificacion?: string | null }): boolean {
+  return /^[\s\u2013\u2014.-]*$/.test(t.codificacion ?? "");
+}
+
+/** Un número de medida utilizable: finito y mayor que cero. Un 0 no es una medida. */
+export const medidaPositiva = (v: unknown): number | null => {
+  const n = v == null ? Number.NaN : Number(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
+/**
+ * El diámetro de la pieza en cm: el declarado (`diametroCm`) y, si falta, el
+ * promedio de los extremos que haya (`d1Cm`/`d2Cm`). Sin ninguno, `null`: un
+ * diámetro que no se midió no se inventa.
+ */
+export function diametroDe(t: { diametroCm?: number | null; d1Cm?: number | null; d2Cm?: number | null }): number | null {
+  const declarado = medidaPositiva(t.diametroCm);
+  if (declarado != null) return declarado;
+  const extremos = [medidaPositiva(t.d1Cm), medidaPositiva(t.d2Cm)].filter((x): x is number => x != null);
+  if (extremos.length === 0) return null;
+  return Math.round((extremos.reduce((a, b) => a + b, 0) / extremos.length) * 100) / 100;
 }
 
 /**
