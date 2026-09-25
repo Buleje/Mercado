@@ -244,6 +244,9 @@ try {
     if (r.status() !== 200) throw new Error(`login ${r.status()}: ${(await r.text()).slice(0, 160)}`);
   }
   await page.close();
+  // Los temas van en serie a propósito: en paralelo (probado 2026-09-25)
+  // bajaba sólo 42 → 37 s — el cuello es el dev server, no el navegador — y
+  // con pasos que guardan escribirían dos veces a la vez.
   for (const [k, t] of temas.entries()) await recorrido(t, k === 0);
 } catch (e) {
   falla = String(e?.message ?? e);
