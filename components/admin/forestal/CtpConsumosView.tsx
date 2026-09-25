@@ -17,7 +17,7 @@ import CtpApartados, { CtpApartadoPanel, useApartado, type Apartado } from "./ct
 import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
 import CtpAvisoSinOrigen from "./CtpAvisoSinOrigen";
 import CtpConsumosPatio from "./CtpConsumosPatio";
-import CtpConsumosSeccion2Kpis from "./CtpConsumosSeccion2Kpis";
+import { useSeccion2Kpis } from "./CtpConsumosSeccion2Kpis";
 import CtpConsumosSeccion2Barra, { CtpConsumosSeccion2Opciones } from "./CtpConsumosSeccion2Barra";
 import CtpConsumosCuadro from "./CtpConsumosCuadro";
 import CtpResumenPermisoModal from "./CtpResumenPermisoModal";
@@ -48,6 +48,9 @@ export default function CtpConsumosView({
   /* El lote que manda Lotes lleva al patio: quedarse en el cuadro no mostraría nada. */
   const irAlPatio = useCallback(() => ir("patio"), [ir]);
   const s2 = useConsumosSeccion2(period);
+  /* El botón de indicadores va en el encabezado del cuadro, al lado de
+     «Opciones»; el panel, debajo del título (2026-09-24). */
+  const kpis2 = useSeccion2Kpis(s2, period);
   const p = usePatioConsumos({ pushToast: push, presetLoteId, onPresetLoteUsado, alAplicarPreset: irAlPatio });
   /* El contador de la pestaña es el patio ENTERO (mismo criterio que «Por
      permiso»: libres + en lote). Salía de las cifras filtradas y, con un lote
@@ -113,12 +116,21 @@ export default function CtpConsumosView({
               producidoSinOrigen={s2.resumen.producidoSinOrigen}
               onIrAProduccion={onIr ? () => onIr("produccion") : undefined}
             />
-            <CtpConsumosSeccion2Kpis s2={s2} period={period} />
             {/* Filtros y «Opciones» dentro del marco del cuadro (2026-09-24). */}
             <CtpConsumosCuadro
               s2={s2}
-              accion={<CtpConsumosSeccion2Opciones s2={s2} onResumenPermiso={abrirResumen} />}
-              barra={<CtpConsumosSeccion2Barra s2={s2} />}
+              accion={
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {kpis2.boton}
+                  <CtpConsumosSeccion2Opciones s2={s2} onResumenPermiso={abrirResumen} />
+                </div>
+              }
+              barra={
+                <>
+                  {kpis2.panel}
+                  <CtpConsumosSeccion2Barra s2={s2} />
+                </>
+              }
             />
           </div>
         )}

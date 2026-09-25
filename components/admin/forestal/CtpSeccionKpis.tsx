@@ -52,6 +52,7 @@ export default function CtpSeccionKpis({
   onFacetas,
   opciones,
   trabajoActivo = false,
+  acciones,
 }: {
   section: CtpSection;
   kpis: KpisSeccion;
@@ -80,6 +81,13 @@ export default function CtpSeccionKpis({
    */
   kpisPrevios?: KpisSeccion | null;
   etiquetaPrevio?: string | null;
+  /**
+   * Los botones de la barra de la vista (buscador, «Filtros», «Opciones»,
+   * el CTA…), en la MISMA fila que «Indicadores» (Brandon, 2026-09-24: «que
+   * el botón de KPIs esté alineado con otros botones, para evitar que ocupe
+   * mucho espacio»). Sin esto, el botón queda solo — como antes.
+   */
+  acciones?: ReactNode;
 }) {
   const veredicto = juzgarRendimientoLote(kpis.avgRend > 0 ? kpis.avgRend : null);
 
@@ -213,7 +221,7 @@ export default function CtpSeccionKpis({
   const resumen =
     section === "produccion"
       ? `${kpis.count} corrida${kpis.count === 1 ? "" : "s"} · ${n2(kpis.consumido)} m³ → ${n2(kpis.totalQty)} m³` +
-        (kpis.avgRend > 0 ? ` · ${kpis.avgRend.toFixed(1)} %` : "") +
+        (kpis.avgRend > 0 ? ` · ${Number(kpis.avgRend).toFixed(1)} %` : "") +
         (kpis.abiertas > 0 ? ` · ${kpis.abiertas} sin declarar` : "")
       : `${kpis.count} despacho${kpis.count === 1 ? "" : "s"} · ${n2(kpis.totalQty)} · ${kpis.guias} guía${kpis.guias === 1 ? "" : "s"}` +
         ((sinAnexo ?? 0) > 0 ? ` · ${sinAnexo} sin anexo` : "");
@@ -286,6 +294,7 @@ export default function CtpSeccionKpis({
       tarjetas={tarjetas}
       resumen={resumen}
       trabajoActivo={trabajoActivo}
+      acciones={acciones}
       /* El rendimiento contra su techo, visible con el panel cerrado: es la
          cifra que decide si la corrida se puede declarar (ADR-358), y estaba
          escondida detrás del botón «Indicadores» como una más. */

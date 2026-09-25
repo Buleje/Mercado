@@ -15,6 +15,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   BookmarkPlus,
   Boxes,
   CheckCircle2,
@@ -32,6 +35,7 @@ import {
   TreePine,
   Truck,
   Users,
+  X,
 } from "@buleje/design-system/icons";
 import CtpKpi, { DesgloseSimple, type FilaDesglose } from "./CtpKpi";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -39,12 +43,13 @@ import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   ColumnasMenu,
-  CtpKpisPlegables,
   IconAction,
   productLabel,
   useColumnasVisibles,
+  useKpisPlegables,
 } from "./ctp-shared";
 import CtpKpiFiltros from "./CtpKpiFiltros";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import {
   CtpPaginacion,
   FilaVacia,
@@ -86,7 +91,6 @@ import CtpApartarModal from "./CtpApartarModal";
 import CtpBarraSeleccion from "./ctp-barra-seleccion";
 import {
   ETIQUETA_TRAMO,
-  TONO_TRAMO,
   edadEnDias,
   fmtEdad,
   resumenDeEdad,
@@ -274,6 +278,50 @@ const COLUMNAS_DISPONIBLES_OPCIONALES = [
 
 const CAMPO =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+
+/**
+ * Como `ThOrdenable` (`ctp-tabla.tsx`), pero con lugar para el autofiltro de
+ * la columna DEBAJO del botón que ordena (Brandon, 2026-09-24: filtros al
+ * encabezado de su columna). Se escribe acá y no se toca `ThOrdenable` porque
+ * esa cabecera la comparten media docena de tablas del libro que no tienen
+ * autofiltro — agregarle un slot que casi nadie usa es peor que un componente
+ * propio de dos columnas.
+ */
+function ThOrdenableConFiltro<C extends string>({
+  campo,
+  orden,
+  onOrdenar,
+  label,
+  filtro,
+}: {
+  campo: C;
+  orden: { by: C; dir: "asc" | "desc" };
+  onOrdenar: (c: C) => void;
+  label: React.ReactNode;
+  /** El `FiltroColumnaMulti` de esta columna, o nada si no aplica. */
+  filtro?: React.ReactNode;
+}) {
+  const activo = orden.by === campo;
+  const Icono = !activo ? ArrowUpDown : orden.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th
+      aria-sort={activo ? (orden.dir === "asc" ? "ascending" : "descending") : "none"}
+      className="px-3 py-2 font-bold"
+    >
+      <button
+        type="button"
+        onClick={() => onOrdenar(campo)}
+        className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 font-bold uppercase tracking-[var(--ls-wider)] transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
+          activo ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""
+        }`}
+      >
+        {label}
+        <Icono className={`h-3.5 w-3.5 ${activo ? "" : "opacity-40"}`} aria-hidden="true" />
+      </button>
+      {filtro}
+    </th>
+  );
+}
 
 export default function CtpProductosDisponibles({ period }: { period: CtpPeriod }) {
   const [corridas, setCorridas] = useState<CorridaDisponible[]>([]);
@@ -509,22 +557,25 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   );
 
   /**
-   * Cuánto m³ DISPONIBLE hay detrás de cada valor (ADR-400).
+   * Cuánto m³ DISPONIBLE hay detrás de cada valor, y en cuántas corridas
+   * (ADR-400 + autofiltro de columna, 2026-09-24).
    *
    * Es lo que se muestra al costado de cada opción: acá lo que importa no es
    * cuántas corridas hay sino cuánta madera queda, que es lo que se despacha.
-   * Un permiso con 0.4 m³ y otro con 40 se eligen distinto.
+   * Un permiso con 0.4 m³ y otro con 40 se eligen distinto. El conteo lo pide
+   * `FiltroColumnaMulti` (autofiltro de la columna Especie/Producto).
    */
   const pesos = useMemo(() => {
     /* Suma por CLAVE, no por texto: si no, cada grafía muestra su mitad y el
        número de la opción no es el que aparece al elegirla. */
     const sumar = (valores: (c: CorridaDisponible) => string[], clave: (v: string) => string) => {
-      const m = new Map<string, number>();
+      const m = new Map<string, { count: number; peso: number }>();
       for (const c of corridas) {
         for (const bruto of valores(c)) {
           const k = clave(bruto ?? "");
           if (!k) continue;
-          m.set(k, (m.get(k) ?? 0) + c.disponible);
+          const prev = m.get(k) ?? { count: 0, peso: 0 };
+          m.set(k, { count: prev.count + 1, peso: prev.peso + c.disponible });
         }
       }
       return m;
@@ -908,6 +959,240 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     setNota(`Exportadas ${ordenadas.length} fila${ordenadas.length === 1 ? "" : "s"} a ${nombre}.`);
   }, [ordenadas, colsVisibles, ahora]);
 
+  /* Todos detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular
+     —cuánto hay y en cuántos paquetes— va en la línea de resumen. El botón
+     viaja a la barra de búsqueda (Brandon, 2026-09-24: «alineado con otros
+     botones... para evitar que ocupe mucho espacio»). */
+  const { boton: kpiBoton, panel: kpiPanel } = useKpisPlegables({
+    claveMemoria: "disponibles",
+    /* Los filtros que gobiernan estas cifras (ADR-400): son los MISMOS que
+       recortan la tabla de abajo — `visibles` alimenta a las dos. */
+    filtrosActivos: [especie, producto, permiso].filter((v) => v.length > 0).length,
+    filtros: (
+      <CtpKpiFiltros
+        campos={[
+          {
+            key: "especie",
+            label: "Especie",
+            todos: "Todas las especies",
+            textoVacio: "Sin producto en el depósito",
+            valor: especie,
+            opciones: opciones.especies.map((e) => ({
+              value: e,
+              label: e,
+              hint: `${fmtM3(pesos.especies.get(claveEspecie(e))?.peso ?? 0)} m³`,
+            })),
+            onChange: setEspecie,
+          },
+          {
+            key: "permiso",
+            label: "Permiso (título habilitante)",
+            todos: "Todos los permisos",
+            textoVacio: "Sin producto en el depósito",
+            valor: permiso,
+            opciones: opciones.permisos.map((p) => ({
+              value: p,
+              label: p,
+              hint: `${fmtM3(pesos.permisos.get(clavePermiso(p))?.peso ?? 0)} m³`,
+            })),
+            onChange: setPermiso,
+          },
+          {
+            key: "producto",
+            label: "Producto",
+            todos: "Todos los productos",
+            textoVacio: "Sin producto en el depósito",
+            valor: producto,
+            opciones: opciones.productos.map((p) => ({
+              value: p,
+              label: productLabel(p),
+              hint: `${fmtM3(pesos.productos.get(claveEspecie(p))?.peso ?? 0)} m³`,
+            })),
+            onChange: setProducto,
+          },
+        ]}
+        onLimpiar={() => {
+          setEspecie([]);
+          setPermiso([]);
+          setProducto([]);
+        }}
+        nota={
+          [especie, permiso, producto].some((v) => v.length > 0)
+            ? `Los indicadores muestran sólo ${[
+                especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
+                permiso.length > 0 ? `permiso: ${permiso.join(" o ")}` : "",
+                producto.length > 0
+                  ? `producto: ${producto.map(productLabel).join(" o ")}`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")}`
+            : null
+        }
+      />
+    ),
+    resumen: (
+      visibles.length === 0
+        ? ocultosPorUsado
+          ? `Sin producto disponible · ${fmtM3(ocultosPorUsado.volumen)} m³ marcados como usados`
+          : "Sin producto disponible en planta"
+        : `${fmtM3(totales.volumen)} m³ · ${nf(totales.paquetes)} paquete${totales.paquetes === 1 ? "" : "s"} · ${nf(totalPiezas)} pieza${totalPiezas === 1 ? "" : "s"} · ${nf(visibles.length)} corrida${visibles.length === 1 ? "" : "s"}`
+    ),
+    tarjetas: [
+      <CtpKpi
+        key="volumen"
+        label="Disponible (m³)"
+        value={fmtM3(totales.volumen)}
+        /* La fórmula decía «producido − despachado − reprocesado» y se
+           dejaba afuera la resta que más sorprende: lo marcado a mano como
+           usado. Con 76.45 m³ marcados, el operador leía 0.000 bajo una
+           fórmula donde ningún término explicaba ese cero. */
+        subValue={
+          ocultosPorUsado
+            ? `${formatNumber(pieTablarDe(totales.volumen))} pt · ${fmtM3(ocultosPorUsado.volumen)} m³ más están marcados como usados`
+            : `${formatNumber(pieTablarDe(totales.volumen))} pt · producido − despachado − reprocesado − marcado usado`
+        }
+        icon={TreePine}
+        desglose={
+          porEspecie.length > 0 ? (
+            <DesgloseSimple filas={porEspecie} onElegir={(v) => setEspecie([v])} />
+          ) : undefined
+        }
+        desgloseLabel="Por especie"
+        emphasis="success"
+      />,
+      <CtpKpi
+        key="paquetes"
+        label="Paquetes en planta"
+        value={nf(totales.paquetes)}
+        subValue={
+          totales.paquetes === 0
+            ? "Sin paquetes cargados"
+            : paquetesSinMedidas > 0
+              ? `${nf(paquetesSinMedidas)} sin escuadría cargada`
+              : "Todos con su código y su escuadría"
+        }
+        icon={Boxes}
+      />,
+      /**
+       * Las PIEZAS, que es como se carga un camión.
+       *
+       * `totalPiezas` se calculaba desde antes —lo usa el pie de la tabla—
+       * pero no estaba en ninguna tarjeta: el cliente pide «200 tablas», no
+       * «4 m³», y el vendedor tenía que sumarlas fila por fila.
+       */
+      <CtpKpi
+        key="piezas"
+        label="Piezas disponibles"
+        value={nf(totalPiezas)}
+        subValue={
+          totalPiezas === 0
+            ? "las corridas no declaran cantidad por paquete"
+            : "de todo lo filtrado, no sólo de esta página"
+        }
+        icon={Layers}
+      />,
+      <CtpKpi
+        key="especies"
+        label="Especies"
+        value={nf(totales.especies)}
+        subValue="Distintas en stock"
+        icon={TreePine}
+        desglose={
+          porEspecie.length > 0 ? (
+            <DesgloseSimple filas={porEspecie} onElegir={(v) => setEspecie([v])} />
+          ) : undefined
+        }
+        desgloseLabel="Cuánto hay de cada una"
+      />,
+      /* `totales.productos` también venía calculado y sin mostrarse: dos
+         especies pueden dar seis productos distintos (aserrada, tablillas,
+         comercial…) y es lo que decide qué se le puede ofrecer al cliente. */
+      <CtpKpi
+        key="productos"
+        label="Tipos de producto"
+        value={nf(totales.productos)}
+        subValue={totales.productos === 1 ? "Un solo tipo en stock" : "Distintos en stock"}
+        icon={Boxes}
+        desglose={
+          porProducto.length > 0 ? (
+            <DesgloseSimple filas={porProducto} onElegir={(v) => setProducto([v])} />
+          ) : undefined
+        }
+        desgloseLabel="Cuánto hay de cada uno"
+      />,
+      <CtpKpi
+        key="corridas"
+        label="Corridas con saldo"
+        value={nf(visibles.length)}
+        subValue="Producción que todavía no salió"
+        icon={PackageOpen}
+      />,
+      /**
+       * Hace cuánto que la madera más vieja no se mueve.
+       *
+       * El patio venía descrito sólo por su tamaño (m³, paquetes, piezas) y
+       * nunca por su edad: 85 m³ de Tornillo aserrado ayer y 85 m³ parados
+       * desde hace once meses se leían igual en esta pantalla, y valen
+       * cosas muy distintas — la aserrada parada se mancha de hongo azul.
+       */
+      <CtpKpi
+        key="edad"
+        label="Lo más viejo lleva"
+        value={edadDelStock.masViejoDias == null ? "—" : fmtEdad(edadDelStock.masViejoDias)}
+        subValue={
+          edadDelStock.porTramo.viejo.filas > 0
+            ? `${nf(edadDelStock.porTramo.viejo.filas)} fila${edadDelStock.porTramo.viejo.filas === 1 ? "" : "s"} · ${fmtM3(edadDelStock.porTramo.viejo.volumenM3)} m³ paradas hace más de ${DIAS_VIEJO} días`
+            : "Nada lleva más de 90 días parado"
+        }
+        icon={Clock}
+        emphasis={edadDelStock.porTramo.viejo.filas > 0 ? "error" : undefined}
+        desglose={
+          <DesgloseSimple
+            filas={(["viejo", "maduro", "fresco"] as TramoEdad[])
+              .filter((t) => edadDelStock.porTramo[t].filas > 0)
+              .map((t) => ({
+                value: ETIQUETA_TRAMO[t],
+                count: edadDelStock.porTramo[t].filas,
+                volumeM3: edadDelStock.porTramo[t].volumenM3,
+              }))}
+            onElegir={(v) =>
+              setAviso(v === ETIQUETA_TRAMO.viejo ? (aviso === "viejos" ? null : "viejos") : null)
+            }
+          />
+        }
+        desgloseLabel="Cuánto hay de cada edad"
+      />,
+      /**
+       * Cuánto vale lo que está parado.
+       *
+       * El costo de la materia prima entra por guía (ADR-134) y muere en
+       * Ingresos: el stock nunca supo lo que costó. Medido el 2026-09-15,
+       * ninguna de las 24 guías de Blas tiene costo cargado, así que la
+       * tarjeta hoy no muestra una cifra falsa: muestra cuántas guías hay
+       * que costear para que exista.
+       */
+      <CtpKpi
+        key="valor"
+        label="Valor del patio"
+        value={
+          valorDelStock.filasValorizadas === 0
+            ? "sin costear"
+            : `S/ ${formatNumber(valorDelStock.totalSoles, { max: 0 })}`
+        }
+        subValue={
+          valorDelStock.guiasSinCosto.length > 0
+            ? `Faltan costear ${nf(valorDelStock.guiasSinCosto.length)} guía${valorDelStock.guiasSinCosto.length === 1 ? "" : "s"} en Ingresos`
+            : valorDelStock.filasValorizadas === 0
+              ? "Ninguna corrida dice de qué guía salió"
+              : `${nf(valorDelStock.filasValorizadas)} fila${valorDelStock.filasValorizadas === 1 ? "" : "s"} valorizadas al costo de su guía`
+        }
+        icon={Coins}
+      />,
+    ],
+    alto: "md",
+  });
+
   if (error) {
     return (
       <p className="rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]">
@@ -942,242 +1227,33 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
         />
       )}
 
-      {/* Todos detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular
-          —cuánto hay y en cuántos paquetes— va en la línea de resumen. */}
-      <CtpKpisPlegables
-        claveMemoria="disponibles"
-        /* Los filtros que gobiernan estas cifras (ADR-400): son los MISMOS que
-           recortan la tabla de abajo — `visibles` alimenta a las dos. */
-        filtrosActivos={[especie, producto, permiso].filter((v) => v.length > 0).length}
-        filtros={
-          <CtpKpiFiltros
-            campos={[
-              {
-                key: "especie",
-                label: "Especie",
-                todos: "Todas las especies",
-                textoVacio: "Sin producto en el depósito",
-                valor: especie,
-                opciones: opciones.especies.map((e) => ({
-                  value: e,
-                  label: e,
-                  hint: `${fmtM3(pesos.especies.get(claveEspecie(e)) ?? 0)} m³`,
-                })),
-                onChange: setEspecie,
-              },
-              {
-                key: "permiso",
-                label: "Permiso (título habilitante)",
-                todos: "Todos los permisos",
-                textoVacio: "Sin producto en el depósito",
-                valor: permiso,
-                opciones: opciones.permisos.map((p) => ({
-                  value: p,
-                  label: p,
-                  hint: `${fmtM3(pesos.permisos.get(clavePermiso(p)) ?? 0)} m³`,
-                })),
-                onChange: setPermiso,
-              },
-              {
-                key: "producto",
-                label: "Producto",
-                todos: "Todos los productos",
-                textoVacio: "Sin producto en el depósito",
-                valor: producto,
-                opciones: opciones.productos.map((p) => ({
-                  value: p,
-                  label: productLabel(p),
-                  hint: `${fmtM3(pesos.productos.get(claveEspecie(p)) ?? 0)} m³`,
-                })),
-                onChange: setProducto,
-              },
-            ]}
-            onLimpiar={() => {
-              setEspecie([]);
-              setPermiso([]);
-              setProducto([]);
-            }}
-            nota={
-              [especie, permiso, producto].some((v) => v.length > 0)
-                ? `Los indicadores muestran sólo ${[
-                    especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
-                    permiso.length > 0 ? `permiso: ${permiso.join(" o ")}` : "",
-                    producto.length > 0
-                      ? `producto: ${producto.map(productLabel).join(" o ")}`
-                      : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}`
-                : null
-            }
-          />
-        }
-        resumen={
-          visibles.length === 0
-            ? ocultosPorUsado
-              ? `Sin producto disponible · ${fmtM3(ocultosPorUsado.volumen)} m³ marcados como usados`
-              : "Sin producto disponible en planta"
-            : `${fmtM3(totales.volumen)} m³ · ${nf(totales.paquetes)} paquete${totales.paquetes === 1 ? "" : "s"} · ${nf(totalPiezas)} pieza${totalPiezas === 1 ? "" : "s"} · ${nf(visibles.length)} corrida${visibles.length === 1 ? "" : "s"}`
-        }
-        tarjetas={[
-          <CtpKpi
-            key="volumen"
-            label="Disponible (m³)"
-            value={fmtM3(totales.volumen)}
-            /* La fórmula decía «producido − despachado − reprocesado» y se
-               dejaba afuera la resta que más sorprende: lo marcado a mano como
-               usado. Con 76.45 m³ marcados, el operador leía 0.000 bajo una
-               fórmula donde ningún término explicaba ese cero. */
-            subValue={
-              ocultosPorUsado
-                ? `${formatNumber(pieTablarDe(totales.volumen))} pt · ${fmtM3(ocultosPorUsado.volumen)} m³ más están marcados como usados`
-                : `${formatNumber(pieTablarDe(totales.volumen))} pt · producido − despachado − reprocesado − marcado usado`
-            }
-            icon={TreePine}
-            desglose={
-              porEspecie.length > 0 ? (
-                <DesgloseSimple filas={porEspecie} onElegir={(v) => setEspecie([v])} />
-              ) : undefined
-            }
-            desgloseLabel="Por especie"
-            emphasis="success"
-          />,
-          <CtpKpi
-            key="paquetes"
-            label="Paquetes en planta"
-            value={nf(totales.paquetes)}
-            subValue={
-              totales.paquetes === 0
-                ? "Sin paquetes cargados"
-                : paquetesSinMedidas > 0
-                  ? `${nf(paquetesSinMedidas)} sin escuadría cargada`
-                  : "Todos con su código y su escuadría"
-            }
-            icon={Boxes}
-          />,
-          /**
-           * Las PIEZAS, que es como se carga un camión.
-           *
-           * `totalPiezas` se calculaba desde antes —lo usa el pie de la tabla—
-           * pero no estaba en ninguna tarjeta: el cliente pide «200 tablas», no
-           * «4 m³», y el vendedor tenía que sumarlas fila por fila.
-           */
-          <CtpKpi
-            key="piezas"
-            label="Piezas disponibles"
-            value={nf(totalPiezas)}
-            subValue={
-              totalPiezas === 0
-                ? "las corridas no declaran cantidad por paquete"
-                : "de todo lo filtrado, no sólo de esta página"
-            }
-            icon={Layers}
-          />,
-          <CtpKpi
-            key="especies"
-            label="Especies"
-            value={nf(totales.especies)}
-            subValue="Distintas en stock"
-            icon={TreePine}
-            desglose={
-              porEspecie.length > 0 ? (
-                <DesgloseSimple filas={porEspecie} onElegir={(v) => setEspecie([v])} />
-              ) : undefined
-            }
-            desgloseLabel="Cuánto hay de cada una"
-          />,
-          /* `totales.productos` también venía calculado y sin mostrarse: dos
-             especies pueden dar seis productos distintos (aserrada, tablillas,
-             comercial…) y es lo que decide qué se le puede ofrecer al cliente. */
-          <CtpKpi
-            key="productos"
-            label="Tipos de producto"
-            value={nf(totales.productos)}
-            subValue={totales.productos === 1 ? "Un solo tipo en stock" : "Distintos en stock"}
-            icon={Boxes}
-            desglose={
-              porProducto.length > 0 ? (
-                <DesgloseSimple filas={porProducto} onElegir={(v) => setProducto([v])} />
-              ) : undefined
-            }
-            desgloseLabel="Cuánto hay de cada uno"
-          />,
-          <CtpKpi
-            key="corridas"
-            label="Corridas con saldo"
-            value={nf(visibles.length)}
-            subValue="Producción que todavía no salió"
-            icon={PackageOpen}
-          />,
-          /**
-           * Hace cuánto que la madera más vieja no se mueve.
-           *
-           * El patio venía descrito sólo por su tamaño (m³, paquetes, piezas) y
-           * nunca por su edad: 85 m³ de Tornillo aserrado ayer y 85 m³ parados
-           * desde hace once meses se leían igual en esta pantalla, y valen
-           * cosas muy distintas — la aserrada parada se mancha de hongo azul.
-           */
-          <CtpKpi
-            key="edad"
-            label="Lo más viejo lleva"
-            value={edadDelStock.masViejoDias == null ? "—" : fmtEdad(edadDelStock.masViejoDias)}
-            subValue={
-              edadDelStock.porTramo.viejo.filas > 0
-                ? `${nf(edadDelStock.porTramo.viejo.filas)} fila${edadDelStock.porTramo.viejo.filas === 1 ? "" : "s"} · ${fmtM3(edadDelStock.porTramo.viejo.volumenM3)} m³ paradas hace más de ${DIAS_VIEJO} días`
-                : "Nada lleva más de 90 días parado"
-            }
-            icon={Clock}
-            emphasis={edadDelStock.porTramo.viejo.filas > 0 ? "error" : undefined}
-            desglose={
-              <DesgloseSimple
-                filas={(["viejo", "maduro", "fresco"] as TramoEdad[])
-                  .filter((t) => edadDelStock.porTramo[t].filas > 0)
-                  .map((t) => ({
-                    value: ETIQUETA_TRAMO[t],
-                    count: edadDelStock.porTramo[t].filas,
-                    volumeM3: edadDelStock.porTramo[t].volumenM3,
-                  }))}
-                onElegir={(v) =>
-                  setAviso(v === ETIQUETA_TRAMO.viejo ? (aviso === "viejos" ? null : "viejos") : null)
-                }
-              />
-            }
-            desgloseLabel="Cuánto hay de cada edad"
-          />,
-          /**
-           * Cuánto vale lo que está parado.
-           *
-           * El costo de la materia prima entra por guía (ADR-134) y muere en
-           * Ingresos: el stock nunca supo lo que costó. Medido el 2026-09-15,
-           * ninguna de las 24 guías de Blas tiene costo cargado, así que la
-           * tarjeta hoy no muestra una cifra falsa: muestra cuántas guías hay
-           * que costear para que exista.
-           */
-          <CtpKpi
-            key="valor"
-            label="Valor del patio"
-            value={
-              valorDelStock.filasValorizadas === 0
-                ? "sin costear"
-                : `S/ ${formatNumber(valorDelStock.totalSoles, { max: 0 })}`
-            }
-            subValue={
-              valorDelStock.guiasSinCosto.length > 0
-                ? `Faltan costear ${nf(valorDelStock.guiasSinCosto.length)} guía${valorDelStock.guiasSinCosto.length === 1 ? "" : "s"} en Ingresos`
-                : valorDelStock.filasValorizadas === 0
-                  ? "Ninguna corrida dice de qué guía salió"
-                  : `${nf(valorDelStock.filasValorizadas)} fila${valorDelStock.filasValorizadas === 1 ? "" : "s"} valorizadas al costo de su guía`
-            }
-            icon={Coins}
-          />,
-        ]}
-      />
+      {/* Lo que pasó tras una acción de la fila (desmarcar, guardar escuadría,
+          exportar…): se dice arriba, o se pierde antes de que el operador
+          levante la vista de la tabla. */}
+      {nota && (
+        <p className="flex items-start gap-2 rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] px-4 py-3 text-sm font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
+          <span className="flex-1">{nota}</span>
+          <button
+            type="button"
+            onClick={() => setNota(null)}
+            aria-label="Cerrar el aviso"
+            className="shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </p>
+      )}
 
-      {/* Siete columnas y no seis: la celda de la derecha ahora lleva DOS
-          botones (Exportar y Columnas) y con una sola columna «Exportar»
-          quedaba cortado contra el borde. */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-7">
-        <label className="relative sm:col-span-2">
+      {/* Especie y Producto se filtran en el encabezado de su propia columna
+          (autofiltro tipo Excel, más abajo): acá afuera queda lo que NO es una
+          columna siempre a la vista — el buscador, el N° de permiso (su
+          columna es opcional y arranca apagada), «Ver también lo marcado como
+          usado», Exportar, Columnas y el botón Indicadores, todos en la MISMA
+          fila (Brandon, 2026-09-24: «alineado con otros botones, para evitar
+          que ocupe mucho espacio»). */}
+      <div className="flex flex-wrap items-center gap-2">
+        {kpiBoton}
+        <label className="relative min-w-0 flex-1 sm:min-w-[220px]">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
             aria-hidden
@@ -1190,13 +1266,12 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             className={`${CAMPO} pl-9`}
           />
         </label>
-        {/* Un desplegable sin opciones no se dibuja — la misma regla que ya
-            aplica el panel de indicadores (`CtpKpiFiltros`). Acá salían los tres
-            en gris diciendo «Sin datos en el período», que además culpaba al
-            período: en esta vista el período NO acota el depósito (ver el
-            endpoint, `soloDelPeriodo`), así que mandaba a cambiar algo que no
-            cambia nada. El que está filtrando se dibuja igual, o el operador se
-            queda sin poder apagarlo. */}
+        {/* Especie y Producto se filtran arriba, en el encabezado de su
+            columna — pero a `<640px` la tabla se vuelve tarjetas y el
+            `<thead>` se oculta entero (`cards-moviles-th-con-autofiltro-rotulo`):
+            sin esto, en el celular no había forma de filtrar por especie o
+            producto. Mismo patrón que `CtpPatioFiltros.tsx`: el panel se
+            repite `sm:hidden`. */}
         {(opciones.especies.length > 0 || especie.length > 0) && (
           <CampoDeFiltro
             label="Especie"
@@ -1205,6 +1280,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             onChange={setEspecie}
             placeholder="Todas las especies"
             textoVacio="Sin producto en el depósito"
+            className="w-full sm:hidden"
           />
         )}
         {(opciones.productos.length > 0 || producto.length > 0) && (
@@ -1215,8 +1291,16 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             onChange={setProducto}
             placeholder="Todos los productos"
             textoVacio="Sin producto en el depósito"
+            className="w-full sm:hidden"
           />
         )}
+        {/* Un desplegable sin opciones no se dibuja — la misma regla que ya
+            aplica el panel de indicadores (`CtpKpiFiltros`). Acá salía en gris
+            diciendo «Sin datos en el período», que además culpaba al período:
+            en esta vista el período NO acota el depósito (ver el endpoint,
+            `soloDelPeriodo`), así que mandaba a cambiar algo que no cambia
+            nada. El que está filtrando se dibuja igual, o el operador se queda
+            sin poder apagarlo. */}
         {(opciones.permisos.length > 0 || permiso.length > 0) && (
           <CampoDeFiltro
             label="N° de permiso"
@@ -1225,36 +1309,36 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             onChange={setPermiso}
             placeholder="Todos los permisos"
             textoVacio="Sin producto en el depósito"
+            className="w-full sm:w-56"
           />
         )}
-        <div className="flex flex-wrap items-center justify-end gap-2 sm:col-span-2">
-          {/* Lo que el vendedor manda por WhatsApp cuando le piden la lista. */}
-          <button
-            type="button"
-            onClick={exportar}
-            disabled={ordenadas.length === 0}
-            title="Bajar lo que estás viendo a un CSV que abre en Excel"
-            className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-[var(--accent)]"
-          >
-            <FileSpreadsheet className="h-4 w-4 shrink-0" aria-hidden /> Exportar
-          </button>
-          <ColumnasMenu
-            columnas={COLUMNAS_DISPONIBLES_OPCIONALES}
-            visibles={colsVisibles}
-            onChange={setColsVisibles}
+        <label className="flex shrink-0 cursor-pointer items-center gap-2 text-sm text-[var(--text-secondary)]">
+          <input
+            type="checkbox"
+            checked={verUsados}
+            onChange={(e) => setVerUsados(e.target.checked)}
+            className="h-5 w-5 accent-[var(--accent)]"
           />
-        </div>
+          Ver también lo marcado como usado
+        </label>
+        {/* Lo que el vendedor manda por WhatsApp cuando le piden la lista. */}
+        <button
+          type="button"
+          onClick={exportar}
+          disabled={ordenadas.length === 0}
+          title="Bajar lo que estás viendo a un CSV que abre en Excel"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-[var(--accent)]"
+        >
+          <FileSpreadsheet className="h-4 w-4 shrink-0" aria-hidden /> Exportar
+        </button>
+        <ColumnasMenu
+          columnas={COLUMNAS_DISPONIBLES_OPCIONALES}
+          visibles={colsVisibles}
+          onChange={setColsVisibles}
+        />
       </div>
 
-      <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-[var(--text-secondary)]">
-        <input
-          type="checkbox"
-          checked={verUsados}
-          onChange={(e) => setVerUsados(e.target.checked)}
-          className="h-5 w-5 accent-[var(--accent)]"
-        />
-        Ver también lo marcado como usado
-      </label>
+      {kpiPanel}
 
       {/* Lo que el propio stock tiene mal, en chips que acotan la tabla. */}
       <AvisosDelStock
@@ -1293,12 +1377,55 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             <ThOrdenable campo="codigo" orden={orden} onOrdenar={ordenarPor}>
               Código paquete
             </ThOrdenable>
-            <ThOrdenable campo="producto" orden={orden} onOrdenar={ordenarPor}>
-              Producto
-            </ThOrdenable>
-            <ThOrdenable campo="especie" orden={orden} onOrdenar={ordenarPor}>
-              Especie
-            </ThOrdenable>
+            {/* Autofiltro tipo Excel en el propio encabezado (Brandon,
+                2026-09-24): Producto y Especie son columnas fijas, siempre a
+                la vista, así que su filtro vive acá y no en la barra de
+                arriba. El permiso se queda afuera — su columna es opcional y
+                arranca apagada (`colsVisibles.permiso`), y un filtro escondido
+                detrás de una columna que nadie prendió no se encuentra. */}
+            <ThOrdenableConFiltro
+              campo="producto"
+              orden={orden}
+              onOrdenar={ordenarPor}
+              label="Producto"
+              filtro={
+                (opciones.productos.length > 0 || producto.length > 0) && (
+                  <FiltroColumnaMulti
+                    label="Producto"
+                    value={producto}
+                    options={opciones.productos.map((p) => ({
+                      value: p,
+                      count: pesos.productos.get(claveEspecie(p))?.count ?? 0,
+                      peso: pesos.productos.get(claveEspecie(p))?.peso ?? 0,
+                    }))}
+                    etiqueta={productLabel}
+                    onChange={setProducto}
+                    placeholder="Todos"
+                  />
+                )
+              }
+            />
+            <ThOrdenableConFiltro
+              campo="especie"
+              orden={orden}
+              onOrdenar={ordenarPor}
+              label="Especie"
+              filtro={
+                (opciones.especies.length > 0 || especie.length > 0) && (
+                  <FiltroColumnaMulti
+                    label="Especie"
+                    value={especie}
+                    options={opciones.especies.map((e) => ({
+                      value: e,
+                      count: pesos.especies.get(claveEspecie(e))?.count ?? 0,
+                      peso: pesos.especies.get(claveEspecie(e))?.peso ?? 0,
+                    }))}
+                    onChange={setEspecie}
+                    placeholder="Todas"
+                  />
+                )
+              }
+            />
             {colsVisibles.presentacion && <th className="px-3 py-2 font-bold">Presentación</th>}
             {colsVisibles.medidas && <th className="px-3 py-2 font-bold">Medidas</th>}
             {/* Piezas · m³ · PT, pegadas (2026-09-09): el pie tablar estaba

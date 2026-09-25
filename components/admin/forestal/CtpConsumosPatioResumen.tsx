@@ -29,24 +29,23 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import CtpPatioPorPermiso from "./CtpPatioPorPermiso";
 import CtpLotesTira from "./CtpLotesTira";
-import type { EstadoPatioConsumos } from "./hooks/use-patio-consumos";
+import CtpPatioKpis from "./CtpPatioKpis";
+import { NotaFiltrosKpi, notaDeFiltros } from "./CtpKpiFiltros";
+import { camposDelFiltroPatio, type EstadoPatioConsumos } from "./hooks/use-patio-consumos";
 
 const nf = (n: number) => formatNumber(n);
 
 export default function CtpConsumosPatioResumen({
   estado,
-  indicadores,
   trabajando,
   onIr,
 }: {
   estado: EstadoPatioConsumos;
-  /** `CtpPatioKpis`: el botón «Indicadores» con el titular en una línea. */
-  indicadores: React.ReactNode;
   /** Hay un lote elegido: la tabla por permiso y la tira de lotes ceden la pantalla. */
   trabajando: boolean;
   onIr?: (vista: string) => void;
 }) {
-  const { lotes, carga, porPermiso } = estado;
+  const { lotes, carga, porPermiso, patio } = estado;
   const idTitulo = useId();
   const idTabla = useId();
   /* En el celular arranca plegada: cada permiso es una tarjeta de ~200 px y la
@@ -75,23 +74,34 @@ export default function CtpConsumosPatioResumen({
       aria-labelledby={idTitulo}
       className="space-y-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
     >
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle as="h3" id={idTitulo} className="text-base font-bold text-[var(--text-primary)]">
-          Qué queda en el patio
-        </CardTitle>
-        <button
-          type="button"
-          onClick={() => void estado.descargarExcel()}
-          disabled={filas.length === 0 || estado.descargando}
-          title="Descargar el patio por permiso (Excel): una hoja por permiso con sus trozas"
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
-        >
-          <FileDown className="h-4 w-4" aria-hidden />
-          {estado.descargando ? "Generando…" : "Excel por permiso"}
-        </button>
-      </header>
-
-      {indicadores}
+      {/* Título, «Indicadores» y el Excel en UNA fila (Brandon 2026-09-24:
+          «el botón de KPIs alineado con otros botones»): el botón lleva el
+          titular adentro mientras está cerrado. */}
+      <CtpPatioKpis
+        resumen={patio.resumen}
+        filtrosActivos={patio.cuantosFiltros}
+        filtros={<NotaFiltrosKpi nota={notaDeFiltros(camposDelFiltroPatio(patio))} onLimpiar={patio.limpiar} />}
+        trabajoActivo={trabajando}
+        cargando={lotes.cargando}
+        acotadoA={carga.loteElegido?.speciesCommon ?? undefined}
+        antes={
+          <CardTitle as="h3" id={idTitulo} className="mr-1 text-base font-bold text-[var(--text-primary)]">
+            Qué queda en el patio
+          </CardTitle>
+        }
+        acciones={
+          <button
+            type="button"
+            onClick={() => void estado.descargarExcel()}
+            disabled={filas.length === 0 || estado.descargando}
+            title="Descargar el patio por permiso (Excel): una hoja por permiso con sus trozas"
+            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
+          >
+            <FileDown className="h-4 w-4" aria-hidden />
+            {estado.descargando ? "Generando…" : "Excel por permiso"}
+          </button>
+        }
+      />
 
       <div className="space-y-2">
         <div className="flex items-center gap-1">

@@ -11,6 +11,8 @@ import { cn, exportToCSV } from "@/lib/utils";
 import AdminCard from "./shared/AdminCard";
 import StatusBadge from "./shared/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -62,6 +64,9 @@ export default function TaxTab() {
   const [lines, setLines] = useState<TaxLine[]>([]);
   const [view, setView] = useState<"ventas" | "compras" | "resumen">("resumen");
   const [tick, setTick] = useState(0);
+  /** Filtro de la columna "Estado" (Pendiente/Declarado) — antes no existía
+   *  ningún filtro sobre esa columna. */
+  const [estadoFilter, setEstadoFilter] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -140,6 +145,18 @@ export default function TaxTab() {
   }, [lines]);
 
   const visibleLines = view === "resumen" ? lines : lines.filter(l => l.type === (view === "ventas" ? "venta" : "compra"));
+
+  // Peso de "Estado" sobre lo que ya recortó la pestaña (ventas/compras/todos),
+  // no sobre lo que además recortó el propio filtro — si no, marcar "Declarado"
+  // hace desaparecer "Pendiente" de su propia lista de opciones.
+  const estadoOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const l of visibleLines) counts[l.status] = (counts[l.status] ?? 0) + 1;
+    return (["pendiente", "declarado"] as const)
+      .filter((s) => counts[s] > 0)
+      .map((s) => ({ value: s, count: counts[s] }));
+  }, [visibleLines]);
+  const filteredLines = estadoFilter.length > 0 ? visibleLines.filter((l) => estadoFilter.includes(l.status)) : visibleLines;
 
   const handleDeclare = (id: string) => {
     setLines(prev => prev.map(l => l.id === id ? { ...l, status: "declarado" } : l));
@@ -225,7 +242,7 @@ export default function TaxTab() {
 
           {/* Table */}
           <div className="bg-[var(--surface-raised)]">
-            <DataTable className="min-w-[600px]">
+            <DataTable filtrable className="min-w-[600px]">
               <thead>
                 <tr>
                   <th>Fecha</th>
@@ -235,12 +252,23 @@ export default function TaxTab() {
                   <th className="text-right hidden sm:table-cell">Base</th>
                   <th className="text-right">IGV</th>
                   <th className="text-right">Total</th>
-                  <th className="text-center hidden sm:table-cell">Estado</th>
+                  <th className="text-center hidden sm:table-cell">
+                    <span className="block">Estado</span>
+                    <FiltroColumnaMulti
+                      label="Estado"
+                      value={estadoFilter}
+                      options={estadoOptions}
+                      etiqueta={(v) => (v === "declarado" ? "Declarado" : "Pendiente")}
+                      onChange={setEstadoFilter}
+                      placeholder="Todos"
+                      className="mx-auto"
+                    />
+                  </th>
                   <th className="text-center hidden sm:table-cell">Acc.</th>
                 </tr>
               </thead>
               <tbody>
-                {visibleLines.map(line => (
+                {filteredLines.map(line => (
                   <tr key={line.id}>
                     <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>
                     <td>
@@ -267,7 +295,7 @@ export default function TaxTab() {
                 ))}
               </tbody>
             </DataTable>
-            {visibleLines.length === 0 && <p className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted text-sm">Sin registros para el período.</p>}
+            {filteredLines.length === 0 && <p className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted text-sm">Sin registros para el período.</p>}
           </div>
 
           {/* Pending alert — AdminCard con intent warning */}

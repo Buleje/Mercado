@@ -10,6 +10,8 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { DataTable, StatCard } from "@buleje/design-system";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 import {
   HeartHandshake,
   Users,
@@ -192,13 +194,15 @@ function MembersTab({
   onSelect: (m: SocioMember) => void;
 }) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<SocioMember["status"] | "all">("all");
-  const [planFilter, setPlanFilter] = useState<SocioMember["plan"] | "all">("all");
+  // Multi-selección en el `<th>` de su propia columna (convención de filtros
+  // en la cabecera) — vivían como dos `<select>` sueltos en la barra.
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [planFilter, setPlanFilter] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
     return members.filter((m) => {
-      if (statusFilter !== "all" && m.status !== statusFilter) return false;
-      if (planFilter !== "all" && m.plan !== planFilter) return false;
+      if (statusFilter.length > 0 && !statusFilter.includes(m.status)) return false;
+      if (planFilter.length > 0 && !planFilter.includes(m.plan)) return false;
       if (!search.trim()) return true;
       const q = search.toLowerCase();
       return (
@@ -208,6 +212,23 @@ function MembersTab({
       );
     });
   }, [members, search, statusFilter, planFilter]);
+
+  // Peso sobre TODOS los miembros, no sobre `filtered` — si no, tildar
+  // "Activos" hace desaparecer "Pausados" de su propia lista de opciones.
+  const statusOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const m of members) counts[m.status] = (counts[m.status] ?? 0) + 1;
+    return (Object.keys(STATUS_LABELS) as SocioMember["status"][])
+      .filter((s) => counts[s] > 0)
+      .map((s) => ({ value: s, count: counts[s] }));
+  }, [members]);
+  const planOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const m of members) counts[m.plan] = (counts[m.plan] ?? 0) + 1;
+    return (Object.keys(PLAN_LABELS) as SocioMember["plan"][])
+      .filter((p) => counts[p] > 0)
+      .map((p) => ({ value: p, count: counts[p] }));
+  }, [members]);
 
   return (
     <div className="space-y-4">
@@ -223,27 +244,6 @@ function MembersTab({
             className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
-        <select
-          value={planFilter}
-          onChange={(e) => setPlanFilter(e.target.value as SocioMember["plan"] | "all")}
-          aria-label="Filtrar por plan"
-          className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
-        >
-          <option value="all">Todos los planes</option>
-          <option value="mensual">Mensual</option>
-          <option value="anual">Anual</option>
-        </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as SocioMember["status"] | "all")}
-          aria-label="Filtrar por estado"
-          className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
-        >
-          <option value="all">Todos los estados</option>
-          <option value="activo">Activos</option>
-          <option value="pausado">Pausados</option>
-          <option value="cancelado">Cancelados</option>
-        </select>
         <button
           onClick={() => exportCSV(filtered)}
           className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
@@ -253,34 +253,99 @@ function MembersTab({
         </button>
       </div>
 
+      {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
+          <thead>): Plan y Estado se repiten acá, mismo estado, sólo visibles
+          ahí. */}
+      {members.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:hidden">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Plan</span>
+            <FiltroColumnaMulti
+              label="Plan"
+              value={planFilter}
+              options={planOptions}
+              etiqueta={(v) => PLAN_LABELS[v as SocioMember["plan"]] ?? v}
+              onChange={setPlanFilter}
+              placeholder="Todos"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Estado</span>
+            <FiltroColumnaMulti
+              label="Estado"
+              value={statusFilter}
+              options={statusOptions}
+              etiqueta={(v) => STATUS_LABELS[v as SocioMember["status"]] ?? v}
+              onChange={setStatusFilter}
+              placeholder="Todos"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Tabla */}
-      {filtered.length === 0 ? (
+      {members.length === 0 ? (
         <div className="text-center py-16 text-[var(--text-tertiary)]">
           <Users className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm font-semibold">Sin miembros que mostrar</p>
-          <p className="text-xs mt-1">Ajusta los filtros o espera nuevas suscripciones.</p>
+          <p className="text-xs mt-1">Aún no hay miembros del programa Socio Buleje.</p>
         </div>
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
+            <DataTable filtrable className="w-full text-sm">
               <thead className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Miembro</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">Plan</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">
+                    <span className="block">Plan</span>
+                    <FiltroColumnaMulti
+                      label="Plan"
+                      value={planFilter}
+                      options={planOptions}
+                      etiqueta={(v) => PLAN_LABELS[v as SocioMember["plan"]] ?? v}
+                      onChange={setPlanFilter}
+                      placeholder="Todos"
+                    />
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Renovación</th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Cashback</th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Pedidos</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Estado</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">
+                    <span className="block">Estado</span>
+                    <FiltroColumnaMulti
+                      label="Estado"
+                      value={statusFilter}
+                      options={statusOptions}
+                      etiqueta={(v) => STATUS_LABELS[v as SocioMember["status"]] ?? v}
+                      onChange={setStatusFilter}
+                      placeholder="Todos"
+                      className="mx-auto"
+                    />
+                  </th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center">
+                      <p className="text-sm font-semibold text-[var(--text-secondary)]">Ningún miembro coincide con el filtro.</p>
+                      <button
+                        type="button"
+                        onClick={() => { setStatusFilter([]); setPlanFilter([]); setSearch(""); }}
+                        className="mt-2 text-xs font-extrabold text-[var(--accent)] hover:underline"
+                      >
+                        Quitar filtros
+                      </button>
+                    </td>
+                  </tr>
+                )}
                 {filtered.map((m) => (
                   <tr key={m.id} className="hover:bg-[var(--surface-alt)] transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--data-success-500)] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white flex items-center justify-center text-xs font-bold shrink-0">
                           {m.name.charAt(0).toUpperCase()}
                         </div>
                         <div>

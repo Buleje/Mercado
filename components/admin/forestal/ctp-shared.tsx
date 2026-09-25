@@ -7,7 +7,6 @@
 
 import {
   Children,
-  Fragment,
   cloneElement,
   isValidElement,
   useCallback,
@@ -16,12 +15,11 @@ import {
   useRef,
   useState,
   type ReactElement,
-  type ReactNode,
 } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
-import { AlertCircle, AlertTriangle, BarChart3, Check, CheckCircle2, ChevronDown, Clock, Columns3, Copy, ExternalLink, X as XIcon } from "@buleje/design-system/icons";
+import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, Columns3, Copy, ExternalLink, X as XIcon } from "@buleje/design-system/icons";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -719,7 +717,10 @@ const BTN_SIZE: Record<"md" | "sm", string> = {
   sm: "h-9 px-3 text-sm",
 };
 const BTN_VARIANT: Record<BtnVariant, string> = {
-  primary: "bg-[var(--data-success-700)] text-white shadow-sm hover:opacity-90",
+  /* El CTA lleva la marca, no el verde de «éxito» (Brandon 2026-09-24: «veo
+     que está verde y mi color no es eso»). --accent-dark: turquesa del logo
+     con texto blanco AA (4.86:1). */
+  primary: "bg-[var(--accent-dark)] text-white shadow-sm hover:brightness-110",
   dark: "bg-[var(--brand-ink)] text-white shadow-sm hover:opacity-90",
   secondary: "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]",
   ghost: "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
@@ -772,161 +773,9 @@ export function DescuadreChip({ entry }: { entry: WoodEntry }) {
   );
 }
 
-/**
- * La fila de KPIs de una vista, con lo secundario plegado.
- *
- * Brandon, 2026-09-02: «en los KPI, la segunda fila que se oculte por defecto y
- * verlo con un botón para desplegarlo». Cinco tarjetas caen a dos filas apenas
- * la ventana baja de 1280 px, y esa segunda fila empuja la tabla —que es a lo
- * que se entra— fuera de la pantalla.
- *
- * `principales` = los que se ven siempre (los dos primeros: cuánto hay y cuánto
- * mide). El resto entra tras el botón, y la preferencia se recuerda por vista:
- * quien los quiere abiertos los abre una vez.
- *
- * El grid es `auto-fit` y no un número fijo de columnas a propósito: plegado
- * son dos tarjetas y desplegado cinco, y con `xl:grid-cols-5` las dos visibles
- * dejaban tres huecos en blanco del alto de una tarjeta.
- */
-export function CtpKpisPlegables({
-  claveMemoria,
-  tarjetas,
-  resumen,
-  resumenExtra,
-  encabezado,
-  filtros,
-  filtrosActivos = 0,
-  trabajoActivo = false,
-}: {
-  claveMemoria: string;
-  tarjetas: ReactNode[];
-  /**
-   * El bloque ancho que va ARRIBA de las tarjetas dentro del panel: en
-   * Producción, el balance físico del período (entró → salió → rendimiento).
-   * No es una tarjeta más — es lo que las tarjetas resumen.
-   */
-  encabezado?: ReactNode;
-  /**
-   * Lo que acompaña al titular con el panel CERRADO (el mini-gauge de
-   * rendimiento). Va al lado del texto porque la cifra que gobierna la
-   * producción no puede vivir sólo detrás de un botón.
-   */
-  resumenExtra?: ReactNode;
-  /**
-   * Hay trabajo abierto abajo (un lote elegido, una corrida en curso).
-   *
-   * Medido en la pantalla real: con los indicadores abiertos, la mesa de
-   * trabajo —la lista de trozas que se tildan— empezaba en el píxel 1247 de un
-   * viewport de 1000. El trabajo nacía fuera de pantalla. Cuando se elige el
-   * lote, el panel se repliega solo y le devuelve esa mitad de pantalla a lo
-   * que se vino a hacer. Si el operador lo reabre, se queda abierto: esto
-   * decide en el momento del cambio, no en cada render.
-   */
-  trabajoActivo?: boolean;
-  /**
-   * La fila que gobierna estas cifras (ADR-400): va DENTRO del panel, arriba
-   * de las tarjetas, porque filtra justo lo que se está mirando.
-   */
-  filtros?: ReactNode;
-  /** Cuántos filtros hay puestos: se dice en el botón, que puede estar cerrado
-   *  sobre cifras recortadas — y un número chico sin explicación se lee como
-   *  una caída del mes. */
-  filtrosActivos?: number;
-  /**
-   * El titular en una línea, al lado del botón cerrado.
-   *
-   * Sin esto el botón es una caja ciega: nadie abre un panel que no sabe qué
-   * tiene adentro, y las cifras dejarían de mirarse del todo. Va corto —dos o
-   * tres números— y sale de las MISMAS cuentas que las tarjetas.
-   */
-  resumen?: string;
-}) {
-  /* Arranca CERRADO (Brandon, 2026-09-03: «que los KPIs estén ocultos y que
-     haya un botón para mostrarlos»). Ocho tarjetas empujaban la tabla —que es
-     el trabajo— media pantalla abajo en cada carga de cada pestaña.
-
-     Clave `v2`: la v1 guardaba «¿está abierta la SEGUNDA fila?», que es otra
-     pregunta. Reusarla habría abierto el panel entero a quien sólo había
-     pedido ver dos tarjetas más. */
-  const [abierto, setAbierto] = useState(false);
-  useEffect(() => {
-    try { setAbierto(localStorage.getItem(`ctp-kpis-v2:${claveMemoria}`) === "1"); } catch { /* modo privado */ }
-  }, [claveMemoria]);
-  const alternar = () => {
-    setAbierto((v) => {
-      const next = !v;
-      try { localStorage.setItem(`ctp-kpis-v2:${claveMemoria}`, next ? "1" : "0"); } catch { /* quota */ }
-      return next;
-    });
-  };
-
-  /* Al ARRANCAR el trabajo el panel se repliega; la preferencia guardada no se
-     pisa, así que al soltar el lote vuelve a abrirse si así estaba. El efecto
-     depende sólo de `trabajoActivo`: si dependiera de `abierto`, reabrirlo a
-     mano lo volvería a cerrar en el render siguiente. */
-  const trabajoPrevio = useRef(trabajoActivo);
-  useEffect(() => {
-    if (trabajoActivo && !trabajoPrevio.current) setAbierto(false);
-    if (!trabajoActivo && trabajoPrevio.current) {
-      try { setAbierto(localStorage.getItem(`ctp-kpis-v2:${claveMemoria}`) === "1"); } catch { /* modo privado */ }
-    }
-    trabajoPrevio.current = trabajoActivo;
-  }, [trabajoActivo, claveMemoria]);
-
-  if (tarjetas.length === 0) return null;
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <button
-          type="button"
-          onClick={alternar}
-          aria-expanded={abierto}
-          title={abierto ? "Ocultar los indicadores del período" : "Ver los indicadores del período"}
-          className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border-[1.5px] px-2.5 text-sm font-bold transition-colors print:hidden ${
-            abierto
-              ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-          }`}
-        >
-          <BarChart3 className="h-4 w-4" aria-hidden />
-          Indicadores
-          <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-xs tabular-nums text-[var(--text-tertiary)]">
-            {tarjetas.length}
-          </span>
-          <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
-        </button>
-        {/* Con el panel cerrado, el resumen habla de un conjunto filtrado sin
-            decirlo. Esta marca es lo único que lo delata. */}
-        {filtrosActivos > 0 && (
-          <span
-            title="Los indicadores están mostrando sólo una parte del período"
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
-          >
-            {filtrosActivos} filtro{filtrosActivos === 1 ? "" : "s"}
-          </span>
-        )}
-        {/* El titular sólo mientras están escondidas: con el panel abierto, las
-            tarjetas ya lo dicen mejor y repetirlo es ruido. */}
-        {/* El indicador va PEGADO al titular, no al borde opuesto de la fila:
-            son la misma frase («esto produjo, a este rendimiento») y separados
-            por medio metro de pantalla se leen como dos cosas sin relación. */}
-        {!abierto && resumen && (
-          <p className="min-w-0 truncate font-mono text-sm tabular-nums text-[var(--text-secondary)]">{resumen}</p>
-        )}
-        {!abierto && resumenExtra}
-      </div>
-      {abierto && (
-        <>
-          {filtros}
-          {encabezado}
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3">
-            {tarjetas.map((k, i) => <Fragment key={i}>{k}</Fragment>)}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+/** Los indicadores plegables viven en `kpis-plegables.tsx` (2026-09-24); se
+ *  re-exportan acá para no tocar los imports que ya existían. */
+export { CtpKpisPlegables, useKpisPlegables } from "./kpis-plegables";
 
 /**
  * Columnas opcionales de una tabla, elegibles por el operador y persistidas
@@ -1020,6 +869,7 @@ export function ColumnasMenu<K extends string>({
         <div
           className="absolute right-0 top-full z-50 mt-1 max-h-[70vh] min-w-[230px] overflow-y-auto overscroll-contain rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         >
           {/* Agrupadas cuando la tabla declara grupos: quince casillas seguidas
               se leen como una bolsa. Sin `grupo`, cae en una sola lista y se ve

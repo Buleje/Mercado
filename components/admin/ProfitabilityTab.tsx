@@ -11,6 +11,8 @@ import { cn, exportToCSV } from "@/lib/utils";
 import { useProductProfitability } from "@/hooks/use-product-profitability";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { formatCurrency, formatNumber } from "@/lib/format";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -47,7 +49,9 @@ export default function ProfitabilityTab() {
   const [days, setDays] = useState<number>(30);
   const { lines: raw, resumen, since, loading, error, refetch } = useProductProfitability(days);
   const [search, setSearch] = useState("");
-  const [filterCat, setFilterCat] = useState("todos");
+  /** Multi-selección, ahora en el `<th>Categoría` de la tabla — vivía como un
+   *  `<select>` suelto en la barra (convención de filtros en la cabecera). */
+  const [catFilter, setCatFilter] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"marginPct" | "grossMargin" | "revenue" | "unitsSold">("marginPct");
   const [detail, setDetail] = useState<ProfitLine | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
@@ -89,16 +93,24 @@ export default function ProfitabilityTab() {
 
   const estimatedCount = useMemo(() => lines.filter(l => l.costEstimated).length, [lines]);
 
+  // Peso de cada categoría sobre TODAS las líneas del período (no sobre lo ya
+  // filtrado): así la opción sigue ahí aunque se haya elegido otra.
+  const catOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const l of lines) counts[l.category] = (counts[l.category] ?? 0) + 1;
+    return categories.map(c => ({ value: c, count: counts[c] ?? 0 }));
+  }, [lines, categories]);
+
   const filtered = useMemo(() => {
     let list = [...lines];
-    if (filterCat !== "todos") list = list.filter(l => l.category === filterCat);
+    if (catFilter.length > 0) list = list.filter(l => catFilter.includes(l.category));
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(l => l.product.toLowerCase().includes(q));
     }
     list.sort((a, b) => b[sortBy] - a[sortBy]);
     return list;
-  }, [lines, filterCat, search, sortBy]);
+  }, [lines, catFilter, search, sortBy]);
 
   // KPIs de arriba: el período completo, lo calcula el backend.
   const totals = useMemo(
@@ -245,10 +257,6 @@ export default function ProfitabilityTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select aria-label="Filtrar por categoría" value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <option value="todos">Todas las categorías</option>
-          {categories.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
         <select aria-label="Ordenar por" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="marginPct">Mayor % margen</option>
           <option value="grossMargin">Mayor margen bruto</option>
@@ -257,13 +265,31 @@ export default function ProfitabilityTab() {
         </select>
       </div>
 
+      {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
+          <thead>): Categoría se repite acá, mismo estado, sólo visible ahí. */}
+      {lines.length > 0 && (
+        <div className="flex flex-col gap-1 sm:hidden">
+          <span className="text-sm font-bold text-[var(--text-secondary)]">Categoría</span>
+          <FiltroColumnaMulti label="Categoría" value={catFilter} options={catOptions} onChange={setCatFilter} placeholder="Todas" />
+        </div>
+      )}
+
       {/* Table */}
-      <DataTable className="min-w-[600px]">
+      <DataTable filtrable className="min-w-[600px]">
         <thead>
           <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             <th>#</th>
             <th>Producto</th>
-            <th>Categoría</th>
+            <th>
+              <span className="block">Categoría</span>
+              <FiltroColumnaMulti
+                label="Categoría"
+                value={catFilter}
+                options={catOptions}
+                onChange={setCatFilter}
+                placeholder="Todas"
+              />
+            </th>
             <th className="text-right">Uds.</th>
             <th className="text-right">Ingresos</th>
             <th className="text-right">Costo</th>
@@ -318,7 +344,7 @@ export default function ProfitabilityTab() {
                 </span>
               </td>
               <td>
-                <button aria-label="Ver" onClick={() => setDetail(l)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
+                <button aria-label="Ver" onClick={() => setDetail(l)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
               </td>
             </tr>
           ))}

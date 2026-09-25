@@ -16,19 +16,18 @@ import { StatCard } from "@buleje/design-system";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
-import { CtpKpisPlegables } from "./ctp-shared";
+import { useKpisPlegables } from "./kpis-plegables";
 import { NotaFiltrosKpi, notaDeFiltros } from "./CtpKpiFiltros";
 import type { EstadoConsumosSeccion2 } from "./hooks/use-consumos-seccion2";
 
 const nf = (n: number) => formatNumber(n);
 
-export default function CtpConsumosSeccion2Kpis({
-  s2,
-  period,
-}: {
-  s2: EstadoConsumosSeccion2;
-  period: CtpPeriod;
-}) {
+/**
+ * Los indicadores del cuadro como `{ boton, panel }` (2026-09-24): el botón va
+ * en el encabezado del cuadro, al lado de «Opciones», y el panel debajo del
+ * título — antes era una fila suelta entre el aviso y el cuadro.
+ */
+export function useSeccion2Kpis(s2: EstadoConsumosSeccion2, period: CtpPeriod) {
   const { visibles, filas, total, especies, resumen, veredicto, filtro } = s2;
   const nota = notaDeFiltros([
     { label: "Búsqueda", valores: filtro.texto.trim() ? [`«${filtro.texto.trim()}»`] : [] },
@@ -37,20 +36,19 @@ export default function CtpConsumosSeccion2Kpis({
     { label: "Guía", valor: filtro.gtf },
   ]);
 
-  return (
-    <CtpKpisPlegables
-      claveMemoria="consumos-seccion2"
-      filtrosActivos={s2.cuantosFiltros}
-      filtros={<NotaFiltrosKpi nota={nota} onLimpiar={s2.limpiar} />}
-      resumen={
+  return useKpisPlegables({
+      alto: "sm",
+      claveMemoria: "consumos-seccion2",
+      filtrosActivos: s2.cuantosFiltros,
+      filtros: <NotaFiltrosKpi nota={nota} onLimpiar={s2.limpiar} />,
+      resumen:
         s2.cargandoInicial
           ? "Leyendo los consumos del período…"
           : visibles.length === 0
             ? "Sin consumos en el período"
             : `${nf(visibles.length)} consumo${visibles.length === 1 ? "" : "s"} · ${fmtM3(total)} m³ a la sierra` +
-              (resumen.rendimientoPct != null ? ` · ${resumen.rendimientoPct} %` : "")
-      }
-      tarjetas={[
+              (resumen.rendimientoPct != null ? ` · ${resumen.rendimientoPct} %` : ""),
+      tarjetas: [
         <StatCard
           key="consumos"
           density="compact"
@@ -96,7 +94,6 @@ export default function CtpConsumosSeccion2Kpis({
              en claro (axe, 24-09). El veredicto va escrito debajo. */
           emphasis="neutral"
         />,
-      ]}
-    />
-  );
+      ],
+  });
 }

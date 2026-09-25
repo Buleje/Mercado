@@ -32,7 +32,7 @@ import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import {
-  CtpKpisPlegables,
+  useKpisPlegables,
   estaFueraDePlazo,
   PLAZO_REGISTRO_DIAS,
   type WoodEntry,
@@ -47,6 +47,7 @@ export default function CtpGtfIngresadasKpis({
   onLate,
   filtros,
   filtrosActivos = 0,
+  acciones,
 }: {
   guias: GuiaIngreso<WoodEntry>[];
   /** El filtro «fuera de plazo» del panel, para que la tarjeta lo refleje. */
@@ -59,6 +60,16 @@ export default function CtpGtfIngresadasKpis({
    */
   filtros?: React.ReactNode;
   filtrosActivos?: number;
+  /**
+   * La barra de la vista (buscador · Filtros · Opciones · Nuevo ingreso), para
+   * que comparta fila con el botón «Indicadores» (Brandon, 2026-09-24).
+   */
+  /**
+   * La barra de la vista. Como función, recibe el botón «Indicadores» y lo
+   * pone ella misma en su primera fila (antes del buscador): al lado de una
+   * barra de varias filas, el botón le robaba el ancho al buscador.
+   */
+  acciones?: React.ReactNode | ((boton: React.ReactNode) => React.ReactNode);
 }) {
   const volumen = guias.reduce((a, g) => a + g.volumenM3, 0);
   const piezas = guias.reduce((a, g) => a + g.trozasCount, 0);
@@ -120,21 +131,22 @@ export default function CtpGtfIngresadasKpis({
     return [...map].map(([value, v]) => ({ value, count: v.count, volumeM3: v.peso }));
   })();
 
-  return (
-    /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular va
-       en la línea de resumen. */
-    <CtpKpisPlegables
-      claveMemoria="gtf-ingresadas"
-      filtros={filtros}
-      filtrosActivos={filtrosActivos}
-      resumen={
-        guias.length === 0
-          ? "Sin guías en el archivo del período"
-          : `${nf(guias.length)} guía${guias.length === 1 ? "" : "s"} · ${volumen.toFixed(2)} m³ · ${nf(piezas)} piezas` +
-            (sinCuadrar > 0 ? ` · ${nf(sinCuadrar)} sin cuadrar` : "") +
-            (tarde > 0 ? ` · ${nf(tarde)} fuera de plazo` : "")
-      }
-      tarjetas={[
+  /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular va
+     en la línea de resumen. Sueltos —no el envoltorio `CtpKpisPlegables`—
+     para alinear el botón CON la barra de acciones (`items-start`), no
+     centrarlo contra un bloque de varias filas. */
+  const { boton, panel } = useKpisPlegables({
+    claveMemoria: "gtf-ingresadas",
+    filtros,
+    filtrosActivos,
+    resumen:
+      guias.length === 0
+        ? "Sin guías en el archivo del período"
+        : `${nf(guias.length)} guía${guias.length === 1 ? "" : "s"} · ${volumen.toFixed(2)} m³ · ${nf(piezas)} piezas` +
+          (sinCuadrar > 0 ? ` · ${nf(sinCuadrar)} sin cuadrar` : "") +
+          (tarde > 0 ? ` · ${nf(tarde)} fuera de plazo` : ""),
+    alto: acciones ? "md" : "sm",
+    tarjetas: [
         <CtpKpi
           key="guias"
           label="Guías ingresadas"
@@ -215,7 +227,20 @@ export default function CtpGtfIngresadasKpis({
           tono="inverso"
           emphasis={sinCuadrar > 0 ? "warning" : "success"}
         />,
-      ]}
-    />
+      ],
+  });
+
+  return (
+    <div className="space-y-2">
+      {typeof acciones === "function" ? (
+        acciones(boton)
+      ) : (
+        <div className={`flex flex-wrap gap-2 ${acciones ? "items-start" : "items-center"}`}>
+          {boton}
+          {acciones && <div className="min-w-0 flex-1">{acciones}</div>}
+        </div>
+      )}
+      {panel}
+    </div>
   );
 }

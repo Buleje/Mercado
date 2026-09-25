@@ -4,6 +4,8 @@ import { CardTitle, DataTable, SectionTitle, StatCard } from "@buleje/design-sys
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useMemo, useState, useRef, useId, useCallback } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 import {
   Package,
   Download,
@@ -119,7 +121,10 @@ export default function ShrinkageTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const [filterCause, setFilterCause] = useState<ShrinkageCause | "todos">("todos");
+  /** Multi-selección igual que el resto del panel (ADR filtros-en-cabecera):
+   *  vacío = todos, OR adentro de la columna. Vivía como 5 botones pastilla
+   *  sueltos arriba de la tabla; ahora es el autofiltro del `<th>Motivo`. */
+  const [causeFilter, setCauseFilter] = useState<string[]>([]);
   const [detail, setDetail] = useState<ShrinkageRecord | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const detailTitleId = useId();
@@ -158,13 +163,24 @@ export default function ShrinkageTab() {
 
   const filtered = useMemo(() => {
     let list = [...records];
-    if (filterCause !== "todos") list = list.filter((record) => record.cause === filterCause);
+    if (causeFilter.length > 0) list = list.filter((record) => causeFilter.includes(record.cause));
     if (search.trim()) {
       const query = search.toLowerCase();
       list = list.filter((record) => record.product.toLowerCase().includes(query) || record.category.toLowerCase().includes(query));
     }
     return list;
-  }, [records, filterCause, search]);
+  }, [records, causeFilter, search]);
+
+  // Peso de cada motivo sobre TODOS los registros (no sobre `filtered`): el
+  // autofiltro cuenta contra el universo, como en Inventario/Pedidos — si no,
+  // marcar una opción hace que las demás desaparezcan de su propia lista.
+  const causeOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const r of records) counts[r.cause] = (counts[r.cause] ?? 0) + 1;
+    return (Object.keys(CAUSE_META) as ShrinkageCause[])
+      .filter((c) => counts[c] > 0)
+      .map((c) => ({ value: c, count: counts[c] }));
+  }, [records]);
 
   const stats = useMemo(() => {
     const totalLoss = records.reduce((sum, record) => sum + record.totalLoss, 0);
@@ -254,17 +270,25 @@ export default function ShrinkageTab() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o categoria..." className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] h-11 pl-10 pr-4 text-sm dark:border-[var(--rule-base)] " />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setFilterCause("todos")} className={cn("rounded-xl px-3 py-2 text-xs font-bold", filterCause === "todos" ? "bg-primary text-white" : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:text-muted")}>Todos</button>
-          {(Object.keys(CAUSE_META) as ShrinkageCause[]).map((cause) => (
-            <button key={cause} onClick={() => setFilterCause(cause)} className={cn("rounded-xl px-3 py-2 text-xs font-bold", filterCause === cause ? "bg-primary text-white" : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:text-muted")}>
-              {CAUSE_META[cause].label}
-            </button>
-          ))}
-        </div>
       </div>
 
-      <DataTable className="min-w-[600px]">
+      {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
+          <thead>): Motivo se repite acá, mismo estado, sólo visible ahí. */}
+      {records.length > 0 && (
+        <div className="flex flex-col gap-1 sm:hidden">
+          <span className="text-sm font-bold text-[var(--text-secondary)]">Motivo</span>
+          <FiltroColumnaMulti
+            label="Motivo"
+            value={causeFilter}
+            options={causeOptions}
+            etiqueta={(v) => CAUSE_META[v as ShrinkageCause]?.label ?? v}
+            onChange={setCauseFilter}
+            placeholder="Todos"
+          />
+        </div>
+      )}
+
+      <DataTable filtrable className="min-w-[600px]">
             <thead>
               <tr>
                 <th>Fecha</th>
@@ -272,7 +296,17 @@ export default function ShrinkageTab() {
                 <th className="text-right">Cantidad</th>
                 <th className="text-right">Costo u.</th>
                 <th className="text-right">Perdida</th>
-                <th>Motivo</th>
+                <th>
+                  <span className="block">Motivo</span>
+                  <FiltroColumnaMulti
+                    label="Motivo"
+                    value={causeFilter}
+                    options={causeOptions}
+                    etiqueta={(v) => CAUSE_META[v as ShrinkageCause]?.label ?? v}
+                    onChange={setCauseFilter}
+                    placeholder="Todos"
+                  />
+                </th>
                 <th className="text-center">Detalle</th>
               </tr>
             </thead>

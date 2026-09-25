@@ -14,7 +14,6 @@ import { useId, useMemo } from "react";
 import { BarChart3, Download, Layers, Search, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import type { AgrupacionConsumo } from "@/lib/forestal/loctp-consumos-analisis";
-import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
 import type { EstadoConsumosSeccion2 } from "./hooks/use-consumos-seccion2";
@@ -106,9 +105,12 @@ export default function CtpConsumosSeccion2Barra({ s2 }: { s2: EstadoConsumosSec
   const idBuscar = useId();
   const { filtro, set, opciones } = s2;
 
+  /* Especie y permiso se filtran desde su columna del cuadro (2026-09-24).
+     Afuera queda lo que no tiene columna: el texto y la guía de ingreso (la
+     GTF sólo aparece dentro de las observaciones). */
   return (
-    <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="flex min-w-0 flex-col gap-1">
+    <div className="flex flex-wrap items-end gap-2">
+      <div className="flex min-w-[min(100%,16rem)] flex-1 flex-col gap-1">
         <label htmlFor={idBuscar} className={ROTULO}>
           Buscar en los consumos
         </label>
@@ -119,6 +121,7 @@ export default function CtpConsumosSeccion2Barra({ s2 }: { s2: EstadoConsumosSec
           />
           <input
             id={idBuscar}
+            type="search"
             value={filtro.texto}
             onChange={(e) => set.texto(e.target.value)}
             placeholder="Guía, especie, código…"
@@ -127,33 +130,17 @@ export default function CtpConsumosSeccion2Barra({ s2 }: { s2: EstadoConsumosSec
         </div>
       </div>
       {/* Dos o más valores por campo (Brandon, 2026-09-10). */}
-      <ConRotulo texto="Especie">
-        <CampoDeFiltro
-          label="Especie"
-          value={filtro.especie}
-          options={opciones.especie.map((e) => ({ value: e }))}
-          onChange={set.especie}
-          placeholder="Todas las especies"
-        />
-      </ConRotulo>
-      <ConRotulo texto="Permiso">
-        <CampoDeFiltro
-          label="Permiso (título habilitante)"
-          value={filtro.permiso}
-          options={opciones.permiso.map((p) => ({ value: p.value, hint: `${fmtM3(p.m3)} m³` }))}
-          onChange={set.permiso}
-          placeholder="Todos los permisos"
-        />
-      </ConRotulo>
-      <ConRotulo texto="Guía de ingreso">
-        <CampoDeFiltro
-          label="Guía de ingreso"
-          value={filtro.gtf}
-          options={opciones.gtf.map((g) => ({ value: g }))}
-          onChange={set.gtf}
-          placeholder="Todas las guías"
-        />
-      </ConRotulo>
+      <div className="w-full sm:w-64">
+        <ConRotulo texto="Guía de ingreso">
+          <CampoDeFiltro
+            label="Guía de ingreso"
+            value={filtro.gtf}
+            options={opciones.gtf.map((g) => ({ value: g }))}
+            onChange={set.gtf}
+            placeholder="Todas las guías"
+          />
+        </ConRotulo>
+      </div>
     </div>
   );
 }

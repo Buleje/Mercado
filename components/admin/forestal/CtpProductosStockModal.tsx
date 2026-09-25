@@ -30,6 +30,8 @@ import { useTratoDeVenta } from "./hooks/use-trato-de-venta";
 import { Btn, ModalFooter, productLabel } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import { formatDateNumeric } from "@/lib/format";
+import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
+import { CampoDeFiltro } from "./ctp-filtros-panel";
 
 const CAMPO =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
@@ -80,12 +82,15 @@ export default function CtpProductosStockModal({
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [plan, setPlan] = useState("");
-  const [lote, setLote] = useState("");
+  // Los cuatro corresponden a su propia columna de la tabla: viven en el `<th>`
+  // (multi-selección, OR adentro, AND entre columnas — Brandon, 2026-09-24).
+  // Sólo el texto libre y la fecha, que no son una columna sola, quedan arriba.
+  const [titularFiltro, setTitularFiltro] = useState<string[]>([]);
+  const [loteFiltro, setLoteFiltro] = useState<string[]>([]);
   const [texto, setTexto] = useState("");
   const [fecha, setFecha] = useState("");
-  const [especie, setEspecie] = useState(presetEspecie ?? "");
-  const [producto, setProducto] = useState(presetProducto ?? "");
+  const [especieFiltro, setEspecieFiltro] = useState<string[]>(presetEspecie ? [presetEspecie] : []);
+  const [productoFiltro, setProductoFiltro] = useState<string[]>(presetProducto ? [presetProducto] : []);
 
   /** Lo tildado + lo editado a mano, por uid (sobrevive al cambio de filtro). */
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
@@ -107,8 +112,14 @@ export default function CtpProductosStockModal({
            ASERRADA"): sin canonizarlo, el atajo abría la pila vacía sin decir
            por qué. Si no existe entre lo disponible, se ignora — mejor la lista
            completa que una pantalla en blanco. */
-        if (presetProducto) setProducto(nuevas.map((f) => f.producto ?? "").find((p) => norm(p) === norm(presetProducto)) ?? "");
-        if (presetEspecie) setEspecie(nuevas.map((f) => f.especie ?? "").find((e) => norm(e) === norm(presetEspecie)) ?? "");
+        if (presetProducto) {
+          const real = nuevas.map((f) => f.producto ?? "").find((p) => norm(p) === norm(presetProducto));
+          setProductoFiltro(real ? [real] : []);
+        }
+        if (presetEspecie) {
+          const real = nuevas.map((f) => f.especie ?? "").find((e) => norm(e) === norm(presetEspecie));
+          setEspecieFiltro(real ? [real] : []);
+        }
         /* Reserva: se tildan las filas de esas corridas. Una corrida puede tener
            varios paquetes y cada uno es una fila, así que se marcan TODAS las
            suyas — el operador destilda lo que no sale en este viaje. */
@@ -128,13 +139,30 @@ export default function CtpProductosStockModal({
     [presetCorridas],
   );
 
+  /** Opciones del autofiltro de cada columna, con cuántas filas trae cada una
+   *  — de TODA la pila, no de lo ya acotado por las demás columnas (el mismo
+   *  embudo de Excel que ya usan Inventario y Pedidos). */
   const opciones = useMemo(() => {
-    const unicos = (vals: (string | null | undefined)[]) => [...new Set(vals.map((v) => (v ?? "").trim()).filter(Boolean))].sort();
+    const contar = (get: (f: FilaDespacho) => string | readonly string[] | null | undefined): FacetaOpcion[] => {
+      const map = new Map<string, number>();
+      for (const f of filas) {
+        const crudo = get(f);
+        const valores = Array.isArray(crudo) ? crudo : crudo ? [crudo] : [];
+        for (const v0 of valores) {
+          const v = (v0 ?? "").trim();
+          if (!v) continue;
+          map.set(v, (map.get(v) ?? 0) + 1);
+        }
+      }
+      return [...map.entries()]
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+    };
     return {
-      planes: unicos(filas.flatMap((f) => f.titularOrigen)),
-      lotes: unicos(filas.map((f) => f.lote)),
-      especies: unicos(filas.map((f) => f.especie)),
-      productos: unicos(filas.map((f) => f.producto)),
+      titulares: contar((f) => f.titularOrigen),
+      lotes: contar((f) => f.lote),
+      especies: contar((f) => f.especie),
+      productos: contar((f) => f.producto),
     };
   }, [filas]);
 
@@ -143,15 +171,19 @@ export default function CtpProductosStockModal({
     return filas.filter((f) => {
       if (yaElegidos.has(f.uid)) return false;
       if (soloCorridas && !soloCorridas.has(f.corridaId)) return false;
-      if (plan && !f.titularOrigen.some((t) => norm(t) === norm(plan))) return false;
-      if (lote && norm(f.lote) !== norm(lote)) return false;
-      if (especie && norm(f.especie) !== norm(especie)) return false;
-      if (producto && norm(f.producto) !== norm(producto)) return false;
+      // `norm()` en los dos lados: las opciones del autofiltro sólo llevan
+      // `.trim()` (arriba, en `opciones`), así que un valor elegido en el
+      // popover debe seguir encontrando la fila aunque su grafía difiera en
+      // mayúsculas/espacios.
+      if (titularFiltro.length > 0 && !f.titularOrigen.some((t) => titularFiltro.some((v) => norm(v) === norm(t)))) return false;
+      if (loteFiltro.length > 0 && !loteFiltro.some((v) => norm(v) === norm(f.lote))) return false;
+      if (especieFiltro.length > 0 && !especieFiltro.some((v) => norm(v) === norm(f.especie))) return false;
+      if (productoFiltro.length > 0 && !productoFiltro.some((v) => norm(v) === norm(f.producto))) return false;
       if (fecha && dia(f.fechaProduccion) !== fecha) return false;
       if (q && ![f.codigo, ...f.gtfOrigen, f.lote, f.especie].some((v) => norm(v).includes(q))) return false;
       return true;
     });
-  }, [filas, yaElegidos, soloCorridas, plan, lote, especie, producto, fecha, texto]);
+  }, [filas, yaElegidos, soloCorridas, titularFiltro, loteFiltro, especieFiltro, productoFiltro, fecha, texto]);
 
   const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(visibles, { porPaginaInicial: 25 });
 
@@ -256,20 +288,10 @@ export default function CtpProductosStockModal({
             </span>
           </p>
         )}
-        {/* Los seis filtros del formato, en el mismo orden. */}
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-6">
-          <Filtro label="Plan de manejo de origen">
-            <select value={plan} onChange={(e) => setPlan(e.target.value)} className={CAMPO}>
-              <option value="">Todos los planes</option>
-              {opciones.planes.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </Filtro>
-          <Filtro label="Lote de producción">
-            <select value={lote} onChange={(e) => setLote(e.target.value)} className={CAMPO}>
-              <option value="">Todos los lotes</option>
-              {opciones.lotes.map((l) => <option key={l} value={l}>{l}</option>)}
-            </select>
-          </Filtro>
+        {/* Lo que no es una columna de la tabla: el texto libre y la fecha
+            (rango de un día). Titular, lote, especie y producto ahora se
+            filtran desde su propio <th>, como el resto del panel. */}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Filtro label="Paquete / GTF de origen">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
@@ -279,18 +301,27 @@ export default function CtpProductosStockModal({
           <Filtro label="Fecha de producción">
             <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={CAMPO} />
           </Filtro>
-          <Filtro label="Especie">
-            <select value={especie} onChange={(e) => setEspecie(e.target.value)} className={CAMPO}>
-              <option value="">Todas</option>
-              {opciones.especies.map((e2) => <option key={e2} value={e2}>{e2}</option>)}
-            </select>
-          </Filtro>
-          <Filtro label="Producto">
-            <select value={producto} onChange={(e) => setProducto(e.target.value)} className={CAMPO}>
-              <option value="">Todos</option>
-              {opciones.productos.map((p) => <option key={p} value={p}>{productLabel(p)}</option>)}
-            </select>
-          </Filtro>
+        </div>
+
+        {/* En el celular la tabla es tarjetas (el <thead> se esconde): los
+            cuatro filtros de columna se repiten acá, sólo visibles ahí. */}
+        <div className="grid grid-cols-2 gap-2 sm:hidden">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Titular de origen</span>
+            <CampoDeFiltro label="Titular de origen" value={titularFiltro} options={opciones.titulares} onChange={setTitularFiltro} placeholder="Todos" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Lote</span>
+            <CampoDeFiltro label="Lote" value={loteFiltro} options={opciones.lotes} onChange={setLoteFiltro} placeholder="Todos" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Especie</span>
+            <CampoDeFiltro label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Producto</span>
+            <CampoDeFiltro label="Producto" value={productoFiltro} options={opciones.productos} etiqueta={productLabel} onChange={setProductoFiltro} placeholder="Todos" />
+          </div>
         </div>
 
         <TablaCtp altoMax="max-h-[52vh]">
@@ -312,13 +343,25 @@ export default function CtpProductosStockModal({
                 />
               </th>
               <th className="px-3 py-2 font-bold">GTF origen</th>
-              <th className="px-3 py-2 font-bold">Titular de origen</th>
+              <th className="px-3 py-2 font-bold">
+                <span className="block">Titular de origen</span>
+                <FiltroColumnaMulti label="Titular de origen" value={titularFiltro} options={opciones.titulares} onChange={setTitularFiltro} placeholder="Todos" />
+              </th>
               <th className="px-3 py-2 font-bold">Producción</th>
-              <th className="px-3 py-2 font-bold">Lote</th>
+              <th className="px-3 py-2 font-bold">
+                <span className="block">Lote</span>
+                <FiltroColumnaMulti label="Lote" value={loteFiltro} options={opciones.lotes} onChange={setLoteFiltro} placeholder="Todos" />
+              </th>
               <th className="px-3 py-2 font-bold">Paquete</th>
               <th className="px-3 py-2 font-bold">Línea</th>
-              <th className="px-3 py-2 font-bold">Especie</th>
-              <th className="px-3 py-2 font-bold">Producto</th>
+              <th className="px-3 py-2 font-bold">
+                <span className="block">Especie</span>
+                <FiltroColumnaMulti label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
+              </th>
+              <th className="px-3 py-2 font-bold">
+                <span className="block">Producto</span>
+                <FiltroColumnaMulti label="Producto" value={productoFiltro} options={opciones.productos} etiqueta={productLabel} onChange={setProductoFiltro} placeholder="Todos" />
+              </th>
               <th className="px-3 py-2 text-right font-bold">Esp. (cm)</th>
               <th className="px-3 py-2 text-right font-bold">Ancho (cm)</th>
               <th className="px-3 py-2 text-right font-bold">Largo (m)</th>
@@ -395,7 +438,7 @@ export default function CtpProductosStockModal({
                       className={`${CELDA_NUM} ${excede ? "border-[var(--data-error-500)]" : ""}`}
                     />
                     <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                      saldo {f.disponibleCorrida.toFixed(4)}
+                      saldo {Number(f.disponibleCorrida).toFixed(4)}
                     </div>
                   </td>
                   <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{MEDIDA[f.unidad] ?? f.unidad}</td>

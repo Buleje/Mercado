@@ -49,7 +49,7 @@ import {
   trozaPromedio,
   type Reparto,
 } from "@/lib/forestal/ctp-ingresos-kpis";
-import { CtpKpisPlegables, type WoodEntryStats } from "./ctp-shared";
+import { useKpisPlegables, type WoodEntryStats } from "./ctp-shared";
 import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros";
 import type { CtpFacetasActivas } from "./CtpIngresosFiltros";
 import { productLabel } from "./ctp-shared";
@@ -94,6 +94,18 @@ export interface CtpIngresosKpisProps {
    */
   facetas: CtpFacetasActivas;
   onFacetas: (f: CtpFacetasActivas) => void;
+  /**
+   * La barra de la vista (buscador · Filtros · Opciones · Nuevo ingreso), para
+   * que viaje en la MISMA fila que el botón «Indicadores» (Brandon, 2026-09-24:
+   * «alineado con otros botones... para evitar que ocupe mucho espacio»). Sin
+   * ella, el botón queda solo, como antes.
+   */
+  /**
+   * La barra de la vista. Como función, recibe el botón «Indicadores» y lo
+   * pone ella misma en su primera fila (antes del buscador): al lado de una
+   * barra de varias filas, el botón le robaba el ancho al buscador.
+   */
+  acciones?: React.ReactNode | ((boton: React.ReactNode) => React.ReactNode);
 }
 
 const nf = (n: number) => formatNumber(n);
@@ -144,7 +156,7 @@ function Eslabones({ eslabones }: { eslabones: NonNullable<ReturnType<typeof tra
           <div className="flex items-baseline justify-between gap-2 text-[length:var(--ts-xs)]">
             <span className="font-bold text-[var(--text-secondary)]">{e.label}</span>
             <span className="shrink-0 whitespace-nowrap tabular-nums text-[var(--text-tertiary)]">
-              {nf(e.con)} de {nf(e.total)} · {e.pct.toFixed(0)} %
+              {nf(e.con)} de {nf(e.total)} · {Number(e.pct).toFixed(0)} %
             </span>
           </div>
           <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
@@ -178,6 +190,7 @@ export default function CtpIngresosKpis({
   period,
   facetas,
   onFacetas,
+  acciones,
 }: CtpIngresosKpisProps) {
   const vol = stats ? Number(stats.totalVolumeM3) : 0;
   const volPrevio = statsPrevios ? Number(statsPrevios.totalVolumeM3) : 0;
@@ -310,7 +323,7 @@ export default function CtpIngresosKpis({
       <CtpKpi
         key="concentracion"
         label="Proveedor principal"
-        value={`${provHoy.principal.pct.toFixed(1)} %`}
+        value={`${Number(provHoy.principal.pct).toFixed(1)} %`}
         subValue={
           <>
             {/* El nombre se trunca, el conteo no: «3 pro…» no dice nada. */}
@@ -345,7 +358,7 @@ export default function CtpIngresosKpis({
       <CtpKpi
         key="especie"
         label="Especie principal"
-        value={`${espHoy.principal.pct.toFixed(1)} %`}
+        value={`${Number(espHoy.principal.pct).toFixed(1)} %`}
         subValue={
           <>
             <span className="flex min-w-0 gap-1">
@@ -375,7 +388,7 @@ export default function CtpIngresosKpis({
       <CtpKpi
         key="troza"
         label="Troza promedio"
-        value={`${trozaHoy.m3PorTroza.toFixed(3)} m³`}
+        value={`${Number(trozaHoy.m3PorTroza).toFixed(3)} m³`}
         subValue={`${nf(trozaHoy.ptPorTroza)} pt por pieza · ${nf(trozaHoy.piezas)} ${
           trozaHoy.fuente === "trozas" ? "trozas medidas" : "piezas declaradas"
         }`}
@@ -416,7 +429,7 @@ export default function CtpIngresosKpis({
         key="costo"
         label="Costo por m³"
         value={soles(costoHoy.porM3)}
-        subValue={`${soles(costoHoy.total)} · ${costoHoy.pctValorizado.toFixed(0)} % del volumen valorizado`}
+        subValue={`${soles(costoHoy.total)} · ${Number(costoHoy.pctValorizado).toFixed(0)} % del volumen valorizado`}
         icon={TrendingUp}
         /* Pagar más por m³ es peor para el aserradero. */
         tono="inverso"
@@ -433,7 +446,7 @@ export default function CtpIngresosKpis({
       <CtpKpi
         key="trazabilidad"
         label="Trazabilidad"
-        value={`${trazHoy.minimo.pct.toFixed(0)} %`}
+        value={`${Number(trazHoy.minimo.pct).toFixed(0)} %`}
         subValue={
           completo
             ? `trozas, origen y constancia en los ${nf(trazHoy.minimo.total)}`
@@ -473,36 +486,45 @@ export default function CtpIngresosKpis({
     );
   }
 
-  const panel = (
-    /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03). */
-    <CtpKpisPlegables
-      claveMemoria="ingresos"
-      filtrosActivos={activos}
-      filtros={
-        <CtpKpiFiltros
-          campos={campos}
-          onLimpiar={() =>
-            onFacetas({ ...facetas, species: undefined, permiso: undefined, provider: undefined, product: undefined })
-          }
-          nota={nota}
-        />
-      }
-      resumen={
-        stats
-          ? `${nf(stats.totalCount)} ingreso${stats.totalCount === 1 ? "" : "s"} · ${vol.toFixed(2)} m³` +
-            /* Las piezas sólo si el papel las declara: un «0 piezas» al lado de
-               las trozas cargadas se lee como un error de la pantalla. */
-            (stats.totalPieces > 0 ? ` · ${nf(stats.totalPieces)} piezas` : "") +
-            (stats.byStatus.pendiente > 0 ? ` · ${nf(stats.byStatus.pendiente)} por validar` : "") +
-            (stats.lateCount > 0 ? ` · ${nf(stats.lateCount)} fuera de plazo` : "")
-          : "Leyendo el período…"
-      }
-      tarjetas={tarjetas}
-    />
-  );
+  /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03). El botón y el
+     panel salen sueltos —no del envoltorio `CtpKpisPlegables`— para poder
+     alinear el botón CON la barra de acciones en vez de centrarlo contra un
+     bloque de varias filas (`items-start`, no `items-center`). */
+  const { boton, panel } = useKpisPlegables({
+    claveMemoria: "ingresos",
+    filtrosActivos: activos,
+    filtros: (
+      <CtpKpiFiltros
+        campos={campos}
+        onLimpiar={() =>
+          onFacetas({ ...facetas, species: undefined, permiso: undefined, provider: undefined, product: undefined })
+        }
+        nota={nota}
+      />
+    ),
+    resumen:
+      stats
+        ? `${nf(stats.totalCount)} ingreso${stats.totalCount === 1 ? "" : "s"} · ${vol.toFixed(2)} m³` +
+          /* Las piezas sólo si el papel las declara: un «0 piezas» al lado de
+             las trozas cargadas se lee como un error de la pantalla. */
+          (stats.totalPieces > 0 ? ` · ${nf(stats.totalPieces)} piezas` : "") +
+          (stats.byStatus.pendiente > 0 ? ` · ${nf(stats.byStatus.pendiente)} por validar` : "") +
+          (stats.lateCount > 0 ? ` · ${nf(stats.lateCount)} fuera de plazo` : "")
+        : "Leyendo el período…",
+    tarjetas,
+    alto: acciones ? "md" : "sm",
+  });
 
   return (
     <div className="space-y-2">
+      {typeof acciones === "function" ? (
+        acciones(boton)
+      ) : (
+        <div className={`flex flex-wrap gap-2 ${acciones ? "items-start" : "items-center"}`}>
+          {boton}
+          {acciones && <div className="min-w-0 flex-1">{acciones}</div>}
+        </div>
+      )}
       {panel}
       <BarraDeuda items={deudas} vacio="Todo el período está validado, a tiempo, con su origen y con costo." />
     </div>

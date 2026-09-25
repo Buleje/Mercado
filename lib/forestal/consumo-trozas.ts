@@ -218,7 +218,10 @@ export interface FiltroTrozas {
   soloDisponibles?: boolean;
 }
 
-const norm = (v: string | null | undefined) =>
+/** min\u00fasculas + sin tildes + trim: dos graf\u00edas de la misma especie/gu\u00eda son
+ *  la misma clave. Exportado para que los pickers que arman su propio
+ *  autofiltro de columna (ADR filtros-en-cabecera) comparen igual que ac\u00e1. */
+export const norm = (v: string | null | undefined) =>
   (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 /**

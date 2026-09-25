@@ -89,6 +89,8 @@ export interface CtpIngresosFiltrosProps {
    * móvil (sin tabla, hay cards). Falso en la lista por troza, que no los tiene.
    */
   enCabecera?: boolean;
+  /** Lo que va primero en la fila del buscador (el botón «Indicadores»). */
+  antes?: React.ReactNode;
 }
 
 export default function CtpIngresosFiltros({
@@ -114,6 +116,7 @@ export default function CtpIngresosFiltros({
   modoLista,
   columnas,
   enCabecera = false,
+  antes,
 }: CtpIngresosFiltrosProps) {
   /* Una COLUMNA acotada cuenta 1, tenga uno o cinco valores elegidos. */
   const puesto = (v: string | readonly string[] | undefined) => (Array.isArray(v) ? v.length > 0 : !!v);
@@ -176,7 +179,9 @@ export default function CtpIngresosFiltros({
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 transition-colors focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
+        {/* El botón «Indicadores», primero de la fila (2026-09-24). */}
+        {antes}
+        <div className="flex h-12 min-w-[min(100%,14rem)] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 transition-colors focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <label htmlFor="ctp-ing-search" className="sr-only">
             Buscar ingresos
@@ -231,7 +236,7 @@ export default function CtpIngresosFiltros({
           <button
             type="button"
             onClick={onNuevo}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:shadow-md hover:brightness-110 sm:flex-none"
+            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent-600)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:shadow-md hover:brightness-110 sm:flex-none"
           >
             <Plus className="h-5 w-5" />
             Nuevo ingreso

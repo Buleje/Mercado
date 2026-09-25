@@ -22,6 +22,7 @@ import {
   estaDisponible,
   filtrarTrozas,
   motivoBloqueo,
+  norm,
   type TrozaConsumible,
 } from "@/lib/forestal/consumo-trozas";
 import { r4, uidDeFila, type FilaDespacho } from "@/lib/forestal/despacho-lista";
@@ -29,6 +30,8 @@ import { Btn, ModalFooter } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import { formatDateNumeric } from "@/lib/format";
+import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
+import { CampoDeFiltro } from "./ctp-filtros-panel";
 
 const CAMPO =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
@@ -85,8 +88,11 @@ export default function CtpTrozasDespachoModal({
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [texto, setTexto] = useState("");
-  const [especie, setEspecie] = useState("");
-  const [gtf, setGtf] = useState("");
+  // Especie y GTF de ingreso son columnas de la tabla: se filtran desde su
+  // <th> (multi-selección). `filtrarTrozas` (lib compartida con el picker de
+  // consumo) sólo sabe de un valor por lado, así que ese cruce se hace acá.
+  const [especieFiltro, setEspecieFiltro] = useState<string[]>([]);
+  const [gtfFiltro, setGtfFiltro] = useState<string[]>([]);
   const [soloDisponibles, setSoloDisponibles] = useState(true);
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
 
@@ -101,15 +107,29 @@ export default function CtpTrozasDespachoModal({
   }, []);
 
   const opciones = useMemo(() => {
-    const unicos = (vals: (string | null | undefined)[]) =>
-      [...new Set(vals.map((v) => (v ?? "").trim()).filter(Boolean))].sort();
-    return { especies: unicos(trozas.map((t) => t.especieComun)), guias: unicos(trozas.map((t) => t.gtfNumber)) };
+    const contar = (get: (t: TrozaConsumible) => string | null | undefined): FacetaOpcion[] => {
+      const map = new Map<string, number>();
+      for (const t of trozas) {
+        const v = (get(t) ?? "").trim();
+        if (!v) continue;
+        map.set(v, (map.get(v) ?? 0) + 1);
+      }
+      return [...map.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+    };
+    return { especies: contar((t) => t.especieComun), guias: contar((t) => t.gtfNumber) };
   }, [trozas]);
 
-  const visibles = useMemo(
-    () => filtrarTrozas(trozas, { texto, especie, gtf, soloDisponibles }).filter((t) => !yaElegidas.has(t.id)),
-    [trozas, texto, especie, gtf, soloDisponibles, yaElegidas],
-  );
+  const visibles = useMemo(() => {
+    const base = filtrarTrozas(trozas, { texto, soloDisponibles }).filter((t) => !yaElegidas.has(t.id));
+    return base.filter((t) => {
+      // `norm()` en los dos lados: las opciones del autofiltro sólo llevan
+      // `.trim()` (línea de arriba), así que «Cedro» elegido en el popover
+      // debe seguir encontrando una troza escrita «CEDRO» en el patio.
+      if (especieFiltro.length > 0 && !especieFiltro.some((v) => norm(v) === norm(t.especieComun))) return false;
+      if (gtfFiltro.length > 0 && !gtfFiltro.some((v) => norm(v) === norm(t.gtfNumber))) return false;
+      return true;
+    });
+  }, [trozas, texto, soloDisponibles, especieFiltro, gtfFiltro, yaElegidas]);
   const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(visibles, { porPaginaInicial: 25 });
 
   const seleccionadas = useMemo(() => visibles.filter((t) => elegidas.has(t.id)), [visibles, elegidas]);
@@ -150,25 +170,29 @@ export default function CtpTrozasDespachoModal({
       }
     >
       <div className="space-y-3 px-5 py-4 sm:px-6">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <label className="relative xl:col-span-2">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-            <input
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-              placeholder="Código de la troza, marca de planta o guía…"
-              aria-label="Buscar una troza del patio"
-              className={`${CAMPO} pl-9`}
-            />
-          </label>
-          <select value={especie} onChange={(e) => setEspecie(e.target.value)} aria-label="Filtrar por especie" className={CAMPO}>
-            <option value="">Todas las especies</option>
-            {opciones.especies.map((e2) => <option key={e2} value={e2}>{e2}</option>)}
-          </select>
-          <select value={gtf} onChange={(e) => setGtf(e.target.value)} aria-label="Filtrar por guía de ingreso" className={CAMPO}>
-            <option value="">Todas las guías</option>
-            {opciones.guias.map((g) => <option key={g} value={g}>{g}</option>)}
-          </select>
+        {/* Especie y GTF de ingreso ahora se filtran desde su propia columna. */}
+        <label className="relative block">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <input
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="Código de la troza, marca de planta o guía…"
+            aria-label="Buscar una troza del patio"
+            className={`${CAMPO} pl-9`}
+          />
+        </label>
+
+        {/* En el celular la tabla es tarjetas (el <thead> se esconde): Especie
+            y GTF de ingreso se repiten acá, sólo visibles ahí. */}
+        <div className="grid grid-cols-2 gap-2 sm:hidden">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Especie</span>
+            <CampoDeFiltro label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">GTF de ingreso</span>
+            <CampoDeFiltro label="GTF de ingreso" value={gtfFiltro} options={opciones.guias} onChange={setGtfFiltro} placeholder="Todas" />
+          </div>
         </div>
 
         <label className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)]">
@@ -190,8 +214,14 @@ export default function CtpTrozasDespachoModal({
               <th className="px-2 py-2" />
               <th className="px-3 py-2 font-bold">Código</th>
               <th className="px-3 py-2 font-bold">Marca de planta</th>
-              <th className="px-3 py-2 font-bold">Especie</th>
-              <th className="px-3 py-2 font-bold">GTF de ingreso</th>
+              <th className="px-3 py-2 font-bold">
+                <span className="block">Especie</span>
+                <FiltroColumnaMulti label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
+              </th>
+              <th className="px-3 py-2 font-bold">
+                <span className="block">GTF de ingreso</span>
+                <FiltroColumnaMulti label="GTF de ingreso" value={gtfFiltro} options={opciones.guias} onChange={setGtfFiltro} placeholder="Todas" />
+              </th>
               <th className="px-3 py-2 font-bold">Título habilitante</th>
               <th className="px-3 py-2 font-bold">Recepción</th>
               <th className="px-3 py-2 text-right font-bold">Largo (m)</th>

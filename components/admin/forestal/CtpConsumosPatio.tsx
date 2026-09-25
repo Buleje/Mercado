@@ -21,17 +21,15 @@ import type { AgrupacionPatio } from "@/lib/forestal/consumo-trozas";
 import { ETIQUETA_TRAMO_DIAS, TRAMOS_DIAS, type TramoDias } from "@/lib/forestal/patio-resumen";
 import { formatNumber } from "@/lib/format";
 import CtpConsumosPatioResumen from "./CtpConsumosPatioResumen";
-import CtpPatioKpis from "./CtpPatioKpis";
 import CtpConsumosPatioAccion from "./CtpConsumosPatioAccion";
 import CtpPatioFiltros from "./CtpPatioFiltros";
 import CtpCubicacionParaConsumo from "./CtpCubicacionParaConsumo";
 import CtpLoteCerradoFicha from "./CtpLoteCerradoFicha";
 import CtpCargarSierra from "./CtpCargarSierra";
 import CtpTrozasIngresadas, { type FiltrosPatioColumna } from "./CtpTrozasIngresadas";
-import { NotaFiltrosKpi, notaDeFiltros } from "./CtpKpiFiltros";
 import type { ActionToast } from "./cubicador-toasts";
 import { useRegistrarJornadas } from "./hooks/use-registrar-jornadas";
-import { camposDelFiltroPatio, type EstadoPatioConsumos } from "./hooks/use-patio-consumos";
+import type { EstadoPatioConsumos } from "./hooks/use-patio-consumos";
 
 type PushToast = (t: Omit<ActionToast, "id" | "exiting">) => number;
 
@@ -89,7 +87,6 @@ export default function CtpConsumosPatio({
     largo: { valor: patio.largo, onChange: patio.set.largo, conDato: f.largo.conDato },
     diametro: { valor: patio.diametro, onChange: patio.set.diametro, conDato: f.diametro.conDato },
   };
-  const nota = notaDeFiltros(camposDelFiltroPatio(patio));
 
   const opcionesPatio: MenuAccion[] = useMemo(
     () => [
@@ -161,21 +158,7 @@ export default function CtpConsumosPatio({
         </p>
       )}
 
-      <CtpConsumosPatioResumen
-        estado={estado}
-        trabajando={trabajando}
-        onIr={onIr}
-        indicadores={
-          <CtpPatioKpis
-            resumen={patio.resumen}
-            filtrosActivos={patio.cuantosFiltros}
-            filtros={<NotaFiltrosKpi nota={nota} onLimpiar={patio.limpiar} />}
-            trabajoActivo={trabajando}
-            cargando={lotes.cargando}
-            acotadoA={loteElegido?.speciesCommon ?? undefined}
-          />
-        }
-      />
+      <CtpConsumosPatioResumen estado={estado} trabajando={trabajando} onIr={onIr} />
 
       {estado.piezasOcultasDelLote > 0 && (
         <p role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border-2 border-[var(--data-warning-500)] px-4 py-3 text-sm text-[var(--text-primary)]">

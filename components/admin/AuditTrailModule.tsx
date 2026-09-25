@@ -12,6 +12,8 @@ import {
   categoryOf, actionLabel, CATEGORY_UI, CATEGORY_ORDER, type AuditCategory,
 } from "@/components/admin/tabs/audit-categories";
 import { formatDateShort, formatNumber, formatTime } from "@/lib/format";
+import { FiltroColumna } from "@/components/admin/shared/filtros-columna";
+import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 
 interface AuditEntry {
   id: string;
@@ -199,11 +201,15 @@ export default function AuditTrailModule() {
               className={cn(FILTER_CLS, "w-full pl-12 pr-4 placeholder:text-[var(--text-tertiary)]")}
             />
           </div>
+          {/* Entidad y Acción son columnas de la tabla: en desktop su filtro
+              vive en el propio `<th>` (convención de filtros en la cabecera).
+              Acá sólo quedan para el celular, donde la tabla es tarjetas y no
+              hay `<th>` que las sostenga. */}
           <select
             aria-label="Filtrar por entidad"
             value={entityFilter}
             onChange={(e) => { setEntityFilter(e.target.value); setPage(0); }}
-            className={cn(FILTER_CLS, "px-4 font-medium")}
+            className={cn(FILTER_CLS, "px-4 font-medium sm:hidden")}
           >
             {ENTITIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
@@ -211,7 +217,7 @@ export default function AuditTrailModule() {
             aria-label="Filtrar por acción"
             value={actionFilter}
             onChange={(e) => { setActionFilter(e.target.value); setPage(0); }}
-            className={cn(FILTER_CLS, "px-4 font-medium")}
+            className={cn(FILTER_CLS, "px-4 font-medium sm:hidden")}
           >
             <option value="">Todas las acciones</option>
             {(summary?.byAction ?? []).map(({ action, count }) => (
@@ -259,12 +265,37 @@ export default function AuditTrailModule() {
           <>
             {/* Desktop: tabla */}
             <div className="hidden sm:block">
-              <DataTable>
+              <DataTable filtrable>
                 <thead>
                   <tr>
-                    {["Fecha", "Acción", "Entidad", "Detalle", "Usuario"].map((h) => (
-                      <th key={h}>{h}</th>
-                    ))}
+                    <th>Fecha</th>
+                    <th>
+                      <span className="block">Acción</span>
+                      <FiltroColumna
+                        label="Acción"
+                        value={actionFilter || undefined}
+                        options={(summary?.byAction ?? []).map((a): FacetaOpcion => ({ value: a.action, count: a.count }))}
+                        etiqueta={actionLabel}
+                        onChange={(v) => { setActionFilter(v ?? ""); setPage(0); }}
+                        placeholder="Todas"
+                      />
+                    </th>
+                    <th>
+                      <span className="block">Entidad</span>
+                      <select
+                        aria-label="Filtrar por Entidad"
+                        title="Filtrar por Entidad"
+                        value={entityFilter}
+                        onChange={(e) => { setEntityFilter(e.target.value); setPage(0); }}
+                        className={`mt-1.5 block h-9 max-w-40 rounded-lg border-[1.5px] bg-[var(--surface-raised)] px-2 text-sm font-normal normal-case tracking-normal text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none ${
+                          entityFilter ? "border-[var(--accent)] bg-primary/10 font-bold" : "border-[var(--rule-base)]"
+                        }`}
+                      >
+                        {ENTITIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                    </th>
+                    <th>Detalle</th>
+                    <th>Usuario</th>
                   </tr>
                 </thead>
                 <tbody>

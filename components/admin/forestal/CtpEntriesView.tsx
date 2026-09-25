@@ -15,7 +15,6 @@ import {
   Coins,
   Truck,
   AlertCircle,
-  HelpCircle,
   PackagePlus,
   Calculator,
   Calendar,
@@ -1470,6 +1469,131 @@ export function CtpEntriesView({
   ]);
 
   const Icon = meta.icon;
+  /**
+   * Los botones de la barra en la MISMA fila que «Indicadores» (Brandon,
+   * 2026-09-24: «que el botón de KPIs esté alineado con otros botones, para
+   * evitar que ocupe mucho espacio»). Antes eran dos renglones: el botón
+   * solo arriba, buscador/Opciones/CTA abajo.
+   *
+   * El manual de Producción («¿Cómo funciona esta pestaña?», tres líneas que
+   * se leían una vez y estorbaban las otras doscientas) se pliega detrás de
+   * un ⓘ en vez de un `<details>` que se comía media fila.
+   */
+  const accionesBarra = (
+    <>
+      {section === "produccion" ? (
+        <InfoTip
+          icono="ayuda"
+          title="¿Cómo funciona esta pestaña?"
+          ariaLabel="¿Cómo funciona esta pestaña?"
+          ancho="w-80"
+          body={
+            <>
+              Elige en <b className="text-[var(--text-primary)]">Lotes</b> la madera que entra hoy a
+              la sierra: abajo sale su lista de trozas. Lo ya declarado está en{" "}
+              <b className="text-[var(--text-primary)]">
+                Opciones → Producción · Todos y registrados
+              </b>
+              . ¿La sierra ya cortó y el lote todavía no está armado? Usa{" "}
+              <b className="text-[var(--text-primary)]">Producir sin lote</b>. Para ver cuánto puede
+              dar todavía cada título habilitante,{" "}
+              <b className="text-[var(--text-primary)]">Saldo por permiso</b>.
+            </>
+          }
+        />
+      ) : (
+        <BuscadorSeccion
+          section={section}
+          label={meta.label}
+          value={searchInput}
+          onChange={setSearchInput}
+        />
+      )}
+      {/* Filtrar y elegir columnas son de la TABLA: en Producción viajan
+          con ella adentro del modal del libro. */}
+      {section === "despacho" && (
+        <BotonFiltros activos={activos} abierto={abierto} panelId={panelId} onToggle={alternar} />
+      )}
+      <ActionMenu
+        label="Opciones"
+        title="Descargar, recargar y las tareas del período"
+        actions={opcionesMenu}
+        size="md"
+        compactoEnMovil
+      />
+      {/*
+        UN solo menú «Lotes» (Brandon, 2026-09-02): antes eran dos botones
+        —«Corridas sin declarar» y el CTA de elegir lote— más una tira de
+        tarjetas debajo con el mismo contenido. Tres lugares para el mismo
+        acto: decidir sobre qué madera se trabaja hoy.
+
+        Adentro va todo lo que tiene trabajo pendiente, en dos grupos:
+        primero los lotes con trozas para meter a la sierra, y después los
+        ya aserrados a los que hay que sacarles la producción (la
+        recuperación de ADR-340/365).
+      */}
+      {/* Producir SIN lote: cubicar acá mismo y declarar la corrida. La
+          materia prima se vincula después — la sierra corta antes de que el
+          papel exista (Brandon, 2026-09-09). */}
+      {/* Saldo por permiso: cuánto puede dar cada título habilitante al 56 %
+          y cuánto ya se declaró sin lote contra él (ADR-409). Es consulta,
+          no una acción del libro: mismo peso visual que «Producir sin
+          lote», nunca el del CTA. */}
+      {section === "produccion" && (
+        <button
+          type="button"
+          onClick={() => setSaldoPermiso(true)}
+          title="Ver, permiso por permiso: rolliza por especie, su equivalente en pies al 56 %, lo ya declarado sin lote y lo que queda"
+          className="inline-flex h-12 items-center gap-1.5 whitespace-nowrap rounded-2xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+        >
+          <Layers className="h-4 w-4" aria-hidden /> Saldo por permiso
+        </button>
+      )}
+      {section === "produccion" && (
+        <button
+          type="button"
+          onClick={() => setProducirSinLote(true)}
+          title="Abrir el cubicador acá adentro, cargar las medidas y declarar la producción sin lote ni consumo"
+          /* Secundario, no un segundo primario: el camino normal es elegir
+             el lote. Dos botones con el mismo peso obligan a leer los dos
+             cada vez para acordarse de cuál era el de todos los días. */
+          className="inline-flex h-12 items-center gap-1.5 whitespace-nowrap rounded-2xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+        >
+          <Calculator className="h-4 w-4" aria-hidden /> Producir sin lote
+        </button>
+      )}
+      {section === "produccion" ? (
+        /* Un botón que abre el SELECTOR, no un desplegable.
+           Elegir el lote es la decisión de la que cuelga toda la pestaña, y
+           vivía en un menú de 300 px que el borde de la pantalla cortaba,
+           terminado en «Hay más opciones»: para decidir hay que comparar
+           madera libre, volumen y antigüedad, y nada de eso entraba ahí. */
+        <button
+          type="button"
+          onClick={() => setElegirLote(true)}
+          title="Elegir el lote que entra a la sierra, o la corrida a la que falta declararle lo que salió (atajo: N)"
+          className="inline-flex h-12 items-center gap-1.5 whitespace-nowrap rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-3.5 text-sm font-bold text-white shadow-sm transition hover:brightness-110 max-sm:flex-1"
+        >
+          <Boxes className="h-4 w-4" aria-hidden />
+          Lotes
+          {declararMenu.length > 0 && (
+            <span className="rounded-full bg-white/25 px-1.5 font-mono text-xs tabular-nums">
+              {declararMenu.length}
+            </span>
+          )}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:brightness-110 sm:flex-none"
+        >
+          <Plus className="h-5 w-5" /> {meta.cta}
+        </button>
+      )}
+    </>
+  );
+
   return (
     <div className="space-y-3">
       {/* Ocho KPIs y no tres (`CtpSeccionKpis`): los m³ de materia prima eran el
@@ -1494,135 +1618,10 @@ export function CtpEntriesView({
            en pantalla, abiertos empujaban la lista de trozas al píxel 1247 de
            un viewport de 1000 — el trabajo nacía fuera de cuadro. */
         trabajoActivo={Boolean(loteElegido || corridaAbierta)}
+        /* Los botones de la vista viajan en la MISMA fila que «Indicadores»:
+           un botón que sólo dice eso en su propio renglón sobraba una fila. */
+        acciones={accionesBarra}
       />
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* En Producción el buscador se fue con la tabla —vive en el modal del
-            libro— y en su lugar la barra dice qué se hace en esta pantalla y
-            dónde quedó lo ya declarado. Un input que no filtra nada de lo que
-            se ve es peor que ninguno. */}
-        {section === "produccion" ? (
-          /* El manual de tres líneas se lee UNA vez y estorba las otras
-             doscientas: se pliega. El estado vacío de la mesa de abajo ya dice
-             qué hacer justo donde hay que hacerlo, que es donde sirve. */
-          <details className="group min-w-0 flex-1">
-            <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-sm text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)]">
-              <HelpCircle className="h-4 w-4 shrink-0" aria-hidden />
-              ¿Cómo funciona esta pestaña?
-            </summary>
-            <p className="mt-2 text-sm leading-snug text-[var(--text-secondary)]">
-              Elige en <b className="text-[var(--text-primary)]">Lotes</b> la madera que entra hoy a
-              la sierra: abajo sale su lista de trozas. Lo ya declarado está en{" "}
-              <b className="text-[var(--text-primary)]">
-                Opciones → Producción · Todos y registrados
-              </b>
-              . ¿La sierra ya cortó y el lote todavía no está armado? Usa{" "}
-              <b className="text-[var(--text-primary)]">Producir sin lote</b>. Para ver cuánto puede
-              dar todavía cada título habilitante,{" "}
-              <b className="text-[var(--text-primary)]">Saldo por permiso</b>.
-            </p>
-          </details>
-        ) : (
-          <BuscadorSeccion
-            section={section}
-            label={meta.label}
-            value={searchInput}
-            onChange={setSearchInput}
-          />
-        )}
-        {/* Tres controles y no nueve (ADR-360): filtrar, el resto plegado en
-            «Opciones», y el CTA. Lo pendiente —declarar una corrida abierta—
-            tiene su propio botón porque es deuda del libro, no una opción. */}
-        <div className="flex items-center gap-2">
-          {/* Filtrar y elegir columnas son de la TABLA: en Producción viajan
-              con ella adentro del modal del libro. */}
-          {section === "despacho" && (
-            <BotonFiltros
-              activos={activos}
-              abierto={abierto}
-              panelId={panelId}
-              onToggle={alternar}
-            />
-          )}
-          <ActionMenu
-            label="Opciones"
-            title="Descargar, recargar y las tareas del período"
-            actions={opcionesMenu}
-            size="md"
-            compactoEnMovil
-          />
-          {/*
-            UN solo menú «Lotes» (Brandon, 2026-09-02): antes eran dos botones
-            —«Corridas sin declarar» y el CTA de elegir lote— más una tira de
-            tarjetas debajo con el mismo contenido. Tres lugares para el mismo
-            acto: decidir sobre qué madera se trabaja hoy.
-
-            Adentro va todo lo que tiene trabajo pendiente, en dos grupos:
-            primero los lotes con trozas para meter a la sierra, y después los
-            ya aserrados a los que hay que sacarles la producción (la
-            recuperación de ADR-340/365).
-          */}
-          {/* Producir SIN lote: cubicar acá mismo y declarar la corrida. La
-              materia prima se vincula después — la sierra corta antes de que el
-              papel exista (Brandon, 2026-09-09). */}
-          {/* Saldo por permiso: cuánto puede dar cada título habilitante al 56 %
-              y cuánto ya se declaró sin lote contra él (ADR-409). Es consulta,
-              no una acción del libro: mismo peso visual que «Producir sin
-              lote», nunca el del CTA. */}
-          {section === "produccion" && (
-            <button
-              type="button"
-              onClick={() => setSaldoPermiso(true)}
-              title="Ver, permiso por permiso: rolliza por especie, su equivalente en pies al 56 %, lo ya declarado sin lote y lo que queda"
-              className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-            >
-              <Layers className="h-4 w-4" aria-hidden /> Saldo por permiso
-            </button>
-          )}
-          {section === "produccion" && (
-            <button
-              type="button"
-              onClick={() => setProducirSinLote(true)}
-              title="Abrir el cubicador acá adentro, cargar las medidas y declarar la producción sin lote ni consumo"
-              /* Secundario, no un segundo primario: el camino normal es elegir
-                 el lote. Dos botones con el mismo peso obligan a leer los dos
-                 cada vez para acordarse de cuál era el de todos los días. */
-              className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-            >
-              <Calculator className="h-4 w-4" aria-hidden /> Producir sin lote
-            </button>
-          )}
-          {section === "produccion" ? (
-            /* Un botón que abre el SELECTOR, no un desplegable.
-               Elegir el lote es la decisión de la que cuelga toda la pestaña, y
-               vivía en un menú de 300 px que el borde de la pantalla cortaba,
-               terminado en «Hay más opciones»: para decidir hay que comparar
-               madera libre, volumen y antigüedad, y nada de eso entraba ahí. */
-            <button
-              type="button"
-              onClick={() => setElegirLote(true)}
-              title="Elegir el lote que entra a la sierra, o la corrida a la que falta declararle lo que salió (atajo: N)"
-              className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-3.5 text-sm font-bold text-white shadow-sm transition hover:brightness-110 max-sm:flex-1"
-            >
-              <Boxes className="h-4 w-4" aria-hidden />
-              Lotes
-              {declararMenu.length > 0 && (
-                <span className="rounded-full bg-white/25 px-1.5 font-mono text-xs tabular-nums">
-                  {declararMenu.length}
-                </span>
-              )}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:brightness-110 sm:flex-none"
-            >
-              <Plus className="h-5 w-5" /> {meta.cta}
-            </button>
-          )}
-        </div>
-      </div>
       {showSim && section === "produccion" && (
         <CtpSimuladorModal onClose={() => setShowSim(false)} />
       )}

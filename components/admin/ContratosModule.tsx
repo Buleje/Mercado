@@ -297,7 +297,7 @@ export default function ContratosModule() {
           setStoreSettings(s);
         }
       })
-      .catch(() => { /* noop */ });
+      .catch((err) => console.warn("[contratos] no se pudo cargar la config del negocio", err));
   }, []);
 
   // ── Geolocation ────────────────────────────────────────────────────────
@@ -345,6 +345,16 @@ export default function ContratosModule() {
   const totalPages = Math.max(1, Math.ceil(filteredContratos.length / PER_PAGE));
   const paginated = filteredContratos.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   useEffect(() => { setPage(1); }, [debouncedSearch, filterTipo, filterEstado]);
+
+  /** Vacía los 3 filtros de golpe (búsqueda, tipo, estado) — el botón «Quitar
+   *  filtros» del vacío filtrado. Se limpia `debouncedSearch` directo, sin
+   *  esperar los 250ms del debounce. */
+  const clearContratosFilters = useCallback(() => {
+    setSearch("");
+    setDebouncedSearch("");
+    setFilterTipo("ALL");
+    setFilterEstado("ALL");
+  }, []);
 
   // Stats
   const stats = useMemo(() => {
@@ -837,11 +847,15 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
-                  <select aria-label="Filtrar por tipo" value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  {/* Tipo y Estado ya tienen su autofiltro en el `<th>` de la vista lista
+                      (Brandon, 2026-09-24): acá se ocultan justo cuando esa columna se ve
+                      (mismo breakpoint que el `<th>`), y siguen visibles en cuadrícula
+                      (sin cabecera) o en pantallas donde la columna se esconde. */}
+                  <select aria-label="Filtrar por tipo" value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className={cn("px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30", viewMode === "list" && "sm:hidden")}>
                     <option value="ALL">Todos los tipos</option>
                     {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
-                  <select aria-label="Filtrar por estado" value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select aria-label="Filtrar por estado" value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className={cn("px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30", viewMode === "list" && "lg:hidden")}>
                     <option value="ALL">Todos los estados</option>
                     <option value="VIGENTE">Vigentes</option>
                     <option value="POR_VENCER">Por vencer</option>
@@ -853,19 +867,29 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   </div>
                 </div>
 
-                {filteredContratos.length === 0 ? (
+                {contratos.length === 0 ? (
+                  // El vacío de "no hay nada" se decide por el total SIN
+                  // filtrar — si hay contratos pero el filtro los deja todos
+                  // afuera, esto NO es lo que se muestra (ver más abajo).
                   <div className="text-center py-16">
                     <FileText className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
                     <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin contratos</CardTitle>
                     <p className="text-sm text-[var(--text-secondary)] mb-6">Crea tu primer contrato desde una plantilla</p>
                     <button onClick={() => setActiveTab("plantillas")} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Ver Plantillas</button>
                   </div>
+                ) : viewMode === "cards" && filteredContratos.length === 0 ? (
+                  <div className="text-center py-16">
+                    <FileText className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
+                    <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Ningún contrato coincide con el filtro</CardTitle>
+                    <p className="text-sm text-[var(--text-secondary)] mb-6">Prueba con otro tipo o estado, o limpia la búsqueda.</p>
+                    <button onClick={clearContratosFilters} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Quitar filtros</button>
+                  </div>
                 ) : viewMode === "cards" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {paginated.map(c => {
                       const estado = estadoVisible(c);
                       const dias = diasParaVencer(c.fechaVencimiento);
-                      const borderColor = estado === "VENCIDO" ? "border-l-red-500" : estado === "POR_VENCER" ? "border-l-amber-500" : "border-l-emerald-500";
+                      const borderColor = estado === "VENCIDO" ? "border-l-[var(--data-error-500)]" : estado === "POR_VENCER" ? "border-l-[var(--data-warning-500)]" : "border-l-[var(--data-success-500)]";
                       return (
                         <div
                           key={c.id}
@@ -897,7 +921,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                               <p className="text-sm font-bold text-primary">{formatMoney(c.monto, c.moneda)}</p>
                               <div className="flex gap-1">
                                 <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-primary transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
-                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
+                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-primary transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
                               </div>
                             </div>
                           </div>
@@ -911,14 +935,36 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         <tr>
                           <th>N.o</th>
                           <th>Cliente</th>
-                          <th className="hidden sm:table-cell">Tipo</th>
+                          <th className="hidden sm:table-cell">
+                            <span className="block">Tipo</span>
+                            <select aria-label="Filtrar por tipo" value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="mt-1 h-7 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-[length:var(--ts-2xs)] font-normal normal-case text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30">
+                              <option value="ALL">Todos</option>
+                              {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                            </select>
+                          </th>
                           <th className="text-right">Monto</th>
                           <th className="hidden md:table-cell">Fecha</th>
-                          <th className="hidden lg:table-cell">Estado</th>
+                          <th className="hidden lg:table-cell">
+                            <span className="block">Estado</span>
+                            <select aria-label="Filtrar por estado" value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="mt-1 h-7 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-[length:var(--ts-2xs)] font-normal normal-case text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30">
+                              <option value="ALL">Todos</option>
+                              <option value="VIGENTE">Vigentes</option>
+                              <option value="POR_VENCER">Por vencer</option>
+                              <option value="VENCIDO">Vencidos</option>
+                            </select>
+                          </th>
                           <th>Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
+                        {filteredContratos.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-10 text-center">
+                              <p className="text-sm font-semibold text-[var(--text-secondary)]">Ningún contrato coincide con el filtro.</p>
+                              <button onClick={clearContratosFilters} className="mt-2 text-xs font-extrabold text-primary hover:underline">Quitar filtros</button>
+                            </td>
+                          </tr>
+                        )}
                         {paginated.map(c => {
                           const estado = estadoVisible(c);
                           return (
@@ -1087,7 +1133,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       placeholder={field.placeholder}
                                       className={cn(
                                         "flex-1 px-3 h-10 rounded-xl border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                        isAutoFilled ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : "border-[var(--rule-base)] bg-[var(--surface-raised)] "
+                                        isAutoFilled ? "border-[var(--accent)]/30 dark:border-[var(--accent)]/30 bg-primary/10 dark:bg-primary/15" : "border-[var(--rule-base)] bg-[var(--surface-raised)] "
                                       )}
                                     />
                                     <button
@@ -1102,7 +1148,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                   </div>
                                 )}
                                 {isCiudadField && geoResult && (
-                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-1 mt-0.5 mb-1">
+                                  <p className="text-[length:var(--ts-2xs)] text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center gap-1 mt-0.5 mb-1">
                                     <MapPin className="h-3 w-3" /> Ubicacion detectada: {geoResult}
                                   </p>
                                 )}
@@ -1205,7 +1251,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     step={field.type === "number" ? "0.01" : undefined}
                                     className={cn(
                                       "w-full px-3 h-10 rounded-xl border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] bg-[var(--surface-raised)] "
+                                      isAutoFilled && !isCiudadField ? "border-[var(--accent)]/30 dark:border-[var(--accent)]/30 bg-primary/10 dark:bg-primary/15" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] bg-[var(--surface-raised)] "
                                     )}
                                   />
                                 )}
@@ -1219,7 +1265,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                                 {/* Auto-generated letras preview */}
                                 {(field.key === "PRECIO_LETRAS" || field.key === "MONTO_LETRAS") && wizardData[field.key] && (
-                                  <p className="text-[length:var(--ts-2xs)] text-primary dark:text-[var(--data-success-500)] mt-1 flex items-center gap-1">
+                                  <p className="text-[length:var(--ts-2xs)] text-primary dark:text-[var(--accent)] mt-1 flex items-center gap-1">
                                     <Info className="h-3 w-3 shrink-0" /> Auto-generado del monto numerico
                                   </p>
                                 )}
@@ -1674,7 +1720,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <button onClick={() => verPDF(selected)} className="flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">
                       <Eye className="h-4 w-4" /> Ver PDF
                     </button>
-                    <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 transition-colors">
+                    <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-muted)] transition-colors">
                       <Download className="h-4 w-4" /> Descargar
                     </button>
                   </div>

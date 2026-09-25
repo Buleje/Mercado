@@ -1068,7 +1068,7 @@ export default function PuntoCompraView() {
         <button
           type="button"
           onClick={() => setShowInvoiceScanner(true)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-primary/10 hover:text-[var(--data-success-500)] transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-primary/10 hover:text-primary transition-colors"
           title="Escanear factura con cámara"
         >
           <Camera className="h-3.5 w-3.5 shrink-0" /> Factura
@@ -1409,6 +1409,7 @@ export default function PuntoCompraView() {
               }
             }}
             placeholder="Escanea o escribe el código de barras..."
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- único campo al abrir el escáner, foco intencional para escanear de inmediato
             autoFocus
             className="flex-1 px-3 h-10 border border-primary rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:ring-2 focus:ring-primary"
           />
@@ -1628,7 +1629,7 @@ export default function PuntoCompraView() {
                         <td className="p-3 text-right text-[var(--text-secondary)]">
                           {p.stock ?? "—"} {p.unit}
                         </td>
-                        <td className="p-3 text-right text-[var(--data-success-500)] font-medium">
+                        <td className="p-3 text-right text-[var(--accent-ink)] dark:text-[var(--accent)] font-medium">
                           {sug}
                         </td>
                         <td className="p-3 text-right">
@@ -2057,7 +2058,7 @@ export default function PuntoCompraView() {
                         const event = new CustomEvent("compras-navigate-tab", { detail: "ordenes-compra" });
                         window.dispatchEvent(event);
                       }}
-                      className="w-full text-center text-xs font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 rounded-lg py-1.5 transition-colors"
+                      className="w-full text-center text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-muted)] rounded-lg py-1.5 transition-colors"
                     >
                       Ver en Órdenes →
                     </button>
@@ -2256,16 +2257,17 @@ export default function PuntoCompraView() {
 
       {/* Modal crear nuevo proveedor — mini-form vinculado a /api/suppliers */}
       {showNewSupplier && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- clic afuera cierra por mouse; el teclado ya cierra con Escape vía useModalAccesible
         <div
           className="fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4"
-          onClick={cerrarNuevoProveedor}
+          onClick={(e) => e.target === e.currentTarget && cerrarNuevoProveedor()}
           role="dialog"
           aria-modal="true"
           aria-labelledby="punto-compra-nuevo-proveedor"
           ref={nuevoProveedorModalRef}
           tabIndex={-1}
         >
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-6 space-y-5">
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle as="h3" id="punto-compra-nuevo-proveedor" className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
@@ -2301,7 +2303,6 @@ export default function PuntoCompraView() {
                       else setRucLookup({ status: "idle" });
                     }}
                     inputMode="numeric"
-                    autoFocus
                     placeholder="20XXXXXXXXX"
                     className="w-full pl-3 pr-10 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono"
                   />

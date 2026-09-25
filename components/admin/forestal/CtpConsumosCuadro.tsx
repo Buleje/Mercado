@@ -8,7 +8,7 @@
  * y el detalle plegado (lo que se busca casi siempre es el total del grupo).
  */
 
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { AlertTriangle, ChevronRight } from "@buleje/design-system/icons";
 import { unidadOficial } from "@/lib/forestal/loctp-campos";
 import type { FilaConsumo } from "@/lib/forestal/loctp-consumos";
@@ -17,6 +17,7 @@ import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatDate, formatNumber } from "@/lib/format";
 import { Celda, Cuadro, SinDatos, Texto, Th } from "./ctp-cuadro-shared";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { CtpPaginacion } from "./ctp-tabla";
 import type { EstadoConsumosSeccion2 } from "./hooks/use-consumos-seccion2";
 
@@ -56,6 +57,18 @@ function filaConsumo(f: FilaConsumo, id?: string) {
   );
 }
 
+/** Cuántos consumos hay detrás de cada valor, de TODO el período (no de lo
+ *  filtrado: si no, quitar un filtro no se podría deshacer desde el selector). */
+function contar(valores: readonly (string | null | undefined)[]): { value: string; count: number }[] {
+  const por = new Map<string, number>();
+  for (const v of valores) {
+    const k = (v ?? "").trim();
+    if (!k || k === "—") continue;
+    por.set(k, (por.get(k) ?? 0) + 1);
+  }
+  return [...por.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+}
+
 export default function CtpConsumosCuadro({
   s2,
   accion,
@@ -68,6 +81,10 @@ export default function CtpConsumosCuadro({
   barra?: React.ReactNode;
 }) {
   const { visibles, filas, total, agrupar, grupos, abiertos, alternarGrupo, paginacion } = s2;
+  const facetas = useMemo(
+    () => ({ especie: contar(filas.map((f) => f.especieComun)), permiso: contar(filas.map((f) => f.codigoOrigen)) }),
+    [filas],
+  );
   const { visibles: filasEnPagina, rango, porPagina, setPorPagina, ir } = paginacion;
 
   return (
@@ -108,9 +125,17 @@ export default function CtpConsumosCuadro({
           <Th ancho="w-14">(1) N°</Th>
           <Th>(2) Fecha</Th>
           <Th>(3) Tipo de producto</Th>
-          <Th>(4) N. común</Th>
+          {/* Especie y permiso se filtran desde su columna, como en Excel
+              (2026-09-24): eran dos desplegables sueltos arriba del cuadro. */}
+          <Th>
+            <span className="block">(4) N. común</span>
+            <FiltroColumnaMulti label="Especie" value={s2.filtro.especie} options={facetas.especie} onChange={s2.set.especie} placeholder="Todas" />
+          </Th>
           <Th>(5) N. científico</Th>
-          <Th>(6) Cód. origen/CTP</Th>
+          <Th>
+            <span className="block">(6) Cód. origen/CTP</span>
+            <FiltroColumnaMulti label="Permiso (título habilitante)" value={s2.filtro.permiso} options={facetas.permiso} onChange={s2.set.permiso} placeholder="Todos" />
+          </Th>
           <Th>(7) N° fuente</Th>
           <Th>(8) Unidad</Th>
           <Th>(9) Cantidad</Th>

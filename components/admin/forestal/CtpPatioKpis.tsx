@@ -44,7 +44,13 @@ export default function CtpPatioKpis({
   trabajoActivo = false,
   cargando = false,
   acotadoA,
+  antes,
+  acciones,
 }: {
+  /** En la misma fila del botón, a la izquierda (el título de la tarjeta). */
+  antes?: React.ReactNode;
+  /** En la misma fila, a la derecha (el Excel). */
+  acciones?: React.ReactNode;
   resumen: ResumenPatio;
   /**
    * La especie del lote elegido: las cifras son de lo que ESE lote puede
@@ -88,6 +94,9 @@ export default function CtpPatioKpis({
     /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular
        —cuántas trozas y cuántos m³— viaja en la línea de resumen. */
     <CtpKpisPlegables
+      antes={antes}
+      acciones={acciones}
+      alto="sm"
       claveMemoria="consumos-patio"
       filtros={filtros}
       filtrosActivos={filtrosActivos}

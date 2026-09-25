@@ -2,6 +2,7 @@
 
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useEffect, useCallback, useId, useRef } from "react";
 import {
@@ -53,8 +54,8 @@ type EmitForm = {
 const fmt = (n: number) => "S/ " + formatNumber(n, { min: 2 });
 
 const TYPE_META: Record<DocType, { label: string; color: string; bg: string }> = {
-  boleta:         { label: "Boleta",          color: "text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15" },
-  factura:        { label: "Factura",         color: "text-[var(--data-success-500)]",  bg: "bg-primary/10 dark:bg-primary/15" },
+  boleta:         { label: "Boleta",          color: "text-primary",     bg: "bg-primary/10 dark:bg-primary/15" },
+  factura:        { label: "Factura",         color: "text-primary",  bg: "bg-primary/10 dark:bg-primary/15" },
   "nota-credito": { label: "Nota de crédito", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   "nota-debito":  { label: "Nota de débito",  color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
@@ -81,8 +82,10 @@ const EMPTY_FORM: EmitForm = {
 export default function EInvoiceTab() {
   const [docs, setDocs] = useState<EDocument[]>([]);
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState<DocType | "todos">("todos");
-  const [filterStatus, setFilterStatus] = useState<DocStatus | "todos">("todos");
+  // Tipo y Estado son columnas de la tabla: autofiltro en su `<th>` (Brandon
+  // 2026-09-24), `[]` = todos, admite varios a la vez.
+  const [filterType, setFilterType] = useState<DocType[]>([]);
+  const [filterStatus, setFilterStatus] = useState<DocStatus[]>([]);
   const [detail, setDetail] = useState<EDocument | null>(null);
   const [, setLoadingDocs] = useState(true);
 
@@ -160,8 +163,8 @@ export default function EInvoiceTab() {
 
   const filtered = useMemo(() => {
     let list = [...docs];
-    if (filterType !== "todos") list = list.filter(d => d.type === filterType);
-    if (filterStatus !== "todos") list = list.filter(d => d.status === filterStatus);
+    if (filterType.length > 0) list = list.filter(d => filterType.includes(d.type));
+    if (filterStatus.length > 0) list = list.filter(d => filterStatus.includes(d.status));
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(d =>
@@ -356,15 +359,37 @@ export default function EInvoiceTab() {
             className="w-full pl-9 pr-3 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           />
         </div>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as DocType | "todos")} aria-label="Filtrar por tipo de comprobante" className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <option value="todos">Todos los tipos</option>
-          {(Object.keys(TYPE_META) as DocType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
-        </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as DocStatus | "todos")} aria-label="Filtrar por estado" className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <option value="todos">Todos los estados</option>
-          {(Object.keys(STATUS_META) as DocStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
-        </select>
       </div>
+
+      {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
+          <thead>): Tipo y Estado se repiten acá, mismo estado, sólo visibles
+          ahí. */}
+      {docs.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:hidden">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Tipo</span>
+            <FiltroColumnaMulti
+              label="Tipo"
+              value={filterType}
+              options={(Object.keys(TYPE_META) as DocType[]).map(t => ({ value: t, count: docs.filter(d => d.type === t).length }))}
+              etiqueta={(v) => TYPE_META[v as DocType]?.label ?? v}
+              onChange={(v) => setFilterType(v as DocType[])}
+              placeholder="Todos"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Estado</span>
+            <FiltroColumnaMulti
+              label="Estado"
+              value={filterStatus}
+              options={(Object.keys(STATUS_META) as DocStatus[]).map(s => ({ value: s, count: docs.filter(d => d.status === s).length }))}
+              etiqueta={(v) => STATUS_META[v as DocStatus]?.label ?? v}
+              onChange={(v) => setFilterStatus(v as DocStatus[])}
+              placeholder="Todos"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Documents table */}
       <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
@@ -380,10 +405,30 @@ export default function EInvoiceTab() {
                 <tr>
                   <th>Serie-Nro</th>
                   <th>Fecha</th>
-                  <th>Tipo</th>
+                  <th>
+                    <span className="block">Tipo</span>
+                    <FiltroColumnaMulti
+                      label="Tipo"
+                      value={filterType}
+                      options={(Object.keys(TYPE_META) as DocType[]).map(t => ({ value: t, count: docs.filter(d => d.type === t).length }))}
+                      etiqueta={(v) => TYPE_META[v as DocType]?.label ?? v}
+                      onChange={(v) => setFilterType(v as DocType[])}
+                      placeholder="Todos"
+                    />
+                  </th>
                   <th>Cliente</th>
                   <th>Total</th>
-                  <th>Estado</th>
+                  <th>
+                    <span className="block">Estado</span>
+                    <FiltroColumnaMulti
+                      label="Estado"
+                      value={filterStatus}
+                      options={(Object.keys(STATUS_META) as DocStatus[]).map(s => ({ value: s, count: docs.filter(d => d.status === s).length }))}
+                      etiqueta={(v) => STATUS_META[v as DocStatus]?.label ?? v}
+                      onChange={(v) => setFilterStatus(v as DocStatus[])}
+                      placeholder="Todos"
+                    />
+                  </th>
                   <th></th>
                 </tr>
               </thead>
@@ -418,7 +463,7 @@ export default function EInvoiceTab() {
                             href={d.pdfUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-bold text-[var(--data-success-500)] hover:underline"
+                            className="text-xs font-bold text-primary hover:underline"
                             title="Ver PDF"
                           >
                             PDF
@@ -435,8 +480,8 @@ export default function EInvoiceTab() {
 
       {/* Detail modal */}
       {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && setDetail(null)}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4">
             <div className="flex items-center justify-between">
               <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.serie}-{detail.number}</CardTitle>
               <button aria-label="Cerrar" onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
@@ -479,8 +524,8 @@ export default function EInvoiceTab() {
 
       {/* Emit modal */}
       {emitForm !== null && (
-        <div className="modal-backdrop p-4" onClick={() => !emitLoading && setEmitForm(null)}>
-          <div ref={emitModalRef} role="dialog" aria-modal="true" aria-labelledby={emitTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && !emitLoading && setEmitForm(null)}>
+          <div ref={emitModalRef} role="dialog" aria-modal="true" aria-labelledby={emitTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4">
             <div className="flex items-center justify-between">
               <CardTitle id={emitTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Send className="h-4 w-4 text-primary" /> Emitir comprobante SUNAT

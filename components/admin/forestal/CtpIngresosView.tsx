@@ -774,6 +774,71 @@ export default function CtpIngresosView({
     setFacetas({});
   }, []);
 
+  /**
+   * La barra de acciones de la vista (buscador · Filtros · Opciones · Nuevo
+   * ingreso), armada UNA vez y pasada como `acciones` al botón «Indicadores»
+   * (Brandon, 2026-09-24: «alineado con otros botones... para evitar que
+   * ocupe mucho espacio»). Antes vivía en su propia fila debajo de los KPIs;
+   * ahora comparte fila con el botón que los pliega.
+   */
+  const barraFiltros = (boton: React.ReactNode) => (
+    <CtpIngresosFiltros
+      antes={boton}
+      /* Dos lecturas del MISMO registro: por guía (lo que declara el papel) o
+         por troza (una fila por pieza). Viaja con los chips de estado — antes
+         tenía su propia fila con un texto que repetía el nombre del botón. */
+      /* Qué columnas de la tabla se ven — sólo en la lista por guía, que es
+         la que tiene columnas opcionales. */
+      columnas={
+        modo === "guia" ? (
+          <ColumnasMenu columnas={COLUMNAS_GUIAS_OPCIONALES} visibles={colsGuias} onChange={setColsGuias} className="h-9 rounded-full" />
+        ) : undefined
+      }
+      modoLista={
+        <div role="radiogroup" aria-label="Cómo listar los ingresos" className="inline-flex items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-0.5">
+          {([
+            { v: "guia", label: "Por guía", hint: "Una fila por documento de ingreso" },
+            { v: "troza", label: "Por troza", hint: "Una fila por pieza, con su código y sus tres dimensiones" },
+          ] as const).map((o) => (
+            <button
+              key={o.v}
+              type="button"
+              role="radio"
+              aria-checked={modo === o.v}
+              title={o.hint}
+              onClick={() => setModo(o.v)}
+              className={`inline-flex h-8 items-center rounded-full px-3 text-sm font-bold transition-colors ${modo === o.v
+                ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
+                : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      }
+      searchInput={searchInput}
+      onSearch={setSearchInput}
+      statusFilter={statusFilter}
+      onStatus={setStatusFilter}
+      facetas={facetas}
+      onFacetas={setFacetas}
+      enCabecera={modo === "guia"}
+      stats={stats}
+      loading={loading}
+      dashboardOn={showDashboard}
+      onDashboard={() => setShowDashboard((v) => !v)}
+      onReload={() => void reload()}
+      onNuevo={() => { setFormGtf(null); setFormPreset(undefined); setShowForm(true); }}
+      onDescargar={() => void descargar()}
+      descargando={descargando}
+      totalFiltrado={total}
+      onLegajo={() => void armarLegajo()}
+      legajoCount={selectedIds.length || total}
+      legajoDeTodo={selectedIds.length === 0}
+      armandoLegajo={armandoLegajo}
+    />
+  );
+
   return (
     <div className="space-y-3">
       {/* La bandeja se puede abrir a todo el libro sin cambiar de pestaña: el
@@ -822,6 +887,7 @@ export default function CtpIngresosView({
               nota={notaDeFiltros(camposArchivo)}
             />
           }
+          acciones={barraFiltros}
         />
       ) : (
       <CtpIngresosKpis
@@ -848,65 +914,11 @@ export default function CtpIngresosView({
            (ADR-400): el servidor calcula los agregados con ese mismo `where`. */
         facetas={facetas}
         onFacetas={setFacetas}
+        acciones={barraFiltros}
       />
       )}
 
       {showDashboard && <SpeciesAggregateChart period={period} />}
-
-      <CtpIngresosFiltros
-        /* Dos lecturas del MISMO registro: por guía (lo que declara el papel) o
-           por troza (una fila por pieza). Viaja con los chips de estado — antes
-           tenía su propia fila con un texto que repetía el nombre del botón. */
-        /* Qué columnas de la tabla se ven — sólo en la lista por guía, que es
-           la que tiene columnas opcionales. */
-        columnas={
-          modo === "guia" ? (
-            <ColumnasMenu columnas={COLUMNAS_GUIAS_OPCIONALES} visibles={colsGuias} onChange={setColsGuias} className="h-9 rounded-full" />
-          ) : undefined
-        }
-        modoLista={
-          <div role="radiogroup" aria-label="Cómo listar los ingresos" className="inline-flex items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-0.5">
-            {([
-              { v: "guia", label: "Por guía", hint: "Una fila por documento de ingreso" },
-              { v: "troza", label: "Por troza", hint: "Una fila por pieza, con su código y sus tres dimensiones" },
-            ] as const).map((o) => (
-              <button
-                key={o.v}
-                type="button"
-                role="radio"
-                aria-checked={modo === o.v}
-                title={o.hint}
-                onClick={() => setModo(o.v)}
-                className={`inline-flex h-8 items-center rounded-full px-3 text-sm font-bold transition-colors ${modo === o.v
-                  ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-        }
-        searchInput={searchInput}
-        onSearch={setSearchInput}
-        statusFilter={statusFilter}
-        onStatus={setStatusFilter}
-        facetas={facetas}
-        onFacetas={setFacetas}
-        enCabecera={modo === "guia"}
-        stats={stats}
-        loading={loading}
-        dashboardOn={showDashboard}
-        onDashboard={() => setShowDashboard((v) => !v)}
-        onReload={() => void reload()}
-        onNuevo={() => { setFormGtf(null); setFormPreset(undefined); setShowForm(true); }}
-        onDescargar={() => void descargar()}
-        descargando={descargando}
-        totalFiltrado={total}
-        onLegajo={() => void armarLegajo()}
-        legajoCount={selectedIds.length || total}
-        legajoDeTodo={selectedIds.length === 0}
-        armandoLegajo={armandoLegajo}
-      />
 
       {/* Puente monte→planta: guías emitidas en Títulos Habilitantes sin ingresar. */}
       {!esArchivo && (

@@ -27,6 +27,8 @@ import {
   Ban,
 } from "@buleje/design-system/icons";
 import { DataTable, StatCard } from "@buleje/design-system";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 import LibroChrome, { type LibroAction } from "@/components/admin/shared/libro-chrome";
 import { IconAction, TablaSkeleton } from "@/components/admin/shared/module-primitives";
 import CacaoLoteCardMobile from "./CacaoLoteCardMobile";
@@ -34,7 +36,6 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   GRADO_LABEL,
-  CACAO_VARIEDADES,
   ESTADO_PAGO_LABEL,
   type CacaoGrado,
   type CacaoEstadoPago,
@@ -89,16 +90,19 @@ interface Lote {
 const saldoDe = (l: Lote) => Math.max(0, Number(l.totalPagado ?? 0) - Number(l.montoPagado ?? 0));
 const tienePendiente = (l: Lote) => l.estadoPago !== "pagado" && saldoDe(l) > 0;
 
-/** Filtros rápidos client-side sobre los lotes ya cargados. */
-type Quick = "todos" | "saldo" | "sin_vincular" | "grado1" | "humedo";
+/** Filtros rápidos client-side sobre los lotes ya cargados. «Grado I» y
+ *  «Variedad» vivían acá Y en el panel «Filtros» de abajo (dos controles para
+ *  el mismo dato) — ahora es sólo el autofiltro de su propia columna. */
+type Quick = "todos" | "saldo" | "sin_vincular" | "humedo";
 type SortKey = "fecha" | "pesoKg" | "totalPagado";
 const QUICK_CHIPS: { key: Quick; label: string }[] = [
   { key: "todos", label: "Todos" },
   { key: "saldo", label: "Con saldo" },
   { key: "sin_vincular", label: "Sin vincular" },
-  { key: "grado1", label: "Grado I" },
   { key: "humedo", label: "Húmedo" },
 ];
+/** Bucket para lotes sin grado evaluado — un valor real de columna, no "todos". */
+const SIN_GRADO = "__sin_grado__";
 
 const fdate = (iso: string) => {
   try {
@@ -123,21 +127,20 @@ export default function CacaoAcopio() {
   const [payMonto, setPayMonto] = useState("");
   const [paying, setPaying] = useState(false);
   const [loteDrawerId, setLoteDrawerId] = useState<string | null>(null);
-  // Filtros de acopio (task #4)
-  const [fVariedad, setFVariedad] = useState("");
-  const [fGrado, setFGrado] = useState("");
+  // Filtros de acopio (task #4) — sólo el rango de fechas queda server-side
+  // (recorta qué se pide, no algo que ya esté en cada fila cargada).
   const [fFrom, setFFrom] = useState("");
   const [fTo, setFTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  // Refinamiento client-side sobre los lotes ya cargados (chips + orden).
+  // Refinamiento client-side sobre los lotes ya cargados (chips + orden +
+  // autofiltro de columna en Variedad y Grado).
   const [quick, setQuick] = useState<Quick>("todos");
+  const [varFilter, setVarFilter] = useState<string[]>([]);
+  const [gradoFilter, setGradoFilter] = useState<string[]>([]);
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "fecha", dir: "desc" });
 
   const load = useCallback(
-    async (
-      v: CacaoView,
-      fOverride?: { variedad?: string; grado?: string; from?: string; to?: string },
-    ) => {
+    async (v: CacaoView, fOverride?: { from?: string; to?: string }) => {
       // Solo "acopio" se renderiza inline; el resto son componentes self-fetch.
       if (v !== "acopio") {
         setLoading(false);
@@ -145,15 +148,11 @@ export default function CacaoAcopio() {
       } // ventas/inventario/etc. self-fetch
       setLoading(true);
       setError(null);
-      const fv = fOverride?.variedad ?? fVariedad,
-        fg = fOverride?.grado ?? fGrado,
-        ff = fOverride?.from ?? fFrom,
+      const ff = fOverride?.from ?? fFrom,
         ft = fOverride?.to ?? fTo;
       try {
         const q = new URLSearchParams({ view: "lotes" });
         if (search.trim()) q.set("search", search.trim());
-        if (fv) q.set("variedad", fv);
-        if (fg) q.set("grado", fg);
         if (ff) q.set("from", new Date(ff).toISOString());
         if (ft) q.set("to", new Date(ft + "T23:59:59").toISOString());
         const r = await fetch(`/api/admin/cacao?${q}`, { credentials: "include" });
@@ -166,7 +165,7 @@ export default function CacaoAcopio() {
         setLoading(false);
       }
     },
-    [search, fVariedad, fGrado, fFrom, fTo],
+    [search, fFrom, fTo],
   );
   useEffect(() => {
     load(view); /* eslint-disable-next-line react-hooks/exhaustive-deps */
@@ -265,23 +264,40 @@ export default function CacaoAcopio() {
       todos: reg.length,
       saldo: reg.filter(tienePendiente).length,
       sin_vincular: reg.filter((l) => l.productorNombre && !l.productorId).length,
-      grado1: reg.filter((l) => l.grado === "I").length,
       humedo: reg.filter((l) => l.tipoGrano === "humedo").length,
     };
   }, [lotes]);
 
-  // Filas visibles: chip rápido + orden por columna (client-side, sin refetch).
+  // Peso de cada Variedad/Grado sobre TODOS los lotes cargados (no sobre lo ya
+  // filtrado por el otro autofiltro o los chips) — Excel: la propia columna no
+  // se recorta a sí misma.
+  const varOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const l of lotes) if (l.variedad) counts[l.variedad] = (counts[l.variedad] ?? 0) + 1;
+    return Object.entries(counts).map(([value, count]) => ({ value, count }));
+  }, [lotes]);
+  const gradoOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const l of lotes) {
+      const k = l.grado ?? SIN_GRADO;
+      counts[k] = (counts[k] ?? 0) + 1;
+    }
+    return Object.entries(counts).map(([value, count]) => ({ value, count }));
+  }, [lotes]);
+
+  // Filas visibles: chips + autofiltro de columna + orden (client-side, sin refetch).
   const rows = useMemo(() => {
     let r = lotes;
     if (quick === "saldo") r = r.filter(tienePendiente);
     else if (quick === "sin_vincular") r = r.filter((l) => l.productorNombre && !l.productorId);
-    else if (quick === "grado1") r = r.filter((l) => l.grado === "I");
     else if (quick === "humedo") r = r.filter((l) => l.tipoGrano === "humedo");
+    if (varFilter.length > 0) r = r.filter((l) => l.variedad != null && varFilter.includes(l.variedad));
+    if (gradoFilter.length > 0) r = r.filter((l) => gradoFilter.includes(l.grado ?? SIN_GRADO));
     const dir = sort.dir === "asc" ? 1 : -1;
     const val = (l: Lote) =>
       sort.key === "fecha" ? new Date(l.fecha).getTime() : Number(l[sort.key] ?? 0);
     return [...r].sort((a, b) => (val(a) - val(b)) * dir);
-  }, [lotes, quick, sort]);
+  }, [lotes, quick, varFilter, gradoFilter, sort]);
 
   // Totales del set visible (pie de tabla).
   const rowTotals = useMemo(
@@ -350,7 +366,7 @@ export default function CacaoAcopio() {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
-  const activeFilters = [fVariedad, fGrado, fFrom, fTo].filter(Boolean).length;
+  const activeFilters = [fFrom, fTo].filter(Boolean).length;
 
   /** Lo que se baja una vez por campaña: plegado, no ocupando la cabecera. */
   const acciones: LibroAction[] = [
@@ -479,39 +495,41 @@ export default function CacaoAcopio() {
             </button>
           </div>
           {showFilters && (
-            <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4 sm:grid-cols-4">
-              <label className="block">
+            <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
+              {/* Variedad y Grado son columnas de la tabla: en desktop su
+                  filtro vive en el propio `<th>` (autofiltro instantáneo). En
+                  el celular la tabla es tarjetas y no hay `<th>` que lo
+                  sostenga — se repite acá, mismo estado, sólo `sm:hidden`. */}
+              {/* `<div>`, no `<label>`: FiltroColumnaMulti ya trae su propio
+                  aria-label — un `<label>` sin control real dispara
+                  jsx-a11y/label-has-associated-control. */}
+              <div className="col-span-2 block sm:hidden">
                 <span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
                   Variedad
                 </span>
-                <select
-                  value={fVariedad}
-                  onChange={(e) => setFVariedad(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
-                >
-                  <option value="">Todas</option>
-                  {CACAO_VARIEDADES.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
+                <FiltroColumnaMulti
+                  label="Variedad"
+                  value={varFilter}
+                  options={varOptions}
+                  onChange={setVarFilter}
+                  placeholder="Todas"
+                  className="!mt-0"
+                />
+              </div>
+              <div className="col-span-2 block sm:hidden">
                 <span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
                   Grado
                 </span>
-                <select
-                  value={fGrado}
-                  onChange={(e) => setFGrado(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
-                >
-                  <option value="">Todos</option>
-                  <option value="I">Grado I</option>
-                  <option value="II">Grado II</option>
-                  <option value="fuera_norma">Fuera de norma</option>
-                </select>
-              </label>
+                <FiltroColumnaMulti
+                  label="Grado"
+                  value={gradoFilter}
+                  options={gradoOptions}
+                  etiqueta={(v) => (v === SIN_GRADO ? "Sin clasificar" : GRADO_LABEL[v as CacaoGrado] ?? v)}
+                  onChange={setGradoFilter}
+                  placeholder="Todos"
+                  className="!mt-0"
+                />
+              </div>
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
                   Desde
@@ -534,7 +552,7 @@ export default function CacaoAcopio() {
                   className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
                 />
               </label>
-              <div className="col-span-2 flex gap-2 sm:col-span-4">
+              <div className="col-span-2 flex gap-2">
                 <button
                   type="button"
                   onClick={() => load("acopio")}
@@ -546,11 +564,9 @@ export default function CacaoAcopio() {
                   <button
                     type="button"
                     onClick={() => {
-                      setFVariedad("");
-                      setFGrado("");
                       setFFrom("");
                       setFTo("");
-                      load("acopio", { variedad: "", grado: "", from: "", to: "" });
+                      load("acopio", { from: "", to: "" });
                     }}
                     className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                   >
@@ -589,16 +605,35 @@ export default function CacaoAcopio() {
               automática `.admin-mobile-cards` dejaba tarjetas de 120px de ancho
               con la fecha partida en tres líneas. */}
           <div className="hidden overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
-            <DataTable className="w-full text-sm">
+            <DataTable filtrable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left">
                 <tr>
                   <Th>Lote</Th>
                   <SortTh label="Fecha" col="fecha" sort={sort} onSort={toggleSort} className="hidden sm:table-cell" />
                   <Th>Productor</Th>
-                  <Th className="hidden md:table-cell">Variedad</Th>
+                  <Th className="hidden md:table-cell">
+                    <span className="block">Variedad</span>
+                    <FiltroColumnaMulti
+                      label="Variedad"
+                      value={varFilter}
+                      options={varOptions}
+                      onChange={setVarFilter}
+                      placeholder="Todas"
+                    />
+                  </Th>
                   <SortTh label="Peso (kg)" col="pesoKg" sort={sort} onSort={toggleSort} align="right" />
                   <Th className="hidden text-right sm:table-cell">Humedad</Th>
-                  <Th className="hidden md:table-cell">Grado</Th>
+                  <Th className="hidden md:table-cell">
+                    <span className="block">Grado</span>
+                    <FiltroColumnaMulti
+                      label="Grado"
+                      value={gradoFilter}
+                      options={gradoOptions}
+                      etiqueta={(v) => (v === SIN_GRADO ? "Sin clasificar" : GRADO_LABEL[v as CacaoGrado] ?? v)}
+                      onChange={setGradoFilter}
+                      placeholder="Todos"
+                    />
+                  </Th>
                   <SortTh label="Liquidación" col="totalPagado" sort={sort} onSort={toggleSort} align="right" />
                   <Th className="text-right">Acción</Th>
                 </tr>
@@ -689,7 +724,7 @@ export default function CacaoAcopio() {
                             {tienePendiente(l) && (
                               <IconAction
                                 icon={Wallet}
-                                tone="success"
+                                tone="accent"
                                 label={`Pagar al productor (debe S/ ${n2(saldoDe(l))})`}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -870,7 +905,7 @@ export default function CacaoAcopio() {
                 Motivo de la anulación
               </span>
               <input
-                autoFocus
+                ref={(el) => el?.focus()}
                 value={annulReason}
                 onChange={(e) => setAnnulReason(e.target.value)}
                 onKeyDown={(e) => {
@@ -917,7 +952,7 @@ export default function CacaoAcopio() {
             <AdminModal open onClose={() => setPayId(null)} variant="centered-sm" hideCloseButton>
               <div className="bg-[var(--surface-raised)] px-5 py-5 sm:px-6">
                 <div className="flex items-start gap-3">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-600)]">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                     <Wallet className="h-6 w-6" />
                   </span>
                   <div className="min-w-0">
@@ -972,7 +1007,7 @@ export default function CacaoAcopio() {
                     </button>
                   </span>
                   <input
-                    autoFocus
+                    ref={(el) => el?.focus()}
                     inputMode="decimal"
                     value={payMonto}
                     onChange={(e) => setPayMonto(e.target.value.replace(/[^0-9.]/g, ""))}
@@ -980,7 +1015,7 @@ export default function CacaoAcopio() {
                       if (e.key === "Enter" && !invalido && !paying) pagar();
                     }}
                     placeholder="0.00"
-                    className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]"
+                    className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                   />
                   <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
                     Es el total acumulado pagado por este lote (adelanto + abonos), no solo el último
@@ -1000,7 +1035,7 @@ export default function CacaoAcopio() {
                     type="button"
                     disabled={invalido || paying}
                     onClick={pagar}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
                   >
                     <Wallet className="h-4 w-4" />
                     {paying ? "Guardando…" : "Registrar pago"}

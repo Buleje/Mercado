@@ -8,6 +8,8 @@ import {
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import { FiltroColumna } from "@/components/admin/shared/filtros-columna";
+import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 
 /* ── Types ──────────────────────────────────────────────────── */
 type ExpenseItem = {
@@ -44,6 +46,12 @@ type BudgetConfig = {
 const fmt = (n: number) =>
   `${formatCurrency(n)}`;
 const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+
+const ESTADOS = [
+  { value: "over", label: "Exceso" },
+  { value: "under", label: "Ahorro" },
+  { value: "ok", label: "OK" },
+] as const;
 
 const MONTH_LABELS: Record<string, string> = {
   "01": "Ene", "02": "Feb", "03": "Mar", "04": "Abr",
@@ -252,8 +260,14 @@ export default function BudgetVsRealTab() {
   const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
   const [monthFilter, setMonthFilter] = useState<string>("all");
-  const [deptFilter, setDeptFilter] = useState("all");
-  const [alertFilter, setAlertFilter] = useState<"all" | "over" | "under" | "ok">("all");
+  /** Depto y Estado: ahora en el `<th>` de su columna (convención de filtros
+   *  en la cabecera) — vivían como un `<select>` y un grupo de botones sueltos. */
+  const [deptFilter, setDeptFilter] = useState<string | undefined>(undefined);
+  const [alertFilter, setAlertFilter] = useState<string | undefined>(undefined);
+  /** `true` en cuanto el usuario toca el filtro de Mes — antes de eso, el
+   *  default de "último mes" se puede reponer; después, "Limpiar" (volver a
+   *  "Todos los meses") debe quedarse así, no reponer el último mes solo. */
+  const [monthTouched, setMonthTouched] = useState(false);
 
   // Config de presupuesto
   const [budgetConfig, setBudgetConfig] = useState<BudgetConfig>({ month: ym, salesGoal: 0, expensesGoal: 0 });
@@ -331,14 +345,22 @@ export default function BudgetVsRealTab() {
   const MONTHS = useMemo(() => ["all", ...new Set(lines.map((b) => b.month))], [lines]);
   const DEPARTMENTS = useMemo(() => [...new Set(lines.map((b) => b.department))], [lines]);
 
-  const effectiveMonthFilter = monthFilter === "all" && MONTHS.length > 1
-    ? MONTHS[MONTHS.length - 1]
-    : monthFilter;
+  // Default a "el último mes" SOLO antes de que el usuario toque el filtro —
+  // si no, "Limpiar" (que pone monthFilter en "all") quedaba reemplazado por
+  // el último mes en cada render y nunca se veían "Todos los meses" juntos.
+  useEffect(() => {
+    if (!monthTouched && MONTHS.length > 1) setMonthFilter(MONTHS[MONTHS.length - 1]);
+  }, [MONTHS, monthTouched]);
+  const effectiveMonthFilter = monthFilter;
+  const handleMonthFilterChange = (v: string | undefined) => {
+    setMonthTouched(true);
+    setMonthFilter(v ?? "all");
+  };
 
   const filtered = useMemo(() => {
     return lines.filter((b) => {
       if (effectiveMonthFilter !== "all" && b.month !== effectiveMonthFilter) return false;
-      if (deptFilter !== "all" && b.department !== deptFilter) return false;
+      if (deptFilter && b.department !== deptFilter) return false;
       if (search && !b.category.toLowerCase().includes(search.toLowerCase())) return false;
       const variance = b.budgeted > 0 ? ((b.actual - b.budgeted) / b.budgeted) * 100 : 0;
       if (alertFilter === "over" && variance <= 10) return false;
@@ -347,6 +369,34 @@ export default function BudgetVsRealTab() {
       return true;
     });
   }, [lines, search, effectiveMonthFilter, deptFilter, alertFilter]);
+
+  // Peso de cada opción sobre TODAS las líneas del mes/depto elegido (Excel:
+  // el propio filtro no se recorta a sí mismo). Mes usa `effectiveMonthFilter`
+  // porque esa es la ventana real que ve la tabla.
+  const monthOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const b of lines) counts[b.month] = (counts[b.month] ?? 0) + 1;
+    return MONTHS.filter((m) => m !== "all").map((m) => ({ value: m, count: counts[m] ?? 0 }));
+  }, [lines, MONTHS]);
+  const deptOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const b of lines) {
+      if (effectiveMonthFilter !== "all" && b.month !== effectiveMonthFilter) continue;
+      counts[b.department] = (counts[b.department] ?? 0) + 1;
+    }
+    return DEPARTMENTS.map((d) => ({ value: d, count: counts[d] ?? 0 }));
+  }, [lines, DEPARTMENTS, effectiveMonthFilter]);
+  const estadoOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = { over: 0, under: 0, ok: 0 };
+    for (const b of lines) {
+      if (effectiveMonthFilter !== "all" && b.month !== effectiveMonthFilter) continue;
+      if (deptFilter && b.department !== deptFilter) continue;
+      const variance = b.budgeted > 0 ? ((b.actual - b.budgeted) / b.budgeted) * 100 : 0;
+      const key = Math.abs(variance) <= 10 ? "ok" : variance > 10 ? "over" : "under";
+      counts[key] += 1;
+    }
+    return ESTADOS.filter((e) => counts[e.value] > 0).map((e) => ({ value: e.value, count: counts[e.value] }));
+  }, [lines, effectiveMonthFilter, deptFilter]);
 
   const totals = useMemo(() => {
     const budgeted = filtered.reduce((s, b) => s + b.budgeted, 0);
@@ -637,65 +687,80 @@ export default function BudgetVsRealTab() {
           onChange={(e) => setSearch(e.target.value)}
           className="px-4 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
         />
-        <select
-          aria-label="Filtrar por mes"
-          value={effectiveMonthFilter}
-          onChange={(e) => setMonthFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
-        >
-          <option value="all">Todos los meses</option>
-          {MONTHS.filter((m) => m !== "all").map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-        <select
-          aria-label="Filtrar por departamento"
-          value={deptFilter}
-          onChange={(e) => setDeptFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
-        >
-          <option value="all">Todos los dptos</option>
-          {DEPARTMENTS.map((d) => (
-            <option key={d} value={d}>{d}</option>
-          ))}
-        </select>
-        <div className="flex rounded-xl border border-[var(--rule-base)] overflow-hidden">
-          {(
-            [
-              ["all", "Todos"],
-              ["over", "Exceso"],
-              ["under", "Ahorro"],
-              ["ok", "OK"],
-            ] as const
-          ).map(([val, lbl]) => (
-            <button
-              key={val}
-              onClick={() => setAlertFilter(val)}
-              className={cn(
-                "px-3 py-2 text-sm font-semibold transition-colors min-h-[44px]",
-                alertFilter === val
-                  ? "bg-primary text-white"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
-              )}
-            >
-              {lbl}
-            </button>
-          ))}
+      </div>
+
+      {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
+          <thead>): Depto/Mes/Estado se repiten acá, mismo estado, sólo
+          visibles ahí. */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-bold text-[var(--text-secondary)]">Depto</span>
+          <FiltroColumna label="Depto" value={deptFilter} options={deptOptions} onChange={setDeptFilter} placeholder="Todos" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-bold text-[var(--text-secondary)]">Mes</span>
+          <FiltroColumna
+            label="Mes"
+            value={effectiveMonthFilter === "all" ? undefined : effectiveMonthFilter}
+            options={monthOptions}
+            onChange={handleMonthFilterChange}
+            placeholder="Todos"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-bold text-[var(--text-secondary)]">Estado</span>
+          <FiltroColumna
+            label="Estado"
+            value={alertFilter}
+            options={estadoOptions}
+            etiqueta={(v) => ESTADOS.find((e) => e.value === v)?.label ?? v}
+            onChange={setAlertFilter}
+            placeholder="Todos"
+          />
         </div>
       </div>
 
       {/* Tabla de detalle por categoría */}
-      <DataTable className="min-w-[600px]">
+      <DataTable filtrable className="min-w-[600px]">
         <thead>
           <tr className="border-b border-[var(--rule-base)]">
             <th>Categoría</th>
-            <th>Depto</th>
-            <th>Mes</th>
+            <th>
+              <span className="block">Depto</span>
+              <FiltroColumna
+                label="Depto"
+                value={deptFilter}
+                options={deptOptions}
+                onChange={setDeptFilter}
+                placeholder="Todos"
+              />
+            </th>
+            <th>
+              <span className="block">Mes</span>
+              <FiltroColumna
+                label="Mes"
+                value={effectiveMonthFilter === "all" ? undefined : effectiveMonthFilter}
+                options={monthOptions}
+                onChange={handleMonthFilterChange}
+                placeholder="Todos"
+              />
+            </th>
             <th className="text-right">Presupuesto</th>
             <th className="text-right">Real</th>
             <th className="text-right">Variación</th>
             <th className="text-center">Barra</th>
-            <th className="text-center">Estado</th>
+            <th className="text-center">
+              <span className="block">Estado</span>
+              <FiltroColumna
+                label="Estado"
+                value={alertFilter}
+                options={estadoOptions}
+                etiqueta={(v) => ESTADOS.find((e) => e.value === v)?.label ?? v}
+                onChange={setAlertFilter}
+                placeholder="Todos"
+                className="mx-auto"
+              />
+            </th>
           </tr>
         </thead>
         <tbody>

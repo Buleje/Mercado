@@ -35,7 +35,6 @@ import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { libresDelPatio, resumenPatio } from "@/lib/forestal/patio-resumen";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
 import {
-  ESTADO_LOTE,
   alertasDeLote,
   ETIQUETA_ORDEN,
   facetasDeLotes,
@@ -45,7 +44,6 @@ import {
   juzgarRendimientoLote,
   pieTablarDe,
   resumenLotes,
-  type EstadoLoteAserrio,
 } from "@/lib/forestal/lotes-aserrio";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
@@ -61,7 +59,7 @@ import CtpDeclararDesdeSniffs from "./CtpDeclararDesdeSniffs";
 import CtpRegistrarProduccionModal, {
   type ProduccionRegistrada,
 } from "./CtpRegistrarProduccionModal";
-import { Btn, CtpKpisPlegables, PanelSkeleton, VistaHeader } from "./ctp-shared";
+import { Btn, PanelSkeleton, VistaHeader, useKpisPlegables } from "./ctp-shared";
 import { sniffsRefDesdeDetalle } from "@/lib/forestal/sniffs-produccion-parse";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
@@ -188,10 +186,6 @@ export default function CtpLotesView({
 
   const resumen = useMemo(() => resumenLotes(lotes), [lotes]);
   const veredicto = juzgarRendimientoLote(resumen.rendimientoPct);
-  const opcionesEspecie = useMemo(
-    () => [...new Set(lotes.map((l) => l.speciesCommon).filter(Boolean))].sort(),
-    [lotes],
-  );
   const filtro = useMemo(
     () => ({ texto, especie, estado, sobra, situacion }),
     [texto, especie, estado, sobra, situacion],
@@ -221,6 +215,115 @@ export default function CtpLotesView({
   const descuadres = useMemo(() => lotesQueNoCuadran(lotes), [lotes]);
   const filtrando =
     Boolean(texto) || especie.length > 0 || estado.length > 0 || sobra.length > 0 || situacion.length > 0;
+
+  /* Todos detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular
+     va en la línea de resumen, que es lo que se mira de reojo. El botón viaja
+     a la barra del buscador (Brandon, 2026-09-24: «alineado con otros
+     botones... para evitar que ocupe mucho espacio»). */
+  const { boton: kpiBoton, panel: kpiPanel } = useKpisPlegables({
+    claveMemoria: "lotes",
+    resumen: (
+      `${resumen.abiertos} abierto${resumen.abiertos === 1 ? "" : "s"} · ${fmtM3(resumen.volumenApartado)} m³ apartados · ${libresEnPatio} libre${libresEnPatio === 1 ? "" : "s"} en patio` +
+      (resumen.margenTotalM3 > 0 ? ` · ${fmtM3(resumen.margenTotalM3)} m³ por declarar` : "")
+    ),
+    tarjetas: [
+      <CtpKpi
+        key="abiertos"
+        label="Lotes abiertos"
+        value={String(resumen.abiertos)}
+        subValue={
+          estado.includes("abierto")
+            ? "Filtrando por estos"
+            : /* Los vacíos se DICEN aparte (ADR-357): un lote sin piezas es un
+               rótulo esperando madera, no una pila en el patio. */
+              `${resumen.piezasApartadas} piezas esperando la sierra${
+                resumen.vacios > 0 ? ` · ${resumen.vacios} rótulo(s) sin cargar` : ""
+              }`
+        }
+        icon={Boxes}
+        /* La pastilla del KPI alterna ese valor dentro de la lista, no la
+           reemplaza: así se puede tener «abierto» y otro estado a la vez. */
+        onClick={() =>
+          setEstado((e) => (e.includes("abierto") ? e.filter((v) => v !== "abierto") : [...e, "abierto"]))
+        }
+        filtrando={estado.includes("abierto")}
+      />,
+      <CtpKpi
+        key="volumen"
+        label="Volumen apartado"
+        value={`${fmtM3(resumen.volumenApartado)} m³`}
+        subValue={`${formatNumber(resumen.pieTablarApartado)} pt · listos para el carro`}
+        icon={TreePine}
+        emphasis="success"
+      />,
+      <CtpKpi
+        key="libres"
+        label="Libres en el patio"
+        value={String(libresEnPatio)}
+        subValue="Piezas sin apartar — arma un lote"
+        icon={PackageOpen}
+        onClick={() => setArmar(true)}
+        emphasis={libresEnPatio > 0 ? "neutral" : "warning"}
+      />,
+      <CtpKpi
+        key="rendimiento"
+        label="Rendimiento aserrado"
+        value={resumen.rendimientoPct != null ? `${resumen.rendimientoPct}%` : "—"}
+        subValue={
+          resumen.rendimientoPct != null
+            ? `${resumen.consumidos} lote(s) aserrados · ${veredicto.texto}`
+            : resumen.sinRendimiento > 0
+              ? `${resumen.sinRendimiento} corrida(s) en otra unidad`
+              : "Sin lotes aserrados todavía"
+        }
+        icon={Gauge}
+        emphasis={
+          veredicto.tono === "ok"
+            ? "success"
+            : veredicto.tono === "neutro"
+              ? "neutral"
+              : "warning"
+        }
+      />,
+      <CtpKpi
+        key="sobrante"
+        label="Volumen sobrante"
+        value={`${fmtM3(resumen.margenTotalM3)} m³`}
+        subValue={`${formatNumber(pieTablarDe(resumen.margenTotalM3))} pt · declarable desde Producción`}
+        icon={Boxes}
+        emphasis={resumen.margenTotalM3 > 0 ? "success" : "neutral"}
+      />,
+      /**
+       * Lo que esta planta YA aserró, que no estaba en ninguna cifra de la
+       * pestaña: `volumenAserrado` y `consumidos` los devolvía `resumenLotes`
+       * desde siempre y sólo se usaban para el rendimiento. Es el otro lado
+       * del «volumen apartado» — cuánto pasó por el carro y cuánto espera.
+       */
+      <CtpKpi
+        key="aserrado"
+        label="Ya aserrado"
+        value={`${fmtM3(resumen.volumenAserrado)} m³`}
+        subValue={
+          resumen.consumidos === 0
+            ? "Ningún lote entró a la sierra todavía"
+            : `${resumen.consumidos} lote${resumen.consumidos === 1 ? "" : "s"} consumido${resumen.consumidos === 1 ? "" : "s"}`
+        }
+        icon={Layers}
+      />,
+      /* Un lote es de UNA especie (ADR-337): cuántas hay dice de cuántas
+       maderas distintas se está trabajando a la vez. */
+      <CtpKpi
+        key="especies"
+        label="Especies en lotes"
+        value={String(resumen.especies)}
+        subValue={
+          resumen.especies === 1 ? "Una sola especie en el patio" : "Distintas entre los lotes"
+        }
+        icon={TreePine}
+      />,
+    ],
+    alto: "md",
+  });
 
   return (
     <div className="space-y-3">
@@ -322,112 +425,6 @@ export default function CtpLotesView({
         </button>
       )}
 
-      {/* Todos detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular
-          va en la línea de resumen, que es lo que se mira de reojo. */}
-      <CtpKpisPlegables
-        claveMemoria="lotes"
-        resumen={
-          `${resumen.abiertos} abierto${resumen.abiertos === 1 ? "" : "s"} · ${fmtM3(resumen.volumenApartado)} m³ apartados · ${libresEnPatio} libre${libresEnPatio === 1 ? "" : "s"} en patio` +
-          (resumen.margenTotalM3 > 0 ? ` · ${fmtM3(resumen.margenTotalM3)} m³ por declarar` : "")
-        }
-        tarjetas={[
-          <CtpKpi
-            key="abiertos"
-            label="Lotes abiertos"
-            value={String(resumen.abiertos)}
-            subValue={
-              estado.includes("abierto")
-                ? "Filtrando por estos"
-                : /* Los vacíos se DICEN aparte (ADR-357): un lote sin piezas es un
-                   rótulo esperando madera, no una pila en el patio. */
-                  `${resumen.piezasApartadas} piezas esperando la sierra${
-                    resumen.vacios > 0 ? ` · ${resumen.vacios} rótulo(s) sin cargar` : ""
-                  }`
-            }
-            icon={Boxes}
-            /* La pastilla del KPI alterna ese valor dentro de la lista, no la
-               reemplaza: así se puede tener «abierto» y otro estado a la vez. */
-            onClick={() =>
-              setEstado((e) => (e.includes("abierto") ? e.filter((v) => v !== "abierto") : [...e, "abierto"]))
-            }
-            filtrando={estado.includes("abierto")}
-          />,
-          <CtpKpi
-            key="volumen"
-            label="Volumen apartado"
-            value={`${fmtM3(resumen.volumenApartado)} m³`}
-            subValue={`${formatNumber(resumen.pieTablarApartado)} pt · listos para el carro`}
-            icon={TreePine}
-            emphasis="success"
-          />,
-          <CtpKpi
-            key="libres"
-            label="Libres en el patio"
-            value={String(libresEnPatio)}
-            subValue="Piezas sin apartar — arma un lote"
-            icon={PackageOpen}
-            onClick={() => setArmar(true)}
-            emphasis={libresEnPatio > 0 ? "neutral" : "warning"}
-          />,
-          <CtpKpi
-            key="rendimiento"
-            label="Rendimiento aserrado"
-            value={resumen.rendimientoPct != null ? `${resumen.rendimientoPct}%` : "—"}
-            subValue={
-              resumen.rendimientoPct != null
-                ? `${resumen.consumidos} lote(s) aserrados · ${veredicto.texto}`
-                : resumen.sinRendimiento > 0
-                  ? `${resumen.sinRendimiento} corrida(s) en otra unidad`
-                  : "Sin lotes aserrados todavía"
-            }
-            icon={Gauge}
-            emphasis={
-              veredicto.tono === "ok"
-                ? "success"
-                : veredicto.tono === "neutro"
-                  ? "neutral"
-                  : "warning"
-            }
-          />,
-          <CtpKpi
-            key="sobrante"
-            label="Volumen sobrante"
-            value={`${fmtM3(resumen.margenTotalM3)} m³`}
-            subValue={`${formatNumber(pieTablarDe(resumen.margenTotalM3))} pt · declarable desde Producción`}
-            icon={Boxes}
-            emphasis={resumen.margenTotalM3 > 0 ? "success" : "neutral"}
-          />,
-          /**
-           * Lo que esta planta YA aserró, que no estaba en ninguna cifra de la
-           * pestaña: `volumenAserrado` y `consumidos` los devolvía `resumenLotes`
-           * desde siempre y sólo se usaban para el rendimiento. Es el otro lado
-           * del «volumen apartado» — cuánto pasó por el carro y cuánto espera.
-           */
-          <CtpKpi
-            key="aserrado"
-            label="Ya aserrado"
-            value={`${fmtM3(resumen.volumenAserrado)} m³`}
-            subValue={
-              resumen.consumidos === 0
-                ? "Ningún lote entró a la sierra todavía"
-                : `${resumen.consumidos} lote${resumen.consumidos === 1 ? "" : "s"} consumido${resumen.consumidos === 1 ? "" : "s"}`
-            }
-            icon={Layers}
-          />,
-          /* Un lote es de UNA especie (ADR-337): cuántas hay dice de cuántas
-           maderas distintas se está trabajando a la vez. */
-          <CtpKpi
-            key="especies"
-            label="Especies en lotes"
-            value={String(resumen.especies)}
-            subValue={
-              resumen.especies === 1 ? "Una sola especie en el patio" : "Distintas entre los lotes"
-            }
-            icon={TreePine}
-          />,
-        ]}
-      />
-
       {error && (
         <p className="rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]">
           No se pudieron leer los lotes: {error}
@@ -455,6 +452,7 @@ export default function CtpLotesView({
       )}
 
       <div className="flex flex-wrap gap-2">
+        {kpiBoton}
         {/* `w-full` en chico y `flex-1` desde sm: `min-w-*` no emite CSS en este
             proyecto (medido), así que un mínimo declarado ahí no protege nada. */}
         <label className="relative w-full sm:w-auto sm:flex-1">
@@ -552,6 +550,8 @@ export default function CtpLotesView({
           </button>
         )}
       </div>
+
+      {kpiPanel}
 
       {conAlerta > 0 && !filtrando && (
         <p className="rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-bold text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">

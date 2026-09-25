@@ -1308,6 +1308,20 @@ export default function DocumentosModule() {
             algo que ahí no se puede usar. */}
         <EstadoCarpetaLocalBadge tenantId={slugActivo()} onAbrir={() => setFilterMode("sync")} />
 
+        {/* El botón de resumen vivía en su propia fila, antes del contenido
+            (Brandon 2026-09-24: «alineado con otros botones, para evitar que
+            ocupe mucho espacio»). En la papelera no hay resumen que mostrar. */}
+        {filterMode !== "trash" && (
+          <button
+            onClick={() => setKpisVisible((v) => !v)}
+            aria-expanded={kpisVisible}
+            className="inline-flex items-center gap-1.5 h-11 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
+          >
+            {kpisVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {kpisVisible ? "Ocultar resumen" : "Mostrar resumen"}
+          </button>
+        )}
+
         {/* Cinco acciones en el header no entraban en pantallas medianas: se
             partían en dos-tres filas y competían con el primario. Queda UNA
             acción principal (Subir archivos) y el resto en el menú del DS —
@@ -1477,7 +1491,7 @@ export default function DocumentosModule() {
               <p className="mt-0.5">La IA lo nombró y clasificó. Si vence, agrega la fecha desde el documento.</p>
             )}
           </div>
-          <button onClick={() => setScanResult(null)} className="ml-auto p-1 rounded-xl hover:bg-emerald-100" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+          <button onClick={() => setScanResult(null)} className="ml-auto p-1 rounded-xl hover:bg-[var(--data-success-500)]/15" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
       )}
 
@@ -1519,18 +1533,11 @@ export default function DocumentosModule() {
           el de los BORRADOS, así que "Total archivos" y "Espacio usado" contaban
           la papelera como si fuera el drive (4 archivos, 976 KB, con 41 vivos).
           Ocultos por defecto (Brandon 2026-08-30): la fila de resumen empujaba
-          los documentos, que es lo que se busca casi siempre al abrir el drive. */}
-      {filterMode !== "trash" && (
-      <div>
-        <button
-          onClick={() => setKpisVisible((v) => !v)}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-tertiary)] hover:text-primary transition-colors"
-        >
-          {kpisVisible ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          {kpisVisible ? "Ocultar resumen" : "Mostrar resumen"}
-        </button>
-        {kpisVisible && (
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-2">
+          los documentos, que es lo que se busca casi siempre al abrir el drive.
+          El botón que los muestra vive arriba, en el header (alineado con
+          "Subir archivos" — 2026-09-24), acá sólo queda el panel. */}
+      {filterMode !== "trash" && kpisVisible && (
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           <StatBlock label="Total archivos" value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" />
           <StorageRing usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />
           <button
@@ -1550,8 +1557,6 @@ export default function DocumentosModule() {
           </button>
           <StatBlock label="Favoritos" value={favCount.toString()} icon={Star} tint="text-amber-500" />
         </div>
-        )}
-      </div>
       )}
 
       <div
@@ -1690,7 +1695,7 @@ export default function DocumentosModule() {
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") { setNewFolderParent(undefined); setNewFolderName(""); } }}
-                autoFocus
+                ref={(el) => el?.focus()}
                 placeholder="Nombre de la carpeta…"
                 className="flex-1 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-xs outline-none focus:border-primary"
               />
@@ -1751,6 +1756,7 @@ export default function DocumentosModule() {
                         <label
                           className="flex shrink-0 cursor-pointer items-center pl-1 pr-0.5"
                           onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
                         >
                           <input
                             type="checkbox"
@@ -1862,7 +1868,7 @@ export default function DocumentosModule() {
                         value={newFolderName}
                         onChange={(e) => setNewFolderName(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") { setNewFolderParent(undefined); setNewFolderName(""); } }}
-                        autoFocus
+                        ref={(el) => el?.focus()}
                         placeholder="Subcarpeta…"
                         className="flex-1 min-w-0 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-xs outline-none focus:border-primary"
                       />
@@ -2013,6 +2019,7 @@ export default function DocumentosModule() {
                   <div
                     className="absolute right-0 top-full z-50 mt-1 min-w-[180px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-xl"
                     onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
                   >
                     <p className="px-2 py-1 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Columnas</p>
                     {(
@@ -2206,6 +2213,7 @@ export default function DocumentosModule() {
                   className="fixed z-50 min-w-[200px] overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl"
                   style={{ top: bulkMorePos.top, right: bulkMorePos.right }}
                   onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
                 >
                   <select
                     onChange={(e) => { const v = e.target.value; if (v) { bulkMove(v === "__none__" ? null : v); } setBulkMoreOpen(false); }}
@@ -2535,7 +2543,7 @@ export default function DocumentosModule() {
                               onChange={(e) => setRenaming({ ...renaming, value: e.target.value })}
                               onKeyDown={(e) => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") setRenaming(null); }}
                               onBlur={commitRename}
-                              autoFocus
+                              ref={(el) => el?.focus()}
                               aria-label={`Renombrar ${doc.name}`}
                               className="w-full max-w-[320px] px-2 py-1 rounded-xl border-2 border-primary text-sm font-bold outline-none bg-[var(--surface-raised)] text-[var(--text-primary)]"
                             />
@@ -3136,7 +3144,7 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
         )}
       </button>
       {open && pos && (
-        <div className="fixed z-50 min-w-[160px] overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl" style={{ top: pos.top, left: pos.left }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed z-50 min-w-[160px] overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl" style={{ top: pos.top, left: pos.left }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           {STATUS_ORDER.map((k) => {
             const m = STATUS_META[k];
             return (
@@ -3284,7 +3292,7 @@ function DocCard({
             onChange={(e) => onRenameChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") onCommitRename(); if (e.key === "Escape") onCancelRename(); }}
             onBlur={onCommitRename}
-            autoFocus
+            ref={(el) => el?.focus()}
             className="w-full px-2 py-1 rounded-xl border-2 border-primary text-sm font-bold outline-none"
           />
         ) : (
@@ -3443,6 +3451,7 @@ function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onTag,
           className="fixed z-50 min-w-[170px] overflow-y-auto overscroll-contain rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl"
           style={{ top: pos.top, bottom: pos.bottom, right: pos.right, maxHeight: pos.maxHeight }}
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         >
           {item(Eye, "Ver", onPreview)}
           {item(Wand2, "Analizar con IA", onAnalyze)}

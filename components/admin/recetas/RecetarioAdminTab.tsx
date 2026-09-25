@@ -11,6 +11,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 
@@ -56,7 +57,9 @@ export default function RecetarioAdminTab() {
   const [recetas, setRecetas] = useState<RecetaPublica[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCat, setFilterCat] = useState("");
+  // Categoria es una columna de la tabla: autofiltro en su `<th>` (Brandon
+  // 2026-09-24), `[]` = todas, admite varias a la vez.
+  const [filterCat, setFilterCat] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<RecetaPublica | null>(null);
   const [saving, setSaving] = useState(false);
@@ -241,7 +244,7 @@ export default function RecetarioAdminTab() {
   // ── Filter ──
   const filtered = recetas.filter(r => {
     const matchSearch = !searchTerm || r.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchCat = !filterCat || r.categoria === filterCat;
+    const matchCat = filterCat.length === 0 || filterCat.includes(r.categoria);
     return matchSearch && matchCat;
   });
 
@@ -265,7 +268,7 @@ export default function RecetarioAdminTab() {
           <BookOpen className="h-3.5 w-3.5" />
           Recetas publicadas: {activas}
         </div>
-        <div className="flex items-center gap-1.5 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 rounded-lg font-bold">
           <BarChart3 className="h-3.5 w-3.5" />
           Ingredientes promedio: {avgIng}
         </div>
@@ -286,11 +289,13 @@ export default function RecetarioAdminTab() {
             className="w-full pl-10 pr-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
+        {/* Categoria ya tiene su autofiltro en el `<th>` — este select es el
+            atajo para cuando esa columna se esconde (< sm). */}
         <select
-          value={filterCat}
-          onChange={e => setFilterCat(e.target.value)}
+          value={filterCat[0] ?? ""}
+          onChange={e => setFilterCat(e.target.value ? [e.target.value] : [])}
           aria-label="Filtrar por categoría"
-          className="px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="sm:hidden px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         >
           <option value="">Todas las categorias</option>
           {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -307,15 +312,16 @@ export default function RecetarioAdminTab() {
       {/* Table */}
       {loading ? (
         <LoadingState />
-      ) : filtered.length === 0 ? (
+      ) : recetas.length === 0 ? (
+        // El vacío de "no hay nada" se decide por el total SIN filtrar: si el
+        // recetario tiene recetas pero el filtro las dejó todas afuera, la
+        // tabla (con su `<thead>`) sigue abajo con una fila que ofrece quitarlos.
         <div className="flex flex-col items-center justify-center py-12 gap-2">
           <BookOpen className="h-8 w-8 text-[var(--text-tertiary)]" />
-          <p className="text-sm text-[var(--text-secondary)]">{recetas.length === 0 ? "No hay recetas en el recetario" : "Sin resultados"}</p>
-          {recetas.length === 0 && (
-            <button onClick={openNew} className="text-xs text-primary hover:underline font-semibold mt-1">
-              Crear la primera receta
-            </button>
-          )}
+          <p className="text-sm text-[var(--text-secondary)]">No hay recetas en el recetario</p>
+          <button onClick={openNew} className="text-xs text-primary hover:underline font-semibold mt-1">
+            Crear la primera receta
+          </button>
         </div>
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
@@ -324,7 +330,17 @@ export default function RecetarioAdminTab() {
               <thead>
                 <tr className="border-b border-[var(--rule-soft)] text-left">
                   <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Receta</th>
-                  <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Categoria</th>
+                  <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">
+                    <span className="block">Categoria</span>
+                    <FiltroColumnaMulti
+                      label="Categoria"
+                      value={filterCat}
+                      options={CATEGORIAS.map(c => ({ value: c, count: recetas.filter(r => r.categoria === c).length }))}
+                      onChange={setFilterCat}
+                      placeholder="Todas"
+                      className="font-normal"
+                    />
+                  </th>
                   <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-center hidden md:table-cell">Ing.</th>
                   <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Costo</th>
                   <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-center">Estado</th>
@@ -332,6 +348,19 @@ export default function RecetarioAdminTab() {
                 </tr>
               </thead>
               <tbody>
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-10 text-center">
+                      <p className="text-sm text-[var(--text-secondary)]">Ninguna receta coincide con el filtro.</p>
+                      <button
+                        onClick={() => { setSearchTerm(""); setFilterCat([]); }}
+                        className="mt-2 text-xs text-primary hover:underline font-semibold"
+                      >
+                        Quitar filtros
+                      </button>
+                    </td>
+                  </tr>
+                )}
                 {filtered.map(r => (
                   <tr key={r._noteId || r.id} className="border-b border-gray-50 hover:bg-[var(--surface-sunken)] transition-colors">
                     <td className="px-4 py-3">
@@ -517,7 +546,7 @@ export default function RecetarioAdminTab() {
                                           <button
                                             key={p.id}
                                             onClick={() => selectProduct(idx, p)}
-                                            className="text-[length:var(--ts-2xs)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-lg hover:bg-primary/10 transition-colors"
+                                            className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)] px-2 py-0.5 rounded-lg hover:bg-[var(--accent-muted)] transition-colors"
                                           >
                                             {p.name} — {formatCurrency(Number(p.price))}
                                           </button>
