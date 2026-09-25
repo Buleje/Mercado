@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatDateNumeric } from "@/lib/format";
+import { useMiRol } from "@/hooks/use-mi-rol";
 import { AlertCircle, PackageCheck, ThumbsDown, ThumbsUp } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import BulkActionsBar from "@/components/admin/shared/BulkActionsBar";
@@ -73,6 +74,7 @@ import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
 import CtpIngresoEditModal from "./CtpIngresoEditModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import CtpGuiasTable, { COLUMNAS_GUIAS_OPCIONALES } from "./CtpGuiasTable";
+import { useColumnasGuias } from "./ctp-guias-columnas";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import CtpGuiaFichaModal from "./CtpGuiaFichaModal";
 import CtpAcomodarTrozasModal from "./CtpAcomodarTrozasModal";
@@ -95,7 +97,6 @@ import {
   STATUS_META,
   originLabel,
   productLabel,
-  useColumnasVisibles,
   type CtpFiltroRapido,
   type WoodEntry,
 } from "./ctp-shared";
@@ -159,6 +160,11 @@ export default function CtpIngresosView({
    */
   recepcion?: "pendiente" | "cerrada";
 }) {
+  /* Corregir la recepción y acomodar trozas los firma admin o dueño (el servidor
+     rechaza al resto). `null` = todavía no se sabe: se ofrece y el servidor decide,
+     igual que en «Para poner al día» de la ficha del permiso. */
+  const rolActual = useMiRol();
+  const firma = rolActual == null || rolActual === "admin" || rolActual === "owner" || rolActual === "superadmin";
   // Cómo dejó la pestaña la última vez (orden + filtros; la búsqueda no).
   const prefs = usePrefsIniciales(recepcion ?? "todas");
   const [searchInput, setSearchInput] = useState("");
@@ -167,7 +173,9 @@ export default function CtpIngresosView({
   const [facetas, setFacetas] = useState<CtpFacetasActivas>(prefs.facetas);
   /* Qué columnas de la tabla se ven (Brandon, 2026-09-08). Se recuerda por
      dispositivo, como en Producción. */
-  const [colsGuias, setColsGuias] = useColumnasVisibles("ctp-ingresos-cols", COLUMNAS_GUIAS_OPCIONALES);
+  /* 2026-09-25: clave `-v2` porque cambió el defecto; la elección hecha con la
+     vieja se migra una vez (`migrarColumnasGuias`). */
+  const [colsGuias, setColsGuias] = useColumnasGuias();
   /**
    * El ARCHIVO se ordena por lo último RECIBIDO (ADR-351).
    *
@@ -811,7 +819,13 @@ export default function CtpIngresosView({
          la que tiene columnas opcionales. */
       columnas={
         modo === "guia" ? (
-          <ColumnasMenu columnas={COLUMNAS_GUIAS_OPCIONALES} visibles={colsGuias} onChange={setColsGuias} className="h-9 rounded-full" />
+          /* Sólo con tabla (≥640 px): en el celular cada guía es una tarjeta
+             que muestra todo igual, y el desplegable abría cortado a la
+             izquierda (x=−25 a 400 px, 2026-09-25) para elegir algo que ahí
+             no cambia nada. */
+          <div className="max-sm:hidden">
+            <ColumnasMenu columnas={COLUMNAS_GUIAS_OPCIONALES} visibles={colsGuias} onChange={setColsGuias} className="h-9 rounded-full" />
+          </div>
         ) : undefined
       }
       modoLista={
@@ -853,7 +867,7 @@ export default function CtpIngresosView({
       descargando={descargando}
       totalFiltrado={total}
       onLegajo={() => void armarLegajo()}
-      onAcomodar={() => setAcomodar({ alcance: { todas: true }, descripcion: "Todas las guías de varias especies", desdeFicha: false })}
+      onAcomodar={firma ? () => setAcomodar({ alcance: { todas: true }, descripcion: "Todas las guías de varias especies", desdeFicha: false }) : undefined}
       legajoCount={selectedIds.length || total}
       legajoDeTodo={selectedIds.length === 0}
       armandoLegajo={armandoLegajo}
@@ -1162,7 +1176,9 @@ export default function CtpIngresosView({
         onVerFicha={(g) => void verFicha(g)}
         onCuadrar={setCuadreGuia}
         onCostear={(g) => setCostoGuia(costeableDeGuia(g))}
-        onCorregirRecepcion={(g) => setCorregirRecepcion({ inicial: g.clave })}
+        onCorregirRecepcion={firma ? (g) => setCorregirRecepcion({ inicial: g.clave }) : undefined}
+        /* ADR-435 desde la fila o la tarjeta: sólo ESTA guía, sin pasar por la ficha. */
+        onAcomodar={firma ? (g) => setAcomodar({ alcance: { woodEntryId: g.lineas[0]!.id }, descripcion: `Guía ${g.gtfNumber}`, desdeFicha: false }) : undefined}
         sort={sort}
         onSort={ordenar}
       />
@@ -1325,8 +1341,11 @@ export default function CtpIngresosView({
             setFichaTrozas(null);
             setCuadreGuia(g);
           }}
-          onAcomodar={() =>
-            setAcomodar({ alcance: { woodEntryId: fichaGuia.lineas[0]!.id }, descripcion: `Guía ${fichaGuia.gtfNumber}`, desdeFicha: true })
+          onAcomodar={
+            firma
+              ? () =>
+                  setAcomodar({ alcance: { woodEntryId: fichaGuia.lineas[0]!.id }, descripcion: `Guía ${fichaGuia.gtfNumber}`, desdeFicha: true })
+              : undefined
           }
           onClose={() => { setFichaGuia(null); setFichaTrozas(null); setFichaError(null); }}
         />

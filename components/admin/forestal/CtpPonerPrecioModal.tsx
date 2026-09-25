@@ -34,14 +34,17 @@ import { usePlanDePrecio } from "./hooks/use-plan-de-precio";
 type Pestana = "tanda" | "fila";
 
 export default function CtpPonerPrecioModal({
+  permiso,
   onClose,
   onGuardado,
 }: {
+  /** Código del permiso: sólo sus guías (desde la ficha del permiso). Sin él, todas. */
+  permiso?: string | null;
   onClose: () => void;
   /** Después de escribir: quien abrió recarga su lista. */
   onGuardado?: () => void;
 }) {
-  const { datos, error: errorCarga, recargar, guardar } = usePrecioEnTanda();
+  const { datos, error: errorCarga, recargar, guardar } = usePrecioEnTanda(permiso);
   const [pestana, setPestana] = useState<Pestana>("tanda");
   const [precioProv, setPrecioProv] = useState<Record<string, string>>({});
   const [precioEsp, setPrecioEsp] = useState<Record<string, string>>({});
@@ -111,7 +114,7 @@ export default function CtpPonerPrecioModal({
       title="Poner precio a la madera"
       description={
         datos
-          ? `${sinPrecio} de ${datos.filas.length} guías sin precio · ${formatNumber(m3SinPrecio, 2)} m³`
+          ? `${permiso ? `${permiso} · ` : ""}${sinPrecio} de ${datos.filas.length} guías sin precio · ${formatNumber(m3SinPrecio, 2)} m³`
           : "Cargando las guías…"
       }
       footer={

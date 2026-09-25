@@ -23,6 +23,7 @@ import type { VolumenDelPermiso } from "@/lib/forestal/volumen-del-permiso";
 import { TOLERANCIA_EXCESO_PT } from "@/lib/forestal/semaforo-permiso";
 import CtpDescontarMaderaModal from "./CtpDescontarMaderaModal";
 import CtpPermisoAvisos from "./CtpPermisoAvisos";
+import CtpPermisoPuestaAlDia from "./CtpPermisoPuestaAlDia";
 import { TablaPorEspecie, TablaPorTipo } from "./CtpPermisoTablas";
 import { Cifra, esNegativo, m3, plural } from "./permiso-volumen-ui";
 
@@ -51,6 +52,9 @@ export default function CtpPermisoVolumen({
 
   return (
     <div className="space-y-4">
+      {/* Lo que falta para que el saldo cuadre, arriba de todo (orden por pregunta). */}
+      <CtpPermisoPuestaAlDia volumen={volumen} onRecargar={onRecargar} />
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
         <StatCard
           density="compact"

@@ -153,37 +153,8 @@ async function matriz(page, nombre, t) {
   await page.setViewportSize({ width: anchos[0] ?? 1280, height: 900 });
 }
 
-/**
- * «La red se aquietó», sin contar las conexiones que NO terminan nunca.
- *
- * El panel abre dos SSE (`/api/admin/sse`, `/api/admin/notifications/stream`)
- * que quedan abiertos: `waitForLoadState("networkidle")` no llegaba jamás y
- * cada recorrido quemaba sus 30 s de tope enteros — 60 s por llamada con los
- * dos temas (medido 2026-09-25: la vista montada a los 7,5 s, «networkidle»
- * TIMEOUT a los 30). Acá se cuentan los pedidos en vuelo salvo los
- * `eventsource`/streams, y se sigue cuando van `quieto` ms sin ninguno.
- */
-function vigilarRed(page) {
-  const enVuelo = new Set();
-  let ultimo = Date.now();
-  const esStream = (r) => r.resourceType() === "eventsource" || /\/(sse|stream)(\/|\?|$)/.test(new URL(r.url()).pathname);
-  page.on("request", (r) => { if (!esStream(r)) { enVuelo.add(r); ultimo = Date.now(); } });
-  const fin = (r) => { if (enVuelo.delete(r)) ultimo = Date.now(); };
-  page.on("requestfinished", fin);
-  page.on("requestfailed", fin);
-  return async function esperarQuietud({ quieto = 800, tope = 30_000 } = {}) {
-    const t0 = Date.now();
-    while (Date.now() - t0 < tope) {
-      if (enVuelo.size === 0 && Date.now() - ultimo >= quieto) return true;
-      await page.waitForTimeout(100);
-    }
-    return false;
-  };
-}
-
 async function recorrido(t, primero) {
   const page = await ctx.newPage();
-  const esperarQuietud = vigilarRed(page);
   page.on("console", (m) => { if (m.type() === "error") consola.push(m.text().slice(0, 300)); });
   page.on("pageerror", (e) => pageerrors.push(`[${t}] ${String(e?.message ?? e).slice(0, 300)}`));
   page.on("response", (r) => {
@@ -196,7 +167,7 @@ async function recorrido(t, primero) {
   }, t === "oscuro");
   try {
     await page.goto(`${BASE}${ruta}`, { waitUntil: "domcontentloaded", timeout: 90_000 });
-    await esperarQuietud();
+    await page.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => { /* SSE/polling: no se aquieta */ });
     let huboCaptura = false;
     for (const [i, p] of pasos.entries()) {
       const [tipo, valor] = Object.entries(p)[0] ?? [];
@@ -231,11 +202,7 @@ try {
   // Login como la app: la cookie `csrf-token` sale de cualquier GET, y
   // `tenantSlug` va en el body porque `qaadmin` existe en varios tenants.
   if (!bandera("sin-login")) {
-    // La cookie sale de `/api/health` (0,7 s) y no de cargar la portada: `/`
-    // compila y pinta el marketplace entero (5-6 s en el navegador, medido
-    // 2026-09-25) sólo para sembrar una cookie. Mismo `ctx`: el Set-Cookie de
-    // `page.request` queda en el contexto.
-    await page.request.get(`${BASE}/api/health`, { timeout: 60_000 });
+    await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
     const csrf = (await ctx.cookies()).find((c) => c.name === "csrf-token")?.value ?? "";
     const r = await page.request.post(`${BASE}/api/auth/login`, {
       headers: { "content-type": "application/json", "x-tenant-id": tenant, "x-csrf-token": csrf },

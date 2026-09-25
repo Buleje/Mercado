@@ -100,6 +100,8 @@ export interface ActionMenuProps {
  *  altura de la fila entera y multiplica el scroll por cada registro. */
 const ALTO = { xs: "h-8", sm: "h-10", md: "h-12" } as const;
 const RADIO = { xs: "rounded-lg", sm: "rounded-xl", md: "rounded-2xl" } as const;
+/** Ancho del panel (antes la clase `w-[19rem]`): lo usa `ubicar` para no salirse. */
+const ANCHO_PANEL_REM = 19;
 
 /**
  * La caja contra la que se resuelve un `position: fixed` DESCENDIENTE.
@@ -177,7 +179,7 @@ export default function ActionMenu({
 }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const anclaRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState<{ top: number; right: number; maxHeight: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; right: number; maxHeight: number; width: number } | null>(null);
   const listaRef = useRef<HTMLDivElement>(null);
   /**
    * Dónde se portalea el panel (ADR "menú de fila sin clics dentro del
@@ -245,9 +247,23 @@ export default function ActionMenu({
     const arriba = bTop - MARGEN;
     const haciaArriba = abajo < 240 && arriba > abajo;
     const disponible = haciaArriba ? arriba : abajo;
+    /*
+     * A lo ancho: el panel cuelga del borde DERECHO del botón —el de siempre—,
+     * pero nunca cruza el borde IZQUIERDO del marco.
+     *
+     * Medido a 400 px (2026-09-25, Ingresos): «Opciones» es el segundo botón
+     * de la fila, con su borde derecho en x=120; un panel de 19rem (304 px)
+     * alineado a ese borde arrancaba en x=−184 y se veía cortado a la mitad.
+     * Se corre a la derecha lo justo para empezar en el margen, y en un marco
+     * más angosto que el panel, el panel se angosta (`ancho`).
+     */
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const ancho = Math.max(0, Math.min(ANCHO_PANEL_REM * rem, base.width - 2 * MARGEN));
+    const derechaAlBoton = Math.max(MARGEN, base.width - bRight);
     setPos({
       top: haciaArriba ? Math.max(MARGEN, bTop - Math.min(disponible, 520) - 8) : bBottom + 8,
-      right: Math.max(MARGEN, base.width - bRight),
+      right: Math.min(derechaAlBoton, Math.max(MARGEN, base.width - ancho - MARGEN)),
+      width: ancho,
       /* SIN piso de 200: eso fue justo lo que empujó el panel fuera del
          diálogo cuando `disponible` daba menos (el menú de la fila igual
          scrollea adentro con `overflow-y-auto` en `listaRef`, así que un
@@ -324,8 +340,8 @@ export default function ActionMenu({
           ds-no-z-arbitrary-admin. */}
       <div className="fixed inset-0 z-modal-2" onClick={() => setOpen(false)} aria-hidden="true" />
       <div
-        style={{ top: pos.top, right: pos.right, maxHeight: pos.maxHeight }}
-        className="fixed z-modal-2 flex w-[19rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+        style={{ top: pos.top, right: pos.right, maxHeight: pos.maxHeight, width: pos.width }}
+        className="fixed z-modal-2 flex flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
         {/* Los degradés van FUERA del área que scrollea, si no se irían con el
             contenido. `pointer-events-none` para no comerse el clic de la
@@ -438,7 +454,8 @@ export default function ActionMenu({
         className={`inline-flex shrink-0 items-center justify-center gap-2 font-bold transition disabled:opacity-60 ${ALTO[size]} ${RADIO[size]} ${piel} ${
           size === "xs" ? "gap-1.5 px-2 text-xs" : "px-4"
         } ${variant === "primary" ? "text-base" : size === "xs" ? "" : "text-sm"} ${
-          soloIcono ? "w-10 justify-center px-0" : compactoEnMovil ? "max-sm:w-12 max-sm:px-0" : ""
+          /* Cuadrado del alto del botón: `xs` (h-8) dentro de una fila de tabla. */
+          soloIcono ? `${size === "xs" ? "w-8" : "w-10"} justify-center px-0` : compactoEnMovil ? "max-sm:w-12 max-sm:px-0" : ""
         } ${className}`}
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BotonIcono className="h-4 w-4 shrink-0" />}

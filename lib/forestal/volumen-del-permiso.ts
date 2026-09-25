@@ -116,6 +116,12 @@ export interface GuiaDelPermiso {
    *  array, nunca `null`: sin fotos es `[]`, no un hueco que haya que chequear
    *  en cada pantalla. */
   fotos: string[];
+  /**
+   * `WoodEntry.costoTotal` de esta fila: lo que costó la madera. `null` = sin
+   * precio cargado (sin factura es `null`, nunca 0). Opcional para no romper a
+   * quien arma una guía a mano; el servidor lo manda siempre.
+   */
+  costo?: number | null;
 }
 
 /** atada = `contratoId` es este permiso · heredada = sin contrato y comió de guías de este permiso. */
@@ -280,6 +286,8 @@ export interface GuiaEntrada {
   proveedor: string | null;
   /** Ver `GuiaDelPermiso.fotos`. Siempre un array. */
   fotos: string[];
+  /** `WoodEntry.costoTotal`; `null` = sin precio. Ver `GuiaDelPermiso.costo`. */
+  costo?: number | null;
 }
 
 /** Un `ForestCtpConsumo` de una corrida VIVA (sin baja, no anulada). */
@@ -630,6 +638,7 @@ export function armarVolumenDelPermiso(e: EntradaVolumenDelPermiso): VolumenDelP
       trozas: trozasPorGuia.get(g.id) ?? null,
       consumos,
       fotos: g.fotos,
+      costo: g.costo == null ? null : numero(g.costo),
     };
   });
   guias.sort((a, b) => tiempo(a.fecha) - tiempo(b.fecha) || texto(a.gtf, b.gtf) || texto(a.id, b.id));

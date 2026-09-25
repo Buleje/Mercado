@@ -202,11 +202,14 @@ export default function CtpIngresosFiltros({
         ]
       : []),
     {
+      /* `disabled` y no `busy` mientras carga: con `busy`, el botón «Opciones»
+         entero decía «Generando…» en cada carga de la tabla (visto a 1280 px,
+         2026-09-25) — se leía como si algo se estuviera exportando. */
       id: "recargar",
-      label: "Recargar",
+      label: loading ? "Leyendo el período…" : "Recargar",
       hint: "Volver a pedir el período al servidor (atajo: R)",
       icon: RefreshCw,
-      busy: loading,
+      disabled: loading,
       onSelect: onReload,
     },
   ];
@@ -214,9 +217,14 @@ export default function CtpIngresosFiltros({
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* El botón «Indicadores», primero de la fila (2026-09-24). */}
-        {antes}
-        <div className="flex h-12 min-w-[min(100%,14rem)] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 transition-colors focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
+        {/* El botón «Indicadores», primero de la fila (2026-09-24).
+            Con tope de ancho y el buscador con base propia: a 1280 px el
+            resumen del botón se llevaba 383 px y el buscador quedaba en 117
+            («Buscar p…»). `min-w-*` no sirve acá — el reset global
+            `* { min-width: 0 }` le gana a las utilidades (memoria
+            `min-width-utilities-muertas`); `basis` y `max-w` sí aplican. */}
+        {antes && <div className="flex min-w-0 sm:max-w-64 2xl:max-w-96">{antes}</div>}
+        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl sm:basis-40 border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 transition-colors focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <label htmlFor="ctp-ing-search" className="sr-only">
             Buscar ingresos

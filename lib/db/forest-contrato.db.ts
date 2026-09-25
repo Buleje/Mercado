@@ -743,6 +743,7 @@ export class ForestContratoDB {
           pieces: true,
           providerName: true,
           photos: true,
+          costoTotal: true,
         },
       }),
       WoodEntriesDB.trozasComoConsumibles(tenantId, { contratoId }),
@@ -852,6 +853,7 @@ export class ForestContratoDB {
         piezas: g.pieces,
         proveedor: txt(g.providerName),
         fotos: fotosDe(g.photos),
+        costo: g.costoTotal == null ? null : Number(g.costoTotal),
       })),
       trozas,
       consumos: [

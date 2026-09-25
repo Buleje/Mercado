@@ -100,4 +100,39 @@ describe("ActionMenu — portal según el ancestro", () => {
     // (marco=viewport) esto daba top+maxHeight≈888−141=747 > 618.
     expect(top + maxHeight).toBeLessThanOrEqual(618);
   });
+
+  it("a 400 px, con el botón cerca del borde IZQUIERDO, el panel no se sale por la izquierda (Ingresos, 2026-09-25)", () => {
+    // Medido: «Opciones» de Ingresos a 400 px, botón en x=72–120. Colgado del
+    // borde derecho del botón, el panel de 304 px arrancaba en x=−184.
+    Object.defineProperty(window, "innerWidth", { value: 400, configurable: true });
+    Object.defineProperty(window, "innerHeight", { value: 860, configurable: true });
+    render(<ActionMenu label="Opciones" actions={acciones} />);
+    const boton = screen.getByRole("button", { name: /Opciones/i });
+    boton.getBoundingClientRect = () =>
+      ({ top: 406, bottom: 454, left: 72, right: 120, width: 48, height: 48, x: 72, y: 406, toJSON() {} }) as DOMRect;
+
+    fireEvent.click(boton);
+
+    const item = screen.getByRole("menuitem", { name: /Acción A/i });
+    const panel = item.closest('[role="menu"]')!.parentElement as HTMLElement;
+    const ancho = parseFloat(panel.style.width) || 304;
+    const izquierda = 400 - parseFloat(panel.style.right) - ancho;
+    expect(izquierda).toBeGreaterThanOrEqual(12);
+    expect(parseFloat(panel.style.right)).toBeGreaterThanOrEqual(12);
+  });
+
+  it("con el botón a la derecha, el panel sigue colgado de su borde derecho (no cambia lo que ya andaba)", () => {
+    Object.defineProperty(window, "innerWidth", { value: 1280, configurable: true });
+    Object.defineProperty(window, "innerHeight", { value: 900, configurable: true });
+    render(<ActionMenu label="Opciones" actions={acciones} />);
+    const boton = screen.getByRole("button", { name: /Opciones/i });
+    boton.getBoundingClientRect = () =>
+      ({ top: 405, bottom: 453, left: 930, right: 1074, width: 144, height: 48, x: 930, y: 405, toJSON() {} }) as DOMRect;
+
+    fireEvent.click(boton);
+
+    const panel = screen.getByRole("menuitem", { name: /Acción A/i }).closest('[role="menu"]')!.parentElement as HTMLElement;
+    // Medido en el navegador antes y después: panel 770–1074 (right = 1280 − 1074).
+    expect(parseFloat(panel.style.right)).toBe(206);
+  });
 });

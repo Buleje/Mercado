@@ -9,16 +9,17 @@
  * el total definitivo lo devuelve el POST.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
-import type {
-  FilaParaPrecio,
-  FilaVista,
-  GrupoProveedor,
-  PlanDePrecio,
-  PrecioPedido,
-  ReferenciasDePrecio,
+import {
+  agruparParaPrecio,
+  type FilaParaPrecio,
+  type FilaVista,
+  type GrupoProveedor,
+  type PlanDePrecio,
+  type PrecioPedido,
+  type ReferenciasDePrecio,
 } from "@/lib/forestal/precio-en-tanda";
 import { logger } from "@/lib/logger";
 
@@ -50,7 +51,13 @@ export interface PedidoTanda {
   confirmarAvisos: boolean;
 }
 
-export function usePrecioEnTanda() {
+/**
+ * @param permiso el código del permiso (ficha del permiso → «Para poner al
+ *   día»): sólo sus guías se muestran y, como el servidor escribe únicamente
+ *   lo que la vista previa mostró (`vistos`), sólo ésas se pueden tocar. Sin
+ *   él, todas las del libro (Ingresos → Opciones).
+ */
+export function usePrecioEnTanda(permiso?: string | null) {
   const [datos, setDatos] = useState<DatosPrecio | null>(null);
   const [error, setError] = useState<string | null>(null);
   const pedido = useRef(0);
@@ -102,5 +109,11 @@ export function usePrecioEnTanda() {
     }
   }, []);
 
-  return { datos, error, recargar, guardar };
+  const vista = useMemo<DatosPrecio | null>(() => {
+    if (!datos || !permiso) return datos;
+    const filas = datos.filas.filter((f) => f.permiso === permiso);
+    return { ...datos, filas, grupos: agruparParaPrecio(filas) };
+  }, [datos, permiso]);
+
+  return { datos: vista, error, recargar, guardar };
 }

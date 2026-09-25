@@ -43,6 +43,9 @@ async function mutar<T>(body: unknown, method: "POST" | "PATCH"): Promise<T> {
   return json as T;
 }
 
+/** Los lotes que acompañan al patio. Exportada para que otro lector pida la MISMA URL y `ctpGet` la comparta. */
+export const URL_LOTES_DEL_PATIO = `${API}?limite=500`;
+
 /** La URL del patio, con `?contratoId=` sólo si viene (el filtro lo hace el servidor). */
 export function urlDelPatio(contratoId: string | null | undefined): string {
   const qs = conContratoId(new URLSearchParams(), contratoId).toString();
@@ -78,7 +81,7 @@ export function useLotesAserrio(opts: { contratoId?: string | null } = {}): Esta
       /* Deduplicado (ADR-347): la pestaña monta este hook desde dos lugares y
          pedía el patio y los lotes dos veces por carga. */
       const [rl, rt] = await Promise.all([
-        ctpGet<{ lotes?: LoteAserrio[] }>(`${API}?limite=500`),
+        ctpGet<{ lotes?: LoteAserrio[] }>(URL_LOTES_DEL_PATIO),
         ctpGet<{ trozas?: TrozaConsumible[]; total?: number; devueltas?: number; truncado?: boolean }>(
           urlDelPatio(contratoId),
         ),
