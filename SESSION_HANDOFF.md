@@ -1,19 +1,19 @@
-# SESSION HANDOFF — 2026-09-24 (noche): Consumos ordenado, banda en una fila y «explicar con ⓘ» en todo el forestal
+# SESSION HANDOFF — 2026-09-24 (cierre): colores del logo, indicadores en la barra y filtros en el encabezado
 
-**Estado:** push al día (`081bfaf13`). Árbol limpio salvo `.claude/improvement-radar.md` (sugerencias automáticas de skills por co-edición del barrido: ruido, no se commiteó).
+**Estado:** push al día. Árbol limpio salvo `.claude/improvement-radar.md` (ruido del hook de co-edición; no se commitea).
 
-**Hecho (7 commits, todos con compuertas verdes):**
-- `d21d75a81` / `5dc62bfa1` — lo que dejó sin commitear la sesión anterior (ADR-431 patio por permiso + rediseño Consumos/Saldos), revisado y probado en navegador.
-- `fabc21e45` — banda de los libros en UNA fila (container queries `/banda` y `/acciones`; `BandaPermiso` = chip + «Solo este permiso»). 167 → 119 px a 1920/1600. A 1440/1280 siguen 2 renglones.
-- Consumos › Patio en 2 tarjetas («Qué queda en el patio» + «Trozas en el patio» con lote, día y filtros adentro); Sección 2 con filtros dentro del cuadro. pt de rolliza = ≈aserrable 56 % en toda la vista (antes 38 260 vs 21 426 pt de la misma pila). Celular: 9,8 → 4,4 pantallas.
-- `85155a20c` — InfoTip en portal (z-system, pointer-events, tokens del panel), `VistaHeader.hint` → ⓘ, regla 9 en `.claude/rules/ui-components.md`, columna «pal. ayuda» en `scripts/medir-orden-admin.mjs`, tests `infotip-portal` + `infotip-no-anidado` (prohíbe ⓘ en button/h*/label/summary).
-- `081bfaf13` — barrido ⓘ en ~130 archivos del forestal (7 agentes + revisor que encontró 5 altas, todas corregidas).
+**Hecho en esta ronda (commits `74bb8a06f`, `68703a7a1`, `7ddf9d01f`; gates verdes: typecheck, eslint 0 avisos, anidado, vitest 969 relacionados):**
+- **Colores del logo** (turquesa #00A29C + tinta #12181E, medidos en `public/brand/buleje-logo.png`). El verde salía del preset «emerald» (hue 175), del `Btn primary` = verde de éxito y del estilo «ejecutivo» con coral. ~80 botones de acción a la marca; estados siguen verdes. Oscuro: fondos con texto blanco 4,86:1. Memoria `colores-del-logo-no-verde`.
+- **Indicadores en la barra** (`components/admin/forestal/kpis-plegables.tsx`): Ingresos, GTF, Producción, Despacho, Lotes, Disponibles, Consumos (Patio y S2) sin fila propia.
+- **Filtros en el `<th>`** en 17 pantallas (forestal + admin), con copia `sm:hidden` para el celular y «Quitar filtros» cuando el filtro deja 0.
 
-**Pendiente / para proponer:**
-- «y otros» de Brandon: el barrido ⓘ fuera del forestal (admin general). Medición en `reports/orden-admin/orden-1600.json` (columna `ayuda`).
-- `AdminModal` no acepta ⓘ junto al título (los agentes lo pusieron en el primer rótulo del cuerpo): agregar prop `ayuda`.
-- Medición «antes/después» del forestal es ruidosa (pantallas que cargan distinto a 6 s vs 10 s): comparar solo pantalla a pantalla con el mismo contenido.
-- Siguen del 23-09: avisos de plazos caídos (WhatsApp 401 + Resend) · reserva de Juancho vencida · probar el audio real del cubicador.
+**PENDIENTE para la próxima sesión (en orden):**
+1. **Decisión de Brandon — producción:** `PlatformSetting brand.primaryColor = #00B4A6` pinta tiendas y la raíz del admin (sidebar, portales). Pasarlo a `#00A29C` (1 valor en /superadmin o SQL). Hoy el panel ya es #00A29C porque el preset define toda la escala.
+2. Tienda / marketplace: 159 botones con verde de éxito como CTA (fuera del admin, no se tocaron).
+3. `AdminModal` no acepta ⓘ junto al título (prop `ayuda`).
+4. Resto del admin fuera del forestal con texto de ayuda a la vista: 1 399 palabras en 62 pestañas (peores: Compras 104, Canales 89, Rendimiento 89) — `node scripts/medir-orden-admin.mjs`.
+5. Navegador de toda la ronda en 1280 px (se verificó 1600 y 400).
+6. Siguen del 23-09: avisos de plazos caídos (WhatsApp 401 + Resend) · reserva de Juancho vencida · audio real del cubicador.
 
 ---
 
