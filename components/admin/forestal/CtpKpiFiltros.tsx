@@ -158,7 +158,7 @@ export function camposDeIngresos({
      GUÍAS (documentos) y esto cuenta líneas del libro. Sin la palabra, «9 ·
      55.78 m³» al lado de una tarjeta que dice «8 guías» se lee como un error. */
   const peso = (f: { count: number; volumeM3: number }) =>
-    `${nf(f.count)} ${f.count === 1 ? "asiento" : "asientos"} · ${f.volumeM3.toFixed(2)} m³`;
+    `${nf(f.count)} ${f.count === 1 ? "asiento" : "asientos"} · ${formatNumber(Number(f.volumeM3), 2)} m³`;
   return [
     {
       key: "species",
@@ -207,11 +207,56 @@ export function camposDeIngresos({
   ];
 }
 
-/** Lo que dice la nota del panel: qué se está mirando, en una línea. */
-export function notaDeFiltros(campos: CampoKpiFiltro[]): string | null {
-  const puestos = campos.filter((c) => filtroActivo(c.valor));
+/**
+ * Un campo para la nota: el de la fila de KPIs (`valor`) o uno suelto con sus
+ * `valores` ya como lista (el texto buscado, un tramo de días, un rango).
+ */
+export type CampoParaNota =
+  | Pick<CampoKpiFiltro, "label" | "valor">
+  | { label: string; valores: readonly string[] };
+
+const valoresDeCampo = (c: CampoParaNota): string[] =>
+  "valores" in c ? c.valores.filter(Boolean) : valoresDe(c.valor);
+
+/**
+ * Lo que dice la nota del panel: qué se está mirando, en una línea.
+ *
+ * UNA sola copia (ADR-431): Consumos la armaba dos veces a mano y Saldos una
+ * tercera, y las tres contaban campos distintos — con la guía filtrada desde la
+ * cabecera de la tabla, los KPI cambiaban y la nota no lo decía. Quien llama
+ * pasa TODOS los campos que acotan las cifras, incluido el texto buscado.
+ */
+export function notaDeFiltros(campos: readonly CampoParaNota[]): string | null {
+  const puestos = campos
+    .map((c) => ({ label: c.label, valores: valoresDeCampo(c) }))
+    .filter((c) => c.valores.length > 0);
   if (puestos.length === 0) return null;
-  return `Los indicadores muestran sólo ${puestos
-    .map((c) => `${c.label.toLowerCase()}: ${valoresDe(c.valor).join(" o ")}`)
+  return `Los indicadores muestran solo ${puestos
+    .map((c) => `${c.label.toLowerCase()}: ${c.valores.join(" o ")}`)
     .join(" · ")}`;
+}
+
+/**
+ * La nota dentro del panel de indicadores, sin controles (ADR-431).
+ *
+ * Los filtros del patio y del cuadro viven pegados a su tabla (la ley de
+ * Brandon #5): repetirlos dentro del panel de KPIs era el mismo filtro en tres
+ * lugares. Acá sólo se dice qué recortó las cifras y se ofrece volver a verlo
+ * todo.
+ */
+export function NotaFiltrosKpi({ nota, onLimpiar }: { nota: string | null; onLimpiar: () => void }) {
+  if (!nota) return null;
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
+      <SlidersHorizontal className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+      <p className="min-w-0 flex-1 text-sm font-bold text-[var(--text-primary)]">{nota}</p>
+      <button
+        type="button"
+        onClick={onLimpiar}
+        className="flex h-10 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
+      >
+        <X className="h-4 w-4" aria-hidden /> Ver todo
+      </button>
+    </div>
+  );
 }

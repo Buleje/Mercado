@@ -22,7 +22,10 @@ import { useMemo, useState } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { PackageCheck, Truck, ArrowUpDown } from "@buleje/design-system/icons";
 import { Btn } from "../ctp-shared";
-import { Th, Td, n2 } from "../ctp-section-shared";
+import { Th, Td } from "../ctp-section-shared";
+import { formatNumber } from "@/lib/format";
+
+const n2 = (v: number) => formatNumber(v, 2);
 
 export interface FilaProducto {
   producto: string;
@@ -32,6 +35,46 @@ export interface FilaProducto {
 }
 
 type Columna = "producto" | "producido" | "despachado" | "stock";
+type Orden = { col: Columna; desc: boolean };
+
+/**
+ * Encabezado que ordena. Vive FUERA del render: definido adentro se volvía un
+ * componente nuevo en cada render y React re-montaba la cabecera entera.
+ * `aria-sort` dice en el `<th>` cuál columna manda y en qué sentido.
+ */
+function EncabezadoOrden({
+  col,
+  orden,
+  onOrdenar,
+  children,
+  className,
+}: {
+  col: Columna;
+  orden: Orden;
+  onOrdenar: (col: Columna) => void;
+  children: string;
+  className?: string;
+}) {
+  const activa = orden.col === col;
+  return (
+    <Th
+      className={className}
+      aria-sort={activa ? (orden.desc ? "descending" : "ascending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onOrdenar(col)}
+        className={`inline-flex min-h-6 items-center gap-1 transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
+          activa ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""
+        }`}
+      >
+        {children}
+        <span className="sr-only">, ordenar</span>
+        <ArrowUpDown className="h-3 w-3 opacity-60" aria-hidden />
+      </button>
+    </Th>
+  );
+}
 
 /**
  * La fila del stock viene etiquetada "tipo · especie" (`productLabel` de
@@ -55,7 +98,7 @@ export default function TablaProductos({
 }) {
   // Por defecto, lo que más stock tiene arriba: es la pregunta con la que se
   // abre la tabla ("¿qué puedo despachar?"), no el orden alfabético.
-  const [orden, setOrden] = useState<{ col: Columna; desc: boolean }>({ col: "stock", desc: true });
+  const [orden, setOrden] = useState<Orden>({ col: "stock", desc: true });
 
   const filas = useMemo(() => {
     const copia = [...productos];
@@ -82,34 +125,17 @@ export default function TablaProductos({
   const ordenar = (col: Columna) =>
     setOrden((p) => ({ col, desc: p.col === col ? !p.desc : col !== "producto" }));
 
-  const Orden = ({
-    col,
-    children,
-    className,
-  }: {
-    col: Columna;
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <Th className={className}>
-      <button
-        type="button"
-        onClick={() => ordenar(col)}
-        className={`inline-flex items-center gap-1 transition-colors hover:text-primary ${
-          orden.col === col ? "text-primary" : ""
-        }`}
-        aria-label={`Ordenar por ${children}`}
-      >
-        {children}
-        <ArrowUpDown className="h-3 w-3 opacity-60" aria-hidden />
-      </button>
-    </Th>
-  );
-
   return (
-    <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <section
+      aria-labelledby="saldos-productos-titulo"
+      className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+        <CardTitle
+          as="h3"
+          id="saldos-productos-titulo"
+          className="text-base font-bold text-[var(--text-primary)]"
+        >
           Stock de productos transformados
         </CardTitle>
         <p className="text-xs text-[var(--text-tertiary)]">
@@ -120,24 +146,44 @@ export default function TablaProductos({
 
       {filas.length === 0 ? (
         <div className="p-10 text-center text-[var(--text-tertiary)]">
-          <PackageCheck className="mx-auto mb-3 h-9 w-9 opacity-30" />
+          <PackageCheck className="mx-auto mb-3 h-9 w-9 opacity-30" aria-hidden />
           <p className="text-sm">Sin productos transformados todavía.</p>
         </div>
       ) : (
-        <DataTable className="w-full text-sm">
+        <DataTable
+          className="w-full text-sm"
+          wrapperClassName="rounded-none border-0"
+          aria-labelledby="saldos-productos-titulo"
+        >
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
-              <Orden col="producto">Producto · Especie</Orden>
-              <Orden col="producido" className="text-right">
+              <EncabezadoOrden col="producto" orden={orden} onOrdenar={ordenar}>
+                Producto · Especie
+              </EncabezadoOrden>
+              <EncabezadoOrden
+                col="producido"
+                orden={orden}
+                onOrdenar={ordenar}
+                className="text-right"
+              >
                 Producido
-              </Orden>
-              <Orden col="despachado" className="text-right">
+              </EncabezadoOrden>
+              <EncabezadoOrden
+                col="despachado"
+                orden={orden}
+                onOrdenar={ordenar}
+                className="text-right"
+              >
                 Despachado
-              </Orden>
-              <Orden col="stock" className="text-right">
+              </EncabezadoOrden>
+              <EncabezadoOrden col="stock" orden={orden} onOrdenar={ordenar} className="text-right">
                 Stock
-              </Orden>
-              {onDespachar && <Th className="text-right">&nbsp;</Th>}
+              </EncabezadoOrden>
+              {onDespachar && (
+                <Th className="text-right">
+                  <span className="sr-only">Acciones</span>
+                </Th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -153,15 +199,13 @@ export default function TablaProductos({
                 <Td className="text-right">
                   <span
                     className={`font-mono font-bold tabular-nums ${
-                      p.stock < 0
-                        ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
-                        : "text-[var(--text-primary)]"
+                      p.stock < 0 ? "text-[var(--data-error-ink)]" : "text-[var(--text-primary)]"
                     }`}
                   >
                     {n2(p.stock)}
                   </span>
                   {p.stock < 0 && (
-                    <span className="ml-2 rounded-full bg-[var(--data-error-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                    <span className="ml-2 rounded-full bg-[var(--data-error-500)]/15 px-2 py-0.5 text-xs font-bold text-[var(--data-error-ink)]">
                       despachado de más
                     </span>
                   )}
@@ -174,7 +218,7 @@ export default function TablaProductos({
                         variant="secondary"
                         onClick={() => onDespachar(...partirProducto(p.producto))}
                       >
-                        <Truck className="h-4 w-4" />
+                        <Truck className="h-4 w-4" aria-hidden />
                         Despachar
                       </Btn>
                     )}
@@ -207,6 +251,6 @@ export default function TablaProductos({
           </tfoot>
         </DataTable>
       )}
-    </div>
+    </section>
   );
 }

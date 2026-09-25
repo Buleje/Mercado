@@ -51,6 +51,9 @@ export const PARAMS_DE_VISTA = [
   "permiso",
   "especie",
   "guia",
+  /* La especie de los indicadores de Saldos: su propio parámetro (ver
+     `PARAM_ESPECIE_KPI`), y se limpia igual que los otros. */
+  "especieKpi",
 ] as const;
 
 /** Lee la vista que pide la URL, validada contra las que el módulo declara. */
@@ -107,7 +110,14 @@ export function useSubvistaModulo<T extends string>(
    */
   opciones?: { recordar?: boolean },
 ): UseVistaModuloResult<T> {
-  return useVistaEnParam(moduleId, validas, porDefecto, forzada, PARAM_SUB, opciones?.recordar ?? true);
+  return useVistaEnParam(
+    moduleId,
+    validas,
+    porDefecto,
+    forzada,
+    PARAM_SUB,
+    opciones?.recordar ?? true,
+  );
 }
 
 function useVistaEnParam<T extends string>(
@@ -122,7 +132,9 @@ function useVistaEnParam<T extends string>(
 
   const [vista, setVista] = useState<T>(() => {
     if (typeof window === "undefined") {
-      return forzada && (validas as readonly string[]).includes(forzada) ? (forzada as T) : porDefecto;
+      return forzada && (validas as readonly string[]).includes(forzada)
+        ? (forzada as T)
+        : porDefecto;
     }
     // 1. La URL manda: un link compartido tiene que abrir SIEMPRE lo mismo,
     //    sin importar dónde quedó esta persona la última vez.

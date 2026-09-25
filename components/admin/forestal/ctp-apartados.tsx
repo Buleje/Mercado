@@ -1,28 +1,40 @@
 "use client";
 
 /**
- * Ir de apartado en apartado dentro de una vista del libro (ADR-343).
+ * Los apartados de una vista del libro, como PESTAÑAS de verdad (ADR-343 → 431).
  *
- * Una pestaña del CTP puede tener dos o tres cosas largas apiladas —el patio y
- * el cuadro oficial, por ejemplo— y apilarlas obliga a scrollear una entera para
- * llegar a la otra. Acá se turnan en el MISMO lugar: se elige por su número o se
- * avanza con las flechas.
+ * Una pestaña del CTP puede tener dos cosas largas —el patio y el cuadro
+ * oficial— que se turnan en el MISMO lugar. Eso es un `tablist`: hasta el 24-09
+ * era un `<nav>` con `aria-current="step"`, así que un lector de pantalla no
+ * sabía que el botón cambiaba el contenido de abajo, ni cuál estaba elegido.
  *
- * El apartado activo se recuerda por vista: el operador que trabaja todo el día
- * en el patio no tiene que volver a elegirlo cada vez que entra.
+ * Ahora: `role="tablist"/"tab"/"tabpanel"`, `aria-selected`, `aria-controls`
+ * sólo en la pestaña activa (el otro panel no está montado), foco itinerante y
+ * ←/→/Inicio/Fin. El contador dice su unidad («46 trozas»), la pista va en
+ * texto para lectores (antes en `title`, que no llega por teclado ni en táctil).
+ *
+ * El apartado activo se recuerda por vista: quien trabaja todo el día en el
+ * patio no tiene que volver a elegirlo cada vez que entra.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { formatNumber } from "@/lib/format";
 
 export interface Apartado {
   id: string;
   label: string;
-  /** Qué se hace ahí, en una línea (va al tooltip). */
+  /** Qué se hace ahí, en una línea (texto para lectores de pantalla). */
   hint?: string;
   /** Contador a la derecha del rótulo: filas, piezas, pendientes… */
   contador?: number | string;
+  /** La unidad del contador, que entra al nombre accesible: «46 trozas». */
+  unidad?: string;
 }
+
+/** Ids de la pestaña y de su panel, atados entre sí. */
+export const idTab = (base: string, id: string) => `${base}-tab-${id}`;
+export const idPanel = (base: string, id: string) => `${base}-panel-${id}`;
+const idPista = (base: string, id: string) => `${base}-pista-${id}`;
 
 /** Estado del apartado activo, persistido por vista. */
 export function useApartado(claveMemoria: string, apartados: readonly Apartado[]) {
@@ -42,7 +54,11 @@ export function useApartado(claveMemoria: string, apartados: readonly Apartado[]
   const ir = useCallback(
     (id: string) => {
       setActivo(id);
-      try { localStorage.setItem(`ctp-apartado:${claveMemoria}`, id); } catch { /* quota */ }
+      try {
+        localStorage.setItem(`ctp-apartado:${claveMemoria}`, id);
+      } catch {
+        /* quota */
+      }
     },
     [claveMemoria],
   );
@@ -50,118 +66,117 @@ export function useApartado(claveMemoria: string, apartados: readonly Apartado[]
   return { activo, ir };
 }
 
+const contadorConUnidad = (a: Apartado) => {
+  if (a.contador == null) return null;
+  const n = typeof a.contador === "number" ? formatNumber(a.contador) : a.contador;
+  return a.unidad ? `${n} ${a.unidad}` : n;
+};
+
 export default function CtpApartados({
   apartados,
   activo,
   onIr,
-  enLinea = false,
+  idBase,
+  etiqueta,
 }: {
   apartados: readonly Apartado[];
   activo: string;
   onIr: (id: string) => void;
-  /**
-   * Modo `enLinea`: sin caja propia ni flechas, para entrar en la MISMA fila
-   * que los filtros de la vista (Brandon, 2026-09-02: «quiero que la sección
-   * de trozas en el patio y sección 2 · consumo estén en la misma fila de
-   * filtros»). Con dos apartados las flechas ← → no aportan nada —los dos
-   * botones ya están a la vista— y la caja gastaba un renglón entero de
-   * pantalla arriba de la tabla que se viene a mirar.
-   */
-  enLinea?: boolean;
+  /** Prefijo de los ids de pestañas y paneles (`useId()` de la vista). */
+  idBase: string;
+  /** Nombre del grupo de pestañas, para el lector de pantalla. */
+  etiqueta: string;
 }) {
-  const i = Math.max(0, apartados.findIndex((a) => a.id === activo));
-  const anterior = apartados[i - 1];
-  const siguiente = apartados[i + 1];
+  const refs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
-  if (enLinea) {
-    return (
-      <nav aria-label="Apartados de la vista" className="flex min-w-0 shrink-0 flex-wrap items-center gap-2">
-        {apartados.map((a, n) => {
-          const esActivo = a.id === activo;
-          return (
-            <button
-              key={a.id}
-              type="button"
-              onClick={() => onIr(a.id)}
-              aria-current={esActivo ? "step" : undefined}
-              title={a.hint}
-              /* `h-12` = la altura de los campos de filtro de la barra: si
-                 fueran más bajos, la fila se leería como dos filas. */
-              className={`inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-2xl border-2 px-3 text-sm font-semibold transition-colors ${
-                esActivo
-                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]"
-              }`}
-            >
-              <span className="font-mono text-[length:var(--ts-2xs)] opacity-70">{String(n + 1).padStart(2, "0")}</span>
-              {a.label}
-              {a.contador != null && (
-                <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] tabular-nums">
-                  {a.contador}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-    );
-  }
+  /* Flechas, Inicio y Fin mueven el foco Y eligen (activación automática: con
+     dos o tres pestañas no hay costo en mostrar el panel al llegar). */
+  const alTeclear = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
+    const n = apartados.length;
+    const destino =
+      e.key === "ArrowRight" ? (i + 1) % n
+        : e.key === "ArrowLeft" ? (i - 1 + n) % n
+          : e.key === "Home" ? 0
+            : e.key === "End" ? n - 1
+              : null;
+    if (destino == null) return;
+    e.preventDefault();
+    const a = apartados[destino];
+    onIr(a.id);
+    refs.current.get(a.id)?.focus();
+  };
 
   return (
-    <nav
-      aria-label="Apartados de la vista"
-      className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3"
+    <>
+    {/* A 400 px las pestañas van en dos columnas y el texto envuelve: con
+        `whitespace-nowrap` la segunda se salía de la pantalla (medido: borde
+        derecho en 450 px). */}
+    <div role="tablist" aria-label={etiqueta} className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-stretch">
+      {apartados.map((a, i) => {
+        const esActivo = a.id === activo;
+        const cuenta = contadorConUnidad(a);
+        return (
+          <button
+            key={a.id}
+            ref={(el) => {
+              if (el) refs.current.set(a.id, el);
+              else refs.current.delete(a.id);
+            }}
+            type="button"
+            role="tab"
+            id={idTab(idBase, a.id)}
+            aria-selected={esActivo}
+            aria-controls={esActivo ? idPanel(idBase, a.id) : undefined}
+            aria-describedby={a.hint ? idPista(idBase, a.id) : undefined}
+            tabIndex={esActivo ? 0 : -1}
+            onClick={() => onIr(a.id)}
+            onKeyDown={(e) => alTeclear(e, i)}
+            className={`flex min-h-12 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border-2 px-3 py-1.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 ${
+              esActivo
+                ? "border-[var(--accent)] bg-primary/10 font-bold text-[var(--text-primary)]"
+                : "border-[var(--rule-base)] bg-[var(--surface-raised)] font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            <span className="min-w-0">{a.label}</span>
+            {cuenta != null && <span className="sr-only">,</span>}{" "}
+            {cuenta != null && (
+              <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-sm font-semibold tabular-nums text-[var(--text-secondary)]">
+                {cuenta}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+    {/* La pista de cada pestaña, como DESCRIPCIÓN (no como parte del nombre). */}
+    <div hidden>
+      {apartados.map((a) => a.hint && <span key={a.id} id={idPista(idBase, a.id)}>{a.hint}</span>)}
+    </div>
+    </>
+  );
+}
+
+/** El panel de una pestaña: nombrado por ella y alcanzable con Tab. */
+export function CtpApartadoPanel({
+  idBase,
+  id,
+  children,
+  className = "",
+}: {
+  idBase: string;
+  id: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      role="tabpanel"
+      id={idPanel(idBase, id)}
+      aria-labelledby={idTab(idBase, id)}
+      tabIndex={0}
+      className={`rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${className}`}
     >
-      <button
-        type="button"
-        onClick={() => anterior && onIr(anterior.id)}
-        disabled={!anterior}
-        aria-label={anterior ? `Ir a ${anterior.label}` : "No hay apartado anterior"}
-        title={anterior ? anterior.label : undefined}
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-30"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </button>
-
-      <ol className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-        {apartados.map((a, n) => {
-          const esActivo = a.id === activo;
-          return (
-            <li key={a.id}>
-              <button
-                type="button"
-                onClick={() => onIr(a.id)}
-                aria-current={esActivo ? "step" : undefined}
-                title={a.hint}
-                className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 min-h-10 text-sm font-semibold transition-colors ${
-                  esActivo
-                    ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]"
-                }`}
-              >
-                <span className="font-mono text-[length:var(--ts-2xs)] opacity-70">{String(n + 1).padStart(2, "0")}</span>
-                {a.label}
-                {a.contador != null && (
-                  <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] tabular-nums">
-                    {a.contador}
-                  </span>
-                )}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-
-      <button
-        type="button"
-        onClick={() => siguiente && onIr(siguiente.id)}
-        disabled={!siguiente}
-        aria-label={siguiente ? `Ir a ${siguiente.label}` : "No hay apartado siguiente"}
-        title={siguiente ? siguiente.label : undefined}
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-30"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </button>
-    </nav>
+      {children}
+    </div>
   );
 }

@@ -17,7 +17,7 @@
  * cuando son varios — un contador sin el total no deja saber si falta tildar.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronDown, Search, X } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { OpcionFiltro } from "@/lib/forestal/capacidad-de-planta";
@@ -45,16 +45,32 @@ export default function FiltroMulti({
   const [abierto, setAbierto] = useState(false);
   const [busca, setBusca] = useState("");
   const caja = useRef<HTMLDivElement>(null);
+  const boton = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const id = useId();
+  const idEtiqueta = `${id}-etiqueta`;
+  const idResumen = `${id}-resumen`;
+  const idPanel = `${id}-panel`;
+
+  /* Al abrir, el foco ENTRA al panel (el buscador o la primera casilla): con
+     teclado, abrir un menú y quedarse en el botón obliga a tabular a ciegas. */
+  useEffect(() => {
+    if (!abierto) return;
+    const primero = panel.current?.querySelector<HTMLElement>("input, button");
+    primero?.focus();
+  }, [abierto]);
 
   /* Cerrar al click afuera y con Escape — mismo comportamiento que el menú de
-     columnas, para que los dos menús del módulo se usen igual. */
+     columnas. Con Escape el foco VUELVE al botón que lo abrió. */
   useEffect(() => {
     if (!abierto) return;
     const fuera = (e: MouseEvent) => {
       if (!caja.current?.contains(e.target as Node)) setAbierto(false);
     };
     const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setAbierto(false);
+      if (e.key !== "Escape") return;
+      setAbierto(false);
+      boton.current?.focus();
     };
     window.addEventListener("mousedown", fuera);
     window.addEventListener("keydown", esc);
@@ -76,41 +92,63 @@ export default function FiltroMulti({
      un filtro fantasma, imposible de destildar. */
   const huerfanos = valores.filter((v) => !opciones.some((o) => o.valor === v));
   const resumen =
-    valores.length === 0 ? todos : valores.length === 1 ? valores[0] : `${valores.length} de ${opciones.length}`;
+    valores.length === 0
+      ? todos
+      : valores.length === 1
+        ? valores[0]
+        : `${valores.length} de ${opciones.length}`;
 
   return (
-    <div className="relative" ref={caja}>
-      <label className="flex items-center gap-2 text-xs">
-        <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+    <div className="relative max-sm:w-full" ref={caja}>
+      {/* El botón NO va dentro de un <label>: un label que envuelve un botón
+          suma su texto al nombre y confunde el lector. La etiqueta se asocia
+          con aria-labelledby: se oye «Permiso, Todos los permisos». */}
+      <div className="flex items-center gap-2 text-xs">
+        <span
+          id={idEtiqueta}
+          className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
+        >
           {etiqueta}
         </span>
         <button
+          ref={boton}
           type="button"
           onClick={() => setAbierto((v) => !v)}
           aria-expanded={abierto}
+          aria-haspopup="dialog"
+          aria-controls={abierto ? idPanel : undefined}
+          aria-labelledby={`${idEtiqueta} ${idResumen}`}
           title={valores.length > 1 ? valores.join(" · ") : undefined}
-          className={`inline-flex h-9 w-56 max-w-full items-center justify-between gap-2 rounded-lg border px-2 text-sm font-medium transition-colors ${
+          className={`inline-flex h-10 w-56 max-w-full items-center justify-between gap-2 rounded-lg border px-2 text-sm font-medium transition-colors max-sm:flex-1 ${
             valores.length > 0
               ? "border-[var(--accent)] bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]"
               : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)]"
           }`}
         >
-          <span className="truncate">{resumen}</span>
+          <span id={idResumen} className="truncate">
+            {resumen}
+          </span>
           <ChevronDown className="h-4 w-4 shrink-0 opacity-60" aria-hidden />
         </button>
-      </label>
+      </div>
 
       {abierto && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-72 max-w-[90vw] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]">
+        <div
+          ref={panel}
+          id={idPanel}
+          role="dialog"
+          aria-label={`Elegir ${etiqueta.toLowerCase()}`}
+          className="absolute left-0 top-full z-50 mt-1 w-72 max-w-[90vw] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
+        >
           <div className="flex items-center justify-between gap-2 px-1 pb-1">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               {etiqueta}
             </p>
             {valores.length > 0 && (
               <button
                 type="button"
                 onClick={onLimpiar}
-                className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-dark)] underline underline-offset-2 dark:text-[var(--accent)]"
+                className="min-h-6 rounded px-2 text-xs font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
               >
                 Quitar
               </button>
@@ -129,8 +167,13 @@ export default function FiltroMulti({
                 className="h-8 w-full bg-transparent text-sm text-[var(--text-primary)] outline-none"
               />
               {busca && (
-                <button type="button" onClick={() => setBusca("")} aria-label="Limpiar la búsqueda">
-                  <X className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                <button
+                  type="button"
+                  onClick={() => setBusca("")}
+                  aria-label="Limpiar la búsqueda"
+                  className="grid h-6 w-6 place-items-center"
+                >
+                  <X className="h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden />
                 </button>
               )}
             </div>
@@ -146,10 +189,10 @@ export default function FiltroMulti({
                   type="checkbox"
                   checked
                   onChange={() => onAlternar(v)}
-                  className="h-4 w-4 shrink-0 rounded border border-[var(--rule-base)] accent-[var(--accent)]"
+                  className="h-5 w-5 shrink-0 rounded border border-[var(--rule-base)] accent-[var(--accent)]"
                 />
                 <span className="truncate">{v}</span>
-                <span className="ml-auto shrink-0 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                <span className="ml-auto shrink-0 text-xs text-[var(--text-tertiary)]">
                   sin madera hoy
                 </span>
               </label>
@@ -165,15 +208,21 @@ export default function FiltroMulti({
                     type="checkbox"
                     checked={tildado}
                     onChange={() => onAlternar(o.valor)}
-                    className="h-4 w-4 shrink-0 rounded border border-[var(--rule-base)] accent-[var(--accent)]"
+                    className="h-5 w-5 shrink-0 rounded border border-[var(--rule-base)] accent-[var(--accent)]"
                   />
                   <span className="truncate" title={o.valor}>
                     {o.valor}
                   </span>
                   {/* Cuánta madera hay detrás: un permiso con 0.4 m³ y otro con
                       40 se eligen distinto. */}
-                  <span className="ml-auto shrink-0 font-mono tabular-nums text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    {fmtM3(o.m3)} m³ ({o.piezas})
+                  {/* «n» cuenta trozas Y corridas (lo libre, lo por recepcionar y
+                      lo ya aserrado): se dice en el nombre accesible. */}
+                  <span className="ml-auto shrink-0 whitespace-nowrap tabular-nums text-xs text-[var(--text-tertiary)]">
+                    {fmtM3(o.m3)} m³ · {o.piezas}
+                    <span className="sr-only">
+                      {" "}
+                      {o.piezas === 1 ? "troza o corrida" : "trozas o corridas"}
+                    </span>
                   </span>
                 </label>
               );
@@ -186,11 +235,11 @@ export default function FiltroMulti({
           </div>
 
           {valores.length > 0 && (
-            <p className="flex items-start gap-1 border-t border-[var(--rule-soft)] px-1 pt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            <p className="flex items-start gap-1 border-t border-[var(--rule-soft)] px-1 pt-1.5 text-xs text-[var(--text-tertiary)]">
               <Check className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
               <span>
                 {valores.length === 1
-                  ? "Se muestra sólo lo de ese valor."
+                  ? "Se muestra solo lo de ese valor."
                   : `Se suman los ${valores.length} elegidos.`}
               </span>
             </p>

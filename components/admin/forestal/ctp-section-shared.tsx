@@ -8,19 +8,32 @@ import { claveSalida, SALIDA_LABEL, type ClaveSalida } from "@/lib/forestal/ctp-
 export type CtpSection = "produccion" | "despacho";
 
 export interface CtpEntry {
-  id: string; section: CtpSection; lineNo: number; entryDate: string;
-  gtfIngreso: string | null; materiaPrimaRef: string | null;
-  speciesCommon: string | null; speciesScientific: string | null; cites: boolean;
-  productType: string | null; volumeInputM3: string | null; rendimientoPct: string | null;
-  quantity: string | null; unit: string | null; pieces: number | null;
-  gtfNumber: string | null; destino: string | null; observations: string | null;
+  id: string;
+  section: CtpSection;
+  lineNo: number;
+  entryDate: string;
+  gtfIngreso: string | null;
+  materiaPrimaRef: string | null;
+  speciesCommon: string | null;
+  speciesScientific: string | null;
+  cites: boolean;
+  productType: string | null;
+  volumeInputM3: string | null;
+  rendimientoPct: string | null;
+  quantity: string | null;
+  unit: string | null;
+  pieces: number | null;
+  gtfNumber: string | null;
+  destino: string | null;
+  observations: string | null;
   /**
    * Datos de la GTF de salida tal como los devuelve el endpoint (JSON crudo; lo
    * valida `leerGtfDatos`). Estaba en la respuesta y no en el tipo, así que
    * quien lo necesitaba tenía que castear a ciegas.
    */
   gtfDatos?: unknown;
-  status: "registrado" | "anulado"; annulledReason: string | null;
+  status: "registrado" | "anulado";
+  annulledReason: string | null;
   /** El código pintado en el atado (ADR-314 · casillero 9 de la Sección 4). */
   codigoProducto?: string | null;
   /**
@@ -106,7 +119,12 @@ export type ColsProduccionVisibles = Record<ColProduccionKey, boolean>;
  * ficha del despacho: tres lugares donde agregar una unidad nueva y olvidarse de
  * dos deja "pt" crudo en pantalla.
  */
-export const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
+export const UNIT_LABELS: Record<string, string> = {
+  m3: "m³",
+  kg: "Kg",
+  pt: "pt",
+  unidad: "unidad",
+};
 
 /**
  * Sólo una corrida `registrado` admite marcarse para «Cobrar aserrío en
@@ -140,14 +158,37 @@ export function estadoSalida(
   if (!tono) return null;
   if (tono === "stock") return { label: SALIDA_LABEL.stock, tono };
   if (tono === "salido") return { label: SALIDA_LABEL.salido, tono };
-  const queda = Number(e.quantity ?? 0) - Number(e.despachadoQty ?? 0) - Number(e.reprocesadoQty ?? 0);
+  const queda =
+    Number(e.quantity ?? 0) - Number(e.despachadoQty ?? 0) - Number(e.reprocesadoQty ?? 0);
   return { label: `Parcial · queda ${queda.toFixed(2)}`, tono };
 }
 
 export const n2 = (v: number) => v.toFixed(2);
 
-export function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>{children}</th>;
+/**
+ * Encabezado de columna. `scope="col"` por defecto: sin él un lector de
+ * pantalla no asocia la celda con su encabezado en tablas con celdas vacías.
+ * Acepta los atributos de un `<th>` (`aria-sort`, `colSpan`…) — lo usan 19
+ * tablas del libro, así que el estilo no cambia.
+ */
+export function Th({
+  children,
+  className,
+  scope = "col",
+  ...rest
+}: { children: React.ReactNode; className?: string } & Omit<
+  React.ThHTMLAttributes<HTMLTableCellElement>,
+  "className" | "children"
+>) {
+  return (
+    <th
+      scope={scope}
+      className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}
+      {...rest}
+    >
+      {children}
+    </th>
+  );
 }
 export function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;

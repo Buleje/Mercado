@@ -1,16 +1,10 @@
 "use client";
 
 /**
- * Cargar la sierra desde la pestaña Consumos (ADR-340).
- *
- * El orden del aserradero: se elige el lote, el día, y qué piezas entran. Antes
- * esto sólo se podía declarar hacia atrás —al registrar la corrida— así que la
- * madera que ya estaba aserrándose no figuraba en ningún lado hasta que alguien
- * supiera cuánto había salido.
- *
- * Lo que se ofrece son las piezas **recepcionadas y libres**: sin guía recibida
- * no hay madera que consumir (ADR-339), y una pieza ya apartada en otro lote no
- * se puede tomar dos veces.
+ * Cargar la sierra desde la pestaña Consumos (ADR-340): se elige el lote, el
+ * día y qué piezas entran. Se ofrecen las piezas **recepcionadas y libres**: sin
+ * guía recibida no hay madera que consumir (ADR-339), y una pieza apartada en
+ * otro lote no se toma dos veces.
  *
  * El filtro de la pila lo maneja la vista (ADR-345): acá llegan las filas ya
  * acotadas. Este componente es la ACCIÓN — qué se eligió, el acta y el consumo.
@@ -20,8 +14,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Flame, PackageOpen } from "@buleje/design-system/icons";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import { pieTablarAserrableDe } from "@/lib/forestal/cubicacion";
+import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { labelProductoConsumible } from "@/lib/forestal/lote-programacion";
-import CtpTrozasIngresadas from "./CtpTrozasIngresadas";
+import CtpTrozasIngresadas, { type FiltrosPatioColumna } from "./CtpTrozasIngresadas";
 import CtpConsumirLoteModal, { type ConfirmacionConsumo } from "./CtpConsumirLoteModal";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import CtpBarraSeleccion from "./ctp-barra-seleccion";
@@ -41,7 +37,12 @@ export default function CtpCargarSierra({
   seleccion,
   onSeleccion,
   onConsumido,
+  filtrosColumna,
+  ahora,
+  encabezado,
 }: {
+  /** El menú del lote + el día, y la búsqueda: dentro de la tarjeta de la tabla (2026-09-24). */
+  encabezado?: { accion?: React.ReactNode; barra?: React.ReactNode };
   /** El lote elegido en el filtro. */
   lote: LoteAserrio;
   /** Día del consumo (`AAAA-MM-DD`), el del filtro. */
@@ -60,6 +61,10 @@ export default function CtpCargarSierra({
    * mentir sobre lo que pasó.
    */
   onConsumido: (mensaje: string, tono: "ok" | "aviso", accion?: "consumo" | "adjuntar") => void;
+  /** Los mismos autofiltros de cabecera que sin lote (ADR-431): con un lote
+   *  elegido, en escritorio no había forma de filtrar por guía. */
+  filtrosColumna?: FiltrosPatioColumna;
+  ahora?: Date;
 }) {
   const [confirmando, setConfirmando] = useState(false);
   /** La guía que se está cuadrando desde el acta (ADR-353). */
@@ -130,12 +135,9 @@ export default function CtpCargarSierra({
   }
 
   /**
-   * ADJUNTAR SIN CONSUMIR (Brandon, 2026-09-01): arma el lote de a poco, sin
-   * cerrarlo. Es la manera real de dejar trozas para otro día — `consumirEnPatio`
-   * adjunta Y consume junto, así que lo tildado se cierra apenas se firma. Acá
-   * en cambio las piezas quedan APARTADAS: el lote sigue "abierto" y este mismo
-   * combo las vuelve a ofrecer la próxima vez, para tildar sólo una parte y
-   * consumir esa (misma fecha o distinta) mientras el resto sigue esperando.
+   * ADJUNTAR SIN CONSUMIR (Brandon, 2026-09-01): arma el lote de a poco. Las
+   * piezas quedan APARTADAS, el lote sigue "abierto" y la próxima vez se tilda
+   * sólo una parte mientras el resto sigue esperando.
    */
   async function adjuntarSinConsumir() {
     if (nuevasParaAdjuntar.length === 0) return;
@@ -173,19 +175,17 @@ export default function CtpCargarSierra({
           )}
         </p>
         <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-          {alConsumo.length} pza · {fmtM3(volumen)} m³ · {formatNumber(pieTablarDe(volumen))} pt
+          {alConsumo.length} pza · {fmtM3(volumen)} m³ · ≈{formatNumber(pieTablarAserrableDe(volumen, RENDIMIENTO_META))} pt aserr.
         </span>
       </header>
 
-      {/* "Revisar y consumir" adjunta Y consume junto: el lote se cierra apenas
-          se firma (Brandon, 2026-09-01: "el mismo lote seguirá ahí para
-          escoger otras trozas otro día"). "Adjuntar sin consumir" es el
-          camino para dejar reserva sin salir de esta pantalla. */}
+      {/* "Revisar y consumir" adjunta Y consume junto; "Adjuntar sin consumir"
+          deja reserva sin salir de esta pantalla (Brandon, 2026-09-01). */}
       {yaEnElLote.length === 0 && (
-        <p className="text-sm text-[var(--text-tertiary)]">
+        <p className="text-sm text-[var(--text-secondary)]">
           &ldquo;Revisar y consumir&rdquo; cierra el lote con lo que tildaste. Si quieres
           tildar de más y dejar una parte apartada para otro día, usa{" "}
-          <b className="text-[var(--text-secondary)]">Adjuntar sin consumir</b> — el lote
+          <b className="text-[var(--text-primary)]">Adjuntar sin consumir</b> — el lote
           sigue abierto y vuelves a elegirlo la próxima vez.
         </p>
       )}
@@ -213,12 +213,14 @@ export default function CtpCargarSierra({
           void estado.quitarTroza(lote.id, trozaId).catch((e) => setError(e instanceof Error ? e.message : String(e)));
         }}
         acotadaA={`${lote.speciesCommon}${lote.tipoProductoConsumir ? ` · ${labelProductoConsumible(lote.tipoProductoConsumir)}` : ""}`}
+        filtrosColumna={filtrosColumna}
+        ahora={ahora}
+        accion={encabezado?.accion}
+        barra={encabezado?.barra}
       />
 
       {/* Sin nada tildado, el botón apagado dice qué falta hacer. Con selección
-          manda la barra del pie, que lleva la cuenta acumulada al lado de la
-          acción: el operador decide por m³ mientras tilda, y el total vivía a
-          doscientas filas de scroll de donde está mirando. */}
+          manda la barra del pie, con la cuenta acumulada al lado de la acción. */}
       {alConsumo.length === 0 && (
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Btn variant="primary" disabled>
@@ -294,7 +296,7 @@ export default function CtpCargarSierra({
       )}
 
       {!confirmando && error && (
-        <p className="flex items-start gap-2 rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+        <p role="status" className="flex items-start gap-2 rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <Check className="mt-0.5 h-4 w-4 shrink-0 rotate-45" aria-hidden />
           {error}
         </p>

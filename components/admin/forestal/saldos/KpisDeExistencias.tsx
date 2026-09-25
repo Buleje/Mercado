@@ -20,7 +20,6 @@
  *     se usan para decidir. Van últimos y más chicos.
  *
  * Dos cosas que esta tarjeta hace y la anterior no:
- *
  *  · **El saldo negativo se explica con el patio físico.** El endpoint devuelve
  *    `piezasDisponibles` al lado de un `saldoM3` de −81.81: hay 57 trozas
  *    paradas y el libro dice que no queda nada. No es contradicción, son dos
@@ -41,8 +40,12 @@ import {
 } from "@/lib/forestal/ctp-saldos-analisis";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { formatNumber } from "@/lib/format";
+import { Derivado, Movimiento, TONO_VALOR, type Tono } from "./KpisCeldas";
 
-const n2 = (v: number) => v.toFixed(2);
+/* Volúmenes con 3 decimales, como el patio y la capacidad: el mismo m³ salía
+   «80.30» acá y «80.296» en la pestaña de al lado. */
+const m3 = (v: number) => `${formatNumber(v, 3)} m³`;
+const pct = (v: number) => formatNumber(v, 2);
 const nf = (v: number) => formatNumber(v);
 
 /** Cuántos días de patio se consideran cómodos antes de encender el aviso. */
@@ -50,15 +53,6 @@ const COBERTURA_JUSTA = 7;
 const COBERTURA_CRITICA = 3;
 /** Depender de una sola especie por encima de esto es un riesgo de permiso. */
 const CONCENTRACION_ALTA = 60;
-
-const TONO_VALOR = {
-  neutral: "text-[var(--text-primary)]",
-  success: "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]",
-  warning: "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]",
-  error: "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]",
-} as const;
-
-type Tono = keyof typeof TONO_VALOR;
 
 export default function KpisDeExistencias({
   materiaPrima,
@@ -117,11 +111,13 @@ export default function KpisDeExistencias({
             : ""
         }`
       : enRojo > 0.0001
-        ? `${n2(disponible)} m³ aserrables menos ${n2(enRojo)} m³ de especies en negativo, que no son stock sino un error por corregir.`
+        ? `${m3(disponible)} aserrables menos ${m3(enRojo)} de especies en negativo, que no son stock sino un error por corregir.`
         : piezasEnPatio > 0
           ? `Disponible en patio, en ${nf(piezasEnPatio)} ${piezasEnPatio === 1 ? "troza" : "trozas"} listas para la sierra.`
           : "Disponible en patio para aserrar.";
 
+  /* Sólo se pinta cuando APURA: 423 días en verde se leían como buena noticia
+     cuando es madera parada que se degrada. Lo neutro no juzga. */
   const coberturaTono: Tono =
     kpis.coberturaDias == null
       ? "neutral"
@@ -129,12 +125,12 @@ export default function KpisDeExistencias({
         ? "error"
         : kpis.coberturaDias <= COBERTURA_JUSTA
           ? "warning"
-          : "success";
+          : "neutral";
 
   /** Sin cobertura hay dos motivos distintos y el operador necesita cuál. */
   const coberturaSinDato =
     mp.saldoM3 <= 0.0001
-      ? `el saldo no es positivo${kpis.consumoDiario != null ? ` · se consume ${n2(kpis.consumoDiario)} m³/día` : ""}`
+      ? `el saldo no es positivo${kpis.consumoDiario != null ? ` · se consume ${formatNumber(kpis.consumoDiario, 3)} m³/día` : ""}`
       : "todavía no hubo consumo que marque el ritmo";
 
   /* «Salió sin aserrar» sólo aparece cuando la hubo, así que la tira tiene 3 o 4
@@ -150,13 +146,13 @@ export default function KpisDeExistencias({
       {/* ── 1. El saldo: el único número que se firma ─────────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 p-5">
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            <Scale className="h-3.5 w-3.5" aria-hidden /> Saldo de materia prima
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            <Scale className="h-3.5 w-3.5" aria-hidden /> Saldo de materia prima · lo que se declara
           </p>
           <p
-            className={`mt-1 font-mono text-3xl font-extrabold leading-none tabular-nums sm:text-4xl ${TONO_VALOR[tonoSaldo]}`}
+            className={`mt-1 text-3xl font-extrabold leading-none tabular-nums sm:text-4xl ${TONO_VALOR[tonoSaldo]}`}
           >
-            {n2(mp.saldoM3)} m³
+            {m3(mp.saldoM3)}
           </p>
           <p className="mt-2 max-w-prose text-sm text-[var(--text-secondary)]">{explicacion}</p>
         </div>
@@ -181,13 +177,13 @@ export default function KpisDeExistencias({
                 type="button"
                 onClick={onVerMovimiento}
                 title="Ver la curva con fechas, el valle y los movimientos que la explican"
-                className="mb-1 flex w-full items-center justify-end gap-1 text-right text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+                className="mb-1 ml-auto flex min-h-6 items-center justify-end gap-1 rounded text-right text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
               >
                 Cómo llegó hasta acá
-                <ArrowRight className="h-3 w-3" aria-hidden />
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
               </button>
             ) : (
-              <p className="mb-1 text-right text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <p className="mb-1 text-right text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Cómo llegó hasta acá
               </p>
             )}
@@ -204,23 +200,27 @@ export default function KpisDeExistencias({
 
       {/* ── 2. Los sumandos que lo explican ───────────────────────────────── */}
       <dl
-        className={`grid grid-cols-2 divide-[var(--rule-soft)] border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] sm:divide-x ${
-          hayDespachoDirecto ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"
+        /* Con tres celdas en dos columnas la última quedaba sola con un hueco
+           al lado (400 px, 24-09): la impar del final ocupa la fila entera. */
+        className={`grid grid-cols-2 divide-[var(--rule-soft)] border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] sm:divide-x [&>div:last-child:nth-child(odd)]:col-span-2 ${
+          hayDespachoDirecto
+            ? "sm:grid-cols-2 lg:grid-cols-4"
+            : "sm:grid-cols-3 sm:[&>div:last-child:nth-child(odd)]:col-span-1"
         }`}
       >
         <Movimiento
           icono={Layers}
           termino="Ingresado (validado)"
-          valor={`${n2(mp.ingresoM3)} m³`}
+          valor={m3(mp.ingresoM3)}
           pie={`${mp.ingresosCount} ${mp.ingresosCount === 1 ? "ingreso" : "ingresos"} en el período`}
         />
         <Movimiento
           icono={Boxes}
           termino="Consumido en producción"
-          valor={`${n2(mp.consumidoM3)} m³`}
+          valor={m3(mp.consumidoM3)}
           pie={
             kpis.rotacionPct != null
-              ? `${n2(kpis.rotacionPct)} % de lo ingresado`
+              ? `${pct(kpis.rotacionPct)} % de lo ingresado`
               : "sin ingresos que rotar"
           }
           /* Consumir más del 100 % de lo ingresado es exactamente el sobreconsumo
@@ -231,11 +231,11 @@ export default function KpisDeExistencias({
         <Movimiento
           icono={Clock}
           termino="Pendiente de validar"
-          valor={`${n2(mp.pendienteM3)} m³`}
+          valor={m3(mp.pendienteM3)}
           pie={
             mp.pendienteM3 > 0
               ? kpis.sinValidarPct != null
-                ? `${n2(kpis.sinValidarPct)} % de lo que hay en patio`
+                ? `${pct(kpis.sinValidarPct)} % de lo que hay en patio`
                 : "no computa como saldo"
               : "todo el ingreso está validado"
           }
@@ -248,7 +248,7 @@ export default function KpisDeExistencias({
           <Movimiento
             icono={TreePine}
             termino="Salió sin aserrar"
-            valor={`${n2(mp.despachadoDirectoM3 ?? 0)} m³`}
+            valor={m3(mp.despachadoDirectoM3 ?? 0)}
             pie="madera vendida en rollo"
           />
         )}
@@ -261,14 +261,14 @@ export default function KpisDeExistencias({
           valor={kpis.coberturaDias != null ? `${kpis.coberturaDias} días` : null}
           pie={
             kpis.coberturaDias != null && kpis.consumoDiario != null
-              ? `a ${n2(kpis.consumoDiario)} m³/día · ${kpis.diasMedidos} ${kpis.diasMedidos === 1 ? "día medido" : "días medidos"}`
+              ? `a ${formatNumber(kpis.consumoDiario, 3)} m³/día · ${kpis.diasMedidos} ${kpis.diasMedidos === 1 ? "día medido" : "días medidos"}`
               : coberturaSinDato
           }
           tono={coberturaTono}
         />
         <Derivado
           termino="Depende de"
-          valor={kpis.concentracion ? `${n2(kpis.concentracion.pct)} %` : null}
+          valor={kpis.concentracion ? `${pct(kpis.concentracion.pct)} %` : null}
           pie={
             kpis.concentracion
               ? `${kpis.concentracion.especie} · del saldo en patio`
@@ -296,67 +296,5 @@ export default function KpisDeExistencias({
         />
       </dl>
     </section>
-  );
-}
-
-/** Un sumando del saldo. Se declara: va en mono y con su ícono. */
-function Movimiento({
-  icono: Icono,
-  termino,
-  valor,
-  pie,
-  tono = "neutral",
-}: {
-  icono: typeof Layers;
-  termino: string;
-  valor: string;
-  pie: string;
-  tono?: Tono;
-}) {
-  return (
-    <div className="border-t border-[var(--rule-soft)] px-4 py-3 first:border-t-0 sm:border-t-0">
-      <dt className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        <Icono className="h-3.5 w-3.5" aria-hidden /> {termino}
-      </dt>
-      <dd className={`mt-0.5 font-mono text-xl font-extrabold tabular-nums ${TONO_VALOR[tono]}`}>
-        {valor}
-      </dd>
-      <p className="text-xs text-[var(--text-tertiary)]">{pie}</p>
-    </div>
-  );
-}
-
-/**
- * Un derivado de planta. `valor` en `null` significa «no se puede afirmar»: en
- * vez del guión gigante —que se lee como dato que no cargó— sube el motivo, que
- * es lo único que hay para decir.
- */
-function Derivado({
-  termino,
-  valor,
-  pie,
-  tono = "neutral",
-}: {
-  termino: string;
-  valor: string | null;
-  pie: string;
-  tono?: Tono;
-}) {
-  return (
-    <div className="border-t border-[var(--rule-soft)] px-4 py-2.5 first:border-t-0 sm:border-t-0">
-      <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        {termino}
-      </dt>
-      {valor != null ? (
-        <>
-          <dd className={`font-mono text-lg font-extrabold tabular-nums ${TONO_VALOR[tono]}`}>
-            {valor}
-          </dd>
-          <p className="text-xs text-[var(--text-tertiary)]">{pie}</p>
-        </>
-      ) : (
-        <dd className="mt-0.5 text-sm text-[var(--text-secondary)]">Sin dato: {pie}.</dd>
-      )}
-    </div>
   );
 }

@@ -132,7 +132,12 @@ export const BulejeWaterfallChart = memo(function BulejeWaterfallChart({
   const detalle = activo != null ? bars[activo] : null;
 
   return (
-    <div className={cn("rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5", className)}>
+    <div
+      className={cn(
+        "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5",
+        className,
+      )}
+    >
       {(label || sublabel) && (
         <div className="mb-5">
           {label && (
@@ -153,7 +158,9 @@ export const BulejeWaterfallChart = memo(function BulejeWaterfallChart({
           viewBox={`0 0 ${W} ${height}`}
           preserveAspectRatio="xMidYMax meet"
           className="w-full h-full"
-          role="group"
+          /* `list`, no `group`: cada barra es un `listitem` y axe exige que su
+             padre sea una lista (aria-required-parent, medido en Saldos 24-09). */
+          role="list"
           aria-label={sublabel ?? label ?? "Cascada de valores"}
         >
           {/* Zero line */}
@@ -231,7 +238,12 @@ export const BulejeWaterfallChart = memo(function BulejeWaterfallChart({
                   y={chartH + 20}
                   textAnchor="middle"
                   className="fill-[var(--text-tertiary)]"
-                  style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                  }}
                 >
                   {b.label.length > maxChars ? b.label.slice(0, maxChars - 1) + "…" : b.label}
                 </text>
@@ -256,7 +268,9 @@ export const BulejeWaterfallChart = memo(function BulejeWaterfallChart({
             )}
           </>
         ) : (
-          <span className="text-[var(--text-tertiary)]">{hint ?? "Señalá una barra para ver el acumulado."}</span>
+          <span className="text-[var(--text-tertiary)]">
+            {hint ?? "Señalá una barra para ver el acumulado."}
+          </span>
         )}
       </p>
     </div>

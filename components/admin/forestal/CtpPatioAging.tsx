@@ -1,277 +1,182 @@
 "use client";
 
 /**
- * CtpPatioAging — "gemelo del patio": qué materia prima está PARADA y hace
- * cuánto. La madera en troza sin procesar se degrada (mancha azul, insectos,
- * rajaduras) y encima inmoviliza capital. Esta vista lista las guías con saldo
- * sin consumir ordenadas por antigüedad, con el valor inmovilizado, para que el
- * operador procese primero lo más viejo (FIFO) antes de que pierda valor.
+ * CtpPatioAging — qué madera del LIBRO está parada y hace cuánto, guía por guía.
  *
- * Deriva de `availableSource(produccion)` (guías con `disponible` + `entryDate` +
- * costo/m³). Sin migración. El costo puede faltar (factura pendiente) → el valor
- * inmovilizado se reporta como parcial, nunca inventado.
+ * La troza sin procesar se degrada (mancha azul, insectos, rajaduras) y encima
+ * inmoviliza capital: esto lista las guías con saldo sin consumir de la más
+ * vieja a la más nueva, con el valor inmovilizado, para procesar primero lo
+ * más viejo.
+ *
+ * Tres cosas cambiaron el 24-09 (ADR-431):
+ *  · **Se rotula como lo que es**: m³ del libro por guía, NO piezas del patio.
+ *    En Blas daba 125,22 m³ al lado de un patio físico de 135,59 y ninguna de
+ *    las dos cifras decía cuál era cuál.
+ *  · **La escala de días es la única del libro** (0-14 · 15-29 · 30-59 · 60+),
+ *    y cada pastilla dice su severidad en texto, no sólo en color.
+ *  · **No se pide solo ni se esconde**: los datos llegan por props (el
+ *    «Recargar» de la cabecera los refresca), y cargando o con error se ve un
+ *    esqueleto o el motivo, en vez de un `return null` que hacía saltar la página.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { CardTitle, DataTable } from "@buleje/design-system";
-import { AlertCircle, Clock, RefreshCw } from "@buleje/design-system/icons";
-import { bucketsAntiguedad } from "@/lib/forestal/ctp-saldos-analisis";
-import { claveEspecie } from "@/lib/forestal/loth-constants";
-import { formatNumber } from "@/lib/format";
+import { CardTitle } from "@buleje/design-system";
+import { AlertCircle, ChevronDown, Clock } from "@buleje/design-system/icons";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import type { ResumenAntiguedad } from "@/lib/forestal/antiguedad-por-guia";
+import type { EstadoFuente } from "@/lib/forestal/capacidad-de-planta";
+import { formatCurrency, formatNumber } from "@/lib/format";
+import AntiguedadGuiasTabla from "./saldos/AntiguedadGuiasTabla";
+import AntiguedadTramos from "./saldos/AntiguedadTramos";
 
-interface Guia {
-  id: string; code: string | null; entryDate: string; species: string | null;
-  cites: boolean; disponible: number; costoUnitario: number | null; moneda: string;
-}
-
-// Umbrales de antigüedad (días parado). La madera tropical en troza se degrada
-// rápido: pasados ~2 meses el riesgo de mancha/insectos es alto.
-const DIAS_ATENCION = 30;
-const DIAS_RIESGO = 60;
-
-/**
- * Colores de ESTADO, no de serie: cada tramo es una condición de la madera
- * (fresca / hay que mirarla / se está degradando). Van siempre con su etiqueta
- * de días al lado, así el tramo se identifica sin depender del color.
- *
- * En dark el texto sube a `-500` (el color BASE del preset) en vez del `-700`.
- * Motivo medido, no estético: `DesignTokensProvider` deriva la escala del
- * preset activo con `darken(base, 24%)` para el 700 sin mirar el tema, y esa
- * inyección pisa el bloque `.dark` de `globals.css`. Resultado sobre el fondo
- * oscuro real de la tarjeta: «Más de 60 días» quedaba en 2.15:1 y «Hasta 30
- * días» en 2.76:1 — por debajo del piso de 4.5:1 para texto. El 500 no pasa por
- * el `darken`, así que sobrevive al pisón.
- */
-const TONO_TRAMO = {
-  fresca: {
-    texto: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
-    barra: "bg-[var(--data-success-500)]",
-  },
-  atencion: {
-    texto: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
-    barra: "bg-[var(--data-warning-500)]",
-  },
-  riesgo: {
-    texto: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
-    barra: "bg-[var(--data-error-500)]",
-  },
-} as const;
-
-const n2 = (v: number) => v.toFixed(2);
-const money = (v: number, m = "PEN") => `${m === "USD" ? "US$" : "S/"} ${formatNumber(v, 2)}`;
-const diasDesde = (iso: string) => {
-  const d = new Date(iso).getTime();
-  if (Number.isNaN(d)) return 0;
-  return Math.max(0, Math.floor((Date.now() - d) / 86_400_000));
-};
+const m3 = (v: number) => `${formatNumber(v, 3)} m³`;
+const dinero = (v: number, moneda = "PEN") =>
+  moneda === "USD" ? `US$ ${formatNumber(v, 2)}` : formatCurrency(v);
 
 export default function CtpPatioAging({
-  onValorizar,
+  resumen,
+  estado,
+  error,
   especie,
-}: { onValorizar?: () => void; especie?: string } = {}) {
-  const [guias, setGuias] = useState<Guia[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const r = await fetch("/api/admin/forestal/ctp?available=produccion", { credentials: "include" });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
-      setGuias((await r.json()).items ?? []);
-    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
-    finally { setLoading(false); }
-  }, []);
-  useEffect(() => { void load(); }, [load]);
-
-  const {
-    filas, totM3, totValor, valorParcial, enRiesgo, tramos,
-    m3ConCosto, m3SinCosto, guiasSinCosto, cobertura, riesgoSinCosto, m3RiesgoSinCosto,
-  } = useMemo(() => {
-    /* El recorte por especie del panel de arriba (ADR-400). Se hace acá y no en
-       el servidor porque la especie viene EN CADA GUÍA: el conjunto es el mismo
-       que devolvería un `where`. Por `claveEspecie`, que es como agrupa el resto
-       del libro — «Tornillo» y «TORNILLO» son una sola especie. */
-    const clave = especie?.trim() ? claveEspecie(especie) : null;
-    const filas = guias
-      .filter((g) => clave == null || claveEspecie(g.species ?? "") === clave)
-      .map((g) => ({ ...g, dias: diasDesde(g.entryDate), valor: g.costoUnitario != null ? g.disponible * g.costoUnitario : null }))
-      .sort((a, b) => b.dias - a.dias);
-    const totM3 = filas.reduce((a, f) => a + f.disponible, 0);
-    const totValor = filas.reduce((a, f) => a + (f.valor ?? 0), 0);
-    const valorParcial = filas.some((f) => f.valor == null);
-    const enRiesgo = filas.filter((f) => f.dias > DIAS_RIESGO).length;
-    const tramos = bucketsAntiguedad(filas, DIAS_ATENCION, DIAS_RIESGO);
-
-    /* CUÁNTO del patio respalda ese importe. El total sumaba sólo las guías con
-       costo y se mostraba pegado a los m³ totales: en la planta real son S/
-       6.350 al lado de 99.43 m³ cuando el importe cubre 39.79. Se lee como "hay
-       seis mil parados" y la cifra verdadera es desconocida y MAYOR. Una guía
-       sin factura vale «no sé», nunca «S/ 0» — la suma ya lo respeta, faltaba
-       que la pantalla lo dijera. */
-    const m3ConCosto = filas.reduce((a, f) => a + (f.valor != null ? f.disponible : 0), 0);
-    const m3SinCosto = totM3 - m3ConCosto;
-    const guiasSinCosto = filas.filter((f) => f.valor == null).length;
-    const cobertura = totM3 > 0 ? (m3ConCosto / totM3) * 100 : 0;
-    // Lo que está por degradarse Y encima no tiene precio: es la plata que no
-    // se puede ni reclamar porque no se sabe cuánta es.
-    const riesgoSinCosto = filas.filter((f) => f.dias > DIAS_RIESGO && f.valor == null);
-    const m3RiesgoSinCosto = riesgoSinCosto.reduce((a, f) => a + f.disponible, 0);
-
-    return {
-      filas, totM3, totValor, valorParcial, enRiesgo, tramos,
-      m3ConCosto, m3SinCosto, guiasSinCosto, cobertura,
-      riesgoSinCosto: riesgoSinCosto.length, m3RiesgoSinCosto,
-    };
-  }, [guias, especie]);
-
-  const badge = (dias: number) => {
-    if (dias > DIAS_RIESGO) return { label: `${dias} días`, cls: "bg-[var(--data-error-100)] text-[var(--data-error-700)]" };
-    if (dias > DIAS_ATENCION) return { label: `${dias} días`, cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" };
-    return { label: `${dias} días`, cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" };
-  };
-
-  if (loading && guias.length === 0) return null;
-  if (error) return null; // sección secundaria — no rompe Saldos si falla
-  if (guias.length === 0) return null;
-  /* Con el filtro puesto puede no quedar ninguna: la tabla entera se va, en vez
-     de dibujar una cabecera con cero filas bajo un título que promete madera. */
-  if (filas.length === 0) return null;
+  onValorizar,
+}: {
+  resumen: ResumenAntiguedad;
+  estado: EstadoFuente;
+  error: string | null;
+  /** El recorte por especie de los indicadores, si hay: para decirlo en el vacío. */
+  especie?: string;
+  /** Lleva a Rentabilidad › Valorizar ingresos, donde se cargan los costos. */
+  onValorizar?: () => void;
+}) {
+  const { filas, totM3, totValor, valorParcial, m3ConCosto, m3SinCosto, guiasSinCosto, cobertura } =
+    resumen;
+  const idTitulo = "saldos-antiguedad-titulo";
+  const idTabla = "saldos-antiguedad-guias";
+  /* La tabla guía por guía se abre a pedido y se recuerda: con 20 guías eran
+     880 px a 1280 y 4 000 px de tarjetas a 400. Los tramos de arriba ya dicen
+     cuánto hay en cada edad; la lista es para ir a buscar una guía. */
+  const [verGuias, setVerGuias] = useLocalStorage<boolean>("saldos-antiguedad-ver-guias", false);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <div>
-          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Clock className="h-4 w-4" /> Antigüedad de materia prima (patio)</CardTitle>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Guías con saldo sin consumir, de más vieja a más nueva. Procesa primero lo más antiguo (FIFO) — la troza parada se degrada.</p>
-        </div>
-        <div className="flex items-center gap-3 text-right">
-          <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Inmovilizado</p>
-            {/* El m³ manda: es el único número completo. El importe va abajo y
-                dice sobre cuánto volumen se calculó, para que nadie lo lea como
-                el valor de todo el patio. */}
-            <p className="font-mono text-sm font-bold text-[var(--text-primary)]">{n2(totM3)} m³</p>
+    <section
+      aria-labelledby={idTitulo}
+      aria-busy={estado === "cargando" || undefined}
+      className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
+    >
+      <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
+        <CardTitle as="h3" id={idTitulo} className="flex items-center gap-2 text-base font-bold">
+          <Clock className="h-4 w-4 shrink-0" aria-hidden /> Antigüedad por guía · m³ del libro (no
+          piezas)
+        </CardTitle>
+        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
+          Guías con saldo sin consumir, de la más vieja a la más nueva. Es el m³ del libro por guía:
+          no cuadra con el patio pieza por pieza de «Patio por permiso», y no se suman.
+        </p>
+        {filas.length > 0 && (
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            <span className="font-bold text-[var(--text-primary)]">Inmovilizado: {m3(totM3)}</span>
             {totValor > 0 && (
-              <p className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-                {money(totValor)} <span className="text-[var(--text-tertiary)]">sobre {n2(m3ConCosto)} m³</span>
-              </p>
+              <>
+                {" · "}
+                <span className="whitespace-nowrap font-bold text-[var(--text-primary)]">
+                  {dinero(totValor)}
+                </span>{" "}
+                sobre los {m3(m3ConCosto)} que tienen costo cargado
+              </>
             )}
-          </div>
-          <button type="button" onClick={() => void load()} className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]" aria-label="Recargar"><RefreshCw className="h-4 w-4" /></button>
-        </div>
+          </p>
+        )}
       </div>
 
-      {enRiesgo > 0 && (
-        <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--data-error-50)] px-4 py-2 text-xs font-medium text-[var(--data-error-700)] dark:bg-[var(--surface-sunken)] dark:text-[var(--data-error-500)]">
-          <AlertCircle className="h-4 w-4 shrink-0" /> {enRiesgo} {enRiesgo === 1 ? "guía lleva" : "guías llevan"} más de {DIAS_RIESGO} días sin procesar — riesgo de degradación.
+      {estado === "cargando" && filas.length === 0 && (
+        <div role="status" aria-label="Cargando la antigüedad por guía" className="space-y-2 p-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-5 animate-pulse rounded bg-[var(--surface-sunken)]" />
+          ))}
         </div>
       )}
 
-      {m3SinCosto > 0.01 && (
-        <div className="border-b border-[var(--rule-soft)] bg-[var(--data-warning-50)] px-4 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--surface-sunken)] dark:text-[var(--data-warning-500)]">
-          <strong>
-            {n2(m3SinCosto)} m³ del patio ({(100 - cobertura).toFixed(0)} %) no tienen costo cargado
-          </strong>{" "}
-          — {guiasSinCosto} {guiasSinCosto === 1 ? "guía" : "guías"} con factura pendiente.
-          {totValor > 0
-            ? " El importe de arriba es un piso: lo que hay parado vale más, no menos."
-            : " Por eso no hay importe: sin costo no se inventa uno."}
-          {riesgoSinCosto > 0 && (
-            <>
-              {" "}
-              Lo más urgente son {n2(m3RiesgoSinCosto)} m³ que ya pasaron los {DIAS_RIESGO} días{" "}
-              <em>y</em> tampoco tienen precio.
-            </>
+      {estado === "error" && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 px-4 py-3 text-sm text-[var(--data-error-ink)]"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          No se pudo leer la antigüedad por guía{error ? `: ${error}` : ""}. Usa «Recargar» arriba.
+        </p>
+      )}
+
+      {estado === "ok" && filas.length === 0 && (
+        <p className="px-4 py-3 text-sm text-[var(--text-secondary)]">
+          {especie
+            ? `Ninguna guía de ${especie} tiene saldo sin consumir en el libro.`
+            : "Ninguna guía tiene saldo sin consumir en el libro."}
+        </p>
+      )}
+
+      {filas.length > 0 && (
+        <>
+          {resumen.varadas.guias > 0 && (
+            <p className="flex items-start gap-2 border-b border-[var(--rule-soft)] bg-[var(--data-error-500)]/10 px-4 py-2 text-sm font-medium text-[var(--data-error-ink)]">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              {resumen.varadas.guias} {resumen.varadas.guias === 1 ? "guía lleva" : "guías llevan"}{" "}
+              60 días o más sin procesar ({m3(resumen.varadas.m3)}): riesgo de degradación.
+            </p>
           )}
-          {/* La pantalla que carga esos costos ya existe (Rentabilidad →
-              Valorizar ingresos). Denunciar el hueco sin decir dónde se tapa
-              obliga a buscarla a mano por 23 vistas del libro. */}
-          {onValorizar && (
+
+          {m3SinCosto > 0.01 && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--rule-soft)] bg-[var(--data-warning-500)]/10 px-4 py-2 text-sm text-[var(--data-warning-ink)]">
+              <p className="min-w-0 flex-1">
+                <strong>
+                  {m3(m3SinCosto)} ({formatNumber(100 - cobertura, 0)} %) no tienen costo cargado
+                </strong>{" "}
+                — {guiasSinCosto} {guiasSinCosto === 1 ? "guía" : "guías"} con factura pendiente.
+                {totValor > 0
+                  ? " El importe de arriba es un piso: lo parado vale más, no menos."
+                  : " Por eso no hay importe: sin costo no se inventa uno."}
+              </p>
+              {onValorizar && (
+                <button
+                  type="button"
+                  onClick={onValorizar}
+                  className="inline-flex min-h-8 shrink-0 items-center rounded-lg border-2 border-current px-3 text-xs font-bold transition-colors hover:bg-[var(--data-warning-500)]/15"
+                >
+                  Cargar costos
+                </button>
+              )}
+            </div>
+          )}
+
+          <AntiguedadTramos tramos={resumen.tramos} totM3={totM3} />
+
+          <div className="border-b border-[var(--rule-soft)] px-4 py-2">
             <button
               type="button"
-              onClick={onValorizar}
-              className="ml-2 inline-flex items-center gap-1 rounded-lg border-2 border-current px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] transition-colors hover:bg-[var(--data-warning-500)]/15"
+              onClick={() => setVerGuias(!verGuias)}
+              aria-expanded={verGuias}
+              aria-controls={idTabla}
+              className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
             >
-              Cargar costos
+              {verGuias
+                ? "Ocultar las guías"
+                : `Ver las ${filas.length} ${filas.length === 1 ? "guía" : "guías"}, de la más vieja a la más nueva`}
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${verGuias ? "rotate-180" : ""}`}
+                aria-hidden
+              />
             </button>
+          </div>
+          {verGuias && (
+            <div id={idTabla}>
+              <AntiguedadGuiasTabla filas={filas} idTitulo={idTitulo} />
+            </div>
           )}
-        </div>
+          {valorParcial && (
+            <p className="px-4 py-2 text-xs text-[var(--text-tertiary)]">
+              * Valor parcial: cubre solo las guías con costo cargado. Los m³ sí están completos.
+            </p>
+          )}
+        </>
       )}
-
-      {/* Los tres tramos, a escala. La tabla de abajo lista guía por guía; esto
-          contesta antes la pregunta que se hace al entrar al patio: cuánto de lo
-          que está parado ya es viejo. Tres categorías no justifican un gráfico
-          con ejes — barras proporcionales con el número al lado alcanzan y se
-          leen igual sin color. */}
-      {totM3 > 0 && (
-        <ul className="space-y-2.5 border-b border-[var(--rule-soft)] px-4 py-3">
-          {tramos.map((t) => {
-            const pct = totM3 > 0 ? (t.m3 / totM3) * 100 : 0;
-            const tono = TONO_TRAMO[t.clave];
-            return (
-              <li key={t.clave}>
-                <div className="flex items-baseline gap-2 text-xs">
-                  <span className={`font-bold ${tono.texto}`}>{t.label}</span>
-                  <span className="text-[var(--text-tertiary)]">
-                    {t.guias} {t.guias === 1 ? "guía" : "guías"}
-                  </span>
-                  <span className="ml-auto font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                    {n2(t.m3)} m³
-                  </span>
-                  <span className="w-10 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
-                    {pct.toFixed(0)} %
-                  </span>
-                  <span className="w-28 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                    {t.valor != null ? `${money(t.valor)}${t.valorParcial ? "*" : ""}` : "sin costo cargado"}
-                  </span>
-                </div>
-                <div className="mt-1 h-2 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-                  <div
-                    className={`h-full rounded-full ${tono.barra}`}
-                    style={{ width: `${Math.max(pct > 0 ? 2 : 0, pct)}%` }}
-                  />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
-      <DataTable className="w-full text-sm">
-        <thead className="bg-[var(--surface-sunken)] text-left">
-          <tr>
-            <Th>Especie</Th><Th>GTF</Th>
-            <Th className="text-right">Sin consumir (m³)</Th>
-            <Th className="text-right">Parada</Th>
-            <Th className="text-right">Valor inmovilizado</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {filas.map((f) => {
-            const b = badge(f.dias);
-            return (
-              <tr key={f.id} className="border-t border-[var(--rule-soft)]">
-                <Td>
-                  <span className="inline-flex items-center gap-2 font-medium text-[var(--text-primary)]">{f.species ?? "—"}{f.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}</span>
-                </Td>
-                <Td className="font-mono text-xs text-[var(--text-secondary)]">{f.code ?? "—"}</Td>
-                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(f.disponible)}</Td>
-                <Td className="text-right"><span className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${b.cls}`}>{b.label}</span></Td>
-                <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{f.valor != null ? money(f.valor, f.moneda) : <span className="text-xs text-[var(--text-tertiary)]">sin costo cargado</span>}</Td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </DataTable>
-      {valorParcial && <p className="px-4 py-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">* Valor parcial: cubre sólo las guías con costo cargado. Los m³ sí están completos.</p>}
-    </div>
+    </section>
   );
-}
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>{children}</th>;
-}
-function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
 }

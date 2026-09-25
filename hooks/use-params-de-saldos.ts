@@ -21,6 +21,14 @@ import { useCallback, useEffect, useState } from "react";
 import type { FiltrosCapacidad } from "@/lib/forestal/capacidad-de-planta";
 
 export const PARAM_SECCION = "seccion";
+/**
+ * La especie de los indicadores (ADR-400). Parámetro PROPIO y no `especie`:
+ * aquella es el recorte de la capacidad —multi, del cliente— y ésta viaja al
+ * servidor de a una. Eran dos filtros con el mismo nombre y distinto alcance;
+ * compartir la clave de la URL haría que uno pise al otro. Antes ni siquiera
+ * estaba en la URL y se perdía al recargar.
+ */
+export const PARAM_ESPECIE_KPI = "especieKpi";
 export const PARAMS_DE_FILTRO = ["permiso", "especie", "guia"] as const;
 
 /**
@@ -36,7 +44,7 @@ export const SEP_FILTRO = ",";
 export function leerParams<S extends string>(
   search: string,
   secciones: readonly S[],
-): { seccion: S | null; filtros: FiltrosCapacidad } {
+): { seccion: S | null; filtros: FiltrosCapacidad; especieKpi: string } {
   const p = new URLSearchParams(search);
   const s = p.get(PARAM_SECCION);
   const filtros: FiltrosCapacidad = {};
@@ -53,12 +61,26 @@ export function leerParams<S extends string>(
     ];
     if (valores.length > 0) filtros[k] = valores;
   }
-  return { seccion: s && (secciones as readonly string[]).includes(s) ? (s as S) : null, filtros };
+  return {
+    seccion: s && (secciones as readonly string[]).includes(s) ? (s as S) : null,
+    filtros,
+    especieKpi: (p.get(PARAM_ESPECIE_KPI) ?? "").trim(),
+  };
 }
 
 /** Escribe sobre una URL lo que hay; borra lo que está vacío. Puro. */
-export function escribirParams(url: URL, seccion: string, filtros: FiltrosCapacidad): URL {
+export function escribirParams(
+  url: URL,
+  seccion: string,
+  filtros: FiltrosCapacidad,
+  especieKpi?: string,
+): URL {
   url.searchParams.set(PARAM_SECCION, seccion);
+  /* `undefined` = quien llama no maneja la especie de los KPIs: no se toca. */
+  if (especieKpi !== undefined) {
+    if (especieKpi.trim()) url.searchParams.set(PARAM_ESPECIE_KPI, especieKpi.trim());
+    else url.searchParams.delete(PARAM_ESPECIE_KPI);
+  }
   for (const k of PARAMS_DE_FILTRO) {
     const valores = (filtros[k] ?? []).map((v) => v.trim()).filter(Boolean);
     if (valores.length > 0) url.searchParams.set(k, valores.join(SEP_FILTRO));
@@ -68,17 +90,26 @@ export function escribirParams(url: URL, seccion: string, filtros: FiltrosCapaci
 }
 
 export function useParamsDeSaldos<S extends string>(secciones: readonly S[], porDefecto: S) {
-  const [estado, setEstado] = useState<{ seccion: S; filtros: FiltrosCapacidad }>(() => {
-    if (typeof window === "undefined") return { seccion: porDefecto, filtros: {} };
-    const { seccion, filtros } = leerParams(window.location.search, secciones);
-    return { seccion: seccion ?? porDefecto, filtros };
+  const [estado, setEstado] = useState<{
+    seccion: S;
+    filtros: FiltrosCapacidad;
+    especieKpi: string;
+  }>(() => {
+    if (typeof window === "undefined") return { seccion: porDefecto, filtros: {}, especieKpi: "" };
+    const { seccion, filtros, especieKpi } = leerParams(window.location.search, secciones);
+    return { seccion: seccion ?? porDefecto, filtros, especieKpi };
   });
 
   /* Cada cambio va a la URL. Se escribe también al montar, para que el link
      sea copiable aunque la sección venga del default. */
   useEffect(() => {
     try {
-      const url = escribirParams(new URL(window.location.href), estado.seccion, estado.filtros);
+      const url = escribirParams(
+        new URL(window.location.href),
+        estado.seccion,
+        estado.filtros,
+        estado.especieKpi,
+      );
       if (url.toString() !== window.location.href)
         window.history.replaceState(null, "", url.toString());
     } catch {
@@ -95,5 +126,17 @@ export function useParamsDeSaldos<S extends string>(secciones: readonly S[], por
     [],
   );
 
-  return { seccion: estado.seccion, filtros: estado.filtros, setSeccion, setFiltros };
+  const setEspecieKpi = useCallback(
+    (v: string) => setEstado((e) => (e.especieKpi === v ? e : { ...e, especieKpi: v })),
+    [],
+  );
+
+  return {
+    seccion: estado.seccion,
+    filtros: estado.filtros,
+    especieKpi: estado.especieKpi,
+    setSeccion,
+    setFiltros,
+    setEspecieKpi,
+  };
 }

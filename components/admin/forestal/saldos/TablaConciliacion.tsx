@@ -72,9 +72,13 @@ export default function TablaConciliacion({
   const negativas = filas.filter((f) => f.negativa);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+        <CardTitle
+          as="h3"
+          id="saldos-conciliacion-titulo"
+          className="text-base font-bold text-[var(--text-primary)]"
+        >
           Conciliación del período · apertura → cierre
         </CardTitle>
         <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
@@ -82,7 +86,11 @@ export default function TablaConciliacion({
           del período = existencia final. Así el saldo cuadra con el stock heredado.
         </p>
       </div>
-      <DataTable className="w-full text-sm">
+      <DataTable
+        className="w-full text-sm"
+        wrapperClassName="rounded-none border-0"
+        aria-labelledby="saldos-conciliacion-titulo"
+      >
         <thead className="bg-[var(--surface-sunken)] text-left">
           <tr>
             <Th>Especie</Th>
@@ -91,7 +99,11 @@ export default function TablaConciliacion({
             <Th className="text-right">− Consumido</Th>
             {hayDirecto && <Th className="text-right">− Salió sin aserrar</Th>}
             <Th className="text-right bg-[var(--surface-raised)]">= Final (m³)</Th>
-            {onKardex && <Th className="text-right">&nbsp;</Th>}
+            {onKardex && (
+              <Th className="text-right">
+                <span className="sr-only">Acciones</span>
+              </Th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -109,7 +121,7 @@ export default function TablaConciliacion({
               <td className="px-4 py-2 text-[var(--text-primary)]">
                 {s.especie}
                 {s.cites && (
-                  <span className="ml-2 rounded-full bg-[var(--data-info-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
+                  <span className="ml-2 rounded-full border border-[var(--data-info-500)] px-2 py-0.5 text-xs font-bold text-[var(--text-primary)]">
                     CITES
                   </span>
                 )}
@@ -117,7 +129,7 @@ export default function TablaConciliacion({
               <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                 {n2(s.apertura)}
               </td>
-              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--data-success-600)] dark:text-[var(--data-success-500)]">
+              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--data-success-ink)]">
                 {n2(s.ingreso)}
               </td>
               <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
@@ -166,7 +178,7 @@ export default function TablaConciliacion({
             <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
               {n2(total.apertura)}
             </td>
-            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--data-success-600)] dark:text-[var(--data-success-500)]">
+            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--data-success-ink)]">
               {n2(total.ingreso)}
             </td>
             <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
@@ -192,7 +204,7 @@ export default function TablaConciliacion({
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] ${
               cuadra
-                ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-ink)]"
                 : "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
             }`}
           >
@@ -215,7 +227,7 @@ export default function TablaConciliacion({
         </p>
 
         {negativas.length > 0 && (
-          <p className="mt-2 text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          <p className="mt-2 text-xs text-[var(--data-error-ink)]">
             <strong>
               {negativas.length === 1
                 ? `${negativas[0].especie} cierra en negativo`

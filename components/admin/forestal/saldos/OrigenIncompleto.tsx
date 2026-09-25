@@ -62,7 +62,7 @@ export default function OrigenIncompleto({
     <div className="rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--surface-raised)] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="mb-1 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          <p className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-ink)]">
             <ShieldAlert className="h-3.5 w-3.5" aria-hidden />
             Origen incompleto
           </p>
@@ -113,10 +113,10 @@ export default function OrigenIncompleto({
             <button
               type="button"
               onClick={() => onAbrirCorrida(c)}
-              className="inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-primary"
+              className="inline-flex min-h-8 items-center gap-0.5 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
             >
               {c.motivo === "sin_materia_prima" ? "Atar materia prima" : "Abrir corrida"}
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight className="h-4 w-4" aria-hidden />
             </button>
             {/* La otra salida honesta cuando no hay qué atar: declarar que la
                 madera es anterior al libro (ADR-394). Sólo para corridas sin
@@ -133,9 +133,7 @@ export default function OrigenIncompleto({
             {/* El porqué y el remedio, en la misma fila: un aviso sin salida es
                 un aviso que se aprende a ignorar. */}
             <span className="w-full text-xs text-[var(--text-tertiary)]">
-              <strong className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                {MOTIVO_LABEL[c.motivo]}.
-              </strong>{" "}
+              <strong className="text-[var(--data-warning-ink)]">{MOTIVO_LABEL[c.motivo]}.</strong>{" "}
               {MOTIVO_REMEDIO[c.motivo]}
               {c.motivo === "ingreso_sin_titulo" &&
                 c.guias.length > 0 &&
@@ -207,7 +205,8 @@ function ListaApertura({
                 <button
                   type="button"
                   onClick={() => onDeclararApertura(c, true)}
-                  className="ml-2 font-bold underline underline-offset-2"
+                  aria-label={`Quitar la existencia de apertura de la corrida ${c.lote ?? ""}`.trim()}
+                  className="ml-2 inline-flex min-h-6 items-center rounded px-1.5 font-bold underline underline-offset-2 hover:bg-[var(--surface-sunken)]"
                 >
                   quitar
                 </button>

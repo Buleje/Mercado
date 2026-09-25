@@ -50,8 +50,7 @@ const m3 = (v: number | string) => `${Number(v).toFixed(2)} m³`;
 function etiqueta(iso: string, paso: CurvaSaldoData["paso"]): string {
   const d = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return iso;
-  if (paso === "mes")
-    return formatMonthYear(d, { soloFecha: true });
+  if (paso === "mes") return formatMonthYear(d, { soloFecha: true });
   const dia = formatDateShort(d, { soloFecha: true });
   return paso === "semana" ? `sem ${dia}` : dia;
 }
@@ -110,9 +109,9 @@ export default function CurvaDeSaldo({
   const bajando = delta < -0.0001;
   const Flecha = subiendo ? TrendingUp : bajando ? TrendingDown : Minus;
   const tonoDelta = subiendo
-    ? "text-[var(--data-success-600)]"
+    ? "text-[var(--data-success-ink)]"
     : bajando
-      ? "text-[var(--data-warning-600)]"
+      ? "text-[var(--data-warning-ink)]"
       : "text-[var(--text-secondary)]";
 
   // El valle sólo es noticia si tocó el rojo; un mínimo positivo es sólo el día
@@ -176,7 +175,7 @@ export default function CurvaDeSaldo({
       </dl>
 
       {valleEnRojo && (
-        <p className="mt-3 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]">
+        <p className="mt-3 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-ink)] dark:bg-transparent">
           El saldo estuvo bajo cero durante el período: hubo consumo declarado antes de que
           ingresara la madera que lo respalda. Revisa las fechas de las corridas contra las de sus
           guías.
@@ -193,7 +192,7 @@ export default function CurvaDeSaldo({
             <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Más entró
             </span>{" "}
-            <span className="font-mono font-bold tabular-nums text-[var(--data-success-600)] dark:text-[var(--data-success-500)]">
+            <span className="font-mono font-bold tabular-nums text-[var(--data-success-ink)]">
               {n2(mayorIngreso.ingreso)} m³
             </span>{" "}
             el {etiqueta(mayorIngreso.fecha, curva.paso)}
@@ -204,7 +203,7 @@ export default function CurvaDeSaldo({
             <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Más se aserró
             </span>{" "}
-            <span className="font-mono font-bold tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            <span className="font-mono font-bold tabular-nums text-[var(--data-warning-ink)]">
               {n2(mayorConsumo.consumo)} m³
             </span>{" "}
             el {etiqueta(mayorConsumo.fecha, curva.paso)}
@@ -318,7 +317,7 @@ function Dato({
         {icono}
         {valor}
       </dd>
-      <p className="text-xs text-[var(--text-tertiary)]">{pie}</p>
+      <dd className="text-xs text-[var(--text-tertiary)]">{pie}</dd>
     </div>
   );
 }

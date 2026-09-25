@@ -42,6 +42,18 @@ import {
 import FiltroMulti from "./FiltroMulti";
 import { formatNumber } from "@/lib/format";
 
+/**
+ * Qué se cuenta detrás de cada fuente. «Detalles (12)» no decía 12 qué: en el
+ * patio son trozas, en los lotes son lotes y en el depósito son corridas.
+ */
+const UNIDAD_FILAS: Record<FuenteDeCapacidad["clave"], [string, string]> = {
+  porRecepcionar: ["troza", "trozas"],
+  patio: ["troza", "trozas"],
+  apartado: ["lote", "lotes"],
+  lotes: ["lote", "lotes"],
+  productos: ["corrida", "corridas"],
+};
+
 /** Los tres recortes, con el nombre de su lista de opciones. */
 const FILTROS: {
   clave: ClaveFiltro;
@@ -78,7 +90,7 @@ export default function BalanceDeCapacidad({
 
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-      <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+      <p className="mb-1 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         Capacidad de la planta
       </p>
       <CardTitle
@@ -87,7 +99,7 @@ export default function BalanceDeCapacidad({
       >
         Cuánto producto puede salir de todo lo que hay hoy
       </CardTitle>
-      <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+      <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
         Suma las cuatro fuentes de la planta. La rolliza se convierte al{" "}
         {Math.round(RENDIMIENTO_META * 100)} %, que es el <strong>techo</strong> del rendimiento —
         el total es un máximo, no una promesa.
@@ -109,7 +121,10 @@ export default function BalanceDeCapacidad({
               opciones={opciones[f.lista]}
               todos={f.todos}
               onAlternar={(v) =>
-                onFiltros({ ...filtros, [f.clave]: alternarEnRecorte(filtros[f.clave], v) }, f.clave)
+                onFiltros(
+                  { ...filtros, [f.clave]: alternarEnRecorte(filtros[f.clave], v) },
+                  f.clave,
+                )
               }
               onLimpiar={() => onFiltros({ ...filtros, [f.clave]: undefined }, f.clave)}
             />
@@ -118,7 +133,7 @@ export default function BalanceDeCapacidad({
             <button
               type="button"
               onClick={() => onFiltros({})}
-              className="text-xs font-bold text-[var(--accent-dark)] underline underline-offset-2 dark:text-[var(--accent)]"
+              className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-bold text-[var(--accent-ink)] underline underline-offset-2 hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
             >
               Quitar filtros
             </button>
@@ -129,7 +144,7 @@ export default function BalanceDeCapacidad({
             <button
               type="button"
               onClick={onLlevar}
-              className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 dark:text-[var(--accent)]"
+              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 dark:text-[var(--accent)]"
             >
               <Ruler className="h-3.5 w-3.5" aria-hidden />
               Llevar al cubicador
@@ -145,40 +160,42 @@ export default function BalanceDeCapacidad({
             className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-[var(--rule-soft)] pb-2 last:border-0"
           >
             <span className="w-52 shrink-0 font-bold text-[var(--text-primary)]">{f.label}</span>
-            <span className="font-mono tabular-nums text-[var(--text-secondary)]">
+            <span className="whitespace-nowrap tabular-nums text-[var(--text-secondary)]">
               {fmtM3(f.m3)} m³
             </span>
             {f.convertido && (
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <span className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 → al {Math.round(RENDIMIENTO_META * 100)} %
               </span>
             )}
-            <span className="ml-auto font-mono font-bold tabular-nums text-[var(--text-primary)]">
+            <span className="ml-auto whitespace-nowrap font-bold tabular-nums text-[var(--text-primary)]">
               {fmtM3(f.enProducto)} m³
             </span>
             {/* El pie tablar es la unidad con la que se vende y se cotiza; el m³
                 es la del libro. Las dos juntas evitan la calculadora al lado. */}
-            <span className="w-28 shrink-0 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+            <span className="w-24 shrink-0 whitespace-nowrap text-right tabular-nums text-[var(--text-tertiary)]">
               {formatNumber(pieTablarDe(f.enProducto))} pt
             </span>
             {/* El botón sólo aparece si hay filas que abrir: un «Ver detalle»
                 que abre una tabla vacía enseña a no tocarlo. */}
-            <span className="w-24 shrink-0 text-right">
+            <span className="w-28 shrink-0 text-right">
               {onDetalle && f.filas > 0 ? (
                 <button
                   type="button"
                   onClick={() => onDetalle(f)}
-                  className="inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-primary"
+                  aria-label={`Ver ${f.filas} ${f.filas === 1 ? UNIDAD_FILAS[f.clave][0] : UNIDAD_FILAS[f.clave][1]} de ${f.label}`}
+                  className="inline-flex min-h-8 items-center gap-0.5 whitespace-nowrap rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
                 >
-                  Detalles ({f.filas})
-                  <ChevronRight className="h-3.5 w-3.5" />
+                  Ver {f.filas}{" "}
+                  {f.filas === 1 ? UNIDAD_FILAS[f.clave][0] : UNIDAD_FILAS[f.clave][1]}
+                  <ChevronRight className="h-4 w-4" aria-hidden />
                 </button>
               ) : (
-                <span className="text-xs text-[var(--text-tertiary)]">—</span>
+                <span className="text-sm text-[var(--text-tertiary)]">—</span>
               )}
             </span>
             {(f.noAtribuible ?? f.detalle) && (
-              <span className="w-full text-xs text-[var(--text-tertiary)]">
+              <span className="w-full text-sm text-[var(--text-tertiary)]">
                 {f.noAtribuible ?? f.detalle}
               </span>
             )}

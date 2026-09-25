@@ -23,7 +23,13 @@ import {
 } from "@buleje/design-system/icons";
 import CtpKpi, { DesgloseSimple } from "./CtpKpi";
 import { CtpKpisPlegables } from "./ctp-shared";
-import { DIAS_PATIO_ANEJO, type ResumenPatio } from "@/lib/forestal/patio-resumen";
+import {
+  DIAS_PATIO_ANEJO,
+  ETIQUETA_TRAMO_DIAS,
+  SEVERIDAD_TRAMO_DIAS,
+  tramoDeDias,
+  type ResumenPatio,
+} from "@/lib/forestal/patio-resumen";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { pieTablarAserrableDe } from "@/lib/forestal/cubicacion";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
@@ -35,23 +41,25 @@ export default function CtpPatioKpis({
   resumen,
   filtros,
   filtrosActivos = 0,
+  trabajoActivo = false,
+  cargando = false,
 }: {
   resumen: ResumenPatio;
   /**
-   * La fila que gobierna estas cifras (ADR-400): los filtros del patio
-   —especie, permiso, proveedor— pegados a los números que cambian. El resumen
-   * ya se calcula sobre lo filtrado; lo que faltaba era poder filtrarlo desde
-   * acá y no sólo desde la cabecera de la tabla.
+   * Lo que va DENTRO del panel, arriba de las tarjetas: desde ADR-431 sólo la
+   * nota de qué recortó las cifras. Los controles viven pegados a la tabla.
    */
   filtros?: React.ReactNode;
+  /** TODOS los campos puestos, el texto incluido (se dice en el botón cerrado). */
   filtrosActivos?: number;
-  /** Cuántas piezas tiene el patio sin filtrar. Ya no se usa acá —el resumen de
-   *  especies que la necesitaba se sacó (Brandon, 2026-09-01): agrupar la
-   *  tabla por especie/guía/permiso dice lo mismo, sin duplicar la cuenta. */
-  totalSinFiltrar?: number;
+  /** Hay un lote elegido: el panel se repliega y le devuelve la pantalla a la tabla. */
+  trabajoActivo?: boolean;
+  /** Primera lectura del patio: no afirmar «sin madera» antes de saberlo. */
+  cargando?: boolean;
 }) {
   const r = resumen;
   const lider = r.porEspecie[0] ?? null;
+  const tramoMasVieja = tramoDeDias(r.esperaMaxDias);
 
   /**
    * De qué está hecha la pila, para abrirlo desde la tarjeta.
@@ -77,22 +85,29 @@ export default function CtpPatioKpis({
       claveMemoria="consumos-patio"
       filtros={filtros}
       filtrosActivos={filtrosActivos}
+      trabajoActivo={trabajoActivo}
       resumen={
-        r.piezas === 0
-          ? "Sin madera esperando"
-          : `${nf(r.piezas)} trozas · ${fmtM3(r.volumenM3)} m³ · ${nf(r.libres)} libres` +
-            (r.anejas > 0 ? ` · ${nf(r.anejas)} añejas` : "")
+        cargando && r.piezas === 0
+          ? "Leyendo el patio…"
+          : r.enPatioPiezas === 0
+            ? "Sin madera esperando"
+            : `${nf(r.enPatioPiezas)} trozas · ${fmtM3(r.enPatioM3)} m³ · ${nf(r.libres)} libres` +
+              (r.anejas > 0 ? ` · ${nf(r.anejas)} añejas (${DIAS_PATIO_ANEJO} días o más)` : "")
       }
       tarjetas={[
+        /* «En el patio» = libres + apartadas en lote, guía recibida y sin
+           bloqueo (ADR-431): el MISMO número que el contador de la pestaña y la
+           fila de «Por permiso». Las bloqueadas (madre retrozada, descarte,
+           despachada) se ven en la tabla pero no son madera para la sierra. */
         <CtpKpi
           key="piezas"
           label="Trozas en el patio"
-          value={nf(r.piezas)}
+          value={nf(r.enPatioPiezas)}
           subValue={
-            r.piezas === 0
+            r.enPatioPiezas === 0 && r.bloqueadas === 0
               ? "Sin madera esperando"
               : `${nf(r.libres)} libres · ${nf(r.apartadas)} en lotes` +
-                (r.bloqueadas > 0 ? ` · ${nf(r.bloqueadas)} bloqueadas` : "")
+                (r.bloqueadas > 0 ? ` · +${nf(r.bloqueadas)} bloqueadas en la tabla (no cuentan)` : "")
           }
           icon={PackageOpen}
           desglose={reparto.length > 0 ? <DesgloseSimple filas={reparto} /> : undefined}
@@ -103,12 +118,12 @@ export default function CtpPatioKpis({
         <CtpKpi
           key="volumen"
           label="Volumen en patio (m³)"
-          value={fmtM3(r.volumenM3)}
-          subValue={`≈${nf(pieTablarAserrableDe(r.volumenM3, RENDIMIENTO_META))} pt aserrables (56%) · ${fmtM3(r.volumenLibreM3)} libres hoy`}
+          value={fmtM3(r.enPatioM3)}
+          subValue={`≈${nf(pieTablarAserrableDe(r.enPatioM3, RENDIMIENTO_META))} pt aserrables (derivado al 56 %) · ${fmtM3(r.volumenLibreM3)} libres hoy`}
           icon={TreePine}
           desglose={reparto.length > 0 ? <DesgloseSimple filas={reparto} /> : undefined}
           desgloseLabel="Cuánto hay de cada una"
-          emphasis="success"
+          emphasis="neutral"
         />,
         <CtpKpi
           key="especies"
@@ -123,6 +138,8 @@ export default function CtpPatioKpis({
         />,
         /* La pregunta que nadie hace hasta que la madera se manchó: ¿hace cuánto
            que está parada? El promedio escondería justo la pieza vieja. */
+        /* El tramo sale de la escala única (0-14 / 15-29 / 30-59 / 60+) y se
+           dice en texto, no sólo en color. */
         <CtpKpi
           key="espera"
           label="Espera en el patio"
@@ -130,12 +147,13 @@ export default function CtpPatioKpis({
           subValue={
             r.esperaMaxDias == null
               ? "Sin fecha de recepción"
-              : r.anejas > 0
-                ? `${nf(r.anejas)} pza · ${DIAS_PATIO_ANEJO} días o más`
-                : `Ninguna pasa los ${DIAS_PATIO_ANEJO} días`
+              : `La más vieja: ${ETIQUETA_TRAMO_DIAS[tramoMasVieja ?? "hasta15"]} (${SEVERIDAD_TRAMO_DIAS[tramoMasVieja ?? "hasta15"]})` +
+                (r.anejas > 0 ? ` · ${nf(r.anejas)} pza de ${DIAS_PATIO_ANEJO} días o más` : "")
           }
           icon={Clock}
-          emphasis={r.anejas > 0 ? "warning" : "neutral"}
+          /* Neutral a propósito: el ámbar del valor del StatCard da 2,03:1 sobre
+             blanco (axe, 24-09). La severidad va escrita («añeja», «varada»). */
+          emphasis="neutral"
         />,
         /**
          * De cuántos papeles cuelga esta pila.
@@ -155,7 +173,7 @@ export default function CtpPatioKpis({
               : `${nf(r.permisos)} título${r.permisos === 1 ? "" : "s"} habilitante${r.permisos === 1 ? "" : "s"} · ${nf(r.proveedores)} proveedor${r.proveedores === 1 ? "" : "es"}`
           }
           icon={FileStack}
-          emphasis={r.guias === 0 && r.piezas > 0 ? "warning" : "neutral"}
+          emphasis="neutral"
         />,
         /**
          * ¿Es pila de palo grueso o de menudo? Cambia el rendimiento esperado y

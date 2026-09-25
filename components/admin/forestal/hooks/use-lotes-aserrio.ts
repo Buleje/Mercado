@@ -12,44 +12,22 @@
  * Tornillo»). Quien llama decide dónde mostrarlo.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { conContratoId } from "@/lib/forestal/contrato-filtro";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
-import type { SniffsRefLote } from "@/lib/forestal/sniffs-produccion-parse";
+import type {
+  CambiosLote,
+  EstadoLotesAserrio,
+  ResultadoGuardado,
+  TrozaRechazada,
+} from "./use-lotes-aserrio-tipos";
+
+export type { CambiosLote, EstadoLotesAserrio, ResultadoGuardado, TrozaRechazada } from "./use-lotes-aserrio-tipos";
 
 const API = "/api/admin/forestal/lotes-aserrio";
-
-/** Piezas que no entraron, con el motivo: «guardé 28 de 30» a secas obliga a contar a mano. */
-export interface TrozaRechazada {
-  id: string;
-  codigo: string | null;
-  motivo: string;
-}
-
-export interface ResultadoGuardado {
-  loteId: string;
-  code: string | null;
-  agregadas: number;
-  rechazadas: TrozaRechazada[];
-}
-
-/**
- * Lo que se puede corregir de un lote ya creado (Brandon, 2026-08-31): antes
- * sólo la nota. `undefined` = no tocar ese campo.
- */
-export interface CambiosLote {
-  code?: string | null;
-  speciesCommon?: string;
-  speciesScientific?: string | null;
-  ordenProduccion?: string | null;
-  tipoProductoConsumir?: string | null;
-  /** `AAAA-MM-DD` o `null` para borrarla. */
-  inicioProceso?: string | null;
-  finProceso?: string | null;
-  notes?: string | null;
-}
 
 /** Toda escritura tira el caché del módulo: si no, la próxima lectura miente. */
 async function mutar<T>(body: unknown, method: "POST" | "PATCH"): Promise<T> {
@@ -65,141 +43,36 @@ async function mutar<T>(body: unknown, method: "POST" | "PATCH"): Promise<T> {
   return json as T;
 }
 
-export interface EstadoLotesAserrio {
-  lotes: LoteAserrio[];
-  /** El patio entero, incluidas las bloqueadas: el picker muestra el porqué. */
-  trozas: TrozaConsumible[];
-  /**
-   * El patio NO entró entero en la lectura (pasa el tope del endpoint).
-   * Quien dibuje una lista de piezas tiene que decirlo: mostrar de menos en
-   * silencio hace que el operador crea que su madera desapareció.
-   */
-  patioTruncado: { hay: number; leidas: number } | null;
-  cargando: boolean;
-  error: string | null;
-  recargar: () => Promise<void>;
-  crearConTrozas: (input: {
-    speciesCommon: string;
-    speciesScientific?: string | null;
-    notes?: string | null;
-    /** Programación del lote (ADR-342): los campos del formulario oficial. */
-    ordenProduccion?: string | null;
-    tipoProductoConsumir?: string | null;
-    inicioProceso?: string | null;
-    finProceso?: string | null;
-    /** Código a mano; vacío = correlativo automático `LA-2026-00N`. */
-    code?: string | null;
-    /** Vacío = el lote se declara y se carga después, en Consumos. */
-    trozaIds: string[];
-  }) => Promise<ResultadoGuardado>;
-  agregarTrozas: (loteId: string, trozaIds: string[]) => Promise<ResultadoGuardado>;
-  /**
-   * Declara un lote como INVENTARIO (Brandon, 2026-08-31): entra y sale en el
-   * mismo acto, sin trozas reales que apartar. El volumen consumido y los
-   * paquetes producidos se declaran juntos; el tope del 56 % se valida en el
-   * servidor con la misma puerta que el resto del libro.
-   */
-  crearInventario: (input: {
-    speciesCommon: string;
-    speciesScientific?: string | null;
-    volumenConsumidoM3: number;
-    fecha?: string;
-    finProceso?: string | null;
-    /** Código a mano; vacío = correlativo automático `LA-2026-00N`. */
-    code?: string | null;
-    notes?: string | null;
-    /** Vacío = programación (ADR-398): consumo declarado, producción pendiente. */
-    paquetes: {
-      codigo: string;
-      productType?: string | null;
-      presentacion?: string | null;
-      cantidad: number;
-      volumenM3: number;
-      espesorCm?: number | null;
-      anchoCm?: number | null;
-      largoM?: number | null;
-      observations?: string | null;
-    }[];
-    /** Lo que el SNIFFS declaró del lote, para cotejar (ADR-398). */
-    sniffs?: SniffsRefLote | null;
-  }) => Promise<{ lote: { id: string; code: string }; corrida: { id: string; lineNo: number } }>;
-  /**
-   * Consumir en el patio (ADR-340): las piezas entran al lote y a la sierra con
-   * la fecha dada, y se abre la corrida que declarará la producción.
-   */
-  consumirEnPatio: (input: {
-    loteId: string;
-    trozaIds: string[];
-    fecha?: string;
-    /** Observación del consumo — va al casillero (11) del libro. */
-    observaciones?: string | null;
-  }) => Promise<{
-    corrida: { id: string; lineNo: number };
-    piezas: number;
-    volumenM3: number;
-    rechazadas: TrozaRechazada[];
-  }>;
-  /**
-   * Sumar piezas a una corrida que todavía NO declaró (ADR-364): el turno que
-   * entra en tandas es una sola corrida. Sobre una ya declarada el servidor
-   * responde 422 — cambiarle el denominador del rendimiento a un asiento cerrado
-   * es lo que el ADR prohíbe.
-   */
-  sumarACorrida: (input: {
-    loteId: string;
-    corridaId: string;
-    trozaIds: string[];
-    fecha?: string;
-  }) => Promise<{ piezas: number; volumenM3: number; volumenTotalM3: number; loteCerrado: boolean }>;
-  /**
-   * El reverso (ADR-364): piezas mal tildadas que salen de una corrida abierta.
-   * No las puede sacar todas — una corrida sin materia prima se anula, no se
-   * vacía.
-   */
-  quitarDeCorrida: (input: { corridaId: string; trozaIds: string[] }) => Promise<{
-    piezas: number;
-    volumenM3: number;
-    volumenTotalM3: number;
-    lotesReabiertos: string[];
-  }>;
-  /**
-   * Cerrar un lote parcial que no va a terminar de aserrarse: su madera libre
-   * vuelve al patio y deja de figurar como trabajo pendiente. Motivo obligatorio.
-   */
-  cerrarLote: (input: { loteId: string; motivo: string }) => Promise<{
-    code: string;
-    liberadas: number;
-    volumenM3: number;
-    teniaCorridas: boolean;
-  }>;
-  /**
-   * Vuelve a abrir un lote ya ASERRADO para seguirle cargando madera
-   * (2026-09-02). Las piezas que ya entraron a una corrida no se tocan: siguen
-   * atadas a ella. Un lote CERRADO no se reabre — el servidor lo rechaza.
-   */
-  reabrirLote: (loteId: string) => Promise<{ code: string; piezasConsumidas: number }>;
-  quitarTroza: (loteId: string, trozaId: string) => Promise<void>;
-  /** Código, especie, programación y nota — lo que se puede corregir de un lote ya creado. */
-  editarLote: (loteId: string, cambios: CambiosLote) => Promise<void>;
-  deshacer: (loteId: string) => Promise<void>;
-  /**
-   * DESHACER un lote consumido cuya corrida sigue viva (Brandon, 2026-08-31):
-   * anula la corrida (con motivo) y suelta el lote, en un solo paso desde
-   * Lotes. Sin `forzar`, falla si la corrida ya tiene despacho o reproceso
-   * registrado — con `forzar: true` (Brandon, 2026-09-01: "sin excepción")
-   * anula igual y ese despacho/reproceso queda sin corrida de origen.
-   */
-  deshacerForzado: (loteId: string, motivo: string, forzar?: boolean) => Promise<{ code: string; corridaAnulada: boolean }>;
+/** La URL del patio, con `?contratoId=` sólo si viene (el filtro lo hace el servidor). */
+export function urlDelPatio(contratoId: string | null | undefined): string {
+  const qs = conContratoId(new URLSearchParams(), contratoId).toString();
+  return `/api/admin/forestal/trozas/patio${qs ? `?${qs}` : ""}`;
 }
 
-export function useLotesAserrio(): EstadoLotesAserrio {
+/**
+ * @param opts.contratoId «Solo este permiso» (ADR-431): el patio se pide ya
+ *   acotado a ese contrato. Opt-in: los otros cuatro consumidores (Lotes,
+ *   Producción, Historia del lote y el reparto) llaman sin argumentos y siguen
+ *   pidiendo la misma URL de siempre.
+ */
+export function useLotesAserrio(opts: { contratoId?: string | null } = {}): EstadoLotesAserrio {
+  const contratoId = opts.contratoId ?? null;
   const [lotes, setLotes] = useState<LoteAserrio[]>([]);
   const [trozas, setTrozas] = useState<TrozaConsumible[]>([]);
   const [patioTruncado, setPatioTruncado] = useState<{ hay: number; leidas: number } | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * El número del último pedido. Al prender «Solo este permiso» salen dos: el
+   * del patio entero (grande, lento) y el acotado (chico, rápido). Si el lento
+   * llegara último pisaría al acotado y la pantalla mostraría toda la planta con
+   * el interruptor diciendo «solo este permiso» — la carga vieja que pisa la
+   * vigente. Sólo escribe el pedido que sigue siendo el último.
+   */
+  const pedidoRef = useRef(0);
 
   const recargar = useCallback(async () => {
+    const pedido = ++pedidoRef.current;
     setCargando(true);
     try {
       /* Deduplicado (ADR-347): la pestaña monta este hook desde dos lugares y
@@ -207,9 +80,10 @@ export function useLotesAserrio(): EstadoLotesAserrio {
       const [rl, rt] = await Promise.all([
         ctpGet<{ lotes?: LoteAserrio[] }>(`${API}?limite=500`),
         ctpGet<{ trozas?: TrozaConsumible[]; total?: number; devueltas?: number; truncado?: boolean }>(
-          "/api/admin/forestal/trozas/patio",
+          urlDelPatio(contratoId),
         ),
       ]);
+      if (pedido !== pedidoRef.current) return;
       setLotes(rl.lotes ?? []);
       setTrozas(rt.trozas ?? []);
       setPatioTruncado(
@@ -217,11 +91,12 @@ export function useLotesAserrio(): EstadoLotesAserrio {
       );
       setError(null);
     } catch (e) {
+      if (pedido !== pedidoRef.current) return;
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setCargando(false);
+      if (pedido === pedidoRef.current) setCargando(false);
     }
-  }, []);
+  }, [contratoId]);
 
   useEffect(() => {
     void recargar();
