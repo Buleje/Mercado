@@ -1,0 +1,470 @@
+import "server-only";
+import { prisma } from "@/lib/prisma";
+import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
+import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { getOrSet, invalidate, invalidateByPrefix } from "@/lib/cache";
+import {
+  CATALOGO_VACIO,
+  agregarEspecie,
+  editarEspecie,
+  especiesDisponibles,
+  normalizarCatalogo,
+  resumirEspeciesDelLibro,
+  quitarEspecie,
+  restaurarEspecie,
+  type CatalogoEspecies,
+  type EspecieEnElLibro,
+  type ResultadoCatalogo,
+} from "@/lib/forestal/especies-catalogo";
+import { normalizarGrupos, type GruposEspeciesInput } from "@/lib/forestal/precio-cliente";
+
+/**
+ * ForestEspeciesDB — el catálogo de especies que edita el aserradero.
+ *
+ * POR QUÉ KV y no un modelo Prisma (mismo criterio que la biblioteca de fotos y
+ * que trámites, ADR-308 §4): son decenas de especies por planta, no miles, y
+ * cada entrada es un nombre. Promoverlo a tabla el día que haga falta (sinónimos,
+ * CITES por especie, aprobación) es leer el KV e insertar filas —sin fabricar
+ * una migración que necesita DIRECT_URL.
+ *
+ * Los writes se auditan: la especie es lo que el libro declara ante SERFOR, y
+ * quién la creó o la sacó de la lista tiene que poder saberse.
+ */
+
+const KEY_PREFIX = "ctp-especies-catalogo:";
+
+/* Alias: dentro de `editar`/`quitar` el parámetro se llama `claveEspecie` y
+   tapa al import. */
+const normalizarClave = (nombre: string) => claveEspecie(nombre);
+
+const clave = (tenantId: string) => `${KEY_PREFIX}${tenantId}`;
+/** Caché de lo que el LIBRO tiene escrito (no del catálogo: eso ya lo cachea el KV). */
+const claveLibro = (tenantId: string) => `ctp-especies-libro:${tenantId}`;
+
+/**
+ * Lo que el catálogo rechaza por sus propias reglas —una especie repetida, un
+ * nombre vacío— y no por una falla del sistema. El route lo traduce a 422 con
+ * el motivo tal cual: son mensajes escritos para quien está cargando.
+ */
+export class EspecieCatalogoError extends Error {
+  constructor(motivo: string) {
+    super(motivo);
+    this.name = "EspecieCatalogoError";
+  }
+}
+
+/**
+ * Los grupos de especies (ADR-430) sobreviven a cualquier cambio de la lista.
+ *
+ * `agregarEspecie`, `quitarEspecie` y la edición de una de fábrica arman el
+ * catálogo nuevo con `{ agregadas, ocultas }` y sin `...catalogo`: sin esto,
+ * dar de alta una especie BORRABA los grupos y, con ellos, los precios por
+ * grupo de la planta y de cada cliente dejaban de aplicarse sin aviso.
+ *
+ * Si una especie cambia de nombre (y de clave), su lugar en el grupo la sigue.
+ */
+function conGrupos(
+  nuevo: CatalogoEspecies,
+  previo: CatalogoEspecies,
+  renombre?: { de: string; a: string },
+): CatalogoEspecies {
+  const grupos = nuevo.grupos ?? previo.grupos;
+  if (!grupos?.length) return nuevo;
+  const mover = renombre && renombre.de && renombre.a && renombre.de !== renombre.a ? renombre : null;
+  return {
+    ...nuevo,
+    grupos: mover
+      ? grupos.map((g) => ({ ...g, claves: [...new Set(g.claves.map((k) => (k === mover.de ? mover.a : k)))] }))
+      : grupos,
+  };
+}
+
+/** Guarda y deja el rastro. Devuelve el catálogo ya guardado. */
+async function aplicar(
+  tenantId: string,
+  resultado: ResultadoCatalogo,
+  user: string,
+  detalle: string,
+  previo: CatalogoEspecies,
+  renombre?: { de: string; a: string },
+): Promise<{ catalogo: CatalogoEspecies; mensaje: string }> {
+  if (!resultado.ok) throw new EspecieCatalogoError(resultado.motivo);
+  const catalogo = conGrupos(resultado.catalogo, previo, renombre);
+  await PlatformSettingsDB.set(clave(tenantId), catalogo, user);
+  auditCtp({
+    tenantId,
+    action: "ctp_especie_catalogo",
+    entity: "ForestEspecieCatalogo",
+    entityId: tenantId,
+    detail: detalle,
+    user,
+  });
+  return { catalogo, mensaje: resultado.mensaje };
+}
+
+export const ForestEspeciesDB = {
+  /** El catálogo del tenant. Nunca `null`: sin nada guardado son las de fábrica. */
+  async get(tenantId: string): Promise<CatalogoEspecies> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const raw = await PlatformSettingsDB.get<unknown>(clave(tenantId));
+    return raw ? normalizarCatalogo(raw) : CATALOGO_VACIO;
+  },
+
+  /**
+   * Cómo escribe ESTA planta esa especie, y con qué binomio.
+   *
+   * Es lo que se usa al ABRIR una fila del libro: si el catálogo conoce la
+   * clave, manda su grafía. Así una guía que dice «TORNILLO» y un lote que dice
+   * «Tornillo» entran al libro escritos igual, y los totales por especie no se
+   * parten en dos — que es el problema que había que ir a arreglar después con
+   * «unificar» (125 filas contra 10 en el tenant real).
+   *
+   * Es hacia ADELANTE y sólo sobre la grafía: no reescribe nada de lo cargado
+   * y no cambia de especie —la clave normalizada tiene que ser la misma—. Si el
+   * catálogo no la conoce, se guarda tal cual vino: el libro admite una especie
+   * que la lista todavía no tiene.
+   */
+  async resolverEspecie(
+    tenantId: string,
+    nombre: string | null | undefined,
+  ): Promise<{ nombre: string; cientifico: string | null }> {
+    const original = (nombre ?? "").trim();
+    const objetivo = claveEspecie(original);
+    if (!tenantId || !objetivo) return { nombre: original, cientifico: null };
+    const catalogo = await this.get(tenantId);
+    const enLista = especiesDisponibles(catalogo).find((e) => e.clave === objetivo);
+    return enLista
+      ? { nombre: enLista.nombre, cientifico: enLista.cientifico?.trim() || null }
+      : { nombre: original, cientifico: null };
+  },
+
+  /**
+   * El científico que ESTA planta declaró para esa especie, si lo declaró.
+   *
+   * Lo usa el libro al abrir un asiento sin científico: la columna existe en el
+   * LO-CTP y el que carga una corrida a las seis de la mañana no se acuerda del
+   * binomio. No inventa nada — devuelve `null` si el catálogo no lo sabe, que
+   * es lo que el libro ya hacía.
+   */
+  async cientificoDe(tenantId: string, nombre: string): Promise<string | null> {
+    if (!tenantId || !nombre?.trim()) return null;
+    const objetivo = claveEspecie(nombre);
+    if (!objetivo) return null;
+    const catalogo = await this.get(tenantId);
+    return catalogo.agregadas.find((e) => e.clave === objetivo)?.cientifico?.trim() || null;
+  },
+
+  async agregar(
+    tenantId: string,
+    entrada: { nombre: string; cientifico?: string | null },
+    user = "unknown",
+  ) {
+    const actual = await this.get(tenantId);
+    const r = agregarEspecie(actual, entrada, { usuario: user });
+    return aplicar(tenantId, r, user, `Agregó la especie «${entrada.nombre}» al catálogo`, actual);
+  },
+
+  async editar(
+    tenantId: string,
+    claveEspecie: string,
+    cambios: { nombre?: string; cientifico?: string | null },
+    user = "unknown",
+  ) {
+    const actual = await this.get(tenantId);
+    const r = editarEspecie(actual, claveEspecie, cambios, { usuario: user });
+    return aplicar(
+      tenantId,
+      r,
+      user,
+      `Editó la especie «${claveEspecie}»${cambios.nombre ? ` → «${cambios.nombre}»` : ""}`,
+      actual,
+      cambios.nombre ? { de: normalizarClave(claveEspecie), a: normalizarClave(cambios.nombre) } : undefined,
+    );
+  },
+
+  async quitar(tenantId: string, claveEspecie: string, user = "unknown") {
+    const actual = await this.get(tenantId);
+    const r = quitarEspecie(actual, claveEspecie);
+    return aplicar(tenantId, r, user, `Quitó la especie «${claveEspecie}» del catálogo`, actual);
+  },
+
+  async restaurar(tenantId: string, claveEspecie: string, user = "unknown") {
+    const actual = await this.get(tenantId);
+    const r = restaurarEspecie(actual, claveEspecie);
+    return aplicar(tenantId, r, user, `Volvió a mostrar la especie «${claveEspecie}»`, actual);
+  },
+
+  /**
+   * Guarda los grupos de especies de la planta (ADR-430): «Duras: Anacaspi,
+   * Shihuahuaco». Reemplaza la lista entera — la pantalla manda todos.
+   *
+   * La entrada ya viene validada por `gruposEspeciesSchema` (una especie en UN
+   * solo grupo); acá se normalizan las claves. Lista vacía = sin grupos, y el
+   * catálogo queda idéntico al de antes de ADR-430.
+   *
+   * Quitar un grupo apaga los precios que lo usaban (de la tarifa de la planta
+   * y de cada cliente): se dice en el mensaje, no se borra nada de los tratos.
+   */
+  async guardarGrupos(
+    tenantId: string,
+    input: GruposEspeciesInput,
+    user = "unknown",
+  ): Promise<{ catalogo: CatalogoEspecies; mensaje: string }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const actual = await this.get(tenantId);
+    const grupos = normalizarGrupos(input);
+    const catalogo: CatalogoEspecies = {
+      agregadas: actual.agregadas,
+      ocultas: actual.ocultas,
+      ...(grupos.length ? { grupos } : {}),
+    };
+    await PlatformSettingsDB.set(clave(tenantId), catalogo, user);
+
+    const nuevos = new Set(grupos.map((g) => g.id));
+    const quitados = (actual.grupos ?? []).filter((g) => !nuevos.has(g.id));
+    const especies = grupos.reduce((t, g) => t + g.claves.length, 0);
+    auditCtp({
+      tenantId,
+      action: "ctp_especie_catalogo",
+      entity: "ForestEspecieCatalogo",
+      entityId: tenantId,
+      detail:
+        `Guardó ${grupos.length} grupo(s) de especies` +
+        (grupos.length ? `: ${grupos.map((g) => `${g.nombre} (${g.claves.length})`).join(", ")}` : "") +
+        (quitados.length ? ` · quitó ${quitados.map((g) => g.nombre).join(", ")}` : ""),
+      user,
+    });
+    return {
+      catalogo,
+      mensaje:
+        `Quedaron ${grupos.length} grupo${grupos.length === 1 ? "" : "s"} con ${especies} especie${especies === 1 ? "" : "s"}.` +
+        (quitados.length
+          ? ` Se quitó ${quitados.map((g) => `«${g.nombre}»`).join(", ")}: los precios por ese grupo dejan de aplicarse.`
+          : ""),
+    };
+  },
+
+  /**
+   * Las especies que el libro YA tiene escritas, con todas sus grafías.
+   *
+   * Cuatro lugares nombran una especie y los cuatro cuentan: el ingreso de la
+   * GTF, la troza del patio, el asiento del libro y el lote de aserrío. Una
+   * especie que sólo aparece en trozas es tan real como la que encabeza un
+   * asiento — y es justo la que nadie se acuerda de dar de alta.
+   *
+   * Se leen los cuatro en paralelo y se agrupan por clave normalizada
+   * (`resumirEspeciesDelLibro`, pura y con tests). Lo borrado no cuenta: una
+   * especie que sólo vive en filas dadas de baja no es del libro.
+   */
+  async usadasEnElLibro(tenantId: string): Promise<EspecieEnElLibro[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    /* Cuatro `groupBy` sobre las tablas grandes del tenant. Lo piden el gestor,
+       la biblioteca de fotos, Cumplimiento y la pastilla de Producción — y esta
+       última en CADA montaje de la pestaña. Sin caché eran cuatro consultas por
+       entrar a Producción (auditoría 2026-09-11). 60 s: es un aviso de higiene,
+       no un saldo; y las dos escrituras que lo cambian (sembrar, unificar) lo
+       invalidan a mano. */
+    return getOrSet(claveLibro(tenantId), 60, () => this.leerDelLibro(tenantId));
+  },
+
+  /** La lectura de verdad — sin caché, para que las escrituras la usen fresca. */
+  async leerDelLibro(tenantId: string): Promise<EspecieEnElLibro[]> {
+    const [catalogo, ingresos, trozas, asientos, lotes] = await Promise.all([
+      this.get(tenantId),
+      prisma.woodEntry.groupBy({
+        by: ["speciesCommonName", "speciesScientificName"],
+        where: { tenantId, deletedAt: null },
+        _count: { _all: true },
+      }),
+      prisma.woodEntryTroza.groupBy({
+        by: ["especieComun", "especieCientifica"],
+        where: { tenantId },
+        _count: { _all: true },
+      }),
+      prisma.forestCtpEntry.groupBy({
+        by: ["speciesCommon", "speciesScientific"],
+        where: { tenantId, deletedAt: null },
+        _count: { _all: true },
+      }),
+      prisma.forestLoteAserrio.groupBy({
+        by: ["speciesCommon", "speciesScientific"],
+        where: { tenantId, deletedAt: null },
+        _count: { _all: true },
+      }),
+    ]);
+
+    return resumirEspeciesDelLibro(
+      [
+        ...ingresos.map((r) => ({
+          nombre: r.speciesCommonName,
+          cientifico: r.speciesScientificName,
+          usos: r._count._all,
+        })),
+        ...trozas.map((r) => ({
+          nombre: r.especieComun,
+          cientifico: r.especieCientifica,
+          usos: r._count._all,
+        })),
+        ...asientos.map((r) => ({
+          nombre: r.speciesCommon,
+          cientifico: r.speciesScientific,
+          usos: r._count._all,
+        })),
+        ...lotes.map((r) => ({
+          nombre: r.speciesCommon,
+          cientifico: r.speciesScientific,
+          usos: r._count._all,
+        })),
+      ],
+      catalogo,
+    );
+  },
+
+  /**
+   * Da de alta varias de una vez — sembrar el catálogo con lo que el libro ya
+   * usa. Se aplican UNA POR UNA sobre el catálogo en memoria y recién al final
+   * se guarda: así la segunda ve a la primera y el tope y los repetidos se
+   * respetan igual que agregando a mano. Lo rechazado no aborta el resto; se
+   * devuelve dicho, porque sembrar 9 de 11 con dos motivos es mejor que no
+   * sembrar ninguna.
+   */
+  async agregarVarias(
+    tenantId: string,
+    entradas: readonly { nombre: string; cientifico?: string | null }[],
+    user = "unknown",
+  ): Promise<{ catalogo: CatalogoEspecies; mensaje: string; agregadas: string[]; rechazadas: { nombre: string; motivo: string }[] }> {
+    const previo = await this.get(tenantId);
+    let catalogo = previo;
+    const agregadas: string[] = [];
+    const rechazadas: { nombre: string; motivo: string }[] = [];
+    for (const e of entradas) {
+      const r = agregarEspecie(catalogo, e, { usuario: user });
+      if (r.ok) {
+        catalogo = r.catalogo;
+        agregadas.push(e.nombre);
+      } else {
+        rechazadas.push({ nombre: e.nombre, motivo: r.motivo });
+      }
+    }
+    if (agregadas.length === 0) {
+      throw new EspecieCatalogoError(
+        rechazadas[0]?.motivo ?? "No había ninguna especie nueva para agregar.",
+      );
+    }
+    catalogo = conGrupos(catalogo, previo);
+    await PlatformSettingsDB.set(clave(tenantId), catalogo, user);
+    /* Lo sembrado cambia qué especies «faltan»: el aviso tiene que recalcularse. */
+    invalidate(claveLibro(tenantId));
+    auditCtp({
+      tenantId,
+      action: "ctp_especie_catalogo",
+      entity: "ForestEspecieCatalogo",
+      entityId: tenantId,
+      detail: `Sembró ${agregadas.length} especie(s) desde el libro: ${agregadas.join(", ")}`,
+      user,
+    });
+    return {
+      catalogo,
+      agregadas,
+      rechazadas,
+      mensaje:
+        `Se agregaron ${agregadas.length} especie${agregadas.length === 1 ? "" : "s"} que tu libro ya usaba` +
+        (rechazadas.length > 0 ? ` · ${rechazadas.length} quedaron afuera: ${rechazadas[0].motivo}` : "."),
+    };
+  },
+
+  /**
+   * Unifica en el LIBRO las grafías de una especie: «TORNILLO» pasa a decir
+   * «Tornillo» donde estaba escrito distinto.
+   *
+   * ⚠️ Esto **reescribe filas del libro**, que es un acta que se declara ante
+   * SERFOR. Por eso: nunca automático, nunca en silencio y nunca por
+   * aproximación — sólo las grafías EXACTAS que el resumen encontró bajo la
+   * misma clave normalizada, y todo queda auditado con el conteo por tabla.
+   * No toca volúmenes, fechas ni atribuciones: cambia cómo se escribe un
+   * nombre, no lo que el libro declara.
+   */
+  async unificarEnElLibro(
+    tenantId: string,
+    entrada: { clave: string; nombre: string },
+    user = "unknown",
+  ): Promise<{ mensaje: string; filas: number; porTabla: { tabla: string; filas: number }[] }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const objetivo = claveEspecie(entrada.clave);
+    const nombre = entrada.nombre.trim();
+    if (!objetivo || !nombre) throw new EspecieCatalogoError("Falta decir qué especie unificar.");
+    if (claveEspecie(nombre) !== objetivo) {
+      /* Unificar es elegir entre las formas que YA existen de esa especie, no
+         renombrarla: si el nombre bueno fuera de otra especie, el libro pasaría
+         a declarar una madera distinta de la que entró. */
+      throw new EspecieCatalogoError(
+        "La forma elegida tiene que ser la misma especie, escrita distinto.",
+      );
+    }
+
+    /* Fresca a propósito: unificar decide qué filas reescribe a partir de las
+       grafías que hay AHORA. Con la cacheada podría dejar afuera una que entró
+       hace un minuto. */
+    const delLibro = await this.leerDelLibro(tenantId);
+    const especie = delLibro.find((e) => e.clave === objetivo);
+    const otras = (especie?.grafias ?? []).map((g) => g.texto).filter((t) => t !== nombre);
+    if (otras.length === 0) {
+      throw new EspecieCatalogoError(`«${nombre}» ya es la única forma escrita en el libro.`);
+    }
+
+    const [ingresos, trozas, asientos, lotes] = await prisma.$transaction([
+      prisma.woodEntry.updateMany({
+        where: { tenantId, deletedAt: null, speciesCommonName: { in: otras } },
+        data: { speciesCommonName: nombre },
+      }),
+      prisma.woodEntryTroza.updateMany({
+        where: { tenantId, especieComun: { in: otras } },
+        data: { especieComun: nombre },
+      }),
+      prisma.forestCtpEntry.updateMany({
+        where: { tenantId, deletedAt: null, speciesCommon: { in: otras } },
+        data: { speciesCommon: nombre },
+      }),
+      prisma.forestLoteAserrio.updateMany({
+        where: { tenantId, deletedAt: null, speciesCommon: { in: otras } },
+        data: { speciesCommon: nombre },
+      }),
+    ]);
+
+    const porTabla = [
+      { tabla: "Ingresos", filas: ingresos.count },
+      { tabla: "Trozas", filas: trozas.count },
+      { tabla: "Asientos del libro", filas: asientos.count },
+      { tabla: "Lotes de aserrío", filas: lotes.count },
+    ];
+    const filas = porTabla.reduce((t, x) => t + x.filas, 0);
+
+    auditCtp({
+      tenantId,
+      action: "ctp_especie_unificar",
+      entity: "ForestEspecieCatalogo",
+      entityId: objetivo,
+      detail:
+        `Unificó la especie como «${nombre}» (antes: ${otras.join(", ")}) — ` +
+        porTabla.map((x) => `${x.tabla}: ${x.filas}`).join(" · "),
+      user,
+    });
+    /* El libro entero cambió de texto en esas filas: lo cacheado lo dice viejo.
+       Los prefijos salen de `ctp-fetch`/`wood-entries.db` — se invalidan los dos
+       lados porque la especie viaja en las dos familias de lectura. */
+    /* Los prefijos son los que usan de verdad las DB classes (`forest-ctp` y
+       `wood-entries`): `ctp:` no existía y la invalidación no tocaba nada —la
+       tabla seguía mostrando la grafía vieja (auditoría 2026-09-11). Son
+       síncronas, no devuelven promesa. */
+    invalidate(claveLibro(tenantId));
+    invalidateByPrefix(`forest-ctp:${tenantId}`);
+    invalidateByPrefix(`wood-entries:${tenantId}`);
+
+    return {
+      porTabla,
+      filas,
+      mensaje: `Quedó «${nombre}» en ${filas} fila${filas === 1 ? "" : "s"} del libro. Las ${otras.length} forma(s) anteriores ya no figuran.`,
+    };
+  },
+};

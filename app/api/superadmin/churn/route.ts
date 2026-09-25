@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
-import { prisma } from "@/lib/prisma";
+import { SuperadminChurnTenantDB } from "@/lib/db/superadmin-churn-tenant.db";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 
@@ -34,23 +34,25 @@ export async function GET(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Parámetros inválidos", issues: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const { riskLevel, limit, offset } = parsed.data;
 
-    logger.info("[superadmin/churn] GET dashboard", { user: auth.username, riskLevel, limit, offset });
-
-    // Obtener el score más reciente de cada tenant.
-    // Usamos groupBy para encontrar el calculatedAt máximo por tenant,
-    // luego cargamos los registros correspondientes.
-    const latestByTenant = await prisma.tenantHealthScore.groupBy({
-      by: ["tenantId"],
-      _max: { calculatedAt: true },
+    logger.info("[superadmin/churn] GET dashboard", {
+      user: auth.username,
+      riskLevel,
+      limit,
+      offset,
     });
 
-    if (latestByTenant.length === 0) {
+    // Score más reciente de cada tenant en UNA query (distinct-on en la DB class).
+    // Reemplaza el groupBy + N findFirst (N+1: 11 queries con 10 tenants) por 1.
+    // Equivalencia verificada before/after contra la DB real (0 diferencias).
+    const nonNull = await SuperadminChurnTenantDB.listLatestHealthScores();
+
+    if (nonNull.length === 0) {
       return NextResponse.json({
         tenants: [],
         stats: {
@@ -63,37 +65,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Cargar los scores más recientes de cada tenant
-    const allLatestScores = await Promise.all(
-      latestByTenant.map((g) =>
-        prisma.tenantHealthScore.findFirst({
-          where: {
-            tenantId: g.tenantId,
-            calculatedAt: g._max.calculatedAt ?? undefined,
-          },
-          select: {
-            tenantId: true,
-            score: true,
-            riskLevel: true,
-            loginsLast7d: true,
-            ordersLast7d: true,
-            daysSinceLastOrder: true,
-            daysSinceLastLogin: true,
-            trialDaysLeft: true,
-            calculatedAt: true,
-          },
-        })
-      )
-    );
-
-    const nonNull = allLatestScores.filter(Boolean) as NonNullable<
-      (typeof allLatestScores)[number]
-    >[];
-
     // Filtrar por riskLevel si se proporcionó
-    const filteredScores = riskLevel
-      ? nonNull.filter((s) => s.riskLevel === riskLevel)
-      : nonNull;
+    const filteredScores = riskLevel ? nonNull.filter((s) => s.riskLevel === riskLevel) : nonNull;
 
     // Ordenar por score ascendente (los más críticos primero)
     const sortedScores = filteredScores.sort((a, b) => a.score - b.score);
@@ -116,37 +89,12 @@ export async function GET(req: NextRequest) {
     const tenantIds = paginatedScores.map((s) => s.tenantId);
 
     // Obtener info de tenants
-    const tenants = await prisma.tenant.findMany({
-      where: { id: { in: tenantIds } },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        plan: true,
-        ownerEmail: true,
-        trialEndsAt: true,
-        createdAt: true,
-      },
-    });
+    const tenants = await SuperadminChurnTenantDB.listTenantsForChurn(tenantIds);
 
     const tenantMap = new Map(tenants.map((t) => [t.id, t]));
 
     // Signals activos por tenant
-    const activeSignals = await prisma.churnSignal.findMany({
-      where: {
-        tenantId: { in: tenantIds },
-        resolved: false,
-      },
-      select: {
-        id: true,
-        tenantId: true,
-        signalType: true,
-        severity: true,
-        detail: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const activeSignals = await SuperadminChurnTenantDB.listActiveSignals(tenantIds);
 
     const signalsByTenant = new Map<string, typeof activeSignals>();
     for (const sig of activeSignals) {
@@ -191,15 +139,11 @@ export async function GET(req: NextRequest) {
 
     const total = filteredScores.length;
     const avgScore =
-      total > 0
-        ? Math.round(filteredScores.reduce((sum, s) => sum + s.score, 0) / total)
-        : 0;
+      total > 0 ? Math.round(filteredScores.reduce((sum, s) => sum + s.score, 0) / total) : 0;
 
     // Churn rate estimado: tenants en high+critical / total
     const churnRateEstimated =
-      total > 0
-        ? Math.round(((byRiskLevel.high + byRiskLevel.critical) / total) * 100)
-        : 0;
+      total > 0 ? Math.round(((byRiskLevel.high + byRiskLevel.critical) / total) * 100) : 0;
 
     return NextResponse.json({
       tenants: result,
@@ -211,7 +155,6 @@ export async function GET(req: NextRequest) {
       },
       pagination: { total, limit, offset },
     });
-
   } catch (e) {
     logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });

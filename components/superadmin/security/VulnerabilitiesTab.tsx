@@ -77,7 +77,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}
@@ -156,11 +156,11 @@ export function VulnerabilitiesTab() {
       <Toasts toasts={toasts} />
 
       {/* ─── Header status (empty/honest) ─────────────────────── */}
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8 text-center">
-        <div className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 mb-4">
+      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8 text-center">
+        <div className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300 mb-4">
           <ShieldAlert className="h-7 w-7" strokeWidth={1.75} aria-hidden />
         </div>
-        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-300">
           Estado · Sin escáner
         </p>
         <h2 className="mt-1 font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
@@ -187,7 +187,7 @@ export function VulnerabilitiesTab() {
             href="https://snyk.io/docs/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
           >
             Conectar Snyk
             <ExternalLink className="h-3.5 w-3.5 opacity-80" aria-hidden />
@@ -196,7 +196,7 @@ export function VulnerabilitiesTab() {
             href="https://aquasecurity.github.io/trivy/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
           >
             Conectar Trivy
             <ExternalLink className="h-3.5 w-3.5 opacity-80" aria-hidden />
@@ -208,7 +208,7 @@ export function VulnerabilitiesTab() {
       {error && (
         <div
           role="alert"
-          className="rounded-xl border-2 border-rose-300 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 p-3 flex items-center gap-2 text-sm text-rose-700 dark:text-rose-300"
+          className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-rose-500/10 dark:border-[var(--data-error-500)] p-3 flex items-center gap-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
         >
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>No se pudo leer el snapshot ({error})</span>
@@ -366,15 +366,15 @@ function StatCell({
 }) {
   const iconBg = {
     info: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
-    success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+    success: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
+    danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
   }[tone];
   const valueTone =
     tone === "warning"
-      ? "text-amber-700 dark:text-amber-300"
+      ? "text-teal-700 dark:text-teal-300"
       : tone === "danger"
-        ? "text-rose-700 dark:text-rose-300"
+        ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
         : "text-[var(--text-primary)]";
   return (
     <div className="p-5">
@@ -437,7 +437,7 @@ function MitigationCard({
             <button
               onClick={() => onCopy(code, "Comando")}
               aria-label={`Copiar ${title}`}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)] shrink-0"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)] shrink-0"
             >
               <Copy className="h-3.5 w-3.5" />
             </button>

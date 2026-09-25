@@ -20,7 +20,13 @@ const ALLOWED_BASELINE: Record<string, number> = {
   "app/api/cron/marketplace-sla-watchdog/route.ts": 1, // Platform-wide SLA watchdog cron — same pattern as marketplace-weekly-report
   "app/api/cron/marketplace-weekly-report/route.ts": 1,
   "app/api/daily-digest/route.ts": 1,                  // WhatsApp fallback when no tenant resolved
-  "app/api/marketplace/drivers/apply/route.ts": 4,     // Driver es cross-tenant (plataforma marketplace): findFirst, create x2 + WhatsApp admin notif
+  // app/api/marketplace/drivers/apply/route.ts: FIX 2026-08-22 — estaba acá
+  // como "cross-tenant intencional", pero verificado end-to-end (Playwright,
+  // tenant real "mi-pollo") que cada tenant tiene su propio pool de
+  // repartidores aislado. El hardcode a "main" mezclaba KYC de un negocio con
+  // otro. Ahora usa x-tenant-id (inyectado por proxy.ts, no confiable del
+  // cliente). Sacado del allowlist a propósito — que vuelva a aparecer acá
+  // sería la regresión.
   "app/api/price-comparison/route.ts": 1,
   "lib/db/inventory.db.ts": 1,
 };

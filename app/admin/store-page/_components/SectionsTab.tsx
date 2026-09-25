@@ -16,13 +16,19 @@
  * Persistencia: PUT /api/store-page/sections — guarda en TenantStorePage.
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Plus,
   Eye,
   EyeOff,
   ArrowUp,
   ArrowDown,
+  GripVertical,
+  Columns2,
+  RotateCcw,
+  Copy,
   Trash2,
   Save,
   Edit3,
@@ -43,6 +49,7 @@ import {
   type SectionTemplate,
 } from "@/lib/store-sections-types";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 const TYPE_EMOJI: Record<SectionType, string> = {
   about: "📖",
   hours: "🕐",
@@ -52,6 +59,14 @@ const TYPE_EMOJI: Record<SectionType, string> = {
   benefits: "✨",
   gallery: "📸",
   "image-text": "🖼️",
+  cta: "🎯",
+  video: "🎬",
+  map: "📍",
+  logos: "🏷️",
+  countdown: "⏳",
+  team: "👥",
+  social: "📲",
+  categories: "🗂️",
 };
 
 const TYPE_LABEL: Record<SectionType, string> = {
@@ -63,9 +78,18 @@ const TYPE_LABEL: Record<SectionType, string> = {
   benefits: "Beneficios",
   gallery: "Galería de fotos",
   "image-text": "Imagen + texto",
+  cta: "Banner de acción",
+  video: "Video",
+  map: "Mapa de ubicación",
+  logos: "Marcas / logos",
+  countdown: "Cuenta regresiva",
+  team: "Nuestro equipo",
+  social: "Redes sociales",
+  categories: "Categorías visual",
 };
 
-export default function SectionsTab() {
+export default function SectionsTab({ slug = "main" }: { slug?: string }) {
+  const { confirm } = useConfirm();
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -73,6 +97,12 @@ export default function SectionsTab() {
   const [error, setError] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Drag-and-drop para reordenar (Brandon 2026-06-26 — el "v2" que pedía el código).
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  // Vista previa en vivo del storefront (Brandon 2026-06-26): drawer /t/{slug}.
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewKey, setPreviewKey] = useState(0);
 
   // ── Load ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -107,6 +137,7 @@ export default function SectionsTab() {
         setError(typeof j.error === "string" ? j.error : "Error al guardar");
       } else {
         setSaved(true);
+        setPreviewKey((k) => k + 1); // recarga el preview con lo recién publicado
         setTimeout(() => setSaved(false), 2500);
       }
     } catch {
@@ -129,10 +160,30 @@ export default function SectionsTab() {
     setEditingId(newSection.id);
   }, [sections.length]);
 
-  const removeSection = useCallback((id: string) => {
-    if (!confirm("¿Eliminar esta sección? Esta acción no se puede deshacer.")) return;
-    setSections((prev) => prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, order: i })));
+  // Duplicar una sección: clona tipo + datos, la inserta justo debajo (Brandon 2026-06-26).
+  const duplicateSection = useCallback((id: string) => {
+    setSections((prev) => {
+      const idx = prev.findIndex((s) => s.id === id);
+      if (idx === -1) return prev;
+      const copy = {
+        ...prev[idx],
+        id: `s_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        data: structuredClone(prev[idx].data),
+      } as Section;
+      const next = [...prev.slice(0, idx + 1), copy, ...prev.slice(idx + 1)];
+      return next.map((s, i) => ({ ...s, order: i }));
+    });
   }, []);
+
+  const removeSection = useCallback(async (id: string) => {
+    if (!(await confirm({
+      title: "¿Eliminar esta sección?",
+      description: "Esta acción no se puede deshacer.",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
+    setSections((prev) => prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, order: i })));
+  }, [confirm]);
 
   const toggleVisible = useCallback((id: string) => {
     setSections((prev) =>
@@ -148,6 +199,17 @@ export default function SectionsTab() {
       if (swapIdx < 0 || swapIdx >= prev.length) return prev;
       const next = [...prev];
       [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+      return next.map((s, i) => ({ ...s, order: i }));
+    });
+  }, []);
+
+  // Reordenar por drag-and-drop: mueve la sección `from` a la posición `to`.
+  const reorderSection = useCallback((from: number, to: number) => {
+    setSections((prev) => {
+      if (from === to || from < 0 || to < 0 || from >= prev.length || to >= prev.length) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
       return next.map((s, i) => ({ ...s, order: i }));
     });
   }, []);
@@ -172,7 +234,7 @@ export default function SectionsTab() {
   return (
     <AdminTabShell
       title="Secciones de tu página pública"
-      description="Arma tu /t/[slug] con bloques pre-elaborados. Agregás, editás y reordenás — todo se refleja en vivo cuando guardás."
+      description="Arma tu /t/[slug] con bloques pre-elaborados. Agregas, editas y reordenas — todo se refleja en vivo cuando guardas."
       icon={Layers}
     >
       {/* Header con acciones */}
@@ -185,27 +247,53 @@ export default function SectionsTab() {
             {sections.filter((s) => s.visible).length} visibles
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowTemplates(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-4 h-10 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors shadow-md"
-        >
-          <Plus className="w-4 h-4" strokeWidth={2.5} />
-          Añadir sección
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowPreview((v) => !v)}
+            aria-pressed={showPreview}
+            className={`inline-flex items-center gap-2 rounded-full px-4 h-10 text-sm font-extrabold transition-colors ${showPreview ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"}`}
+          >
+            <Columns2 className="w-4 h-4" strokeWidth={2.5} />
+            Vista previa
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowTemplates(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-4 h-10 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors shadow-md"
+          >
+            <Plus className="w-4 h-4" strokeWidth={2.5} />
+            Añadir sección
+          </button>
+        </div>
       </section>
+
+      {/* Drawer de vista previa en vivo del storefront (Brandon 2026-06-26).
+          Muestra /t/{slug}; se recarga al guardar. */}
+      {showPreview && (
+        <div className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[480px] flex-col border-l-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
+          <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] px-3 py-2">
+            <span className="truncate text-xs font-bold text-[var(--text-secondary)]">Vista previa · /t/{slug} · se actualiza al guardar</span>
+            <div className="flex shrink-0 items-center gap-1">
+              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} aria-label="Recargar vista previa" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"><RotateCcw className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setShowPreview(false)} aria-label="Cerrar vista previa" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"><X className="h-4 w-4" /></button>
+            </div>
+          </div>
+          <iframe key={previewKey} src={`/t/${slug}`} title="Vista previa de la tienda" className="w-full flex-1 bg-[var(--surface-raised)]" />
+        </div>
+      )}
 
       {/* Estado vacio */}
       {sections.length === 0 && (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
-          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
+          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <Layers className="h-7 w-7" strokeWidth={1.75} />
           </span>
-          <h3 className="text-lg font-extrabold text-[var(--text-primary)] mb-1">
+          <CardTitle className="text-[var(--text-primary)] mb-1">
             Tu página pública aún no tiene secciones
-          </h3>
+          </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto mb-5">
-            Agregá bloques desde las plantillas: Sobre Nosotros, Horarios, Métodos de Pago, Cómo Pedir, FAQ y más.
+            Agrega bloques desde las plantillas: Sobre Nosotros, Horarios, Métodos de Pago, Cómo Pedir, FAQ y más.
           </p>
           <button
             type="button"
@@ -226,13 +314,31 @@ export default function SectionsTab() {
             return (
               <div
                 key={section.id}
+                onDragOver={(e) => { if (dragIndex === null) return; e.preventDefault(); if (dragOverIndex !== idx) setDragOverIndex(idx); }}
+                onDrop={(e) => { if (dragIndex === null) return; e.preventDefault(); reorderSection(dragIndex, idx); setDragIndex(null); setDragOverIndex(null); }}
                 className={`rounded-2xl border-2 bg-[var(--surface-raised)] transition-all ${
-                  isEditing ? "border-[var(--accent)] shadow-lg" : "border-[var(--rule-base)]"
-                } ${!section.visible ? "opacity-60" : ""}`}
+                  isEditing
+                    ? "border-[var(--accent)] shadow-lg"
+                    : dragOverIndex === idx && dragIndex !== idx
+                      ? "border-dashed border-[var(--accent)]"
+                      : "border-[var(--rule-base)]"
+                } ${!section.visible ? "opacity-60" : ""} ${dragIndex === idx ? "opacity-40" : ""}`}
               >
                 {/* Header de la card */}
-                <div className="flex items-center gap-3 p-4 border-b border-[var(--rule-soft)]">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-xl shrink-0">
+                <div className="flex items-center gap-2 p-4 border-b border-[var(--rule-soft)]">
+                  <span
+                    draggable
+                    onDragStart={(e) => { setDragIndex(idx); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; }}
+                    onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Arrastra para reordenar la sección"
+                    title="Arrastra para reordenar"
+                    className="inline-flex h-9 w-5 shrink-0 cursor-grab items-center justify-center rounded-md text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:cursor-grabbing"
+                  >
+                    <GripVertical className="h-4 w-4" aria-hidden />
+                  </span>
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-xl shrink-0">
                     {TYPE_EMOJI[section.type]}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -250,7 +356,7 @@ export default function SectionsTab() {
                       onClick={() => moveSection(section.id, -1)}
                       disabled={idx === 0}
                       aria-label="Subir"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       <ArrowUp className="h-4 w-4" />
                     </button>
@@ -259,7 +365,7 @@ export default function SectionsTab() {
                       onClick={() => moveSection(section.id, 1)}
                       disabled={idx === sections.length - 1}
                       aria-label="Bajar"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       <ArrowDown className="h-4 w-4" />
                     </button>
@@ -268,7 +374,7 @@ export default function SectionsTab() {
                       type="button"
                       onClick={() => toggleVisible(section.id)}
                       aria-label={section.visible ? "Ocultar" : "Mostrar"}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       {section.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </button>
@@ -277,7 +383,7 @@ export default function SectionsTab() {
                       type="button"
                       onClick={() => setEditingId(isEditing ? null : section.id)}
                       aria-label={isEditing ? "Cerrar editor" : "Editar"}
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
                         isEditing
                           ? "bg-[var(--accent)] text-white"
                           : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
@@ -285,12 +391,22 @@ export default function SectionsTab() {
                     >
                       {isEditing ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <Edit3 className="h-4 w-4" />}
                     </button>
+                    {/* Duplicar */}
+                    <button
+                      type="button"
+                      onClick={() => duplicateSection(section.id)}
+                      aria-label="Duplicar sección"
+                      title="Duplicar"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
                     {/* Eliminar */}
                     <button
                       type="button"
                       onClick={() => removeSection(section.id)}
                       aria-label="Eliminar"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)] transition-colors"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)] transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -315,7 +431,7 @@ export default function SectionsTab() {
       {/* Sticky Save bar */}
       <div className="sticky bottom-4 flex items-center justify-end gap-3 p-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-lg">
         {error && <span className="text-sm text-[var(--data-error-500)]">{error}</span>}
-        {saved && <span className="text-sm text-[var(--data-success-500)] font-semibold">Guardado · refrescá /t/[slug] para verlo</span>}
+        {saved && <span className="text-sm text-[var(--data-success-500)] font-semibold">Guardado · refresca /t/[slug] para verlo</span>}
         <button
           onClick={save}
           disabled={saving}
@@ -345,26 +461,29 @@ function TemplatesModal({
   onClose: () => void;
   onPick: (tpl: SectionTemplate) => void;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
-      aria-label="Elegí una plantilla"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      aria-label="Elige una plantilla"
+      className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)]">
+        <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] px-5 py-4 sm:px-6">
           <div>
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
               Galería de plantillas
             </p>
-            <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
-              Elegí una sección para agregar
-            </h2>
+            <SectionTitle className="text-[var(--text-primary)]">
+              Elige una sección para agregar
+            </SectionTitle>
           </div>
           <button
             type="button"
@@ -375,13 +494,13 @@ function TemplatesModal({
             <X className="h-5 w-5" />
           </button>
         </header>
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3 px-5 py-6 sm:px-6">
           {SECTION_TEMPLATES.map((tpl) => (
             <button
               key={tpl.type}
               type="button"
               onClick={() => onPick(tpl)}
-              className="group text-left rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 hover:border-[var(--accent)] hover:-translate-y-0.5 hover:shadow-md transition-all"
+              className="group text-left rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 hover:border-[var(--accent)] hover:-translate-y-0.5 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between gap-2 mb-3">
                 <span className="text-2xl">{tpl.emoji}</span>
@@ -682,7 +801,7 @@ function SectionEditor({
                 type="button"
                 onClick={() => removeImage(i)}
                 aria-label="Eliminar imagen"
-                className="text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)] inline-flex h-9 w-9 items-center justify-center rounded-md shrink-0"
+                className="text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)] inline-flex h-9 w-9 items-center justify-center rounded-lg shrink-0"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -697,6 +816,9 @@ function SectionEditor({
     const data = section.data;
     return (
       <div className="space-y-3">
+        <FieldLabel label="Etiqueta superior (eyebrow)">
+          <input value={data.eyebrow ?? ""} onChange={(e) => onChange({ eyebrow: e.target.value })} placeholder="Nuestra historia" className={inputCls} />
+        </FieldLabel>
         <FieldLabel label="Título">
           <input value={data.title} onChange={(e) => onChange({ title: e.target.value })} className={inputCls} />
         </FieldLabel>
@@ -733,9 +855,9 @@ function SectionEditor({
             <button
               type="button"
               onClick={() => onChange({ imagePosition: "left" })}
-              className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
+              className={`flex-1 rounded-xl border-2 px-3 h-10 text-xs font-extrabold transition-all ${
                 data.imagePosition === "left"
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)]"
               }`}
             >
@@ -744,14 +866,37 @@ function SectionEditor({
             <button
               type="button"
               onClick={() => onChange({ imagePosition: "right" })}
-              className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
+              className={`flex-1 rounded-xl border-2 px-3 h-10 text-xs font-extrabold transition-all ${
                 data.imagePosition === "right"
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)]"
               }`}
             >
               Imagen a la derecha →
             </button>
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-[var(--text-secondary)] mb-1.5">Fondo del bloque</p>
+          <div className="flex gap-2">
+            {([
+              { id: "light", label: "Claro" },
+              { id: "brand", label: "Marca" },
+              { id: "dark", label: "Oscuro" },
+            ] as const).map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => onChange({ background: b.id })}
+                className={`flex-1 rounded-xl border-2 px-3 h-10 text-xs font-extrabold transition-all ${
+                  (data.background ?? "light") === b.id
+                    ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)]"
+                }`}
+              >
+                {b.label}
+              </button>
+            ))}
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

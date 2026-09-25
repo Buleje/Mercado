@@ -33,15 +33,25 @@ export type ABCProductMeta = {
   category: string | null;
 };
 
+/** Ventana de fechas opcional — `undefined` = sin filtrar (todo el historial). */
+export type RangoFechas = { gte?: Date; lt?: Date };
+
 export const AnalyticsABCDB = {
   /**
    * Obtiene todos los items de ventas POS del tenant con precio y cantidad.
    * Filtra por tenantId via relación Sale → tenantId.
    * @param tenantId — Scope multi-tenant obligatorio.
+   * @param rango — Ventana `createdAt` opcional (BCG la usa para comparar dos
+   *   períodos; ABC la deja `undefined` y sigue viendo todo el historial).
    */
-  async getSaleItemsForABC(tenantId: string): Promise<ABCSaleItemRaw[]> {
+  async getSaleItemsForABC(tenantId: string, rango?: RangoFechas): Promise<ABCSaleItemRaw[]> {
     const rows = await prisma.saleItem.findMany({
-      where: { sale: { tenantId } },
+      where: {
+        sale: {
+          tenantId,
+          ...(rango && { createdAt: { ...(rango.gte && { gte: rango.gte }), ...(rango.lt && { lt: rango.lt }) } }),
+        },
+      },
       select: { productId: true, price: true, quantity: true },
       // Cap defensivo (Brandon 2026-06-13, audit perf): evita OOM si el tenant
       // acumula cientos de miles de SaleItem. 50k cubre el análisis ABC real.
@@ -60,12 +70,17 @@ export const AnalyticsABCDB = {
    * Obtiene items de órdenes online (no canceladas) del tenant.
    * Filtra por tenantId via relación Order → tenantId.
    * @param tenantId — Scope multi-tenant obligatorio.
+   * @param rango — Ídem `getSaleItemsForABC`.
    */
-  async getOrderItemsForABC(tenantId: string): Promise<ABCOrderItemRaw[]> {
+  async getOrderItemsForABC(tenantId: string, rango?: RangoFechas): Promise<ABCOrderItemRaw[]> {
     const rows = await prisma.orderItem.findMany({
       where: {
         productId: { not: null },
-        order: { tenantId, status: { not: "cancelado" } },
+        order: {
+          tenantId,
+          status: { not: "cancelado" },
+          ...(rango && { createdAt: { ...(rango.gte && { gte: rango.gte }), ...(rango.lt && { lt: rango.lt }) } }),
+        },
       },
       select: { productId: true, price: true, quantity: true },
     });

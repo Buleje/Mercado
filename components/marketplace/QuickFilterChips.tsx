@@ -9,6 +9,7 @@ import {
   Smartphone,
   Sun,
   Coins,
+  Wallet,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +23,8 @@ export type QuickChipId =
   | "new_stores"
   | "accepts_yape"
   | "no_min_order"
-  | "open_24h";
+  | "open_24h"
+  | "accepts_fiado";
 
 interface ChipDef {
   id: QuickChipId;
@@ -39,6 +41,7 @@ const CHIPS: ChipDef[] = [
   { id: "accepts_yape",  label: "Acepta Yape",     Icon: Smartphone },
   { id: "no_min_order",  label: "Sin mínimo",      Icon: Coins      },
   { id: "open_24h",      label: "Abre 24 h",       Icon: Sun        },
+  { id: "accepts_fiado", label: "Acepta fiado",    Icon: Wallet     },
 ];
 
 /* ── Props ──────────────────────────────────────────────────────────────────── */
@@ -57,6 +60,7 @@ export interface QuickFilterStore {
   hours24h?: boolean;
   createdAt?: string | Date | null;
   hasOffers?: boolean;
+  acceptsFiado?: boolean;
 }
 
 export interface QuickFilterChipsProps {
@@ -98,6 +102,8 @@ function chipHasMatch(chip: QuickChipId, stores: ReadonlyArray<QuickFilterStore>
       return stores.some((s) => (s.minimumOrder ?? 0) <= 0);
     case "open_24h":
       return stores.some((s) => s.hours24h === true);
+    case "accepts_fiado":
+      return stores.some((s) => s.acceptsFiado === true);
   }
 }
 

@@ -265,7 +265,7 @@ export default function AICommandCenter() {
       className={cn(
         "flex flex-col bg-[var(--surface-raised)] overflow-hidden",
         maximized
-          ? "fixed inset-0 z-[9999]"
+          ? "fixed inset-0 z-tour"
           : "rounded-xl border border-[var(--rule-base)] min-h-[600px]",
       )}
     >
@@ -298,7 +298,7 @@ export default function AICommandCenter() {
                     className={cn(
                       "text-xs font-extrabold rounded-full px-1.5 py-0.5 min-w-[20px] text-center",
                       isActive
-                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                         : "bg-[var(--data-error-500)] text-white",
                     )}
                   >
@@ -339,7 +339,7 @@ export default function AICommandCenter() {
                   if (next) {
                     toast.success(
                       `Modo TV activado · cambia de tab cada ${TV_ROTATION_MS / 1000} segundos`,
-                      { duration: 4000, description: "Pulsá Pausar o Esc para detener" },
+                      { duration: 4000, description: "Pulsa Pausar o Esc para detener" },
                     );
                   } else {
                     toast(`Modo TV pausado`, { duration: 2000 });
@@ -352,7 +352,7 @@ export default function AICommandCenter() {
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors",
                 autoplay
-                  ? "bg-[var(--data-success-500)] text-white border-[var(--data-success-500)]"
+                  ? "bg-[var(--accent-dark)] text-white border-[var(--accent-dark)]"
                   : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
               )}
             >
@@ -375,7 +375,7 @@ export default function AICommandCenter() {
 
       {/* Modo TV progress bar */}
       {autoplay && maximized && (
-        <div className="h-1 bg-gray-100 shrink-0 overflow-hidden" data-export-hide="true">
+        <div className="h-1 bg-[var(--rule-soft)] shrink-0 overflow-hidden" data-export-hide="true">
           <div
             className="h-full bg-[var(--data-success-500)] transition-[width] duration-[var(--dur-micro)] ease-linear"
             style={{ width: `${autoplayProgress}%` }}

@@ -19,6 +19,8 @@
  */
 
 import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   X,
   Tag,
@@ -41,6 +43,7 @@ import {
   Edit3,
   Trash2,
 } from "@buleje/design-system/icons";
+import { SectionTitle, CardTitle } from "@buleje/design-system";
 import { getCategoryIcon } from "@/lib/expense-icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -76,6 +79,15 @@ const FREQUENCIES: ExpenseFrequency[] = ["mensual", "quincenal", "semanal", "anu
 const PAYMENT_METHODS: ExpensePaymentMethod[] = ["efectivo", "yape", "plin", "transferencia", "tarjeta", "credito"];
 
 export default function RecurringExpenseModal({ open, onClose, onCreated, tenantSlug, defaultCategory }: Props) {
+  const { confirm } = useConfirm();
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
   // ── State ─────────────────────────────────────────────────────────
   const [customCats, setCustomCats] = useState<ExpenseCategoryDef[]>([]);
   const allCats = useMemo(
@@ -210,8 +222,13 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
     setNewCatColor("teal");
   };
 
-  const handleRemoveCategory = (name: string) => {
-    if (!confirm(`¿Eliminar la categoría "${name}"? Los gastos existentes no se borran.`)) return;
+  const handleRemoveCategory = async (name: string) => {
+    if (!(await confirm({
+      title: `¿Eliminar la categoría "${name}"?`,
+      description: "Los gastos existentes no se borran.",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
     const next = removeCustomCategory(tenantSlug, name);
     setCustomCats(next);
     if (selectedCategoryName === name) setSelectedCategoryName("Otros");
@@ -223,26 +240,26 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
   const SelectedIcon = getCategoryIcon(selectedCategory.iconKey);
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="recurring-expense-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-modal flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape" && !submitting) onClose(); }}
     >
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-3xl my-8 overflow-hidden border border-[var(--rule-base)]">
+      <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-3xl my-8 overflow-hidden border border-[var(--rule-base)]">
         {/* ── Header ── */}
         <header className={cn("px-5 sm:px-6 py-4 border-b border-[var(--rule-base)] flex items-center gap-3", colorCls.bg)}>
           <span className={cn("inline-flex items-center justify-center h-12 w-12 rounded-xl ring-1", colorCls.iconBg, colorCls.border)}>
             <SelectedIcon className={cn("h-6 w-6", colorCls.text)} strokeWidth={2} />
           </span>
           <div className="flex-1 min-w-0">
-            <h2 id="recurring-expense-title" className="text-lg font-extrabold text-[var(--text-primary)]">
+            <SectionTitle as="h2" id="recurring-expense-title" className="text-lg font-extrabold text-[var(--text-primary)]">
               Nuevo gasto recurrente
-            </h2>
+            </SectionTitle>
             <p className="text-sm text-[var(--text-secondary)] truncate">
-              Configurá un pago fijo (alquiler, internet, etc.) para registrarlo en 1 click cuando llegue la fecha.
+              Configura un pago fijo (alquiler, internet, etc.) para registrarlo en 1 click cuando llegue la fecha.
             </p>
           </div>
           <button
@@ -274,7 +291,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                       "group inline-flex items-center gap-2 h-11 px-3.5 rounded-2xl border-2 text-sm font-semibold transition-all",
                       active
                         ? cn(cls.bg, cls.text, cls.border, "ring-2", cls.ring)
-                        : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
@@ -299,7 +316,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                 <button
                   type="button"
                   onClick={() => setShowNewCategoryForm(true)}
-                  className="inline-flex items-center gap-2 h-11 px-3.5 rounded-2xl border-2 border-dashed border-[var(--text-tertiary)]/40 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
+                  className="inline-flex items-center gap-2 h-11 px-3.5 rounded-2xl border-2 border-dashed border-[var(--text-tertiary)]/40 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-all"
                 >
                   <Plus className="h-4 w-4" />
                   Nueva categoría
@@ -309,7 +326,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
 
             {/* Sub-form: crear categoría custom */}
             {showNewCategoryForm && (
-              <div className="mt-4 p-4 rounded-2xl bg-[var(--surface-sunken)] border-2 border-dashed border-[var(--rule-base)] space-y-3">
+              <div className="mt-4 p-4 rounded-2xl bg-[var(--surface-sunken)] border border-dashed border-[var(--rule-base)] space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-bold text-[var(--text-primary)]">Crear categoría personalizada</p>
                   <button
@@ -328,7 +345,8 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                     onChange={(e) => setNewCatName(e.target.value)}
                     placeholder="Ej. Cuotas máquina"
                     ref={(el) => el?.focus()}
-                    className="mt-1 w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium focus:outline-none focus:border-primary"
+                    aria-label="Nombre de la categoría"
+                    className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium focus:outline-none focus:border-primary"
                   />
                 </div>
                 <div>
@@ -365,12 +383,13 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                           key={key}
                           type="button"
                           onClick={() => setNewCatIcon(key)}
+                          aria-label={`Ícono ${key}`}
                           aria-pressed={active}
                           className={cn(
                             "aspect-square inline-flex items-center justify-center rounded-xl border-2 transition-all",
                             active
                               ? cn(cls.iconBg, cls.text, cls.border)
-                              : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
+                              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
                           )}
                         >
                           <Icon className="h-4 w-4" />
@@ -383,7 +402,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                   type="button"
                   onClick={handleCreateCategory}
                   disabled={!newCatName.trim()}
-                  className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                  className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
                 >
                   <Check className="h-4 w-4" />
                   Guardar categoría
@@ -402,7 +421,8 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Ej. Alquiler local, Recarga celular Movistar, Servicio limpieza semanal"
-                className="mt-1 w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium focus:outline-none focus:border-primary"
+                aria-label="Descripción del gasto"
+                className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium focus:outline-none focus:border-primary"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -417,7 +437,8 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full h-12 pl-12 pr-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-base font-bold tabular-nums focus:outline-none focus:border-primary"
+                    aria-label="Monto en soles"
+                    className="w-full h-12 pl-12 pr-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-bold tabular-nums focus:outline-none focus:border-primary"
                   />
                 </div>
               </div>
@@ -428,7 +449,8 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                   value={supplierName}
                   onChange={(e) => setSupplierName(e.target.value)}
                   placeholder="Ej. Edelnor, Don Juan (casero), Movistar"
-                  className="mt-1 w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium focus:outline-none focus:border-primary"
+                  aria-label="Proveedor o quién recibe el pago"
+                  className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium focus:outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -449,8 +471,8 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                       className={cn(
                         "h-11 px-2 rounded-2xl border-2 text-sm font-semibold transition-all",
                         active
-                          ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
-                          : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
+                          ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-2 ring-primary/30"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
                       )}
                     >
                       {FREQUENCY_LABELS[freq]}
@@ -467,7 +489,8 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                   <select
                     value={paymentDay}
                     onChange={(e) => setPaymentDay(e.target.value)}
-                    className="mt-1 w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium focus:outline-none focus:border-primary"
+                    aria-label="Día de pago"
+                    className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium focus:outline-none focus:border-primary"
                   >
                     {DAYS_OF_WEEK.map((d, i) => (
                       <option key={i} value={i}>{d}</option>
@@ -481,7 +504,8 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                     value={paymentDay}
                     onChange={(e) => setPaymentDay(e.target.value)}
                     placeholder="Día del mes (1-31)"
-                    className="mt-1 w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-base font-bold tabular-nums focus:outline-none focus:border-primary"
+                    aria-label="Día de pago del mes"
+                    className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-bold tabular-nums focus:outline-none focus:border-primary"
                   />
                 )}
                 <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
@@ -512,8 +536,8 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                     className={cn(
                       "inline-flex items-center justify-center gap-2 h-11 px-3 rounded-2xl border-2 text-sm font-semibold transition-all",
                       active
-                        ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
-                        : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
+                        ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-2 ring-primary/30"
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
@@ -526,7 +550,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
 
           {/* Recordatorio + Notas ────────────────────────────────── */}
           <Section icon={<StickyNote className="h-4 w-4" />} title="Notas y recordatorio">
-            <label className="flex items-center gap-3 p-3 rounded-2xl border-2 border-[var(--rule-base)] cursor-pointer hover:border-[var(--text-secondary)]">
+            <label className="flex items-center gap-3 p-3 rounded-2xl border border-[var(--rule-base)] cursor-pointer hover:border-[var(--text-secondary)]">
               <input
                 type="checkbox"
                 checked={reminderEnabled}
@@ -546,7 +570,8 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Ej. El casero prefiere efectivo, dejar recibo firmado en caja chica..."
                 rows={2}
-                className="mt-1 w-full px-3.5 py-2.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium focus:outline-none focus:border-primary resize-none"
+                aria-label="Notas internas"
+                className="mt-1 w-full px-3.5 py-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium focus:outline-none focus:border-primary resize-none"
               />
             </div>
           </Section>
@@ -564,7 +589,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="flex-1 h-12 rounded-2xl text-sm font-bold text-[var(--text-secondary)] bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] hover:border-[var(--text-secondary)] transition-colors disabled:opacity-50"
+            className="flex-1 h-12 rounded-2xl text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] hover:border-[var(--text-secondary)] transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -572,7 +597,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex-1 sm:flex-[2] h-12 inline-flex items-center justify-center gap-2 rounded-2xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="flex-1 sm:flex-[2] h-12 inline-flex items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
             {submitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -592,10 +617,10 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
 function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
     <section className="space-y-3">
-      <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+      <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
         <span className="text-[var(--text-tertiary)]">{icon}</span>
         {title}
-      </h3>
+      </CardTitle>
       <div className="space-y-3">{children}</div>
     </section>
   );

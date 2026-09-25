@@ -29,13 +29,14 @@ import {
 } from "@buleje/design-system/icons";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { formatCategoryLabel } from "@/lib/format-category";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
 // Mapa real (OSM) — client-only. Sin onPick = solo lectura (marker fijo).
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), {
   ssr: false,
-  loading: () => <div className="h-[196px] w-full animate-pulse bg-[var(--surface-sunken)]" />,
+  loading: () => <div className="h-[150px] w-full animate-pulse bg-[var(--surface-sunken)]" />,
 });
 
 interface StoreHeroProps {
@@ -79,7 +80,6 @@ export default function StoreHero({
   deliveryMin = 25,
   distanceLabel = "Callería",
   scheduleLabel = "Abierto",
-  address,
   paymentMethods = ["yape", "efectivo"],
   isOpen = true,
   freeDelivery = true,
@@ -108,7 +108,11 @@ export default function StoreHero({
   const [favorited, setFavorited] = useState(false);
   useEffect(() => {
     if (!storeSlug) return;
-    try { setFavorited(localStorage.getItem(`buleje:fav-store:${storeSlug}`) === "1"); } catch { /* ignore */ }
+    try {
+      setFavorited(localStorage.getItem(`buleje:fav-store:${storeSlug}`) === "1");
+    } catch {
+      /* ignore */
+    }
   }, [storeSlug]);
   const toggleFavorite = useCallback(() => {
     if (!storeSlug) return;
@@ -117,7 +121,9 @@ export default function StoreHero({
       try {
         if (next) localStorage.setItem(`buleje:fav-store:${storeSlug}`, "1");
         else localStorage.removeItem(`buleje:fav-store:${storeSlug}`);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   }, [storeSlug]);
@@ -132,9 +138,7 @@ export default function StoreHero({
       aria-labelledby="store-hero-heading"
       className="hidden md:block max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-2"
     >
-      <div
-        className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] shadow-sm"
-      >
+      <div className="rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] shadow-sm">
         {/* ── Barra superior: retroceder + guardar (dentro de la tienda) ── */}
         <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 sm:px-7 lg:px-8 py-2.5">
           <button
@@ -158,27 +162,31 @@ export default function StoreHero({
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]",
             )}
           >
-            <Heart className={cn("h-4 w-4", favorited && "fill-[var(--data-error-500)]")} strokeWidth={2.25} aria-hidden />
+            <Heart
+              className={cn("h-4 w-4", favorited && "fill-[var(--data-error-500)]")}
+              strokeWidth={2.25}
+              aria-hidden
+            />
             {favorited ? "Guardada" : "Guardar"}
           </button>
         </div>
 
         {/* ── Header — identidad + CTAs ───────────────────────────────── */}
-        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:p-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-3 p-4 sm:p-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0 flex-1">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
               <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-              Tienda Buleje · {category}
+              Tienda Buleje · {formatCategoryLabel(category)}
             </span>
             <h1
               id="store-hero-heading"
-              className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]"
+              className="mt-2 text-2xl sm:text-3xl lg:text-[2rem] font-bold leading-[1.1] tracking-[var(--ls-tight)] text-[var(--text-primary)]"
             >
               {name}
             </h1>
             {description && (
               <p className="mt-1.5 max-w-2xl text-sm sm:text-base leading-relaxed text-[var(--text-secondary)]">
-                <span className="italic font-serif text-[var(--text-primary)]">
+                <span className="italic font-serif text-[var(--text-secondary)]">
                   &ldquo;{description}&rdquo;
                 </span>
               </p>
@@ -200,7 +208,7 @@ export default function StoreHero({
                   el.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
               }}
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--text-primary)] px-5 text-sm font-black text-[var(--surface-raised)] transition-all hover:opacity-90 hover:scale-[1.01] active:scale-[0.98]"
+              className="inline-flex h-12 items-center gap-2 rounded-none bg-[var(--text-primary)] px-5 text-sm font-bold text-[var(--surface-raised)] transition-all hover:opacity-90 active:scale-[0.98]"
             >
               Ver catálogo
               <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
@@ -214,13 +222,18 @@ export default function StoreHero({
                 onClick={() => {
                   window.dispatchEvent(
                     new CustomEvent("buleje:open-chat", {
-                      detail: { storeId, storeName: name, storeSlug: storeSlug ?? null, storeLogo: storeLogo ?? null },
+                      detail: {
+                        storeId,
+                        storeName: name,
+                        storeSlug: storeSlug ?? null,
+                        storeLogo: storeLogo ?? null,
+                      },
                     }),
                   );
                 }}
                 aria-label={`Enviar mensaje a ${name}`}
                 title="Chatea con la tienda"
-                className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--text-primary)]/20 bg-transparent px-4 text-sm font-black text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--surface-raised)] active:scale-[0.98]"
+                className="inline-flex h-12 items-center gap-2 rounded-none border-2 border-[var(--text-primary)]/20 bg-transparent px-4 text-sm font-bold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--surface-raised)] active:scale-[0.98]"
               >
                 <MessageCircle className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                 Mensaje
@@ -233,7 +246,7 @@ export default function StoreHero({
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
                 title="Pedí por WhatsApp"
-                className="inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="inline-flex h-12 w-12 items-center justify-center rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 <Phone className="h-4 w-4" strokeWidth={2.25} aria-hidden />
               </a>
@@ -257,7 +270,7 @@ export default function StoreHero({
               Rating
             </span>
             {ratingLabel ? (
-              <p className="text-lg sm:text-xl font-black tabular-nums text-[var(--text-primary)] leading-tight">
+              <p className="text-lg sm:text-xl font-bold tabular-nums text-[var(--text-primary)] leading-tight">
                 {ratingLabel}
                 <span className="ml-1 text-sm font-bold text-[var(--text-tertiary)]">
                   ({reviewCount})
@@ -276,11 +289,9 @@ export default function StoreHero({
               <Truck className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Delivery
             </span>
-            <p className="text-lg sm:text-xl font-black tabular-nums text-[var(--text-primary)] leading-tight">
+            <p className="text-lg sm:text-xl font-bold tabular-nums text-[var(--text-primary)] leading-tight">
               {deliveryMin}
-              <span className="ml-0.5 text-sm font-bold text-[var(--text-tertiary)]">
-                min
-              </span>
+              <span className="ml-0.5 text-sm font-bold text-[var(--text-tertiary)]">min</span>
               {freeDelivery && (
                 <span className="ml-1.5 text-xs font-black text-[var(--data-success-500)]">
                   GRATIS
@@ -295,7 +306,7 @@ export default function StoreHero({
               <MapPin className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Zona
             </span>
-            <p className="text-lg sm:text-xl font-black text-[var(--text-primary)] leading-tight truncate">
+            <p className="text-lg sm:text-xl font-bold text-[var(--text-primary)] leading-tight truncate">
               {locationLabel}
             </p>
           </div>
@@ -306,7 +317,7 @@ export default function StoreHero({
               <Clock className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Estado
             </span>
-            <p className="flex items-center gap-1.5 text-lg sm:text-xl font-black leading-tight">
+            <p className="flex items-center gap-1.5 text-lg sm:text-xl font-bold leading-tight">
               <span
                 aria-hidden
                 className={`inline-block h-2.5 w-2.5 rounded-full ${
@@ -317,9 +328,7 @@ export default function StoreHero({
               />
               <span
                 className={
-                  isOpen
-                    ? "text-[var(--data-success-500)]"
-                    : "text-[var(--data-error-500)]"
+                  isOpen ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
                 }
               >
                 {isOpen ? "Abierto" : "Cerrado"}
@@ -332,35 +341,52 @@ export default function StoreHero({
              Brandon 2026-06-06: ejecutivo y compacto. Mapa real a la izquierda,
              datos en grilla a la derecha. Solo desktop (en mobile, modal de info). */}
         <div className="grid grid-cols-1 border-t-2 border-[var(--rule-base)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          {/* Mapa real */}
-          <div className="relative min-h-[196px] border-b-2 border-[var(--rule-base)] lg:border-b-0 lg:border-r-2 [&_.leaflet-container]:!rounded-none">
-            <LeafletMap lat={mapLat} lon={mapLng} zoom={15} height={196} />
+          {/* Mapa real — más bajo para compactar la sección */}
+          <div className="relative min-h-[150px] border-b-2 border-[var(--rule-base)] lg:border-b-0 lg:border-r-2 [&_.leaflet-container]:!rounded-none">
+            <LeafletMap lat={mapLat} lon={mapLng} zoom={15} height={150} />
             <a
               href={mapsHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="absolute bottom-3 right-3 z-[500] inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] shadow-md transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="absolute bottom-3 right-3 z-[500] inline-flex items-center gap-1.5 rounded-none border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] shadow-md transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               <MapPin className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden /> Cómo llegar
             </a>
           </div>
 
-          {/* Datos */}
-          <div className="bg-[var(--surface-sunken)] p-4 sm:p-5 lg:rounded-br-3xl">
-            <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+          {/* Datos — grid compacto, padding reducido */}
+          <div className="bg-[var(--surface-sunken)] p-3 sm:p-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
               <InfoRow icon={MapPin} label="Ubicación" value={zone ?? "Ciudad Constitución"} />
-              <InfoRow icon={Clock} label="Horario" value={scheduleLabel === "Abierto" ? "Lun a Dom · 6am – 11pm" : scheduleLabel} valueClass={isOpen ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)]"} />
-              <InfoRow icon={Truck} label="Delivery" value={`${deliveryMin} min${freeDelivery ? " · gratis" : ""}`} />
+              <InfoRow
+                icon={Clock}
+                label="Horario"
+                value={scheduleLabel === "Abierto" ? "Lun a Dom · 6am – 11pm" : scheduleLabel}
+                valueClass={
+                  isOpen ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)]"
+                }
+              />
+              <InfoRow
+                icon={Truck}
+                label="Delivery"
+                value={`${deliveryMin} min${freeDelivery ? " · gratis" : ""}`}
+              />
               {payLabel && <InfoRow icon={Wallet} label="Pagos" value={payLabel} />}
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--rule-base)] pt-4">
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--rule-base)] pt-3">
               {waLink && (
-                <a href={waLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]">
+                <a
+                  href={waLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-none border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
                   <MessageCircle className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden /> WhatsApp
                 </a>
               )}
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 px-3 py-1.5 text-xs font-bold text-[var(--data-success-500)]">
-                <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden /> Verificada por Buleje
+              <span className="inline-flex items-center gap-1.5 rounded-none border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 px-3 py-1.5 text-xs font-semibold text-[var(--data-success-500)]">
+                <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden /> Verificada
+                por Buleje
               </span>
             </div>
           </div>
@@ -370,15 +396,34 @@ export default function StoreHero({
   );
 }
 
-function InfoRow({ icon: Icon, label, value, valueClass }: { icon: typeof MapPin; label: string; value: string; valueClass?: string }) {
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+  valueClass,
+}: {
+  icon: typeof MapPin;
+  label: string;
+  value: string;
+  valueClass?: string;
+}) {
   return (
-    <div className="flex items-start gap-2.5">
-      <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
-        <Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+    <div className="flex items-start gap-2">
+      <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
+        <Icon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
       </span>
       <div className="min-w-0">
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">{label}</p>
-        <p className={cn("text-sm font-bold leading-snug text-[var(--text-primary)]", valueClass)}>{value}</p>
+        <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
+          {label}
+        </p>
+        <p
+          className={cn(
+            "text-sm font-semibold leading-snug text-[var(--text-primary)]",
+            valueClass,
+          )}
+        >
+          {value}
+        </p>
       </div>
     </div>
   );

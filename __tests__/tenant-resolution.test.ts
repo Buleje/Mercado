@@ -23,6 +23,16 @@ vi.mock("@/lib/session", async (importOriginal) => {
   };
 });
 
+// FIX 2026-07-07: Source 0 (path /t/[slug]/) llama resolveTenantSlugToId, que
+// hace un prisma.tenant.findUnique. Sin DB en el test, la query queda colgada
+// (el .catch cubre errores, no un hang de conexión) → timeout de 5s en los dos
+// tests de Source 0. Mockeamos el resolver con el MISMO comportamiento real de
+// "slug no encontrado": devolver el slug tal cual (tenant?.id ?? slugOrId), que
+// es lo que valida el test (el path gana; la resolución del slug es incidental).
+vi.mock("@/lib/resolve-tenant", () => ({
+  resolveTenantSlugToId: vi.fn(async (slug: string) => slug),
+}));
+
 import { resolveTenantMultiSource } from "@/lib/middleware/tenant";
 
 function makeReq(path: string, opts?: { headers?: Record<string, string>; cookies?: Record<string, string> }) {

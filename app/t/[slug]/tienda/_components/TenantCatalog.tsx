@@ -139,7 +139,7 @@ function ProductCard({
             onClick={onAdd}
             disabled={!hasStock}
             className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ background: hasStock ? color : "#9ca3af", minHeight: "44px" }}
+            style={{ background: hasStock ? color : "var(--text-tertiary)", minHeight: "44px" }}
           >
             <Plus className="w-4 h-4" />
             Agregar

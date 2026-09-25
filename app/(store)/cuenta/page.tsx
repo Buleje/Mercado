@@ -8,8 +8,9 @@ import CuentaDashboardClient from "./CuentaDashboardClient";
  * Server component ligero. Wrappea el dashboard en <CuentaLayoutShell> que
  * aporta Header + AnnouncementBar + CuentaSidebar + CuentaMobileTabs.
  *
- * Toda la UI del dashboard vive en <CuentaDashboardClient> que consume el
- * contexto customer + mock data centralizado (lib/customer-dashboard.mock.ts).
+ * Toda la UI del dashboard vive en <CuentaDashboardClient>, que consume datos
+ * reales: contexto customer (useCustomer), inteligencia de cliente
+ * (useCustomerIntelligence → /api/customer/intelligence) y pedidos (/api/orders).
  */
 
 export default function CuentaPage() {

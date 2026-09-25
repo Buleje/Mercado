@@ -1,16 +1,19 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback } from "react";
+import { LoadingState, CardTitle, Kicker, SectionTitle } from "@buleje/design-system";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
+import { activateProps } from "@/components/admin/shared/a11y";
 import Image from "next/image";
+import { Field } from "@/components/admin/shared/Field";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Save, Eye, Loader2, Check, GripVertical,
-  Megaphone, Layout, Grid3x3, ShoppingBag, Tag,
-  Package, BookOpen, MessageSquare, HelpCircle,
+  Megaphone, Grid3x3, ShoppingBag, Tag,
+  Package, BookOpen,
   Phone, Map as MapIcon, ToggleLeft, ToggleRight,
-  Zap, TrendingUp, Star, Clock, Heart, Home, Store, AlertTriangle,
+  Zap, TrendingUp, Star, Clock, Heart, Store, AlertTriangle,
   Navigation, ChefHat, Award, Mail, History, Globe,
-  X, Search, Plus, ChevronUp, ChevronDown, Pencil,
+  X, Search, Plus, ChevronUp, ChevronDown, Pencil, Lightbulb,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -31,6 +34,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { formatCurrency } from "@/lib/format";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -68,86 +72,6 @@ type StorefrontSection = {
   iconBg: string;
   enabled: boolean;
 };
-
-const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
-  {
-    key: "announcement",
-    label: "Banner de anuncio",
-    description: "Barra superior con mensajes promocionales",
-    icon: <Megaphone className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
-  },
-  {
-    key: "hero",
-    label: "Hero principal",
-    description: "Banner grande con foto y llamada a la acción",
-    icon: <Layout className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  },
-  {
-    key: "categories",
-    label: "Categorías",
-    description: "Burbujas de categorías para explorar la tienda",
-    icon: <Grid3x3 className="h-4 w-4" />,
-    iconBg: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  },
-  {
-    key: "popular",
-    label: "Productos populares",
-    description: "Grilla de productos más vendidos o destacados",
-    icon: <ShoppingBag className="h-4 w-4" />,
-    iconBg: "bg-primary/10 text-primary dark:bg-primary/20",
-  },
-  {
-    key: "deals",
-    label: "Ofertas del día",
-    description: "Producto con descuento especial y cuenta regresiva",
-    icon: <Tag className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]",
-  },
-  {
-    key: "combos",
-    label: "Combos",
-    description: "Paquetes de productos con precio especial",
-    icon: <Package className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
-  },
-  {
-    key: "recipes",
-    label: "Recetas",
-    description: "Ideas de recetas peruanas con ingredientes de la bodega",
-    icon: <BookOpen className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  },
-  {
-    key: "testimonials",
-    label: "Testimonios",
-    description: "Opiniones de clientes satisfechos",
-    icon: <MessageSquare className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/40 dark:text-[var(--data-info-500)]",
-  },
-  {
-    key: "faq",
-    label: "Preguntas frecuentes",
-    description: "Respuestas a las dudas más comunes de los clientes",
-    icon: <HelpCircle className="h-4 w-4" />,
-    iconBg: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
-  },
-  {
-    key: "contact",
-    label: "Contacto",
-    description: "Formulario y datos de contacto de la bodega",
-    icon: <Phone className="h-4 w-4" />,
-    iconBg: "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/40 dark:text-teal-400",
-  },
-  {
-    key: "delivery_map",
-    label: "Mapa de delivery",
-    description: "Mapa interactivo con la zona de cobertura",
-    icon: <MapIcon className="h-4 w-4" />,
-    iconBg: "bg-[var(--data-info-100)] text-[var(--data-info-500)] dark:bg-[var(--data-info-500)]/40 dark:text-[var(--data-info-500)]",
-  },
-];
 
 // ── Secciones de la página de TIENDA (/tienda) ─────────────────────────────
 
@@ -199,7 +123,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Más Vendidos de la Semana",
     description: "Los productos que más se venden esta semana",
     icon: <TrendingUp className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    iconBg: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
     defaultEnabled: true,
   },
   {
@@ -207,7 +131,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Productos Destacados",
     description: "Carrusel de productos que quieres resaltar",
     icon: <ShoppingBag className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    iconBg: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
     defaultEnabled: true,
   },
   {
@@ -239,7 +163,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Vistos Recientemente",
     description: "Productos que el cliente vio hace poco",
     icon: <Clock className="h-4 w-4" />,
-    iconBg: "bg-slate-100 text-slate-600 dark:bg-slate-900/40 dark:text-slate-400",
+    iconBg: "bg-[var(--rule-soft)] text-[var(--text-secondary)] ",
     defaultEnabled: true,
   },
   {
@@ -269,7 +193,7 @@ const NAV_ITEM_DEFAULTS: Omit<NavItem, "visible">[] = [
     label: "Tienda",
     description: "Catálogo completo de productos",
     icon: <Store className="h-4 w-4" />,
-    iconBg: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    iconBg: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   },
   {
     id: "recetas",
@@ -317,28 +241,6 @@ const NAV_ITEM_DEFAULTS: Omit<NavItem, "visible">[] = [
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
 
-function buildSectionsFromData(
-  visibleKeys: SectionKey[],
-  orderKeys: SectionKey[],
-): StorefrontSection[] {
-  const enabledSet = new Set<SectionKey>(
-    visibleKeys.length > 0 ? visibleKeys : SECTION_DEFAULTS.map((s) => s.key)
-  );
-  const baseOrder = orderKeys.length > 0 ? orderKeys : SECTION_DEFAULTS.map((s) => s.key);
-  const allKeys = SECTION_DEFAULTS.map((s) => s.key);
-  const orderedKeys = [...baseOrder, ...allKeys.filter((k) => !baseOrder.includes(k))];
-
-  // Deduplicar
-  const unique = [...new Set(orderedKeys)];
-
-  return unique
-    .filter((key) => SECTION_DEFAULTS.some((s) => s.key === key))
-    .map((key) => {
-      const def = SECTION_DEFAULTS.find((s) => s.key === key)!;
-      return { ...def, enabled: enabledSet.has(key) };
-    });
-}
-
 function buildTiendaSectionsFromData(
   visibleKeys: TiendaSectionKey[],
   orderKeys: TiendaSectionKey[],
@@ -378,7 +280,7 @@ const TITLE_SUGGESTIONS: Record<string, string[]> = {
   countdown:         ["Apurate, se termina", "Oferta por tiempo limitado", "Quedan pocas horas", "Última oportunidad"],
   flash_deals:       ["Ofertas flash", "Solo hoy a este precio", "Liquidación exprés", "Precio bomba"],
   popular_products:  ["Lo más vendido", "Los favoritos del barrio", "Top 10 de esta semana", "Lo que más se llevan"],
-  featured_carousel: ["Productos destacados", "Recomendados para vos", "Selección de la casa", "Los mejor calificados"],
+  featured_carousel: ["Productos destacados", "Recomendados para ti", "Selección de la casa", "Los mejor calificados"],
   combos:            ["Combos imperdibles", "Pack ahorrador", "Más por menos", "Combinaciones perfectas"],
   recipes:           ["Para cocinar hoy", "Ideas peruanas", "Recetas con ingredientes que tenemos", "Inspirate en la cocina"],
   favorites:         ["Tus favoritos", "Productos que te gustaron", "Tu lista guardada"],
@@ -388,14 +290,14 @@ const TITLE_SUGGESTIONS: Record<string, string[]> = {
 
 // Tips contextuales por sección — guían al dueño sobre qué productos elegir.
 const SECTION_TIPS: Record<string, string> = {
-  daily_special:     "Tip: elegí 1 producto estrella con precio agresivo. Funciona mejor con stock limitado real.",
-  seasonal_promo:    "Tip: agrupá 2-4 productos relacionados con la temporada (panetón, parrilla, helados, etc.).",
-  countdown:         "Tip: usá esto para promos REALES con tiempo límite. Si abusas, el cliente deja de creerte.",
+  daily_special:     "Tip: elige 1 producto estrella con precio agresivo. Funciona mejor con stock limitado real.",
+  seasonal_promo:    "Tip: agrupa 2-4 productos relacionados con la temporada (panetón, parrilla, helados, etc.).",
+  countdown:         "Tip: usa esto para promos REALES con tiempo límite. Si abusas, el cliente deja de creerte.",
   flash_deals:       "Tip: 4-8 productos con descuento real que duren pocas horas. Genera FOMO sano.",
   popular_products:  "Tip: 6-12 best-sellers del último mes. Aumenta confianza social y ticket promedio.",
-  featured_carousel: "Tip: elegí los productos con mejor margen y mejor foto — se llevan la atención del cliente.",
+  featured_carousel: "Tip: elige los productos con mejor margen y mejor foto — se llevan la atención del cliente.",
   combos:            "Tip: combinaciones que aumentan ticket: pollo + papa + bebida, salchipapa + gaseosa, etc.",
-  recipes:           "Tip: recetas peruanas con ingredientes que TENÉS en stock. Linkea cada paso a un producto.",
+  recipes:           "Tip: recetas peruanas con ingredientes que TIENES en stock. Linkea cada paso a un producto.",
   favorites:         "Tip: esta sección es automática — el cliente arma su lista. No necesita configuración.",
   recently_viewed:   "Tip: automática — recuerda los productos que el cliente vio hace poco.",
   last_units:        "Tip: productos con stock < 10 unidades. Genera urgencia honesta — si lo hace falso, te rebota.",
@@ -516,10 +418,19 @@ function SectionEditorModal({
   // Total estimado de productos asignados (suma de precios).
   const assignedTotal = assignedProducts.reduce((sum, p) => sum + p.price, 0);
 
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose });
+
   return (
     <div className="modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col shadow-[var(--shadow-xl)]"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header con kicker descriptivo + counter */}
@@ -530,12 +441,12 @@ function SectionEditorModal({
             </div>
             <div>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">Editar sección</p>
-              <h2 className="text-lg font-extrabold text-[var(--text-primary)] leading-tight">{sectionLabel}</h2>
+              <SectionTitle id={titleId} className="text-[var(--text-primary)]">{sectionLabel}</SectionTitle>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+            className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
@@ -545,7 +456,7 @@ function SectionEditorModal({
         {/* Tip contextual */}
         {sectionTip && (
           <div className="px-6 py-3 bg-primary/5 dark:bg-primary/10 border-b border-primary/10 shrink-0">
-            <p className="text-sm text-[var(--text-primary)]"><span className="font-bold">💡 </span>{sectionTip}</p>
+            <p className="flex items-start gap-1.5 text-sm text-[var(--text-primary)]"><Lightbulb className="h-4 w-4 shrink-0 mt-0.5 text-[var(--accent)]" aria-hidden />{sectionTip}</p>
           </div>
         )}
 
@@ -556,14 +467,15 @@ function SectionEditorModal({
           <div className="overflow-y-auto p-6 space-y-5 border-b lg:border-b-0 lg:border-r-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             {/* Título con sugerencias */}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-[var(--text-primary)]">Título de la sección</label>
+              <Field label="Título de la sección" labelClassName="text-sm font-bold text-[var(--text-primary)]">
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={sectionLabel}
                 maxLength={50}
-                className="w-full px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-4 h-12 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
+              </Field>
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted">Aparece arriba de la sección en tu tienda.</p>
                 <span className="text-xs font-mono text-muted shrink-0">{(title || "").length}/50</span>
@@ -585,7 +497,7 @@ function SectionEditorModal({
                           "px-3 h-8 rounded-full text-xs font-semibold border-2 transition-all",
                           title === s
                             ? "bg-primary text-white border-primary"
-                            : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                            : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                         )}
                       >
                         {s}
@@ -600,34 +512,34 @@ function SectionEditorModal({
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-[var(--text-primary)]">Productos en esta sección</h3>
-                  <span className="inline-flex items-center justify-center h-6 px-2 rounded-md bg-primary/10 text-primary text-xs font-bold tabular-nums">
+                  <CardTitle className="text-[var(--text-primary)]">Productos en esta sección</CardTitle>
+                  <span className="inline-flex items-center justify-center h-6 px-2 rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold tabular-nums">
                     {assignedProducts.length}
                   </span>
                 </div>
                 {assignedProducts.length > 0 && (
                   <span className="text-xs font-mono tabular-nums text-muted">
-                    Total: <span className="font-bold text-[var(--text-primary)]">S/{assignedTotal.toFixed(2)}</span>
+                    Total: <span className="font-bold text-[var(--text-primary)]">{formatCurrency(assignedTotal)}</span>
                   </span>
                 )}
               </div>
 
               {assignedProducts.length === 0 ? (
-                <div className="p-8 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-center">
+                <div className="p-8 rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-center">
                   <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
                     <Package className="h-7 w-7 text-primary" />
                   </div>
                   <p className="text-base font-bold text-[var(--text-primary)]">Sin productos todavía</p>
-                  <p className="text-sm text-muted mt-1">Buscá y agregá productos del catálogo de la derecha.</p>
+                  <p className="text-sm text-muted mt-1">Busca y agrega productos del catálogo de la derecha.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {assignedProducts.map((p, idx) => (
-                    <div key={p.id} className="group flex items-center gap-3 p-3 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 transition-all">
-                      <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg bg-primary/10 text-primary text-xs font-bold tabular-nums shrink-0">
+                    <div key={p.id} className="group flex items-center gap-3 p-3 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 transition-all">
+                      <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold tabular-nums shrink-0">
                         {idx + 1}
                       </span>
-                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-[var(--rule-soft)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
                         {p.image ? (
                           <Image src={p.image} alt={p.name} fill className="object-cover" sizes="48px" />
                         ) : (
@@ -637,7 +549,7 @@ function SectionEditorModal({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-[var(--text-primary)] truncate leading-tight">{p.name}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-sm font-bold text-primary tabular-nums">S/{Number(p.price).toFixed(2)}</span>
+                          <span className="text-sm font-bold text-primary tabular-nums">{formatCurrency(Number(p.price))}</span>
                           {p.category && (
                             <>
                               <span className="text-xs text-muted">·</span>
@@ -651,7 +563,7 @@ function SectionEditorModal({
                           type="button"
                           onClick={() => moveUp(idx)}
                           disabled={idx === 0}
-                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors disabled:opacity-25"
+                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-25"
                           aria-label="Mover arriba"
                         >
                           <ChevronUp className="h-4 w-4" />
@@ -660,7 +572,7 @@ function SectionEditorModal({
                           type="button"
                           onClick={() => moveDown(idx)}
                           disabled={idx === assignedProducts.length - 1}
-                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors disabled:opacity-25"
+                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-25"
                           aria-label="Mover abajo"
                         >
                           <ChevronDown className="h-4 w-4" />
@@ -686,7 +598,7 @@ function SectionEditorModal({
             {/* Search bar grande */}
             <div className="p-6 pb-4 space-y-3 shrink-0 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
-                <label className="text-sm font-bold text-[var(--text-primary)]">Catálogo de productos</label>
+                <span className="text-sm font-bold text-[var(--text-primary)]">Catálogo de productos</span>
                 <p className="text-xs text-muted mt-0.5">Click en un producto para agregarlo a la sección.</p>
               </div>
               <div className="relative">
@@ -695,13 +607,13 @@ function SectionEditorModal({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar por nombre…"
-                  className="w-full pl-12 pr-12 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full pl-12 pr-12 h-12 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {searchQuery && (
-                  <button
+                  <button aria-label="Quitar"
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-surface text-muted hover:text-[var(--text-primary)]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-xl hover:bg-[var(--rule-soft)] text-muted hover:text-[var(--text-primary)]"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -752,13 +664,13 @@ function SectionEditorModal({
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : availableFiltered.length === 0 ? (
-                <div className="text-center py-12 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                <div className="text-center py-12 rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <Search className="h-10 w-10 mx-auto text-muted mb-2" />
                   <p className="text-base font-bold text-[var(--text-primary)]">
                     {searchQuery || categoryFilter !== "todos" ? "Sin resultados" : "Todos los productos están asignados"}
                   </p>
                   <p className="text-sm text-muted mt-1">
-                    {searchQuery || categoryFilter !== "todos" ? "Probá con otros filtros." : "Sumá más productos en Inventario."}
+                    {searchQuery || categoryFilter !== "todos" ? "Prueba con otros filtros." : "Suma más productos en Inventario."}
                   </p>
                 </div>
               ) : (
@@ -768,9 +680,9 @@ function SectionEditorModal({
                       key={p.id}
                       type="button"
                       onClick={() => addProduct(p.id)}
-                      className="group flex items-center gap-3 p-2.5 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all text-left"
+                      className="group flex items-center gap-3 p-2.5 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all text-left"
                     >
-                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-[var(--rule-soft)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
                         {p.image ? (
                           <Image src={p.image} alt={p.name} fill className="object-cover" sizes="48px" />
                         ) : (
@@ -780,7 +692,7 @@ function SectionEditorModal({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-[var(--text-primary)] truncate leading-tight">{p.name}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-sm font-bold text-primary tabular-nums">S/{Number(p.price).toFixed(2)}</span>
+                          <span className="text-sm font-bold text-primary tabular-nums">{formatCurrency(Number(p.price))}</span>
                           {p.category && (
                             <>
                               <span className="text-xs text-muted">·</span>
@@ -789,7 +701,7 @@ function SectionEditorModal({
                           )}
                         </div>
                       </div>
-                      <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
+                      <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
                         <Plus className="h-4 w-4" />
                       </div>
                     </button>
@@ -799,7 +711,7 @@ function SectionEditorModal({
 
               {availableFiltered.length > 60 && (
                 <p className="text-xs text-center text-muted mt-4">
-                  Mostrando primeros 60 — usá el buscador o filtros para encontrar más.
+                  Mostrando primeros 60 — usa el buscador o filtros para encontrar más.
                 </p>
               )}
             </div>
@@ -814,13 +726,13 @@ function SectionEditorModal({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-5 h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+              className="px-5 h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={() => onSave({ productIds, title: title.trim() || undefined })}
-              className="flex items-center gap-2 px-6 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md"
+              className="flex items-center gap-2 px-6 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md"
             >
               <Save className="h-4 w-4" />
               Guardar sección
@@ -888,7 +800,7 @@ function SectionThumbnail({ sectionKey }: { sectionKey: string }) {
                 <div className="absolute top-0.5 left-0.5 h-1 w-1 rounded-full bg-[var(--data-error-500)]" />
               )}
               {sectionKey === "favorites" && (
-                <div className="absolute top-0.5 right-0.5 text-[length:var(--ts-2xs)]">♥</div>
+                <Heart className="absolute top-0.5 right-0.5 h-4 w-4 text-[var(--data-error-500)]" fill="currentColor" aria-hidden />
               )}
             </div>
           ))}
@@ -1087,7 +999,7 @@ function SortableRow({
         "group rounded-2xl border-2 transition-all duration-[var(--dur-fast)] select-none overflow-hidden",
         section.enabled
           ? "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md"
-          : "bg-gray-50 dark:bg-surface border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:opacity-100",
+          : "bg-[var(--surface-sunken)] border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:opacity-100",
         isDragging && "ring-2 ring-primary/40 bg-primary/5 dark:bg-primary/10 shadow-xl scale-[1.01]"
       )}
     >
@@ -1096,7 +1008,7 @@ function SortableRow({
         {/* Drag handle */}
         <button
           type="button"
-          className="cursor-grab active:cursor-grabbing touch-none p-1 -m-1 rounded-md hover:bg-gray-100 dark:hover:bg-surface transition-colors shrink-0"
+          className="cursor-grab active:cursor-grabbing touch-none p-1 -m-1 rounded-xl hover:bg-[var(--rule-soft)] transition-colors shrink-0"
           aria-label={`Reordenar ${section.label}`}
           {...attributes}
           {...listeners}
@@ -1109,9 +1021,10 @@ function SortableRow({
           className={cn(
             "inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg text-xs font-bold tabular-nums shrink-0 border",
             section.enabled
-              ? "bg-primary/10 text-primary border-primary/20"
-              : "bg-gray-100 dark:bg-gray-700 text-[var(--text-tertiary)] border-transparent"
+              ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary/20"
+              : "bg-[var(--rule-soft)] text-[var(--text-tertiary)] border-transparent"
           )}
+          role="img"
           aria-label={`Posición ${position}`}
         >
           {position}
@@ -1129,14 +1042,14 @@ function SortableRow({
         {/* Info — clickable to edit */}
         <div
           className={cn("flex-1 min-w-0", onEdit && "cursor-pointer")}
-          onClick={onEdit}
+          {...(onEdit ? activateProps(onEdit) : {})}
         >
           <div className="flex items-center gap-2">
             <p className={cn("text-base font-bold leading-tight", section.enabled ? "text-[var(--text-primary)]" : "text-muted")}>
               {section.label}
             </p>
             {!section.enabled && (
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--rule-base)] text-[var(--text-tertiary)] shrink-0">
                 Oculta
               </span>
             )}
@@ -1149,7 +1062,7 @@ function SortableRow({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
-            className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+            className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors shrink-0"
             aria-label={`Editar ${section.label}`}
           >
             <Pencil className="h-4 w-4" />
@@ -1164,14 +1077,14 @@ function SortableRow({
             "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
             section.enabled
               ? "bg-primary border-primary"
-              : "bg-gray-200 dark:bg-gray-700 border-transparent"
+              : "bg-[var(--rule-base)] border-transparent"
           )}
           aria-label={section.enabled ? `Ocultar ${section.label}` : `Mostrar ${section.label}`}
           aria-pressed={section.enabled}
         >
           <span
             className={cn(
-              "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
+              "inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transition-transform duration-[var(--dur-base)]",
               section.enabled ? "translate-x-6" : "translate-x-1"
             )}
           />
@@ -1333,7 +1246,7 @@ export default function StorefrontEditor() {
       {/* Header — solo contador y CTAs (titulo lo da el wrapper de StoreCustomizer) */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-xl bg-primary/10 text-primary font-bold text-base">
+          <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-base">
             {enabledCount}
             <span className="text-muted/70 mx-1">/</span>
             <span className="text-muted">{totalCount}</span>
@@ -1348,7 +1261,7 @@ export default function StorefrontEditor() {
             href={previewHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3.5 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface hover:border-primary/40 transition-colors"
+            className="flex items-center gap-1.5 px-3.5 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-primary/40 transition-colors"
           >
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Vista previa</span>
@@ -1359,9 +1272,9 @@ export default function StorefrontEditor() {
             onClick={handleSave}
             disabled={saving}
             className={cn(
-              "flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-bold text-white transition-all",
+              "flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-semibold text-white transition-all",
               saved
-                ? "bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]"
+                ? "bg-primary/10 hover:bg-primary/10"
                 : "bg-primary hover:bg-primary/90 active:scale-[0.98] shadow-md",
               saving && "opacity-70 cursor-not-allowed"
             )}
@@ -1379,12 +1292,12 @@ export default function StorefrontEditor() {
       </div>
 
       {/* Page tabs: Tienda vs Navegación */}
-      <div className="flex gap-1 p-1 bg-gray-100 dark:bg-surface rounded-xl">
+      <div className="flex gap-1 p-1 bg-[var(--rule-soft)] rounded-xl">
         <button
           type="button"
           onClick={() => setActiveTab("tienda")}
           className={cn(
-            "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+            "flex items-center gap-2 flex-1 justify-center px-4 min-h-10 rounded-xl text-sm font-semibold transition-all",
             activeTab === "tienda"
               ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
               : "text-muted hover:text-[var(--text-primary)]"
@@ -1397,7 +1310,7 @@ export default function StorefrontEditor() {
           type="button"
           onClick={() => setActiveTab("navegacion")}
           className={cn(
-            "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+            "flex items-center gap-2 flex-1 justify-center px-4 min-h-10 rounded-xl text-sm font-semibold transition-all",
             activeTab === "navegacion"
               ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
               : "text-muted hover:text-[var(--text-primary)]"
@@ -1445,9 +1358,9 @@ export default function StorefrontEditor() {
                   return (
                     <section key={groupKey} className="space-y-2.5">
                       <header className="flex items-center justify-between gap-2 px-1">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                        <Kicker as="h3" className="text-[var(--text-secondary)]">
                           {SECTION_GROUPS[groupKey].label}
-                        </h3>
+                        </Kicker>
                         <span className="text-xs font-mono tabular-nums text-muted shrink-0">
                           {enabledInGroup}/{sectionsInGroup.length}
                         </span>
@@ -1478,7 +1391,7 @@ export default function StorefrontEditor() {
            cambia cuando activa/desactiva un link. */
         <div className="space-y-5">
           {/* ── Preview del menu navbar real ────────────────────────── */}
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-linear-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card overflow-hidden">
+          <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-linear-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card overflow-hidden">
             <div className="px-4 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-white/50 dark:bg-[var(--surface-raised)]/50">
               Vista previa de tu menú
             </div>
@@ -1510,7 +1423,7 @@ export default function StorefrontEditor() {
                   "group flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-[var(--dur-fast)]",
                   item.visible
                     ? "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md"
-                    : "bg-gray-50 dark:bg-surface border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] opacity-70 hover:opacity-100"
+                    : "bg-[var(--surface-sunken)] border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] opacity-70 hover:opacity-100"
                 )}
               >
                 <div className={cn(
@@ -1526,7 +1439,7 @@ export default function StorefrontEditor() {
                       {item.label}
                     </p>
                     {!item.visible && (
-                      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
+                      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--rule-base)] text-[var(--text-tertiary)] shrink-0">
                         Oculto
                       </span>
                     )}
@@ -1540,14 +1453,14 @@ export default function StorefrontEditor() {
                     "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
                     item.visible
                       ? "bg-primary border-primary"
-                      : "bg-gray-200 dark:bg-gray-700 border-transparent"
+                      : "bg-[var(--rule-base)] border-transparent"
                   )}
                   aria-label={item.visible ? `Ocultar ${item.label}` : `Mostrar ${item.label}`}
                   aria-pressed={item.visible}
                 >
                   <span
                     className={cn(
-                      "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
+                      "inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transition-transform duration-[var(--dur-base)]",
                       item.visible ? "translate-x-6" : "translate-x-1"
                     )}
                   />

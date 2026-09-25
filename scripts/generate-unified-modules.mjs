@@ -8,17 +8,6 @@ fs.mkdirSync(dir, { recursive: true });
 
 const modules = [
   {
-    name: "PanelPrincipalModule",
-    imports: [
-      ["DashboardTab", "@/components/admin/DashboardTab"],
-      ["ExecutiveDashboardTab", "@/components/admin/ExecutiveDashboardTab"],
-    ],
-    tabs: [
-      ["dashboard", "Dashboard"],
-      ["ejecutivo", "Ejecutivo"],
-    ],
-  },
-  {
     name: "POSCajaModule",
     imports: [
       ["POSView", "@/components/admin/POSView"],
@@ -175,21 +164,12 @@ const modules = [
       ["anomalias", "Anomalías"],
     ],
   },
-  {
-    name: "VentasMarketingModule",
-    imports: [
-      ["MarketingAutomationTab", "@/components/admin/MarketingAutomationTab"],
-      ["SalesForecastTab", "@/components/admin/SalesForecastTab"],
-      ["ConversionMetricsTab", "@/components/admin/ConversionMetricsTab"],
-      ["ReferralTab", "@/components/admin/ReferralTab"],
-    ],
-    tabs: [
-      ["marketing", "Automatización"],
-      ["forecast", "Forecast Ventas"],
-      ["metricas", "Métricas"],
-      ["referidos", "Referidos"],
-    ],
-  },
+  // VentasMarketingModule: recipe OBSOLETO removido (2026-06-28). La
+  // consolidación real pasó por CrecimientoHubModule (MarketingAutomationTab) y
+  // AnalisisHubModule (ForecastingDashboard); SalesForecastTab/ConversionMetricsTab/
+  // ReferralTab quedaron huérfanos y se borraron. Este script ya no es
+  // source-of-truth (los unified se editan a mano), pero se limpia la receta
+  // para no referenciar archivos inexistentes.
   {
     name: "CRMClientesModule",
     imports: [
@@ -272,12 +252,10 @@ const modules = [
     imports: [
       ["PLTab", "@/components/admin/PLTab"],
       ["BalanceSheetTab", "@/components/admin/BalanceSheetTab"],
-      ["CashFlowTab", "@/components/admin/CashFlowTab"],
       ["BudgetTab", "@/components/admin/BudgetTab"],
       ["BudgetVsRealTab", "@/components/admin/BudgetVsRealTab"],
       ["BreakEvenTab", "@/components/admin/BreakEvenTab"],
       ["ProfitabilityTab", "@/components/admin/ProfitabilityTab"],
-      ["MarginDashboardTab", "@/components/admin/MarginDashboardTab"],
     ],
     tabs: [
       ["pl", "P&G"],

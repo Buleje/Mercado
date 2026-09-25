@@ -27,7 +27,7 @@ export function StepBar({ step }: StepBarProps) {
               )}
               <div className={`flex items-center gap-1.5 ${isActive ? "text-primary" : isDone ? "text-primary/70" : "text-gray-400 dark:text-gray-500"}`}>
                 <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-black ${
-                  isActive ? "bg-primary text-white" : isDone ? "bg-primary/20 text-primary" : "bg-[var(--rule-soft)] dark:bg-gray-700 text-gray-400 dark:text-gray-500"
+                  isActive ? "bg-primary text-white" : isDone ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--rule-soft)] dark:bg-gray-700 text-gray-400 dark:text-gray-500"
                 }`}>
                   {isDone ? "✓" : num}
                 </div>

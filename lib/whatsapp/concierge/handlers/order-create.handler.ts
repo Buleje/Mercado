@@ -4,7 +4,6 @@ import {
   formatOrderConfirmation,
   formatAskAddress,
   formatEmptyCartWarning,
-  formatCart,
 } from "../../message-templates";
 import type { ConversationContext, ActionResult, Classification, CartItem } from "../types";
 import { extractCartItems } from "../conversation-store";

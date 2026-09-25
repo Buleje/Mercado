@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { Product, Sale, SaleItem } from "@/types/erp";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ViewMode = "categoria" | "pago" | "hora";
@@ -14,7 +15,7 @@ interface RevenueBreakdownChartProps {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function pct(value: number, total: number) {
@@ -31,8 +32,8 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS = [
-  "var(--accent)", "#f97316", "#3b82f6", "#8b5cf6",
-  "#ec4899", "#14C2C2", "#f59e0b", "#6366f1",
+  "var(--accent)", "#ff6b5b", "#3b82f6", "#8b5cf6",
+  "#ec4899", "#14C2C2", "#ff6b5b", "#6366f1",
   "#10b981", "#ef4444",
 ];
 
@@ -40,7 +41,7 @@ const PAYMENT_COLORS: Record<string, string> = {
   efectivo: "var(--accent)",
   yape: "#3b82f6",
   plin: "#8b5cf6",
-  tarjeta: "#f97316",
+  tarjeta: "#ff6b5b",
   transferencia: "#14C2C2",
 };
 
@@ -196,9 +197,9 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
             key={key}
             onClick={() => setView(key)}
             className={cn(
-              "flex-1 text-xs py-1 rounded-md font-medium transition-colors",
+              "flex-1 text-xs py-1 rounded-lg font-medium transition-colors",
               view === key
-                ? "bg-white dark:bg-gray-600 text-primary dark:text-primary "
+                ? "bg-[var(--surface-raised)] text-primary dark:text-primary "
                 : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200"
             )}
           >

@@ -52,6 +52,10 @@ const TENANT_SCOPED_PREFIXES: readonly string[] = [
   "dashboard-data-",
   "buleje-admin-",
   "morning-summary-",
+  // La foto del arqueo (`arqueo-foto-<fecha>` en CashRegisterTab) no matcheaba
+  // ningún prefijo: al cambiar de negocio, el cajón fotografiado de una bodega
+  // seguía apareciendo en el arqueo de la otra.
+  "arqueo-",
 ];
 
 /**

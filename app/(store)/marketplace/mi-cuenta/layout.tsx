@@ -142,8 +142,8 @@ export default function MiCuentaLayout({
                   "relative flex items-center gap-3 rounded-2xl border-2 px-3.5 h-16 transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:flex-col sm:h-auto sm:gap-1.5 sm:py-3 sm:text-center",
                   isLast && "col-span-2 sm:col-span-1",
                   isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]/60 shadow-sm"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/20",
+                    ? "border-[var(--accent)] bg-primary/10 shadow-sm"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-primary/10",
                 )}
               >
                 <span
@@ -151,7 +151,7 @@ export default function MiCuentaLayout({
                     "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
                     isActive
                       ? "bg-[var(--accent-600,var(--accent))] text-white"
-                      : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                      : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
                   )}
                 >
                   <Icon className="h-4.5 w-4.5" strokeWidth={2} aria-hidden />

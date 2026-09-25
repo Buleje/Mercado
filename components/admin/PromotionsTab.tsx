@@ -1,24 +1,28 @@
 ﻿"use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { activateProps } from "@/components/admin/shared/a11y";
 import Image from "next/image";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Plus, Trash2, X, Check, Search, Loader2, AlertTriangle,
   MessageCircle, ExternalLink, Send, Calendar, TrendingUp,
   Percent, Users, User, Phone, Target, Play, Pause, Clock,
+  Pencil, Zap, Gift, Eye, EyeOff, Flame, Sparkles, BadgePercent,
+  TreePine, Flag, Flower2, GraduationCap, Tag, Sun, Heart, Ghost,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
 import type { DbPromotion, DbCustomer } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
 import { CardTitle, LoadingState, PrimaryButton, SectionTitle } from "@buleje/design-system";
 import { useSettingsSafe } from "@/contexts/settings-context";
-
-function formatDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
-  catch { return iso; }
-}
+import { Field } from "@/components/admin/shared/Field";
+import { formatCurrency, formatDate, formatDateTime, formatNumber } from "@/lib/format";
 
 function safeMdToHtml(md: string): string {
   return md.split("\n").map(line => {
@@ -77,6 +81,7 @@ function applyStoreName(template: string, storeName: string): string {
 }
 
 export default function PromotionsTab() {
+  const { confirm, notice } = useConfirm();
   // Brandon mayo 2026 v7: el admin no monta SettingsProvider (lo monta el
   // storefront). Usamos la variante "safe" + fallback.
   const settings = useSettingsSafe();
@@ -102,6 +107,7 @@ export default function PromotionsTab() {
   // AI suggestions
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string | null>(null);
+  const [aiError, setAiError] = useState(false);
   const [loadingAi, setLoadingAi] = useState(false);
   const [aiContext, setAiContext] = useState("");
 
@@ -141,23 +147,28 @@ export default function PromotionsTab() {
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [campaignForm, setCampaignForm] = useState(emptyCampaign);
   const [savingCampaign, setSavingCampaign] = useState(false);
+  const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
+  const [campaignFeedback, setCampaignFeedback] = useState<{ id: string; text: string; ok: boolean } | null>(null);
 
-  const campaignTemplates: { name: string; icon: string; description: string; form: PromoForm }[] = [
-    { name: "🎄 Navidad & Año Nuevo", icon: "🎄", description: "Descuento navideño para fiestas de fin de año",
+  // Brandon: iconos del DS, no emoji (se ven distinto por SO/navegador). El
+  // emoji SÍ se conserva dentro de `form.message` — eso es el mensaje de
+  // WhatsApp que recibe el cliente, contenido, no cromo de nuestra UI.
+  const campaignTemplates: { name: string; icon: LucideIcon; description: string; form: PromoForm }[] = [
+    { name: "Navidad & Año Nuevo", icon: TreePine, description: "Descuento navideño para fiestas de fin de año",
       form: { name: "Fiestas de Fin de Año", description: "¡Celebra con precios especiales! Descuento en toda tu compra navideña.", discountPercent: 15, minPurchase: "50", imageUrl: "", message: "🎄 {TIENDA} te desea ¡Felices Fiestas! 🎉\nLleva un *15% de descuento* en compras mayores a S/50.\n¡Haz tu pedido ahora!", targetType: "all", expiresAt: "" }},
-    { name: "🇵🇪 Fiestas Patrias", icon: "🇵🇪", description: "Celebración patria con ofertas en canasta de productos peruanos",
+    { name: "Fiestas Patrias", icon: Flag, description: "Celebración patria con ofertas en canasta de productos peruanos",
       form: { name: "Fiestas Patrias", description: "¡Viva el Perú! Descuentos especiales en tu canasta patriota.", discountPercent: 12, minPurchase: "40", imageUrl: "", message: "🇵🇪 ¡Felices Fiestas Patrias! 🎉\n{TIENDA} tiene *12% de descuento* en compras mayores a S/40.\n¡Arma tu canasta patriota!", targetType: "all", expiresAt: "" }},
-    { name: "💖 Día de la Madre", icon: "💖", description: "Sorprende a mamá con la mejor canasta de productos",
+    { name: "Día de la Madre", icon: Flower2, description: "Sorprende a mamá con la mejor canasta de productos",
       form: { name: "Día de la Madre", description: "Un detalle especial para mamá con descuento exclusivo.", discountPercent: 10, minPurchase: "30", imageUrl: "", message: "💖 ¡Feliz Día de la Madre! 🌸\n*10% de descuento* en compras mayores a S/30.\n¡Sorpréndela con la mejor canasta de {TIENDA}!", targetType: "all", expiresAt: "" }},
-    { name: "🎒 Vuelta a Clases", icon: "🎒", description: "Ofertas en lonchera saludable y snacks para el colegio",
+    { name: "Vuelta a Clases", icon: GraduationCap, description: "Ofertas en lonchera saludable y snacks para el colegio",
       form: { name: "Vuelta a Clases", description: "Lonchera saludable con descuento. ¡La mejor nutrición para tus hijos!", discountPercent: 8, minPurchase: "25", imageUrl: "", message: "🎒 *Vuelta a Clases* con {TIENDA} 📚\n*8% de descuento* en tu compra de lonchera mayor a S/25.\n¡Nutrición y ahorro!", targetType: "all", expiresAt: "" }},
-    { name: "🖤 Black Friday / Cyber", icon: "🖤", description: "Super descuento por tiempo limitado",
+    { name: "Black Friday / Cyber", icon: Tag, description: "Super descuento por tiempo limitado",
       form: { name: "Black Friday", description: "¡El descuento más grande del año! Solo por tiempo limitado.", discountPercent: 20, minPurchase: "60", imageUrl: "", message: "🖤 *BLACK FRIDAY* en {TIENDA} 🔥\n¡*20% de descuento* en compras mayores a S/60!\n⏰ Solo por tiempo limitado. ¡No te lo pierdas!", targetType: "all", expiresAt: "" }},
-    { name: "🌞 Verano", icon: "🌞", description: "Refrescos, frutas y ofertas de temporada calurosa",
+    { name: "Verano", icon: Sun, description: "Refrescos, frutas y ofertas de temporada calurosa",
       form: { name: "Ofertas de Verano", description: "¡Combate el calor! Descuentos en refrescos, frutas y más.", discountPercent: 10, minPurchase: "30", imageUrl: "", message: "🌞 *¡Ofertas de Verano!* 🍉\n*10% de descuento* en compras mayores a S/30.\n¡Refréscate con {TIENDA}!", targetType: "all", expiresAt: "" }},
-    { name: "❤️ San Valentín", icon: "❤️", description: "Ofertas para parejas y celebraciones románticas",
+    { name: "San Valentín", icon: Heart, description: "Ofertas para parejas y celebraciones románticas",
       form: { name: "San Valentín", description: "¡Celebra el amor! Descuento especial para este día.", discountPercent: 10, minPurchase: "35", imageUrl: "", message: "❤️ *¡Feliz San Valentín!* 🌹\n*10% de descuento* en compras mayores a S/35.\n¡Sorprende a esa persona especial con {TIENDA}!", targetType: "all", expiresAt: "" }},
-    { name: "🎃 Halloween", icon: "🎃", description: "Dulces, snacks y decoración con descuento",
+    { name: "Halloween", icon: Ghost, description: "Dulces, snacks y decoración con descuento",
       form: { name: "Halloween", description: "¡Truco o trato! Descuento en dulces y snacks para la noche de brujas.", discountPercent: 8, minPurchase: "20", imageUrl: "", message: "🎃 *¡Halloween en {TIENDA}!* 👻\n*8% de descuento* en compras mayores a S/20.\n¡Prepárate para la noche más divertida!", targetType: "all", expiresAt: "" }},
   ];
 
@@ -171,6 +182,43 @@ export default function PromotionsTab() {
 
   useScrollLock(showForm || showAiModal || !!sendPromo || !!confirmDeleteId || !!detailPromo || showTemplates || showCampaignForm);
 
+  // A11y: los 7 modales de este tab son overlays a mano sin rol de diálogo
+  // ni trampa de foco/Escape — cableado mínimo con el hook compartido.
+  const formModalRef = useRef<HTMLDivElement>(null);
+  const formTitleId = useId();
+  const closeFormModal = useCallback(() => setShowForm(false), []);
+  useModalAccesible(formModalRef, { onCerrar: closeFormModal, activo: showForm });
+
+  const detailModalRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const closeDetailModal = useCallback(() => setDetailPromo(null), []);
+  useModalAccesible(detailModalRef, { onCerrar: closeDetailModal, activo: !!detailPromo });
+
+  const sendModalRef = useRef<HTMLDivElement>(null);
+  const sendTitleId = useId();
+  const closeSendModal = useCallback(() => setSendPromo(null), []);
+  useModalAccesible(sendModalRef, { onCerrar: closeSendModal, activo: !!sendPromo });
+
+  const aiModalRef = useRef<HTMLDivElement>(null);
+  const aiTitleId = useId();
+  const closeAiModal = useCallback(() => setShowAiModal(false), []);
+  useModalAccesible(aiModalRef, { onCerrar: closeAiModal, activo: showAiModal });
+
+  const deleteModalRef = useRef<HTMLDivElement>(null);
+  const deleteTitleId = useId();
+  const closeDeleteModal = useCallback(() => setConfirmDeleteId(null), []);
+  useModalAccesible(deleteModalRef, { onCerrar: closeDeleteModal, activo: !!confirmDeleteId });
+
+  const templatesModalRef = useRef<HTMLDivElement>(null);
+  const templatesTitleId = useId();
+  const closeTemplatesModal = useCallback(() => setShowTemplates(false), []);
+  useModalAccesible(templatesModalRef, { onCerrar: closeTemplatesModal, activo: showTemplates });
+
+  const campaignFormModalRef = useRef<HTMLDivElement>(null);
+  const campaignFormTitleId = useId();
+  const closeCampaignFormModal = useCallback(() => setShowCampaignForm(false), []);
+  useModalAccesible(campaignFormModalRef, { onCerrar: closeCampaignFormModal, activo: showCampaignForm });
+
   // Save campaigns to localStorage whenever they change
   useEffect(() => {
     if (campaigns.length >= 0) {
@@ -178,17 +226,30 @@ export default function PromotionsTab() {
     }
   }, [campaigns]);
 
+  // Una carga que salió antes que otra trae la lista vieja: con el doble montaje
+  // salen dos GET y, si el primero vuelve después del que sigue a Eliminar, la
+  // promo borrada reaparece y el «Cargando…» se apaga antes de tiempo (el mismo
+  // bug medido en Tareas el 2026-09-14). Sólo aplica lo suyo la carga más nueva;
+  // cada cambio de promo ya termina en load(), por eso no hace falta contar cambios.
+  const cargasRef = useRef({ ultima: 0 });
   const load = useCallback(async () => {
+    const esta = ++cargasRef.current.ultima;
     setLoading(true);
     try {
       const [pRes, cRes] = await Promise.all([
         fetch("/api/promotions"),
         fetch("/api/customers"),
       ]);
-      if (pRes.ok) setPromos(await pRes.json());
-      if (cRes.ok) setCustomers(await cRes.json());
+      if (pRes.ok) {
+        const lista = (await pRes.json()) as DbPromotion[];
+        if (esta === cargasRef.current.ultima) setPromos(lista);
+      }
+      if (cRes.ok) {
+        const lista = (await cRes.json()) as DbCustomer[];
+        if (esta === cargasRef.current.ultima) setCustomers(lista);
+      }
     } catch {}
-    setLoading(false);
+    if (esta === cargasRef.current.ultima) setLoading(false);
   }, []);
 
    
@@ -226,39 +287,81 @@ export default function PromotionsTab() {
       expiresAt: form.expiresAt || undefined,
     };
     try {
-      if (editingId) {
-        await fetch(`/api/promotions/${editingId}`, {
-          method: "PATCH",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(payload),
-        });
-      } else {
-        await fetch("/api/promotions", {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(payload),
-        });
+      // El formulario se cerraba pasara lo que pasara: si el servidor
+      // rechazaba la promo (fechas inválidas, plan vencido, 503), la pantalla
+      // volvía a la lista sin ella y el dueño la cargaba de nuevo desde cero,
+      // sin saber por qué no había quedado.
+      const res = editingId
+        ? await fetch(`/api/promotions/${editingId}`, {
+            method: "PATCH",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(payload),
+          })
+        : await fetch("/api/promotions", {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(payload),
+          });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo guardar la promoción (error ${res.status})`,
+        );
+        return;
       }
       setShowForm(false);
       load();
-    } catch {}
-    setSaving(false);
+    } catch (err) {
+      console.warn("[PromotionsTab] guardar promoción falló", err);
+      toast.error("Sin conexión — la promoción no se guardó.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleActive = async (p: DbPromotion) => {
-    await fetch(`/api/promotions/${p.id}`, {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ active: !p.active }),
-    });
+    // Prender o apagar una promo cambia lo que la tienda cobra: si el switch
+    // vuelve solo a su lugar, hay que decir por qué.
+    try {
+      const res = await fetch(`/api/promotions/${p.id}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ active: !p.active }),
+      });
+      if (!res.ok) {
+        toast.error(`No se pudo ${p.active ? "pausar" : "activar"} la promoción (error ${res.status})`);
+      }
+    } catch (err) {
+      console.warn("[PromotionsTab] toggle promoción falló", err);
+      toast.error("Sin conexión — la promoción no cambió.");
+    }
     load();
   };
 
   const confirmDelete = async () => {
     if (!confirmDeleteId) return;
-    await fetch(`/api/promotions/${confirmDeleteId}`, { method: "DELETE" });
-    setConfirmDeleteId(null);
-    load();
+    try {
+      const res = await fetch(`/api/promotions/${confirmDeleteId}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo eliminar la promoción (error ${res.status})`,
+        );
+        return;
+      }
+      setConfirmDeleteId(null);
+      load();
+    } catch (err) {
+      console.warn("[PromotionsTab] eliminar promoción falló", err);
+      toast.error("Sin conexión — la promoción NO se eliminó.");
+    }
   };
 
   // ── Scheduled Campaigns ────────────────────────────────────────────────
@@ -344,21 +447,69 @@ export default function PromotionsTab() {
     }));
   };
 
-  const deleteCampaign = (id: string) => {
-    if (confirm("¿Eliminar campaña programada?")) {
+  const deleteCampaign = async (id: string) => {
+    if (await confirm({
+      title: "¿Eliminar campaña programada?",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    })) {
       setCampaigns(prev => prev.filter(c => c.id !== id));
     }
   };
 
-  const sendCampaignNow = (c: ScheduledCampaign) => {
-    alert(`Enviando campaña "${c.name}" ahora...\n\nSegmento: ${c.targetSegment}\nMensaje: ${c.messageTemplate}\nCódigo: ${c.discountCode}`);
-    // In production, call /api/campaigns/send
+  // Resuelve los teléfonos del segmento (best-effort con los datos del cliente
+  // que ya tenemos). El backend filtra además por consentimiento (notifPromotions).
+  const segmentPhones = (segment: string): string[] => {
+    const s = (segment || "all").toLowerCase();
+    let list = customers;
+    if (s === "loyal" || s === "champions" || s === "vip") {
+      list = customers.filter(c => ["oro", "diamante"].includes((c.loyaltyTier || "").toLowerCase()));
+    } else if (s === "deudores") {
+      list = customers.filter(c => (c.creditBalance ?? 0) < 0);
+    }
+    // all / at-risk / lost / new / promising → todos (segmentación fina vive en Crecimiento → Campañas)
+    return list.map(c => c.phone).filter(Boolean);
+  };
+
+  const sendCampaignNow = async (c: ScheduledCampaign) => {
+    const phones = segmentPhones(c.targetSegment);
+    if (phones.length === 0) {
+      setCampaignFeedback({ id: c.id, text: "No hay clientes en ese segmento.", ok: false });
+      return;
+    }
+    setSendingCampaignId(c.id);
+    setCampaignFeedback(null);
+    try {
+      const message = c.discountCode && !c.messageTemplate.includes(c.discountCode)
+        ? `${c.messageTemplate}\n\nCódigo: ${c.discountCode}`
+        : c.messageTemplate;
+      const res = await fetch("/api/campaigns/notify", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ phones, title: c.name, message }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCampaignFeedback({
+          id: c.id,
+          text: `Enviado a ${data.sent} cliente${data.sent === 1 ? "" : "s"} (notificación en la app).${data.skipped ? ` ${data.skipped} sin permiso de promociones.` : ""}`,
+          ok: true,
+        });
+      } else {
+        setCampaignFeedback({ id: c.id, text: "No se pudo enviar la campaña.", ok: false });
+      }
+    } catch {
+      setCampaignFeedback({ id: c.id, text: "Error de red al enviar.", ok: false });
+    } finally {
+      setSendingCampaignId(null);
+    }
   };
 
   // ── AI Suggestions ─────────────────────────────────────────────────────────
   const requestAiSuggestions = async () => {
     setLoadingAi(true);
     setAiSuggestions(null);
+    setAiError(false);
     setShowAiModal(true);
     try {
       const r = await fetch("/api/promotions/ai-suggest", {
@@ -367,9 +518,9 @@ export default function PromotionsTab() {
         body: JSON.stringify({ context: aiContext }),
       });
       const data = await r.json();
-      if (data.error) setAiSuggestions(`⚠️ ${data.error}`);
+      if (data.error) { setAiError(true); setAiSuggestions(data.error); }
       else setAiSuggestions(data.suggestions);
-    } catch { setAiSuggestions("Error al conectar con el servicio de IA."); }
+    } catch { setAiError(true); setAiSuggestions("Error al conectar con el servicio de IA."); }
     setLoadingAi(false);
   };
 
@@ -395,7 +546,7 @@ export default function PromotionsTab() {
 
   const sendToAll = async () => {
     if (!sendPromo) return;
-    const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
+    const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: ${formatCurrency(sendPromo.minPurchase)}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
     const msg = applyStoreName(rawMsg, storeName);
     const phones = Array.from(sendPhones);
     if (phones.length === 0) return;
@@ -410,7 +561,11 @@ export default function PromotionsTab() {
     // Open first WhatsApp link
     sendWhatsApp(phones[0], msg);
     if (phones.length > 1) {
-      alert(`Se abrió WhatsApp para ${phones[0]}.\n\nSe crearon ${phones.length} notificaciones in-app.\nQuedan ${phones.length - 1} clientes más por WhatsApp. Haz clic en cada botón "Enviar" para enviar individualmente.`);
+      await notice({
+        title: `Se abrió WhatsApp para ${phones[0]}`,
+        description: `Se crearon ${phones.length} notificaciones in-app. Quedan ${phones.length - 1} clientes más por WhatsApp: haz clic en cada botón "Enviar" para enviarles individualmente.`,
+        intent: "info",
+      });
     }
   };
 
@@ -441,46 +596,64 @@ export default function PromotionsTab() {
 
   const topPromo = promoMetrics.reduce((best, p) => p.estimatedUses > (best?.estimatedUses ?? 0) ? p : best, promoMetrics[0]);
 
+  const totalUses = promoMetrics.reduce((s, p) => s + p.estimatedUses, 0);
+  const totalRevenue = promoMetrics.reduce((s, p) => s + p.estimatedRevenue, 0);
+
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* ── Mejora 13: Resumen de rendimiento ────────────────────────────── */}
+    <div className="space-y-5">
+      {/* Header + toolbar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Promociones y campañas</SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)]">
+            {active.length} activas · {inactive.length} inactivas · {campaigns.length} campañas
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            <Sparkles className="h-4 w-4" /> Sugerencias IA
+          </button>
+          <button
+            onClick={() => setShowTemplates(true)}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            <Calendar className="h-4 w-4" /> Plantillas
+          </button>
+          <button
+            onClick={openCreate}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition-all hover:brightness-105"
+          >
+            <Plus className="h-4 w-4" /> Nueva promoción
+          </button>
+        </div>
+      </div>
+
+      {/* Resumen de rendimiento — stat cards firma (sin emojis) */}
       {promos.length > 0 && (
-        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
-          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-[var(--data-success-500)]" />
-            Rendimiento de Promociones
-          </CardTitle>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Activas</p>
-              <p className="text-lg font-extrabold text-[var(--data-success-500)]">{active.length}</p>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: "Activas", value: active.length, icon: Zap, tint: "var(--data-success-500)" },
+            { label: "Usos estimados", value: totalUses, icon: TrendingUp, tint: "var(--accent)" },
+            { label: "Ingreso estimado", value: `S/${formatNumber(totalRevenue, { max: 0 })}`, icon: BadgePercent, tint: "var(--data-info-500)" },
+            { label: "Más usada", value: topPromo?.name || "—", sub: topPromo ? `~${topPromo.estimatedUses} usos` : "", icon: Flame, tint: "var(--data-warning-500)" },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="flex items-center gap-2">
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: `color-mix(in srgb, ${s.tint} 14%, transparent)`, color: s.tint }}
+                >
+                  <s.icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </span>
+                <p className="text-sm font-semibold text-[var(--text-secondary)]">{s.label}</p>
+              </div>
+              <p className="mt-1.5 truncate font-display text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{s.value}</p>
+              {s.sub && <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{s.sub}</p>}
             </div>
-            <div className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Total usos est.</p>
-              <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{promoMetrics.reduce((s, p) => s + p.estimatedUses, 0)}</p>
-            </div>
-            <div className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Revenue est.</p>
-              <p className="text-lg font-extrabold text-primary">S/{promoMetrics.reduce((s, p) => s + p.estimatedRevenue, 0).toFixed(0)}</p>
-            </div>
-            <div className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Mas popular</p>
-              <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{topPromo?.name || "-"}</p>
-              <p className="text-xs text-[var(--text-tertiary)]">{topPromo ? `~${topPromo.estimatedUses} usos` : ""}</p>
-            </div>
-          </div>
-          {/* Badges de rendimiento inline por promo */}
-          <div className="flex flex-wrap gap-2">
-            {promoMetrics.slice(0, 6).map(p => (
-              <span key={p.id} className={cn(
-                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold",
-                p.estimatedUses > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                p.estimatedUses < 3 ? "bg-gray-100 text-[var(--text-secondary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-              )}>
-                {p.estimatedUses > 10 ? "🔥" : p.estimatedUses < 3 ? "💤" : "📊"} {p.name}: ~{p.estimatedUses} usos
-              </span>
-            ))}
-          </div>
+          ))}
         </div>
       )}
 
@@ -514,9 +687,9 @@ export default function PromotionsTab() {
           <div className="space-y-2">
             {campaigns.map(c => {
               const statusConfig = {
-                scheduled: { label: "Programada", color: "bg-gray-100 text-[var(--text-primary)]", icon: Clock },
-                active: { label: "Activa", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", icon: Play },
-                completed: { label: "Finalizada", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", icon: Check },
+                scheduled: { label: "Programada", color: "bg-[var(--rule-soft)] text-[var(--text-primary)]", icon: Clock },
+                active: { label: "Activa", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", icon: Play },
+                completed: { label: "Finalizada", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", icon: Check },
                 paused: { label: "Pausada", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", icon: Pause },
               };
               const config = statusConfig[c.status];
@@ -537,10 +710,10 @@ export default function PromotionsTab() {
                       </div>
                       <p className="text-sm text-[var(--text-secondary)] dark:text-muted mb-2">{c.description || "Sin descripción"}</p>
                       <div className="flex flex-wrap gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted">
-                        <span>Inicio: {new Date(c.startDate).toLocaleString("es-PE")}</span>
-                        {c.endDate && <span>Fin: {new Date(c.endDate).toLocaleString("es-PE")}</span>}
+                        <span>Inicio: {formatDateTime(c.startDate)}</span>
+                        {c.endDate && <span>Fin: {formatDateTime(c.endDate)}</span>}
                         {c.discountCode && <span className="font-mono font-bold text-[var(--data-success-500)]">Código: {c.discountCode}</span>}
-                        {c.autoSend && <span className="text-[var(--data-success-500)]">📤 Auto-envío</span>}
+                        {c.autoSend && <span className="inline-flex items-center gap-1 text-[var(--data-success-500)]"><Send className="h-3.5 w-3.5" aria-hidden /> Auto-envío</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -548,15 +721,16 @@ export default function PromotionsTab() {
                         <>
                           <button
                             onClick={() => sendCampaignNow(c)}
-                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                            disabled={sendingCampaignId === c.id}
+                            className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 disabled:opacity-50 transition-colors"
                             title="Enviar ahora"
                           >
-                            <Send className="h-4 w-4" />
+                            {sendingCampaignId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                           </button>
                           <button
                             onClick={() => toggleCampaignStatus(c.id)}
-                            className={cn("p-1.5 rounded-lg transition-colors",
-                              c.status === "paused" ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)]"
+                            className={cn("p-1.5 rounded-xl transition-colors",
+                              c.status === "paused" ? "text-[var(--data-success-500)] hover:bg-primary/10" : "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)]"
                             )}
                             title={c.status === "paused" ? "Reanudar" : "Pausar"}
                           >
@@ -566,20 +740,25 @@ export default function PromotionsTab() {
                       )}
                       <button
                         onClick={() => openEditCampaign(c)}
-                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                        className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
                         title="Editar"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => deleteCampaign(c.id)}
-                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                        className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                         title="Eliminar"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
+                  {campaignFeedback?.id === c.id && (
+                    <p className={cn("mt-2 text-xs font-semibold", campaignFeedback.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
+                      {campaignFeedback.text}
+                    </p>
+                  )}
                 </div>
               );
             })}
@@ -587,114 +766,115 @@ export default function PromotionsTab() {
         )}
       </div>
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Promociones</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{active.length} activas · {inactive.length} inactivas</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white hover:brightness-110 transition-all "
-            style={{ background: 'linear-gradient(to right, #8b5cf6, #9333ea)' }}
-          >
-            <MessageCircle className="h-4 w-4" /> Sugerencias IA
-          </button>
-          <button
-            onClick={() => setShowTemplates(true)}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)] transition-colors "
-          >
-            <Calendar className="h-4 w-4" /> Plantillas
-          </button>
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors "
-          >
-            <Plus className="h-4 w-4" /> Nueva
-          </button>
-        </div>
-      </div>
-
       {loading ? (
-        <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted">Cargando…</div>
+        <div className="flex h-40 items-center justify-center text-[var(--text-tertiary)]">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Cargando…
+        </div>
       ) : promos.length === 0 ? (
-        <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
-          No hay promociones. Crea una o pide sugerencias a la IA.
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-14 text-center">
+          <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            <Gift className="h-7 w-7" strokeWidth={2} />
+          </span>
+          <div className="space-y-1">
+            <CardTitle className="text-[var(--text-primary)]">Todavía no tienes promociones</CardTitle>
+            <p className="mx-auto max-w-sm text-sm text-[var(--text-secondary)]">
+              Crea tu primera oferta y mándala por WhatsApp a tus clientes — o pídele ideas a la IA según tu negocio.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              onClick={openCreate}
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition-all hover:brightness-105"
+            >
+              <Plus className="h-4 w-4" /> Crear promoción
+            </button>
+            <button
+              onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              <Sparkles className="h-4 w-4" /> Pedir ideas a la IA
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
-          {promos.map(p => (
-            <div key={p.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl  overflow-hidden">
+          {promoMetrics.map(p => {
+            const targetLabel = p.targetType === "all" ? "Todos"
+              : p.targetType === "group" ? "Grupo"
+              : p.targetType === "individual" ? "Individual"
+              : p.targetType === "specific" ? "Segmentado" : "Todos";
+            return (
+            <div key={p.id} className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-shadow hover:shadow-[var(--shadow-sm)]">
               <div className="flex">
-                {/* Accent strip */}
-                <div className={cn("w-1.5 shrink-0",
-                  p.active ? (p.discountPercent > 0 ? "bg-[var(--data-error-500)]" : "bg-[var(--accent-soft)]") : "bg-gray-200"
-                )} />
-                <div className="flex-1">
+                {/* Accent strip por estado */}
+                <div className={cn("w-1.5 shrink-0", p.active ? "bg-[var(--accent)]" : "bg-[var(--rule-base)]")} />
+                <div className="min-w-0 flex-1">
                   <div
-                    className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
-                    onClick={() => setDetailPromo(p)}
+                    className="cursor-pointer p-4 transition-colors hover:bg-[var(--surface-sunken)]/40"
+                    {...activateProps(() => setDetailPromo(p))}
                   >
                     <div className="flex flex-wrap items-start gap-3">
                       {/* Image preview */}
                       {p.imageUrl && (
-                        <div className="relative w-14 h-14 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden shrink-0">
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[var(--surface-sunken)]">
                           <Image src={p.imageUrl} alt={p.name} fill className="object-cover" sizes="56px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         </div>
                       )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</span>
-                          <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                            p.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-[var(--text-primary)]">{p.name}</span>
+                          <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-[length:var(--ts-xs)] font-bold",
+                            p.active ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                           )}>
                             {p.active ? "Activa" : "Inactiva"}
                           </span>
                           {p.discountPercent > 0 && (
-                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]">
-                              {p.discountPercent}% OFF
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--data-error-50)] px-2.5 py-0.5 text-[length:var(--ts-xs)] font-bold text-[var(--data-error-700)]">
+                              <BadgePercent className="h-3 w-3" /> {p.discountPercent}% OFF
                             </span>
                           )}
-                          <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                            p.targetType === "all" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                            p.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-                          )}>
-                            {p.targetType === "all" ? "Todos" : p.targetType === "group" ? "Grupo" : "Individual"}
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
+                            <Target className="h-3 w-3" /> {targetLabel}
                           </span>
                         </div>
-                        <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5 line-clamp-2">{p.description}</p>
-                        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
-                          Creada: {formatDate(p.createdAt)}
-                          {p.expiresAt && <> · Expira: {formatDate(p.expiresAt)}</>}
-                        </p>
+                        <p className="mt-0.5 line-clamp-2 text-sm text-[var(--text-secondary)]">{p.description}</p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                          <span>Creada {formatDate(p.createdAt)}</span>
+                          {p.expiresAt && <span>· Expira {formatDate(p.expiresAt)}</span>}
+                          <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-secondary)]">
+                            <TrendingUp className="h-3.5 w-3.5" /> ~{p.estimatedUses} usos
+                          </span>
+                          <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-secondary)]">
+                            <BadgePercent className="h-3.5 w-3.5" /> ~S/{formatNumber(p.estimatedRevenue, { max: 0 })} est.
+                          </span>
+                        </div>
                       </div>
                       {/* Actions */}
-                      <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                      <div className="flex shrink-0 items-center gap-1" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => openSendModal(p)}
-                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                          className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent)]"
                           title="Enviar por WhatsApp"
                         >
                           <Send className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openEdit(p)}
-                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                          className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                           title="Editar"
                         >
-                          <ExternalLink className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => toggleActive(p)}
-                          className={cn("p-1.5 rounded-lg transition-colors", p.active ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent")}
+                          className={cn("rounded-xl p-2 transition-colors", p.active ? "text-[var(--data-success-500)] hover:bg-primary/10" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
                           title={p.active ? "Desactivar" : "Activar"}
                         >
-                          <Check className="h-4 w-4" />
+                          {p.active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(p.id)}
-                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                          className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -705,67 +885,66 @@ export default function PromotionsTab() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* ── Create/Edit Modal ─────────────────────────────────────────────── */}
       {showForm && (
-        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowForm(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={closeFormModal}>
+          <div ref={formModalRef} role="dialog" aria-modal="true" aria-labelledby={formTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingId ? "Editar promoción" : "Nueva promoción"}</CardTitle>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <CardTitle id={formTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingId ? "Editar promoción" : "Nueva promoción"}</CardTitle>
+              <button aria-label="Cerrar" onClick={closeFormModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {/* Name */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre *</label>
+              <Field label="Nombre *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Ej: 2x1 en arroz" />
-              </div>
+                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Ej: 2x1 en arroz" />
+              </Field>
               {/* Description */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
+              <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none" placeholder="Detalles de la promoción…" />
-              </div>
+              </Field>
               {/* Discount + Min purchase */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descuento %</label>
+                <Field label="Descuento %" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" min={0} max={100} value={form.discountPercent} onChange={e => setForm(f => ({ ...f, discountPercent: Number(e.target.value) }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Compra mín. (S/)</label>
+                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                </Field>
+                <Field label="Compra mín. (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" min={0} step={0.01} value={form.minPurchase} onChange={e => setForm(f => ({ ...f, minPurchase: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Opcional" />
-                </div>
+                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Opcional" />
+                </Field>
               </div>
               {/* Image URL */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">URL de imagen</label>
-                <input type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="https://..." />
-                {form.imageUrl && (
-                  <div className="relative mt-2 w-32 h-32 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden">
-                    <Image src={form.imageUrl} alt="preview" fill className="object-cover" sizes="128px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                  </div>
+              <Field label="URL de imagen" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(id) => (
+                  <>
+                    <input id={id} type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
+                      className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="https://..." />
+                    {form.imageUrl && (
+                      <div className="relative mt-2 w-32 h-32 rounded-xl bg-[var(--rule-soft)] dark:bg-accent overflow-hidden">
+                        <Image src={form.imageUrl} alt="preview" fill className="object-cover" sizes="128px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                      </div>
+                    )}
+                  </>
                 )}
-              </div>
+              </Field>
               {/* WhatsApp message */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mensaje WhatsApp</label>
+              <Field label="Mensaje WhatsApp" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none"
                   placeholder="🎉 *Promoción especial*&#10;&#10;Aprovecha el descuento…" />
-              </div>
+              </Field>
               {/* Target type */}
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Público objetivo</label>
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Público objetivo</span>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {[
                     { v: "all", l: "Todos", icon: Users },
@@ -774,8 +953,8 @@ export default function PromotionsTab() {
                   ].map(({ v, l, icon: Icon }) => (
                     <button key={v} type="button"
                       onClick={() => setForm(f => ({ ...f, targetType: v }))}
-                      className={cn("flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all",
-                        form.targetType === v ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
+                      className={cn("flex-1 flex items-center justify-center gap-1.5 min-h-11 rounded-xl text-sm font-semibold border-2 transition-all",
+                        form.targetType === v ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                       )}>
                       <Icon className="h-4 w-4" /> {l}
                     </button>
@@ -785,15 +964,15 @@ export default function PromotionsTab() {
               {/* Customer selection for group/individual */}
               {form.targetType !== "all" && (
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Seleccionar clientes</label>
+                  <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Seleccionar clientes</span>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted pointer-events-none" />
                     <input type="text" placeholder="Buscar cliente…" value={customerSearch} onChange={e => setCustomerSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                      className="w-full pl-9 pr-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
                   </div>
-                  <div className="max-h-40 overflow-y-auto rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] divide-y divide-gray-100">
+                  <div className="max-h-40 overflow-y-auto rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] divide-y divide-[var(--rule-soft)]">
                     {filteredFormCustomers.map(c => (
-                      <label key={c.phone} className="flex flex-wrap items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-surface cursor-pointer text-sm">
+                      <label key={c.phone} className="flex flex-wrap items-center gap-2 px-3 py-2 hover:bg-[var(--surface-sunken)] cursor-pointer text-sm">
                         <input type="checkbox" checked={selectedPhones.has(c.phone)}
                           onChange={() => {
                             setSelectedPhones(prev => {
@@ -814,16 +993,15 @@ export default function PromotionsTab() {
                 </div>
               )}
               {/* Expiry */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha de expiración</label>
+              <Field label="Fecha de expiración" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
-              </div>
+                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
+              </Field>
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3 shrink-0">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
+              <button onClick={closeFormModal} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
               <button onClick={savePromo} disabled={saving || !form.name.trim()}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
+                className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
                 {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Crear promoción"}
               </button>
             </div>
@@ -833,23 +1011,23 @@ export default function PromotionsTab() {
 
       {/* ── Promo Detail Modal ────────────────────────────────────────────── */}
       {detailPromo && (
-        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setDetailPromo(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={closeDetailModal}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{detailPromo.name}</CardTitle>
-              <button onClick={() => setDetailPromo(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{detailPromo.name}</CardTitle>
+              <button aria-label="Cerrar" onClick={closeDetailModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {detailPromo.imageUrl && (
-                <div className="relative rounded-xl overflow-hidden bg-gray-100 dark:bg-accent h-48">
+                <div className="relative rounded-xl overflow-hidden bg-[var(--rule-soft)] dark:bg-accent h-48">
                   <Image src={detailPromo.imageUrl} alt={detailPromo.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
+                  detailPromo.active ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--rule-soft)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
                 )}>{detailPromo.active ? "Activa" : "Inactiva"}</span>
                 {detailPromo.discountPercent > 0 && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]">
@@ -857,7 +1035,7 @@ export default function PromotionsTab() {
                   </span>
                 )}
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.targetType === "all" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : detailPromo.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                  detailPromo.targetType === "all" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : detailPromo.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                 )}>{detailPromo.targetType === "all" ? "Todos los clientes" : detailPromo.targetType === "group" ? "Grupo seleccionado" : "Individual"}</span>
               </div>
               {detailPromo.description && (
@@ -869,13 +1047,13 @@ export default function PromotionsTab() {
               {detailPromo.minPurchase && (
                 <div>
                   <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Compra mínima</p>
-                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">S/{detailPromo.minPurchase}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">{formatCurrency(detailPromo.minPurchase)}</p>
                 </div>
               )}
               {detailPromo.message && (
                 <div>
                   <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Mensaje WhatsApp</p>
-                  <div className="bg-[var(--accent-soft)] rounded-xl p-3 mt-1 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap border border-[var(--data-success-500)]/30">{detailPromo.message}</div>
+                  <div className="bg-primary/10 rounded-xl p-3 mt-1 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap border border-[var(--data-success-500)]/30">{detailPromo.message}</div>
                 </div>
               )}
               {detailPromo.targetPhones && (
@@ -885,7 +1063,7 @@ export default function PromotionsTab() {
                     {detailPromo.targetPhones.split(",").filter(Boolean).map(ph => {
                       const cust = customers.find(c => c.phone === ph);
                       return (
-                        <span key={ph} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-gray-100 dark:bg-accent text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">
+                        <span key={ph} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-[var(--rule-soft)] dark:bg-accent text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">
                           <Phone className="h-3 w-3" /> {cust ? cust.name : ph}
                         </span>
                       );
@@ -902,13 +1080,13 @@ export default function PromotionsTab() {
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3 shrink-0">
               <button
                 onClick={() => { setDetailPromo(null); openSendModal(detailPromo); }}
-                className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors"
+                className="flex-1 flex flex-wrap items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 transition-colors"
               >
                 <Send className="h-4 w-4" /> Enviar por WhatsApp
               </button>
               <button
                 onClick={() => { setDetailPromo(null); openEdit(detailPromo); }}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors"
               >
                 Editar
               </button>
@@ -919,22 +1097,22 @@ export default function PromotionsTab() {
 
       {/* ── WhatsApp Send Modal ───────────────────────────────────────────── */}
       {sendPromo && (
-        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setSendPromo(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={closeSendModal}>
+          <div ref={sendModalRef} role="dialog" aria-modal="true" aria-labelledby={sendTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Enviar por WhatsApp</CardTitle>
+                <CardTitle id={sendTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Enviar por WhatsApp</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{sendPromo.name}</p>
               </div>
-              <button onClick={() => setSendPromo(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button aria-label="Quitar" onClick={closeSendModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             {/* Message preview */}
             <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-1">Vista previa del mensaje</p>
-              <div className="bg-[var(--accent-soft)] rounded-xl p-3 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap border border-[var(--data-success-500)]/30 max-h-24 overflow-y-auto">
-                {applyStoreName(sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`, storeName)}
+              <div className="bg-primary/10 rounded-xl p-3 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap border border-[var(--data-success-500)]/30 max-h-24 overflow-y-auto">
+                {applyStoreName(sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: ${formatCurrency(sendPromo.minPurchase)}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`, storeName)}
               </div>
             </div>
             {/* Customer selection */}
@@ -942,18 +1120,18 @@ export default function PromotionsTab() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted pointer-events-none" />
                 <input type="text" placeholder="Buscar cliente…" value={sendSearch} onChange={e => setSendSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                  className="w-full pl-9 pr-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
               </div>
               <button onClick={() => setSendPhones(new Set(customers.map(c => c.phone)))}
                 className="text-xs font-semibold text-primary hover:underline whitespace-nowrap">Todos</button>
               <button onClick={() => setSendPhones(new Set())}
                 className="text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted hover:underline whitespace-nowrap">Ninguno</button>
             </div>
-            <div className="overflow-y-auto flex-1 divide-y divide-gray-100">
+            <div className="overflow-y-auto flex-1 divide-y divide-[var(--rule-soft)]">
               {filteredSendCustomers.map(c => {
                 const selected = sendPhones.has(c.phone);
                 return (
-                  <div key={c.phone} className="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-surface">
+                  <div key={c.phone} className="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-[var(--surface-sunken)] ">
                     <input type="checkbox" checked={selected}
                       onChange={() => {
                         setSendPhones(prev => {
@@ -962,6 +1140,7 @@ export default function PromotionsTab() {
                           return next;
                         });
                       }}
+                      aria-label={`Seleccionar ${c.name}`}
                       className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</p>
@@ -969,10 +1148,10 @@ export default function PromotionsTab() {
                     </div>
                     <button
                       onClick={() => {
-                        const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
+                        const rawMsg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: ${formatCurrency(sendPromo.minPurchase)}` : ""}\n\n¡Te esperamos en {TIENDA}! 🛒`;
                         sendWhatsApp(c.phone, applyStoreName(rawMsg, storeName));
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 transition-colors flex items-center gap-1"
                     >
                       <Send className="h-3 w-3" /> Enviar
                     </button>
@@ -985,7 +1164,7 @@ export default function PromotionsTab() {
               <button
                 onClick={sendToAll}
                 disabled={sendPhones.size === 0}
-                className="w-full py-3 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
+                className="w-full min-h-11 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
               >
                 <Send className="h-4 w-4" /> Enviar a todos los seleccionados
               </button>
@@ -996,22 +1175,27 @@ export default function PromotionsTab() {
 
       {/* ── AI Suggestions Modal ──────────────────────────────────────────── */}
       {showAiModal && (
-        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowAiModal(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={closeAiModal}>
+          <div ref={aiModalRef} role="dialog" aria-modal="true" aria-labelledby={aiTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, #8b5cf6, #9333ea)' }}>
                   <MessageCircle className="h-4 w-4 text-white" />
                 </div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Sugerencias IA</CardTitle>
+                <CardTitle id={aiTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Sugerencias IA</CardTitle>
               </div>
-              <button onClick={() => setShowAiModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button aria-label="Cerrar" onClick={closeAiModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4">
               {loadingAi ? (
                 <LoadingState message="Analizando datos de clientes y ventas..." />
+              ) : aiSuggestions && aiError ? (
+                <div className="flex items-start gap-2 text-sm text-[var(--data-error-500)]">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />
+                  <p>{aiSuggestions}</p>
+                </div>
               ) : aiSuggestions ? (
                 <div className="space-y-0.5" dangerouslySetInnerHTML={{ __html: safeMdToHtml(aiSuggestions) }} />
               ) : (
@@ -1024,20 +1208,20 @@ export default function PromotionsTab() {
 
       {/* ── Delete Confirmation ───────────────────────────────────────────── */}
       {confirmDeleteId && (
-        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/60" style={{ zIndex: 200 }} onClick={() => setConfirmDeleteId(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/60" style={{ zIndex: 200 }} onClick={closeDeleteModal}>
+          <div ref={deleteModalRef} role="dialog" aria-modal="true" aria-labelledby={deleteTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">¿Eliminar promoción?</CardTitle>
+                <CardTitle id={deleteTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">¿Eliminar promoción?</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Esta acción no se puede deshacer.</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
-              <button onClick={confirmDelete} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">Sí, eliminar</button>
+              <button onClick={closeDeleteModal} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
+              <button onClick={confirmDelete} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">Sí, eliminar</button>
             </div>
           </div>
         </div>
@@ -1045,14 +1229,14 @@ export default function PromotionsTab() {
 
       {/* ── Campaign Templates Modal ── */}
       {showTemplates && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowTemplates(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={closeTemplatesModal}>
+          <div ref={templatesModalRef} role="dialog" aria-modal="true" aria-labelledby={templatesTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b dark:border-[var(--rule-base)] shrink-0">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Plantillas de Campaña</CardTitle>
+                <CardTitle id={templatesTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Plantillas de Campaña</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Selecciona una plantilla y personalízala</p>
               </div>
-              <button onClick={() => setShowTemplates(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-100 transition-colors">
+              <button aria-label="Cerrar" onClick={closeTemplatesModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1061,13 +1245,15 @@ export default function PromotionsTab() {
                 <button
                   key={tpl.name}
                   onClick={() => applyTemplate(tpl)}
-                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface hover:bg-[var(--data-warning-50)] dark:hover:bg-[var(--data-warning-500)]/10 hover:border-[var(--data-warning-500)] dark:hover:border-[var(--data-warning-500)] transition-all text-left"
+                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:bg-[var(--data-warning-50)] dark:hover:bg-[var(--data-warning-500)]/10 hover:border-[var(--data-warning-500)] dark:hover:border-[var(--data-warning-500)] transition-all text-left"
                 >
-                  <span className="text-xl sm:text-2xl shrink-0">{tpl.icon}</span>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--data-warning-500)]/12 text-[var(--data-warning-500)]">
+                    <tpl.icon className="h-5 w-5" aria-hidden />
+                  </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{tpl.name}</p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{tpl.description}</p>
-                    <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. S/{tpl.form.minPurchase}</p>
+                    <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. {formatCurrency(tpl.form.minPurchase)}</p>
                   </div>
                 </button>
               ))}
@@ -1078,32 +1264,29 @@ export default function PromotionsTab() {
 
       {/* ── Campaign Form Modal ───────────────────────────────────────────── */}
       {showCampaignForm && (
-        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowCampaignForm(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={closeCampaignFormModal}>
+          <div ref={campaignFormModalRef} role="dialog" aria-modal="true" aria-labelledby={campaignFormTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</CardTitle>
-              <button onClick={() => setShowCampaignForm(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <CardTitle id={campaignFormTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</CardTitle>
+              <button aria-label="Cerrar" onClick={closeCampaignFormModal} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {/* Name */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre de campaña *</label>
+              <Field label="Nombre de campaña *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="text" value={campaignForm.name} onChange={e => setCampaignForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
-              </div>
+                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
+              </Field>
               {/* Description */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
+              <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <textarea value={campaignForm.description} onChange={e => setCampaignForm(f => ({ ...f, description: e.target.value }))} rows={2}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none" placeholder="Detalles de la campaña…" />
-              </div>
+              </Field>
               {/* Target Segment */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Segmento objetivo *</label>
+              <Field label="Segmento objetivo *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select value={campaignForm.targetSegment} onChange={e => setCampaignForm(f => ({ ...f, targetSegment: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-white dark:bg-surface">
+                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-[var(--surface-raised)] ">
                   <option value="all">Todos</option>
                   <option value="champions">Champions</option>
                   <option value="loyal">Loyal</option>
@@ -1112,36 +1295,36 @@ export default function PromotionsTab() {
                   <option value="new">New</option>
                   <option value="promising">Promising</option>
                 </select>
-              </div>
+              </Field>
               {/* Dates */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha/hora inicio *</label>
+                <Field label="Fecha/hora inicio *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="datetime-local" value={campaignForm.startDate ? campaignForm.startDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, startDate: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha/hora fin</label>
+                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
+                </Field>
+                <Field label="Fecha/hora fin" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="datetime-local" value={campaignForm.endDate ? campaignForm.endDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, endDate: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
-                </div>
+                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
+                </Field>
               </div>
               {/* Message Template */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mensaje con placeholders</label>
-                <textarea value={campaignForm.messageTemplate} onChange={e => setCampaignForm(f => ({ ...f, messageTemplate: e.target.value }))} rows={4}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none font-mono"
-                  placeholder="¡Hola {name}! Tenemos un {discount}% de descuento especial para ti..." />
-                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Variables: {"{name}"}, {"{discount}"}, {"{code}"}</p>
-              </div>
+              <Field label="Mensaje con placeholders" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(id) => (
+                  <>
+                    <textarea id={id} value={campaignForm.messageTemplate} onChange={e => setCampaignForm(f => ({ ...f, messageTemplate: e.target.value }))} rows={4}
+                      className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none font-mono"
+                      placeholder="¡Hola {name}! Tenemos un {discount}% de descuento especial para ti..." />
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Variables: {"{name}"}, {"{discount}"}, {"{code}"}</p>
+                  </>
+                )}
+              </Field>
               {/* Discount Code */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Código de descuento</label>
+              <Field label="Código de descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="text" value={campaignForm.discountCode} onChange={e => setCampaignForm(f => ({ ...f, discountCode: e.target.value.toUpperCase() }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="VERANO20" />
-              </div>
+                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="VERANO20" />
+              </Field>
               {/* Auto-send toggle */}
-              <div className="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
+              <div className="flex flex-wrap items-center gap-3 p-3 bg-[var(--surface-sunken)] rounded-xl">
                 <input type="checkbox" id="autoSend" checked={campaignForm.autoSend} onChange={e => setCampaignForm(f => ({ ...f, autoSend: e.target.checked }))}
                   className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                 <label htmlFor="autoSend" className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] cursor-pointer flex-1">
@@ -1151,7 +1334,7 @@ export default function PromotionsTab() {
               </div>
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3 shrink-0">
-              <PrimaryButton variant="secondary" onClick={() => setShowCampaignForm(false)} className="flex-1">Cancelar</PrimaryButton>
+              <PrimaryButton variant="secondary" onClick={closeCampaignFormModal} className="flex-1">Cancelar</PrimaryButton>
               <PrimaryButton
                 variant="primary"
                 onClick={saveCampaign}

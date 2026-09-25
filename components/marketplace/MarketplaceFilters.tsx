@@ -46,6 +46,10 @@ export interface MarketplaceFiltersProps {
   /** Si true, no renderiza el row horizontal de PRODUCT_CATEGORIES
       (porque el caller lo está renderizando arriba en formato propio). */
   hideProductCategory?: boolean;
+  /** Si true, no renderiza el filtro de RANGO DE PRECIO. En /tiendas (directorio
+      de TIENDAS) el precio no aplica — se elige una tienda, no una banda de
+      precio. Brandon 2026-07-06 (audit filtros #2). */
+  hidePrice?: boolean;
   /** Zonas disponibles. Si se provee, se muestra sección "Zona" en el drawer mobile. */
   zones?: ZoneOption[];
   /** Id de zona seleccionada ("" = todas). */
@@ -232,10 +236,10 @@ function FiltersDrawer({
   onChange,
   onRequestGeo,
   onReset,
-  activeCount,
   zones,
   zone,
   onZoneChange,
+  hidePrice,
   extraSort,
   onClearAll,
 }: {
@@ -251,6 +255,7 @@ function FiltersDrawer({
   zones?: ZoneOption[];
   zone?: string;
   onZoneChange?: (zone: string) => void;
+  hidePrice?: boolean;
   extraSort?: {
     value: string;
     onChange: (v: string) => void;
@@ -432,20 +437,22 @@ function FiltersDrawer({
           </div>
 
           {/* Price Range */}
-          <div>
-            <p className="mb-3 flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
-              <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[var(--accent)]/12 text-[var(--accent)] font-mono text-[10px]">
-                S/
-              </span>
-              Precio
-            </p>
-            <PriceRangePopover
-              min={filters.minPrice}
-              max={filters.maxPrice}
-              onChangeMin={(v) => onChange({ minPrice: v })}
-              onChangeMax={(v) => onChange({ maxPrice: v })}
-            />
-          </div>
+          {!hidePrice && (
+            <div>
+              <p className="mb-3 flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
+                <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[var(--accent)]/12 text-[var(--accent)] font-mono text-[10px]">
+                  S/
+                </span>
+                Precio
+              </p>
+              <PriceRangePopover
+                min={filters.minPrice}
+                max={filters.maxPrice}
+                onChangeMin={(v) => onChange({ minPrice: v })}
+                onChangeMax={(v) => onChange({ maxPrice: v })}
+              />
+            </div>
+          )}
 
           {/* Nearby */}
           <button
@@ -507,6 +514,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
     onRequestGeo,
     geoLoading,
     hideProductCategory,
+    hidePrice,
     zones,
     zone,
     onZoneChange,
@@ -556,7 +564,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
               ? "h-9 px-3 text-xs rounded-md"
               : "min-h-10 px-4 py-2 text-sm rounded-xl",
             activeCount > 0
-              ? "bg-primary/10 border-primary/30 text-primary"
+              ? "bg-primary/10 border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)]"
               : "border-gray-200 bg-white text-[var(--text-secondary)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
           )}
         >
@@ -595,6 +603,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
         zones={zones}
         zone={zone}
         onZoneChange={onZoneChange}
+        hidePrice={hidePrice}
         extraSort={extraSort}
         onClearAll={onClearAll}
       />
@@ -649,7 +658,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
               "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all",
               filters.sortBy !== "relevance"
                 ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/30"
-                : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/20"
+                : "bg-[var(--surface-canvas)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:bg-primary/10"
             )}
           >
             <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -667,7 +676,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
                   className={cn(
                     "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
                     filters.sortBy === opt.value
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "text-[var(--text-secondary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800"
                   )}
                 >
@@ -680,7 +689,8 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
         </div>
         )}
 
-        {/* Precio — dropdown con slider */}
+        {/* Precio — dropdown con slider (oculto en /tiendas via hidePrice) */}
+        {!hidePrice && (
         <div className="relative">
           <button
             type="button"
@@ -692,7 +702,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
               "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all",
               priceActive
                 ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/30"
-                : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/20"
+                : "bg-[var(--surface-canvas)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:bg-primary/10"
             )}
           >
             <DollarSign className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -708,6 +718,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             />
           </FilterDropdown>
         </div>
+        )}
 
         {/* Cerca de mí — toggle */}
         <button
@@ -720,7 +731,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all disabled:opacity-60",
             filters.nearbyEnabled
               ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)] shadow-sm"
-              : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]/20"
+              : "bg-[var(--surface-canvas)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)] hover:bg-primary/10"
           )}
         >
           {geoLoading

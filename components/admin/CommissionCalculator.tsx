@@ -1,12 +1,15 @@
 "use client";
  
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { DollarSign, Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
+import { Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 /* ── Helpers ── */
 const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+  `S/ ${formatNumber(n, { min: 2 })}`;
 
 const STORAGE_KEY = "commission_rates";
 
@@ -14,8 +17,9 @@ const STORAGE_KEY = "commission_rates";
 type SaleRecord = {
   id: string;
   total: number;
-  cashierId: string;
-  cashierName: string;
+  cashierId: string | null;
+  // `/api/sales` no incluye el nombre — se resuelve desde /api/admin-users.
+  cashierName?: string;
   createdAt: string;
 };
 
@@ -37,6 +41,12 @@ export default function CommissionCalculator() {
   const [customRates, setCustomRates] = useState<Record<string, number>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [period, setPeriod] = useState<"month" | "week">("month");
+  // FIX 2026-07-08 (reporte ventas-caja bug "Sin cajero"): `/api/sales` NO
+  // devuelve `cashierName` — solo `cashierId`, que guarda el username del
+  // cajero (ver app/api/sales POST). Sin resolución, el detalle mostraba
+  // "Sin cajero" para TODAS las ventas aunque el total salía bien. Resolvemos
+  // username→nombre desde /api/admin-users (misma fuente que TurnosModule).
+  const [cashierNames, setCashierNames] = useState<Record<string, string>>({});
 
   /* Cargar tasas desde localStorage */
   useEffect(() => {
@@ -95,13 +105,34 @@ export default function CommissionCalculator() {
     load();
   }, [load]);
 
+  /* Resolver username→nombre del equipo (una vez). El cashierId de cada venta
+     es el username; sin este mapa el detalle caía a "Sin cajero". */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin-users")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((users: { username: string; name?: string }[]) => {
+        if (cancelled || !Array.isArray(users)) return;
+        const map: Record<string, string> = {};
+        for (const u of users) if (u.username) map[u.username] = u.name || u.username;
+        setCashierNames(map);
+      })
+      .catch((e) => console.warn("[CommissionCalculator] admin-users load failed:", e));
+    return () => { cancelled = true; };
+  }, []);
+
   /* ── Calculos ── */
   const { summaries, totalCommissions } = useMemo(() => {
     const byId: Record<string, { name: string; total: number; count: number }> = {};
 
     for (const s of sales) {
+      const hasCashier = !!s.cashierId;
       const id = s.cashierId || "unknown";
-      const name = s.cashierName || "Sin cajero";
+      // Prioridad: cashierName del payload (si existe) → nombre del equipo por
+      // username → el propio username. Solo ventas SIN cajero → "Sin cajero".
+      const name = hasCashier
+        ? (s.cashierName || cashierNames[id] || id)
+        : "Sin cajero";
       if (!byId[id]) byId[id] = { name, total: 0, count: 0 };
       byId[id].total += s.total;
       byId[id].count++;
@@ -125,7 +156,7 @@ export default function CommissionCalculator() {
     const totalCommissions = summaries.reduce((s, c) => s + c.commission, 0);
 
     return { summaries, totalCommissions };
-  }, [sales, defaultRate, customRates]);
+  }, [sales, defaultRate, customRates, cashierNames]);
 
   /* ── Export CSV ── */
   const handleExport = () => {
@@ -147,28 +178,29 @@ export default function CommissionCalculator() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-3">
         <div className="flex items-center gap-2">
           <select
+            aria-label="Filtrar por periodo"
             value={period}
             onChange={(e) => setPeriod(e.target.value as "month" | "week")}
-            className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-sm text-[var(--text-secondary)]"
+            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-sm text-[var(--text-secondary)]"
           >
             <option value="month">Este mes</option>
             <option value="week">Esta semana</option>
           </select>
-          <button
+          <button aria-label="Configurar"
             onClick={() => setShowSettings((s) => !s)}
             className={cn(
-              "p-1.5 rounded-lg border transition-colors",
+              "p-1.5 rounded-xl border transition-colors",
               showSettings
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750"
+                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] "
             )}
           >
             <Settings className="w-4 h-4" />
           </button>
-          <button
+          <button aria-label="Actualizar"
             onClick={load}
             disabled={loading}
-            className="p-1.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750 transition-colors"
+            className="p-1.5 rounded-xl border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] transition-colors"
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
           </button>
@@ -181,23 +213,23 @@ export default function CommissionCalculator() {
           <p className="text-sm font-medium text-[var(--text-secondary)]">
             Configuracion de comisiones
           </p>
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-[var(--text-secondary)] w-40">
-              Porcentaje por defecto
-            </label>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step={0.5}
-                value={defaultRate}
-                onChange={(e) => setDefaultRate(Number(e.target.value))}
-                className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <span className="text-sm text-[var(--text-secondary)]">%</span>
-            </div>
-          </div>
+          <Field className="flex items-center gap-3" label="Porcentaje por defecto" labelClassName="text-sm text-[var(--text-secondary)] w-40">
+            {(id) => (
+              <div className="flex items-center gap-1.5">
+                <input
+                  id={id}
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={defaultRate}
+                  onChange={(e) => setDefaultRate(Number(e.target.value))}
+                  className="w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <span className="text-sm text-[var(--text-secondary)]">%</span>
+              </div>
+            )}
+          </Field>
 
           {summaries.length > 0 && (
             <div className="space-y-2">
@@ -222,7 +254,7 @@ export default function CommissionCalculator() {
                           [s.cashierId]: Number(e.target.value),
                         }))
                       }
-                      className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <span className="text-sm text-[var(--text-secondary)]">%</span>
                   </div>
@@ -278,7 +310,7 @@ export default function CommissionCalculator() {
 
       {/* Tabla de cajeros */}
       {!loading && !error && summaries.length > 0 && (
-        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-x-auto">
+        <div className="bg-[var(--surface-raised)]">
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
             <p className="text-base font-bold text-[var(--text-primary)]">
               Detalle por cajero
@@ -291,64 +323,61 @@ export default function CommissionCalculator() {
               Exportar CSV
             </button>
           </div>
-          <table className="w-full text-sm">
+          <DataTable>
             <thead>
-              <tr className="border-b border-[var(--rule-soft)] bg-[var(--surface-alt)]/50">
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-left font-semibold text-[var(--text-tertiary)]">
+              <tr className="border-b border-[var(--rule-soft)]">
+                <th>
                   Cajero
                 </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
+                <th className="text-right">
                   Ventas totales
                 </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
+                <th className="text-right">
                   Nro ventas
                 </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
+                <th className="text-right">
                   % Comisión
                 </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
+                <th className="text-right">
                   Comisión
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--rule-soft)]">
+            <tbody>
               {summaries.map((s) => (
-                <tr
-                  key={s.cashierId}
-                  className="hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750 transition-colors"
-                >
-                  <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)]">
+                <tr key={s.cashierId}>
+                  <td className="text-base font-semibold text-[var(--text-primary)]">
                     {s.cashierName}
                   </td>
-                  <td className="px-4 py-4 text-right text-base text-[var(--text-primary)] tabular-nums">
+                  <td className="text-right text-base text-[var(--text-primary)] tabular-nums">
                     {fmt(s.totalSales)}
                   </td>
-                  <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
+                  <td className="text-right text-base text-[var(--text-secondary)] tabular-nums">
                     {s.saleCount}
                   </td>
-                  <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
+                  <td className="text-right text-base text-[var(--text-secondary)] tabular-nums">
                     {s.rate}%
                   </td>
-                  <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-warning-500)] tabular-nums">
+                  <td className="text-right text-base font-bold text-[var(--data-warning-500)] tabular-nums">
                     {fmt(s.commission)}
                   </td>
                 </tr>
               ))}
-              <tr className="bg-[var(--surface-alt)] dark:bg-gray-750 font-bold">
-                <td className="px-4 py-4 text-base text-[var(--text-primary)]">Total</td>
-                <td className="px-4 py-4 text-right text-base text-[var(--text-primary)] tabular-nums">
+              <tr className="bg-[var(--surface-alt)] font-bold">
+                <td className="text-base text-[var(--text-primary)]">Total</td>
+                <td className="text-right text-base text-[var(--text-primary)] tabular-nums">
                   {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}
                 </td>
-                <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
+                <td className="text-right text-base text-[var(--text-secondary)] tabular-nums">
                   {summaries.reduce((s, c) => s + c.saleCount, 0)}
                 </td>
-                <td className="px-4 py-4" />
-                <td className="px-4 py-4 text-right text-lg font-extrabold text-[var(--data-warning-500)] tabular-nums">
+                <td />
+                <td className="text-right text-lg font-extrabold text-[var(--data-warning-500)] tabular-nums">
                   {fmt(totalCommissions)}
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
 
@@ -358,7 +387,26 @@ export default function CommissionCalculator() {
             <Users className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
           </div>
           <p className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin ventas en el periodo</p>
-          <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">Las comisiones se calculan a partir de las ventas registradas. Genera tu primera venta desde POS para ver el desglose.</p>
+          <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
+            Las comisiones se calculan a partir de las ventas registradas. Genera tu primera venta desde el POS para ver el desglose.
+          </p>
+          {/* El empty state decía sólo «no hay ventas» y escondía lo único
+              accionable: la regla con la que se van a calcular. Dejarla lista
+              ANTES de vender es justamente lo que se quiere hacer acá. */}
+          <p className="mt-4 text-sm text-[var(--text-secondary)]">
+            Regla actual: <b className="font-mono text-[var(--text-primary)]">{defaultRate}%</b> sobre el total vendido por cada
+            vendedor.
+            {Object.keys(customRates).length > 0 && (
+              <> Hay {Object.keys(customRates).length} vendedor(es) con porcentaje propio.</>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowSettings(true)}
+            className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          >
+            <Settings className="h-4 w-4" /> Ajustar el porcentaje
+          </button>
         </div>
       )}
     </div>

@@ -17,7 +17,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Bookmark, ShoppingCart, Trash2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { useMarketplaceCart, type CartItem } from "@/hooks/use-marketplace-cart";
+import { type CartItem } from "@/hooks/use-marketplace-cart";
 
 // ── Persistencia localStorage ────────────────────────────────────────────────
 

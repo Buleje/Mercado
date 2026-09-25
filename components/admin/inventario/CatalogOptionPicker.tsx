@@ -18,6 +18,7 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import * as Dialog from "@radix-ui/react-dialog";
+import { CardTitle } from "@buleje/design-system";
 import {
   X, Plus, Loader2, Image as ImageIcon, Check, BookOpen, Search,
 } from "@buleje/design-system/icons";
@@ -126,14 +127,18 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
   return (
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[8800] bg-black/60 backdrop-blur-sm" />
+        {/* Overlay y content comparten z-system (mismo nombre a propósito):
+            Dialog.Content va DESPUÉS en el DOM dentro del mismo Dialog.Portal,
+            así que con z-index igual queda arriba por orden de pintado — no
+            hace falta un peldaño propio. Ver gate ds-no-z-arbitrary-admin. */}
+        <Dialog.Overlay className="fixed inset-0 z-system bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-[8801] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl max-h-[88vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-system -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl max-h-[88vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
         >
           {/* Header */}
           <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
               <BookOpen className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
@@ -144,7 +149,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                 Click en cada item para agregarlo a este grupo. El modal queda abierto para sumar más.
               </p>
             </div>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)]">
+            <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)]">
               <X className="h-5 w-5 text-[var(--text-tertiary)]" />
             </button>
           </div>
@@ -157,7 +162,8 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar item, plantilla o categoría…"
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- el buscador se abre para tipear de inmediato
                 autoFocus
               />
             </div>
@@ -222,9 +228,9 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
             {Object.values(grouped).map(({ template, options }) => (
               <section key={template.id} className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <CardTitle as="h3" className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                     {template.category} · {template.name}
-                  </h3>
+                  </CardTitle>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                     {options.length} item{options.length === 1 ? "" : "s"}
                   </span>
@@ -274,10 +280,10 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                         <span className={cn(
                           "shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-full transition-all",
                           inGroup
-                            ? "bg-[var(--data-success-500)] text-white"
+                            ? "bg-[var(--accent-dark)] text-white"
                             : recent
-                              ? "bg-[var(--data-success-500)] text-white"
-                              : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white",
+                              ? "bg-[var(--accent-dark)] text-white"
+                              : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-primary group-hover:text-white",
                         )}>
                           {inGroup || recent ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                         </span>
@@ -298,7 +304,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
             </span>
             <button
               onClick={onClose}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-semibold text-white hover:bg-primary/90"
             >
               <Check className="h-4 w-4" />
               Listo

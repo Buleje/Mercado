@@ -16,7 +16,7 @@
 
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { logger } from "@/lib/logger";
+import { ensureTable } from "@/lib/db/ensure-table";
 
 export type PaymentMethod = "yape" | "plin" | "transfer";
 export type PaymentStatus = "pending" | "approved" | "rejected";
@@ -56,9 +56,7 @@ let bootstrapDone = false;
 
 async function bootstrap(): Promise<void> {
   if (bootstrapDone) return;
-  try {
-     
-    await prisma.$executeRawUnsafe(`
+  await ensureTable("PaymentProof", `
       CREATE TABLE IF NOT EXISTS "PaymentProof" (
         id              TEXT PRIMARY KEY,
         "tenantSlug"    TEXT NOT NULL,
@@ -92,12 +90,8 @@ async function bootstrap(): Promise<void> {
       CREATE INDEX IF NOT EXISTS "PaymentProof_tenantSlug_idx"
         ON "PaymentProof"("tenantSlug");
       ALTER TABLE "PaymentProof" ADD COLUMN IF NOT EXISTS "passwordHash" TEXT;
-    `);
-    bootstrapDone = true;
-  } catch (err) {
-    logger.error("[payment-proofs] bootstrap failed", { error: String(err) });
-    throw err;
-  }
+    `, "payment-proofs");
+  bootstrapDone = true;
 }
 
 interface CreateInput {

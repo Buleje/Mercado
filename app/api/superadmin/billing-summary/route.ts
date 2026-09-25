@@ -22,6 +22,12 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
  
 import { prisma } from "@/lib/prisma";
+import {
+  computeMrrMovement,
+  computeDunning,
+  type MrrMovement,
+  type Dunning,
+} from "@/lib/billing/dunning";
 
 // ── Tabla de precios PEN (ADR-076 / pricing 2026-05) ────────────────────────
 // Si querés cambiar precios, hacelo acá — single source of truth para el
@@ -46,6 +52,11 @@ const PLAN_LABEL: Record<string, string> = {
   enterprise: "Pro",
   max: "Business",
 };
+
+/** Precio mensual de un plan (0 si free/desconocido). */
+function planPrice(plan: string): number {
+  return PLAN_PRICE_PEN[plan] ?? 0;
+}
 
 const NO_STORE_HEADERS = {
   "Cache-Control": "no-store, max-age=0",
@@ -75,6 +86,8 @@ interface BillingSummary {
   generatedAt: string;
   mrrPEN: number;
   arrPEN: number;
+  mrrMovement: MrrMovement;
+  dunning: Dunning;
   counts: {
     total: number;
     paid: number;
@@ -186,7 +199,10 @@ export async function GET(req: NextRequest) {
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
-      take: 1000,
+      // [KPI FIX] Sin cap: MRR/ARR/counts/byPlan se computan sobre TODOS los
+      // tenants. Antes `take:1000` subcontaba el revenue si había >1000. La
+      // tabla Tenant es la base de clientes (no transaccional) → findMany lean
+      // es barato. El array de DETALLE sí se acota abajo (tenants: slice).
     });
 
     const rows: TenantBillingRow[] = tenants.map((t) => {
@@ -279,16 +295,23 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => (a.trialDaysLeft ?? 999) - (b.trialDaysLeft ?? 999))
       .slice(0, 100);
 
+    // ── Movimiento de MRR + cobranza/riesgo (lógica pura, testeable) ─────────
+    const mrrMovement: MrrMovement = computeMrrMovement(rows, planPrice, now);
+    const dunning: Dunning = computeDunning(rows, planPrice, now);
+
     const summary: BillingSummary = {
       generatedAt: new Date().toISOString(),
       mrrPEN,
       arrPEN: mrrPEN * 12,
+      mrrMovement,
+      dunning,
       counts,
       byPlan,
       byIndustry,
       upcoming7d,
       trials,
-      tenants: rows,
+      // Detalle acotado para el payload; los KPIs de arriba ya son sobre TODOS.
+      tenants: rows.slice(0, 1000),
     };
 
     logger.info("[billing-summary] generated", {

@@ -4,14 +4,15 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo, useEffect, startTransition } from "react";
 import { GitCompareArrows, ArrowUp, ArrowDown, Minus, Calendar, Download, BarChart3 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 type Metric = { label: string; periodA: number; periodB: number; format: "money" | "number" | "pct" };
 
-function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 function fmtNum(n: number, format: Metric["format"]) {
   if (format === "money") return fmt(n);
   if (format === "pct") return `${n.toFixed(1)}%`;
-  return n.toLocaleString("es-PE");
+  return formatNumber(n);
 }
 
 const PRESETS = [
@@ -126,14 +127,14 @@ export default function PeriodComparatorTab() {
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><GitCompareArrows className="h-6 w-6 text-primary" /> Comparador de Periodos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Compara métricas clave entre dos rangos de fecha</p>
         </div>
-        <button onClick={() => exportToCSV(data.map(m => ({ metrica: m.label, [current.aLabel]: fmtNum(m.periodA, m.format), [current.bLabel]: fmtNum(m.periodB, m.format), cambio: `${((m.periodA - m.periodB) / m.periodB * 100).toFixed(1)}%` })), `comparador-${preset}`)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors"><Download className="h-3.5 w-3.5" /> Exportar CSV</button>
+        <button onClick={() => exportToCSV(data.map(m => ({ metrica: m.label, [current.aLabel]: fmtNum(m.periodA, m.format), [current.bLabel]: fmtNum(m.periodB, m.format), cambio: `${((m.periodA - m.periodB) / m.periodB * 100).toFixed(1)}%` })), `comparador-${preset}`)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"><Download className="h-3.5 w-3.5" /> Exportar CSV</button>
       </div>
 
       {/* Preset selector */}
       <div className="flex items-center gap-2 flex-wrap">
         <Calendar className="h-4 w-4 text-[var(--text-tertiary)]" />
         {PRESETS.map(p => (
-          <button key={p.id} onClick={() => setPreset(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", preset === p.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>{p.label}</button>
+          <button key={p.id} onClick={() => setPreset(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", preset === p.id ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-base)] ")}>{p.label}</button>
         ))}
       </div>
 
@@ -182,8 +183,8 @@ export default function PeriodComparatorTab() {
                     <span className="text-[var(--data-success-500)] font-semibold">{current.aLabel}</span>
                     <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtNum(m.periodA, m.format)}</span>
                   </div>
-                  <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                    <div className="h-full bg-[var(--accent-soft)] rounded-full transition-all" style={{ width: `${(m.periodA / maxVal) * 100}%` }} />
+                  <div className="w-full h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
+                    <div className="h-full bg-primary/10 rounded-full transition-all" style={{ width: `${(m.periodA / maxVal) * 100}%` }} />
                   </div>
                 </div>
                 <div>
@@ -191,7 +192,7 @@ export default function PeriodComparatorTab() {
                     <span className="text-[var(--text-secondary)] font-semibold">{current.bLabel}</span>
                     <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtNum(m.periodB, m.format)}</span>
                   </div>
-                  <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
                     <div className="h-full bg-[var(--text-primary)] rounded-full transition-all" style={{ width: `${(m.periodB / maxVal) * 100}%` }} />
                   </div>
                 </div>

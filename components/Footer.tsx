@@ -15,8 +15,6 @@ import {
   ArrowRight,
   Facebook,
   Instagram,
-  CreditCard,
-  Wallet,
   ChevronDown,
   UserCircle2,
   Briefcase,
@@ -35,6 +33,7 @@ import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { readNavVisibility, subscribeNavVisibility, type NavVisibilityMap } from "@/lib/nav-visibility";
 import { BRAND_GEO } from "@/lib/geo";
 import { LEGAL, LEGAL_COMPLETO } from "@/lib/legal";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 
 
 // ── Columna 1: Marketplace ──────────────────────────────────────────────
@@ -50,6 +49,7 @@ const marketplaceLinks = [
   { href: "/marketplace/en-vivo", label: "Buleje en Vivo" },
   { href: "/marketplace/ofertas", label: "Ofertas flash" },
   { href: "/recetas", label: "Recetas" },
+  { href: "/precio-cacao", label: "Precio del cacao" },
   { href: "/asistente", label: "Asistente IA" },
 ];
 
@@ -241,9 +241,10 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
   // ficha de tienda y el resto del marketplace — footer único en todas las
   // páginas. Las landings reales (/negocios, /vender, /abrir-tienda,
   // /repartidores) conservan el footer slim.
+  // Brandon 2026-06-24: /abrir-tienda SALE de isLandingMode → usa el MISMO
+  // footer completo (4 columnas) que el inicio, en vez del slim de landing.
   const isLandingMode =
     pathname.startsWith("/repartidores") ||
-    pathname.startsWith("/abrir-tienda") ||
     pathname.startsWith("/negocios") ||
     pathname.startsWith("/vender");
 
@@ -520,6 +521,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
             {/* IZQ: marca + tagline amazónico + chips */}
             <div>
               <BulejeWordmark
+                forceDark
                 size={44}
                 strokeWidth={1.75}
                 textSize={26}
@@ -648,20 +650,23 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
             {/* Trust + payment chips — minimalista: pills neutras + ícono teal
                 (mono + 1 acento de marca). Sin 4 colores distintos. */}
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
-              {([
-                { Icon: ShieldCheck, label: "Sitio seguro" },
-                { Icon: CreditCard, label: "Yape · Plin" },
-                { Icon: Wallet, label: "Efectivo" },
-                { Icon: Truck, label: "Delivery" },
-              ] as const).map(({ Icon, label }) => (
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-white/70 bg-white/[0.04] border border-white/10">
+                <ShieldCheck className="h-3.5 w-3.5 text-teal-300" strokeWidth={2.5} aria-hidden />
+                Sitio seguro
+              </span>
+              {["Yape", "Plin", "Efectivo"].map((m) => (
                 <span
-                  key={label}
-                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-white/70 bg-white/[0.04] border border-white/10"
+                  key={m}
+                  className="inline-flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-xs font-bold text-white/70 bg-white/[0.04] border border-white/10"
                 >
-                  <Icon className="h-3.5 w-3.5 text-teal-300" strokeWidth={2.5} aria-hidden />
-                  {label}
+                  <PaymentMethodIcon method={m} size={18} />
+                  {m}
                 </span>
               ))}
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-white/70 bg-white/[0.04] border border-white/10">
+                <Truck className="h-3.5 w-3.5 text-teal-300" strokeWidth={2.5} aria-hidden />
+                Delivery
+              </span>
             </div>
 
             {/* Copyright + legal — 1 línea */}

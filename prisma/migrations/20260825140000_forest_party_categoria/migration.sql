@@ -1,0 +1,2 @@
+ALTER TABLE "ForestParty" ADD COLUMN IF NOT EXISTS "categoria" TEXT;
+ALTER TABLE "ForestParty" ADD COLUMN IF NOT EXISTS "codigoCtp" TEXT;

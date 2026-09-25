@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { StorePageDB } from "@/lib/db/store-page.db";
+import { SettingsDB } from "@/lib/db/settings.db";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -19,6 +20,7 @@ import {
   DEFAULT_DESIGN_TOKENS,
   type DesignTokens,
 } from "@/lib/store-design-tokens";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color hex inválido");
 
@@ -59,7 +61,7 @@ export async function PUT(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = DesignSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
@@ -78,6 +80,21 @@ export async function PUT(req: NextRequest) {
     });
     await withDbRetry(() =>
       StorePageDB.upsertCustomization(auth.tenantId, { footerHtml: serialized }),
+    );
+    // Write-through al storeTheme (fuente de verdad del storefront): sin esto
+    // los colores del tab "Diseño" quedaban pisados por settings.storeTheme y
+    // NO se veían en /t/[slug]. Fire-and-forget — no rompe el guardado del diseño.
+    await withDbRetry(() =>
+      SettingsDB.patchStoreThemeJson(auth.tenantId, {
+        primaryColor: parsed.data.primaryColor,
+        secondaryColor: parsed.data.secondaryColor,
+        accentColor: parsed.data.accentColor,
+      }),
+    ).catch((err) =>
+      logger.warn("[store-page/design] write-through storeTheme falló", {
+        err: err instanceof Error ? err.message : String(err),
+        tenantId: auth.tenantId,
+      }),
     );
     return NextResponse.json({ ok: true });
   } catch (e) {

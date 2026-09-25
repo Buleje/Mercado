@@ -6,11 +6,11 @@ import {
   Package, AlertTriangle, Timer, TrendingUp,
   DollarSign,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import { inventoryValueAtCost, realUnitCost } from "@/lib/chart-helpers";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
+import BarraDeuda from "@/components/admin/shared/BarraDeuda";
 
 const InventarioCharts = dynamic(() => import("./InventarioCharts"), { ssr: false });
 const InventarioAdvancedCharts = dynamic(
@@ -20,6 +20,7 @@ const InventarioAdvancedCharts = dynamic(
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
 import { BulejeDashboardSkeleton } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,12 +60,12 @@ export interface InventarioData {
 // Brandon 2026-06-04: valor headline con separador de miles es-PE, redondeado
 // al sol (sin centavos) para que el KPI no rompa en 2 líneas. Antes daba
 // "S/ 10984.80" (sin separador, partía feo) — ahora "S/ 10,985".
-function fmt(n: number) { return `S/ ${Math.round(n).toLocaleString("es-PE")}`; }
+function fmt(n: number) { return `S/ ${formatNumber(Math.round(n))}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
+function dayLabel(dk: string) { return formatDateShort(dk + "T12:00:00"); }
 
 const CAT_LABELS: Record<string, string> = { "frutas-verduras": "Frutas y Verduras", abarrotes: "Abarrotes", carnes: "Carnes", lacteos: "Lácteos", bebidas: "Bebidas", limpieza: "Limpieza" };
-const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarrotes: "#f59e0b", carnes: "#ef4444", lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4" };
+const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarrotes: "#ff6b5b", carnes: "#ef4444", lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4" };
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -204,7 +205,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     // Stock distribution
     const ranges = [
       { label: "Sin stock", min: 0, max: 0, color: "#ef4444" },
-      { label: "1-10 uds", min: 1, max: 10, color: "#f59e0b" },
+      { label: "1-10 uds", min: 1, max: 10, color: "#ff6b5b" },
       { label: "11-50 uds", min: 11, max: 50, color: "#3b82f6" },
       { label: "51-100 uds", min: 51, max: 100, color: "#06b6d4" },
       { label: "100+ uds", min: 101, max: Infinity, color: "var(--accent)" },
@@ -230,7 +231,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
-      <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
+      <button onClick={() => void refresh()} className="px-4 min-h-10 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-semibold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
   if (!data) return null;
@@ -246,7 +247,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
         onChangeRange={onChangeRange}
         icon={Package}
         title="Tu inventario está vacío"
-        description="Agregá productos para empezar a ver stock crítico, rotación, valor invertido y proyección de agotamiento."
+        description="Agrega productos para empezar a ver stock crítico, rotación, valor invertido y proyección de agotamiento."
         action={{ label: "Agregar producto", href: "/admin?tab=productos" }}
       />
     );
@@ -262,14 +263,14 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
       {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         <StatCard
           label="Valor Inventario"
           value={fmt(data.valorInventario)}
           subValue={
             data.productosSinCosto > 0
               ? `${data.productosSinCosto} sin costo · valor parcial`
-              : `${totalUnidades.toLocaleString("es-PE")} uds · a costo real`
+              : `${formatNumber(totalUnidades)} uds · a costo real`
           }
           icon={DollarSign}
         />
@@ -278,20 +279,6 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
           value={String(data.totalProductos)}
           subValue={`${categorias} ${categorias === 1 ? "categoría" : "categorías"}`}
           icon={Package}
-        />
-        <StatCard
-          label="Stock Crítico"
-          value={String(data.stockCritico)}
-          subValue={data.stockCritico > 0 ? "bajo el mínimo" : "todo sobre el mínimo"}
-          icon={AlertTriangle}
-          emphasis={data.stockCritico > 0 ? "error" : "success"}
-        />
-        <StatCard
-          label="Agotados"
-          value={String(data.agotados)}
-          subValue={data.agotados > 0 ? "reponer ya" : "ninguno"}
-          icon={Package}
-          emphasis={data.agotados > 0 ? "error" : "success"}
         />
         <StatCard
           label="Sin Movimiento"
@@ -310,44 +297,45 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
         />
       </div>
 
-      {/* ── Alert bar (critical) ── */}
-      {(data.agotados > 0 || data.stockCritico > 0) && (
-        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 px-5 py-3">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
-          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
-            {data.agotados > 0 && <span>{data.agotados} producto{data.agotados > 1 ? "s" : ""} agotado{data.agotados > 1 ? "s" : ""}</span>}
-            {data.agotados > 0 && data.stockCritico > 0 && <span className="mx-1.5 text-[var(--data-error-500)]">·</span>}
-            {data.stockCritico > 0 && <span>{data.stockCritico} en stock crítico</span>}
-          </p>
-        </div>
-      )}
+      {/* Lo que pide reponer, en una línea (`BarraDeuda`).
+          Antes eran dos tarjetas en la grilla MÁS un cartel rojo debajo que
+          repetía los mismos dos números («N agotados · N en stock crítico»),
+          sin llevar a ninguna parte. Ahora cada pastilla es el enlace a la
+          pantalla donde se repone. «Sin Movimiento» se queda arriba: describe
+          la rotación, no pide una acción de hoy. */}
+      <BarraDeuda
+        items={[
+          ...(data.agotados > 0
+            ? [{
+                key: "agotados",
+                valor: data.agotados,
+                label: `producto${data.agotados > 1 ? "s" : ""} agotado${data.agotados > 1 ? "s" : ""}`,
+                hint: "reponer ya",
+                tono: "error" as const,
+                href: "/admin?tab=inventario",
+                title: "Productos en cero: se reponen desde Inventario",
+              }]
+            : []),
+          ...(data.stockCritico > 0
+            ? [{
+                key: "stock-critico",
+                valor: data.stockCritico,
+                label: "en stock crítico",
+                hint: "bajo el mínimo",
+                tono: "warning" as const,
+                href: "/admin?tab=inventario",
+                title: "Productos por debajo de su stock mínimo",
+              }]
+            : []),
+        ]}
+        vacio="Todo el catálogo está sobre su stock mínimo."
+      />
 
       {/* ── Charts base (valor cat, movimiento 14d, top salidas, distribución, cobertura, proyección) ── */}
       <InventarioCharts data={data} />
 
       {/* ── Charts especializados (ABC, salud, rotación cat, salidas stacked, waterfall, comparativa) ── */}
       <InventarioAdvancedCharts />
-    </div>
-  );
-}
-
-// ── Skeleton ──────────────────────────────────────────────────────────────────
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28" />)}
-      </div>
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-[380px]" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />)}
-      </div>
     </div>
   );
 }

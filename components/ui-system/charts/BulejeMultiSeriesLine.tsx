@@ -19,7 +19,6 @@ import {
   CHART_PALETTE,
 } from "./palette";
 import { ChartTooltip } from "./ChartTooltip";
-import { cn } from "@/lib/utils";
 
 /**
  * BulejeMultiSeriesLine — line chart con hasta 5 series comparativas.

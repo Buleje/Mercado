@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { tenantKey } from "@/contexts/tenant-context";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export type SavedLocation = {
   id: string;
@@ -125,8 +126,20 @@ function upsertAccount(list: Customer[], next: Customer): Customer[] {
   return [next, ...cleaned].slice(0, 8); // max 8 cuentas guardadas
 }
 
-export function CustomerProvider({ children }: { children: ReactNode }) {
-  const [customer, setCustomer] = useState<Customer | null>(null);
+export function CustomerProvider({
+  children,
+  // Audit #9 (SSR-auth, Brandon 2026-07-06): estado inicial resuelto en el SERVER
+  // desde la cookie buleje-customer-sess. `undefined` = el server no lo proveyó
+  // (comportamiento viejo con skeleton). Con valor (Customer o null) arrancamos
+  // HIDRATADOS → el navbar pinta el estado real en el primer byte, sin skeleton
+  // ni CLS. El cliente arranca con el mismo prop → sin hydration mismatch; el
+  // useEffect de abajo reconcilia con localStorage / /me después.
+  initialCustomer,
+}: {
+  children: ReactNode;
+  initialCustomer?: Customer | null;
+}) {
+  const [customer, setCustomer] = useState<Customer | null>(initialCustomer ?? null);
   const [accounts, setAccounts] = useState<Customer[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [openMode, setOpenMode] = useState<"order" | "profile">("order");
@@ -135,7 +148,9 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   // Brandon 2026-06-04 (auditoría /negocios): true cuando terminó la hidratación
   // de auth (localStorage o /api/auth/customer/me). El navbar lo usa para mostrar
   // un skeleton estable en vez de parpadear "Ingresar" → avatar.
-  const [hydrated, setHydrated] = useState(false);
+  // Audit #9: si el server proveyó initialCustomer (aunque sea null = logout),
+  // ya conocemos el estado de auth → arrancamos hidratados (sin skeleton).
+  const [hydrated, setHydrated] = useState(initialCustomer !== undefined);
 
   // Hydrate from localStorage after mount — null during SSR to avoid mismatch.
   // Si no hay localStorage (primera visita en este dispositivo) pero SÍ existe
@@ -236,7 +251,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     if (data.phone && hasAdminSession) {
       fetch("/api/customers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           phone: data.phone,
           name: data.name,

@@ -3,9 +3,20 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-  Eye, EyeOff, Percent, Globe, RefreshCw, Check, X,
-  ShoppingBag, Star, Crown, Palette, Image as ImageIcon,
-  ToggleRight, GripVertical,
+  Eye,
+  EyeOff,
+  Percent,
+  Globe,
+  RefreshCw,
+  Check,
+  X,
+  ShoppingBag,
+  Star,
+  Crown,
+  Palette,
+  Image as ImageIcon,
+  ToggleRight,
+  GripVertical,
 } from "@buleje/design-system/icons";
 import { PlanBadge } from "@/components/superadmin/_shared/SABadge";
 import { TableSkeleton } from "@/components/superadmin/_shared/SASkeleton";
@@ -51,7 +62,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
         <div
           className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-lg transition-all ${
             toast.ok
-              ? "bg-[var(--data-success-50)] text-[var(--data-success-500)] border border-[var(--data-success-500)] dark:bg-green-950/80 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]"
+              ? "bg-[var(--data-success-50)] text-[var(--data-success-500)] border border-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/80 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]"
               : "bg-[var(--data-error-50)] text-[var(--data-error-500)] border border-[var(--data-error-500)] dark:bg-red-950/80 dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
           }`}
         >
@@ -94,11 +105,13 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
         <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
           <Eye className="w-4 h-4 text-[var(--data-success-500)]" />
           Tiendas visibles en el Marketplace
-          <span className="ml-auto text-xs font-normal text-gray-400">{published.length} tiendas</span>
+          <span className="ml-auto text-xs font-normal text-[var(--text-tertiary)]">
+            {published.length} tiendas
+          </span>
         </h3>
 
         {published.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">No hay tiendas publicadas</p>
+          <p className="text-sm text-[var(--text-tertiary)] text-center py-8">No hay tiendas publicadas</p>
         ) : (
           <div className="space-y-3">
             {published.map((store, i) => (
@@ -107,7 +120,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                 className="flex items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-800/30 p-4 transition-all hover:border-primary/30"
               >
                 {/* Position */}
-                <div className="flex items-center gap-1 text-gray-400">
+                <div className="flex items-center gap-1 text-[var(--text-tertiary)]">
                   <GripVertical className="w-4 h-4" />
                   <span className="text-xs font-bold tabular-nums w-5 text-center">{i + 1}</span>
                 </div>
@@ -115,7 +128,13 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                 {/* Logo */}
                 <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                   {store.logo ? (
-                    <Image src={store.logo} alt={store.name} width={40} height={40} className="object-cover" />
+                    <Image
+                      src={store.logo}
+                      alt={store.name}
+                      width={40}
+                      height={40}
+                      className="object-cover"
+                    />
                   ) : (
                     <ShoppingBag className="w-5 h-5 text-primary" />
                   )}
@@ -127,25 +146,29 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                     <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
                       {store.name}
                     </span>
-                    {i === 0 && <Crown className="w-3.5 h-3.5 text-[var(--data-warning-500)]" />}
-                    <PlanBadge plan={store.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
+                    {i === 0 && <Crown className="w-3.5 h-3.5 text-[var(--accent-ink)] dark:text-[var(--accent)]" />}
+                    <PlanBadge
+                      plan={store.tenant.plan as "free" | "pro" | "business" | "enterprise"}
+                    />
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
-                    <span className="text-xs text-gray-400 capitalize">{store.category}</span>
-                    <span className="text-xs text-[var(--data-warning-500)] flex items-center gap-0.5">
+                    <span className="text-xs text-[var(--text-tertiary)] capitalize">{store.category}</span>
+                    <span className="text-xs text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center gap-0.5">
                       <Star className="w-3 h-3 fill-current" /> {Number(store.rating).toFixed(1)}
                     </span>
-                    <span className="text-xs text-gray-400">{store._count.products} productos</span>
+                    <span className="text-xs text-[var(--text-tertiary)]">{store._count.products} productos</span>
                   </div>
                 </div>
 
                 {/* Nivel de visibilidad en /tiendas (beneficio por plan) */}
                 <div className="shrink-0 hidden md:flex items-center gap-0.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
-                  {([
-                    { key: "standard", label: "Estándar" },
-                    { key: "featured", label: "Destacada" },
-                    { key: "premium", label: "Premium" },
-                  ] as const).map((t) => {
+                  {(
+                    [
+                      { key: "standard", label: "Estándar" },
+                      { key: "featured", label: "Destacada" },
+                      { key: "premium", label: "Premium" },
+                    ] as const
+                  ).map((t) => {
                     const active = (store.displayTier ?? "standard") === t.key;
                     return (
                       <button
@@ -153,10 +176,10 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                         onClick={() => void setDisplayTier(store, t.key)}
                         disabled={saving === store.id}
                         title={`Nivel: ${t.label}`}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors disabled:opacity-40 ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors disabled:opacity-40 ${
                           active
                             ? "bg-[var(--accent)] text-white shadow-sm"
-                            : "text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                            : "text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-primary/10"
                         }`}
                       >
                         {t.label}
@@ -176,24 +199,23 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                         step="0.5"
                         value={editCommission.value}
                         onChange={(e) => setEditCommission({ id: store.id, value: e.target.value })}
-                        className="w-16 rounded-lg border border-primary/30 bg-[var(--surface-raised)] px-2 py-1 text-xs text-center font-bold focus:border-primary focus:ring-1 focus:ring-primary/30"
+                        className="w-16 rounded-xl border border-primary/30 bg-[var(--surface-raised)] px-2 py-1 text-xs text-center font-bold focus:border-primary focus:ring-1 focus:ring-primary/30"
                         onKeyDown={(e) => {
                           if (e.key === "Enter") void saveCommission(store.id);
                           if (e.key === "Escape") setEditCommission(null);
                         }}
-                        autoFocus
                       />
-                      <span className="text-xs text-gray-400">%</span>
+                      <span className="text-xs text-[var(--text-tertiary)]">%</span>
                       <button
                         onClick={() => void saveCommission(store.id)}
                         disabled={saving === store.id}
-                        className="p-1 rounded-lg text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/30"
+                        className="p-1 rounded-xl text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/30"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setEditCommission(null)}
-                        className="p-1 rounded-lg text-gray-400 hover:bg-[var(--surface-sunken)]"
+                        className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -203,7 +225,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                       onClick={() =>
                         setEditCommission({ id: store.id, value: String(store.commission) })
                       }
-                      className="flex items-center gap-1 text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-lg transition-colors"
+                      className="flex items-center gap-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 px-2 py-1 rounded-lg transition-colors"
                       title="Editar comisión"
                     >
                       <Percent className="w-3 h-3" />
@@ -236,9 +258,11 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
       {hidden.length > 0 && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-            <EyeOff className="w-4 h-4 text-gray-400" />
+            <EyeOff className="w-4 h-4 text-[var(--text-tertiary)]" />
             Tiendas ocultas
-            <span className="ml-auto text-xs font-normal text-gray-400">{hidden.length} tiendas</span>
+            <span className="ml-auto text-xs font-normal text-[var(--text-tertiary)]">
+              {hidden.length} tiendas
+            </span>
           </h3>
 
           <div className="space-y-3">
@@ -258,7 +282,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                       className="w-full h-full object-cover grayscale"
                     />
                   ) : (
-                    <ShoppingBag className="w-5 h-5 text-gray-400" />
+                    <ShoppingBag className="w-5 h-5 text-[var(--text-tertiary)]" />
                   )}
                 </div>
 
@@ -267,13 +291,13 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                   <span className="text-sm font-semibold text-[var(--text-tertiary)] truncate block">
                     {store.name}
                   </span>
-                  <span className="text-xs text-gray-400 capitalize">
+                  <span className="text-xs text-[var(--text-tertiary)] capitalize">
                     {store.category} · {store._count.products} productos
                   </span>
                 </div>
 
                 {/* Commission */}
-                <span className="text-xs font-semibold text-gray-400 tabular-nums">
+                <span className="text-xs font-semibold text-[var(--text-tertiary)] tabular-nums">
                   {store.commission}%
                 </span>
 
@@ -306,10 +330,12 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
-              <ImageIcon className="w-4 h-4 text-gray-400" />
-              <span className="text-xs font-semibold text-[var(--text-secondary)]">Hero Banner</span>
+              <ImageIcon className="w-4 h-4 text-[var(--text-tertiary)]" />
+              <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                Hero Banner
+              </span>
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[var(--text-tertiary)]">
               El banner grande que se muestra arriba del marketplace
             </p>
             <p className="text-[length:var(--ts-xs)] text-primary mt-2 font-medium">
@@ -318,12 +344,12 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
           </div>
           <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
-              <Crown className="w-4 h-4 text-[var(--data-warning-500)]" />
+              <Crown className="w-4 h-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
               <span className="text-xs font-semibold text-[var(--text-secondary)]">
                 Tiendas Destacadas
               </span>
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[var(--text-tertiary)]">
               Las tiendas en posición 1-3 arriba aparecen primero en el marketplace
             </p>
             <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] mt-2 font-medium">
@@ -335,19 +361,21 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
               <Percent className="w-4 h-4 text-[var(--data-success-500)]" />
               <span className="text-xs font-semibold text-[var(--text-secondary)]">Comisiones</span>
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[var(--text-tertiary)]">
               Haz clic en el porcentaje de cada tienda para editar su comisión por venta
             </p>
-            <p className="text-[length:var(--ts-xs)] text-[var(--data-warning-500)] mt-2 font-medium">
+            <p className="text-[length:var(--ts-xs)] text-[var(--accent-ink)] dark:text-[var(--accent)] mt-2 font-medium">
               Promedio actual: {avgCommission}%
             </p>
           </div>
           <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
               <ToggleRight className="w-4 h-4 text-[var(--data-success-500)]" />
-              <span className="text-xs font-semibold text-[var(--text-secondary)]">Visibilidad</span>
+              <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                Visibilidad
+              </span>
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[var(--text-tertiary)]">
               Controla qué tiendas aparecen en el marketplace con los botones Publicar/Ocultar
             </p>
             <p className="text-[length:var(--ts-xs)] text-primary mt-2 font-medium">

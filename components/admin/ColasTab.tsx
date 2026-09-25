@@ -14,6 +14,7 @@ import {
   Play,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatNumber, formatTime } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,7 +68,7 @@ function StatBadge({ label, value, colorClasses, icon }: BadgeProps) {
     >
       {icon}
       <span className="hidden sm:inline">{label}</span>
-      <span className="ml-auto font-bold tabular-nums">{value.toLocaleString("es-PE")}</span>
+      <span className="ml-auto font-bold tabular-nums">{formatNumber(value)}</span>
     </div>
   );
 }
@@ -81,7 +82,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
   return (
     <div
       className={cn(
-        "rounded-xl border bg-white dark:bg-[var(--color-card)] p-5  transition-shadow hover:shadow-[var(--shadow-sm)]",
+        "rounded-xl border bg-[var(--surface-raised)] p-5 transition-shadow hover:shadow-[var(--shadow-sm)]",
         "dark:border-[var(--rule-base)] dark:bg-gray-800",
         hasFailed && "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",
       )}
@@ -94,8 +95,8 @@ function QueueCard({ queue }: { queue: QueueStats }) {
             {formatQueueName(queue.name)}
           </CardTitle>
         </div>
-        <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]">
-          {total.toLocaleString("es-PE")} total
+        <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">
+          {formatNumber(total)} total
         </span>
       </div>
 
@@ -110,13 +111,13 @@ function QueueCard({ queue }: { queue: QueueStats }) {
         <StatBadge
           label="Activos"
           value={queue.active}
-          colorClasses="bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+          colorClasses="bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
           icon={<Loader2 className="h-4 w-4" />}
         />
         <StatBadge
           label="Completados"
           value={queue.completed}
-          colorClasses="bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+          colorClasses="bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
           icon={<CheckCircle className="h-4 w-4" />}
         />
         <StatBadge
@@ -131,7 +132,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
         <StatBadge
           label="Retrasados"
           value={queue.delayed}
-          colorClasses="bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-700/50 dark:text-[var(--text-tertiary)]"
+          colorClasses="bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]"
           icon={<Pause className="h-4 w-4" />}
         />
       </div>
@@ -205,7 +206,7 @@ export default function ColasTab() {
         <button
           type="button"
           onClick={() => fetchStats(true)}
-          className="rounded-lg bg-[var(--accent-dark)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-dark)] dark:bg-[var(--accent)] dark:hover:bg-[var(--accent-dark)]"
+          className="rounded-xl bg-[var(--accent-dark)] px-4 min-h-10 text-sm font-medium text-white hover:bg-[var(--accent-dark)] dark:bg-[var(--accent)] dark:hover:bg-[var(--accent-dark)]"
         >
           Reintentar
         </button>
@@ -224,7 +225,7 @@ export default function ColasTab() {
         </CardTitle>
         <p className="max-w-md text-sm text-[var(--text-tertiary)]">
           No se detectó conexión a Redis. Las colas de trabajo (BullMQ) requieren Redis para funcionar.
-          Configura la variable de entorno <code className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-xs dark:bg-gray-700">REDIS_URL</code> para habilitar el procesamiento asíncrono.
+          Configura la variable de entorno <code className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-xs ">REDIS_URL</code> para habilitar el procesamiento asíncrono.
         </p>
       </div>
     );
@@ -253,7 +254,7 @@ export default function ColasTab() {
           {/* Last updated */}
           {lastUpdated && (
             <span className="text-xs text-[var(--text-tertiary)]">
-              Actualizado: {lastUpdated.toLocaleTimeString("es-PE")}
+              Actualizado: {formatTime(lastUpdated, { segundos: true })}
             </span>
           )}
 
@@ -265,7 +266,7 @@ export default function ColasTab() {
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
               autoRefresh
                 ? "border-teal-300 bg-teal-50 text-[var(--accent-dark)] dark:border-[var(--accent-dark)] dark:bg-teal-900/20 dark:text-teal-400"
-                : "border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:border-gray-600 dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
+                : "border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]",
             )}
             title={autoRefresh ? "Desactivar auto-refresco" : "Activar auto-refresco"}
           >
@@ -303,16 +304,16 @@ export default function ColasTab() {
           <Clock className="h-8 w-8 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
           <div>
             <p className="text-2xl font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
-              {totalWaiting.toLocaleString("es-PE")}
+              {formatNumber(totalWaiting)}
             </p>
             <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">En espera (total)</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border bg-[var(--accent-soft)] p-4 dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]">
+        <div className="flex items-center gap-3 rounded-xl border bg-primary/10 p-4 dark:border-[var(--data-success-500)]/30 dark:bg-primary/15">
           <Activity className="h-8 w-8 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           <div>
             <p className="text-2xl font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-              {totalActive.toLocaleString("es-PE")}
+              {formatNumber(totalActive)}
             </p>
             <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Activos (total)</p>
           </div>
@@ -321,7 +322,7 @@ export default function ColasTab() {
           <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
           <div>
             <p className="text-2xl font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-              {totalFailed.toLocaleString("es-PE")}
+              {formatNumber(totalFailed)}
             </p>
             <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Fallidos (total)</p>
           </div>

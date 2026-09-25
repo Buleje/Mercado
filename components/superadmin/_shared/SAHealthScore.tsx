@@ -1,9 +1,9 @@
 "use client";
 
 // SVG circle health score (0–100)
-// Ola 2: tokenizado a design-system — teal brand (data-success) en >=70,
-// amber (data-warning) en 40–69, rojo (data-error) en <40.
-// Antes: #22c55e / #f59e0b / #ef4444 hardcoded.
+// Tokenizado al design-system — verde (data-success) en >=70,
+// teal de marca (#0d9488) en 40–69, rojo (data-error) en <40.
+// Brandon 2026-06-17: sin ámbar/naranja, el rango medio usa el teal oficial.
 
 interface SAHealthScoreProps {
   score: number;
@@ -19,13 +19,13 @@ export default function SAHealthScore({ score }: SAHealthScoreProps) {
     clamped >= 70
       ? "var(--data-success)"
       : clamped >= 40
-        ? "var(--data-warning)"
+        ? "#0d9488"
         : "var(--data-error)";
   const textColor =
     clamped >= 70
       ? "text-[var(--data-success-500)]"
       : clamped >= 40
-        ? "text-[var(--data-warning-500)]"
+        ? "text-teal-500"
         : "text-[var(--data-error-500)]";
 
   return (

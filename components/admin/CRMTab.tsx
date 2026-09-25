@@ -1,11 +1,12 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
+import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
-  Users, Search, X, Download, Loader2, AlertCircle,
-  Phone, Crown, Star, UserPlus, Moon, Heart,
+  Users, Search, X, Download, AlertCircle,
+  Phone, Crown, Star, UserPlus, Moon,
   ShoppingCart, TrendingUp, UserCheck,
   ChevronLeft, ChevronRight, BarChart3, RefreshCw,
 } from "@buleje/design-system/icons";
@@ -13,6 +14,7 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import dynamic from "next/dynamic";
 
 const CRMTabChart = dynamic(() => import("./CRMTabChart"), {
@@ -26,6 +28,9 @@ import { exportToExcel } from "@/lib/export-excel";
 import Customer360Tab from "./Customer360Tab";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatDateNumeric, formatNumber } from "@/lib/format";
+import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
+import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -47,6 +52,8 @@ type Customer = {
   _tags?: string[];
 };
 
+export type { Customer, Segment };
+
 type QuickFilter = "todos" | "activos" | "inactivos" | "con-deuda";
 
 type Segment = "frecuente" | "ocasional" | "nuevo" | "perdido";
@@ -54,7 +61,7 @@ type Segment = "frecuente" | "ocasional" | "nuevo" | "perdido";
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `S/ ${formatNumber(n, 2)}`;
 }
 
 function fmtRelative(iso: string) {
@@ -66,7 +73,15 @@ function fmtRelative(iso: string) {
   return `hace ${Math.floor(days / 365)}a`;
 }
 
-function inferSegment(c: Customer): Segment {
+/**
+ * Segmento del cliente según cuántas veces compró y hace cuánto.
+ *
+ * Exportada para test: depende de `_orderCount` / `_lastOrder`, que el
+ * componente tiene que LLENAR antes de llamarla. Si llegan vacíos, la primera
+ * línea manda a todos a «nuevo» y la segmentación entera queda muerta sin que
+ * nada falle — que es justo lo que pasaba.
+ */
+export function inferSegment(c: Customer): Segment {
   if ((c._orderCount ?? 0) === 0) return "nuevo";
   if (c._lastOrder) {
     const days = Math.floor((Date.now() - new Date(c._lastOrder).getTime()) / 86400000);
@@ -80,8 +95,8 @@ function inferSegment(c: Customer): Segment {
 // ── Config ─────────────────────────────────────────────────────────────────
 
 const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string; Icon: React.ElementType; variant: BadgeVariant }> = {
-  frecuente: { label: "Frecuente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", Icon: Crown,    variant: "success" },
-  ocasional: { label: "Ocasional", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",     Icon: Star,     variant: "info" },
+  frecuente: { label: "Frecuente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", Icon: Crown,    variant: "success" },
+  ocasional: { label: "Ocasional", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",     Icon: Star,     variant: "info" },
   nuevo:     { label: "Nuevo",     color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]", Icon: UserPlus, variant: "pending" },
   perdido:   { label: "Perdido",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",       Icon: Moon,     variant: "error" },
 };
@@ -96,8 +111,18 @@ export default function CRMTab() {
   const [error, setError]         = useState(false);
 
   const [search, setSearch]           = useState("");
-  const [filterSegment, setFilterSegment] = useState<Segment | "todos">("todos");
-  const [quickFilter, setQuickFilter] = useState<QuickFilter>("todos");
+  // Filtros en la cabecera, estilo Excel (Brandon, 2026-09-03/22): un solo
+  // estado por columna — las pastillas de abajo y el autofiltro del `<th>`
+  // escriben lo mismo, no dos filtros distintos.
+  //
+  // `quickFilter` era UN estado excluyente para tres preguntas de DOS columnas
+  // distintas (actividad de "Último pedido" y deuda de "Crédito"): se separa
+  // en dos, y las pastillas de abajo pasan a ser un atajo que escribe ambos a
+  // la vez (mismo look excluyente de siempre) en vez de la fuente de verdad.
+  const [actividadFiltro, setActividadFiltro] = useState<string[]>([]);
+  const [creditoRango, setCreditoRango] = useState<Rango<number>>({ min: null, max: null });
+  // Segmento: multi (antes un solo valor a la vez).
+  const [filterSegment, setFilterSegment] = useState<Segment[]>([]);
   const [page, setPage]               = useState(1);
 
   const [filterTag, setFilterTag] = useState<string>("todos");
@@ -106,6 +131,11 @@ export default function CRMTab() {
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [editingCreditLimit, setEditingCreditLimit] = useState<string | null>(null); // phone
   const [creditLimitInput, setCreditLimitInput] = useState("");
+  /* Foco en el límite al entrar en edición, sin `autoFocus` (jsx-a11y/no-autofocus). */
+  const creditLimitInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editingCreditLimit) creditLimitInputRef.current?.focus();
+  }, [editingCreditLimit]);
 
   // Mejora nueva 7: Frecuencia de compra
   type FrequencyFilter = "todos-freq" | "diario" | "semanal" | "quincenal" | "mensual" | "inactivo-freq";
@@ -122,9 +152,56 @@ export default function CRMTab() {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch("/api/customers?limit=500");
+      /*
+       * `_orderCount` y `_lastOrder` decían «Populated client-side from
+       * /orders» desde siempre, y NADIE los llenaba: sólo se pedía
+       * /api/customers. Con los dos en `undefined`, `inferSegment` corta en su
+       * primera línea —`_orderCount ?? 0 === 0` → «nuevo»— y toda la
+       * segmentación quedaba muerta: TODOS los clientes «nuevo», Frecuente /
+       * Ocasional / Perdido vacíos para siempre, «Activos (30d)» clavado en 0
+       * y la columna de última compra en blanco. No dependía de los datos: con
+       * cualquier tenant daba lo mismo.
+       *
+       * Cuenta también la venta de mostrador, no sólo el pedido: para el dueño
+       * el cliente que vino ayer a la bodega compró igual que el que pidió por
+       * la app. Las dos listas son secundarias — si fallan, se pierde la
+       * segmentación pero la lista de clientes se muestra igual.
+       */
+      const [res, resPedidos, resVentas] = await Promise.all([
+        fetch("/api/customers?limit=500"),
+        fetch("/api/orders?limit=500").catch(sinDato("CRM /api/orders")),
+        fetch("/api/sales?limit=500").catch(sinDato("CRM /api/sales")),
+      ]);
       if (!res.ok) throw new Error("fetch failed");
       const data: Customer[] = await res.json();
+
+      const compras = new Map<string, { n: number; ultima: string }>();
+      const anotarCompra = (telefono: unknown, fecha: unknown) => {
+        const tel = typeof telefono === "string" ? telefono.trim() : "";
+        const iso = typeof fecha === "string" ? fecha : "";
+        if (!tel || !iso) return;
+        const previo = compras.get(tel);
+        compras.set(tel, {
+          n: (previo?.n ?? 0) + 1,
+          ultima: !previo || iso > previo.ultima ? iso : previo.ultima,
+        });
+      };
+      const leerLista = async (r: Response | null): Promise<unknown[]> => {
+        if (!r?.ok) return [];
+        const j = await leerJson(r);
+        if (Array.isArray(j)) return j;
+        const cont = j as { orders?: unknown[]; sales?: unknown[]; items?: unknown[] } | null;
+        return cont?.orders ?? cont?.sales ?? cont?.items ?? [];
+      };
+      for (const o of await leerLista(resPedidos)) {
+        const p = o as { customer?: { phone?: string }; customerPhone?: string; createdAt?: string };
+        anotarCompra(p.customer?.phone ?? p.customerPhone, p.createdAt);
+      }
+      for (const v of await leerLista(resVentas)) {
+        const p = v as { customerPhone?: string; createdAt?: string; date?: string };
+        anotarCompra(p.customerPhone, p.createdAt ?? p.date);
+      }
+
       // Annotate with inferred segment and parsed tags
       const annotated = data.map(c => {
         let parsedTags: string[] = [];
@@ -134,7 +211,9 @@ export default function CRMTab() {
             if (Array.isArray(t)) parsedTags = t;
           } catch { /* ignore */ }
         }
-        return { ...c, _segment: inferSegment(c), _tags: parsedTags };
+        const compra = compras.get((c.phone ?? "").trim());
+        const conCompras = { ...c, _orderCount: compra?.n ?? 0, _lastOrder: compra?.ultima ?? null };
+        return { ...conCompras, _segment: inferSegment(conCompras), _tags: parsedTags };
       });
       setCustomers(annotated);
     } catch {
@@ -227,21 +306,18 @@ export default function CRMTab() {
   const filtered = useMemo(() => {
     let list = [...customers];
 
-    // Quick filter (activity / debt)
-    if (quickFilter !== "todos") {
-      const now = Date.now();
-      const thirtyDaysAgo = now - 30 * 86400000;
-      if (quickFilter === "activos") {
-        list = list.filter(c => c._lastOrder && new Date(c._lastOrder).getTime() > thirtyDaysAgo);
-      } else if (quickFilter === "inactivos") {
-        list = list.filter(c => !c._lastOrder || new Date(c._lastOrder).getTime() <= thirtyDaysAgo);
-      } else if (quickFilter === "con-deuda") {
-        list = list.filter(c => (c.creditBalance ?? 0) > 0);
-      }
+    // Actividad — columna "Último pedido" (antes parte de quickFilter).
+    if (actividadFiltro.length > 0) {
+      const thirtyDaysAgo = Date.now() - 30 * 86400000;
+      const esActivo = (c: Customer) => Boolean(c._lastOrder && new Date(c._lastOrder).getTime() > thirtyDaysAgo);
+      list = list.filter(c => actividadFiltro.includes(esActivo(c) ? "Activo" : "Inactivo"));
     }
 
+    // Deuda — columna "Crédito" (antes "con-deuda" de quickFilter).
+    list = list.filter(c => enRango(c.creditBalance ?? 0, creditoRango));
+
     // Segment filter
-    if (filterSegment !== "todos") list = list.filter(c => c._segment === filterSegment);
+    if (filterSegment.length > 0) list = list.filter(c => filterSegment.includes(c._segment ?? "nuevo"));
 
     // Tag filter
     if (filterTag !== "todos") list = list.filter(c => (c._tags ?? []).includes(filterTag));
@@ -267,7 +343,7 @@ export default function CRMTab() {
       list = list.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q));
     }
     return list;
-  }, [customers, quickFilter, filterSegment, filterTag, freqFilter, search]);
+  }, [customers, actividadFiltro, creditoRango, filterSegment, filterTag, freqFilter, search]);
 
   const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   // Clamp page dentro del rango válido — evita setState derivado en useEffect
@@ -397,7 +473,7 @@ export default function CRMTab() {
               "Categoría": c.loyaltyTier ?? "—",
               Tags: (c._tags ?? []).join(", ") || "—",
               "Total gastado (S/)": Number((c.totalSpent ?? 0).toFixed(2)),
-              "Última compra": c._lastOrder ? new Date(c._lastOrder).toLocaleDateString("es-PE") : "Sin compras",
+              "Última compra": c._lastOrder ? formatDateNumeric(c._lastOrder) : "Sin compras",
               Estado: c._segment === "frecuente" ? "Frecuente" : c._segment === "ocasional" ? "Ocasional" : c._segment === "perdido" ? "Perdido" : "Nuevo",
             }));
             const fecha = new Date().toISOString().slice(0, 10);
@@ -445,7 +521,7 @@ export default function CRMTab() {
 
       {/* Mejora 13: Canal de adquisicion pie chart */}
       {(() => {
-        const CHANNEL_COLORS = ["var(--accent)", "#f97316", "#457b9d", "#9b5de5", "#6b7280"];
+        const CHANNEL_COLORS = ["var(--accent)", "#ff6b5b", "#457b9d", "#9b5de5", "var(--text-secondary)"];
         const CHANNEL_LABELS: Record<string, string> = { local: "Local", whatsapp: "WhatsApp", web: "Web", referido: "Referido", redes: "Redes" };
         const channelCounts: Record<string, number> = {};
         for (const c of customers) {
@@ -486,44 +562,58 @@ export default function CRMTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Nombre o teléfono..."
-            className="w-full pl-10 pr-9 h-11 sm:h-auto sm:py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
+            className="w-full pl-10 pr-9 h-11 sm:h-auto sm:py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+            <button aria-label="Quitar" onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
               <X className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)]" />
             </button>
           )}
         </div>
 
         {/* Filtro segmento — chips estandar */}
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Segmento
+        </span>
         {([
           { key: "todos" as const, label: "Todos", count: customers.length },
           { key: "frecuente" as const, label: "Frecuente", count: segmentCounts.frecuente },
           { key: "ocasional" as const, label: "Ocasional", count: segmentCounts.ocasional },
           { key: "nuevo" as const, label: "Nuevo", count: segmentCounts.nuevo },
           { key: "perdido" as const, label: "Perdido", count: segmentCounts.perdido },
-        ] as const).map(f => (
+        ] as const).map(f => {
+          // "Todos" activo con la selección vacía; el resto se puede combinar
+          // (multi, 2026-09-22) — mismo estado que el autofiltro de la
+          // columna Segmento: clic para sumar, clic de nuevo para sacar.
+          const active = f.key === "todos" ? filterSegment.length === 0 : filterSegment.includes(f.key as Segment);
+          return (
           <button
             key={f.key}
-            onClick={() => setFilterSegment(f.key)}
+            onClick={() => {
+              if (f.key === "todos") { setFilterSegment([]); return; }
+              const seg = f.key as Segment;
+              setFilterSegment(prev => prev.includes(seg) ? prev.filter(s => s !== seg) : [...prev, seg]);
+            }}
+            aria-pressed={active}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
-              filterSegment === f.key
+              active
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             {f.label}
             {f.count > 0 && (
               <span className={cn(
                 "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-                filterSegment === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+                active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
               )}>
                 {f.count > 99 ? "99+" : f.count}
               </span>
             )}
           </button>
-        ))}
+          );
+        })}
 
         {/* Spacer */}
         <div className="flex-1" />
@@ -535,7 +625,7 @@ export default function CRMTab() {
 
         {/* Acciones */}
         <AdminTooltip content="Recargar clientes desde la base de datos">
-          <button onClick={load} aria-label="Actualizar" className="p-2 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface hover:bg-[var(--rule-soft)] dark:hover:bg-accent transition-colors">
+          <button onClick={load} aria-label="Actualizar" className="p-2 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
           </button>
         </AdminTooltip>
@@ -543,34 +633,62 @@ export default function CRMTab() {
 
       {/* Filtros secundarios: quick filter + frecuencia + tags */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Quick filters */}
+        {/* Cada grupo lleva su etiqueta: había TRES chips "Todos" en la misma
+            fila (segmento, estado y frecuencia) y no se sabía cuál filtraba qué. */}
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Estado
+        </span>
+        {/* Atajo excluyente de siempre (mismo look) — ahora escribe DOS
+            estados de columna en vez de ser la fuente de verdad: Activos/
+            Inactivos van a `actividadFiltro` ("Último pedido"), Con deuda va
+            a `creditoRango` ("Crédito"). Elegir uno limpia el otro, como
+            antes; el autofiltro de cada `<th>` puede combinarlos si hace
+            falta más precisión que el atajo. */}
         {([
           { key: "todos" as QuickFilter,     label: "Todos" },
           { key: "activos" as QuickFilter,   label: "Activos" },
           { key: "inactivos" as QuickFilter, label: "Inactivos 30d" },
           { key: "con-deuda" as QuickFilter, label: "Con deuda" },
-        ]).map(f => (
+        ]).map(f => {
+          const active =
+            f.key === "todos"
+              ? actividadFiltro.length === 0 && creditoRango.min == null && creditoRango.max == null
+              : f.key === "con-deuda"
+                ? creditoRango.min === 0.01 && creditoRango.max == null
+                : actividadFiltro.length === 1 && actividadFiltro[0] === (f.key === "activos" ? "Activo" : "Inactivo");
+          const aplicar = () => {
+            if (f.key === "todos") { setActividadFiltro([]); setCreditoRango({ min: null, max: null }); return; }
+            if (f.key === "con-deuda") { setActividadFiltro([]); setCreditoRango({ min: 0.01, max: null }); return; }
+            setActividadFiltro([f.key === "activos" ? "Activo" : "Inactivo"]);
+            setCreditoRango({ min: null, max: null });
+          };
+          return (
           <button
             key={f.key}
-            onClick={() => setQuickFilter(f.key)}
+            onClick={aplicar}
+            aria-pressed={active}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
-              quickFilter === f.key
+              active
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              quickFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+              active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
             )}>
               {quickFilterCounts[f.key] > 99 ? "99+" : quickFilterCounts[f.key]}
             </span>
           </button>
-        ))}
+          );
+        })}
 
-        <span className="text-[var(--text-tertiary)] dark:text-zinc-600">|</span>
+        <span aria-hidden className="mx-1 h-5 w-px bg-[var(--rule-base)]" />
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Frecuencia
+        </span>
 
         {/* Frecuencia de compra */}
         {([
@@ -588,13 +706,13 @@ export default function CRMTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               freqFilter === f.key
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              freqFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+              freqFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
             )}>
               {freqCounts[f.key] > 99 ? "99+" : freqCounts[f.key]}
             </span>
@@ -611,7 +729,7 @@ export default function CRMTab() {
             className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filterTag === "todos"
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             Todas
@@ -625,7 +743,7 @@ export default function CRMTab() {
                 className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
                   isActive
                     ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                    : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
                 )}
               >
                 {tag}
@@ -645,33 +763,88 @@ export default function CRMTab() {
         </div>
       )}
 
+      {/* Filtros de columna puestos, con su cruz — arriba de la tabla. Crédito
+          y Último pedido se ESCONDEN en pantallas chicas (`hidden lg/sm:
+          table-cell`): sin esto un rango puesto en desktop quedaría acotando
+          en el celular sin ningún control a la vista. */}
+      <ChipsDeFiltros
+        className="mb-2"
+        chips={[
+          ...(filterSegment.length > 0
+            ? [{ id: "segmento", label: "Segmento", texto: filterSegment.length === 1 ? SEGMENT_CONFIG[filterSegment[0]].label : `Segmento: ${filterSegment.length} elegidos` }]
+            : []),
+          ...(actividadFiltro.length > 0
+            ? [{ id: "actividad", label: "Último pedido", texto: actividadFiltro.length === 1 ? `${actividadFiltro[0]} (30 d)` : "Activos e inactivos" }]
+            : []),
+          ...(rangoActivo(creditoRango)
+            ? [{ id: "credito", label: "Crédito", texto: textoDeRango("Crédito", creditoRango, { unidad: "S/" }) }]
+            : []),
+        ] satisfies ChipFiltro[]}
+        onQuitar={(id) => {
+          if (id === "segmento") setFilterSegment([]);
+          else if (id === "actividad") setActividadFiltro([]);
+          else if (id === "credito") setCreditoRango({ min: null, max: null });
+        }}
+        onLimpiarTodo={() => { setFilterSegment([]); setActividadFiltro([]); setCreditoRango({ min: null, max: null }); }}
+      />
+
       {/* Table — UX Mejora 18: Sticky header */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-        <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead className="sticky top-0 bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] z-10 shadow-[var(--shadow-sm)]">
-              <tr>
-                {compareMode && <th className="w-10 px-2 py-3"><span className="sr-only">Seleccionar</span></th>}
-                <th className="text-center px-3 py-3 text-xs font-bold text-[var(--text-tertiary)] w-14">Rank</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Cliente</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Teléfono</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden sm:table-cell">Último pedido</th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden md:table-cell">Total gastado</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden lg:table-cell">Crédito</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Segmento</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden md:table-cell">Contacto</th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Ver</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-card-border">
+      <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
+        <DataTable stickyHeader filtrable className="min-w-[600px]">
+          <thead>
+            <tr>
+              {compareMode && <th className="w-10"><span className="sr-only">Seleccionar</span></th>}
+              <th className="text-center w-14">Rank</th>
+              <th>Cliente</th>
+              <th>Teléfono</th>
+              <th className="hidden sm:table-cell">
+                <span className="block">Último pedido</span>
+                <FiltroColumnaMulti
+                  label="Último pedido"
+                  value={actividadFiltro}
+                  options={[
+                    { value: "Activo", count: quickFilterCounts.activos },
+                    { value: "Inactivo", count: quickFilterCounts.inactivos },
+                  ]}
+                  onChange={setActividadFiltro}
+                  placeholder="Todos"
+                />
+              </th>
+              <th className="text-right hidden md:table-cell">Total gastado</th>
+              <th className="hidden lg:table-cell">
+                <span className="block">Crédito</span>
+                <FiltroColumnaRango
+                  label="Crédito"
+                  unidad="S/"
+                  paso={0.5}
+                  valor={creditoRango}
+                  onChange={(r) => setCreditoRango(r as Rango<number>)}
+                />
+              </th>
+              <th>
+                <span className="block">Segmento</span>
+                <FiltroColumnaMulti
+                  label="Segmento"
+                  value={filterSegment}
+                  options={(Object.keys(SEGMENT_CONFIG) as Segment[]).map((s): FacetaOpcion => ({ value: s, count: segmentCounts[s] }))}
+                  etiqueta={(v) => SEGMENT_CONFIG[v as Segment]?.label ?? v}
+                  onChange={(v) => setFilterSegment(v as Segment[])}
+                  placeholder="Todos"
+                />
+              </th>
+              <th className="hidden md:table-cell">Contacto</th>
+              <th className="text-center">Ver</th>
+            </tr>
+          </thead>
+          <tbody>
               {paginated.length === 0 && (
                 <tr>
                   <td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-2 text-[var(--text-tertiary)] dark:text-muted">
                       <Users className="h-8 w-8 opacity-30" />
                       <p className="text-sm">No se encontraron clientes</p>
-                      {(search || filterSegment !== "todos" || quickFilter !== "todos" || filterTag !== "todos") && (
-                        <button onClick={() => { setSearch(""); setFilterSegment("todos"); setQuickFilter("todos"); setFilterTag("todos"); }} className="text-xs text-primary hover:underline">
+                      {(search || filterSegment.length > 0 || actividadFiltro.length > 0 || creditoRango.min != null || creditoRango.max != null || filterTag !== "todos") && (
+                        <button onClick={() => { setSearch(""); setFilterSegment([]); setActividadFiltro([]); setCreditoRango({ min: null, max: null }); setFilterTag("todos"); }} className="text-xs text-primary hover:underline">
                           Limpiar filtros
                         </button>
                       )}
@@ -692,9 +865,10 @@ export default function CRMTab() {
                   >
                     {/* Mejora 13: Checkbox para comparar */}
                     {compareMode && (
-                      <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
+                      <td onClick={e => e.stopPropagation()}>
                         <input
                           type="checkbox"
+                          aria-label={`Seleccionar ${c.name || c.phone} para comparar`}
                           checked={comparePhones.has(c.phone)}
                           onChange={() => toggleCompare(c.phone)}
                           disabled={!comparePhones.has(c.phone) && comparePhones.size >= 3}
@@ -703,21 +877,21 @@ export default function CRMTab() {
                       </td>
                     )}
                     {/* Ranking */}
-                    <td className="px-3 py-3 text-center">
+                    <td className="text-center">
                       {(() => {
                         const rank = rankingMap.get(c.phone) ?? 999;
                         if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">1</span>;
                         if (rank === 2) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)] text-xs font-extrabold">2</span>;
                         if (rank === 3) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">3</span>;
-                        if (rank <= 10) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted text-xs font-bold">#{rank}</span>;
+                        if (rank <= 10) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted text-xs font-bold">#{rank}</span>;
                         return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
                       })()}
                     </td>
 
                     {/* Nombre */}
-                    <td className="px-4 py-3">
+                    <td>
                       <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-extrabold text-primary shrink-0 select-none">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 select-none">
                           {c.name.split(" ").slice(0, 2).map(n => n[0]?.toUpperCase() ?? "").join("")}
                         </div>
                         <div>
@@ -732,37 +906,37 @@ export default function CRMTab() {
                     </td>
 
                     {/* Teléfono */}
-                    <td className="px-4 py-3">
+                    <td>
                       <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)] dark:text-muted">
                         <Phone className="h-3 w-3" />{c.phone}
                       </span>
                     </td>
 
                     {/* Último pedido */}
-                    <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
+                    <td className="text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
                       {c._lastOrder ? fmtRelative(c._lastOrder) : "—"}
                     </td>
 
                     {/* Total gastado */}
-                    <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hidden md:table-cell">
+                    <td className="text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hidden md:table-cell">
                       {fmt(c.totalSpent ?? 0)}
                     </td>
 
                     {/* Crédito */}
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="hidden lg:table-cell">
                       {editingCreditLimit === c.phone ? (
                         <form
                           onSubmit={e => { e.preventDefault(); saveCreditLimit(c.phone); }}
                           className="flex items-center gap-1"
                         >
                           <input
-                            autoFocus
+                            ref={creditLimitInputRef}
                             type="number"
                             min={0}
                             step={0.01}
                             value={creditLimitInput}
                             onChange={e => setCreditLimitInput(e.target.value)}
-                            className="w-20 text-xs border border-primary/40 rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-20 text-xs border border-primary/40 rounded-xl px-2 py-1 bg-[var(--surface-raised)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                             placeholder="0.00"
                           />
                           <button type="submit" className="text-xs px-1.5 py-1 bg-primary text-white rounded-lg font-bold">OK</button>
@@ -789,12 +963,12 @@ export default function CRMTab() {
                     </td>
 
                     {/* Segmento */}
-                    <td className="px-4 py-3">
+                    <td>
                       <StatusBadge variant={cfg.variant} label={cfg.label} icon={Icon} size="sm" />
                     </td>
 
                     {/* Mejora 9R2: Último contacto */}
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="hidden md:table-cell">
                       {(() => {
                         const lastContact = c._lastOrder;
                         if (!lastContact) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
@@ -804,8 +978,8 @@ export default function CRMTab() {
                         if (days === 0) { label = "Hoy"; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
                         else if (days === 1) { label = "Ayer"; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
                         else if (days < 7) { label = `Hace ${days}d`; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
-                        else if (days < 14) { label = "Hace 1 sem"; colorClass = "text-yellow-600 dark:text-yellow-400"; }
-                        else if (days < 30) { label = `Hace ${Math.floor(days / 7)} sem`; colorClass = "text-yellow-600 dark:text-yellow-400"; }
+                        else if (days < 14) { label = "Hace 1 sem"; colorClass = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"; }
+                        else if (days < 30) { label = `Hace ${Math.floor(days / 7)} sem`; colorClass = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"; }
                         else if (days < 90) { label = `Hace ${Math.floor(days / 30)} meses`; colorClass = "text-[var(--data-error-600)] dark:text-red-400"; }
                         else { label = "Inactivo"; colorClass = "text-[var(--text-tertiary)] dark:text-muted"; }
                         return <span className={cn("text-xs font-bold", colorClass)}>{label}</span>;
@@ -813,10 +987,10 @@ export default function CRMTab() {
                     </td>
 
                     {/* Acciones */}
-                    <td className="px-4 py-3 text-center">
+                    <td className="text-center">
                       <button
                         onClick={() => setDetail(c.phone)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold transition-colors"
                       >
                         <ShoppingCart className="h-3 w-3" />360°
                       </button>
@@ -824,21 +998,20 @@ export default function CRMTab() {
                   </m.tr>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </DataTable>
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] ">
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
               Página {effectivePage} de {totalPages} · {filtered.length} clientes
             </p>
             <div className="flex items-center gap-1">
-              <button
+              <button aria-label="Anterior"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={effectivePage === 1}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-white dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
+                className="p-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
               </button>
@@ -851,17 +1024,17 @@ export default function CRMTab() {
                     className={cn("w-8 h-8 text-xs rounded-lg font-semibold transition-colors",
                       effectivePage === p
                         ? "bg-primary text-white"
-                        : "border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-[var(--surface-raised)]"
+                        : "border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)]"
                     )}
                   >
                     {p}
                   </button>
                 );
               })}
-              <button
+              <button aria-label="Siguiente"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={effectivePage === totalPages}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-white dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
+                className="p-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
               >
                 <ChevronRight className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
               </button>
@@ -880,14 +1053,14 @@ export default function CRMTab() {
             <div className="flex gap-2">
               <button
                 onClick={() => { setComparePhones(new Set()); }}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
+                className="px-3 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
               >
                 Limpiar
               </button>
               <button
                 onClick={() => setShowCompareModal(true)}
                 disabled={comparePhones.size < 2}
-                className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors"
               >
                 Ver comparativa
               </button>
@@ -897,55 +1070,33 @@ export default function CRMTab() {
       )}
 
       {/* Mejora 13: Compare modal */}
-      <AnimatePresence>
-        {showCompareModal && compareCustomers.length >= 2 && (
-          <>
-            <m.div
-              key="compare-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop"
-              onClick={() => setShowCompareModal(false)}
-            />
-            <m.div
-              key="compare-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowCompareModal(false)}
-            >
-              <div className="w-full max-w-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparativa de Clientes
-                  </CardTitle>
-                  <button onClick={() => setShowCompareModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+      <AdminModal
+        open={showCompareModal && compareCustomers.length >= 2}
+        onClose={() => setShowCompareModal(false)}
+        title="Comparativa de Clientes"
+        icon={BarChart3}
+        variant="wide"
+      >
+        <div className={MODAL_BODY}>
+                <DataTable>
                     <thead>
-                      <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                        <th className="text-left py-3 px-3 text-xs font-bold text-[var(--text-secondary)] uppercase">Metrica</th>
+                      <tr>
+                        <th>Metrica</th>
                         {compareCustomers.map(c => (
-                          <th key={c.phone} className="text-center py-3 px-3 text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</th>
+                          <th key={c.phone} className="text-center text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+                    <tbody>
                       {/* Total gastado */}
                       {(() => {
                         const values = compareCustomers.map(c => c.totalSpent ?? 0);
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Total gastado</td>
+                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Total gastado</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 S/{(values[i]).toFixed(0)}
                               </td>
                             ))}
@@ -958,9 +1109,9 @@ export default function CRMTab() {
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Pedidos</td>
+                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Pedidos</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 {values[i]}
                               </td>
                             ))}
@@ -976,9 +1127,9 @@ export default function CRMTab() {
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Ticket promedio</td>
+                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Ticket promedio</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 S/{values[i].toFixed(0)}
                               </td>
                             ))}
@@ -991,9 +1142,9 @@ export default function CRMTab() {
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Última compra</td>
+                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Última compra</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 {c._lastOrder ? fmtRelative(c._lastOrder) : "--"}
                               </td>
                             ))}
@@ -1006,9 +1157,9 @@ export default function CRMTab() {
                         const best = Math.min(...values);
                         return (
                           <tr>
-                            <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Fiado pendiente</td>
+                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Fiado pendiente</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 S/{values[i].toFixed(0)}
                               </td>
                             ))}
@@ -1017,21 +1168,17 @@ export default function CRMTab() {
                       })()}
                       {/* Segmento */}
                       <tr>
-                        <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Segmento</td>
+                        <td className="text-xs text-[var(--text-secondary)] font-semibold">Segmento</td>
                         {compareCustomers.map(c => (
-                          <td key={c.phone} className="py-2.5 px-3 text-center">
+                          <td key={c.phone} className="text-center">
                             <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{getSegmentLabel(c)}</span>
                           </td>
                         ))}
                       </tr>
                     </tbody>
-                  </table>
-                </div>
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+                </DataTable>
+        </div>
+      </AdminModal>
 
       {/* New client modal */}
       <ClienteFormModal

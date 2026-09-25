@@ -1,7 +1,10 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
-import { useCallback } from "react";
+import { DataTable, SectionTitle } from "@buleje/design-system";
+import { AlertTriangle } from "@buleje/design-system/icons";
+import { useCallback, useId, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency, formatDateNumeric } from "@/lib/format";
 
 interface OCPrintPreviewModalProps {
   cart: Array<{
@@ -60,9 +63,9 @@ export default function OCPrintPreviewModal({
     doc.setFont("helvetica", "bold");
     doc.text(ocNum, RIGHT, 20, { align: "right" });
     doc.setFont("helvetica", "normal");
-    doc.text(`Fecha: ${new Date().toLocaleDateString("es-PE")}`, RIGHT, 27, { align: "right" });
+    doc.text(`Fecha: ${formatDateNumeric(new Date())}`, RIGHT, 27, { align: "right" });
     if (deliveryDate) {
-      doc.text(`Entrega: ${new Date(deliveryDate).toLocaleDateString("es-PE")}`, RIGHT, 34, { align: "right" });
+      doc.text(`Entrega: ${formatDateNumeric(deliveryDate)}`, RIGHT, 34, { align: "right" });
     }
 
     // Divider
@@ -101,8 +104,8 @@ export default function OCPrintPreviewModal({
       const lineTotal = unitPrice * item.quantity;
       doc.text(`${item.product.name}`, LEFT + 1, y);
       doc.text(`${item.quantity} ${item.product.unit}`, 130, y, { align: "right" });
-      doc.text(`S/${unitPrice.toFixed(2)}`, 160, y, { align: "right" });
-      doc.text(`S/${lineTotal.toFixed(2)}`, RIGHT, y, { align: "right" });
+      doc.text(`${formatCurrency(unitPrice)}`, 160, y, { align: "right" });
+      doc.text(`${formatCurrency(lineTotal)}`, RIGHT, y, { align: "right" });
       y += 6;
       if (y > 260) { doc.addPage(); y = 20; }
     }
@@ -113,12 +116,12 @@ export default function OCPrintPreviewModal({
     y += 5;
     doc.setFontSize(9);
     doc.text("Subtotal:", 155, y);
-    doc.text(`S/${subtotal.toFixed(2)}`, RIGHT, y, { align: "right" });
+    doc.text(`${formatCurrency(subtotal)}`, RIGHT, y, { align: "right" });
     if (discount > 0) {
       y += 5;
       doc.setTextColor(200, 0, 0);
       doc.text(`Descuento ${discount}%:`, 155, y);
-      doc.text(`-S/${discountAmount.toFixed(2)}`, RIGHT, y, { align: "right" });
+      doc.text(`-${formatCurrency(discountAmount)}`, RIGHT, y, { align: "right" });
       doc.setTextColor(0, 0, 0);
     }
     y += 6;
@@ -126,7 +129,7 @@ export default function OCPrintPreviewModal({
     doc.setFontSize(11);
     doc.text("TOTAL:", 150, y);
     doc.setTextColor(45, 106, 79);
-    doc.text(`S/${total.toFixed(2)}`, RIGHT, y, { align: "right" });
+    doc.text(`${formatCurrency(total)}`, RIGHT, y, { align: "right" });
     doc.setTextColor(0, 0, 0);
 
     // Conditions
@@ -148,33 +151,42 @@ export default function OCPrintPreviewModal({
     doc.save(`OC-${lastOCId ?? Date.now()}.pdf`);
   }, [cart, subtotal, discount, discountAmount, total, selectedSupplier, deliveryDate, paymentMethod, notes, lastOCId]);
 
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose });
+
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 z-modal flex items-center justify-center p-4">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 space-y-4" id="oc-print-area">
           {/* Header */}
           <div className="flex items-center justify-between border-b dark:border-[var(--rule-base)] pb-4">
             <div>
-              <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">ORDEN DE COMPRA</SectionTitle>
+              <SectionTitle id={titleId} className="text-lg font-bold text-[var(--text-primary)]">ORDEN DE COMPRA</SectionTitle>
               <p className="text-sm text-[var(--text-tertiary)]">Buleje</p>
             </div>
             <div className="text-right text-sm text-[var(--text-tertiary)]">
               <p className="font-bold text-[var(--text-primary)]">N° {lastOCId || "---"}</p>
-              <p>Fecha: {new Date().toLocaleDateString("es-PE")}</p>
-              {deliveryDate && <p>Entrega: {new Date(deliveryDate).toLocaleDateString("es-PE")}</p>}
+              <p>Fecha: {formatDateNumeric(new Date())}</p>
+              {deliveryDate && <p>Entrega: {formatDateNumeric(deliveryDate)}</p>}
             </div>
           </div>
 
           {/* Proveedor */}
           <div className="bg-[var(--surface-sunken)] rounded-xl p-3">
             <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase">Proveedor</p>
-            <p className="font-bold text-[var(--text-primary)]">{selectedSupplier?.name || "---"}</p>
+            {/* Reporte QA Compras 2026-08-12: el papel salía con "PROVEEDOR: ---"
+                aunque crear la orden sí exige proveedor. Un documento a medias que
+                se imprime y se manda es peor que uno que no se deja generar. */}
+            <p className={selectedSupplier ? "font-bold text-[var(--text-primary)]" : "font-bold text-[var(--data-error-500)]"}>
+              {selectedSupplier?.name || "Falta elegir el proveedor"}
+            </p>
             {selectedSupplier?.ruc && <p className="text-sm text-[var(--text-secondary)]">RUC: {selectedSupplier.ruc}</p>}
             {selectedSupplier?.phone && <p className="text-sm text-[var(--text-secondary)]">Tel: {selectedSupplier.phone}</p>}
           </div>
 
           {/* Tabla de items */}
-          <table className="w-full text-sm">
+          <DataTable className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-[var(--rule-base)]">
                 <th className="text-left py-2 font-semibold text-[var(--text-secondary)]">Producto</th>
@@ -191,31 +203,31 @@ export default function OCPrintPreviewModal({
                     {item.quantity} {item.product.unit}
                   </td>
                   <td className="py-2 text-right font-mono text-[var(--text-secondary)]">
-                    S/{(item.product.costPrice ?? item.product.price).toFixed(2)}
+                    {formatCurrency(item.product.costPrice ?? item.product.price)}
                   </td>
                   <td className="py-2 text-right font-mono font-bold text-[var(--text-primary)]">
-                    S/{((item.product.costPrice ?? item.product.price) * item.quantity).toFixed(2)}
+                    {formatCurrency((item.product.costPrice ?? item.product.price) * item.quantity)}
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
 
           {/* Totales */}
           <div className="border-t-2 border-[var(--rule-base)] pt-3 space-y-1">
             <div className="flex justify-between text-sm">
               <span className="text-[var(--text-tertiary)]">Subtotal</span>
-              <span className="font-mono dark:text-gray-200">S/{subtotal.toFixed(2)}</span>
+              <span className="font-mono dark:text-gray-200">{formatCurrency(subtotal)}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-sm text-[var(--data-error-500)]">
                 <span>Descuento {discount}%</span>
-                <span className="font-mono">-S/{discountAmount.toFixed(2)}</span>
+                <span className="font-mono">-{formatCurrency(discountAmount)}</span>
               </div>
             )}
             <div className="flex justify-between text-lg font-bold border-t dark:border-[var(--rule-base)] pt-2 dark:text-white">
               <span>TOTAL</span>
-              <span className="font-mono text-primary">S/{total.toFixed(2)}</span>
+              <span className="font-mono text-primary">{formatCurrency(total)}</span>
             </div>
           </div>
 
@@ -238,6 +250,17 @@ export default function OCPrintPreviewModal({
           </div>
         </div>
 
+        {/* Mismo criterio que crear la orden: sin proveedor no hay documento. */}
+        {!selectedSupplier && (
+          <div role="alert" className="mx-4 mb-1 flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-warning-500)]" aria-hidden />
+            <p className="text-sm text-[var(--text-secondary)]">
+              Elige el proveedor para imprimir o descargar. Sin él es una lista de precios,
+              no una orden de compra que alguien pueda aceptar.
+            </p>
+          </div>
+        )}
+
         {/* Botones del modal */}
         <div className="flex gap-2 p-4 border-t dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] rounded-b-2xl">
           <button
@@ -256,7 +279,7 @@ export default function OCPrintPreviewModal({
                       "td{border-bottom:1px solid #eee}" +
                       ".text-right{text-align:right}" +
                       ".font-mono{font-family:monospace}" +
-                      ".font-bold{font-weight:bold}" +
+                      ".font-semibold{font-weight:bold}" +
                       "</style></head><body>"
                   );
                   w.document.write(printArea.innerHTML);
@@ -266,21 +289,23 @@ export default function OCPrintPreviewModal({
                 }
               }
             }}
-            className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+            disabled={!selectedSupplier}
+            className="flex-1 min-h-10 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Imprimir
           </button>
           <button
             type="button"
             onClick={handleDownloadPDF}
-            className="flex-1 py-2 bg-[var(--accent-soft)] text-white rounded-lg text-sm font-medium hover:bg-[var(--accent-soft)] transition-colors"
+            disabled={!selectedSupplier}
+            className="flex-1 min-h-10 bg-primary/10 text-white rounded-xl text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Descargar PDF
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-[var(--text-primary)] rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
+            className="px-4 py-2 bg-[var(--rule-base)] text-[var(--text-primary)] rounded-xl text-sm font-medium hover:bg-gray-300 transition-colors"
           >
             Cerrar
           </button>

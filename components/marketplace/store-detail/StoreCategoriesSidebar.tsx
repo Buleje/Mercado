@@ -13,6 +13,7 @@
 import Image from "next/image";
 import { Tag } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCategoryLabel } from "@/lib/format-category";
 import type { StoreCategoryChip } from "./StoreCategories";
 
 interface Props {
@@ -25,9 +26,12 @@ interface Props {
 }
 
 export default function StoreCategoriesSidebar({
-  categories, activeCategory, onCategoryChange, images, hideHeader,
+  categories,
+  activeCategory,
+  onCategoryChange,
+  images,
+  hideHeader,
 }: Props) {
-  const total = categories.reduce((s, c) => s + c.count, 0);
   const imageMap = images ?? {};
 
   const handleSelect = (cat: string | null) => {
@@ -43,7 +47,7 @@ export default function StoreCategoriesSidebar({
   return (
     <nav aria-label="Categorías de la tienda" className="space-y-1">
       {!hideHeader && (
-        <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] px-3 mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] px-3 mb-2">
           Categorías
         </p>
       )}
@@ -52,7 +56,6 @@ export default function StoreCategoriesSidebar({
       <CategoryRow
         active={activeCategory === null}
         label="Todos"
-        count={total}
         imageUrl={null}
         onClick={() => handleSelect(null)}
       />
@@ -62,8 +65,7 @@ export default function StoreCategoriesSidebar({
         <CategoryRow
           key={cat.name}
           active={activeCategory === cat.name}
-          label={cat.name}
-          count={cat.count}
+          label={formatCategoryLabel(cat.name)}
           imageUrl={imageMap[cat.name] ?? null}
           onClick={() => handleSelect(cat.name)}
         />
@@ -75,11 +77,13 @@ export default function StoreCategoriesSidebar({
 // ─── Single row ──────────────────────────────────────────────────────────────
 
 function CategoryRow({
-  active, label, count, imageUrl, onClick,
+  active,
+  label,
+  imageUrl,
+  onClick,
 }: {
   active: boolean;
   label: string;
-  count: number;
   imageUrl: string | null;
   onClick: () => void;
 }) {
@@ -89,59 +93,48 @@ function CategoryRow({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        // Brandon 2026-05-18: h-14 (56px) en mobile = mejor tap target premium,
-        // más grande que el actual h-12 (48px). Bordes redondeados 2xl. Padding
-        // px-3.5 para más respiración. Transición scale activa al tap.
-        "w-full flex items-center gap-3.5 px-3.5 h-14 rounded-2xl text-left transition-all duration-150 active:scale-[0.98]",
+        // Brandon 2026-06-15: filas cuadradas (rounded-none) y compactas (h-11)
+        // sin contador de productos — sidebar más liviana y editorial.
+        "w-full flex items-center gap-3 px-3 h-11 rounded-none text-left transition-all duration-150 active:scale-[0.98]",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
         active
-          ? "bg-[var(--text-primary)] text-[var(--surface-raised)] shadow-sm"
+          ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
           : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] border border-transparent hover:border-[var(--rule-soft)]",
       )}
     >
-      {/* Thumbnail h-10 (40px, antes 32px) — más prominente */}
-      <span className={cn(
-        "shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-xl overflow-hidden",
-        active ? "bg-[var(--surface-raised)]/15 ring-2 ring-[var(--surface-raised)]/25" : "bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]",
-      )}>
+      {/* Thumbnail cuadrado y más chico */}
+      <span
+        className={cn(
+          "shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-md overflow-hidden",
+          active
+            ? "bg-[var(--surface-raised)]/15 ring-1 ring-[var(--surface-raised)]/25"
+            : "bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]",
+        )}
+      >
         {imageUrl ? (
           <Image
             src={imageUrl}
             alt=""
-            width={40}
-            height={40}
+            width={32}
+            height={32}
             className="w-full h-full object-cover"
             unoptimized
           />
         ) : (
-          <Tag className={cn("h-4.5 w-4.5", active ? "text-[var(--surface-raised)]" : "text-[var(--text-tertiary)]")} strokeWidth={2.25} />
+          <Tag
+            className={cn(
+              "h-4 w-4",
+              active ? "text-[var(--surface-raised)]" : "text-[var(--text-tertiary)]",
+            )}
+            strokeWidth={2}
+          />
         )}
       </span>
 
-      {/* Label + indicador secundario opcional */}
+      {/* Label — solo nombre, sin contador */}
       <span className="flex-1 min-w-0">
-        <span className="block text-sm font-extrabold capitalize truncate leading-tight">{label}</span>
-        <span className={cn(
-          "block text-[length:var(--ts-2xs)] font-bold mt-0.5 tabular-nums",
-          active ? "text-[var(--surface-raised)]/80" : "text-[var(--text-tertiary)]",
-        )}>
-          {count} {count === 1 ? "producto" : "productos"}
-        </span>
+        <span className="block text-sm font-medium truncate leading-tight">{label}</span>
       </span>
-
-      {/* Count badge — más grande y visible, no hace falta porque está inline arriba */}
-      {active ? (
-        <span aria-hidden className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface-raised)]/20">
-          <Tag className="h-3.5 w-3.5 text-[var(--surface-raised)]" strokeWidth={2.5} />
-        </span>
-      ) : (
-        <span
-          aria-hidden
-          className="shrink-0 inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--text-tertiary)] border border-[var(--rule-soft)]"
-        >
-          {count}
-        </span>
-      )}
     </button>
   );
 }

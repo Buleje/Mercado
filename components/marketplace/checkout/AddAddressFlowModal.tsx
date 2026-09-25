@@ -202,7 +202,7 @@ export default function AddAddressFlowModal({
             <div className="flex-1 overflow-y-auto">
               {step === "idle" && (
                 <div className="px-5 sm:px-8 py-8 sm:py-12 flex flex-col items-center text-center gap-6">
-                  <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] shadow-[0_8px_28px_-8px_var(--accent)]">
+                  <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shadow-[0_8px_28px_-8px_var(--accent)]">
                     <Navigation className="h-9 w-9" strokeWidth={2} />
                   </span>
                   <div>
@@ -230,7 +230,7 @@ export default function AddAddressFlowModal({
 
               {step === "loading" && (
                 <div className="flex flex-col items-center justify-center min-h-[260px] px-6 gap-4">
-                  <div className="h-16 w-16 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
                   </div>
                   <div className="text-center">

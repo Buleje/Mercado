@@ -56,10 +56,11 @@ export async function deleteFromStorage(paths: string[]): Promise<void> {
 
 export async function getSignedUrl(
   path: string,
-  ttlSeconds = SIGNED_URL_TTL_SECONDS
+  ttlSeconds = SIGNED_URL_TTL_SECONDS,
+  opts?: { download?: boolean | string }
 ): Promise<string | null> {
   const sb = getSupabaseAdmin();
-  const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(path, ttlSeconds);
+  const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(path, ttlSeconds, opts);
   if (error || !data?.signedUrl) {
     logger.warn("documents.storage.signed_url_fail", { path, error: error?.message });
     return null;
@@ -79,26 +80,6 @@ export async function downloadFromStorage(path: string): Promise<Buffer | null> 
 }
 
 /** Sanea el mime contra una allowlist amplia de tipos de oficina/imágen. */
-export const ALLOWED_MIME_PREFIXES = [
-  "image/",
-  "application/pdf",
-  "application/zip",
-  "application/x-zip-compressed",
-  "application/vnd.openxmlformats-officedocument",
-  "application/vnd.ms-excel",
-  "application/msword",
-  "application/vnd.ms-powerpoint",
-  "text/plain",
-  "text/csv",
-  "text/markdown",
-  "video/mp4",
-  "audio/mpeg",
-  "audio/wav",
-  "audio/ogg",
-];
-
-export function isMimeAllowed(mime: string): boolean {
-  return ALLOWED_MIME_PREFIXES.some((p) =>
-    p.endsWith("/") ? mime.startsWith(p) : mime === p || mime.startsWith(p)
-  );
-}
+// La lista vive en `upload-limits.ts` (client-safe) para que el navegador
+// pueda avisar ANTES de subir con la misma regla que aplica el servidor.
+export { isMimeAllowed, esMimePermitido, esInlineSeguro, extensionDe } from "./upload-limits";

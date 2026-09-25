@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { withCronAuth } from "@/lib/cron-auth";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
@@ -18,7 +18,7 @@ import { logActivity } from "@/lib/activity-logger";
  * Sugerencia vercel.json: "0 9 * * 1" (lunes 9:00 AM)
  * Autorización: Bearer <CRON_SECRET>
  */
-export const GET = withCronAuth("dead-stock-report", async (req) => {
+export const GET = withCronAuth("dead-stock-report", async (_req) => {
   try {
     const result = await withCronRetry("dead-stock-report", async () => {
       const now = new Date();

@@ -15,6 +15,10 @@ import "server-only";
  */
 
 import { logger } from "@/lib/logger";
+import { groqProvider } from "@/lib/llm-providers/groq";
+
+/** Single source de los slugs de Groq (ver lib/llm-providers/groq.ts). */
+const MODELOS_GROQ = groqProvider.models;
 
 // ── Provider types ─────────────────────────────────────────────────────────
 
@@ -49,10 +53,12 @@ function getProviders(): AIProviderConfig[] {
   return [
     {
       id: "groq",
-      name: "Groq (Llama 3.1)",
+      name: "Groq",
       apiKey: process.env.GROQ_API_KEY,
       baseUrl: "https://api.groq.com/openai/v1/chat/completions",
-      model: "llama-3.1-8b-instant",
+      // Del registro, no tipeado: Groq da de baja modelos sin aviso y un slug
+      // hardcodeado acá responde 404 sin que nada lo diga (2026-09).
+      model: MODELOS_GROQ.cheap,
       maxTokens: 500,
       isConfigured: !!process.env.GROQ_API_KEY,
     },

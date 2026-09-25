@@ -1,8 +1,10 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   TrendingUp,
   TrendingDown,
@@ -15,6 +17,7 @@ import {
   Target,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 type Suggestion = "Subir" | "Bajar" | "OK" | "Sin datos";
@@ -36,10 +39,10 @@ const SUGGESTION_CONFIG: Record<
   Suggestion,
   { label: string; badge: string; icon: React.ElementType; kpiColor: string }
 > = {
-  Subir:     { label: "Subir precio",  badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: TrendingUp,   kpiColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+  Subir:     { label: "Subir precio",  badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]", icon: TrendingUp,   kpiColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
   Bajar:     { label: "Bajar precio",  badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",                 icon: TrendingDown, kpiColor: "text-[var(--data-error-600)] dark:text-red-400" },
-  OK:        { label: "Precio OK",     badge: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",                icon: Minus,        kpiColor: "text-[var(--text-tertiary)]" },
-  "Sin datos": { label: "Sin datos",   badge: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]",                icon: HelpCircle,   kpiColor: "text-[var(--text-tertiary)]" },
+  OK:        { label: "Precio OK",     badge: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]",                icon: Minus,        kpiColor: "text-[var(--text-tertiary)]" },
+  "Sin datos": { label: "Sin datos",   badge: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]",                icon: HelpCircle,   kpiColor: "text-[var(--text-tertiary)]" },
 };
 
 // ── Barra mini de comparación ──────────────────────────────────────────────
@@ -60,18 +63,18 @@ function PriceBar({
   const avgPct = Math.min(100, Math.max(0, ((avgPrice - minPrice) / range) * 100));
 
   return (
-    <div className="relative h-2 bg-[var(--rule-soft)] dark:bg-gray-700 rounded-full w-full overflow-visible">
+    <div className="relative h-2 bg-[var(--rule-soft)] rounded-full w-full overflow-visible">
       {/* Barra promedio */}
       <div
         className="absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-gray-400 dark:bg-gray-500 rounded-full"
         style={{ left: `${avgPct}%` }}
-        title={`Promedio: S/${avgPrice.toFixed(2)}`}
+        title={`Promedio: ${formatCurrency(avgPrice)}`}
       />
       {/* Mi precio */}
       <div
         className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary dark:bg-primary rounded-full border-2 border-white dark:border-[var(--rule-base)] shadow"
         style={{ left: `${myPct}%`, transform: "translate(-50%, -50%)" }}
-        title={`Mi precio: S/${myPrice.toFixed(2)}`}
+        title={`Mi precio: ${formatCurrency(myPrice)}`}
       />
     </div>
   );
@@ -92,7 +95,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-[var(--shadow-sm)]">
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div className="flex items-start gap-3">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <BarChart2 className="h-5 w-5" />
           </span>
           <div>
@@ -127,7 +130,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
                 style={{ width: `${(p.myPrice / maxVal) * 100}%` }}
               />
               <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
-                S/{Number(p.myPrice).toFixed(2)}
+                {formatCurrency(Number(p.myPrice))}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -136,7 +139,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
                 style={{ width: `${(p.avgPrice! / maxVal) * 100}%` }}
               />
               <span className="text-sm font-bold tabular-nums text-[var(--text-secondary)] whitespace-nowrap">
-                S/{p.avgPrice!.toFixed(2)}
+                {formatCurrency(p.avgPrice!)}
               </span>
             </div>
           </div>
@@ -152,6 +155,7 @@ export default function CompetitivePricingTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [applying, setApplying] = useState<string | null>(null);
+  const { confirm } = useConfirm();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -177,7 +181,11 @@ export default function CompetitivePricingTab() {
         ? Math.ceil(product.avgPrice * 100) / 100
         : Math.floor(product.avgPrice * 100) / 100;
 
-    if (!confirm(`¿Cambiar precio de "${product.name}" a S/${newPrice.toFixed(2)}?`)) return;
+    if (!(await confirm({
+      title: `¿Cambiar precio de "${product.name}" a ${formatCurrency(newPrice)}?`,
+      intent: "warning",
+      confirmLabel: "Sí, cambiar",
+    }))) return;
 
     setApplying(product.id);
     try {
@@ -195,7 +203,7 @@ export default function CompetitivePricingTab() {
         )
       );
     } catch {
-      alert("No se pudo actualizar el precio. Intenta nuevamente.");
+      toast.error("No se pudo actualizar el precio. Intenta nuevamente.");
     } finally {
       setApplying(null);
     }
@@ -253,7 +261,7 @@ export default function CompetitivePricingTab() {
           Sin productos para analizar
         </p>
         <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-          Activá productos en el marketplace para ver el análisis competitivo de precios.
+          Activa productos en el marketplace para ver el análisis competitivo de precios.
         </p>
       </div>
     );
@@ -265,7 +273,7 @@ export default function CompetitivePricingTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-[var(--shadow-sm)]">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Target className="h-5 w-5" />
             </span>
             <div>
@@ -281,7 +289,7 @@ export default function CompetitivePricingTab() {
             type="button"
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
             Actualizar análisis
@@ -291,7 +299,7 @@ export default function CompetitivePricingTab() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                 <TrendingUp className="h-5 w-5 text-[var(--data-success-500)]" />
               </span>
             </div>
@@ -331,10 +339,10 @@ export default function CompetitivePricingTab() {
               Oportunidad estimada
             </p>
             <p className="text-3xl font-extrabold tabular-nums text-primary leading-tight mt-2">
-              S/{opportunityIncome.toFixed(2)}
+              {formatCurrency(opportunityIncome)}
             </p>
             <p className="text-sm text-[var(--text-tertiary)] mt-1">
-              Ingreso extra si subís los precios bajos
+              Ingreso extra si subes los precios bajos
             </p>
           </div>
         </div>
@@ -344,10 +352,10 @@ export default function CompetitivePricingTab() {
       <PriceComparisonChart products={products} />
 
       {/* ── 3. Tabla análisis por producto ─────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-[var(--shadow-sm)]">
+      <div className="bg-[var(--surface-raised)]">
         <div className="px-6 sm:px-8 py-5 border-b border-[var(--rule-base)] flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <BarChart2 className="h-5 w-5" />
             </span>
             <div>
@@ -363,21 +371,20 @@ export default function CompetitivePricingTab() {
             {products.length} {products.length === 1 ? "producto" : "productos"}
           </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
+        <DataTable>
+            <thead>
               <tr>
-                <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Producto</th>
-                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] whitespace-nowrap">Mi precio</th>
-                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Promedio</th>
-                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Mín</th>
-                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Máx</th>
-                <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Competidores</th>
-                <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Sugerencia</th>
-                <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
+                <th>Producto</th>
+                <th className="text-right whitespace-nowrap">Mi precio</th>
+                <th className="text-right hidden sm:table-cell">Promedio</th>
+                <th className="text-right hidden md:table-cell">Mín</th>
+                <th className="text-right hidden md:table-cell">Máx</th>
+                <th className="text-center hidden sm:table-cell">Competidores</th>
+                <th className="text-center">Sugerencia</th>
+                <th className="text-center">Acción</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--rule-soft)]">
+            <tbody>
               {products.map((p) => {
                 const cfg = SUGGESTION_CONFIG[p.suggestion];
                 const SugIcon = cfg.icon;
@@ -385,8 +392,8 @@ export default function CompetitivePricingTab() {
                   p.suggestion !== "OK" && p.suggestion !== "Sin datos" && p.avgPrice !== null;
 
                 return (
-                  <tr key={p.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
-                    <td className="px-4 py-4">
+                  <tr key={p.id}>
+                    <td>
                       <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight max-w-[200px] truncate">
                         {p.name}
                       </p>
@@ -401,13 +408,13 @@ export default function CompetitivePricingTab() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
-                      S/{Number(p.myPrice).toFixed(2)}
+                    <td className="text-right text-base font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
+                      {formatCurrency(Number(p.myPrice))}
                     </td>
-                    <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-secondary)] hidden sm:table-cell whitespace-nowrap">
+                    <td className="text-right text-sm tabular-nums text-[var(--text-secondary)] hidden sm:table-cell whitespace-nowrap">
                       {p.avgPrice !== null ? (
                         <div>
-                          <p className="font-bold">S/{Number(p.avgPrice).toFixed(2)}</p>
+                          <p className="font-bold">{formatCurrency(Number(p.avgPrice))}</p>
                           {p.minPrice !== null && p.maxPrice !== null && (
                             <div className="mt-2">
                               <PriceBar
@@ -423,28 +430,28 @@ export default function CompetitivePricingTab() {
                         <span className="text-[var(--text-tertiary)]">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
-                      {p.minPrice !== null ? `S/${Number(p.minPrice).toFixed(2)}` : "—"}
+                    <td className="text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
+                      {p.minPrice !== null ? `${formatCurrency(Number(p.minPrice))}` : "—"}
                     </td>
-                    <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
-                      {p.maxPrice !== null ? `S/${Number(p.maxPrice).toFixed(2)}` : "—"}
+                    <td className="text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
+                      {p.maxPrice !== null ? `${formatCurrency(Number(p.maxPrice))}` : "—"}
                     </td>
-                    <td className="px-4 py-4 text-center text-sm font-bold text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
+                    <td className="text-center text-sm font-bold text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                       {p.competitorCount}
                     </td>
-                    <td className="px-4 py-4 text-center">
+                    <td className="text-center">
                       <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold whitespace-nowrap", cfg.badge)}>
                         <SugIcon className="h-3.5 w-3.5" />
                         {cfg.label}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-center">
+                    <td className="text-center">
                       {canApply ? (
                         <button
                           type="button"
                           disabled={applying === p.id}
                           onClick={() => handleApplySuggestion(p)}
-                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold bg-primary hover:bg-primary-dark text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-24 justify-center"
+                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold bg-primary hover:bg-primary-dark text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-24 justify-center"
                         >
                           {applying === p.id && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
                           Aplicar
@@ -457,8 +464,7 @@ export default function CompetitivePricingTab() {
                 );
               })}
             </tbody>
-          </table>
-        </div>
+        </DataTable>
       </div>
     </div>
   );

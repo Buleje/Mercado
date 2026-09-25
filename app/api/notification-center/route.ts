@@ -19,7 +19,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
  * notifications can be filtered server-side per role.
  */
 export async function GET(req: NextRequest) {
-  const rl = await applyRateLimit(req, "MODERATE", "notification-center-get");
+  const rl = await applyRateLimit(req, "SHELL_POLL", "notification-center-get");
   if (rl) return rl;
 
   const auth = await requireAdmin(req);

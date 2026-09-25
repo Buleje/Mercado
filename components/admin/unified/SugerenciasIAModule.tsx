@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import dynamic from "next/dynamic";
 import { Sparkles, GitMerge, ShoppingCart, Megaphone, Users, Home, Calendar } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 const Spinner = () => (
   <div className="flex items-center justify-center py-12">
@@ -29,18 +28,29 @@ const TABS = [
   { id: "estrategias",  label: "Estrategias",    icon: Calendar },
   { id: "clientes",     label: "Para clientes",  icon: Users },
 ];
+const TAB_IDS = TABS.map((t) => t.id);
 
 interface Props {
   tenantId?: string;
 }
 
 export default function SugerenciasIAModule({ tenantId: _tenantId }: Props) {
-  const [tab, setTab] = useState<string>(TABS[0].id);
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader title="Sugerencias IA" icon={Sparkles} />
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla. Recupera ~90px verticales,
+          que en una laptop de 677px útiles es la diferencia entre ver los
+          datos o sólo los encabezados.
+          El `eyebrow` se fue con el header: decía la categoría del sidebar
+          («Abastecimiento · Compras» sobre un título «Compras») — el mismo
+          dato tres veces contando el ítem marcado en el sidebar. */}
       <AdminTabBar
+        heading={{ title: "Sugerencias IA", icon: Sparkles }}
         tabs={TABS}
         activeTab={tab}
         onTabChange={setTab}

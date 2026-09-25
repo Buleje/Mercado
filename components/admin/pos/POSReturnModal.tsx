@@ -1,11 +1,14 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useId, useRef } from "react";
+import { Field } from "@/components/admin/shared/Field";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { X, Search, Loader2, Check, RotateCcw, Package, FileText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,9 +47,9 @@ const MOTIVOS = [
   "Otro",
 ];
 
-function fmt(n: number) { return `S/${n.toFixed(2)}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 function fmtDate(s: string) {
-  try { return new Date(s).toLocaleDateString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
+  try { return formatDateTimeShort(s); }
   catch { return s; }
 }
 
@@ -176,7 +179,7 @@ export default function POSReturnModal({
     setProcessing(false);
   };
 
-  const resetAndClose = () => {
+  const resetAndClose = useCallback(() => {
     setStep(1);
     setSearchQuery("");
     setSales([]);
@@ -187,7 +190,7 @@ export default function POSReturnModal({
     setResult(null);
     setNcResult(null);
     onClose();
-  };
+  }, [onClose]);
 
   // UX Mejora 13: Cerrar modal con Escape
   useEffect(() => {
@@ -199,6 +202,10 @@ export default function POSReturnModal({
     return () => document.removeEventListener("keydown", handleEsc);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: resetAndClose, cerrarConEscape: false, activo: isOpen });
 
   if (!isOpen) return null;
 
@@ -218,18 +225,18 @@ export default function POSReturnModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-modal flex items-center justify-center p-4"
         onClick={e => e.target === e.currentTarget && resetAndClose()}
       >
-        <div className="w-full max-w-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)]">
-            <CardTitle className="text-base font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+            <CardTitle id={titleId} className="text-base font-extrabold text-[var(--text-primary)] flex items-center gap-2">
               <RotateCcw className="h-4 w-4 text-secondary" />
               Devolucion
               {step < 3 && <span className="text-xs font-normal text-[var(--text-tertiary)]">Paso {step}/2</span>}
             </CardTitle>
-            <button onClick={resetAndClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <button onClick={resetAndClose} aria-label="Cerrar" className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
               <X className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
           </div>
@@ -246,13 +253,13 @@ export default function POSReturnModal({
                     onChange={e => setSearchQuery(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleSearch()}
                     placeholder="Buscar por ID de boleta..."
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     autoFocus
                   />
                 </div>
                 <button
                   onClick={handleSearch}
-                  className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors"
+                  className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors"
                 >
                   Buscar
                 </button>
@@ -275,7 +282,7 @@ export default function POSReturnModal({
                     <button
                       key={sale.id}
                       onClick={() => selectSale(sale)}
-                      className="w-full text-left p-3 rounded-lg border border-[var(--rule-soft)] hover:bg-gray-50 transition-colors"
+                      className="w-full text-left p-3 rounded-xl border border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)] transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -304,7 +311,7 @@ export default function POSReturnModal({
           {/* Step 2: Select items to return */}
           {step === 2 && selectedSale && (
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              <div className="bg-gray-50 rounded-xl p-3">
+              <div className="bg-[var(--surface-sunken)] rounded-xl p-3">
                 <p className="text-xs font-bold text-[var(--text-primary)]">
                   Venta #{selectedSale.id.slice(0, 8)} - {fmtDate(selectedSale.createdAt)}
                 </p>
@@ -331,6 +338,7 @@ export default function POSReturnModal({
                         type="checkbox"
                         checked={item.selected}
                         onChange={() => toggleItem(idx)}
+                        aria-label={`Seleccionar ${item.name}`}
                         className="h-4 w-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                       />
                       <div className="flex-1 min-w-0">
@@ -338,17 +346,16 @@ export default function POSReturnModal({
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmt(item.price)} x {item.maxQty} = {fmt(item.price * item.maxQty)}</p>
                       </div>
                       {item.selected && (
-                        <div className="flex items-center gap-1.5">
-                          <label className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Cant:</label>
+                        <Field label="Cant:" labelClassName="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]" className="flex items-center gap-1.5">
                           <input
                             type="number"
                             min={1}
                             max={item.maxQty}
                             value={item.returnQty}
                             onChange={e => updateReturnQty(idx, parseInt(e.target.value) || 0)}
-                            className="w-14 px-2 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-center text-[var(--text-primary)] bg-white dark:bg-[var(--color-card)] outline-none focus:border-primary"
+                            className="w-14 px-2 py-1 rounded-xl border border-[var(--rule-base)] text-xs text-center text-[var(--text-primary)] bg-[var(--surface-raised)] outline-none focus:border-primary"
                           />
-                        </div>
+                        </Field>
                       )}
                     </div>
                   </div>
@@ -356,22 +363,21 @@ export default function POSReturnModal({
               </div>
 
               {/* Motivo */}
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Motivo</label>
+              <Field label="Motivo" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <select
                   value={motivo}
                   onChange={e => setMotivo(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   {MOTIVOS.map(m => (
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
-              </div>
+              </Field>
 
               {/* Refund type */}
               <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Devolver como</label>
+                <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Devolver como</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setRefundType("efectivo")}
@@ -379,7 +385,7 @@ export default function POSReturnModal({
                       "flex-1 py-2 rounded-xl text-xs font-bold transition-colors",
                       refundType === "efectivo"
                         ? "bg-primary text-white"
-                        : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+                        : "bg-[var(--rule-soft)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)]"
                     )}
                   >
                     Efectivo
@@ -390,7 +396,7 @@ export default function POSReturnModal({
                       "flex-1 py-2 rounded-xl text-xs font-bold transition-colors",
                       refundType === "credito"
                         ? "bg-secondary text-white"
-                        : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+                        : "bg-[var(--rule-soft)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)]"
                     )}
                   >
                     Credito en tienda
@@ -412,14 +418,14 @@ export default function POSReturnModal({
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => setStep(1)}
-                  className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
                 >
                   Atras
                 </button>
                 <button
                   onClick={handleConfirm}
                   disabled={selectedCount === 0 || processing}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                 >
                   {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Confirmar devolucion
@@ -433,7 +439,7 @@ export default function POSReturnModal({
             <div className="flex-1 p-6 flex flex-col items-center justify-center text-center gap-3">
               <div className={cn(
                 "h-14 w-14 rounded-full flex items-center justify-center",
-                result.success ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-50)]"
+                result.success ? "bg-primary/10" : "bg-[var(--data-error-50)]"
               )}>
                 {result.success ? (
                   <Check className="h-7 w-7 text-[var(--data-success-500)]" />
@@ -478,7 +484,7 @@ export default function POSReturnModal({
                     setCreatingNC(false);
                   }}
                   disabled={creatingNC}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 disabled:opacity-50 transition-colors"
                 >
                   {creatingNC ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                   Crear Nota de Crédito
@@ -492,7 +498,7 @@ export default function POSReturnModal({
 
               <button
                 onClick={resetAndClose}
-                className="px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+                className="px-6 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
               >
                 Cerrar
               </button>

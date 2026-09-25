@@ -8,6 +8,7 @@
 
 import { Radio, Eye, ShoppingBag, DollarSign, Clock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 export interface PastLive {
   id: string;
@@ -22,16 +23,12 @@ export interface PastLive {
 }
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -47,7 +44,7 @@ export function LivePerformanceCard({ live, onClick }: Props) {
     <button
       onClick={onClick}
       className={cn(
-        "w-full text-left bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl p-4 shadow-sm",
+        "w-full text-left bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 shadow-sm",
         onClick && "hover:border-primary/40 hover:shadow-md transition-all"
       )}
     >
@@ -61,7 +58,7 @@ export function LivePerformanceCard({ live, onClick }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 pt-3 border-t border-gray-100">
+      <div className="grid grid-cols-4 gap-2 pt-3 border-t border-[var(--rule-soft)]">
         <div>
           <div className="flex items-center gap-1 text-[var(--text-tertiary)] mb-0.5">
             <Eye className="h-3 w-3" />

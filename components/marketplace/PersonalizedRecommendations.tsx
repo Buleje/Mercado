@@ -223,7 +223,7 @@ export default function PersonalizedRecommendations() {
         <div className="flex items-center gap-2">
           <span
             aria-hidden
-            className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
           >
             <Sparkles className="h-4 w-4" strokeWidth={2.25} />
           </span>
@@ -273,7 +273,7 @@ export default function PersonalizedRecommendations() {
                 >
                   <div className="relative aspect-square overflow-hidden bg-white dark:bg-gray-900">
                     {p.reason && p.reason !== "Recomendado para ti" && (
-                      <span className="absolute left-1.5 top-1.5 z-10 max-w-[85%] truncate rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[0.7rem] font-bold text-[var(--accent)] shadow-[var(--shadow-sm)]">
+                      <span className="absolute left-1.5 top-1.5 z-10 max-w-[85%] truncate rounded-full bg-primary/10 px-2 py-0.5 text-[0.7rem] font-bold text-[var(--accent)] shadow-[var(--shadow-sm)]">
                         {p.reason}
                       </span>
                     )}

@@ -1,8 +1,12 @@
 # CLAUDE.md — Buleje (Bodega San Martín)
 
-> **Última verificación:** 2026-06-12 · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
+> **Última verificación:** 2026-09-22 (cifras recontadas con `find`/`grep` sobre el árbol, no heredadas) · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
 
 **Idioma:** español. **Estilo de respuesta:** Feynman + tablas, ≤100 palabras de prosa.
+
+**Quién pide y cómo (Brandon, 2026-09-11):** dueño-operador que prueba todo en el navegador; un mensaje trae 3-6 pedidos → hacer **todos**; «aplicarlo en general» → buscar las pantallas hermanas; elige **todas** las opciones y agrega texto libre (prioridad 1). Perfil completo: memoria `perfil-brandon-como-trabaja`.
+
+**Cierre proactivo (DEFAULT, Brandon 2026-06-29 → afilado 2026-09-11):** al terminar CASI SIEMPRE una tarea, cerrá con `AskUserQuestion` (multiSelect) de 3-4 opciones **independientes** + 1 recomendada, cada una con **evidencia medida** — una propuesta sin medición es una opinión. Antes de escribirlas, pasar las **8 lentes** (datos reales del tenant real · construido sin estrenar · pantalla hermana · unidad y vocabulario · accesibilidad real · cifra declarada · lo que entra sin tipear · capstone + quick win): skill `/ronda-de-mejoras`, memoria `propuestas-con-lentes`. No cierres en seco salvo «para acá» o paso intermedio.
 
 ---
 
@@ -21,7 +25,7 @@
 | Compliance | Ley 29733 PE — audit log, GDPR-equivalent export, derecho de acceso |
 | Planes SaaS | `free | starter | pro | enterprise` (`lib/billing/wire-up/usage-tiers.ts`), programa Socio Buleje, Bodega al Mes |
 
-**Ámbito funcional:** 133 tabs en panel admin, 14 fases ERP completadas (detalle histórico en `docs/HISTORY.md`) + Marketplace multi-vendor + POS móvil + Kiosk + Delivery app.
+**Ámbito funcional:** 62 tabs de nivel superior en el panel (`app/admin/_components/TabRouter.tsx`) — **los 62 despachan por `next/dynamic`**, vía 33 wrappers; varios hubs sirven 2-6 tabs con `initialTab`. Las ~133 «pestañas» del habla diaria cuentan las subvistas (`lib/admin/subvistas-modulos.ts`), 14 fases ERP completadas (detalle histórico en `docs/HISTORY.md`) + Marketplace multi-vendor + POS móvil + Kiosk + Delivery app.
 
 ---
 
@@ -30,14 +34,14 @@
 ### Core
 | Capa | Tecnología | Versión |
 |---|---|---|
-| Framework | Next.js (App Router, Turbopack) | **16.2.6** |
+| Framework | Next.js (App Router, Turbopack) | **16.2.10** (= `latest` en npm al 22-09; 16.3 sigue en preview) |
 | UI | React | **19.2.6** |
-| Lenguaje | TypeScript (strict) | 5 |
-| Estilos | Tailwind CSS | **4** (`@theme` tokens) |
-| ORM | Prisma + `@prisma/adapter-pg` | **7.4.2** |
+| Lenguaje | TypeScript (strict) | 5.9.3 · **el gate corre con el nativo 7.0.2** (ADR-428) |
+| Estilos | Tailwind CSS | **4.3** (`@theme` tokens) |
+| ORM | Prisma + `@prisma/adapter-pg` | **7.8.0** instalado (rust-free: 3× queries, −90 % bundle) |
 | DB | Supabase PostgreSQL | — |
 | Auth | bcryptjs + JWT (`jose`) + sessions | — |
-| Validación | Zod (siempre `safeParse`) | **4.3.6** |
+| Validación | Zod (siempre `safeParse`) | **4.4.3** |
 | Estado | React Context API (no Zustand — ADR-056) | — |
 | State machines | XState | 5 |
 | Workspaces | `packages/*` (design-system propio) | — |
@@ -58,46 +62,12 @@ Vitest 4 · Playwright 1.59 + `@playwright/mcp` · `@axe-core/playwright` · k6 
 
 ---
 
-## 3. Mapa de módulos
+## 3. Mapa de módulos (resumen — el detalle se infiere del código)
 
-### `app/` (38 segmentos)
-| Segmento | Propósito |
-|---|---|
-| `(store)/` | Tienda pública: home, `tienda`, `cuenta`, `mis-pedidos`, `buscar` |
-| `(marketing)/`, `(onboarding)/` | Landing y onboarding tenants |
-| `admin/` | Panel ERP (133 tabs en `page.tsx` con `next/dynamic`) |
-| `marketplace/` | Cross-store catálogo, vendors, comisiones |
-| `superadmin/` | Plataforma SaaS (gestión tenants) |
-| `panel/`, `cms/` | Editor visual + page-builder |
-| `delivery/`, `delivery-app/` | Repartidor (+ Capacitor) |
-| `supplier/` | Portal proveedores |
-| `t/[tenantSlug]/` | Storefront por tenant (white-label) |
-| `api/` | **~924 endpoints** REST |
-| `checkout/`, `pedido/`, `tracking/`, `venta/` | Flujos de compra y POS |
-| `pricing/`, `vender/`, `tiendas/` | Marketing SaaS |
-| `playground/`, `design-system/`, `api-docs/` | Internos / dev |
-
-### `lib/` (~222 archivos)
-- **`lib/db/`** (≈203 clases `*.db.ts`) — única vía de acceso a Prisma. Cada clase: `tenantId` 1er param, cache + audit + invalidate.
-- **`lib/auth/`** — sesiones, RBAC `role-permissions.ts` (26 recursos × 6 roles).
-- **`lib/middleware/`, `proxy.ts`** — auth, CSP, rate limit, multi-tenant guard.
-- **`lib/ai/`, `lib/agents/`, `claude-router.ts`** — features IA (chef, asistente, recomendaciones).
-- **`lib/cache.ts`, `lib/circuit-breaker.ts`, `lib/cron/`, `lib/queue/`** — infra.
-- **`lib/billing/`, `lib/commissions.ts`, `lib/credit/`, `lib/coupons/`** — dinero.
-- **`lib/audit/`, `lib/compliance/`, `lib/cms/`, `lib/analytics/`** — gestión.
-- **`lib/env.ts`** — valida secrets en startup.
-
-### `components/` (30 subdirs)
-`admin/` (133 tabs) · `store/` · `checkout/` · `marketplace/` · `customer/` · `delivery/` · `supplier/` · `superadmin/` · `socio-buleje/` · `loyalty/` · `landing/` · `marketing/` · `cms` (`blocks/`) · `ui/` + `ui-system/` (primitivos del DS) · `auth/` · `notifications/` · `onboarding/` · `accessibility/` · `tracking/` · `seo/` · `charts/` · `providers/`.
-
-### `contexts/` (19)
-`cart` · `customer` · `theme` · `settings` · `tenant` · `favorites` · `wishlist` · `compare` · `currency` · `locale` · `vocabulary` · `subscription` · `socio-buleje` · `promotions` · `quick-add` · `reviews` · `module-tabs` · `dashboard-data` · `assistant` · `toast`.
-
-### `prisma/schema.prisma` — **189 modelos**
-Tenant · Product (+ Image/Variant/Modifier) · Customer · Order/OrderItem · Sale/SaleItem · Supplier · PurchaseOrder · Promotion · Coupon · CashRegister · Batch · Review · AdminUser/SuperadminUser · Notification · WhatsAppConversation · StripeWebhookQueue · CMS (Page/PageBlock/Media) · Treasury · Fiado · Turno · Receta · Cotizacion · GuiaRemision · NotaCredito · etc.
-
-### `docs/adr/` (ADRs vivos)
-057 hub-spoke · 058 whatsapp-ai-first · 059 marketplace-retention · 069–075 design-system governance · 076 bodega-al-mes · 077 gift-cards · 078 socio-buleje · 079 vendor-approval.
+- **`app/`** (35 segmentos): `(store)` tienda pública · `admin/` (62 tabs, 100 % `next/dynamic`) · `marketplace/` · `superadmin/` · `t/[tenantSlug]/` white-label · `api/` **1.230 endpoints** · `checkout/`,`pedido/`,`tracking/`,`venta/` · `delivery/`,`supplier/`,`cms/`.
+- **`lib/db/`** **279** clases `*.db.ts` = **única vía a Prisma** (cache+audit+`tenantId`). `lib/auth/` RBAC (26 recursos × 6 roles) · `proxy.ts`+`lib/middleware/` = auth/CSP/rate-limit/multi-tenant guard · `claude-router.ts` IA · `lib/{billing,commissions,credit,coupons}` dinero · `lib/env.ts` valida secrets.
+- **`prisma/schema.prisma`** = **254 modelos** (Tenant/Product/Order/Sale/Supplier/Promotion/CashRegister/Fiado/Turno/SUNAT/CMS…). `contexts/` (26) · `components/` (30 subdirs, incl. `ui-system/` primitivos DS).
+- **ADRs vivos** en `docs/adr/`: 057 hub-spoke · 058 whatsapp-ai-first · 059 marketplace · 069-075 design-system · 076-079.
 
 ---
 
@@ -114,12 +84,12 @@ Tenant · Product (+ Image/Variant/Modifier) · Customer · Order/OrderItem · S
 | 5 | **Invalidar caché tras writes** — `invalidate(key)` / `invalidateByPrefix(prefix)` | Consistencia |
 | 6 | **Totales en backend**; client-side solo preview | Anti-fraude checkout |
 | 7 | **Fire-and-forget** con `.catch(() => {})` | Background no rompe UX |
-| 8 | **`tsc --noEmit` real** — `ignoreBuildErrors: false` | — |
+| 8 | **El gate de tipos es `npm run typecheck`** (tsc 7 nativo, 23 s; ADR-428). `next.config.ts` tiene `ignoreBuildErrors: true` a propósito — el gate real es `tsc -p tsconfig.build.json` en el script `build`, + pre-commit + CI | OOM de Next en Vercel 8 GB |
 | 9 | **`requireAdmin(req, roles[])`** en routes protegidas | RBAC |
 | 10 | **Sin secrets hardcodeados** — `.env*` + `lib/env.ts` valida startup | — |
 | 11 | **Raw SQL** — solo `$1 $2 $3`, nunca interpolation | SQLi |
 | 12 | **ADR nuevo** para arquitectura / contratos / schema → `/adr [título]` | — |
-| 13 | **Self-heal** — 3 intentos auto antes de escalar (`/self-heal`) | — |
+| 13 | **Self-heal** — 3 intentos auto antes de escalar (agente `healer`) | — |
 | 14 | **Deploy** — SLO healthy + canary 5%→25%→100% + DR drill <35d | — |
 
 ### TypeScript / Lint
@@ -149,12 +119,12 @@ Tenant · Product (+ Image/Variant/Modifier) · Customer · Order/OrderItem · S
 
 | Tier | Criterio | Dispatch | Modelo/effort subagentes | Gates |
 |---|---|---|---|---|
-| **HOTFIX** | 1 archivo, <20 líneas | Subagente directo | `haiku`/`sonnet` (mecánico = barato) | lint + tsc |
-| **FEATURE** | 2-5 archivos, 1 área | Team slim (2-3) | default (heredar) | lint + tsc + test |
-| **DANGER** | Zona peligrosa | Squad + security | `opus`/effort alto | Full pipeline |
-| **INITIATIVE** | 5+ archivos, ≥2 áreas | Hub BUILD→QUALITY→OPS o **Workflow** (`audit-verificado` como template) | mixto por fase | Todos los gates |
+| **HOTFIX** | 1 archivo, <20 líneas | Inline o 1 subagente (`healer` si es gate rojo) | `model: haiku`/`sonnet` **en la invocación** | lint + tsc |
+| **FEATURE** | 2-5 archivos, 1 área | 1-2 subagentes con `name` (`backend`/`frontend`/`database`) + `reviewer` con contexto fresco | heredar | lint + tsc + test + navegador |
+| **DANGER** | Zona peligrosa | subagente de dominio + `security` (audit) antes del merge | heredar, effort alto | Full pipeline |
+| **INITIATIVE** | 5+ archivos, ≥2 áreas | **Workflow** por fases (construir → verificar con refutador); `audit-verificado` para auditorías | mixto por fase | Todos los gates |
 
-Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hub & Spoke v2: Director + 14 agentes canónicos + 3 specialists (dark-mode-auditor, storefront-visual-qa, typography-enforcer) = **17 agent defs activos** en `.claude/agents/`. 36 defs legacy absorbidos → archivados en `.claude/_agents-archive/`, NO se cargan; los skills referencian solo nombres canónicos).
+Arquitectura real y decisiones de frontmatter en `AGENTS.md` (reescrito 2026-09-14). **8 agent defs activos** en `.claude/agents/`: `architect` · `backend` · `frontend` · `database` · `healer` · `reviewer` · `security` · `tester` — todos `model: inherit` (salvo `healer` sonnet), `memory: project`, `skills:` precargadas, sin `maxTurns` en constructores; `frontend`/`tester` traen el MCP de Playwright. El router es el hilo principal (no hay `director`). Todo subagente recibe el contexto de Brandon vía hook `SubagentStart`. Agent teams OFF (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0`): un subagente con `name` es subagente, no teammate. Legacy en `.claude/_agents-archive/` y `.claude/_archive-swarm/`, NO se cargan.
 
 ---
 
@@ -166,7 +136,7 @@ Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hu
 | `lib/db/orders.db.ts` | State machine de órdenes |
 | `lib/auth/role-permissions.ts` | 26 recursos × 6 roles |
 | `proxy.ts`, `lib/middleware/**` | Auth + CSP + rate limit + multi-tenant |
-| `prisma/schema.prisma` | **189 modelos**, requiere DIRECT_URL |
+| `prisma/schema.prisma` | **254 modelos**, requiere DIRECT_URL |
 | `contexts/cart-context.tsx` | BroadcastChannel multi-tab |
 | `lib/db/marketplace.db.ts`, `commissions.ts` | Dinero cross-vendor |
 
@@ -179,7 +149,7 @@ Antes de tocar cualquiera: invocar skill `audit-first` y/o `migration-planner` s
 | Grupo | Comandos |
 |---|---|
 | **Dev** | `npm run dev` (turbopack, default) · `npm run dev:fast` (alias) · `npm run dev:clean` (kill+lock) · `npm run dev:nuke` (kill+wipe `.next`) · `npm run dev:health` |
-| **Check** | `npm run lint` · `npx tsc --noEmit` · `npm run test` · `npm run build` · `npm run test:e2e` · `npm run test:load` |
+| **Check** | `npm run lint` · **`npm run typecheck`** (tsc 7 nativo, 23 s — NO `npx tsc`, que son 195 s) · `npm run test` · `npm run build` · `npm run test:e2e` · `npm run test:load` |
 | **DB** | `npm run db:seed` · `npm run db:migrate` (migrate dev; revisar `MEMORIA-PROYECTO.md` para flujo Supabase/pgBouncer) · `npm run db:sanity` |
 | **Mobile** | `npm run cap:sync` · `npm run app:build:android` |
 | **OpenAPI** | `npm run openapi:generate` |
@@ -198,21 +168,21 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 
 ## 9. Power rules para el agente (velocidad + potencia)
 
-1. **Paralelismo máximo**: múltiples Agent/Bash/Read en UN mensaje cuando son independientes. Si hay 3+ tareas, invocar skill `turbo-parallel`.
+1. **Paralelismo máximo**: múltiples Agent/Bash/Read en UN mensaje cuando son independientes. Si hay 3+ tareas independientes, van en UN mensaje (la regla vive en `agentic-style`; el skill `turbo-parallel` se archivó el 22-09: 0 invocaciones en 421 transcripts de 36 días y su contenido ya estaba duplicado ahí). **Recontado 2026-09-23**: **1,20** tool-calls/mensaje, 11,9 % de mensajes con 2+, 1,64 subagentes por tanda (42 transcripts). El «1,00 en 14.044» del 19-09 era un artefacto: el transcript guarda cada `tool_use` en su propia línea con el mismo `message.id`, y el script contaba líneas. El wall-clock ≈ nº de TANDAS. Meta **≥1,5**; la cifra de la sesión anterior aparece en el arranque (`scripts/medir-paralelismo.mjs`). Criterio de modelo por agente: regla `agentic-style`.
 2. **No matar `node.exe` ni wipear `.next`**: restarts de Turbopack son caros (30-90s). Solo `dev:clean` si hay lock corrupto; `dev:nuke` solo si caché realmente corrupto.
 3. **Grep/Glob antes que `Explore` agent**: Explore es para preguntas open-ended. Target conocido = Grep directo (más rápido, menos tokens).
 4. **Batch reads**: leer N screenshots o N archivos en una sola tanda paralela, no secuencial.
-5. **Worktrees para `ultra-impact` >50 files**: `isolation: "worktree"` en Agent. Deja el dev server principal intacto.
+5. **Nunca `isolation: "worktree"`** (tampoco para >50 archivos): en esta rama larga branchea de una base vieja y se pierde lógica (medido 2026-08-03). Trabajo grande = varios agentes con archivos disjuntos sobre el checkout principal.
 6. **Scripts bulk**: antes de auto-inyectar imports a `.tsx`, detectar `"use client"` y poner imports DESPUÉS del directive.
-7. **Pre-refactor primitive**: grep `function <X>|const <X> =` en todo el repo para evitar shadowing (ej. PrestamosModule tenía SparklineKPICard interno clonado). Skill `shadow-detector`.
+7. **Pre-refactor primitive**: grep `function <X>|const <X> =` en todo el repo para evitar shadowing (ej. PrestamosModule tenía SparklineKPICard interno clonado).
 8. **Visual verify focused**: no correr los 34 tabs cada vez. `scripts/visual-verify-admin-focused.mjs` cubre los 9 críticos (~30s).
 9. **Respuestas tipo tabla**: máx 100 palabras prosa + tablas + snippets. No narrar deliberación.
 10. **`HUSKY_SKIP_POSTCOMMIT=1`**: default. Vitest post-commit solo con `HUSKY_RUN_POSTCOMMIT_TESTS=1`. CI ya lo corre.
 11. **`NODE_OPTIONS="--max-old-space-size=8192"`**: ya configurado en pre-commit. Evita SIGKILL en bulk.
 12. **Credenciales QA admin** (Playwright visual verify): `qaadmin` / `Qa-admin-1234` en tenant `main`. Crear con `node -r dotenv/config scripts/create-qa-admin-raw.mjs`.
-13. **Onboarding modal**: localStorage key real = `onboarding-completed-${tenantSlug}`. Setear a `"1"` en Playwright antes de screenshots.
+13. **Onboarding modal**: key = `onboarding-completed-${slug}` con `slug = localStorage["active-tenant-slug"] ?? "main"` (en un navegador limpio pide la de `main` aunque entres a otro tenant). **Capturas de un recorrido conocido: `node scripts/qa-capturas.mjs`** (login + pasos + claro/oscuro × 1280/400 en una llamada, fondo medido; ya resuelve el onboarding y el oscuro en modales). El MCP de Playwright, para explorar.
 14. **Prisma schema drift** (suppliers `ColumnNotFound`): requiere `prisma migrate deploy` con DIRECT_URL accesible. DNS de Supabase directo puede fallar en algunas redes — correr desde red con acceso o aplicar la migration sobrante manualmente.
-15. **Claude Code 2026** (v2.1.175+): `/goal` = condición de completitud con evaluador externo (usar en corridas autónomas); `/btw` = preguntas laterales sin gastar contexto; `/rewind` antes de experimentos riesgosos; `/clear` entre tareas no relacionadas; tras 2 correcciones fallidas → replantear, no insistir. **Context resets + estado en archivos > compaction** en corridas largas.
+15. **Claude Code CLI** (v2.1.270 al 2026-09-14): subagentes en background por default, anidados hasta profundidad 3, 20 concurrentes; `/verify` (bundled: arranca la app y prueba el cambio) y `/code-review` NO se auto-invocan; nuestro gate de repo es `npm run typecheck` + `npm run lint` + `npm test` (**el `/gates` que decía esta línea no existe** — no hay tal skill ni command, local ni global; verificado 22-09); `/goal` para corridas autónomas; `/skill-doctor` y `/doctor` quincenales (los dispara Brandon). Task tools (`TaskCreate`…) ya no existen en Fable/Opus 4.8+. Prompt cache 1 h en el hilo principal (`/cost` muestra hit ratio). **Context resets + estado en archivos > compaction** en corridas largas. Detalle y changelog → memoria `claude-code-novedades-2026-07`.
 16. **Reglas path-scoped en `.claude/rules/`** — cargan solo al tocar archivos que matchean (db-classes, ui-components, danger-zone, agentic-style, **code-quality** = estándar enterprise fijo: tipos/DS/errores/refactor/verificación/commits). Gotchas nuevos de capa → ahí, NO inflar este archivo.
 17. **Workflow `audit-verificado`** — auditorías con verificación adversarial integrada (cada hallazgo pasa por un refutador). Usar para "auditá X" en vez de N agentes sueltos.
 
@@ -222,55 +192,27 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 
 | Archivo | Para qué |
 |---|---|
-| `AGENTS.md` | Arquitectura Hub & Spoke v2 (14 agentes canónicos) y protocolos de handoff |
+| `AGENTS.md` | Cómo se despacha hoy (medido), los 8 agent defs y sus decisiones de frontmatter, hook `SubagentStart`, gates (reescrito 2026-09-14) |
 | `MEMORIA-PROYECTO.md` | Memoria viva del proyecto (decisiones, operación crítica, gaps) |
 | `docs/HISTORY.md` | Snapshot histórico de tabs/fases/batches (archivo histórico) |
 | `README.md` | Quick start, deployment Vercel, API endpoints |
 | `docs/adr/` | Decisiones de arquitectura vivas |
 | `SESSION_HANDOFF.md` | Estado de sesión anterior (si existe) |
-| `.claude/hooks/` | ~31 hooks (danger zone, lint, tsc, rubric-check, ADR injector, deploy gates) + utilidades CLI (hub-gate, agent-evolve) |
-| `.claude/rules/` | Reglas path-scoped 2026 — cargan SOLO al tocar archivos que matchean (db, ui, danger-zone, agentic-style) |
+| `.claude/hooks/` | Hooks (wiring real en `settings.json`): **`pre-tool-guard` (Pre, único)** = mem-guard + danger-zone + bash-guard + filtro de deploy-gates en UN proceso (2026-09-19: 83→33 ms por tool-call, −61 %; 0 divergencias en 18 casos; los 3 scripts viejos siguen en el dir para revertir); `post-edit-dispatcher` async (Post — gatea y spawnea hex/auto-learn/typography/screenshot/rubric solo si el path matchea); deploy-gates solo si `Skill("deploy")` o `Skill("vercel-plugin:deploy")` (**ojo 22-09: no existe una skill `deploy` en `.claude/skills/`, así que esos 3 gates sólo corren si el plugin de Vercel aporta la suya — verificar antes de confiar en ellos**); Stop = `stop-checkpoint` + `stop-skill-suggester` + `avisar-terminado` (`stop-evidence-gate.mjs` nunca estuvo cableado: archivado el 22-09) |
+| `.claude/rules/` | Reglas path-scoped 2026 — cargan SOLO al tocar archivos que matchean (db, ui, danger-zone, agentic-style, code-quality) |
 | `.claude/workflows/` | Workflows guardados — `audit-verificado` (auditoría + refutación adversarial) |
-| `.claude/rubrics/` | Rubrics bash-verificables por capa (api, db, migration, ui) — usa `outcome-evaluator` |
-| `.claude/skills/` | 62 skills (skill v2: frontmatter `allowed-tools`+`model`+`argument-hint`) |
+| `.claude/rubrics/` | Rubrics bash-verificables por capa (api, db, migration, ui) — las corre `post-edit-rubric-check.mjs` |
+| `.claude/skills/` | Skills v2 (`allowed-tools`+`model`+`argument-hint`); el harness los surface por descripción — niche/dead en `_archive/` |
 
 ---
 
-## 11. Power assets 2026 (cheat-sheet de skills/rubrics/hooks claves)
+## 11. Power assets (auto-descubribles — no re-listar aquí, se desincronizan)
 
-### Skills agentic 2026 (Anthropic Code with Claude 2026)
+> Regla: skills, hooks y rubrics se descubren solos (harness + `settings.json` + `.claude/rubrics/`). Listarlos en este archivo los deja stale. Sólo se documentan aquí los **triggers no obvios**:
 
-| Skill | Trigger | Resultado |
-|---|---|---|
-| `outcome-evaluator` | "evaluá esto", "self-grade", refactor crítico | Generator+Evaluator loop con rubric verificable, max 3 iters |
-| `dreaming` | "consolidá memoria", fin de sprint, MEMORY.md >50 entries | Dedupe + síntesis de patrones en dry-run, apply explícito |
-| `agentic-loops` | tarea >1h o ≥3 capas | 5 patrones canónicos (PGE / parallel worktree / Hub & Spoke / Outcomes / BG+SendMessage) |
-| `turbo-parallel` | "rápido", "turbo", 3+ sub-tareas | Dispatch N agentes en 1 mensaje, run_in_background+isolation |
-| `ultra-impact` | "mega refactor", ≥5 archivos, ≥2 capas | Pipeline systematic con baseline pre/post, atomic commits |
-
-### Rubrics bash-verificables (`.claude/rubrics/`)
-
-| Aplica a | Rubric | Criterios critical |
-|---|---|---|
-| `app/api/**/route.ts` | `api-endpoint.json` | tenantId · safeParse · no prisma directo · no force-dynamic · no SQLi |
-| `lib/db/**/*.db.ts` | `db-class.json` | tenantId 1er param · sin fallback "main" · no raw interpolation · sufijo DB |
-| `prisma/migrations/**/migration.sql` | `prisma-migration.json` | no DROP sin backup · NOT NULL con default · tenantId en tablas nuevas |
-| `components/**/*.tsx` | `ui-component.json` | no hex hardcoded · "use client" primera línea · alt en imágenes |
-
-Hook `post-edit-rubric-check.mjs` ya las corre auto en cada Edit/Write/MultiEdit; alertas no-bloqueantes a stderr.
-
-### Hooks claves (28 activos)
-
-| Hook | Cuándo dispara | Función |
-|---|---|---|
-| `pre-tool-mem-guard` | PreToolUse | Aborta si RAM crítica (evita SIGKILL WSL) |
-| `pre-bash-guard` | PreToolUse | Bloquea `rm -rf`, `--force` peligrosos |
-| `danger-zone` | PreToolUse | Confirma edits en archivos críticos (schema, auth) |
-| `post-edit-rubric-check` | PostToolUse | Auto-rubric por capa, warning si critical falla |
-| `post-tool-tsc` | PostToolUse | tsc focused tras edit (debounce 5s) |
-| `post-edit-typography-lint` | PostToolUse | Alerta texto chico, gray sin dark |
-| `pre-compact-handoff` | PreCompact | Snapshot estado antes de compactar contexto |
-| `session-start-context` | SessionStart | Imprime sesión previa, pending tasks, improvement radar |
-| `session-start-autonomy` | SessionStart | Dev server boot, QA admin, warmup BG |
-| `stop-skill-suggester` | Stop | Detecta patrón repetido → propone skill nuevo |
+| Asset | Cuándo importa |
+|---|---|
+| `dreaming` | "consolidá memoria" / MEMORY.md >50 → dedupe en **dry-run**, apply explícito (nunca borra a ciegas) |
+| Rubrics (`api-endpoint`/`db-class`/`prisma-migration`/`ui-component`) | corren auto vía `post-edit-rubric-check.mjs` (warning no-bloqueante) |
+| Hooks Pre (mem-guard/danger-zone/pre-bash-guard) | bloquean RAM crítica / archivos críticos / `rm -rf`. Post (hex/typography/rubric/screenshot) = async no-bloqueante. Deploy-gates SÓLO en `Skill(deploy)` |
 

@@ -163,7 +163,7 @@ export default function DiscoverMegaMenu({
         <Link
           href="/descubri"
           onClick={() => onNavigate?.()}
-          className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-bold text-primary hover:border-primary/60 hover:bg-primary/10 transition-colors"
+          className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:border-primary/60 hover:bg-primary/10 transition-colors"
         >
           <span>¿Nuevo en Buleje? Conoce todas las novedades</span>
           <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
@@ -246,7 +246,7 @@ export default function DiscoverMegaMenu({
                 close();
                 onNavigate?.();
               }}
-              className="flex items-center justify-between gap-3 rounded-xl bg-primary/5 border border-primary/20 px-4 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary/10 hover:border-primary/40"
+              className="flex items-center justify-between gap-3 rounded-xl bg-primary/5 border border-primary/20 px-4 py-3 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors hover:bg-primary/10 hover:border-primary/40"
             >
               <span className="inline-flex items-center gap-2">
                 <Store className="h-4 w-4" strokeWidth={1.75} aria-hidden />

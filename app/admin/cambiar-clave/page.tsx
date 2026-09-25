@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck, Loader2, Eye, EyeOff } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 
+import { PageTitle } from "@buleje/design-system";
 /**
  * Cambio de contraseña FORZADO (ADR-133). Se llega acá cuando el login devuelve
  * mustChangePassword=true (el superadmin reseteó la clave con una temporal de un
@@ -39,7 +40,7 @@ export default function CambiarClavePage() {
       const d = await res.json().catch(() => ({}));
       setErr(d.error === "incorrect current password" ? "La contraseña temporal no es correcta." : (d.issues?.[0]?.message ?? "No se pudo cambiar la contraseña."));
     } catch {
-      setErr("Error de red. Intentá de nuevo.");
+      setErr("Error de red. Intenta de nuevo.");
     } finally {
       setBusy(false);
     }
@@ -49,13 +50,13 @@ export default function CambiarClavePage() {
     <div className="min-h-[100dvh] flex items-center justify-center bg-[var(--surface-canvas)] px-4">
       <div className="w-full max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-xl)]">
         <div className="flex items-center gap-3 mb-1">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <ShieldCheck className="h-5 w-5" />
           </span>
-          <h1 className="text-lg font-extrabold text-[var(--text-primary)]">Creá tu contraseña</h1>
+          <PageTitle className="text-[var(--text-primary)]">Crea tu contraseña</PageTitle>
         </div>
         <p className="text-sm text-[var(--text-secondary)] mb-5">
-          Tu acceso se reseteó con una clave temporal. Por seguridad, elegí tu propia contraseña para continuar.
+          Tu acceso se reseteó con una clave temporal. Por seguridad, elige tu propia contraseña para continuar.
         </p>
 
         <form onSubmit={submit} className="space-y-3">
@@ -64,7 +65,7 @@ export default function CambiarClavePage() {
             <input
               type={show ? "text" : "password"} value={current} onChange={(e) => setCurrent(e.target.value)}
               autoComplete="current-password" required
-              className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
           <label className="block">
@@ -73,14 +74,14 @@ export default function CambiarClavePage() {
               <input
                 type={show ? "text" : "password"} value={next} onChange={(e) => setNext(e.target.value)}
                 autoComplete="new-password" required
-                className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 pr-10 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                className="w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 pr-10 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
               <button type="button" onClick={() => setShow((v) => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--accent)]">
                 {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
-            <span className={`mt-1 block text-xs ${next.length === 0 ? "text-[var(--text-tertiary)]" : strong ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-warning-600,#d97706)]"}`}>
-              {next.length === 0 ? "Mínimo 10 caracteres, con letra y número o símbolo." : strong ? "Contraseña segura ✓" : "Aún débil — sumá largo o un símbolo."}
+            <span className={`mt-1 block text-xs ${next.length === 0 ? "text-[var(--text-tertiary)]" : strong ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-warning-600,#f0503f)]"}`}>
+              {next.length === 0 ? "Mínimo 10 caracteres, con letra y número o símbolo." : strong ? "Contraseña segura ✓" : "Aún débil — suma largo o un símbolo."}
             </span>
           </label>
           <label className="block">
@@ -88,11 +89,11 @@ export default function CambiarClavePage() {
             <input
               type={show ? "text" : "password"} value={confirm} onChange={(e) => setConfirm(e.target.value)}
               autoComplete="new-password" required
-              className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
           {err && <p className="text-sm font-semibold text-[var(--data-error-600,#dc2626)]">{err}</p>}
-          <button type="submit" disabled={busy} className="inline-flex w-full h-11 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-base font-bold text-white hover:opacity-90 disabled:opacity-50">
+          <button type="submit" disabled={busy} className="inline-flex w-full h-11 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-base font-semibold text-white hover:opacity-90 disabled:opacity-50">
             {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
             Guardar y entrar
           </button>

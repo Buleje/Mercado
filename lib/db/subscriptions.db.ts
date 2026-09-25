@@ -125,6 +125,25 @@ export interface SubscriptionStats {
   generatedAt: string;
 }
 
+/** Admin list view — enriched with Customer/Product for the panel table. */
+export interface AdminSubscriptionView {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  productId: number;
+  productName: string;
+  frequency: SubscriptionFreq;
+  quantity: number;
+  /** Precio mensual neto (con descuento aplicado), calculado en backend. */
+  monthlyAmount: number;
+  status: SubscriptionStatus;
+  startDate: string;
+  nextBilling: string;
+  pausedAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+}
+
 // ── Constants / helpers ──────────────────────────────────────────────────────
 
 const FREQUENCY_DAYS: Record<SubscriptionFreq, number> = {
@@ -155,6 +174,14 @@ function listUserCacheKey(tenantId: string, userId: string, status?: Subscriptio
 
 function statsCacheKey(tenantId: string): string {
   return `subscriptions:${tenantId}:stats`;
+}
+
+function adminListCachePrefix(tenantId: string): string {
+  return `subscriptions:${tenantId}:admin-list`;
+}
+
+function adminListCacheKey(tenantId: string, status?: SubscriptionStatus): string {
+  return `${adminListCachePrefix(tenantId)}:${status ?? "all"}`;
 }
 
 function deliveriesCacheKey(tenantId: string, subscriptionId: string): string {
@@ -440,6 +467,80 @@ export const SubscriptionsDB = {
     );
   },
 
+  /**
+   * Admin list view: every subscription in the tenant (any customer),
+   * enriched with Customer.name and Product.name/price so the panel can
+   * show a real table instead of the customer-facing raw DTO. Same
+   * two-pass batch-join pattern as `getStats` (never N+1).
+   */
+  async listForTenantAdmin(
+    tenantId: string,
+    options: { status?: SubscriptionStatus } = {},
+  ): Promise<AdminSubscriptionView[]> {
+    return getOrSet(
+      adminListCacheKey(tenantId, options.status),
+      LIST_TTL_SEC,
+      async () => {
+        const rows = await prisma.subscription.findMany({
+          where: {
+            tenantId,
+            ...(options.status ? { status: options.status } : {}),
+          },
+          orderBy: [{ createdAt: "desc" }],
+        });
+        if (rows.length === 0) return [];
+
+        const phones = Array.from(new Set(rows.map((r) => r.userId)));
+        const productIds = Array.from(new Set(rows.map((r) => r.productId)));
+
+        const [customers, products] = await Promise.all([
+          prisma.customer.findMany({
+            where: { tenantId, phone: { in: phones } },
+            select: { phone: true, name: true },
+          }),
+          prisma.product.findMany({
+            where: { tenantId, id: { in: productIds } },
+            select: { id: true, name: true, price: true },
+          }),
+        ]);
+        const nameByPhone = new Map(customers.map((c) => [c.phone, c.name]));
+        const productById = new Map(products.map((p) => [p.id, p]));
+
+        return rows.map((row): AdminSubscriptionView => {
+          const product = productById.get(row.productId);
+          const price = product ? Number(product.price) : 0;
+          const discountFactor = Number(row.discount);
+          const monthDeliveries = DELIVERIES_PER_MONTH[row.frequency];
+          const monthlyAmount =
+            Math.round(price * row.quantity * monthDeliveries * (1 - discountFactor) * 100) / 100;
+          return {
+            id: row.id,
+            customerName: nameByPhone.get(row.userId) ?? row.userId,
+            customerPhone: row.userId,
+            productId: row.productId,
+            productName: product?.name ?? `Producto #${row.productId}`,
+            frequency: row.frequency,
+            quantity: row.quantity,
+            monthlyAmount,
+            status: row.status,
+            startDate: row.createdAt.toISOString(),
+            nextBilling: row.nextDeliveryAt.toISOString(),
+            pausedAt: row.pausedAt?.toISOString() ?? null,
+            cancelledAt: row.cancelledAt?.toISOString() ?? null,
+            cancelReason: row.cancelReason,
+          };
+        });
+      },
+    ).catch((err) => {
+      if (err instanceof ApiError) throw err;
+      logger.error("[subscriptions.db] listForTenantAdmin failed", {
+        tenantId,
+        error: (err as Error).message,
+      });
+      return [] as AdminSubscriptionView[];
+    });
+  },
+
   // ── Writes ─────────────────────────────────────────────────────────────────
 
   /**
@@ -475,6 +576,7 @@ export const SubscriptionsDB = {
 
     invalidateByPrefix(userCachePrefix(tenantId, input.userId));
     invalidate(statsCacheKey(tenantId));
+    invalidateByPrefix(adminListCachePrefix(tenantId));
 
     logActivity(
       "subscription_create",
@@ -538,6 +640,7 @@ export const SubscriptionsDB = {
 
     invalidateByPrefix(userCachePrefix(tenantId, sub.userId));
     invalidate(statsCacheKey(tenantId));
+    invalidateByPrefix(adminListCachePrefix(tenantId));
 
     logActivity(
       "subscription_status",
@@ -589,6 +692,7 @@ export const SubscriptionsDB = {
 
     invalidateByPrefix(userCachePrefix(tenantId, sub.userId));
     invalidate(statsCacheKey(tenantId));
+    invalidateByPrefix(adminListCachePrefix(tenantId));
 
     logActivity(
       "subscription_frequency",
@@ -643,6 +747,7 @@ export const SubscriptionsDB = {
     invalidateByPrefix(userCachePrefix(tenantId, sub.userId));
     invalidate(deliveriesCacheKey(tenantId, id));
     invalidate(statsCacheKey(tenantId));
+    invalidateByPrefix(adminListCachePrefix(tenantId));
 
     logActivity(
       "subscription_skip",

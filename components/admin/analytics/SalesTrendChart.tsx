@@ -1,7 +1,7 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useReportChartEmpty } from "@/components/admin/shared/ChartManager";
 import {
   ComposedChart,
   Bar,
@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { RefreshCw } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -79,11 +80,11 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{formatDate(d.fecha, "full")}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Ventas</span>
-        <span className="font-mono font-medium text-primary">S/ {Number(d.total).toFixed(2)}</span>
+        <span className="font-mono font-medium text-primary">{formatCurrency(Number(d.total))}</span>
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Media 7d</span>
-        <span className="font-mono font-medium text-[var(--text-tertiary)]">S/ {Number(d.movingAvg7d).toFixed(2)}</span>
+        <span className="font-mono font-medium text-[var(--text-tertiary)]">{formatCurrency(Number(d.movingAvg7d))}</span>
       </p>
       {d.isQuincena && <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1.5">Quincena</p>}
       {d.isFeriado && <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">{d.feriadoNombre ?? "Feriado"}</p>}
@@ -220,11 +221,16 @@ export default function SalesTrendChart() {
     { key: "90d", label: "90D" },
   ];
 
+  // Reporta vacío si no hay días o todos están en cero (sin ventas reales) → el
+  // ChartManager oculta el gráfico. En error NO reporta (deja ver el mensaje).
+  const isEmpty = chartData.every(d => (d.total ?? 0) === 0);
+  useReportChartEmpty(!error && isEmpty, !loading);
+
   // ── Loading ──
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="h-5 w-40 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-4 animate-pulse" />
+        <div className="h-5 w-40 bg-[var(--rule-soft)] rounded mb-4 animate-pulse" />
         <div className="h-64 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
       </div>
     );
@@ -261,9 +267,11 @@ export default function SalesTrendChart() {
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       {/* Header + pills */}
       <div className="flex items-center justify-between mb-4">
-        <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
-          Tendencia de Ventas
-        </CardTitle>
+        {/* Sin título propio: esta gráfica va dentro de una AnalyticsCard que
+            ya dice "Tendencia de Ventas" con su subtítulo. Se repetía dos veces
+            a 20px de distancia. Queda el selector de período solo, alineado
+            a la derecha. */}
+        <span />
         <div className="flex items-center gap-1">
           {pills.map((p) => (
             <button
@@ -272,7 +280,7 @@ export default function SalesTrendChart() {
               className={cn(
                 "px-3 py-1 rounded-full text-xs font-medium transition-colors",
                 period === p.key
-                  ? "bg-gray-900 dark:bg-white text-white dark:text-[var(--text-primary)]"
+                  ? "bg-primary text-white"
                   : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
@@ -288,20 +296,22 @@ export default function SalesTrendChart() {
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--accent)" />
-              <stop offset="100%" stopColor="#14C2C2" />
+              {/* var(--accent), no el literal: #14C2C2 es el acento de DARK, así que
+                  en tema claro el degradado arrancaba del turquesa equivocado. */}
+              <stop offset="100%" stopColor="var(--accent)" />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
           <XAxis
             dataKey="fecha"
             tickFormatter={(d: string) => formatDate(d, "dd/MM")}
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 11, fill: "var(--text-tertiary)" }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             tickFormatter={(v: number) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 11, fill: "var(--text-tertiary)" }}
             axisLine={false}
             tickLine={false}
             width={50}
@@ -312,29 +322,31 @@ export default function SalesTrendChart() {
             iconSize={8}
             wrapperStyle={{ fontSize: 11, paddingTop: 12 }}
             formatter={(value: string) => {
-              const labels: Record<string, string> = { total: "Ventas", movingAvg7d: "Media 7d", predicted: "Proyeccion 7d", totalPrevWeek: "Semana anterior" };
-              return <span style={{ fontSize: 11, color: "#6b7280" }}>{labels[value] ?? value}</span>;
+              const labels: Record<string, string> = { total: "Ventas", movingAvg7d: "Media 7d", predicted: "Proyección 7d", totalPrevWeek: "Semana anterior" };
+              return <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{labels[value] ?? value}</span>;
             }}
           />
 
-          {/* Quincena reference lines (dashed) */}
+          {/* Quincenas y feriados son marcas de CALENDARIO, no alertas. Estaban
+              las dos en color de advertencia, así que el gráfico se leía como
+              si estuviera lleno de errores. Ahora salen de la paleta de series
+              (--data-*): quincena neutra, feriado violeta, "hoy" coral. */}
           {quincenas.map((q) => (
             <ReferenceLine
               key={`q-${q}`}
               x={q}
-              stroke="#f97316"
+              stroke="var(--rule-strong)"
               strokeDasharray="4 4"
-              strokeOpacity={0.6}
+              strokeOpacity={0.35}
             />
           ))}
 
-          {/* Feriado reference lines (orange solid) */}
           {feriados.map((f) => (
             <ReferenceLine
               key={`f-${f}`}
               x={f}
-              stroke="#f97316"
-              strokeOpacity={0.8}
+              stroke="var(--data-8)"
+              strokeOpacity={0.5}
             />
           ))}
 
@@ -342,16 +354,20 @@ export default function SalesTrendChart() {
           {todayFecha && (
             <ReferenceLine
               x={todayFecha}
-              stroke="#f97316"
+              stroke="var(--data-7)"
               strokeWidth={2}
-              label={{ value: "Hoy", position: "top", fill: "#f97316", fontSize: 10, fontWeight: "bold" }}
+              label={{ value: "Hoy", position: "top", fill: "var(--data-7)", fontSize: 10, fontWeight: "bold" }}
             />
           )}
 
-          {/* Banda de confianza de la prediccion */}
+          {/* Banda de confianza de la prediccion — `legendType="none"`: son el
+              sombreado de la proyección, no series propias. Sin esto Recharts
+              cae al dataKey y la leyenda mostraba "predictedHigh" y
+              "predictedLow" crudos, en inglés, al usuario final. */}
           <Area
             type="monotone"
             dataKey="predictedHigh"
+            legendType="none"
             stroke="none"
             fill="var(--accent)"
             fillOpacity={0.08}
@@ -360,6 +376,7 @@ export default function SalesTrendChart() {
           <Area
             type="monotone"
             dataKey="predictedLow"
+            legendType="none"
             stroke="none"
             fill="var(--accent)"
             fillOpacity={0.08}
@@ -371,7 +388,7 @@ export default function SalesTrendChart() {
             <Line
               type="monotone"
               dataKey="totalPrevWeek"
-              stroke="#9ca3af"
+              stroke="var(--text-tertiary)"
               strokeDasharray="4 4"
               dot={false}
               strokeWidth={1}
@@ -390,7 +407,7 @@ export default function SalesTrendChart() {
           <Line
             type="monotone"
             dataKey="movingAvg7d"
-            stroke="#f97316"
+            stroke="var(--data-6)"
             strokeWidth={2.5}
             dot={false}
             isAnimationActive={false}

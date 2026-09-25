@@ -238,37 +238,47 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
           <li key={list.id} className="rounded-md border border-border bg-background dark:bg-background overflow-hidden">
             {/* List header */}
             <div className="flex items-center gap-2 px-3 py-2">
+              {/* El campo de renombrar es HERMANO del botón, no hijo: un
+                  control de formulario no puede colgar de un `<button>`.
+                  Mientras se edita, el botón queda sólo con la flecha. */}
               <button
                 onClick={() => setExpandedId((id) => (id === list.id ? null : list.id))}
-                className="flex-1 flex items-center gap-2 min-w-0 text-left"
+                aria-label={expandedId === list.id ? `Contraer ${list.name}` : `Expandir ${list.name}`}
+                className={cn(
+                  "flex items-center gap-2 min-w-0 text-left",
+                  editingId === list.id ? "shrink-0" : "flex-1"
+                )}
               >
                 {expandedId === list.id ? (
                   <ChevronDown className="h-3.5 w-3.5 text-[var(--text-secondary)] shrink-0" />
                 ) : (
                   <ChevronRight className="h-3.5 w-3.5 text-[var(--text-secondary)] shrink-0" />
                 )}
-                {editingId === list.id ? (
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && saveEdit(list.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className={cn(
-                      "flex-1 rounded border border-[var(--accent)]/40 bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)]",
-                      "text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] px-2 py-0.5 focus:outline-none"
-                    )}
-                    autoFocus
-                  />
-                ) : (
-                  <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
-                    {list.name}
-                  </span>
+                {editingId !== list.id && (
+                  <>
+                    <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
+                      {list.name}
+                    </span>
+                    <span className="text-xs text-[var(--text-secondary)] shrink-0">
+                      ({list.items.length} productos)
+                    </span>
+                  </>
                 )}
-                <span className="text-xs text-[var(--text-secondary)] shrink-0">
-                  ({list.items.length} productos)
-                </span>
               </button>
+              {editingId === list.id && (
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveEdit(list.id)}
+                  aria-label={`Nuevo nombre de ${list.name}`}
+                  className={cn(
+                    "flex-1 min-w-0 rounded border border-[var(--accent)]/40 bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)]",
+                    "text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] px-2 py-0.5 focus:outline-none"
+                  )}
+                  autoFocus
+                />
+              )}
 
               {/* Actions */}
               <div className="flex items-center gap-1 shrink-0">

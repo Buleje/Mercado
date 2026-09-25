@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import Script from "next/script";
-import { Geist, Instrument_Serif } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif, Fraunces, Source_Serif_4 } from "next/font/google";
 
 // Body — Geist: tipografía moderna, neutral, optimizada para pantalla.
 // PERF 2026-05-12 (Performance agent P0): preload TRUE para Geist (body
@@ -29,6 +28,52 @@ const InstrumentDisplay = Instrument_Serif({
   // disponible cross-browser/OS.
   fallback: ["Georgia", "Cambria", "Times New Roman", "serif"],
 });
+// Mono — las CIFRAS del panel. `globals.css` define
+// `--font-mono: var(--font-geist-mono), monospace` desde siempre, pero nadie
+// cargaba la fuente: la variable no existía, la declaración quedaba inválida y
+// las 1.965 apariciones de `font-mono` en 447 archivos del admin (montos, m³,
+// códigos de guía, N° de libro) renderizaban en Geist SANS. Medido en el
+// navegador el 2026-09-18: `fontFamily: "Geist, Geist Fallback"` en todas.
+// `tabular-nums` sí funcionaba, así que las columnas alineaban — por eso pasó
+// desapercibido tanto tiempo.
+// preload FALSE: el storefront casi no usa mono y no tiene por qué pagar la
+// descarga; en el panel baja en el primer render, que es donde se usa.
+const GeistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+});
+
+// Cuarta opción del probador de tipografía (`?tipo=source`): serif de
+// documento, más neutra que Fraunces. preload FALSE — sólo baja si alguien
+// pide esa variante por URL. Se borra junto con el probador.
+const SourceSerifDisplay = Source_Serif_4({
+  variable: "--font-display-serif",
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+  weight: ["600"],
+  fallback: ["Georgia", "Cambria", "Times New Roman", "serif"],
+});
+
+// Display del PANEL — Fraunces: serif variable con eje óptico (opsz) y pesos
+// reales hasta 700. Instrument Serif solo tiene el peso 400, y a 21-26px el
+// título del módulo se leía más fino que su propio kicker (medido 2026-09-18).
+// Se aplica en [data-area="admin"] (globals.css); el storefront y el
+// marketplace siguen con Instrument Serif.
+// preload FALSE: quedó como opción del probador (`?tipo=fraunces`), no es la
+// familia por defecto de nadie — no debe costarle una descarga a ninguna página.
+// axes: sólo `opsz` — cada eje extra (SOFT/WONK) engorda el archivo variable.
+const FrauncesDisplay = Fraunces({
+  variable: "--font-display-alt",
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+  axes: ["opsz"],
+  fallback: ["Georgia", "Cambria", "Times New Roman", "serif"],
+});
+
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { prisma } from "@/lib/prisma";
@@ -223,20 +268,41 @@ async function CachedSchemaMarkup() {
   return <SchemaMarkup ratingValue={ratingValue} ratingCount={ratingCount} />;
 }
 
+/**
+ * La marca de la plataforma, cacheada para Next 16.
+ *
+ * `PlatformSettingsDB.getAll()` ya tenía su caché en memoria de 5 min, pero eso
+ * el framework no lo ve: para Cache Components sigue siendo IO sin cachear, y
+ * un IO sin cachear en el layout marca la ruta como bloqueante — de ahí el
+ * "Uncached data accessed outside of <Suspense>" que salía en el storefront
+ * aunque el componente YA estuviera dentro de un Suspense. Estar adentro no
+ * alcanza; hay que decirle que el dato se puede cachear.
+ *
+ * `cacheTag` y no sólo `cacheLife`: la marca cambia cuando el superadmin la
+ * edita, y eso tiene que verse ya. Los endpoints que la escriben revalidan
+ * este tag (`platform-config`).
+ */
+async function getCachedBrandOverrides() {
+  "use cache";
+  cacheTag("platform-config");
+  cacheLife("hours");
+  const { getPlatformConfigSSR, brandColorOverridesCss } = await import("@/lib/platform-config.server");
+  const cfg = await getPlatformConfigSSR();
+  return { css: brandColorOverridesCss(cfg), faviconUrl: cfg.brand.faviconUrl };
+}
+
 async function BrandRuntimeOverrides() {
   // Brandon mayo 2026: inyecta colores y favicon configurados en
   // /superadmin/configuracion. Si el cliente no cambió nada, este
   // fragmento queda vacío (no overrides).
-  const { getPlatformConfigSSR, brandColorOverridesCss } = await import("@/lib/platform-config.server");
-  const cfg = await getPlatformConfigSSR();
-  const css = brandColorOverridesCss(cfg);
+  const { css, faviconUrl } = await getCachedBrandOverrides();
   return (
     <>
       {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
-      {cfg.brand.faviconUrl && (
+      {faviconUrl && (
         <>
-          <link rel="icon" type="image/png" href={cfg.brand.faviconUrl} />
-          <link rel="shortcut icon" href={cfg.brand.faviconUrl} />
+          <link rel="icon" type="image/png" href={faviconUrl} />
+          <link rel="shortcut icon" href={faviconUrl} />
         </>
       )}
     </>
@@ -281,7 +347,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es-PE" className={`${GeistSans.variable} ${InstrumentDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="es-PE" className={`${GeistSans.variable} ${GeistMono.variable} ${InstrumentDisplay.variable} ${FrauncesDisplay.variable} ${SourceSerifDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head suppressHydrationWarning>
         <Suspense>
           <DynamicHeadContent />

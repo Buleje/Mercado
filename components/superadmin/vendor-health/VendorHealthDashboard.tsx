@@ -88,9 +88,9 @@ const KIND_LABEL: Record<SummaryAlert["kind"], string> = {
 };
 
 const KIND_DOT: Record<SummaryAlert["kind"], string> = {
-  "ruc-changed": "bg-amber-500",
+  "ruc-changed": "bg-teal-500",
   "ruc-not-found": "bg-rose-500",
-  "dni-not-found": "bg-orange-500",
+  "dni-not-found": "bg-teal-500",
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -114,9 +114,7 @@ function csvCell(v: string | number | null | undefined): string {
 function exportAlertsCSV(alerts: SummaryAlert[]) {
   const headers = ["VendorId", "TenantSlug", "Kind", "Detail"];
   const rows = alerts.map((a) => [a.vendorId, a.tenantSlug ?? "", a.kind, a.detail]);
-  const csv =
-    "﻿" +
-    [headers, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  const csv = "﻿" + [headers, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -134,19 +132,13 @@ function HealthRing({ score }: { score: number }) {
   const offset = circumference - (score / 100) * circumference;
   const tone =
     score >= 95
-      ? { stroke: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400" }
+      ? { stroke: "stroke-[var(--data-success-500)]", text: "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" }
       : score >= 80
-        ? { stroke: "stroke-amber-500", text: "text-amber-600 dark:text-amber-400" }
-        : { stroke: "stroke-rose-500", text: "text-rose-600 dark:text-rose-400" };
+        ? { stroke: "stroke-teal-500", text: "text-teal-600 dark:text-teal-400" }
+        : { stroke: "stroke-rose-500", text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" };
   return (
     <div className="relative inline-flex items-center justify-center shrink-0">
-      <svg
-        width="128"
-        height="128"
-        viewBox="0 0 128 128"
-        className="-rotate-90"
-        aria-hidden
-      >
+      <svg width="128" height="128" viewBox="0 0 128 128" className="-rotate-90" aria-hidden>
         <circle
           cx="64"
           cy="64"
@@ -168,10 +160,8 @@ function HealthRing({ score }: { score: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("text-3xl font-extrabold tabular-nums", tone.text)}>
-          {score}
-        </span>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className={cn("text-3xl font-extrabold tabular-nums", tone.text)}>{score}</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           /100
         </span>
       </div>
@@ -194,9 +184,9 @@ function Kpi({
 }) {
   const tone = {
     neutral: "text-[var(--text-primary)]",
-    success: "text-emerald-600 dark:text-emerald-400",
-    warning: "text-amber-600 dark:text-amber-400",
-    error: "text-rose-600 dark:text-rose-400",
+    success: "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]",
+    warning: "text-teal-600 dark:text-teal-400",
+    error: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     info: "text-sky-600 dark:text-sky-400",
   }[color];
   return (
@@ -243,9 +233,7 @@ export function VendorHealthDashboard() {
 
   const [searchRaw, setSearchRaw] = useState("");
   const [search, setSearch] = useState("");
-  const [kindFilter, setKindFilter] = useState<SummaryAlert["kind"] | "all">(
-    "all",
-  );
+  const [kindFilter, setKindFilter] = useState<SummaryAlert["kind"] | "all">("all");
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastId = useRef(1);
@@ -259,28 +247,25 @@ export function VendorHealthDashboard() {
   }, []);
 
   // ── Fetch summary ────────────────────────────────────────────────────
-  const fetchSummary = useCallback(
-    async (silent = false) => {
-      if (!silent) setLoading(true);
-      setRefreshing(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/superadmin/vendor-health", {
-          credentials: "include",
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as VendorHealthResponse;
-        setData(json);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error de red");
-      } finally {
-        if (!silent) setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [],
-  );
+  const fetchSummary = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/superadmin/vendor-health", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as VendorHealthResponse;
+      setData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error de red");
+    } finally {
+      if (!silent) setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     void fetchSummary();
@@ -303,8 +288,7 @@ export function VendorHealthDashboard() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
-      const inField =
-        tag === "input" || tag === "textarea" || tag === "select";
+      const inField = tag === "input" || tag === "textarea" || tag === "select";
       if (e.key === "Escape" && !inField) {
         setSearchRaw("");
         setKindFilter("all");
@@ -349,10 +333,7 @@ export function VendorHealthDashboard() {
       pushToast("Grace limpiado", "success");
       await fetchSummary(true);
     } catch (err) {
-      pushToast(
-        `Error: ${err instanceof Error ? err.message : "red"}`,
-        "error",
-      );
+      pushToast(`Error: ${err instanceof Error ? err.message : "red"}`, "error");
     } finally {
       setClearingTenant(null);
     }
@@ -374,19 +355,13 @@ export function VendorHealthDashboard() {
         const body = (await res.json().catch(() => ({}))) as {
           error?: string;
         };
-        pushToast(
-          body.error ?? `Error: HTTP ${res.status}`,
-          "error",
-        );
+        pushToast(body.error ?? `Error: HTTP ${res.status}`, "error");
         return;
       }
       pushToast("Cron disparado · refrescando en 5s", "success");
       setTimeout(() => fetchSummary(true), 5000);
     } catch (err) {
-      pushToast(
-        `Error: ${err instanceof Error ? err.message : "red"}`,
-        "error",
-      );
+      pushToast(`Error: ${err instanceof Error ? err.message : "red"}`, "error");
     } finally {
       setTriggering(false);
     }
@@ -430,19 +405,17 @@ export function VendorHealthDashboard() {
     return (
       <div
         role="alert"
-        className="rounded-2xl border-2 border-rose-300 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 p-5"
+        className="rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-rose-500/10 dark:border-[var(--data-error-500)] p-5"
       >
-        <p className="flex items-center gap-2 text-base font-bold text-rose-700 dark:text-rose-300">
+        <p className="flex items-center gap-2 text-base font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-5 w-5" aria-hidden />
           No se pudo cargar la salud de vendors
         </p>
-        <p className="mt-1 text-sm text-rose-600 dark:text-rose-300/80">
-          {error}
-        </p>
+        <p className="mt-1 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>
         <button
           type="button"
           onClick={() => fetchSummary()}
-          className="mt-3 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold text-white bg-rose-600 hover:bg-rose-700"
+          className="mt-3 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700"
         >
           <RefreshCw className="h-4 w-4" aria-hidden />
           Reintentar
@@ -469,10 +442,7 @@ export function VendorHealthDashboard() {
         />
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-8 text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
-            <Clock
-              className="h-7 w-7 text-[var(--text-tertiary)]"
-              aria-hidden
-            />
+            <Clock className="h-7 w-7 text-[var(--text-tertiary)]" aria-hidden />
           </div>
           <p className="text-base font-extrabold text-[var(--text-primary)]">
             Esperando primer run del cron
@@ -506,31 +476,25 @@ export function VendorHealthDashboard() {
         setAutoRefresh={setAutoRefresh}
         onRefresh={() => fetchSummary()}
         onTrigger={triggerCron}
-        onExport={
-          summary.alerts.length > 0
-            ? () => exportAlertsCSV(summary.alerts)
-            : undefined
-        }
+        onExport={summary.alerts.length > 0 ? () => exportAlertsCSV(summary.alerts) : undefined}
       />
 
       {/* ── Stale banner ─────────────────────────────────── */}
       {stale && (
         <div
           role="alert"
-          className="flex items-start sm:items-center gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/30 px-4 py-3"
+          className="flex items-start sm:items-center gap-3 rounded-2xl border-2 border-teal-300 bg-teal-50 dark:bg-teal-500/10 dark:border-teal-500/30 px-4 py-3"
         >
           <ShieldAlert
-            className="h-5 w-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5 sm:mt-0"
+            className="h-5 w-5 text-teal-700 dark:text-teal-300 shrink-0 mt-0.5 sm:mt-0"
             aria-hidden
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-              Último run hace {Math.round(ageMinutes / 60)}h — el cron debería
-              correr cada 24h.
+            <p className="text-sm font-bold text-teal-900 dark:text-teal-100">
+              Último run hace {Math.round(ageMinutes / 60)}h — el cron debería correr cada 24h.
             </p>
-            <p className="text-xs text-amber-800 dark:text-amber-200 mt-0.5">
-              Disparalo manualmente o revisá{" "}
-              <code className="font-mono">/api/cron/health</code>.
+            <p className="text-xs text-teal-800 dark:text-teal-200 mt-0.5">
+              Disparalo manualmente o revisá <code className="font-mono">/api/cron/health</code>.
             </p>
           </div>
         </div>
@@ -552,8 +516,8 @@ export function VendorHealthDashboard() {
                   : "Acción urgente"}
             </h2>
             <p className="text-sm text-[var(--text-secondary)] mt-1">
-              {summary.total - summary.alerts.length} de {summary.total} vendors
-              activos sin alertas RENIEC/SUNAT.
+              {summary.total - summary.alerts.length} de {summary.total} vendors activos sin alertas
+              RENIEC/SUNAT.
             </p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-[var(--text-tertiary)]">
               <span className="inline-flex items-center gap-1.5">
@@ -627,14 +591,9 @@ export function VendorHealthDashboard() {
                     : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40",
                 )}
               >
-                <span
-                  className={cn("h-2 w-2 rounded-full", KIND_DOT[kind])}
-                  aria-hidden
-                />
+                <span className={cn("h-2 w-2 rounded-full", KIND_DOT[kind])} aria-hidden />
                 {KIND_LABEL[kind]}
-                <span className="ml-1 tabular-nums text-[var(--text-tertiary)]">
-                  {count}
-                </span>
+                <span className="ml-1 tabular-nums text-[var(--text-tertiary)]">{count}</span>
               </button>
             );
           })}
@@ -663,23 +622,23 @@ export function VendorHealthDashboard() {
             onChange={(e) => setSearchRaw(e.target.value)}
             placeholder="Buscar en alertas y graces (vendorId, slug, detalle…)"
             aria-label="Buscar alertas"
-            className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="w-full h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
       )}
 
       {/* ── Empty success ─────────────────────────────────── */}
       {summary.alerts.length === 0 && (summary.graces?.length ?? 0) === 0 && (
-        <div className="rounded-2xl border-2 border-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 dark:border-emerald-500/30 p-5 flex items-start sm:items-center gap-3">
+        <div className="rounded-2xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/10 dark:border-[var(--data-success-500)]/30 p-5 flex items-start sm:items-center gap-3">
           <ShieldCheck
-            className="h-6 w-6 text-emerald-600 dark:text-emerald-300 shrink-0"
+            className="h-6 w-6 text-[var(--data-success-600)] dark:text-[var(--data-success-500)] shrink-0"
             aria-hidden
           />
           <div>
-            <p className="text-base font-extrabold text-emerald-900 dark:text-emerald-100">
+            <p className="text-base font-extrabold text-[var(--data-success-500)]/20 dark:text-[var(--data-success-100)]">
               Todo limpio
             </p>
-            <p className="text-sm text-emerald-800 dark:text-emerald-200/90">
+            <p className="text-sm text-[var(--data-success-700)] dark:text-[var(--data-success-500)]/90">
               Todos los vendors aprobados están al día con RENIEC + SUNAT.
             </p>
           </div>
@@ -706,10 +665,7 @@ export function VendorHealthDashboard() {
                   className="flex items-start gap-3 p-3 sm:p-3.5 hover:bg-[var(--surface-sunken)]/50 transition-colors"
                 >
                   <span
-                    className={cn(
-                      "h-2.5 w-2.5 rounded-full mt-2 shrink-0",
-                      KIND_DOT[a.kind],
-                    )}
+                    className={cn("h-2.5 w-2.5 rounded-full mt-2 shrink-0", KIND_DOT[a.kind])}
                     aria-hidden
                   />
                   <div className="flex-1 min-w-0">
@@ -748,7 +704,7 @@ export function VendorHealthDashboard() {
             Vendors en período de gracia ({filteredGraces.length} / {summary.graces?.length})
           </p>
           {filteredGraces.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 text-center text-sm text-[var(--text-tertiary)]">
+            <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 text-center text-sm text-[var(--text-tertiary)]">
               Ningún grace coincide con los filtros.
             </div>
           ) : (
@@ -757,10 +713,7 @@ export function VendorHealthDashboard() {
                 const untilDate = new Date(g.until);
                 const daysLeft = Math.max(
                   0,
-                  Math.ceil(
-                    (untilDate.getTime() - Date.now()) /
-                      (24 * 60 * 60 * 1000),
-                  ),
+                  Math.ceil((untilDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)),
                 );
                 const urgent = daysLeft <= 2;
                 return (
@@ -774,7 +727,7 @@ export function VendorHealthDashboard() {
                         className={cn(
                           "inline-flex h-10 w-10 items-center justify-center rounded-xl shrink-0",
                           urgent
-                            ? "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
+                            ? "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]"
                             : "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
                         )}
                       >
@@ -790,7 +743,7 @@ export function VendorHealthDashboard() {
                             className={cn(
                               "font-bold",
                               urgent
-                                ? "text-rose-700 dark:text-rose-300"
+                                ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
                                 : "text-[var(--text-primary)]",
                             )}
                           >
@@ -809,8 +762,7 @@ export function VendorHealthDashboard() {
                           </p>
                         )}
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
-                          Reconocido por{" "}
-                          <span className="font-bold">{g.acknowledgedBy}</span>
+                          Reconocido por <span className="font-bold">{g.acknowledgedBy}</span>
                           {g.tenantSlug && (
                             <>
                               {" · "}
@@ -829,7 +781,7 @@ export function VendorHealthDashboard() {
                         onClick={() => clearGrace(g.tenantId, g.tenantSlug)}
                         disabled={clearingTenant === g.tenantId}
                         aria-label={`Limpiar grace de ${g.businessName}`}
-                        className="inline-flex h-11 px-3 items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-100 dark:text-rose-300 dark:hover:bg-rose-500/15 disabled:opacity-50 transition-colors shrink-0"
+                        className="inline-flex h-11 px-3 items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)] hover:bg-rose-100 dark:text-[var(--data-error-500)] dark:hover:bg-rose-500/15 disabled:opacity-50 transition-colors shrink-0"
                       >
                         {clearingTenant === g.tenantId ? (
                           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -898,7 +850,7 @@ function ActionBar({
         onClick={onRefresh}
         disabled={refreshing}
         title="Recargar (R)"
-        className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+        className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
       >
         <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} aria-hidden />
         Recargar
@@ -908,7 +860,7 @@ function ActionBar({
         onClick={onTrigger}
         disabled={triggering}
         title="Ejecutar el cron de re-verificación ahora"
-        className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 text-sm font-extrabold text-white hover:opacity-90 transition disabled:opacity-50"
+        className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 text-sm font-semibold text-white hover:opacity-90 transition disabled:opacity-50"
       >
         {triggering ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -917,7 +869,7 @@ function ActionBar({
         )}
         Ejecutar ahora
       </button>
-      <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+      <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
         <input
           type="checkbox"
           checked={autoRefresh}
@@ -930,7 +882,7 @@ function ActionBar({
         <button
           type="button"
           onClick={onExport}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
         >
           <Download className="h-4 w-4" aria-hidden />
           CSV
@@ -954,7 +906,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}

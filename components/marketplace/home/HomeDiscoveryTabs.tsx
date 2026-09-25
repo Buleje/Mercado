@@ -14,7 +14,6 @@ import { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { Sparkles, Flame, Tag, Package, ChevronRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import ComboMiniCard from "@/components/marketplace/home/ComboMiniCard";
 import type { UnifiedProductCardProduct } from "@/components/marketplace/UnifiedProductCard";
 
@@ -85,8 +84,10 @@ function normalize(raw: Record<string, unknown>): Item {
   };
 }
 
-const ITEM_WIDTH =
-  "w-[44%] sm:w-[30%] md:w-[22%] lg:w-[calc((100%-5rem)/6)] shrink-0 snap-start";
+// Una sola fila contenida (no scroller, no varias filas): 6 productos que
+// entran en 1 fila en desktop; el resto vía "Ver todo".
+const GRID_CLASS = "grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6";
+const GRID_MAX = 6;
 
 export default function HomeDiscoveryTabs() {
   const [active, setActive] = useState<TabKey>("nuevos");
@@ -166,12 +167,12 @@ export default function HomeDiscoveryTabs() {
         </Link>
       </div>
 
-      {/* Carrusel ancho */}
+      {/* Grilla contenida (no se corre al borde; como "Todos los productos") */}
       <div className="mt-3">
         {items === null ? (
-          <div className="flex gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className={cn(ITEM_WIDTH, "aspect-square rounded-md skeleton-shimmer")} />
+          <div className={GRID_CLASS}>
+            {Array.from({ length: GRID_MAX }).map((_, i) => (
+              <div key={i} className="aspect-[3/4] rounded-xl skeleton-shimmer" />
             ))}
           </div>
         ) : items.length === 0 ? (
@@ -179,24 +180,19 @@ export default function HomeDiscoveryTabs() {
             Nada por acá todavía — probá otra pestaña.
           </p>
         ) : (
-          <HorizontalCarousel
-            ariaLabel={activeTab.label}
-            itemWidthClass={ITEM_WIDTH}
-            showNav
-            scrollByFraction={0.9}
-            edgeBleed={false}
-          >
-            {items.map((p, idx) => (
-              <ComboMiniCard
-                key={p.storeProductId || p.id}
-                index={idx}
-                href={`/marketplace/${p.storeSlug}?p=${p.id}`}
-                product={p}
-                rank={activeTab.ranked ? idx + 1 : undefined}
-                soldUnits={activeTab.ranked ? p.soldUnits : undefined}
-              />
+          <ul className={GRID_CLASS} aria-label={activeTab.label}>
+            {items.slice(0, GRID_MAX).map((p, idx) => (
+              <li key={p.storeProductId || p.id}>
+                <ComboMiniCard
+                  index={idx}
+                  href={`/marketplace/${p.storeSlug}?p=${p.id}`}
+                  product={p}
+                  rank={activeTab.ranked ? idx + 1 : undefined}
+                  soldUnits={activeTab.ranked ? p.soldUnits : undefined}
+                />
+              </li>
             ))}
-          </HorizontalCarousel>
+          </ul>
         )}
       </div>
     </div>

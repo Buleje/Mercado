@@ -7,9 +7,13 @@
  *    e invoca print() (el usuario elige "Guardar como PDF").
  * Client-safe: sin imports de lib/db ni prisma.
  */
-import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
-
-const PLAZO_DIAS = 15;
+import {
+  LOTH_SECTIONS,
+  PLAZO_REGISTRO_DIAS,
+  diasDeRegistro,
+  estaFueraDePlazo,
+  type LothSection,
+} from "@/lib/forestal/loth-constants";
 
 export async function downloadLothExcel(): Promise<void> {
   const res = await fetch("/api/admin/forestal/loth/export?format=xlsx", { credentials: "include" });
@@ -36,12 +40,11 @@ const fdate = (v: unknown) => {
   try { return new Date(v as string).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }); }
   catch { return "—"; }
 };
-function lateDays(e: AnyEntry): number {
-  const a = e.entryDate ? new Date(e.entryDate as string).getTime() : 0;
-  const r = e.createdAt ? new Date(e.createdAt as string).getTime() : 0;
-  if (!a || !r) return 0;
-  return Math.max(0, Math.floor((r - a) / 86_400_000));
-}
+/** Días de registro / fuera de plazo — predicado ÚNICO (loth-constants). */
+const lateDays = (e: AnyEntry): number =>
+  diasDeRegistro(e.entryDate as string | null, e.createdAt as string | null) ?? 0;
+const isLate = (e: AnyEntry): boolean =>
+  estaFueraDePlazo(e.entryDate as string | null, e.createdAt as string | null);
 
 const SECTION_TITLE: Record<LothSection, string> = {
   tala: "1 · Tala (volteo)",
@@ -115,7 +118,7 @@ function sectionTable(section: LothSection, entries: AnyEntry[]): string {
     ? `<tr><td colspan="${cols.length + 4}" class="empty">Sin registros.</td></tr>`
     : rows.map((e) => {
         const annulled = e.status === "anulado";
-        const late = lateDays(e) > PLAZO_DIAS;
+        const late = isLate(e);
         const cls = annulled ? ' class="annul"' : late ? ' class="late"' : "";
         const obs = [
           e.discarded ? "descartado" : "",
@@ -150,7 +153,7 @@ function caratulaBlock(c: AnyCaratula): string {
     .join("");
   return `<div class="caratula">
     <div class="cara-title">${titular}</div>
-    <div class="cara-grid">${cells || '<div class="muted">Carátula sin configurar — completá los datos del titular en el módulo.</div>'}</div>
+    <div class="cara-grid">${cells || '<div class="muted">Carátula sin configurar — completa los datos del titular en el módulo.</div>'}</div>
   </div>`;
 }
 
@@ -211,13 +214,13 @@ export async function printLothLibro(): Promise<void> {
     <div class="legal">
       Declaro bajo juramento que la información registrada en el presente libro es veraz y corresponde a las
       operaciones efectivamente realizadas. Las líneas tachadas corresponden a subsanaciones (no se eliminan registros).
-      Las filas resaltadas en ámbar indican registro fuera del plazo de ${PLAZO_DIAS} días.
+      Las filas resaltadas en ámbar indican registro fuera del plazo de ${PLAZO_REGISTRO_DIAS} días.
     </div>
     <script>setTimeout(function(){window.print();}, 350);</script>
   </body></html>`;
 
   const w = window.open("", "_blank", "width=1100,height=800");
-  if (!w) throw new Error("El navegador bloqueó la ventana de impresión. Permití pop-ups para este sitio.");
+  if (!w) throw new Error("El navegador bloqueó la ventana de impresión. Permite pop-ups para este sitio.");
   w.document.write(html);
   w.document.close();
   w.focus();

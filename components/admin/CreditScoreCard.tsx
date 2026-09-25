@@ -3,8 +3,9 @@
 
 import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, ShieldAlert, ShieldCheck, AlertTriangle, TrendingUp, Clock, CreditCard, User } from "@buleje/design-system/icons";
+import { ShieldAlert, ShieldCheck, AlertTriangle, TrendingUp, Clock, CreditCard, User } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -129,11 +130,11 @@ function calcScore(customer: Customer, orders: Order[]): CreditResult {
   const label = score >= 70 ? "Confiable" : score >= 40 ? "Precaucion" : "No recomendado";
   const recommendation =
     score >= 70
-      ? `Puede fiar hasta S/ ${maxCredit.toFixed(2)}`
+      ? `Puede fiar hasta ${formatCurrency(maxCredit)}`
       : score >= 40
-      ? `Limite bajo — máximo S/ ${maxCredit.toFixed(2)}`
+      ? `Limite bajo — máximo ${formatCurrency(maxCredit)}`
       : totalPending > 0
-      ? `Tiene S/ ${totalPending.toFixed(2)} pendiente sin pagar`
+      ? `Tiene ${formatCurrency(totalPending)} pendiente sin pagar`
       : "Historial insuficiente o deudas antiguas";
 
   return { score, color, label, recommendation, breakdown, totalPending, maxCredit };
@@ -148,7 +149,7 @@ function GaugeCircle({ score, color }: { score: number; color: "green" | "yellow
   const circumference = Math.PI * r; // half circle
   const progress = (score / 100) * circumference;
 
-  const strokeColor = color === "green" ? "var(--accent)" : color === "yellow" ? "#f59e0b" : "#ef4444";
+  const strokeColor = color === "green" ? "var(--accent)" : color === "yellow" ? "#ff6b5b" : "#ef4444";
   const textColor = color === "green" ? "text-[var(--data-success-500)]" : color === "yellow" ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]";
 
   return (
@@ -221,10 +222,10 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
 
   const colorClasses = {
     green: {
-      badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+      badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
       icon: ShieldCheck,
       iconColor: "text-[var(--data-success-500)]",
-      bar: "bg-[var(--accent-soft)]",
+      bar: "bg-primary/10",
       border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
     },
     yellow: {
@@ -288,7 +289,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
             </div>
 
             {/* Label badge + recommendation */}
-            <div className={cn("flex items-start gap-2 px-3 py-3 rounded-xl border", colorClasses[result.color].border, `${result.color === "green" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : result.color === "yellow" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20" : "bg-[var(--data-error-50)] dark:bg-red-950/20"}`)}>
+            <div className={cn("flex items-start gap-2 px-3 py-3 rounded-xl border", colorClasses[result.color].border, `${result.color === "green" ? "bg-primary/10 dark:bg-primary/15" : result.color === "yellow" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20" : "bg-[var(--data-error-50)] dark:bg-red-950/20"}`)}>
               {(() => {
                 const Icon = colorClasses[result.color].icon;
                 return <Icon className={cn("h-4 w-4 shrink-0 mt-0.5", colorClasses[result.color].iconColor)} />;
@@ -326,7 +327,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
               <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
                 <span className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Deuda pendiente actual</span>
                 <span className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                  S/ {Number(result.totalPending).toFixed(2)}
+                  {formatCurrency(Number(result.totalPending))}
                 </span>
               </div>
             )}

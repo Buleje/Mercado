@@ -34,18 +34,42 @@ export default function PreviewLiveTheme() {
 
     // Carga la Google Font elegida en el editor (live) inyectando/actualizando
     // un <link>. `null` = fuente de sistema → no carga nada.
-    const loadFont = (label: string | null | undefined) => {
+    const loadFont = (label: string | null | undefined, id = "buleje-live-font") => {
       if (!label) return;
       const family = encodeURIComponent(label).replace(/%20/g, "+");
       const href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;600;700;800;900&display=swap`;
-      let link = document.getElementById("buleje-live-font") as HTMLLinkElement | null;
+      let link = document.getElementById(id) as HTMLLinkElement | null;
       if (!link) {
         link = document.createElement("link");
-        link.id = "buleje-live-font";
+        link.id = id;
         link.rel = "stylesheet";
         document.head.appendChild(link);
       }
       if (link.href !== href) link.href = href;
+    };
+
+    // Modo oscuro EN VIVO (Brandon 2026-06-25): toggle de la clase `dark` —
+    // antes solo se reflejaba tras recargar el iframe.
+    const applyDarkMode = (dark: boolean | undefined) => {
+      if (typeof dark !== "boolean") return;
+      document.documentElement.classList.toggle("dark", dark);
+      const tenant = document.querySelector(".tenant-theme") as HTMLElement | null;
+      tenant?.classList.toggle("dark", dark);
+    };
+
+    // Texto EN VIVO (Brandon 2026-06-25): el editor manda {heroTitle, heroSubtitle,…}
+    // y acá seteamos el textContent de los elementos marcados con data-live="<campo>".
+    // Así editar el hero/nombre se ve al instante, sin esperar el reload de 2s.
+    // Skip si el elemento está focused (usuario editando inline → no pisamos su texto).
+    const applyText = (text: Record<string, unknown> | undefined) => {
+      if (!text) return;
+      for (const [key, val] of Object.entries(text)) {
+        if (typeof val !== "string") continue;
+        document.querySelectorAll(`[data-live="${key}"]`).forEach((el) => {
+          if (el === document.activeElement) return; // En edición inline → skip
+          if (el.textContent !== val) el.textContent = val;
+        });
+      }
     };
 
     const onMessage = (e: MessageEvent) => {
@@ -56,10 +80,16 @@ export default function PreviewLiveTheme() {
         type?: string;
         vars?: Record<string, unknown>;
         fontLabel?: string | null;
+        bodyFontLabel?: string | null;
+        darkMode?: boolean;
+        text?: Record<string, unknown>;
       } | null;
       if (!data || data.source !== "buleje-editor" || data.type !== "live-theme") return;
       applyVars(data.vars);
       loadFont(data.fontLabel);
+      loadFont(data.bodyFontLabel, "buleje-live-font-body");
+      applyDarkMode(data.darkMode);
+      applyText(data.text);
     };
 
     window.addEventListener("message", onMessage);

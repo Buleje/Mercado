@@ -35,6 +35,15 @@ const EMPHASIS_ACCENT: Record<StatCardEmphasis, string> = {
   error: "var(--data-error)",
 };
 
+/** Color de `accentBar` — el neutral usa el rule, no el texto (una barra
+ *  `--text-primary` sería casi negra; el pedido original era gris tenue). */
+const EMPHASIS_BAR: Record<StatCardEmphasis, string> = {
+  neutral: "var(--rule-soft)",
+  success: "var(--data-success)",
+  warning: "var(--data-warning)",
+  error: "var(--data-error)",
+};
+
 export type StatCardDensity = "compact" | "default" | "comfortable";
 
 export interface StatCardSparkline {
@@ -55,6 +64,20 @@ export interface StatCardProps {
   deltaLabel?: string;
   /** Trend explícito. Si no se da, se infiere del signo de delta. */
   trend?: StatCardTrend;
+  /**
+   * Qué significa que el número SUBA.
+   *
+   * - `normal` (default) — subir es bueno: verde arriba, rojo abajo (ventas, producción).
+   * - `inverse` — subir es malo: rojo arriba, verde abajo (merma, gastos, atrasos, devoluciones).
+   * - `neutral` — ni bueno ni malo, el delta se dice en gris (un rendimiento con
+   *   tope, la cantidad de especies distintas).
+   *
+   * La FLECHA siempre sigue el signo del número; lo único que cambia es el
+   * color. Pintar de rojo una flecha que apunta para arriba es exactamente lo
+   * que hay que hacer cuando subir es la mala noticia — dibujarla para abajo
+   * sería mentir sobre el número para acomodar el color.
+   */
+  deltaPolarity?: "normal" | "inverse" | "neutral";
   /** Ícono a la derecha del label. */
   icon?: LucideIcon;
   /** Intent semántico. Default neutral (monocromo). */
@@ -74,6 +97,37 @@ export interface StatCardProps {
    * No depende de Recharts — render SVG puro.
    */
   sparkline?: StatCardSparkline;
+  /**
+   * Ring de acento (`--accent`) para destacar el KPI que más importa en una
+   * fila (ej. "Ganancia neta" entre 5 cards, "Neto" entre 4).
+   *
+   * Absorbido del canon de clones (2026-09-22): `ActivosModule` y
+   * `SimpleMovementsTab` traían la MISMA prop `highlight` con el MISMO
+   * `ring-1 ring-[var(--accent)]/25` — código duplicado a la letra en dos
+   * archivos. Default `false`: no cambia ninguno de los 51 usos actuales.
+   */
+  highlight?: boolean;
+  /**
+   * Barra de 2px al pie del card, coloreada según `emphasis` (gris/`--rule-soft`
+   * si `emphasis` es "neutral").
+   *
+   * Absorbido de `ActivosModule`/`SimpleMovementsTab`: ahí la barra tenía un
+   * color INDEPENDIENTE del texto (`tone` vs `bar` por separado). Acá se
+   * simplifica atándola a `emphasis` — un solo eje de significado en vez de
+   * dos que podían decir cosas distintas. Default `false`: sin barra, como
+   * hoy en los 51 usos existentes.
+   */
+  accentBar?: boolean;
+  /**
+   * El ícono toma el color de `emphasis` (en vez del gris fijo
+   * `--text-tertiary`). Absorbido de `BatchStatsWidget`, `StoreAnalyticsModule`
+   * y `shared/KPICard`: los tres coloreaban el ícono según severidad — ahí lo
+   * hacían con una "chip" circular de fondo, que NO se absorbe (el rediseño
+   * 2026-06-10 de este mismo archivo eligió ícono plano, sin caja, a
+   * propósito). Sólo el color se preserva. Default `false`: ícono gris fijo,
+   * igual que hoy.
+   */
+  iconEmphasis?: boolean;
   onClick?: () => void;
   className?: string;
 }
@@ -140,11 +194,15 @@ export function StatCard({
   delta,
   deltaLabel,
   trend: trendProp,
+  deltaPolarity = "normal",
   icon: Icon,
   emphasis = "neutral",
   subValue,
   density = "default",
   sparkline,
+  highlight = false,
+  accentBar = false,
+  iconEmphasis = false,
   onClick,
   className,
 }: StatCardProps) {
@@ -158,6 +216,8 @@ export function StatCard({
           : "neutral"
       : "neutral");
 
+  /* La flecha lee el NÚMERO; el color lee si eso es buena o mala noticia. Son
+     dos preguntas distintas y por eso salen de dos variables distintas. */
   const TrendIcon =
     inferredTrend === "up"
       ? ArrowUpRight
@@ -165,10 +225,21 @@ export function StatCard({
         ? ArrowDownRight
         : Minus;
 
+  const trendSemantico: StatCardTrend =
+    deltaPolarity === "neutral"
+      ? "neutral"
+      : deltaPolarity === "inverse"
+        ? inferredTrend === "up"
+          ? "down"
+          : inferredTrend === "down"
+            ? "up"
+            : "neutral"
+        : inferredTrend;
+
   const trendColor =
-    inferredTrend === "up"
+    trendSemantico === "up"
       ? "var(--data-success)"
-      : inferredTrend === "down"
+      : trendSemantico === "down"
         ? "var(--data-error)"
         : "var(--text-tertiary)";
 
@@ -178,13 +249,20 @@ export function StatCard({
     <Container
       type={onClick ? "button" : undefined}
       onClick={onClick}
+      /* Marca para la densidad por altura del panel (globals.css): en una
+         laptop, cuatro KPIs de 120px son 120px que no ve de la tabla. */
+      data-stat-card=""
       className={cn(
         // Rediseño minimalista (Brandon 2026-06-10): rectangular (sin rounded),
         // fondo blanco (surface-raised), hairline border, sin sombra.
-        "w-full text-left border bg-[var(--surface-raised)] border-[var(--rule-base)]",
+        // `h-full`: en una grilla, la card con subValue estiraba a sus vecinas y
+        // las dejaba flotando a media altura (fila despareja). Fuera de grilla,
+        // 100% de un padre auto sigue siendo auto — no cambia nada.
+        "h-full w-full text-left border bg-[var(--surface-raised)] border-[var(--rule-base)]",
         DENSITY_PADDING[density],
         "transition-colors",
         onClick && "hover:border-[var(--rule-strong)] cursor-pointer",
+        highlight && "ring-1 ring-[var(--accent)]/25",
         className,
       )}
     >
@@ -192,7 +270,10 @@ export function StatCard({
         <div className="flex-1 min-w-0">
           <Kicker>{label}</Kicker>
           <div
-            className="mt-2 text-[length:var(--ts-2xl)] font-extrabold tabular-nums leading-[var(--lh-tight)]"
+            // En 390px una grilla de 2 columnas deja ~165px por card: "S/ 1520.00"
+            // a --ts-2xl no entra y se cortaba a "S/". Un escalón menos en móvil
+            // lo mete completo; de `sm` para arriba nada cambia.
+            className="mt-2 text-[length:var(--ts-xl)] font-extrabold tabular-nums leading-[var(--lh-tight)] sm:text-[length:var(--ts-2xl)]"
             style={{ color: EMPHASIS_ACCENT[emphasis] }}
           >
             {value}
@@ -203,9 +284,19 @@ export function StatCard({
         </div>
         {/* Icono plano (sin caja redondeada) — minimalista. */}
         {Icon && (
-          <Icon className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          <Icon
+            className={cn("h-5 w-5 shrink-0", !iconEmphasis && "text-[var(--text-tertiary)]")}
+            style={iconEmphasis ? { color: EMPHASIS_ACCENT[emphasis] } : undefined}
+            aria-hidden
+          />
         )}
       </div>
+      {accentBar && (
+        <div
+          className="mt-3 h-1 rounded-full"
+          style={{ backgroundColor: EMPHASIS_BAR[emphasis] }}
+        />
+      )}
       {(typeof delta === "number" || deltaLabel) && (
         <div className="mt-3 flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold tabular-nums">
           <TrendIcon className="h-3.5 w-3.5" style={{ color: trendColor }} aria-hidden />
@@ -290,7 +381,7 @@ export function useChartTokens() {
     stroke: "#0F172A",
     fill: "#0F172A",
     success: "#10B981",
-    warning: "#F59E0B",
+    warning: "#ff6b5b",
     error: "#EF4444",
     info: "#3B82F6",
   });
@@ -306,7 +397,7 @@ export function useChartTokens() {
       stroke: read("--text-primary", "#0F172A"),
       fill: read("--text-primary", "#0F172A"),
       success: read("--data-success", "#10B981"),
-      warning: read("--data-warning", "#F59E0B"),
+      warning: read("--data-warning", "#ff6b5b"),
       error: read("--data-error", "#EF4444"),
       info: read("--data-info", "#3B82F6"),
     });
@@ -321,6 +412,31 @@ export interface DataTableProps extends TableHTMLAttributes<HTMLTableElement> {
   zebra?: boolean;
   /** Sticky header al hacer scroll. */
   stickyHeader?: boolean;
+  /**
+   * La tabla lleva autofiltros de cabecera estilo Excel (`FiltroColumnaMulti`/
+   * `FiltroColumnaRango` de `@/components/admin/shared/filtros-columna`): sin
+   * esto el `<th>` centra su contenido verticalmente y el control del filtro
+   * queda pegado contra el título en vez de debajo (Brandon, 2026-09-03).
+   * Default `false`: no cambia nada en los usos que no filtran desde el `<th>`.
+   */
+  filtrable?: boolean;
+  /**
+   * Clases del CONTENEDOR (el div que hace el scroll horizontal), no de la
+   * tabla. Para el alto máximo, el redondeo o el borde de la caja.
+   */
+  wrapperClassName?: string;
+  /**
+   * Lo que va en ese mismo div: `style`, `onScroll`, `data-*`.
+   *
+   * Existe porque `DataTable` SIEMPRE trae su propia caja con scroll, y quien
+   * necesitaba una tabla alta con scroll vertical envolvía a `DataTable` en
+   * OTRA caja. Quedaban dos contenedores de scroll anidados: el `<thead>`
+   * sticky se pegaba al de adentro —que no scrollea en vertical— y la cabecera
+   * se iba con el contenido (medido: −24 px por paso de rueda), mientras el
+   * gesto del trackpad, que casi siempre trae algo de horizontal, saltaba entre
+   * una caja y la otra. Con esto la caja es UNA.
+   */
+  wrapperProps?: HTMLAttributes<HTMLDivElement>;
   children: ReactNode;
 }
 
@@ -334,23 +450,48 @@ export interface DataTableProps extends TableHTMLAttributes<HTMLTableElement> {
 export function DataTable({
   zebra,
   stickyHeader,
+  filtrable,
   className,
+  wrapperClassName,
+  wrapperProps,
   children,
   ...rest
 }: DataTableProps) {
+  const { className: wrapperPropsClassName, ...wrapperRest } = wrapperProps ?? {};
   return (
-    <div className="overflow-x-auto rounded-lg border border-[var(--rule-base)]">
+    <div
+      {...wrapperRest}
+      className={cn(
+        "overflow-x-auto rounded-lg border border-[var(--rule-base)]",
+        wrapperClassName,
+        wrapperPropsClassName,
+      )}
+    >
       <table
         className={cn(
           "w-full text-[length:var(--ts-sm)] text-[var(--text-primary)]",
           "[&_thead]:bg-[var(--surface-sunken)]",
-          "[&_thead_th]:px-3 [&_thead_th]:py-2.5 [&_thead_th]:text-left",
+          // El default de alineación cede ante un `text-right`/`text-center`
+          // puesto en el propio <th>. Sin el :not(), este selector descendiente
+          // (0,1,2) le gana a la clase simple (0,1,0) y TODO encabezado queda a
+          // la izquierda — incluidos los de columnas numéricas, cuyos valores sí
+          // van a la derecha. Eso era el "descuadre" de las tablas de m³ y
+          // soles: 84 archivos pedían text-right y ninguno lo conseguía.
+          "[&_thead_th:not(.text-right):not(.text-center)]:text-left",
+          "[&_thead_th]:px-3 [&_thead_th]:py-2.5",
           "[&_thead_th]:font-semibold [&_thead_th]:text-[var(--text-secondary)]",
           "[&_thead_th]:text-[length:var(--ts-xs)] [&_thead_th]:uppercase [&_thead_th]:tracking-[var(--ls-wider)]",
+          filtrable && "[&_thead_th]:align-top",
           stickyHeader && "[&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10",
           "[&_tbody_tr]:border-t [&_tbody_tr]:border-[var(--rule-soft)]",
           "[&_tbody_tr:hover]:bg-[var(--surface-sunken)]",
           "[&_tbody_td]:px-3 [&_tbody_td]:py-2.5",
+          // El pie llevaba el padding que le pusiera el consumidor (px-4 casi
+          // siempre) mientras cuerpo y cabecera quedaban en px-3: la fila de
+          // totales caía 4px corrida respecto a la columna que suma. En una
+          // tabla de conciliación, que existe para demostrar que la suma cierra,
+          // el total tiene que caer bajo su columna.
+          "[&_tfoot_td]:px-3 [&_tfoot_td]:py-2.5 [&_tfoot_th]:px-3 [&_tfoot_th]:py-2.5",
           zebra && "[&_tbody_tr:nth-child(even)]:bg-[var(--surface-sunken)]/50",
           className,
         )}

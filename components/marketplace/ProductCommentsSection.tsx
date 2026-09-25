@@ -144,7 +144,7 @@ export default function ProductCommentsSection({
     <div className={cn("pt-1", className)}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <MessageCircle className="h-4 w-4" strokeWidth={2.25} aria-hidden />
         </span>
         <p className="text-sm font-black text-[var(--text-primary)]">
@@ -209,7 +209,7 @@ export default function ProductCommentsSection({
         <button
           type="button"
           onClick={openAuthModal}
-          className="group flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-left transition-all hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"
+          className="group flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-left transition-all hover:border-[var(--accent)] hover:bg-primary/10"
         >
           <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white">
             <Lock className="h-4 w-4" strokeWidth={2.25} aria-hidden />

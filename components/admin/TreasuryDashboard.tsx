@@ -1,17 +1,18 @@
 "use client";
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle, StatCard } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle,
   Calendar, ArrowUpRight, ArrowDownRight, RefreshCw, MessageCircle,
 } from "@buleje/design-system/icons";
 import {
-  AreaChart, Area, XAxis, YAxis,
+  Area, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { LazyAreaChart } from "@/components/charts";
 import { cn } from "@/lib/utils";
+import { useFinanceAggregates } from "@/hooks/use-finance-aggregates";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import KPICard from "@/components/admin/shared/KPICard";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -85,7 +86,7 @@ function urgencyLabel(days: number): string {
 function urgencyBadge(days: number): string {
   if (days < 0) return "bg-red-100 dark:bg-red-900/30 text-[var(--data-error-700)] dark:text-red-400";
   if (days <= 7) return "bg-amber-100 dark:bg-amber-900/30 text-[var(--data-warning-700)] dark:text-amber-400";
-  return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
+  return "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
 }
 
 // ── Custom Tooltip ─────────────────────────────────────────────────────────────
@@ -112,7 +113,7 @@ function FlowTooltip({ active, payload, label }: {
 
 function Skeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700", className)} />
+    <div className={cn("animate-pulse rounded-lg bg-[var(--rule-base)] ", className)} />
   );
 }
 
@@ -164,31 +165,24 @@ export default function TreasuryDashboard() {
     loadData();
   }, [loadData, refreshKey]);
 
-  // ── KPIs ─────────────────────────────────────────────────────────────────────
+  // ── KPIs — fuente ÚNICA (consolidación fase 3, auditoría 2026-06-15) ─────────
+  // Antes cada uno se recalculaba acá con fórmula propia (y con bugs: porPagar
+  // sumaba el monto TOTAL ignorando lo ya pagado; ingresos era solo Sale, no
+  // Order+Sale). Ahora vienen de /api/admin/finance-aggregates (mes actual), la
+  // misma fórmula que el resto del admin. Las filas crudas se mantienen abajo
+  // para los charts y las listas de payables/fiados.
+  const { kpis: agg, refresh: refreshAgg } = useFinanceAggregates();
 
   const kpis = useMemo(() => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const ingresosMes = sales
-      .filter(s => new Date(s.createdAt) >= startOfMonth)
-      .reduce((sum, s) => sum + (s.total ?? 0), 0);
-
-    const gastosMes = expenses?.total ?? 0;
-    const saldoActual = ingresosMes - gastosMes;
-
-    const porCobrar = fiados
-      .filter(f => f.status !== "pagado")
-      .reduce((sum, f) => sum + ((f.amount ?? 0) - (f.paidAmount ?? 0)), 0);
-
-    const porPagar = payables
-      .filter(p => !p.paid)
-      .reduce((sum, p) => sum + (p.amount ?? 0), 0);
-
+    const ingresosMes = agg?.ingresos ?? 0;
+    const gastosMes = agg?.gastos ?? 0;
+    const saldoActual = agg?.utilidadBruta ?? 0;
+    const porCobrar = agg?.deudaFiados ?? 0;
+    const porPagar = agg?.porPagar ?? 0;
     const flujoProyectado = saldoActual + porCobrar - porPagar;
 
     return { saldoActual, porCobrar, porPagar, flujoProyectado, ingresosMes, gastosMes };
-  }, [sales, payables, fiados, expenses]);
+  }, [agg]);
 
   // ── Flow chart data (last 30 days) ────────────────────────────────────────────
 
@@ -263,12 +257,12 @@ export default function TreasuryDashboard() {
         iconColor="var(--accent)"
       >
         <button
-          onClick={() => setRefreshKey(k => k + 1)}
+          onClick={() => { setRefreshKey(k => k + 1); refreshAgg(); }}
           disabled={loading}
           aria-label="Actualizar datos"
           className={cn(
             "h-9 w-9 rounded-xl flex items-center justify-center transition-all",
-            "bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700",
+            "bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] ",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
             loading && "animate-spin opacity-60",
           )}
@@ -293,36 +287,33 @@ export default function TreasuryDashboard() {
           ))
         ) : (
           <>
-            <KPICard
+            <StatCard
               label="Saldo del mes"
               value={fmt(kpis.saldoActual)}
               icon={kpis.saldoActual >= 0 ? TrendingUp : TrendingDown}
-              color={kpis.saldoActual >= 0 ? "var(--accent)" : "#e63946"}
-              alert={kpis.saldoActual < 0}
-              subtitle={`Ingresos ${fmt(kpis.ingresosMes)} − Gastos ${fmt(kpis.gastosMes)}`}
+              emphasis={kpis.saldoActual >= 0 ? "neutral" : "error"}
+              subValue={`Ingresos ${fmt(kpis.ingresosMes)} − Gastos ${fmt(kpis.gastosMes)}`}
             />
-            <KPICard
+            <StatCard
               label="Por cobrar (fiados)"
               value={fmt(kpis.porCobrar)}
               icon={ArrowUpRight}
-              color="#f97316"
-              subtitle={`${fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length} clientes pendientes`}
+              emphasis="warning"
+              subValue={`${fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length} clientes pendientes`}
             />
-            <KPICard
+            <StatCard
               label="Por pagar"
               value={fmt(kpis.porPagar)}
               icon={ArrowDownRight}
-              color="#e63946"
-              alert={kpis.porPagar > 0 && pendingPayables.some(p => daysUntil(p.dueDate) < 0)}
-              subtitle={`${pendingPayables.length} facturas pendientes`}
+              emphasis="error"
+              subValue={`${pendingPayables.length} facturas pendientes`}
             />
-            <KPICard
+            <StatCard
               label="Flujo neto proyectado"
               value={fmt(kpis.flujoProyectado)}
               icon={kpis.flujoProyectado >= 0 ? TrendingUp : TrendingDown}
-              color={kpis.flujoProyectado >= 0 ? "var(--accent)" : "#e63946"}
-              alert={kpis.flujoProyectado < 0}
-              subtitle="Saldo + cobrar − pagar"
+              emphasis={kpis.flujoProyectado >= 0 ? "neutral" : "error"}
+              subValue="Saldo + cobrar − pagar"
             />
           </>
         )}
@@ -348,17 +339,23 @@ export default function TreasuryDashboard() {
         </div>
         {loading ? (
           <Skeleton className="h-52 w-full" />
+        ) : !flowData.some(d => d.ingresos > 0 || d.gastos > 0) ? (
+          // Sin movimientos reales — no mostrar ejes en cero
+          <div className="flex flex-col items-center justify-center h-52 gap-2">
+            <TrendingUp className="h-8 w-8 text-[var(--text-tertiary)]" />
+            <p className="text-sm text-[var(--text-tertiary)]">Sin movimientos en los últimos 30 días</p>
+          </div>
         ) : (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
-            <AreaChart data={flowData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <LazyAreaChart data={flowData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="ingGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
                   <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gasGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#ff6b5b" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#ff6b5b" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(156,163,175,0.2)" />
@@ -378,8 +375,8 @@ export default function TreasuryDashboard() {
               />
               <Tooltip content={<FlowTooltip />} />
               <Area type="monotone" dataKey="ingresos" name="ingresos" stroke="var(--accent)" strokeWidth={2} fill="url(#ingGrad)" dot={false} />
-              <Area type="monotone" dataKey="gastos" name="gastos" stroke="#f97316" strokeWidth={2} fill="url(#gasGrad)" dot={false} />
-            </AreaChart>
+              <Area type="monotone" dataKey="gastos" name="gastos" stroke="#ff6b5b" strokeWidth={2} fill="url(#gasGrad)" dot={false} />
+            </LazyAreaChart>
           </ResponsiveContainer>
         )}
       </div>
@@ -405,37 +402,35 @@ export default function TreasuryDashboard() {
               <p className="text-sm text-[var(--text-tertiary)]">Sin cuentas por pagar pendientes</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--rule-base)]">
-                    <th className="text-left pb-2 text-[var(--text-tertiary)] font-medium">Proveedor / Concepto</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Monto</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Vence</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingPayables.map(p => {
-                    const days = daysUntil(p.dueDate);
-                    return (
-                      <tr key={p.id} className="border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                        <td className="py-2.5 text-[var(--text-secondary)] truncate max-w-[120px]">
-                          {p.supplier ?? p.description ?? "Sin nombre"}
-                        </td>
-                        <td className="py-2.5 text-right font-mono font-semibold text-[var(--text-primary)]">
-                          {fmt(p.amount)}
-                        </td>
-                        <td className="py-2.5 text-right">
-                          <span className={cn("px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium", urgencyBadge(days))}>
-                            {urgencyLabel(days)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable className="text-xs">
+              <thead>
+                <tr className="border-b border-[var(--rule-base)]">
+                  <th>Proveedor / Concepto</th>
+                  <th className="text-right">Monto</th>
+                  <th className="text-right">Vence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingPayables.map(p => {
+                  const days = daysUntil(p.dueDate);
+                  return (
+                    <tr key={p.id}>
+                      <td className="text-[var(--text-secondary)] truncate max-w-[120px]">
+                        {p.supplier ?? p.description ?? "Sin nombre"}
+                      </td>
+                      <td className="text-right font-mono font-semibold text-[var(--text-primary)]">
+                        {fmt(p.amount)}
+                      </td>
+                      <td className="text-right">
+                        <span className={cn("px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium", urgencyBadge(days))}>
+                          {urgencyLabel(days)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </DataTable>
           )}
         </div>
 
@@ -457,62 +452,60 @@ export default function TreasuryDashboard() {
               <p className="text-sm text-[var(--text-tertiary)]">Todos los fiados al día</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--rule-base)]">
-                    <th className="text-left pb-2 text-[var(--text-tertiary)] font-medium">Cliente</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Pendiente</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Mora</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Acción</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingFiados.map(f => {
-                    const pending = (f.amount ?? 0) - (f.paidAmount ?? 0);
-                    const moraDays = f.dueDate ? Math.max(0, -daysUntil(f.dueDate)) : 0;
-                    const phone = f.phone ?? f.customerPhone ?? f.customer?.phone;
-                    return (
-                      <tr key={f.id} className="border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                        <td className="py-2.5 text-[var(--text-secondary)] truncate max-w-[130px]">
-                          {f.customerName}
-                        </td>
-                        <td className="py-2.5 text-right font-mono font-semibold text-[var(--text-primary)]">
-                          {fmt(pending)}
-                        </td>
-                        <td className="py-2.5 text-right">
-                          {moraDays > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                              {moraDays}d mora
-                            </span>
-                          ) : (
-                            <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
-                              Al día
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 text-right">
-                          {phone && (
-                            <a
-                              href={`https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                                `Hola! Soy Buleje. Te recuerdo que tienes una cuenta pendiente de S/${pending.toFixed(2)}. Agradecemos tu pronto pago. Gracias!`
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white rounded-lg text-[length:var(--ts-2xs)] font-medium transition-colors"
-                              title="Enviar recordatorio por WhatsApp"
-                            >
-                              <MessageCircle className="h-3 w-3" />
-                              Cobrar
-                            </a>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable className="text-xs">
+              <thead>
+                <tr className="border-b border-[var(--rule-base)]">
+                  <th>Cliente</th>
+                  <th className="text-right">Pendiente</th>
+                  <th className="text-right">Mora</th>
+                  <th className="text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingFiados.map(f => {
+                  const pending = (f.amount ?? 0) - (f.paidAmount ?? 0);
+                  const moraDays = f.dueDate ? Math.max(0, -daysUntil(f.dueDate)) : 0;
+                  const phone = f.phone ?? f.customerPhone ?? f.customer?.phone;
+                  return (
+                    <tr key={f.id}>
+                      <td className="text-[var(--text-secondary)] truncate max-w-[130px]">
+                        {f.customerName}
+                      </td>
+                      <td className="text-right font-mono font-semibold text-[var(--text-primary)]">
+                        {fmt(pending)}
+                      </td>
+                      <td className="text-right">
+                        {moraDays > 0 ? (
+                          <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
+                            {moraDays}d mora
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                            Al día
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-right">
+                        {phone && (
+                          <a
+                            href={`https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                              `Hola! Soy Buleje. Te recuerdo que tienes una cuenta pendiente de S/${pending.toFixed(2)}. Agradecemos tu pronto pago. Gracias!`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 hover:bg-primary/10 text-white rounded-lg text-[length:var(--ts-2xs)] font-medium transition-colors"
+                            title="Enviar recordatorio por WhatsApp"
+                          >
+                            <MessageCircle className="h-3 w-3" />
+                            Cobrar
+                          </a>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </DataTable>
           )}
         </div>
       </div>

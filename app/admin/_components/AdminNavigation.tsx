@@ -18,7 +18,7 @@
  * los valores en runtime son idénticos.
  */
 
-import type { ComponentProps, ComponentType } from "react";
+import { memo, type ComponentProps, type ComponentType } from "react";
 import { AdminMobileDrawer } from "@/components/admin/layout/AdminMobileDrawer";
 import { AdminSidebar } from "@/components/admin/layout/AdminSidebar";
 import type { Tab } from "../_lib/tabs.types";
@@ -71,10 +71,8 @@ export interface AdminNavigationShared {
 export interface AdminNavigationDrawer {
   open: boolean;
   onClose: () => void;
-  selectedCategory: string | null;
-  onSelectCategory: (id: string | null) => void;
-  categoryDropdownOpen: boolean;
-  onToggleCategoryDropdown: () => void;
+  sidebarSearch: string;
+  onSidebarSearchChange: (v: string) => void;
   demoDataModules: DrawerProps["demoDataModules"];
   onOpenCierreDiario: () => void;
   onLogout: () => void;
@@ -96,7 +94,6 @@ export interface AdminNavigationSidebar {
   ) => void;
   flyoutTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   hiddenTabs: Set<Tab>;
-  sidebarSearch: string;
   allTabs: SidebarProps["allTabs"];
 }
 
@@ -106,7 +103,10 @@ export interface AdminNavigationProps {
   sidebar: AdminNavigationSidebar;
 }
 
-export function AdminNavigation({
+// Memoizado — reenvía a AdminMobileDrawer/AdminSidebar (ambos memoizados);
+// sin esto, este wrapper igual re-renderiza siempre y arrastra a los dos.
+// Sólo sirve si AdminPage le pasa `shared`/`drawer`/`sidebar` estables.
+export const AdminNavigation = memo(function AdminNavigation({
   shared,
   drawer,
   sidebar,
@@ -115,9 +115,7 @@ export function AdminNavigation({
   // acepta los mismos valores sin problema, pero TS no lo deduce por nominal
   // typing. Los cast son seguros porque el runtime es el mismo objeto.
   const sharedAsSidebar = shared as unknown as {
-    filteredTabs: SidebarProps["filteredTabs"];
     favoriteTabItems: SidebarProps["favoriteTabItems"];
-    recentTabItems: SidebarProps["recentTabItems"];
     customShortcutItems: SidebarProps["customShortcutItems"];
     resolvedShortcuts: SidebarProps["resolvedShortcuts"];
     availableForShortcut: SidebarProps["availableForShortcut"];
@@ -134,10 +132,8 @@ export function AdminNavigation({
         filteredTabs={shared.filteredTabs}
         allowedTabs={shared.allowedTabs}
         visibleCategories={shared.visibleCategories}
-        selectedCategory={drawer.selectedCategory}
-        onSelectCategory={drawer.onSelectCategory}
-        categoryDropdownOpen={drawer.categoryDropdownOpen}
-        onToggleCategoryDropdown={drawer.onToggleCategoryDropdown}
+        sidebarSearch={drawer.sidebarSearch}
+        onSidebarSearchChange={drawer.onSidebarSearchChange}
         favoriteTabItems={shared.favoriteTabItems}
         customShortcutItems={shared.customShortcutItems}
         recentTabItems={shared.recentTabItems}
@@ -173,7 +169,6 @@ export function AdminNavigation({
         tab={shared.tab}
         navigateTab={shared.navigateTab}
         allowedTabs={shared.allowedTabs}
-        filteredTabs={sharedAsSidebar.filteredTabs}
         visibleCategories={shared.visibleCategories}
         openAccordionCategories={sidebar.openAccordionCategories}
         onToggleAccordion={sidebar.onToggleAccordion}
@@ -181,9 +176,6 @@ export function AdminNavigation({
         onSidebarFlyoutChange={sidebar.onSidebarFlyoutChange}
         flyoutTimerRef={sidebar.flyoutTimerRef}
         favoriteTabItems={sharedAsSidebar.favoriteTabItems}
-        recentTabItems={sharedAsSidebar.recentTabItems}
-        recentCollapsed={shared.recentCollapsed}
-        onToggleRecentCollapsed={shared.onToggleRecentCollapsed}
         favoriteTabs={shared.favoriteTabs}
         onToggleFavorite={shared.onToggleFavorite}
         customShortcutItems={sharedAsSidebar.customShortcutItems}
@@ -199,9 +191,8 @@ export function AdminNavigation({
         clearedDemoTabs={shared.clearedDemoTabs}
         alerts={shared.alerts}
         hiddenTabs={sidebar.hiddenTabs}
-        sidebarSearch={sidebar.sidebarSearch}
         allTabs={sidebar.allTabs}
       />
     </>
   );
-}
+});

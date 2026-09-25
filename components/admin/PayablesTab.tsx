@@ -1,9 +1,10 @@
 ﻿"use client";
 
-import { CardTitle, PageTitle, StatCard } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle, StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 
-import { useState, useEffect, useCallback, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useId, useRef, type FormEvent } from "react";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, X,
   DollarSign, CreditCard, Check,
@@ -11,10 +12,13 @@ import {
 import type { DbPayable, DbSupplier, PaymentMethod } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
-import AdminCard from "./shared/AdminCard";
 import StatusBadge from "./shared/StatusBadge";
+import { Field } from "@/components/admin/shared/Field";
+import { formatCurrency, formatDate } from "@/lib/format";
 const PAY_STATUS_LABELS = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado" } as const;
 const PAY_STATUS_VARIANT: Record<"pendiente" | "parcial" | "pagado", "warning" | "info" | "success"> = {
   pendiente: "warning",
@@ -25,9 +29,13 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
   efectivo: "Efectivo", yape: "Yape", plin: "Plin", transferencia: "Transferencia",
 };
 
-function formatDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
-  catch { return iso; }
+// Extrae un mensaje legible de una respuesta fallida (evita el fallo silencioso).
+async function readError(res: Response): Promise<string> {
+  try {
+    const j = await res.json();
+    if (typeof j?.error === "string") return j.error;
+  } catch { /* sin cuerpo JSON */ }
+  return `No se pudo completar la operación (${res.status}).`;
 }
 
 export default function PayablesTab() {
@@ -39,10 +47,15 @@ export default function PayablesTab() {
   const [showPayment, setShowPayment] = useState<string | null>(null);
   const [filterSupplier, setFilterSupplier] = useState("");
   useScrollLock(showAdd);
+  const { confirm } = useConfirm();
+  const addTitleId = useId();
+  const addPanelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(addPanelRef, { onCerrar: () => setShowAdd(false), activo: showAdd });
 
   // Add form
   const [addForm, setAddForm] = useState({ supplierId: "", description: "", amount: "", dueDate: "" });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Payment form
   const [payForm, setPayForm] = useState({ amount: "", method: "efectivo" as PaymentMethod, reference: "" });
@@ -68,7 +81,8 @@ export default function PayablesTab() {
     if (!addForm.supplierId || !addForm.amount) return;
     const sup = suppliers.find(s => s.id === addForm.supplierId);
     setSaving(true);
-    await fetch("/api/payables", {
+    setError(null);
+    const res = await fetch("/api/payables", {
       method: "POST",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
@@ -80,6 +94,7 @@ export default function PayablesTab() {
       }),
     });
     setSaving(false);
+    if (!res.ok) { setError(await readError(res)); return; }
     setShowAdd(false);
     setAddForm({ supplierId: "", description: "", amount: "", dueDate: "" });
     load();
@@ -89,7 +104,8 @@ export default function PayablesTab() {
     e.preventDefault();
     if (!payForm.amount || Number(payForm.amount) <= 0) return;
     setSaving(true);
-    await fetch(`/api/payables/${payableId}/payments`, {
+    setError(null);
+    const res = await fetch(`/api/payables/${payableId}/payments`, {
       method: "POST",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
@@ -99,14 +115,17 @@ export default function PayablesTab() {
       }),
     });
     setSaving(false);
+    if (!res.ok) { setError(await readError(res)); return; }
     setShowPayment(null);
     setPayForm({ amount: "", method: "efectivo", reference: "" });
     load();
   };
 
   const deletePayable = async (id: string) => {
-    if (!confirm("¿Eliminar esta cuenta por pagar?")) return;
-    await fetch(`/api/payables/${id}`, { method: "DELETE" });
+    if (!(await confirm({ title: "¿Eliminar esta cuenta por pagar?", intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
+    setError(null);
+    const res = await fetch(`/api/payables/${id}`, { method: "DELETE", headers: csrfHeaders() });
+    if (!res.ok) { setError(await readError(res)); return; }
     load();
   };
 
@@ -126,26 +145,34 @@ export default function PayablesTab() {
   }).filter(s => s.count > 0);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Finanzas / Obligaciones</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <CreditCard className="h-5 w-5 currentColor" />
-            Cuentas por Pagar
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">{filtered.length} cuentas activas con proveedores</p>
-        </div>
-        <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded-xl transition-colors">
+    <div className="space-y-4">
+      {/* Header estándar (antes: kicker + PageTitle + subtítulo a mano). */}
+      <AdminModuleHeader
+        as="h2"
+        eyebrow="Finanzas · Obligaciones"
+        title="Cuentas por pagar"
+        description={`${filtered.length} cuentas activas con proveedores`}
+        icon={CreditCard}
+      >
+        <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-primary hover:bg-primary-dark px-4 min-h-10 rounded-xl transition-colors">
           <Plus className="h-4 w-4" /> Nueva cuenta
         </button>
-      </div>
+      </AdminModuleHeader>
+
+      {/* Error banner — antes las mutaciones fallaban en silencio */}
+      {error && (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3">
+          <p className="text-sm font-semibold text-[var(--data-error-500)]">{error}</p>
+          <button onClick={() => setError(null)} className="shrink-0 text-[var(--data-error-500)] hover:opacity-70" aria-label="Cerrar aviso">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Por pagar" value={`S/ ${totalDebt.toFixed(2)}`} icon={DollarSign} emphasis={totalDebt > 0 ? "warning" : "neutral"} />
-        <StatCard label="Pagado" value={`S/ ${totalPaid.toFixed(2)}`} icon={Check} emphasis="success" />
+        <StatCard label="Por pagar" value={`${formatCurrency(totalDebt)}`} icon={DollarSign} emphasis={totalDebt > 0 ? "warning" : "neutral"} />
+        <StatCard label="Pagado" value={`${formatCurrency(totalPaid)}`} icon={Check} emphasis="success" />
         <StatCard label="Cuentas activas" value={filtered.length} icon={CreditCard} />
       </div>
 
@@ -165,8 +192,8 @@ export default function PayablesTab() {
             >
               <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm truncate">{s.name}</p>
               <div className="flex flex-wrap items-center gap-3 mt-1">
-                <span className="text-xs text-[var(--data-error-500)] font-bold">Debe: S/{Number(s.pending).toFixed(2)}</span>
-                <span className="text-xs text-[var(--data-success-500)]">Pagado: S/{Number(s.totalPaid).toFixed(2)}</span>
+                <span className="text-xs text-[var(--data-error-500)] font-bold">Debe: {formatCurrency(Number(s.pending))}</span>
+                <span className="text-xs text-[var(--data-success-500)]">Pagado: {formatCurrency(Number(s.totalPaid))}</span>
               </div>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{s.count} factura{s.count !== 1 ? "s" : ""}</p>
             </button>
@@ -199,9 +226,9 @@ export default function PayablesTab() {
                     </div>
                     {p.description && <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">{p.description}</p>}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
-                      <span>Total: <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(p.amount).toFixed(2)}</span></span>
-                      <span>Pagado: <span className="font-bold text-[var(--data-success-500)]">S/{Number(p.paidAmount).toFixed(2)}</span></span>
-                      <span>Restante: <span className="font-bold text-[var(--data-error-500)]">S/{remaining.toFixed(2)}</span></span>
+                      <span>Total: <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(p.amount))}</span></span>
+                      <span>Pagado: <span className="font-bold text-[var(--data-success-500)]">{formatCurrency(Number(p.paidAmount))}</span></span>
+                      <span>Restante: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(remaining)}</span></span>
                       <span>Vence: {formatDate(p.dueDate)}</span>
                     </div>
                     {/* Progress bar — fill sólido y diferenciado: verde cuando
@@ -224,10 +251,10 @@ export default function PayablesTab() {
                         <DollarSign className="h-3.5 w-3.5" /> Pagar
                       </button>
                     )}
-                    <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                    <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                       {expanded === p.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>
-                    <button onClick={() => deletePayable(p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
+                    <button onClick={() => deletePayable(p.id)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -235,41 +262,38 @@ export default function PayablesTab() {
 
                 {/* Payment form */}
                 {showPayment === p.id && (
-                  <form onSubmit={(e) => registerPayment(e, p.id)} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--accent-soft)] flex flex-wrap items-end gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Monto (S/)</label>
+                  <form onSubmit={(e) => registerPayment(e, p.id)} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-primary/10 flex flex-wrap items-end gap-3">
+                    <Field label="Monto (S/)" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                       <input
                         required type="number" step="0.01" min="0.01" max={remaining}
                         value={payForm.amount}
                         onChange={(e) => setPayForm(f => ({ ...f, amount: e.target.value }))}
-                        className="w-28 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        className="w-28 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Método</label>
+                    </Field>
+                    <Field label="Método" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                       <select
                         value={payForm.method}
                         onChange={(e) => setPayForm(f => ({ ...f, method: e.target.value as PaymentMethod }))}
-                        className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                       >
                         {(Object.keys(METHOD_LABELS) as PaymentMethod[]).map(m => (
                           <option key={m} value={m}>{METHOD_LABELS[m]}</option>
                         ))}
                       </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Referencia</label>
+                    </Field>
+                    <Field label="Referencia" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                       <input
                         value={payForm.reference}
                         onChange={(e) => setPayForm(f => ({ ...f, reference: e.target.value }))}
                         placeholder="Nº operación…"
-                        className="w-32 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        className="w-32 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                       />
-                    </div>
+                    </Field>
                     <button type="submit" disabled={saving} className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1 disabled:opacity-60">
                       <Check className="h-3.5 w-3.5" /> Registrar pago
                     </button>
-                    <button type="button" onClick={() => setShowPayment(null)} className="px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted text-xs font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                    <button type="button" onClick={() => setShowPayment(null)} className="px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted text-xs font-semibold hover:bg-[var(--surface-sunken)] transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                       Cancelar
                     </button>
                   </form>
@@ -277,7 +301,7 @@ export default function PayablesTab() {
 
                 {/* Payment history */}
                 {expanded === p.id && (
-                  <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-surface">
+                  <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--surface-sunken)] ">
                     <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Historial de pagos</p>
                     {p.payments.length === 0 ? (
                       <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Sin pagos registrados</p>
@@ -286,7 +310,7 @@ export default function PayablesTab() {
                         {p.payments.map((pay) => (
                           <div key={pay.id} className="flex items-center justify-between text-sm bg-[var(--surface-raised)] rounded-lg px-3 py-2">
                             <div>
-                              <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(pay.amount).toFixed(2)}</span>
+                              <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(pay.amount))}</span>
                               <span className="text-[var(--text-tertiary)] dark:text-muted ml-2">{METHOD_LABELS[pay.method]}</span>
                               {pay.reference && <span className="text-[var(--text-tertiary)] dark:text-muted ml-2 text-xs">Ref: {pay.reference}</span>}
                             </div>
@@ -305,37 +329,33 @@ export default function PayablesTab() {
       )}
       {/* ── Add payable modal ── */}
       {showAdd && (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-        <div className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
+      <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
+        <div ref={addPanelRef} role="dialog" aria-modal="true" aria-labelledby={addTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
           <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
-            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</CardTitle>
-            <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
+            <CardTitle id={addTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</CardTitle>
+            <button aria-label="Cerrar" onClick={() => setShowAdd(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
           </div>
           <form onSubmit={addPayable} className="p-5 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Proveedor *</label>
-                <select required value={addForm.supplierId} onChange={(e) => setAddForm(f => ({ ...f, supplierId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm">
+              <Field label="Proveedor *" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
+                <select required value={addForm.supplierId} onChange={(e) => setAddForm(f => ({ ...f, supplierId: e.target.value }))} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm">
                   <option value="">Seleccionar proveedor</option>
                   {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Monto (S/) *</label>
-                <input required type="number" step="0.01" min="0.01" value={addForm.amount} onChange={(e) => setAddForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Descripción</label>
-                <input value={addForm.description} onChange={(e) => setAddForm(f => ({ ...f, description: e.target.value }))} placeholder="Factura #001…" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Fecha de vencimiento</label>
-                <input type="date" value={addForm.dueDate} onChange={(e) => setAddForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </div>
+              </Field>
+              <Field label="Monto (S/) *" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
+                <input required type="number" step="0.01" min="0.01" value={addForm.amount} onChange={(e) => setAddForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+              </Field>
+              <Field label="Descripción" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
+                <input value={addForm.description} onChange={(e) => setAddForm(f => ({ ...f, description: e.target.value }))} placeholder="Factura #001…" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+              </Field>
+              <Field label="Fecha de vencimiento" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
+                <input type="date" value={addForm.dueDate} onChange={(e) => setAddForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+              </Field>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-              <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+              <button type="button" onClick={() => setShowAdd(false)} className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+              <button type="submit" disabled={saving} className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {saving ? "Guardando…" : "Crear cuenta"}
               </button>
             </div>

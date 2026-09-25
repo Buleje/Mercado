@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Zap, X, HelpCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { estaAgotado } from "@/lib/pos/stock-vendible";
+import { formatCurrency } from "@/lib/format";
 
 interface Product {
   id: number;
@@ -18,7 +20,7 @@ interface POSExpressModeProps {
 }
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 export default function POSExpressMode({
@@ -80,7 +82,7 @@ export default function POSExpressMode({
         return;
       }
 
-      if (product.stock != null && product.stock <= 0) {
+      if (estaAgotado(product)) {
         setFeedback(`Sin stock: ${product.name}`);
         setInput("");
         return;
@@ -110,7 +112,7 @@ export default function POSExpressMode({
     return (
       <button
         onClick={() => setEnabled(true)}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-xl transition-colors shrink-0"
         title="Modo Express - escaneo rápido por codigo"
       >
         <Zap className="h-4 w-4 text-[var(--data-warning-500)]" /> Express
@@ -132,6 +134,7 @@ export default function POSExpressMode({
         </div>
         <button
           onClick={() => setEnabled(false)}
+          aria-label="Salir del modo Express"
           className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
         >
           <X className="h-3.5 w-3.5" />
@@ -145,7 +148,7 @@ export default function POSExpressMode({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Codigo + Enter (ej: 003x5 = producto 003, cant. 5)"
-          className="w-full px-3 py-2.5 rounded-lg border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-[var(--surface-raised)] text-center"
+          className="w-full px-3 h-11 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-[var(--surface-raised)] text-center"
           autoComplete="off"
         />
       </form>
@@ -155,7 +158,7 @@ export default function POSExpressMode({
           className={cn(
             "text-xs font-semibold text-center px-2 py-1 rounded-lg",
             feedback.startsWith("+")
-              ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+              ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 dark:text-[var(--data-success-500)]"
               : "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20 dark:text-[var(--data-error-500)]"
           )}
         >

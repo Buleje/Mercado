@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { laPaginaSeEstaYendo } from "@/lib/navegacion";
+import { puedePedir, type RutaPanel } from "@/lib/auth/roles-rutas-panel";
+import type { AdminRole } from "@/lib/session";
 
 /**
  * Hook que prefetcha en background las APIs admin más usadas y las cachea
@@ -22,6 +25,12 @@ interface CacheConfig {
   ttlMs: number;
   parser?: (json: unknown) => unknown;
   // Para entradas anidadas en {data, ts}
+  /**
+   * Ruta con roles acotados en `lib/auth/roles-rutas-panel.ts`. Si el rol no
+   * puede pedirla, no se precarga: antes el almacenero recibía 403 de
+   * /api/customers y /api/sales en cada carga del panel (medido 2026-09-14).
+   */
+  ruta?: RutaPanel;
 }
 
 const PREFETCH_TARGETS: CacheConfig[] = [
@@ -46,6 +55,7 @@ const PREFETCH_TARGETS: CacheConfig[] = [
   },
   {
     url: "/api/customers",
+    ruta: "/api/customers",
     storageKey: "admin-customers-cache",
     ttlMs: 5 * 60 * 1000,
     parser: (json: unknown) => {
@@ -55,6 +65,7 @@ const PREFETCH_TARGETS: CacheConfig[] = [
   },
   {
     url: "/api/sales?limit=200",
+    ruta: "/api/sales",
     storageKey: "admin-sales-cache",
     ttlMs: 60 * 1000,
     parser: (json: unknown) => (Array.isArray(json) ? json : []),
@@ -96,17 +107,30 @@ async function prefetchOne(config: CacheConfig): Promise<void> {
       /* quota exceeded — siguente intento */
     }
   } catch (err) {
+    /* Irse de la página corta los prefetch en vuelo: eso no es una falla. */
+    if (laPaginaSeEstaYendo()) return;
     console.warn(`[admin-prefetch] ${config.url} failed`, err instanceof Error ? err.message : String(err));
   }
 }
 
-export function useAdminPrefetch() {
+/** Qué se precarga para un rol. Exportado para testearlo sin montar el panel. */
+export function objetivosParaRol(userRole: AdminRole | null | undefined): CacheConfig[] {
+  return PREFETCH_TARGETS.filter((t) => !t.ruta || puedePedir(t.ruta, userRole));
+}
+
+/**
+ * `authReady` + `userRole` vienen de useAdminAuth: hasta que el rol real se
+ * resuelve no se precarga nada (el default optimista es "admin" y dispararía
+ * justo los pedidos que el rol verdadero no puede hacer).
+ */
+export function useAdminPrefetch(authReady: boolean, userRole: AdminRole | null | undefined) {
   useEffect(() => {
+    if (!authReady) return;
     // Espera a que el render principal termine antes de pre-fetchear,
     // así no compite por CPU con la primera pintura.
     const timer = setTimeout(() => {
-      void Promise.allSettled(PREFETCH_TARGETS.map(prefetchOne));
+      void Promise.allSettled(objetivosParaRol(userRole).map(prefetchOne));
     }, 800);
     return () => clearTimeout(timer);
-  }, []);
+  }, [authReady, userRole]);
 }

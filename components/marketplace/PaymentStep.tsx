@@ -19,7 +19,6 @@ import {
   CheckCircle,
   CreditCard,
   Smartphone,
-  Upload,
   Copy,
   Check,
   ShieldCheck,
@@ -205,7 +204,7 @@ function MethodCard({
       className={cn(
         "flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition-all",
         active
-          ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[var(--shadow-sm)]"
+          ? "border-[var(--accent)] bg-primary/10 shadow-[var(--shadow-sm)]"
           : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40",
       )}
     >
@@ -233,7 +232,7 @@ function StripePane({ amount, onSwitch }: { amount: number; onSwitch: () => void
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)]">
       <div className="flex items-start gap-3">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <CreditCard className="h-5 w-5" strokeWidth={2} />
         </span>
         <div className="flex-1 min-w-0">
@@ -444,7 +443,7 @@ function ManualPane({
           </div>
 
           {/* Monto destacado */}
-          <div className="mt-3 flex items-center justify-between rounded-lg bg-[var(--accent-soft)] px-3 py-2">
+          <div className="mt-3 flex items-center justify-between rounded-lg bg-primary/10 px-3 py-2">
             <span className="text-xs font-bold text-[var(--text-secondary)]">Monto a pagar</span>
             <span className="text-lg font-black tabular-nums text-[var(--accent)]">{fmt(amount)}</span>
           </div>
@@ -479,14 +478,14 @@ function ManualPane({
         </label>
         <label
           htmlFor="payment-proof-file"
-          className="flex h-40 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30"
+          className="flex h-40 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] transition-colors hover:border-[var(--accent)] hover:bg-primary/10"
         >
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt="Vista previa del comprobante" className="h-full w-auto object-contain" />
           ) : (
             <>
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <QrCode className="h-6 w-6" strokeWidth={1.75} />
               </span>
               <p className="text-sm font-bold text-[var(--text-secondary)]">Tocá para subir la captura</p>
@@ -590,7 +589,7 @@ function FreePane({ data, onSuccess }: { data: RegistrationPayload; onSuccess: (
 
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-sm)] text-center space-y-4">
-      <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+      <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
         <Sparkles className="h-7 w-7" strokeWidth={2} />
       </span>
       <div>

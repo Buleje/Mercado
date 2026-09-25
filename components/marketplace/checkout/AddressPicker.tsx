@@ -66,7 +66,7 @@ export default function AddressPicker({
                 className={cn(
                   "group relative flex items-start gap-4 rounded-2xl p-4 sm:p-5 transition-all cursor-pointer",
                   isActive
-                    ? "border-2 border-[var(--accent)] bg-[var(--accent-soft)] shadow-[0_6px_20px_-12px_var(--accent)]"
+                    ? "border-2 border-[var(--accent)] bg-primary/10 shadow-[0_6px_20px_-12px_var(--accent)]"
                     : "border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
                 )}
                 onClick={() => onSelect(addr)}
@@ -85,7 +85,7 @@ export default function AddressPicker({
                     "inline-flex h-11 w-11 items-center justify-center rounded-full shrink-0",
                     isActive
                       ? "bg-[var(--accent-600,var(--accent))] text-white"
-                      : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                      : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
                   )}
                   aria-hidden
                 >
@@ -147,7 +147,7 @@ export default function AddressPicker({
         className={cn(
           "group w-full inline-flex items-center gap-3 rounded-2xl border-2 border-dashed p-4",
           "border-[var(--rule-base)] bg-[var(--surface-sunken)]/50",
-          "hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] transition-all",
+          "hover:border-[var(--accent)] hover:bg-primary/10 transition-all",
           "text-left",
         )}
       >

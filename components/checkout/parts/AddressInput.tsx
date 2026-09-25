@@ -233,7 +233,7 @@ export function AddressInput({
                   key={i}
                   type="button"
                   onClick={() => onSelectSuggestion(s)}
-                  className="w-full text-left text-xs px-3 py-2 rounded-lg bg-primary/5 text-primary font-medium hover:bg-primary/10 transition-colors"
+                  className="w-full text-left text-xs px-3 py-2 rounded-lg bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)] font-medium hover:bg-primary/10 transition-colors"
                 >
                   {s}
                 </button>

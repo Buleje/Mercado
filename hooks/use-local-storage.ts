@@ -73,7 +73,10 @@ export function useLocalStorage<T>(
           );
         }
       } catch (error) {
-        console.error(`Error setting localStorage key "${key}":`, error);
+        // warn y no error: el estado YA cambió arriba y la pantalla sigue
+        // andando; lo único que se pierde es recordarlo (modo privado, cuota
+        // llena). No es una falla de la app que haya que perseguir.
+        console.warn(`No se pudo guardar "${key}" en localStorage:`, error);
       }
     },
     [key, storedValue, isClient]

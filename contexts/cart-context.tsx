@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Product } from "@/data/products";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // Unique identifier for this browser tab — prevents BroadcastChannel self-echo loop
 const TAB_ID = typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36).slice(2);
@@ -472,7 +473,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     const timeout = setTimeout(() => {
       fetch(`/api/cart/${encodeURIComponent(phone)}?token=${encodeURIComponent(token)}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ items: state.items }),
       }).catch(() => { /* silent — local cart is primary */ });
     }, 2000); // 2s debounce

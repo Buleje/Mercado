@@ -24,7 +24,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { Gift, Send, X, Heart, MessageCircle } from "@buleje/design-system/icons";
+import { Gift, X, Heart, MessageCircle } from "@buleje/design-system/icons";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { serializeCart } from "@/lib/marketplace/cart-sharing";
 import { cn } from "@/lib/utils";
@@ -70,7 +70,7 @@ export default function GiftCartBanner() {
         className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6"
       >
         <div className="flex items-start gap-3 mb-4">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <Gift className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <div className="flex-1">

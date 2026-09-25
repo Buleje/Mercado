@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     logActivity(
       "Crear", "movimiento_caja",
       `${type === "ingreso" ? "Ingreso" : "Egreso"} manual de S/${amount.toFixed(2)} — ${description}`,
-      movement.id, auth.username,
+      movement.id, auth.username, undefined, auth.tenantId,
     ).catch((err) => logger.warn("[cash-movements] activity log failed", { err: String(err) }));
 
     return NextResponse.json(movement, { status: 201 });

@@ -40,9 +40,11 @@ import {
 import {
   EmptyState,
   LoadingState,
+  CardTitle,
 } from "@buleje/design-system";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -83,16 +85,19 @@ function VisibilitySwitch({
   checked,
   onChange,
   disabled,
+  ariaLabel,
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
   disabled?: boolean;
+  ariaLabel: string;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel}
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
@@ -100,13 +105,13 @@ function VisibilitySwitch({
         "focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40",
         checked
           ? "bg-primary border-primary"
-          : "bg-gray-200 dark:bg-gray-700 border-transparent",
+          : "bg-[var(--rule-base)] border-transparent",
         disabled && "opacity-50 cursor-not-allowed",
       )}
     >
       <span
         className={cn(
-          "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform",
+          "inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transition-transform",
           checked ? "translate-x-6" : "translate-x-1",
         )}
       />
@@ -136,7 +141,7 @@ function StatTile({
         "rounded-2xl border-2 p-4",
         tone === "primary" && "border-primary/20 bg-primary/5 dark:bg-primary/10",
         tone === "success" && "border-[var(--data-success-500)]/20 bg-[var(--data-success-500)]/5",
-        tone === "muted" && "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface",
+        tone === "muted" && "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] ",
       )}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
@@ -156,7 +161,7 @@ function StatTile({
       </p>
       {total > 0 && tone !== "primary" && (
         <div className="mt-2 flex items-center gap-2">
-          <div className="flex-1 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+          <div className="flex-1 h-1.5 rounded-full bg-[var(--rule-base)] overflow-hidden">
             <div
               className={cn(
                 "h-full transition-all rounded-full",
@@ -273,10 +278,10 @@ export default function CatalogoTiendaTab() {
       const tenantSlug = await resolveActiveTenantSlug();
       const res = await fetch("/api/store-page/visibility", {
         method: "PATCH",
-        headers: {
+        headers: csrfHeaders({
           "Content-Type": "application/json",
           "x-tenant-id": tenantSlug,
-        },
+        }),
         body: JSON.stringify({ productIds, visible }),
       });
       if (!res.ok) {
@@ -424,13 +429,13 @@ export default function CatalogoTiendaTab() {
               value={search}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
               placeholder="Buscar por nombre o categoría..."
-              className="w-full pl-12 pr-12 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="w-full pl-12 pr-12 h-12 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-surface text-muted hover:text-[var(--text-primary)]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-xl hover:bg-[var(--rule-soft)] text-muted hover:text-[var(--text-primary)]"
                 aria-label="Limpiar búsqueda"
               >
                 <X className="h-4 w-4" />
@@ -439,7 +444,7 @@ export default function CatalogoTiendaTab() {
           </div>
 
           {/* Visibility segmented control */}
-          <div className="inline-flex p-1 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface shrink-0">
+          <div className="inline-flex p-1 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] shrink-0">
             {([
               { value: "all",     label: "Todos",         count: stats.total },
               { value: "visible", label: "Visibles",      count: stats.visible },
@@ -452,7 +457,7 @@ export default function CatalogoTiendaTab() {
                   type="button"
                   onClick={() => setVisibilityFilter(opt.value as FilterVisibility)}
                   className={cn(
-                    "px-3.5 h-10 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5",
+                    "px-3.5 h-10 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5",
                     active
                       ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                       : "text-muted hover:text-[var(--text-primary)]"
@@ -461,7 +466,7 @@ export default function CatalogoTiendaTab() {
                   {opt.label}
                   <span className={cn(
                     "text-xs font-mono tabular-nums px-1.5 py-0.5 rounded",
-                    active ? "bg-primary/10 text-primary" : "bg-gray-200 dark:bg-gray-700 text-muted"
+                    active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--rule-base)] text-muted"
                   )}>
                     {opt.count}
                   </span>
@@ -550,7 +555,7 @@ export default function CatalogoTiendaTab() {
                 type="button"
                 disabled={bulkSaving || filtered.length === 0}
                 onClick={() => applyBulk(true, "filtered")}
-                className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
               >
                 <Eye className="h-4 w-4" />
                 Mostrar {hasFilters ? "filtrados" : "todos"}
@@ -559,7 +564,7 @@ export default function CatalogoTiendaTab() {
                 type="button"
                 disabled={bulkSaving || filtered.length === 0}
                 onClick={() => applyBulk(false, "filtered")}
-                className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
               >
                 <EyeOff className="h-4 w-4" />
                 Ocultar {hasFilters ? "filtrados" : "todos"}
@@ -580,15 +585,15 @@ export default function CatalogoTiendaTab() {
 
       {/* Filter empty */}
       {items.length > 0 && filtered.length === 0 && (
-        <div className="text-center py-12 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+        <div className="text-center py-12 rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <Search className="h-10 w-10 mx-auto text-muted mb-3" />
           <p className="text-base font-bold text-[var(--text-primary)]">No se encontraron productos</p>
-          <p className="text-sm text-muted mt-1">Probá con otros filtros o limpiá la búsqueda.</p>
+          <p className="text-sm text-muted mt-1">Prueba con otros filtros o limpia la búsqueda.</p>
           {hasFilters && (
             <button
               type="button"
               onClick={clearAllFilters}
-              className="mt-4 inline-flex items-center gap-1.5 px-4 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90"
+              className="mt-4 inline-flex items-center gap-1.5 px-4 h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90"
             >
               Limpiar filtros
             </button>
@@ -598,13 +603,13 @@ export default function CatalogoTiendaTab() {
 
       {/* ── 3. PRODUCTOS — agrupados por categoría ─────────────────── */}
       {filtered.length > 0 && (
-        <div className="space-y-5 pb-24">
+        <div className="space-y-4 pb-24">
           {grouped.map(([cat, prods]) => (
             <section key={cat} className="space-y-2.5">
               <header className="flex items-center justify-between gap-2 px-1">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                <CardTitle as="h3" className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                   {cat}
-                </h3>
+                </CardTitle>
                 <span className="text-xs font-mono tabular-nums text-muted">
                   {prods.filter(p => p.visible).length}/{prods.length} visibles
                 </span>
@@ -623,7 +628,7 @@ export default function CatalogoTiendaTab() {
                           ? "border-primary bg-primary/5 ring-2 ring-primary/20"
                           : p.visible
                             ? "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary/40 hover:shadow-md"
-                            : "border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface opacity-75 hover:opacity-100"
+                            : "border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-75 hover:opacity-100"
                       )}
                     >
                       {/* Checkbox */}
@@ -631,13 +636,13 @@ export default function CatalogoTiendaTab() {
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelect(p.productId)}
-                        className="h-5 w-5 rounded-md border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] accent-primary cursor-pointer shrink-0"
+                        className="h-5 w-5 rounded-md border border-[var(--rule-base)] dark:border-[var(--rule-base)] accent-primary cursor-pointer shrink-0"
                         aria-label={`Seleccionar ${p.name}`}
                       />
 
                       {/* Thumbnail más grande */}
                       <div className={cn(
-                        "relative h-14 w-14 shrink-0 rounded-xl bg-gray-100 dark:bg-surface overflow-hidden border border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
+                        "relative h-14 w-14 shrink-0 rounded-xl bg-[var(--rule-soft)] overflow-hidden border border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
                         !p.visible && "opacity-60"
                       )}>
                         {p.image ? (
@@ -665,7 +670,7 @@ export default function CatalogoTiendaTab() {
                             {p.name}
                           </p>
                           {!p.visible && (
-                            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
+                            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--rule-base)] text-[var(--text-tertiary)] shrink-0">
                               Oculto
                             </span>
                           )}
@@ -707,6 +712,7 @@ export default function CatalogoTiendaTab() {
                         <VisibilitySwitch
                           checked={p.visible}
                           disabled={isSaving}
+                          ariaLabel={`Visible en catálogo: ${p.name}`}
                           onChange={(next) => void toggleOne(p.productId, next)}
                         />
                       </div>
@@ -733,7 +739,7 @@ export default function CatalogoTiendaTab() {
               type="button"
               disabled={bulkSaving}
               onClick={() => applyBulk(true, "selected")}
-              className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 active:scale-[0.98]"
             >
               <Eye className="h-4 w-4" />
               Mostrar
@@ -742,7 +748,7 @@ export default function CatalogoTiendaTab() {
               type="button"
               disabled={bulkSaving}
               onClick={() => applyBulk(false, "selected")}
-              className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl bg-background/10 hover:bg-background/20 text-background text-sm font-bold disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl bg-background/10 hover:bg-background/20 text-background text-sm font-semibold disabled:opacity-50"
             >
               <EyeOff className="h-4 w-4" />
               Ocultar
@@ -750,7 +756,7 @@ export default function CatalogoTiendaTab() {
             <button
               type="button"
               onClick={clearSelection}
-              className="p-2 rounded-lg hover:bg-background/10 text-background/70 hover:text-background"
+              className="p-2 rounded-xl hover:bg-background/10 text-background/70 hover:text-background"
               aria-label="Limpiar selección"
             >
               <X className="h-4 w-4" />

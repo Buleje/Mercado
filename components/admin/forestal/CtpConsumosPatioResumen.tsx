@@ -1,0 +1,168 @@
+"use client";
+
+/**
+ * «Qué queda en el patio» — la primera tarjeta de Consumos › Patio.
+ *
+ * Brandon (2026-09-24): «hay muchos datos dispersos y mal estructurados».
+ * Medido en `main` a 1600 px: cuatro bloques sueltos, cada uno con su caja y
+ * su estilo, contaban la MISMA pila —«Por permiso» con su total, la tira de
+ * lotes, la línea de «Indicadores» y la barra— y la tabla empezaba en y=1231.
+ * Acá quedan juntos, en el orden en que se pregunta:
+ *   1. el titular (cuántas trozas, m³, libres, añejas) con sus indicadores;
+ *   2. de qué permiso es cada cosa (el clic filtra la tabla de abajo);
+ *   3. qué lotes esperan la sierra.
+ * Nada se sacó: el Excel sigue acá (y en «Opciones» de la tabla), la nota de
+ * qué miden las cifras pasó a pie de la tabla por permiso.
+ *
+ * La tabla por permiso se pliega y se recuerda; con un lote elegido se pliega
+ * sola (le devuelve la pantalla a la carga) y vuelve como estaba al soltarlo —
+ * el mismo trato que ya tenían los indicadores.
+ */
+
+import { useEffect, useId, useRef, useState } from "react";
+import { ChevronDown, FileDown } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { esPantallaAngosta } from "@/lib/forestal/tabla-paginacion";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
+import CtpPatioPorPermiso from "./CtpPatioPorPermiso";
+import CtpLotesTira from "./CtpLotesTira";
+import CtpPatioKpis from "./CtpPatioKpis";
+import { NotaFiltrosKpi, notaDeFiltros } from "./CtpKpiFiltros";
+import { camposDelFiltroPatio, type EstadoPatioConsumos } from "./hooks/use-patio-consumos";
+
+const nf = (n: number) => formatNumber(n);
+
+export default function CtpConsumosPatioResumen({
+  estado,
+  trabajando,
+  onIr,
+}: {
+  estado: EstadoPatioConsumos;
+  /** Hay un lote elegido: la tabla por permiso y la tira de lotes ceden la pantalla. */
+  trabajando: boolean;
+  onIr?: (vista: string) => void;
+}) {
+  const { lotes, carga, porPermiso, patio } = estado;
+  const idTitulo = useId();
+  const idTabla = useId();
+  /* En el celular arranca plegada: cada permiso es una tarjeta de ~200 px y la
+     tabla de trozas quedaba a 2 700 px (medido a 400 px, 2026-09-24). La línea
+     plegada igual dice cuántos permisos, la más vieja y lo por recepcionar. */
+  const [abierta, setAbierta] = useLocalStorage<boolean>("ctp-consumos-por-permiso", !esPantallaAngosta());
+  /* Plegada por el trabajo, no por el operador: no se guarda. */
+  const [plegadaPorTrabajo, setPlegadaPorTrabajo] = usePlegadoPorTrabajo(trabajando);
+  const verTabla = abierta && !plegadaPorTrabajo;
+  const alternar = () => {
+    if (plegadaPorTrabajo) setPlegadaPorTrabajo(false);
+    else setAbierta((v) => !v);
+  };
+
+  const { filas, totales } = porPermiso;
+  const conPermiso = filas.filter((f) => f.permiso != null).length;
+  const resumenPlegado =
+    `${nf(conPermiso)} permiso${conPermiso === 1 ? "" : "s"}` +
+    (totales.masVieja ? ` · la más vieja lleva ${nf(totales.masVieja.dias)} días` : "") +
+    (totales.porRecepcionar.trozas > 0
+      ? ` · ${nf(totales.porRecepcionar.trozas)} troza${totales.porRecepcionar.trozas === 1 ? "" : "s"} (${fmtM3(totales.porRecepcionar.m3)} m³) por recepcionar`
+      : "");
+
+  return (
+    <section
+      aria-labelledby={idTitulo}
+      className="space-y-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+    >
+      {/* Título, «Indicadores» y el Excel en UNA fila (Brandon 2026-09-24:
+          «el botón de KPIs alineado con otros botones»): el botón lleva el
+          titular adentro mientras está cerrado. */}
+      <CtpPatioKpis
+        resumen={patio.resumen}
+        filtrosActivos={patio.cuantosFiltros}
+        filtros={<NotaFiltrosKpi nota={notaDeFiltros(camposDelFiltroPatio(patio))} onLimpiar={patio.limpiar} />}
+        trabajoActivo={trabajando}
+        cargando={lotes.cargando}
+        acotadoA={carga.loteElegido?.speciesCommon ?? undefined}
+        antes={
+          <CardTitle as="h3" id={idTitulo} className="mr-1 text-base font-bold text-[var(--text-primary)]">
+            Qué queda en el patio
+          </CardTitle>
+        }
+        acciones={
+          <button
+            type="button"
+            onClick={() => void estado.descargarExcel()}
+            disabled={filas.length === 0 || estado.descargando}
+            title="Descargar el patio por permiso (Excel): una hoja por permiso con sus trozas"
+            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
+          >
+            <FileDown className="h-4 w-4" aria-hidden />
+            {estado.descargando ? "Generando…" : "Excel por permiso"}
+          </button>
+        }
+      />
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={alternar}
+            aria-expanded={verTabla}
+            aria-controls={idTabla}
+            className="flex min-h-10 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-xl px-1 text-left text-sm transition-colors hover:bg-[var(--surface-sunken)]"
+          >
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-[var(--text-secondary)] transition-transform ${verTabla ? "" : "-rotate-90"}`}
+              aria-hidden
+            />
+            <span className="font-bold text-[var(--text-primary)]">Por permiso</span>
+            {/* Plegada, la línea sigue diciendo lo que la tabla tiene: plegar no es esconder el dato. */}
+            {!verTabla && <span className="text-[var(--text-secondary)]">{resumenPlegado}</span>}
+          </button>
+          <InfoTip
+            title="Por permiso"
+            what="Cuántas trozas quedan de cada permiso: las libres más las apartadas en un lote. Lo anotado cuya guía no se recepcionó va en «Por recepcionar»."
+            affects="Clic en un permiso: la tabla de trozas de abajo muestra solo las suyas. Los m³ son del patio pieza por pieza, no el saldo que se declara; el ≈pt es un derivado al 56 %."
+            example="10-HUA-PUE/PER-FMP-2026-007 · 46 trozas · 135.587 m³ · la más vieja 08/09 (16 días, añeja)."
+          />
+        </div>
+        {verTabla && (
+          <div id={idTabla}>
+            <CtpPatioPorPermiso
+              sinCabecera
+              filas={filas}
+              totales={totales}
+              activos={estado.patio.permiso}
+              onElegir={estado.alternarPermiso}
+              onRecepcionar={onIr ? () => onIr("ingresos") : undefined}
+              cargando={lotes.cargando && lotes.trozas.length === 0}
+              error={lotes.error}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Lo que TODAVÍA no entró a la sierra: el semáforo y el camino (ADR-334). */}
+      {onIr && !trabajando && (
+        <CtpLotesTira enLinea lotes={carga.lotesAbiertos} cargando={lotes.cargando} error={lotes.error} onIr={() => onIr("lotes")} />
+      )}
+    </section>
+  );
+}
+
+/**
+ * Se pliega al ARRANCAR el trabajo y se despliega al soltarlo. Depende sólo de
+ * `trabajando`: si dependiera del estado, reabrirla a mano la volvería a
+ * cerrar en el render siguiente (mismo criterio que `CtpKpisPlegables`).
+ */
+function usePlegadoPorTrabajo(trabajando: boolean): [boolean, (v: boolean) => void] {
+  const [plegada, setPlegada] = useState(false);
+  const previo = useRef(trabajando);
+  useEffect(() => {
+    if (trabajando && !previo.current) setPlegada(true);
+    if (!trabajando && previo.current) setPlegada(false);
+    previo.current = trabajando;
+  }, [trabajando, setPlegada]);
+  return [plegada, setPlegada];
+}

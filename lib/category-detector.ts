@@ -21,7 +21,15 @@ export type CategoryId =
   | "carnes"
   | "lacteos"
   | "bebidas"
-  | "limpieza";
+  | "limpieza"
+  // 2026-07-08: rubros no-alimentarios (reporte QA: "Aserrado de madera" caía
+  // en frutas-verduras sin que nada lo señalara). Amplían la cobertura del
+  // aviso de mismatch a ferreterías, farmacias, bazares, etc.
+  | "madera-construccion"
+  | "farmacia"
+  | "hogar-bazar"
+  | "mascotas"
+  | "bebe";
 
 interface CategoryRule {
   id: CategoryId;
@@ -94,6 +102,57 @@ const RULES: CategoryRule[] = [
       "vino", "ron", "pisco", "whisky", "vodka", "trago",
       "te", "cafe", "anis", "infusion", "energizante", "isotonica",
       "cola real", "frugos", "tampico", "san luis", "cielo",
+    ],
+  },
+  {
+    id: "madera-construccion",
+    label: "Madera y Construcción",
+    keywords: [
+      "madera", "aserrado", "aserrada", "tablon", "tabla", "tablas",
+      "cedro", "caoba", "tornillo", "triplay", "listones", "liston",
+      "viga", "vigas", "clavo", "clavos", "cemento", "ladrillo", "ladrillos",
+      "fierro", "varilla", "alambre", "brocha", "martillo", "herramienta",
+      "herramientas", "taladro", "sierra", "lija", "pegamento", "silicona",
+      "yeso", "arena", "cal", "tubo", "tuberia",
+    ],
+  },
+  {
+    id: "farmacia",
+    label: "Farmacia",
+    keywords: [
+      "paracetamol", "ibuprofeno", "aspirina", "gasa", "venda", "vendas",
+      "algodon", "jarabe", "pastilla", "pastillas", "medicina", "antibiotico",
+      "curita", "curitas", "jeringa", "termometro", "panadol", "apronax",
+      "dolo", "mejoral", "sal de andrews", "alcohol medicinal", "agua oxigenada",
+      "preservativo", "preservativos", "condon", "condones",
+    ],
+  },
+  {
+    id: "hogar-bazar",
+    label: "Hogar y Bazar",
+    keywords: [
+      "olla", "ollas", "sarten", "plato", "platos", "vaso", "vasos",
+      "cubiertos", "cuchillo", "tenedor", "cuchara", "foco", "focos",
+      "pila", "pilas", "bateria", "baterias", "cable", "enchufe", "tacho",
+      "balde", "jarra", "termo", "fosforo", "fosforos", "vela", "velas",
+      "encendedor", "pilas aa", "pilas aaa",
+    ],
+  },
+  {
+    id: "mascotas",
+    label: "Mascotas",
+    keywords: [
+      "perro", "gato", "mascota", "mascotas", "ricocan", "dogchow",
+      "mimaskot", "canbo", "gatarina", "croquetas", "alimento para perro",
+      "alimento para gato", "hueso", "correa",
+    ],
+  },
+  {
+    id: "bebe",
+    label: "Bebé",
+    keywords: [
+      "panal", "panales", "toallitas humedas", "biberon", "chupon",
+      "formula", "babysec", "huggies", "pampers", "coladas", "compotas",
     ],
   },
   {

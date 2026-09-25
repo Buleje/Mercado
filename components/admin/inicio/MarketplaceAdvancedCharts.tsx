@@ -22,6 +22,7 @@ import { DraggableSections, type DraggableItem } from "./DraggableSections";
 import EmptyDateRangeState from "./EmptyDateRangeState";
 import { Store } from "@buleje/design-system/icons";
 import { getDefaultRange } from "./DashboardDateRange";
+import { formatMonthYear, formatNumber } from "@/lib/format";
 
 type Order = {
   id: string | number;
@@ -87,7 +88,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
     for (let i = 5; i >= 0; i--) {
       const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
-      const label = mStart.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
+      const label = formatMonthYear(mStart);
       const period = orders.filter(
         (o) =>
           o.status === "entregado" &&
@@ -138,7 +139,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
   // ── 4. RATINGS ──────────────────────────────────────────────────────────
   const ratings = useMemo(() => {
     const arr = [1, 2, 3, 4, 5].map((r) => ({
-      rating: `${r}★`,
+      rating: `${r}/5`,
       cantidad: reviews.filter((rv) => Math.round(rv.rating) === r).length,
     }));
     const total = arr.reduce((s, x) => s + x.cantidad, 0);
@@ -219,7 +220,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
   }, [orders, nowMs]);
 
   const fmtS = (v: number) =>
-    `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+    `S/ ${formatNumber(v, { max: 0 })}`;
 
   // Brandon mayo 2026 v7: hasData REAL por chart — antes estaba hardcoded a
   // true y la regla "sin datos = oculto" no se cumplía a nivel sub-chart
@@ -398,9 +399,9 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
           kpis={[
             { label: "Total reseñas", value: String(ratings.total), tone: "primary" },
             { label: "Promedio", value: Number(ratings.promedio).toFixed(1), tone: "success" },
-            { label: "4★ y 5★", value: String(ratings.buenos), tone: "success" },
+            { label: "4 y 5 estrellas", value: String(ratings.buenos), tone: "success" },
             {
-              label: "1★ y 2★",
+              label: "1 y 2 estrellas",
               value: String(ratings.malos),
               tone: ratings.malos > 0 ? "warning" : "success",
             },

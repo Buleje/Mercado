@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { withCronAuth } from "@/lib/cron-auth";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
@@ -23,7 +23,7 @@ import { logActivity } from "@/lib/activity-logger";
  * Sugerencia vercel.json: "0 10 * * *" (10:00 AM diario)
  * Autorización: Bearer <CRON_SECRET>
  */
-export const GET = withCronAuth("reorder-reminders", async (req) => {
+export const GET = withCronAuth("reorder-reminders", async (_req) => {
   try {
     const result = await withCronRetry("reorder-reminders", async () => {
       const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90 days ago

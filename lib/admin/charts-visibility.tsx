@@ -290,7 +290,7 @@ function ChartsVisibilityModal({ open, onClose, charts, setVisible, visibleCount
                 Gestión de gráficos
               </h2>
               <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
-                Activá solo los gráficos que te sirven. Los que no tienen datos quedan automáticamente fuera.
+                Activa solo los gráficos que te sirven. Los que no tienen datos quedan automáticamente fuera.
               </p>
             </div>
           </div>
@@ -352,7 +352,7 @@ function ChartsVisibilityModal({ open, onClose, charts, setVisible, visibleCount
           {disponibles.length > 0 && (
             <ChartGroup
               title="Disponibles"
-              hint="Tenés datos para mostrarlos."
+              hint="Tienes datos para mostrarlos."
               count={disponibles.length}
               tone="neutral"
               charts={disponibles}

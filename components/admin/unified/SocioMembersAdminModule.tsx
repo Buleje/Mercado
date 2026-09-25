@@ -7,7 +7,11 @@
  * KPIs de miembros, MRR, churn, etc. + catálogo de ofertas exclusivas.
  */
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { DataTable, StatCard } from "@buleje/design-system";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 import {
   HeartHandshake,
   Users,
@@ -20,14 +24,15 @@ import {
   Package,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { tenantFetch } from "@/lib/tenant-fetch";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import KPICard from "@/components/admin/shared/KPICard";
 import {
   MemberProfileDrawer,
   type SocioMember,
 } from "./socio-admin/MemberProfileDrawer";
 import { ExclusiveOffersTab } from "./socio-admin/ExclusiveOffersTab";
+import { formatDate, formatNumber } from "@/lib/format";
 
 // ── Mock data ───────────────────────────────────────────────────────────────
 
@@ -144,16 +149,12 @@ const STATUS_LABELS: Record<SocioMember["status"], string> = {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `S/ ${formatNumber(n, 2)}`;
 }
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -193,13 +194,15 @@ function MembersTab({
   onSelect: (m: SocioMember) => void;
 }) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<SocioMember["status"] | "all">("all");
-  const [planFilter, setPlanFilter] = useState<SocioMember["plan"] | "all">("all");
+  // Multi-selección en el `<th>` de su propia columna (convención de filtros
+  // en la cabecera) — vivían como dos `<select>` sueltos en la barra.
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [planFilter, setPlanFilter] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
     return members.filter((m) => {
-      if (statusFilter !== "all" && m.status !== statusFilter) return false;
-      if (planFilter !== "all" && m.plan !== planFilter) return false;
+      if (statusFilter.length > 0 && !statusFilter.includes(m.status)) return false;
+      if (planFilter.length > 0 && !planFilter.includes(m.plan)) return false;
       if (!search.trim()) return true;
       const q = search.toLowerCase();
       return (
@@ -209,6 +212,23 @@ function MembersTab({
       );
     });
   }, [members, search, statusFilter, planFilter]);
+
+  // Peso sobre TODOS los miembros, no sobre `filtered` — si no, tildar
+  // "Activos" hace desaparecer "Pausados" de su propia lista de opciones.
+  const statusOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const m of members) counts[m.status] = (counts[m.status] ?? 0) + 1;
+    return (Object.keys(STATUS_LABELS) as SocioMember["status"][])
+      .filter((s) => counts[s] > 0)
+      .map((s) => ({ value: s, count: counts[s] }));
+  }, [members]);
+  const planOptions = useMemo<FacetaOpcion[]>(() => {
+    const counts: Record<string, number> = {};
+    for (const m of members) counts[m.plan] = (counts[m.plan] ?? 0) + 1;
+    return (Object.keys(PLAN_LABELS) as SocioMember["plan"][])
+      .filter((p) => counts[p] > 0)
+      .map((p) => ({ value: p, count: counts[p] }));
+  }, [members]);
 
   return (
     <div className="space-y-4">
@@ -221,28 +241,9 @@ function MembersTab({
             placeholder="Buscar por nombre, teléfono o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
-        <select
-          value={planFilter}
-          onChange={(e) => setPlanFilter(e.target.value as SocioMember["plan"] | "all")}
-          className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer"
-        >
-          <option value="all">Todos los planes</option>
-          <option value="mensual">Mensual</option>
-          <option value="anual">Anual</option>
-        </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as SocioMember["status"] | "all")}
-          className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer"
-        >
-          <option value="all">Todos los estados</option>
-          <option value="activo">Activos</option>
-          <option value="pausado">Pausados</option>
-          <option value="cancelado">Cancelados</option>
-        </select>
         <button
           onClick={() => exportCSV(filtered)}
           className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
@@ -252,34 +253,99 @@ function MembersTab({
         </button>
       </div>
 
+      {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
+          <thead>): Plan y Estado se repiten acá, mismo estado, sólo visibles
+          ahí. */}
+      {members.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:hidden">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Plan</span>
+            <FiltroColumnaMulti
+              label="Plan"
+              value={planFilter}
+              options={planOptions}
+              etiqueta={(v) => PLAN_LABELS[v as SocioMember["plan"]] ?? v}
+              onChange={setPlanFilter}
+              placeholder="Todos"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Estado</span>
+            <FiltroColumnaMulti
+              label="Estado"
+              value={statusFilter}
+              options={statusOptions}
+              etiqueta={(v) => STATUS_LABELS[v as SocioMember["status"]] ?? v}
+              onChange={setStatusFilter}
+              placeholder="Todos"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Tabla */}
-      {filtered.length === 0 ? (
+      {members.length === 0 ? (
         <div className="text-center py-16 text-[var(--text-tertiary)]">
           <Users className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm font-semibold">Sin miembros que mostrar</p>
-          <p className="text-xs mt-1">Ajusta los filtros o espera nuevas suscripciones.</p>
+          <p className="text-xs mt-1">Aún no hay miembros del programa Socio Buleje.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--surface-alt)] border-b border-gray-200">
+            <DataTable filtrable className="w-full text-sm">
+              <thead className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Miembro</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">Plan</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">
+                    <span className="block">Plan</span>
+                    <FiltroColumnaMulti
+                      label="Plan"
+                      value={planFilter}
+                      options={planOptions}
+                      etiqueta={(v) => PLAN_LABELS[v as SocioMember["plan"]] ?? v}
+                      onChange={setPlanFilter}
+                      placeholder="Todos"
+                    />
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Renovación</th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Cashback</th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Pedidos</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Estado</th>
+                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">
+                    <span className="block">Estado</span>
+                    <FiltroColumnaMulti
+                      label="Estado"
+                      value={statusFilter}
+                      options={statusOptions}
+                      etiqueta={(v) => STATUS_LABELS[v as SocioMember["status"]] ?? v}
+                      onChange={setStatusFilter}
+                      placeholder="Todos"
+                      className="mx-auto"
+                    />
+                  </th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center">
+                      <p className="text-sm font-semibold text-[var(--text-secondary)]">Ningún miembro coincide con el filtro.</p>
+                      <button
+                        type="button"
+                        onClick={() => { setStatusFilter([]); setPlanFilter([]); setSearch(""); }}
+                        className="mt-2 text-xs font-extrabold text-[var(--accent)] hover:underline"
+                      >
+                        Quitar filtros
+                      </button>
+                    </td>
+                  </tr>
+                )}
                 {filtered.map((m) => (
                   <tr key={m.id} className="hover:bg-[var(--surface-alt)] transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--data-success-500)] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white flex items-center justify-center text-xs font-bold shrink-0">
                           {m.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -289,7 +355,7 @@ function MembersTab({
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--rule-soft)] text-[var(--text-primary)]">
                         {PLAN_LABELS[m.plan]}
                       </span>
                     </td>
@@ -310,7 +376,7 @@ function MembersTab({
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => onSelect(m)}
-                        className="inline-flex items-center gap-1 p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+                        className="inline-flex items-center gap-1 p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                         title="Ver perfil"
                       >
                         <Eye className="h-4 w-4" />
@@ -319,7 +385,7 @@ function MembersTab({
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}
@@ -335,6 +401,7 @@ const TABS = [
   { id: "miembros", label: "Miembros", icon: Users },
   { id: "ofertas", label: "Ofertas exclusivas", icon: Package },
 ];
+const TAB_IDS = TABS.map((t) => t.id);
 
 // ── Server → SocioMember mapper (ADR-078) ─────────────────────────────────────
 
@@ -384,10 +451,15 @@ function serverToLegacyMember(m: ServerMember): SocioMember {
 }
 
 export default function SocioMembersAdminModule() {
-  const [tab, setTab] = useState(TABS[0].id);
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
   const [members, setMembers] = useState<SocioMember[]>(MOCK_MEMBERS);
   const [selected, setSelected] = useState<SocioMember | null>(null);
   const [serverStats, setServerStats] = useState<ServerStats>(null);
+  // true una vez que hidratamos con miembros reales del server (ids = userId).
+  // Solo entonces persistimos acciones vía API; en modo mock evitamos el 404.
+  const [hydrated, setHydrated] = useState(false);
 
   // ADR-078: al mount, intentamos hidratar desde /api/admin/socio/*.
   // Si falla (403, API caída), se mantiene el MOCK_MEMBERS como fallback.
@@ -406,6 +478,7 @@ export default function SocioMembersAdminModule() {
           };
           if (data.ok && Array.isArray(data.members) && data.members.length > 0) {
             setMembers(data.members.map(serverToLegacyMember));
+            setHydrated(true);
           }
         }
         if (!cancelled && statsRes.ok) {
@@ -436,6 +509,26 @@ export default function SocioMembersAdminModule() {
     (m) => m.status === "cancelado" && thisMonth(m.renewsAt)
   ).length;
 
+  // Persiste la acción en el backend (solo con datos reales; en mock no hay
+  // userId válido). Optimista: la UI ya se actualizó; si falla, log + refetch
+  // para revertir al estado real del server.
+  const persistMemberAction = useCallback(
+    async (body: { userId: string; action: "cancel" | "extend"; months?: number; reason?: string }) => {
+      if (!hydrated) return;
+      try {
+        const res = await tenantFetch("/api/admin/socio/members", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (err) {
+        console.error("[socio] no se pudo persistir la acción de miembro", err);
+      }
+    },
+    [hydrated]
+  );
+
   const handleExtend = (id: string, months: number) => {
     setMembers((prev) =>
       prev.map((m) => {
@@ -446,13 +539,15 @@ export default function SocioMembersAdminModule() {
       })
     );
     setSelected(null);
+    void persistMemberAction({ userId: id, action: "extend", months });
   };
 
-  const handleCancel = (id: string, _reason: string) => {
+  const handleCancel = (id: string, reason: string) => {
     setMembers((prev) =>
       prev.map((m) => (m.id === id ? { ...m, status: "cancelado" as const } : m))
     );
     setSelected(null);
+    void persistMemberAction({ userId: id, action: "cancel", reason });
   };
 
   return (
@@ -465,28 +560,26 @@ export default function SocioMembersAdminModule() {
 
       {/* KPIs — prefiere stats de server (ADR-078), fallback a cálculo local */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
+        <StatCard
           label="Miembros activos"
           value={serverStats?.activeMembers ?? activos.length}
           icon={Users}
-          color="var(--accent)"
-          subtitle="Membresía vigente"
+          subValue="Membresía vigente"
         />
-        <KPICard
+        <StatCard
           label="MRR"
           value={fmt(serverStats?.mrrSoles ?? mrr)}
           icon={DollarSign}
-          color="#10B981"
-          subtitle="Ingreso recurrente 30d"
+          emphasis="success"
+          subValue="Ingreso recurrente 30d"
         />
-        <KPICard
+        <StatCard
           label="Nuevos este mes"
           value={nuevosEsteMes}
           icon={TrendingUp}
-          color="#3B82F6"
-          subtitle="Altas del periodo"
+          subValue="Altas del periodo"
         />
-        <KPICard
+        <StatCard
           label={serverStats ? "Churn 30d" : "Churn este mes"}
           value={
             serverStats
@@ -494,9 +587,8 @@ export default function SocioMembersAdminModule() {
               : churnEsteMes
           }
           icon={TrendingDown}
-          color="#F59E0B"
-          subtitle="Bajas del periodo"
-          alert={(serverStats?.churnRate30d ?? 0) > 0.08 || churnEsteMes > 3}
+          emphasis={(serverStats?.churnRate30d ?? 0) > 0.08 || churnEsteMes > 3 ? "error" : "warning"}
+          subValue="Bajas del periodo"
         />
       </div>
 

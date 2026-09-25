@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const subject = `⚠️ ${critical.length} SKU${critical.length > 1 ? "s" : ""} en stock crítico`;
     const body = `Bodega San Martín · alerta automática\n\n${topList}${
       critical.length > 10 ? `\n...y ${critical.length - 10} más` : ""
-    }\n\nRevisá en /admin · módulo Inventario.`;
+    }\n\nRevisa en /admin · módulo Inventario.`;
 
     let inAppCreated = 0;
     let whatsappOk = false;

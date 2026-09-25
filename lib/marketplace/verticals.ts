@@ -75,6 +75,25 @@ export function verticalStoreCategories(id?: string | null): string[] {
   return getVertical(id)?.storeCategories ?? [];
 }
 
+// Índice inverso `Store.category` (minúsculas) → verticalId. Single-source con
+// MARKETPLACE_VERTICALS: si una categoría cae en dos verticales gana el primero
+// declarado (orden = prioridad de "mundo").
+const CAT_TO_VERTICAL = new Map<string, string>();
+for (const v of MARKETPLACE_VERTICALS) {
+  for (const c of v.storeCategories) {
+    if (!CAT_TO_VERTICAL.has(c)) CAT_TO_VERTICAL.set(c, v.id);
+  }
+}
+
+/**
+ * Vertical id que contiene un `Store.category` (case-insensitive); `null` si
+ * ninguna vertical lo reclama (→ el caller lo agrupa como "Otras tiendas").
+ */
+export function verticalForStoreCategory(cat?: string | null): string | null {
+  if (!cat) return null;
+  return CAT_TO_VERTICAL.get(cat.trim().toLowerCase()) ?? null;
+}
+
 export function isValidVertical(id?: string | null): boolean {
   return !!id && BY_ID.has(id.toLowerCase());
 }

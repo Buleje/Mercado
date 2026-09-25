@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
   if (!session?.name) {
     return NextResponse.json(
-      { error: "Iniciá sesión para comentar", requiresAuth: true },
+      { error: "Inicia sesión para comentar", requiresAuth: true },
       { status: 401 },
     );
   }

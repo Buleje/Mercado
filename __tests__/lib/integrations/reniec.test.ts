@@ -10,6 +10,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // Mock cache para no contaminar entre tests
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   cacheStore: {
     get: vi.fn(() => null),
     set: vi.fn(),

@@ -7,10 +7,13 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { Megaphone, Pin, Trash2, Send, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 
+import { PageTitle } from "@buleje/design-system";
+import { formatDateTimeShort } from "@/lib/format";
 interface OwnerPost {
   id: string;
   body: string;
@@ -59,7 +62,7 @@ export default function StorePublicationsManager() {
           pinned,
         }),
       });
-      const j = await res.json().catch(() => null);
+      const j = await leerJson<{ error?: string }>(res);
       if (!res.ok) {
         setError(j?.error ?? "No se pudo publicar.");
         return;
@@ -69,7 +72,7 @@ export default function StorePublicationsManager() {
       setPinned(false);
       await load();
     } catch {
-      setError("Sin conexión. Probá de nuevo.");
+      setError("Sin conexión. Prueba de nuevo.");
     } finally {
       setSaving(false);
     }
@@ -90,11 +93,11 @@ export default function StorePublicationsManager() {
   return (
     <div className="space-y-6">
       <header className="flex items-center gap-3">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Megaphone className="h-6 w-6" strokeWidth={2} aria-hidden />
         </span>
         <div>
-          <h1 className="text-xl font-black text-[var(--text-primary)]">Publicaciones</h1>
+          <PageTitle className="text-[var(--text-primary)]">Publicaciones</PageTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             Contales a tus vecinos las novedades. Aparece en tu tienda del marketplace.
           </p>
@@ -107,8 +110,8 @@ export default function StorePublicationsManager() {
           value={body}
           onChange={(e) => setBody(e.target.value.slice(0, MAX))}
           rows={3}
-          placeholder="Ej: Hoy pollo a la brasa con papas a S/20 🔥 Pedí antes de las 8pm."
-          className="w-full resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
+          placeholder="Ej: Hoy pollo a la brasa con papas a S/20 🔥 Pide antes de las 8pm."
+          className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
         />
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
           <input
@@ -116,16 +119,16 @@ export default function StorePublicationsManager() {
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             placeholder="URL de imagen (opcional)"
-            className="h-11 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
+            className="h-11 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
           />
           <button
             type="button"
             onClick={() => setPinned((v) => !v)}
             aria-pressed={pinned}
             className={cn(
-              "inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition-colors",
+              "inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition-colors",
               pinned
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]",
             )}
           >
@@ -136,7 +139,7 @@ export default function StorePublicationsManager() {
             onClick={publish}
             disabled={saving || !body.trim()}
             className={cn(
-              "inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold transition-all",
+              "inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-all",
               body.trim() && !saving
                 ? "bg-[var(--accent)] text-white hover:opacity-90 active:scale-95"
                 : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
@@ -164,11 +167,11 @@ export default function StorePublicationsManager() {
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
                 {p.pinned && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 font-bold text-[var(--accent)]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-bold text-[var(--accent)]">
                     <Pin className="h-3 w-3" aria-hidden /> Fijada
                   </span>
                 )}
-                <span>{new Date(p.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                <span>{formatDateTimeShort(p.createdAt)}</span>
                 <span className="inline-flex items-center gap-1">
                   <MessageCircle className="h-3.5 w-3.5" aria-hidden /> {p.commentCount}
                 </span>
@@ -179,7 +182,7 @@ export default function StorePublicationsManager() {
               type="button"
               onClick={() => remove(p.id)}
               aria-label="Borrar publicación"
-              className="shrink-0 rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-600)]"
+              className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-600)]"
             >
               <Trash2 className="h-4 w-4" aria-hidden />
             </button>

@@ -2,8 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { BusinessData, Product } from "../ai-center.types";
+import { Field } from "@/components/admin/shared/Field";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,7 +92,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
   return (
     <div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-base)]">
               <th className="text-left py-3 pr-4 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
@@ -169,7 +171,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
               );
             })}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       {hasMore && (
@@ -246,17 +248,14 @@ function SimuladorTab({
     <div className="space-y-4">
       {/* Inputs row */}
       <div className="flex flex-wrap gap-3 items-end">
-        <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
-            Producto
-          </label>
+        <Field label="Producto" labelClassName="block text-xs text-[var(--text-tertiary)] mb-1" className="flex-1 min-w-[160px]">
           <select
             value={selectedId}
             onChange={(e) => {
               setSelectedId(e.target.value);
               setResult(null);
             }}
-            className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
+            className="w-full border border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
           >
             {products.map((p) => (
               <option key={p.id} value={String(p.id)}>
@@ -264,14 +263,13 @@ function SimuladorTab({
               </option>
             ))}
           </select>
-        </div>
+        </Field>
 
-        <div className="w-32">
-          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
-            Cambio de precio
-          </label>
+        <Field label="Cambio de precio" labelClassName="block text-xs text-[var(--text-tertiary)] mb-1" className="w-32">
+          {(id) => (
           <div className="relative">
             <input
+              id={id}
               type="number"
               value={pctChange}
               onChange={(e) => {
@@ -279,18 +277,19 @@ function SimuladorTab({
                 setResult(null);
               }}
               placeholder="5"
-              className="w-full border border-[var(--rule-base)] rounded-lg pl-3 pr-7 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
+              className="w-full border border-[var(--rule-base)] rounded-xl pl-3 pr-7 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
             />
             <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)]">
               %
             </span>
           </div>
-        </div>
+          )}
+        </Field>
 
         <button
           onClick={handleSimulate}
           disabled={!selectedProduct}
-          className="px-4 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-40 text-white text-sm font-medium rounded-lg transition-colors"
+          className="px-4 min-h-10 bg-primary/10 hover:bg-primary/10 disabled:opacity-40 text-white text-sm font-medium rounded-xl transition-colors"
         >
           Simular
         </button>
@@ -394,10 +393,7 @@ function CalculadoraTab() {
           Calculadora de margen
         </p>
 
-        <div>
-          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
-            Costo (S/)
-          </label>
+        <Field label="Costo (S/)" labelClassName="block text-xs text-[var(--text-tertiary)] mb-1">
           <input
             type="number"
             min="0"
@@ -405,14 +401,15 @@ function CalculadoraTab() {
             value={cost}
             onChange={(e) => setCost(e.target.value)}
             placeholder="0.00"
-            className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
+            className="w-full border border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
-            Margen deseado (%)
-          </label>
+        <Field
+          label="Margen deseado (%)"
+          labelClassName="block text-xs text-[var(--text-tertiary)] mb-1"
+          error={showWarning ? "El margen debe estar entre 1% y 99%" : undefined}
+        >
           <input
             type="number"
             min="1"
@@ -421,18 +418,13 @@ function CalculadoraTab() {
             value={desiredMargin}
             onChange={(e) => setDesiredMargin(e.target.value)}
             className={cn(
-              "w-full border rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40",
+              "w-full border rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40",
               showWarning
                 ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                 : "border-[var(--rule-base)]",
             )}
           />
-          {showWarning && (
-            <p className="mt-1 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-              El margen debe estar entre 1% y 99%
-            </p>
-          )}
-        </div>
+        </Field>
 
         <div className="border-t border-[var(--rule-base)] pt-3 space-y-2">
           {calc ? (

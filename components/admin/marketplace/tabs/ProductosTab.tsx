@@ -1,11 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
-import { SectionTitle } from "@buleje/design-system";
+import { useState, useEffect, useId, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { AlertCircle, Check, CheckCircle, ExternalLink, Eye, EyeOff, ImageOff, Megaphone, Minus, Package, PackageX, Pencil, RefreshCw, Search, Sparkles, TrendingDown, TrendingUp, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceProducts, type MarketplaceProduct } from "@/components/admin/marketplace/hooks/use-marketplace-products";
 import { useMarketplaceTienda } from "@/components/admin/marketplace/hooks/use-marketplace-tienda";
 import { KpiTile, SortIcon, TableSkeleton, CounterChip } from "@/components/admin/marketplace/shared";
+import { formatCurrency, formatDateLong, formatNumber } from "@/lib/format";
 
 // ─────────────────────────────────────────────
 // Sub-tab: Productos
@@ -15,7 +17,7 @@ type SortKey = "name" | "retailPrice" | "wholesalePrice" | "stock";
 export function MarketplaceProductosTab() {
   const {
     products, loading, error, toggling, syncing, syncResult, bulkBusy, pricingId,
-    load, handleSync, toggleActive, bulkSetActive, updatePrice, createBoost, stopBoost,
+    load, handleSync, toggleActive, bulkSetActive, updatePrice, updateOferta, createBoost, stopBoost,
   } = useMarketplaceProducts();
   const { store } = useMarketplaceTienda();
   const storeSlug = store.slug;
@@ -32,7 +34,7 @@ export function MarketplaceProductosTab() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [editingPrice, setEditingPrice] = useState<{ id: string; field: "retailPrice" | "wholesalePrice"; value: string } | null>(null);
+  const [editingPrice, setEditingPrice] = useState<{ id: string; field: "retailPrice" | "wholesalePrice" | "discountPrice"; value: string } | null>(null);
   // Brandon mayo 2026 v7 (Nivel C): modal para destacar producto en marketplace.
   const [boostingProduct, setBoostingProduct] = useState<MarketplaceProduct | null>(null);
 
@@ -129,19 +131,38 @@ export function MarketplaceProductosTab() {
     }
   }
 
-  function startEditPrice(id: string, field: "retailPrice" | "wholesalePrice", current: number) {
-    setEditingPrice({ id, field, value: current.toFixed(2) });
+  function startEditPrice(
+    id: string,
+    field: "retailPrice" | "wholesalePrice" | "discountPrice",
+    current: number | null,
+  ) {
+    setEditingPrice({ id, field, value: current != null ? current.toFixed(2) : "" });
   }
 
   async function commitEditPrice() {
     if (!editingPrice) return;
     const num = Number(editingPrice.value);
+    /* La oferta admite vacío: significa "sin rebaja" y se manda como `null`.
+       Los precios no — un retail vacío no es un precio, es un descarte. */
+    if (editingPrice.field === "discountPrice") {
+      const vacio = editingPrice.value.trim() === "";
+      if (!vacio && (!Number.isFinite(num) || num <= 0)) { setEditingPrice(null); return; }
+      const result = await updateOferta(editingPrice.id, { discountPrice: vacio ? null : num });
+      // Si el backend rechazó (la oferta no baja el precio), se deja el valor
+      // tipeado en pantalla: el error ya se muestra arriba y así se corrige.
+      if (result.ok) setEditingPrice(null);
+      return;
+    }
     if (!Number.isFinite(num) || num < 0) {
       setEditingPrice(null);
       return;
     }
     const result = await updatePrice(editingPrice.id, { [editingPrice.field]: num });
     if (result.ok) setEditingPrice(null);
+  }
+
+  async function quitarOferta(id: string) {
+    await updateOferta(id, { discountPrice: null });
   }
 
   return (
@@ -199,7 +220,7 @@ export function MarketplaceProductosTab() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por nombre, SKU o categoría…"
-            className="w-full h-10 pl-10 pr-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
+            className="w-full h-10 pl-10 pr-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
           />
           {query && (
             <button
@@ -216,7 +237,7 @@ export function MarketplaceProductosTab() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors capitalize"
+            className="h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors capitalize"
             aria-label="Filtrar por categoría"
           >
             <option value="todos">Todas las categorías</option>
@@ -228,7 +249,7 @@ export function MarketplaceProductosTab() {
         <button
           onClick={handleSync}
           disabled={syncing}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--accent)] text-white text-sm font-extrabold hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} aria-hidden />
           {syncing ? "Sincronizando…" : "Sincronizar inventario"}
@@ -237,13 +258,13 @@ export function MarketplaceProductosTab() {
 
       {/* ── Bulk action bar — aparece cuando hay selección ─────────── */}
       {selectedCount > 0 && (
-        <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]">
+        <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10">
           <span className="inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--accent)]">
             <Check className="h-4 w-4" strokeWidth={3} />
             {selectedCount} seleccionado{selectedCount !== 1 ? "s" : ""}
           </span>
           <span className="text-xs text-[var(--text-secondary)] hidden sm:inline">
-            Aplicá la acción a todos a la vez:
+            Aplica la acción a todos a la vez:
           </span>
           <div className="ml-auto flex items-center gap-2">
             <button
@@ -267,6 +288,7 @@ export function MarketplaceProductosTab() {
             <button
               type="button"
               onClick={() => setSelectedIds(new Set())}
+              aria-label="Cancelar selección"
               className="inline-flex items-center h-9 px-2 rounded-lg text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
             >
               <X className="h-3.5 w-3.5" />
@@ -291,13 +313,13 @@ export function MarketplaceProductosTab() {
       )}
 
       {products.length === 0 && !error ? (
-        <div className="text-center py-16 text-[var(--text-tertiary)] rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="text-center py-16 text-[var(--text-tertiary)] rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm font-semibold">Sin productos publicados</p>
           <p className="text-xs mt-1">Activa productos desde tu catálogo para mostrarlos en el marketplace.</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-[var(--text-tertiary)] rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="text-center py-12 text-[var(--text-tertiary)] rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <Search className="h-8 w-8 mx-auto mb-2 opacity-40" />
           <p className="text-sm font-semibold">Sin resultados con esos filtros</p>
           <button
@@ -315,7 +337,7 @@ export function MarketplaceProductosTab() {
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto max-h-[calc(100vh-22rem)]">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] sticky top-0 z-10 border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="w-10 px-3 py-3">
@@ -327,7 +349,7 @@ export function MarketplaceProductosTab() {
                       }}
                       onChange={toggleSelectAll}
                       aria-label="Seleccionar todos los productos visibles"
-                      className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                      className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                     />
                   </th>
                   <th className="text-left px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
@@ -347,6 +369,9 @@ export function MarketplaceProductosTab() {
                     >
                       Precio retail <SortIcon k="retailPrice" currentKey={sortKey} currentDir={sortDir} />
                     </button>
+                  </th>
+                  <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                    Oferta
                   </th>
                   <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hidden md:table-cell">
                     <button
@@ -382,7 +407,7 @@ export function MarketplaceProductosTab() {
                   return (
                     <tr key={p.id} className={cn(
                       "transition-colors",
-                      isSel ? "bg-[var(--accent-soft)]/50" : "hover:bg-[var(--surface-sunken)]/50",
+                      isSel ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]/50",
                     )}>
                       <td className="w-10 px-3 py-2.5">
                         <input
@@ -390,7 +415,7 @@ export function MarketplaceProductosTab() {
                           checked={isSel}
                           onChange={() => toggleSelect(p.id)}
                           aria-label={`Seleccionar ${p.name}`}
-                          className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                          className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                         />
                       </td>
                       <td className="px-3 py-2.5">
@@ -439,6 +464,23 @@ export function MarketplaceProductosTab() {
                             count={p.competitionStoreCount ?? 0}
                           />
                         </div>
+                      </td>
+                      {/* Oferta — editable inline. El precio que se cobra sale
+                          de `precioVigente()`: una vencida NO se aplica. */}
+                      <td className="px-3 py-2.5 text-right">
+                        <OfertaCell
+                          lista={p.retailPrice}
+                          oferta={p.discountPrice ?? null}
+                          hasta={p.discountUntil ?? null}
+                          isEditing={editingPrice?.id === p.id && editingPrice.field === "discountPrice"}
+                          editValue={editingPrice?.id === p.id && editingPrice.field === "discountPrice" ? editingPrice.value : ""}
+                          busy={pricingId === p.id}
+                          onStartEdit={() => startEditPrice(p.id, "discountPrice", p.discountPrice ?? null)}
+                          onChange={(v) => setEditingPrice((prev) => prev ? { ...prev, value: v } : prev)}
+                          onCommit={commitEditPrice}
+                          onCancel={() => setEditingPrice(null)}
+                          onQuitar={() => void quitarOferta(p.id)}
+                        />
                       </td>
                       {/* Mayorista — editable inline */}
                       <td className="px-3 py-2.5 text-right hidden md:table-cell">
@@ -502,7 +544,7 @@ export function MarketplaceProductosTab() {
                           <button
                             type="button"
                             onClick={() => setBoostingProduct(p)}
-                            title={`Boost activo · S/${p.boost.bidAmount}/día · Gastado S/${p.boost.totalSpentPen.toFixed(2)} / S/${p.boost.maxBudgetPen.toFixed(0)}`}
+                            title={`Boost activo · S/${p.boost.bidAmount}/día · Gastado ${formatCurrency(p.boost.totalSpentPen)} / S/${p.boost.maxBudgetPen.toFixed(0)}`}
                             className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] text-xs font-extrabold hover:bg-[var(--brand-secondary)]/25 transition-colors"
                           >
                             <Sparkles className="h-3.5 w-3.5" />
@@ -513,7 +555,7 @@ export function MarketplaceProductosTab() {
                             type="button"
                             onClick={() => setBoostingProduct(p)}
                             title="Destacar este producto en el marketplace"
-                            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] text-xs font-bold hover:border-[var(--brand-secondary)] hover:text-[var(--brand-secondary)] transition-colors"
+                            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] text-xs font-bold hover:border-[var(--brand-secondary)] hover:text-[var(--brand-secondary)] transition-colors"
                           >
                             <Megaphone className="h-3.5 w-3.5" />
                             Destacar
@@ -529,7 +571,7 @@ export function MarketplaceProductosTab() {
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Ver en marketplace público"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-primary/10 hover:text-[var(--accent)] transition-colors"
                           >
                             <ExternalLink className="h-3.5 w-3.5" aria-hidden />
                           </a>
@@ -541,7 +583,7 @@ export function MarketplaceProductosTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           {filtered.length < products.length && (
             <div className="border-t border-[var(--rule-base)] px-4 py-2 bg-[var(--surface-sunken)] text-xs font-bold text-[var(--text-secondary)] flex items-center justify-between">
@@ -604,7 +646,7 @@ function CompetitionChip({
   if (Math.abs(diff) < 3) {
     return (
       <span
-        title={`En precio (promedio S/${avg.toFixed(2)} en ${count} tienda${count === 1 ? "" : "s"})`}
+        title={`En precio (promedio ${formatCurrency(avg)} en ${count} tienda${count === 1 ? "" : "s"})`}
         className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums"
       >
         <Minus className="h-3 w-3" />
@@ -615,7 +657,7 @@ function CompetitionChip({
   if (diff > 0) {
     return (
       <span
-        title={`Caro · ${diff.toFixed(0)}% sobre el promedio S/${avg.toFixed(2)} (${count} tienda${count === 1 ? "" : "s"})`}
+        title={`Caro · ${diff.toFixed(0)}% sobre el promedio ${formatCurrency(avg)} (${count} tienda${count === 1 ? "" : "s"})`}
         className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] tabular-nums"
       >
         <TrendingUp className="h-3 w-3" />
@@ -625,7 +667,7 @@ function CompetitionChip({
   }
   return (
     <span
-      title={`Barato · ${Math.abs(diff).toFixed(0)}% bajo el promedio S/${avg.toFixed(2)} (${count} tienda${count === 1 ? "" : "s"})`}
+      title={`Barato · ${Math.abs(diff).toFixed(0)}% bajo el promedio ${formatCurrency(avg)} (${count} tienda${count === 1 ? "" : "s"})`}
       className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] tabular-nums"
     >
       <TrendingDown className="h-3 w-3" />
@@ -648,6 +690,11 @@ function BoostModal({
   onCreate: (payload: { bidAmount: number; days: number; maxBudgetPen: number }) => Promise<{ ok: boolean }>;
   onStop: () => Promise<{ ok: boolean }>;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const existing = product.boost;
   const [bidAmount, setBidAmount] = useState<string>(existing ? String(existing.bidAmount) : "3");
   const [days, setDays] = useState<string>("7");
@@ -686,17 +733,17 @@ function BoostModal({
   }
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
+      className="fixed inset-0 z-system flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-2xl overflow-hidden"
+        className="w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
       >
-        <header className="flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)]">
+        <header className="flex items-start gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-5 sm:px-6">
           <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] shrink-0">
             <Sparkles className="h-6 w-6" strokeWidth={2.25} />
           </span>
@@ -724,15 +771,15 @@ function BoostModal({
         {existing ? (
           <div className="px-6 py-5 space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <KpiTile label="Puja diaria" value={`S/ ${existing.bidAmount.toFixed(2)}`} />
-              <KpiTile label="Gastado" value={`S/ ${existing.totalSpentPen.toFixed(2)}`} sub={`de S/ ${existing.maxBudgetPen.toFixed(0)}`} />
-              <KpiTile label="Impresiones" value={existing.impressionsCount.toLocaleString("es-PE")} />
-              <KpiTile label="Clicks" value={existing.clicksCount.toLocaleString("es-PE")} />
+              <KpiTile label="Puja diaria" value={`${formatCurrency(existing.bidAmount)}`} />
+              <KpiTile label="Gastado" value={`${formatCurrency(existing.totalSpentPen)}`} sub={`de S/ ${existing.maxBudgetPen.toFixed(0)}`} />
+              <KpiTile label="Impresiones" value={formatNumber(existing.impressionsCount)} />
+              <KpiTile label="Clicks" value={formatNumber(existing.clicksCount)} />
             </div>
             <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-3 text-xs text-[var(--text-secondary)]">
               Termina el{" "}
               <strong className="text-[var(--text-primary)]">
-                {new Date(existing.endDate).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
+                {formatDateLong(existing.endDate)}
               </strong>
             </div>
           </div>
@@ -746,18 +793,18 @@ function BoostModal({
               <NumberField label="Duración" suffix="días" value={days} onChange={setDays} hint="Máx 90" />
               <NumberField label="Tope total" prefix="S/" value={maxBudget} onChange={setMaxBudget} hint="Corta al llegar" />
             </div>
-            <div className="rounded-xl bg-[var(--accent-soft)] border-2 border-[var(--accent)]/30 p-3 flex items-center justify-between">
+            <div className="rounded-xl bg-primary/10 border-2 border-[var(--accent)]/30 p-3 flex items-center justify-between">
               <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Gasto estimado
               </span>
               <span className="text-xl font-extrabold tabular-nums text-[var(--accent)]">
-                S/ {estimated.toFixed(2)}
+                {formatCurrency(estimated)}
               </span>
             </div>
           </div>
         )}
 
-        <footer className="px-6 py-4 bg-[var(--surface-sunken)] border-t-2 border-[var(--rule-soft)] flex items-center justify-end gap-2">
+        <footer className="bg-[var(--surface-sunken)] border-t-2 border-[var(--rule-soft)] flex items-center justify-end gap-2 px-5 py-4 sm:px-6">
           {existing ? (
             <button
               type="button"
@@ -767,7 +814,7 @@ function BoostModal({
                 setSubmitting(false);
               }}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] font-extrabold text-sm hover:bg-[var(--data-error-500)]/20 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] font-semibold text-sm hover:bg-[var(--data-error-500)]/20 transition-colors disabled:opacity-50"
             >
               <X className="h-4 w-4" />
               Detener boost
@@ -777,7 +824,7 @@ function BoostModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="h-11 px-4 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]"
+                className="h-11 px-4 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]"
               >
                 Cancelar
               </button>
@@ -785,7 +832,7 @@ function BoostModal({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!canSubmit || submitting}
-                className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--brand-secondary)] text-white font-extrabold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--brand-secondary)] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 <Sparkles className="h-4 w-4" />
                 {submitting ? "Creando…" : "Destacar"}
@@ -814,9 +861,10 @@ function NumberField({
   onChange: (v: string) => void;
   hint?: string;
 }) {
+  const id = useId();
   return (
     <div>
-      <label className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5 block">{label}</label>
+      <label htmlFor={id} className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5 block">{label}</label>
       <div className="relative">
         {prefix && (
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-tertiary)] pointer-events-none">
@@ -824,12 +872,13 @@ function NumberField({
           </span>
         )}
         <input
+          id={id}
           type="number"
           min={0}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={cn(
-            "w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]",
+            "w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]",
             prefix ? "pl-8 pr-3" : "px-3",
             suffix ? "pr-12" : "",
             "text-right tabular-nums",
@@ -847,6 +896,127 @@ function NumberField({
 }
 
 // ── Celda de precio editable inline ──────────────────────────────────────
+/**
+ * OfertaCell — poner, cambiar o sacar la rebaja de un producto.
+ *
+ * Hasta ahora `discountPrice` no se podía cargar desde ninguna pantalla, así que
+ * la vidriera tenía el tachado y el chip «-30%» listos para nada (148 productos,
+ * 0 ofertas). Acá se carga.
+ *
+ * Muestra el % calculado mientras se tipea —igual que el S//m³ del libro
+ * forestal— porque un 19.90 sobre 24.90 no dice nada y un «-20%» sí. Y distingue
+ * la oferta VENCIDA de la vigente: el precio que se cobra sale de
+ * `precioVigente()`, no de que el campo esté lleno.
+ */
+function OfertaCell({
+  lista,
+  oferta,
+  hasta,
+  isEditing,
+  editValue,
+  busy,
+  onStartEdit,
+  onChange,
+  onCommit,
+  onCancel,
+  onQuitar,
+}: {
+  lista: number;
+  oferta: number | null;
+  hasta: string | null;
+  isEditing: boolean;
+  editValue: string;
+  busy: boolean;
+  onStartEdit: () => void;
+  onChange: (v: string) => void;
+  onCommit: () => void;
+  onCancel: () => void;
+  onQuitar: () => void;
+}) {
+  if (isEditing) {
+    const n = Number(editValue);
+    // El % en vivo delata el dedazo: 199 en vez de 19.90 salta como "-699%".
+    const pct = Number.isFinite(n) && n > 0 && lista > 0 ? Math.round(((lista - n) / lista) * 100) : null;
+    return (
+      <div className="inline-flex items-center gap-1 justify-end">
+        <span className="text-xs font-bold text-[var(--text-tertiary)]">S/</span>
+        <input
+          type="number"
+          aria-label="Precio de oferta"
+          autoFocus
+          min={0}
+          step={0.5}
+          value={editValue}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); onCommit(); }
+            if (e.key === "Escape") onCancel();
+          }}
+          onBlur={onCommit}
+          disabled={busy}
+          className="w-20 h-7 px-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
+        />
+        {pct != null && (
+          <span className={cn(
+            "text-[length:var(--ts-2xs)] font-bold tabular-nums",
+            pct > 0 && pct < 100 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
+          )}>
+            {pct > 0 ? `-${pct}%` : "no baja"}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  if (oferta == null) {
+    return (
+      <button
+        type="button"
+        onClick={onStartEdit}
+        title="Poner este producto en oferta"
+        className="inline-flex items-center gap-1 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
+      >
+        <Pencil className="h-3 w-3 opacity-60" aria-hidden /> —
+      </button>
+    );
+  }
+
+  const vencida = hasta != null && new Date(hasta).getTime() <= Date.now();
+  const pct = lista > 0 ? Math.round(((lista - oferta) / lista) * 100) : 0;
+  return (
+    <div className="inline-flex flex-col items-end gap-0.5">
+      <div className="inline-flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onStartEdit}
+          title="Click para editar la oferta"
+          className="group inline-flex items-center gap-1.5 tabular-nums font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
+        >
+          <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
+          {formatCurrency(oferta)}
+        </button>
+        <button
+          type="button"
+          onClick={onQuitar}
+          disabled={busy}
+          title="Quitar la oferta"
+          aria-label="Quitar la oferta"
+          className="rounded p-0.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors disabled:opacity-40"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden />
+        </button>
+      </div>
+      {/* Vencida ≠ cargada: el cliente paga el precio de lista igual. */}
+      <span className={cn(
+        "text-[length:var(--ts-2xs)] font-bold tabular-nums",
+        vencida ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]",
+      )}>
+        {vencida ? "vencida · no se aplica" : `-${pct}%`}
+      </span>
+    </div>
+  );
+}
+
 function PriceCell({
   value,
   isEditing,
@@ -874,6 +1044,7 @@ function PriceCell({
         <span className="text-xs font-bold text-[var(--text-tertiary)]">S/</span>
         <input
           type="number"
+          aria-label="Precio"
           autoFocus
           min={0}
           step={0.5}
@@ -888,7 +1059,7 @@ function PriceCell({
           }}
           onBlur={onCommit}
           disabled={busy}
-          className="w-20 h-7 px-2 rounded-md border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
+          className="w-20 h-7 px-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
         />
       </div>
     );
@@ -918,7 +1089,7 @@ function PriceCell({
       )}
     >
       <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
-      S/ {value.toFixed(2)}
+      {formatCurrency(value)}
     </button>
   );
 }

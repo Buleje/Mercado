@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { CashRegistersDB } from "@/lib/db/sales.db";
+import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 
 /**
  * GET /api/cron/auto-close-register
  *
- * Cron job que busca cajas con status "abierta" que llevan
- * más de 16 horas abiertas y las cierra automáticamente.
+ * Cron job que busca, EN TODOS LOS TENANTS ACTIVOS, cajas con status
+ * "abierta" que llevan más de 16 horas abiertas, y las cierra automáticamente
+ * con el tenantId de cada una.
  *
  * Sugerencia vercel.json: "0 * * * *" (cada hora)
  * Autorización: Bearer <CRON_SECRET>
@@ -27,12 +29,24 @@ export async function GET(req: NextRequest) {
       const now = new Date();
       const cutoff = new Date(now.getTime() - 16 * 60 * 60 * 1000); // 16 horas atrás
 
-      // Obtener todas las cajas abiertas
-      const allRegisters = await CashRegistersDB.getAll("main");
-      const staleRegisters = allRegisters.filter((reg) => {
-        if (reg.status !== "abierta") return false;
-        return new Date(reg.openedAt) <= cutoff;
+      // Las cajas de TODOS los tenants activos. Con el `"main"` que había acá,
+      // este cron sólo existía para un tenant: en el resto del SaaS las cajas
+      // quedaban abiertas para siempre y nadie se enteraba. Mismo patrón que
+      // los demás crons del proyecto (expiry-discounts, market-alerts).
+      const tenants = await prisma.tenant.findMany({
+        where: { active: true },
+        select: { id: true, slug: true },
       });
+
+      const staleRegisters: { tenantId: string; tenantSlug: string; reg: Awaited<ReturnType<typeof CashRegistersDB.getAll>>[number] }[] = [];
+      for (const tenant of tenants) {
+        const registers = await CashRegistersDB.getAll(tenant.id);
+        for (const reg of registers) {
+          if (reg.status !== "abierta") continue;
+          if (new Date(reg.openedAt) > cutoff) continue;
+          staleRegisters.push({ tenantId: tenant.id, tenantSlug: tenant.slug, reg });
+        }
+      }
 
       if (staleRegisters.length === 0) {
         logger.info("[cron/auto-close-register] No hay cajas para cerrar automáticamente");
@@ -42,7 +56,7 @@ export async function GET(req: NextRequest) {
       let closed = 0;
       const closedIds: string[] = [];
 
-      for (const reg of staleRegisters) {
+      for (const { tenantId, tenantSlug, reg } of staleRegisters) {
         // Calcular el monto de cierre esperado (ingresos - egresos + apertura)
         const totalIn = reg.movements
           .filter((m) => m.type === "venta" || m.type === "ingreso")
@@ -52,8 +66,10 @@ export async function GET(req: NextRequest) {
           .reduce((sum, m) => sum + m.amount, 0);
         const expectedClosing = reg.openingAmount + totalIn - totalOut;
 
+        // Cada caja se cierra con SU tenantId: cerrar la de otro tenant con
+        // "main" es escribir en el aislamiento de al lado.
         const updated = await CashRegistersDB.close(
-          "main",
+          tenantId,
           reg.id,
           expectedClosing,
           "Cierre automático del sistema"
@@ -64,6 +80,8 @@ export async function GET(req: NextRequest) {
           closedIds.push(reg.id);
           logger.info("[cron/auto-close-register] Caja cerrada automáticamente", {
             registerId: reg.id,
+            tenantId,
+            tenantSlug,
             openedAt: reg.openedAt,
             expectedClosing,
           });

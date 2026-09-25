@@ -1,14 +1,16 @@
 ﻿"use client";
 
-import { CardTitle, PageTitle } from "@buleje/design-system";
+import { PageTitle } from "@buleje/design-system";
 
 import { useState, useMemo, useEffect } from "react";
 import {
-  ScrollText, Download, Search, Eye, X, AlertTriangle,
+  ScrollText, Download, Search, Eye, AlertTriangle,
   Shield, Trash2, Pencil, Plus, Settings, UserCog, Loader2,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import ResponsiveTable from "@/components/ui/ResponsiveTable";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { formatDateShort, formatTime } from "@/lib/format";
 // import type { ReactNode } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -34,7 +36,7 @@ type AuditEntry = {
 function fmtDate(iso: string) {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) + " " + d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+    return formatDateShort(d) + " " + formatTime(d);
   } catch { return iso; }
 }
 
@@ -50,7 +52,7 @@ const ACTION_META: Record<AuditAction, { label: string; icon: typeof Plus; color
 };
 
 const SEVERITY_META: Record<AuditSeverity, { label: string; color: string; bg: string }> = {
-  info:        { label: "Info",        color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  info:        { label: "Info",        color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
   advertencia: { label: "Advertencia", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   critica:     { label: "Crítica",     color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
@@ -258,7 +260,7 @@ export default function AuditLogTab() {
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Registro de actividad detallado con trazabilidad completa</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(e => ({ fecha: e.timestamp, usuario: e.user, rol: e.role, accion: ACTION_META[e.action].label, modulo: e.module, descripcion: e.description, detalles: e.details, severidad: e.severity, ip: e.ip })), "auditoria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(e => ({ fecha: e.timestamp, usuario: e.user, rol: e.role, accion: ACTION_META[e.action].label, modulo: e.module, descripcion: e.description, detalles: e.details, severidad: e.severity, ip: e.ip })), "auditoria")} className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -273,7 +275,7 @@ export default function AuditLogTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total eventos", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Total eventos", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Hoy", value: String(stats.hoy), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "Advertencias", value: String(stats.advertencias), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Críticas", value: String(stats.criticas), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
@@ -300,21 +302,21 @@ export default function AuditLogTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, usuario..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, usuario..." className="w-full pl-9 pr-3 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value as AuditSeverity | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select aria-label="Filtrar por severidad" value={filterSeverity} onChange={e => setFilterSeverity(e.target.value as AuditSeverity | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las severidades</option>
           {(Object.keys(SEVERITY_META) as AuditSeverity[]).map(s => <option key={s} value={s}>{SEVERITY_META[s].label}</option>)}
         </select>
-        <select value={filterAction} onChange={e => setFilterAction(e.target.value as AuditAction | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select aria-label="Filtrar por acción" value={filterAction} onChange={e => setFilterAction(e.target.value as AuditAction | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las acciones</option>
           {(Object.keys(ACTION_META) as AuditAction[]).map(a => <option key={a} value={a}>{ACTION_META[a].label}</option>)}
         </select>
-        <select value={filterModule} onChange={e => setFilterModule(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select aria-label="Filtrar por módulo" value={filterModule} onChange={e => setFilterModule(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los módulos</option>
           {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
-        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <select aria-label="Filtrar por usuario" value={filterUser} onChange={e => setFilterUser(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los usuarios</option>
           {users.map(u => <option key={u} value={u}>{u}</option>)}
         </select>
@@ -339,7 +341,7 @@ export default function AuditLogTab() {
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
+            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
           >
             {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
             {loadingMore ? "Cargando…" : "Cargar más eventos"}
@@ -348,13 +350,9 @@ export default function AuditLogTab() {
       )}
 
       {/* Detail modal */}
-      {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Detalle del evento</CardTitle>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
-            </div>
+      <AdminModal open={!!detail} onClose={() => setDetail(null)} title="Detalle del evento">
+        <div className={MODAL_BODY}>
+          {detail && (
             <div className="space-y-2 text-sm">
               {[
                 ["Fecha/Hora", fmtDate(detail.timestamp)], ["Usuario", `${detail.user} (${detail.role})`],
@@ -368,9 +366,9 @@ export default function AuditLogTab() {
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </AdminModal>
     </div>
   );
 }

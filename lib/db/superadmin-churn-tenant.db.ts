@@ -1,5 +1,5 @@
 import "server-only";
- 
+
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -103,6 +103,60 @@ export const SuperadminChurnTenantDB = {
         resolvedAt: new Date(),
         resolvedBy,
       },
+    });
+  },
+
+  /**
+   * Dashboard anti-churn: score más reciente de CADA tenant en 1 sola query.
+   * `distinct: [tenantId]` sobre orden `calculatedAt desc` devuelve, por tenant,
+   * la fila más nueva. Reemplaza el groupBy + N findFirst (N+1). Equivalencia
+   * verificada before/after contra la DB real (0 diferencias).
+   */
+  async listLatestHealthScores() {
+    return prisma.tenantHealthScore.findMany({
+      distinct: ["tenantId"],
+      orderBy: [{ tenantId: "asc" }, { calculatedAt: "desc" }],
+      select: {
+        tenantId: true,
+        score: true,
+        riskLevel: true,
+        loginsLast7d: true,
+        ordersLast7d: true,
+        daysSinceLastOrder: true,
+        daysSinceLastLogin: true,
+        trialDaysLeft: true,
+        calculatedAt: true,
+      },
+    });
+  },
+
+  async listTenantsForChurn(ids: string[]) {
+    return prisma.tenant.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        plan: true,
+        ownerEmail: true,
+        trialEndsAt: true,
+        createdAt: true,
+      },
+    });
+  },
+
+  async listActiveSignals(tenantIds: string[]) {
+    return prisma.churnSignal.findMany({
+      where: { tenantId: { in: tenantIds }, resolved: false },
+      select: {
+        id: true,
+        tenantId: true,
+        signalType: true,
+        severity: true,
+        detail: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
     });
   },
 };

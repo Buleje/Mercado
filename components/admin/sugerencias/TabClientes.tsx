@@ -2,8 +2,8 @@
 
 import { useState, useCallback, useRef } from "react";
 import { Search, Users, MessageCircle, ArrowRight } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
+import { formatCurrency } from "@/lib/format";
 
 interface Customer {
   id: string | number;
@@ -22,7 +22,7 @@ interface Recommendation {
 }
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function buildWhatsAppText(customerName: string, recs: Recommendation[]): string {
@@ -94,7 +94,7 @@ export default function TabClientes() {
   }, [selected, recs]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div>
         <p className="text-base font-extrabold text-[var(--text-primary)]">Recomendaciones por cliente</p>
         <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
@@ -110,7 +110,7 @@ export default function TabClientes() {
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Nombre o teléfono del cliente..."
-          className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-base font-medium text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)] focus:border-[var(--text-primary)]"
+          className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)] focus:border-[var(--text-primary)]"
         />
         {loadingSearch && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -121,7 +121,7 @@ export default function TabClientes() {
 
       {/* Resultados de búsqueda */}
       {results.length > 0 && (
-        <ul className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] overflow-hidden divide-y divide-[var(--rule-soft)]">
+        <ul className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden divide-y divide-[var(--rule-soft)]">
           {results.map((c) => (
             <li key={String(c.id)}>
               <button
@@ -150,7 +150,7 @@ export default function TabClientes() {
       {selected && (
         <div className="space-y-4">
           {/* Cliente seleccionado */}
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <div className="flex items-center gap-3 min-w-0">
               <ProductImage name={selected.name} size="md" rounded="lg" />
               <div className="min-w-0">
@@ -163,7 +163,7 @@ export default function TabClientes() {
             {selected.phone && recs.length > 0 && (
               <button
                 onClick={handleWhatsApp}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#1fbb58] transition-colors shrink-0"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 min-h-11 text-sm font-semibold text-white hover:bg-[#1fbb58] transition-colors shrink-0"
               >
                 <MessageCircle className="h-4 w-4" />
                 Enviar por WhatsApp
@@ -194,7 +194,7 @@ export default function TabClientes() {
                 {recs.map((r) => (
                   <div
                     key={String(r.productId)}
-                    className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4 flex items-center gap-3"
+                    className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center gap-3"
                   >
                     <ProductImage name={r.name} imageUrl={r.imageUrl ?? r.image} size="md" rounded="lg" />
                     <div className="flex-1 min-w-0">
@@ -225,7 +225,7 @@ export default function TabClientes() {
                   </pre>
                   <button
                     onClick={handleWhatsApp}
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-xs font-bold text-white hover:bg-[#1fbb58]"
+                    className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2 text-xs font-bold text-white hover:bg-[#1fbb58]"
                   >
                     Enviar
                     <ArrowRight className="h-3.5 w-3.5" />

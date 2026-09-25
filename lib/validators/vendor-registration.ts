@@ -50,10 +50,10 @@ export const datosNegocioSchema = z.object({
     .min(8, "Dirección muy corta")
     .max(200, "Máximo 200 caracteres"),
   distrito: z.enum(DISTRITOS_PUCALLPA, {
-    message: "Seleccioná un distrito",
+    message: "Selecciona un distrito",
   }),
   categoria: z.enum(CATEGORIAS_VENDOR, {
-    message: "Seleccioná una categoría",
+    message: "Selecciona una categoría",
   }),
 });
 export type DatosNegocioForm = z.infer<typeof datosNegocioSchema>;
@@ -85,7 +85,7 @@ export const verificacionSchema = z.object({
     message: "Sube la foto de tu fachada",
   }),
   aceptoTerminos: z.boolean().refine((v) => v === true, {
-    message: "Aceptá los términos para continuar",
+    message: "Acepta los términos para continuar",
   }),
 });
 export type VerificacionForm = z.infer<typeof verificacionSchema>;
@@ -115,9 +115,9 @@ export const horariosDeliverySchema = z.object({
     .length(7, "Se requieren los 7 días de la semana"),
   zonasEntrega: z
     .array(z.enum(DISTRITOS_PUCALLPA))
-    .min(1, "Seleccioná al menos una zona de delivery"),
+    .min(1, "Selecciona al menos una zona de delivery"),
   tarifaDelivery: z
-    .number({ message: "Ingresá la tarifa en soles" })
+    .number({ message: "Ingresa la tarifa en soles" })
     .min(0, "La tarifa no puede ser negativa")
     .max(30, "Tarifa máxima S/ 30"),
 });

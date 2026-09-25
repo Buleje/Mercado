@@ -121,7 +121,7 @@ export function VoiceNotePlayer({ url, durationSec, seed, variant = "onSurface" 
           aria-label="Velocidad de reproducción"
           className={cn(
             "rounded-full px-1.5 text-[length:var(--ts-2xs)] font-black leading-tight",
-            onAccent ? "bg-white/20 text-white" : "bg-[var(--accent-soft)] text-[var(--accent)]",
+            onAccent ? "bg-white/20 text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
           )}
         >
           {SPEEDS[speedIdx]}×

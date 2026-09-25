@@ -42,7 +42,7 @@ export function getSupabaseBrowser(): SupabaseClient {
   if (!url || !key) {
     throw new Error(
       "Supabase browser client: falta NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
-        "Configurá .env.local según docs/guides/OAUTH-SETUP.md.",
+        "Configura .env.local según docs/guides/OAUTH-SETUP.md.",
     );
   }
 

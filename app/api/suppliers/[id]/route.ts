@@ -30,6 +30,8 @@ const SupplierPatchSchema = z.object({
   categoria: z.string().max(50).optional().nullable(),
   condicionPago: z.string().max(30).optional().nullable(),
   diasCredito: z.number().int().min(0).optional(),
+  // ADR-376: de acá sale el punto de reorden de Sugerencias.
+  leadTimeDias: z.number().int().min(0).max(365).optional().nullable(),
   cuentaBancaria: z.string().max(50).optional().nullable(),
   banco: z.string().max(50).optional().nullable(),
   observaciones: z.string().max(2000).optional().nullable(),

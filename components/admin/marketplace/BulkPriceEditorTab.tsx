@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
@@ -9,6 +9,8 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,7 +36,7 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
       "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
+      type === "success" ? "bg-primary/10 text-white" : "bg-[var(--data-error)] text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
       {msg}
@@ -207,7 +209,7 @@ export default function BulkPriceEditorTab() {
       const updates = Array.from(changes.entries()).map(([id, ch]) => ({ id, ...ch }));
       const res = await fetch("/api/marketplace/products/bulk-edit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ updates }),
       });
       setProgress(90);
@@ -257,19 +259,20 @@ export default function BulkPriceEditorTab() {
             placeholder="Buscar producto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
+            className="w-full pl-9 pr-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+            <button aria-label="Quitar" onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
               <X className="h-4 w-4 text-[var(--text-tertiary)]" />
             </button>
           )}
         </div>
 
         <select
+          aria-label="Filtrar por categoría"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
+          className="h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         >
           {categories.map((c) => (
             <option key={c} value={c}>{c === "todas" ? "Todas las categorías" : c}</option>
@@ -281,34 +284,34 @@ export default function BulkPriceEditorTab() {
           placeholder="Precio mín"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
-          className="w-28 py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
+          className="w-28 h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         />
         <input
           type="number"
           placeholder="Precio máx"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
-          className="w-28 py-2.5 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
+          className="w-28 h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         />
 
         <div className="flex gap-2 ml-auto">
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImport} className="hidden" />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="flex items-center gap-1.5 px-3 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <Upload className="h-4 w-4" /> Importar CSV
           </button>
           <button
             onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="flex items-center gap-1.5 px-3 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <Download className="h-4 w-4" /> Exportar CSV
           </button>
           <button
             onClick={() => changeCount > 0 && setShowConfirm(true)}
             disabled={changeCount === 0}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#00A0A0] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-40"
+            className="flex items-center gap-1.5 px-4 min-h-11 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-40"
           >
             Aplicar cambios {changeCount > 0 && `(${changeCount})`}
           </button>
@@ -317,9 +320,9 @@ export default function BulkPriceEditorTab() {
 
       {/* Barra de progreso */}
       {progress > 0 && (
-        <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-1.5 w-full bg-[var(--rule-base)] rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#00A0A0] transition-all duration-[var(--dur-base)]"
+            className="h-full bg-[var(--accent)] transition-all duration-[var(--dur-base)]"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -335,12 +338,13 @@ export default function BulkPriceEditorTab() {
 
       {/* Tabla */}
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <table className="min-w-full text-sm">
+        <DataTable className="min-w-full text-sm">
           <thead>
             <tr className="bg-[var(--surface-canvas)] border-b border-[var(--rule-base)]">
               <th className="px-4 py-3 text-left">
                 <input
                   type="checkbox"
+                  aria-label="Seleccionar todos"
                   checked={filtered.length > 0 && selected.size === filtered.length}
                   onChange={toggleSelectAll}
                   className="rounded border-[var(--rule-base)]"
@@ -356,7 +360,7 @@ export default function BulkPriceEditorTab() {
               <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Activo</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+          <tbody className="divide-y divide-[var(--rule-soft)] ">
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-4 py-12 text-center text-[var(--text-tertiary)]">
@@ -379,6 +383,7 @@ export default function BulkPriceEditorTab() {
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
+                        aria-label={`Seleccionar ${p.name}`}
                         checked={selected.has(p.id)}
                         onChange={() => toggleSelect(p.id)}
                         className="rounded border-[var(--rule-base)]"
@@ -402,7 +407,7 @@ export default function BulkPriceEditorTab() {
                     </td>
                     <td className="px-4 py-3 font-medium text-[var(--text-primary)] max-w-[200px] truncate">{p.name}</td>
                     <td className="px-4 py-3 text-[var(--text-secondary)]">{p.category}</td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">S/ {p.price.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">{formatCurrency(p.price)}</td>
                     <td className="px-4 py-3">
                       <input
                         type="number"
@@ -427,7 +432,7 @@ export default function BulkPriceEditorTab() {
                             });
                           }
                         }}
-                        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
+                        className="w-24 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -440,7 +445,7 @@ export default function BulkPriceEditorTab() {
                           const v = parseInt(e.target.value);
                           if (!isNaN(v)) applyChange(p.id, "stock", v);
                         }}
-                        className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
+                        className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -450,7 +455,7 @@ export default function BulkPriceEditorTab() {
                         aria-label="Alternar activo"
                       >
                         {(ch.active ?? p.active) ? (
-                          <ToggleRight className="h-6 w-6 text-[#00A0A0]" />
+                          <ToggleRight className="h-6 w-6 text-[var(--accent)]" />
                         ) : (
                           <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />
                         )}
@@ -461,7 +466,7 @@ export default function BulkPriceEditorTab() {
               })
             )}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <p className="text-xs text-[var(--text-tertiary)]">
@@ -469,23 +474,23 @@ export default function BulkPriceEditorTab() {
       </p>
 
       <AdminModal open={showConfirm} onClose={() => setShowConfirm(false)} title="Confirmar cambios" variant="centered-sm">
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <p className="text-sm text-[var(--text-secondary)]">
-            Se aplicarán <span className="font-semibold text-[#00A0A0]">{changeCount}</span> cambios a productos.
+            Se aplicarán <span className="font-semibold text-[var(--accent)]">{changeCount}</span> cambios a productos.
             Esta acción no se puede deshacer.
           </p>
           <div className="flex gap-3">
             <button
               onClick={() => setShowConfirm(false)}
               disabled={applying}
-              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               onClick={applyChanges}
               disabled={applying}
-              className="flex-1 py-2.5 rounded-lg bg-[#00A0A0] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 min-h-11 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {applying && <Loader2 className="h-4 w-4 animate-spin" />}
               Confirmar

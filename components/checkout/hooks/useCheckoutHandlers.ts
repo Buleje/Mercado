@@ -226,6 +226,7 @@ export function useCheckoutHandlers({
 
   const canConfirm =
     state.payment.method === "efectivo" ||
+    state.payment.method === "fiado" ||
     (state.payment.method === "yape" &&
       /^\d{6,20}$/.test(state.payment.yapeOpNumber.trim()));
 

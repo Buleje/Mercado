@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/admin/plan/checkout/stripe-session
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     const auth = await requireAdmin(req, ["owner", "admin"]);
     if (auth instanceof NextResponse) return auth;
 
-    const json = await req.json().catch(() => null);
+    const json = await leerJson(req);
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {
       return NextResponse.json(

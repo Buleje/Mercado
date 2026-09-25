@@ -1,12 +1,12 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
+import { useState, useRef, useCallback, useEffect, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Camera,
   Upload,
   X,
-  Loader2,
   AlertCircle,
   RotateCcw,
   ShoppingCart,
@@ -16,6 +16,7 @@ import {
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -242,6 +243,10 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
     onClose();
   }, [stopStream, onClose]);
 
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: handleClose, activo: open });
+
   if (!open) return null;
 
   const editTotal = editItems.reduce(
@@ -253,19 +258,19 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
 
   return (
     <div className="modal-backdrop flex items-center justify-center p-4">
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)]">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)]">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] rounded-t-2xl">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">
+            <SectionTitle id={titleId} className="text-base font-semibold text-[var(--text-primary)]">
               Escanear Factura
             </SectionTitle>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
@@ -284,7 +289,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
                 >
                   <Camera className="h-8 w-8 text-[var(--text-tertiary)] group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-primary">
@@ -294,7 +299,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
                 >
                   <Upload className="h-8 w-8 text-[var(--text-tertiary)] group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-primary">
@@ -331,14 +336,14 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={reset}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-gray-600 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   <X className="h-4 w-4" /> Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={capturePhoto}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
                 >
                   <Camera className="h-4 w-4" /> Capturar
                 </button>
@@ -375,7 +380,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
               <button
                 type="button"
                 onClick={reset}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-gray-600 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 <RotateCcw className="h-4 w-4" /> Intentar de nuevo
               </button>
@@ -386,7 +391,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
           {state === "results" && invoiceData && (
             <div className="space-y-6">
               {/* Proveedor info */}
-              <div className="p-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+              <div className="p-3 rounded-xl bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                 <p className="text-sm font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                   {invoiceData.proveedor.nombre}
                   {invoiceData.proveedor.ruc && (
@@ -404,7 +409,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
 
               {/* Items table */}
               <div className="border border-[var(--rule-base)] rounded-xl overflow-hidden">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="bg-[var(--surface-sunken)]">
                       <th className="text-left px-3 py-2 text-xs font-medium text-[var(--text-tertiary)]">
@@ -422,7 +427,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                       <th className="w-8" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  <tbody className="divide-y divide-[var(--rule-soft)] ">
                     {editItems.map((item, idx) => (
                       <tr
                         key={idx}
@@ -435,6 +440,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                             onChange={(e) =>
                               updateItem(idx, "nombre", e.target.value)
                             }
+                            aria-label={`Producto, fila ${idx + 1}`}
                             className="w-full bg-transparent text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 -mx-1"
                           />
                         </td>
@@ -450,6 +456,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                               )
                             }
                             min={0}
+                            aria-label={`Cantidad, fila ${idx + 1}`}
                             className="w-full bg-transparent text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary rounded"
                           />
                         </td>
@@ -466,11 +473,12 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                             }
                             min={0}
                             step={0.01}
+                            aria-label={`Precio unitario, fila ${idx + 1}`}
                             className="w-full bg-transparent text-sm text-right text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary rounded"
                           />
                         </td>
                         <td className="px-3 py-1.5 text-right text-sm text-[var(--text-secondary)] tabular-nums">
-                          S/{(item.cantidad * item.precioUnitario).toFixed(2)}
+                          {formatCurrency(item.cantidad * item.precioUnitario)}
                         </td>
                         <td className="pr-2 py-1.5">
                           <button
@@ -485,7 +493,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
 
                 {/* Total row */}
                 <div className="flex items-center justify-between px-3 py-2.5 bg-[var(--surface-sunken)] border-t border-[var(--rule-base)]">
@@ -493,7 +501,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                     Total ({editItems.length} items)
                   </span>
                   <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
-                    S/{editTotal.toFixed(2)}
+                    {formatCurrency(editTotal)}
                   </span>
                 </div>
               </div>
@@ -517,7 +525,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
           <button
             type="button"
             onClick={reset}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-gray-600 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <RotateCcw className="h-4 w-4" /> Otra foto
           </button>
@@ -525,7 +533,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
             type="button"
             onClick={handleConfirm}
             disabled={editItems.filter((i) => i.nombre.trim() && i.cantidad > 0).length === 0}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ShoppingCart className="h-4 w-4" /> Agregar al carrito
           </button>

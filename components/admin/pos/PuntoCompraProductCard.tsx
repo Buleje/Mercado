@@ -8,6 +8,7 @@ import {
   calculateSuggestedQty,
   needsReorder,
 } from "@/lib/types/purchases";
+import { formatCurrency } from "@/lib/format";
 
 interface PuntoCompraProductCardProps {
   product: PurchaseProduct;
@@ -26,10 +27,14 @@ export default memo(function PuntoCompraProductCard({
   const displayName = product.name || "Sin nombre";
 
   const displayPrice = product.costPrice ?? product.price;
-  const isOutOfStock = (product.stock ?? 0) === 0;
+  // Distinguir "sin control de stock" (stock null → servicios/gastos como
+  // "Aserrado de madera") de "agotado" (rastreado y en 0). En un Punto de
+  // COMPRA, un producto agotado es justamente lo que querés pedir → la tarjeta
+  // SIEMPRE agrega al carrito. Antes se deshabilitaba y el clic no hacía nada
+  // sin ninguna explicación (reporte QA Compras 2026-07-08).
+  const isOutOfStock = product.stock === 0;
 
   const handleClick = () => {
-    if (isOutOfStock) return;
     onAdd(product, suggestedQty);
   };
 
@@ -37,19 +42,17 @@ export default memo(function PuntoCompraProductCard({
     <button
       type="button"
       onClick={handleClick}
-      disabled={isOutOfStock}
-      aria-label={isOutOfStock ? `${displayName} — agotado` : `Agregar ${displayName} al carrito — cantidad sugerida: ${suggestedQty}`}
+      aria-label={`Agregar ${displayName} al carrito — cantidad sugerida: ${suggestedQty}${isOutOfStock ? " (agotado, repón stock)" : ""}`}
       className={cn(
         "relative border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 transition-all bg-[var(--surface-raised)]",
         "text-left w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-        isOutOfStock
-          ? "opacity-60 cursor-not-allowed"
-          : "cursor-pointer hover:shadow-sm hover:border-primary/50 hover:scale-[1.02]",
+        "cursor-pointer hover:shadow-sm hover:border-primary/50 hover:scale-[1.02]",
       )}
     >
-      {/* Badge AGOTADO / REPONER — bg neutro, color solo en dot + texto */}
-      {(product.stock ?? 0) === 0 ? (
-        <span
+      {/* Badge AGOTADO / REPONER — bg neutro, color solo en dot + texto.
+          AGOTADO solo si el stock está RASTREADO en 0 (no si es null/sin control). */}
+      {isOutOfStock ? (
+        <span role="img"
           aria-label="Producto agotado"
           className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-error-500)]/30 text-[var(--data-error-500)] z-10"
         >
@@ -57,7 +60,7 @@ export default memo(function PuntoCompraProductCard({
           AGOTADO
         </span>
       ) : needsReorder(product) ? (
-        <span
+        <span role="img"
           aria-label="Necesita reposición"
           className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] z-10"
         >
@@ -68,7 +71,7 @@ export default memo(function PuntoCompraProductCard({
 
       {/* Badge en carrito */}
       {inCart > 0 && (
-        <span
+        <span role="img"
           aria-label={`${inCart} en canasta`}
           className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold z-10"
         >
@@ -79,7 +82,7 @@ export default memo(function PuntoCompraProductCard({
       {/* Imagen o inicial */}
       <div className="flex justify-center mb-2 mt-1">
         {product.image ? (
-          <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-gray-50 dark:bg-white/5">
+          <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-[var(--surface-sunken)] ">
             <Image
               src={product.image}
               alt={displayName}
@@ -95,7 +98,7 @@ export default memo(function PuntoCompraProductCard({
         ) : (
           <div
             aria-hidden="true"
-            className="h-20 w-20 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary font-bold text-xl"
+            className="h-20 w-20 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-xl"
           >
             {displayName.charAt(0).toUpperCase()}
           </div>
@@ -111,11 +114,14 @@ export default memo(function PuntoCompraProductCard({
       <div className="flex items-baseline justify-between gap-1 mb-0.5">
         <span
           className="text-sm font-bold text-[var(--text-primary)]"
-          title={`Costo: S/${displayPrice.toFixed(2)} | Venta: S/${Number(product.price).toFixed(2)} | Margen: ${product.costPrice ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : "—"}%`}
+          title={`Costo: ${formatCurrency(displayPrice)} | Venta: ${formatCurrency(Number(product.price))} | Margen: ${product.costPrice ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : "—"}%`}
         >
-          S/{displayPrice.toFixed(2)}
+          {formatCurrency(displayPrice)}
         </span>
-        <span className="text-xs text-[var(--text-tertiary)]">
+        <span
+          className="text-xs text-[var(--text-tertiary)]"
+          title={product.stock == null ? "Este producto no lleva control de inventario" : `${product.stock} ${product.unit ?? ""} en stock`}
+        >
           Stock: {product.stock ?? "—"}
         </span>
       </div>

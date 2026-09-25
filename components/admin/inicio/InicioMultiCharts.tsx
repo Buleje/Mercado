@@ -6,6 +6,7 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
 import { DashboardSection } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { formatNumber } from "@/lib/format";
 
 type Product = {
   id: number | string;
@@ -61,8 +62,6 @@ const CAT_LABEL: Record<string, string> = {
 // Brandon mayo 2026: labels del eje X con día + fecha corta para que el
 // dueño de la bodega entienda inmediatamente "Lunes 10/05" sin tener que
 // adivinar qué semana es. Variantes según el ancho del rango.
-const DAY_FULL = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-const DAY_SHORT = ["Do", "L", "Ma", "Mi", "Ju", "Vi", "Sa"];
 const MONTH_LABELS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 const MS_DAY = 24 * 60 * 60 * 1000;
@@ -499,7 +498,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
   }, [products, prodChart]);
 
   const fmtPEN = (v: number) =>
-    `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+    `S/ ${formatNumber(v, { max: 0 })}`;
 
   // Formateador adaptable del eje Y para soles. Brandon mayo 2026: si el
   // valor < 1000, muestra "S/146" (no "S/0k"). Si >= 1000, "S/1.5k".
@@ -541,7 +540,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             lines={[{ key: "neto", label: "Saldo neto", color: "accent", yAxis: "right" }]}
             leftAxisFormat={fmtPENAxis}
             rightAxisFormat={fmtPENAxis}
-            tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
+            tooltipFormat={(v) => `S/ ${formatNumber(Number(v))}`}
             height={300}
             minDataPoints={2}
             showValues
@@ -555,7 +554,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       render: () => (
         <DashboardSection
           chartId="resumen.inventario"
-          hasData={invChart.length > 0 && invChart.some((r) => r.stock > 0)}
+          hasData={invChart.some((r) => r.stock > 0)}
           kicker="Inventario · top 7 categorías"
           title="Stock por categoría"
           kpis={[
@@ -577,8 +576,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("valor")
-                ? `S/ ${Number(v).toLocaleString("es-PE")}`
-                : Number(v).toLocaleString("es-PE")
+                ? `S/ ${formatNumber(Number(v))}`
+                : formatNumber(Number(v))
             }
             height={300}
             minDataPoints={1}
@@ -593,7 +592,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       render: () => (
         <DashboardSection
           chartId="resumen.compras"
-          hasData={compChart.length > 0 && compChart.some((r) => r.monto > 0)}
+          hasData={compChart.some((r) => r.monto > 0)}
           kicker={`Compras · top 7 proveedores · ${rangeLabel}`}
           title="Compras por proveedor"
           kpis={[
@@ -615,8 +614,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             rightAxisFormat={(v) => v.toString()}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("órdenes")
-                ? Number(v).toLocaleString("es-PE")
-                : `S/ ${Number(v).toLocaleString("es-PE")}`
+                ? formatNumber(Number(v))
+                : `S/ ${formatNumber(Number(v))}`
             }
             height={300}
             minDataPoints={1}
@@ -635,7 +634,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
           kicker={`Clientes · ${rangeLabel}`}
           title="Clientes nuevos vs recurrentes"
           kpis={[
-            { label: "Total clientes", value: cliKpis.total.toLocaleString("es-PE"), tone: "primary" },
+            { label: "Total clientes", value: formatNumber(cliKpis.total), tone: "primary" },
             { label: `Nuevos ${kpiSuffix}`, value: String(cliKpis.nuevosMes), tone: "success" },
             { label: "Activos", value: String(cliKpis.activos), tone: "neutral" },
             { label: "Ticket prom.", value: fmtPEN(cliKpis.ticketProm), tone: "primary" },
@@ -653,8 +652,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("ticket")
-                ? `S/ ${Number(v).toLocaleString("es-PE")}`
-                : Number(v).toLocaleString("es-PE")
+                ? `S/ ${formatNumber(Number(v))}`
+                : formatNumber(Number(v))
             }
             height={300}
             minDataPoints={2}
@@ -668,7 +667,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       render: () => (
         <DashboardSection
           chartId="resumen.productos"
-          hasData={prodChart.length > 0 && prodChart.some((r) => r.unidades > 0)}
+          hasData={prodChart.some((r) => r.unidades > 0)}
           kicker={`Productos · top 7 · ${rangeLabel}`}
           title="Productos más vendidos"
           kpis={[
@@ -691,7 +690,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
                   ? "success"
                   : "warning",
               hint: prodKpis.margenIncompleto
-                ? "Falta costo en algunos productos. Cargá costPrice para ver el margen real."
+                ? "Falta costo en algunos productos. Carga costPrice para ver el margen real."
                 : undefined,
             },
           ]}
@@ -708,8 +707,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("unidades")
-                ? `${Number(v).toLocaleString("es-PE")} u`
-                : `S/ ${Number(v).toLocaleString("es-PE")}`
+                ? `${formatNumber(Number(v))} u`
+                : `S/ ${formatNumber(Number(v))}`
             }
             height={300}
             minDataPoints={1}

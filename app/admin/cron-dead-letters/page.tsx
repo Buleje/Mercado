@@ -16,6 +16,7 @@ import {
 import AdminTabShell from "@/app/admin/_components/_shared/AdminTabShell";
 import AdminEmptyState from "@/app/admin/_components/_shared/AdminEmptyState";
 import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
+import { DataTable, CardTitle } from "@buleje/design-system";
 
 interface DeadLetter {
   id: string;
@@ -149,6 +150,7 @@ export default function CronDeadLettersPage() {
               <select
                 value={filterJob}
                 onChange={(e) => setFilterJob(e.target.value)}
+                aria-label="Filtrar por job"
                 className={ADMIN_TOKENS.input + " w-auto"}
               >
                 <option value="">Todos los jobs</option>
@@ -199,10 +201,10 @@ export default function CronDeadLettersPage() {
           <section className={ADMIN_TOKENS.card}>
             <header className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)]">
               <Activity className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-              <h3 className={ADMIN_TOKENS.headingH3}>Salud de Crons (24h)</h3>
+              <CardTitle className={ADMIN_TOKENS.headingH3}>Salud de Crons (24h)</CardTitle>
             </header>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <DataTable className="w-full text-left text-sm">
                 <thead className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 text-xs font-semibold uppercase text-[var(--text-tertiary)]">
                   <tr>
                     <th className="px-4 py-3">Job</th>
@@ -239,7 +241,7 @@ export default function CronDeadLettersPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           </section>
         )}
@@ -248,7 +250,7 @@ export default function CronDeadLettersPage() {
           <section>
             <header className="flex items-center gap-2 mb-3">
               <AlertTriangle className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-              <h3 className={ADMIN_TOKENS.headingH3}>Resumen por Job</h3>
+              <CardTitle className={ADMIN_TOKENS.headingH3}>Resumen por Job</CardTitle>
             </header>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {summary.map((s) => (
@@ -289,7 +291,7 @@ export default function CronDeadLettersPage() {
         <section>
           <header className="flex items-center gap-2 mb-3">
             <Clock className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-            <h3 className={ADMIN_TOKENS.headingH3}>Entradas ({entries.length})</h3>
+            <CardTitle className={ADMIN_TOKENS.headingH3}>Entradas ({entries.length})</CardTitle>
           </header>
 
           {loading ? (
@@ -305,7 +307,7 @@ export default function CronDeadLettersPage() {
           ) : (
             <div className={`overflow-hidden ${ADMIN_TOKENS.card}`}>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <DataTable className="w-full text-left text-sm">
                   <thead className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 text-xs font-semibold uppercase text-[var(--text-tertiary)]">
                     <tr>
                       <th className="px-4 py-3">Job</th>
@@ -334,7 +336,7 @@ export default function CronDeadLettersPage() {
                           <button
                             onClick={() => clearById(entry.id)}
                             disabled={deletingId === entry.id}
-                            className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] disabled:opacity-50 transition-colors"
+                            className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] disabled:opacity-50 transition-colors"
                             title="Eliminar entrada"
                             aria-label="Eliminar entrada"
                           >
@@ -344,7 +346,7 @@ export default function CronDeadLettersPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             </div>
           )}

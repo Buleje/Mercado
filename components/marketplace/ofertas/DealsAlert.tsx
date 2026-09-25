@@ -83,7 +83,7 @@ export default function DealsAlert() {
               <div
                 role="status"
                 aria-live="polite"
-                className="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-5 py-6"
+                className="rounded-xl border border-[var(--accent)]/30 bg-primary/10 px-5 py-6"
               >
                 <div className="flex items-start gap-3">
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--surface-canvas)] shrink-0">

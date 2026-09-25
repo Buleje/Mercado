@@ -1,8 +1,11 @@
 "use client";
 
+import { useId, useRef } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import { X, Package } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 const LOT_OPTIONS = [
   { label: "Unidad", units: 1, icon: "1" },
@@ -20,25 +23,29 @@ interface Props {
 }
 
 export default function PuntoCompraLotSelector({ product, open, onClose, onSelect }: Props) {
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose, activo: open });
+
   if (!open) return null;
 
   const unitPrice = product.costPrice ?? 0;
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-xs overflow-hidden">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-xs overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div className="flex items-center gap-2 min-w-0">
             <Package className="h-4 w-4 text-primary shrink-0" />
             <div className="min-w-0">
-              <CardTitle className="text-xs font-bold text-[var(--text-primary)] truncate">
+              <CardTitle id={titleId} className="text-xs font-bold text-[var(--text-primary)] truncate">
                 Seleccionar lote
               </CardTitle>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{product.name}</p>
             </div>
           </div>
-          <button
+          <button aria-label="Cerrar"
             type="button"
             onClick={onClose}
             className="h-6 w-6 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
@@ -50,7 +57,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
         {/* Unit price reference */}
         <div className="px-3 pt-2 pb-1">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            Precio unitario: <span className="font-mono font-medium text-[var(--text-secondary)]">S/{unitPrice.toFixed(2)}</span>
+            Precio unitario: <span className="font-mono font-medium text-[var(--text-secondary)]">{formatCurrency(unitPrice)}</span>
           </p>
         </div>
 
@@ -72,7 +79,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                 )}
               >
                 {/* Badge */}
-                <span className="shrink-0 h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                <span className="shrink-0 h-8 w-8 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center text-xs font-bold">
                   {lot.icon}
                 </span>
 
@@ -89,7 +96,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                 {/* Price */}
                 <div className="text-right shrink-0">
                   <p className="text-xs font-bold font-mono text-primary">
-                    S/{totalPrice.toFixed(2)}
+                    {formatCurrency(totalPrice)}
                   </p>
                   {savingsPct > 0 && (
                     <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">

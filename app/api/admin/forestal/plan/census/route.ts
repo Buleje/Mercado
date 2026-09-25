@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { DAP_MAX_M, mensajeDapFueraDeRango } from "@/lib/forestal/loth-constants";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -23,7 +24,14 @@ const treeSchema = z.object({
   speciesCommon: z.string().trim().min(1).max(120),
   speciesScientific: z.string().trim().max(150).nullable().optional(),
   cites: z.boolean().optional(),
-  dapM: z.coerce.number().positive().max(99).nullable().optional(),
+  dapM: z.coerce
+    .number()
+    .positive()
+    .superRefine((v, ctx) => {
+      if (v > DAP_MAX_M) ctx.addIssue({ code: "custom", message: mensajeDapFueraDeRango(v) });
+    })
+    .nullable()
+    .optional(),
   alturaComercialM: z.coerce.number().positive().max(999).nullable().optional(),
   factorForma: z.coerce.number().positive().max(1).nullable().optional(),
   volumenEstimadoM3: z.coerce.number().nonnegative().max(99999).nullable().optional(),
@@ -62,11 +70,16 @@ export const GET = withApiHandler("forestal-plan-census-get", async (req: NextRe
     }
     const planId = url.searchParams.get("planId");
     if (!planId) return NextResponse.json({ error: "planId_required" }, { status: 400 });
-    const { trees, total } = await ForestPlanDB.listTrees(auth.tenantId, planId, {
+    const limitRaw = Number.parseInt(url.searchParams.get("limit") ?? "", 10);
+    const { trees, total, truncado } = await ForestPlanDB.listTrees(auth.tenantId, planId, {
       estado: url.searchParams.get("estado") ?? undefined,
       search: url.searchParams.get("search") ?? undefined,
+      limit: Number.isFinite(limitRaw) ? limitRaw : undefined,
     });
-    return NextResponse.json({ trees, total });
+    /* `total` y `truncado` viajan SIEMPRE: el Plan Operativo se calcula sobre
+       las filas devueltas, así que la pantalla tiene que poder decir si está
+       calculando sobre el censo entero o sobre una parte. */
+    return NextResponse.json({ trees, total, truncado, devueltos: trees.length });
   } catch (err) {
     logger.error("[plan.census.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

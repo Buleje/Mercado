@@ -1,9 +1,10 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Clock, Play, Square, DollarSign, Loader2, AlertTriangle,
   User, ChevronLeft, ChevronRight, X, ShoppingCart, Download,
@@ -21,6 +22,8 @@ const TurnosChart = dynamic(() => import("./TurnosChart"), {
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
+import { formatCurrency, formatDateNumeric, formatDateShort, formatDateTime, formatTime } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -30,6 +33,7 @@ type Turno = {
   id: string;
   tenantId: string;
   adminUserId: string;
+  cashRegisterId?: string;
   inicioEfectivo: number;
   cierreEfectivo?: number;
   ventasTotal: number;
@@ -42,21 +46,6 @@ type Turno = {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatCurrency(n: number) {
-  return `S/${n.toFixed(2)}`;
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("es-PE", {
-    day: "2-digit", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
-}
 
 function elapsedTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -154,6 +143,17 @@ export default function TurnosModule() {
   const [cierreNotas, setCierreNotas] = useState("");
   const [closing, setClosing] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
+  // FIX 2026-07-08 (reporte ventas-caja bug 6): efectivo ESPERADO real en el
+  // cajón = apertura + ventas en efectivo + ingresos − egresos (movimientos
+  // reales de la caja vinculada). Antes el modal usaba `inicio + ventasTotal`,
+  // que ignora ingresos/egresos manuales y cuenta ventas Yape/tarjeta que no
+  // están en efectivo → generaba "sobrantes/faltantes" fantasma. Se carga al
+  // abrir el modal de cierre; `null` = aún cargando / sin caja (fallback).
+  const [cajaEsperado, setCajaEsperado] = useState<number | null>(null);
+  // Ventas del turno EN VIVO (todos los métodos) desde los movimientos de caja.
+  // Mientras el turno está ABIERTO, `turnoActivo.ventasTotal` vale 0 (solo se
+  // agrega al cerrar) → el modal mostraba "Ventas del turno S/0.00".
+  const [ventasTurnoLive, setVentasTurnoLive] = useState<number | null>(null);
 
   // Conteo por denominación — alternativa al input único. La cajera marca
   // cuántos billetes/monedas tiene de cada tipo y la app calcula el total.
@@ -181,6 +181,7 @@ export default function TurnosModule() {
     metodosPago: { metodo: string; total: number }[];
     topProductos: { nombre: string; cantidad: number }[];
     ventasPorHora?: { hora: string; total: number }[];
+    totalDescuentos: number;
   };
   const [showResumen, setShowResumen] = useState(false);
   const [resumen, setResumen] = useState<TurnoSummary | null>(null);
@@ -263,6 +264,62 @@ export default function TurnosModule() {
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
   }, [showMetaConfig, showResumen, showCierre, showCreateCajero, creatingCajero, showDiffConfirm, resetCierreState]);
+
+  // A11y: los 4 modales de este módulo son overlays a mano sin rol de diálogo
+  // ni trampa de foco. El Escape ya lo maneja el handler de arriba →
+  // cerrarConEscape: false para no duplicarlo.
+  const createCajeroModalRef = useRef<HTMLDivElement>(null);
+  const createCajeroTitleId = useId();
+  const closeCreateCajeroModal = useCallback(() => { if (!creatingCajero) setShowCreateCajero(false); }, [creatingCajero]);
+  useModalAccesible(createCajeroModalRef, { activo: showCreateCajero, cerrarConEscape: false });
+
+  const cierreModalRef = useRef<HTMLDivElement>(null);
+  const cierreTitleId = useId();
+  useModalAccesible(cierreModalRef, { activo: showCierre, cerrarConEscape: false });
+
+  const diffConfirmModalRef = useRef<HTMLDivElement>(null);
+  const diffConfirmTitleId = useId();
+  useModalAccesible(diffConfirmModalRef, { activo: showDiffConfirm, cerrarConEscape: false });
+
+  const resumenModalRef = useRef<HTMLDivElement>(null);
+  const resumenTitleId = useId();
+  useModalAccesible(resumenModalRef, { activo: showResumen, cerrarConEscape: false });
+
+  // FIX 2026-07-08 (reporte ventas-caja bug 6): al abrir el modal de cierre,
+  // cargar el efectivo ESPERADO real desde los movimientos de la caja
+  // vinculada (apertura + ventas efectivo + ingresos − egresos). Así el
+  // "Total esperado" y la diferencia reflejan lo que hay en el cajón, no
+  // `inicio + ventasTotal` (que ignora egresos y mezcla ventas no-efectivo).
+  useEffect(() => {
+    if (!showCierre || !turnoActivo) { setCajaEsperado(null); setVentasTurnoLive(null); return; }
+    let cancelled = false;
+    fetch("/api/cash-registers")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const registers: Array<{
+          id: string; status: string; openingAmount: number;
+          movements?: Array<{ type: string; method: string; amount: number }>;
+        }> = Array.isArray(data) ? data : (data.items ?? []);
+        // La caja del turno; si es un turno legacy sin vínculo, la que esté abierta.
+        const reg = registers.find((r) => r.id === turnoActivo.cashRegisterId)
+          ?? registers.find((r) => r.status === "abierta");
+        if (!reg) return;
+        const movs = reg.movements ?? [];
+        const ventasEfectivo = movs.filter((m) => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + Number(m.amount || 0), 0);
+        const ventasTotales = movs.filter((m) => m.type === "venta").reduce((s, m) => s + Number(m.amount || 0), 0);
+        const ingresos = movs.filter((m) => m.type === "ingreso").reduce((s, m) => s + Number(m.amount || 0), 0);
+        const egresos = movs.filter((m) => m.type === "egreso").reduce((s, m) => s + Number(m.amount || 0), 0);
+        setCajaEsperado(Number(reg.openingAmount || 0) + ventasEfectivo + ingresos - egresos);
+        setVentasTurnoLive(ventasTotales);
+      })
+      .catch(() => {
+        // Red no crítica: si la caja no carga, el modal cae al esperado legacy
+        // (inicio + ventasTotal) vía el `?? fallback` de cada display.
+        if (!cancelled) { setCajaEsperado(null); setVentasTurnoLive(null); }
+      });
+    return () => { cancelled = true; };
+  }, [showCierre, turnoActivo]);
 
   // ── Open turno ─────────────────────────────────────────────────────────────
 
@@ -350,7 +407,8 @@ export default function TurnosModule() {
   const DIFF_ANORMAL_PCT = 0.05;
 
   const evaluarDiferencia = (cierreMonto: number, turno: Turno): { diff: number; anormal: boolean } => {
-    const esperado = turno.inicioEfectivo + turno.ventasTotal;
+    // Esperado real del cajón (movimientos de caja); fallback legacy si aún no cargó.
+    const esperado = cajaEsperado ?? (turno.inicioEfectivo + turno.ventasTotal);
     const diff = cierreMonto - esperado;
     const absDiff = Math.abs(diff);
     const pctDiff = esperado > 0 ? absDiff / esperado : 0;
@@ -404,7 +462,9 @@ export default function TurnosModule() {
 
       // Build summary from turno data + API
       const ventasTotal = Number(cerrado.ventasTotal ?? turnoActivo.ventasTotal ?? 0);
-      const diferencia = Number(cerrado.diferencia ?? (monto - (turnoActivo.inicioEfectivo + ventasTotal)));
+      // Diferencia server-authoritative (basada en movimientos reales de caja);
+      // fallback al esperado real del cajón si el server no la devolvió.
+      const diferencia = Number(cerrado.diferencia ?? (monto - (cajaEsperado ?? (turnoActivo.inicioEfectivo + ventasTotal))));
 
       // T6 (audit ventas-caja 2026-05-07): server-authoritative aggregation.
       // Antes traiamos /api/sales completo y agregabamos en cliente, violando
@@ -414,6 +474,7 @@ export default function TurnosModule() {
       let metodosPago: { metodo: string; total: number }[] = [];
       let topProductos: { nombre: string; cantidad: number }[] = [];
       let cantidadVentas = 0;
+      let totalDescuentos = 0;
 
       try {
         const summaryRes = await fetch(`/api/turnos/${turnoActivo.id}/summary`);
@@ -422,6 +483,7 @@ export default function TurnosModule() {
           cantidadVentas = Number(summary.cantidadVentas ?? 0);
           metodosPago = Array.isArray(summary.metodosPago) ? summary.metodosPago : [];
           topProductos = Array.isArray(summary.topProductos) ? summary.topProductos.slice(0, 3) : [];
+          totalDescuentos = Number(summary.totalDescuentos ?? 0);
         }
       } catch {
         // Sales fetch failed — use basic data
@@ -475,6 +537,7 @@ export default function TurnosModule() {
         metodosPago,
         topProductos,
         ventasPorHora,
+        totalDescuentos,
       });
 
       resetCierreState();
@@ -529,20 +592,20 @@ export default function TurnosModule() {
         <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-xl p-1 w-fit">
           <button
             onClick={() => { setMainTab("turnos"); try { localStorage.setItem("turnos-subtab", "turnos"); } catch {} }}
-            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+            className={cn("px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
           >
             <Clock className="h-3.5 w-3.5" /> Turnos
           </button>
           <button
             onClick={() => { setMainTab("cajeros"); try { localStorage.setItem("turnos-subtab", "cajeros"); } catch {} }}
-            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+            className={cn("px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
           >
             <User className="h-3.5 w-3.5" /> Cajeros
           </button>
         </div>
         {/* Chip de estado inline — antes flotaba solo arriba */}
         {turnoActivo ? (
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] px-2.5 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2.5 py-1 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-success-500)] animate-pulse" aria-hidden />
             Turno abierto
           </span>
@@ -669,7 +732,7 @@ export default function TurnosModule() {
                           </div>
                         </div>
                         {/* Mini performance bar */}
-                        <div className="h-1.5 bg-[var(--surface-sunken)] dark:bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                           <div
                             className={cn("h-full rounded-full transition-all", isTop ? "bg-[var(--data-warning-500)]" : "bg-primary")}
                             style={{ width: `${barWidth}%` }}
@@ -689,58 +752,51 @@ export default function TurnosModule() {
                   <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                   Ranking de Cajeros
                 </CardTitle>
-                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-base">
-                      <thead>
-                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left bg-gray-50/50 dark:bg-surface/30">
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide w-12 text-center">#</th>
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Cajero</th>
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Turnos</th>
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Ventas</th>
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right hidden sm:table-cell">Ventas/hora</th>
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right hidden md:table-cell">Dif. caja</th>
+                <DataTable>
+                  <thead>
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th className="w-12 text-center">#</th>
+                      <th>Cajero</th>
+                      <th className="text-right">Turnos</th>
+                      <th className="text-right">Ventas</th>
+                      <th className="text-right hidden sm:table-cell">Ventas/hora</th>
+                      <th className="text-right hidden md:table-cell">Dif. caja</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cajeroStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map((c, i) => {
+                      const isTop = i === 0 && cajeroStats.length > 1;
+                      return (
+                        <tr key={c.id} className={isTop ? "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning-500)]/10" : undefined}>
+                          <td className="text-center">
+                            {isTop ? (
+                              <Trophy className="h-5 w-5 text-[var(--data-warning-500)] inline-block" strokeWidth={1.75} aria-hidden />
+                            ) : (
+                              <span className="text-base text-[var(--text-tertiary)] font-bold tabular-nums">{i + 1}</span>
+                            )}
+                          </td>
+                          <td className="font-semibold text-[var(--text-primary)]">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                                style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}
+                              >
+                                {c.name.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="truncate max-w-[160px] text-base">{c.name}</span>
+                            </div>
+                          </td>
+                          <td className="text-right text-base text-[var(--text-secondary)] tabular-nums">{c.turnos}</td>
+                          <td className="text-right text-base font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(c.ventasTotal)}</td>
+                          <td className="text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">{formatCurrency(c.ventasPorHora)}/h</td>
+                          <td className={cn("text-right text-base font-bold hidden md:table-cell tabular-nums", Math.abs(c.difCaja) < 0.01 ? "text-[var(--data-success-500)]" : c.difCaja > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
+                            {Math.abs(c.difCaja) < 0.01 ? formatCurrency(0) : (c.difCaja > 0 ? "+" : "") + formatCurrency(c.difCaja)}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {cajeroStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map((c, i) => {
-                          const isTop = i === 0 && cajeroStats.length > 1;
-                          return (
-                            <tr key={c.id} className={cn(
-                              "border-b border-gray-50 dark:border-white/5 transition-colors hover:bg-gray-50/50",
-                              isTop ? "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning-500)]/10" : ""
-                            )}>
-                              <td className="px-4 py-3.5 text-center">
-                                {isTop ? (
-                                  <Trophy className="h-5 w-5 text-[var(--data-warning-500)] inline-block" strokeWidth={1.75} aria-hidden />
-                                ) : (
-                                  <span className="text-base text-[var(--text-tertiary)] font-bold tabular-nums">{i + 1}</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3.5 font-semibold text-[var(--text-primary)]">
-                                <div className="flex items-center gap-3">
-                                  <div
-                                    className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                                    style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}
-                                  >
-                                    {c.name.charAt(0).toUpperCase()}
-                                  </div>
-                                  <span className="truncate max-w-[160px] text-base">{c.name}</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3.5 text-right text-base text-[var(--text-secondary)] tabular-nums">{c.turnos}</td>
-                              <td className="px-4 py-3.5 text-right text-base font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(c.ventasTotal)}</td>
-                              <td className="px-4 py-3.5 text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">{formatCurrency(c.ventasPorHora)}/h</td>
-                              <td className={cn("px-4 py-3.5 text-right text-base font-bold hidden md:table-cell tabular-nums", Math.abs(c.difCaja) < 0.01 ? "text-[var(--data-success-500)]" : c.difCaja > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
-                                {Math.abs(c.difCaja) < 0.01 ? formatCurrency(0) : (c.difCaja > 0 ? "+" : "") + formatCurrency(c.difCaja)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                      );
+                    })}
+                  </tbody>
+                </DataTable>
               </div>
             )}
 
@@ -830,9 +886,9 @@ export default function TurnosModule() {
 
       {/* ── Active turno or open form ─────────────────────────────────────────── */}
       {turnoActivo ? (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-2 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-2xl overflow-hidden">
+        <div className="bg-primary/10 dark:bg-primary/15 border-2 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-2xl overflow-hidden">
           {/* Active turno header — prominente */}
-          <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-5 sm:px-6 py-5">
+          <div className="bg-primary/10 dark:bg-primary/15 border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-5 sm:px-6 py-5">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-[var(--data-success-500)] flex items-center justify-center animate-pulse shrink-0">
                 <Play className="h-6 w-6 text-white" strokeWidth={2.5} />
@@ -848,7 +904,7 @@ export default function TurnosModule() {
               </div>
               <button
                 onClick={() => { setShowCierre(true); setCloseError(null); }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 transition-colors shrink-0"
+                className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 transition-colors shrink-0"
               >
                 <Square className="h-4 w-4" />
                 <span className="hidden sm:inline">Cerrar turno</span>
@@ -899,7 +955,7 @@ export default function TurnosModule() {
         <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-6 sm:p-7">
             <div className="flex items-start gap-4 mb-6">
-              <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <Clock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
@@ -908,32 +964,35 @@ export default function TurnosModule() {
               </div>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cajero asignado</label>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedCajero}
-                    onChange={e => setSelectedCajero(e.target.value)}
-                    className="flex-1 h-11 px-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  >
-                    <option value="">Yo mismo (usuario actual)</option>
-                    {cajeros.map(c => (
-                      <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => { setCreateCajeroError(null); setShowCreateCajero(true); }}
-                    title="Crear nueva cajera (sin salir de turnos)"
-                    className="h-11 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-sm font-semibold whitespace-nowrap transition-colors"
-                  >
-                    + Nueva
-                  </button>
-                </div>
-                {cajerosLoading && <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cargando cajeros...</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Efectivo inicial en caja</label>
+              <Field label="Cajero asignado" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                {(id) => (
+                  <>
+                    <div className="flex gap-2">
+                      <select
+                        id={id}
+                        value={selectedCajero}
+                        onChange={e => setSelectedCajero(e.target.value)}
+                        className="flex-1 h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      >
+                        <option value="">Yo mismo (usuario actual)</option>
+                        {cajeros.map(c => (
+                          <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => { setCreateCajeroError(null); setShowCreateCajero(true); }}
+                        title="Crear nueva cajera (sin salir de turnos)"
+                        className="h-11 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold whitespace-nowrap transition-colors"
+                      >
+                        + Nueva
+                      </button>
+                    </div>
+                    {cajerosLoading && <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cargando cajeros...</p>}
+                  </>
+                )}
+              </Field>
+              <Field label="Efectivo inicial en caja" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                 <input
                   type="number"
                   step="0.01"
@@ -941,10 +1000,10 @@ export default function TurnosModule() {
                   value={efectivoInicial}
                   onChange={e => setEfectivoInicial(e.target.value)}
                   placeholder="S/ 0.00"
-                  className="w-full h-11 px-4 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-lg font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
+                  className="w-full h-11 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-lg font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
                 />
                 <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Dinero que abre en la caja al inicio del turno.</p>
-              </div>
+              </Field>
             </div>
             <div className="mt-5">
               <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Montos rápidos</p>
@@ -957,10 +1016,10 @@ export default function TurnosModule() {
                       type="button"
                       onClick={() => setEfectivoInicial(String(amount))}
                       className={cn(
-                        "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
+                        "px-4 min-h-10 rounded-xl text-sm font-semibold border transition-colors",
                         active
                           ? "bg-primary text-white border-primary"
-                          : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
+                          : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
                       )}
                     >
                       S/ {amount}
@@ -973,7 +1032,7 @@ export default function TurnosModule() {
               <button
                 onClick={handleAbrir}
                 disabled={opening}
-                className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-8 min-h-11 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
               >
                 {opening ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Play className="h-5 w-5" strokeWidth={2} aria-hidden />}
                 Abrir turno
@@ -1017,8 +1076,10 @@ export default function TurnosModule() {
                       min="0"
                       value={metaInput}
                       onChange={e => setMetaInput(e.target.value)}
+                      // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir la meta del turno de inmediato
                       autoFocus
-                      className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-white/5 text-lg font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      aria-label="Meta del turno en soles"
+                      className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-lg font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -1029,14 +1090,14 @@ export default function TurnosModule() {
                         try { localStorage.setItem("turno-meta-ventas", String(val)); } catch {}
                         setShowMetaConfig(false);
                       }}
-                      className="flex-1 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                      className="flex-1 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
                     >
                       Guardar
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowMetaConfig(false)}
-                      className="px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
+                      className="px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
                     >
                       Cancelar
                     </button>
@@ -1128,8 +1189,8 @@ export default function TurnosModule() {
                     {DIAS_SEMANA.map((dia, idx) => {
                       const turnos = weekMap.get(idx) || [];
                       return (
-                        <div key={dia} className={cn("border-r border-[var(--rule-soft)] dark:border-white/5 last:border-r-0", idx < 5 ? "" : "bg-gray-50/50 dark:bg-white/[0.02]")}>
-                          <div className="px-2 py-2.5 border-b border-[var(--rule-soft)] dark:border-white/5 text-center">
+                        <div key={dia} className={cn("border-r border-[var(--rule-soft)] last:border-r-0", idx < 5 ? "" : "bg-gray-50/50 dark:bg-white/[0.02]")}>
+                          <div className="px-2 py-2.5 border-b border-[var(--rule-soft)] text-center">
                             <p className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">{dia}</p>
                           </div>
                           <div className="p-2 min-h-[110px] space-y-1.5">
@@ -1165,51 +1226,46 @@ export default function TurnosModule() {
                 <BarChart3 className="h-4 w-4 text-[var(--data-warning-500)]" />
                 Productividad por cajero
               </CardTitle>
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
-                {cajerosStats.length <= 1 && cajerosStats.length === 1 ? (
-                  <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">Solo hay 1 cajero registrado</div>
-                ) : cajerosStats.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">Sin datos de productividad</div>
-                ) : (
-                  <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <table className="w-full min-w-[550px] sm:min-w-0 text-sm">
-                      <thead>
-                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Cajero</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Turnos</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Ventas total</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden sm:table-cell">Ventas/hora</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden sm:table-cell">Ticket prom</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden md:table-cell">Dif. caja</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cajerosStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map(c => (
-                          <tr key={c.name} className={cn(
-                            "border-b border-gray-50 dark:border-white/5 transition-colors",
-                            c.name === bestCajero ? "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]" : ""
-                          )}>
-                            <td className="px-4 py-3 font-medium text-[var(--text-primary)] flex items-center gap-2">
-                              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>
-                                {c.name.charAt(0).toUpperCase()}
-                              </div>
-                              <span className="truncate max-w-[100px]">{c.name}</span>
-                              {c.name === bestCajero && <span className="text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold">TOP</span>}
-                            </td>
-                            <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{c.turnos}</td>
-                            <td className="px-4 py-3 text-right font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(c.ventasTotal)}</td>
-                            <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ventasPorHora)}/h</td>
-                            <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ticketPromedio)}</td>
-                            <td className={cn("px-4 py-3 text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
-                              {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              {cajerosStats.length <= 1 && cajerosStats.length === 1 ? (
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center text-sm text-[var(--text-tertiary)]">Solo hay 1 cajero registrado</div>
+              ) : cajerosStats.length === 0 ? (
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center text-sm text-[var(--text-tertiary)]">Sin datos de productividad</div>
+              ) : (
+                <div className="-mx-4 sm:mx-0">
+                <DataTable className="min-w-[550px] sm:min-w-0">
+                  <thead>
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th>Cajero</th>
+                      <th className="text-right">Turnos</th>
+                      <th className="text-right">Ventas total</th>
+                      <th className="text-right hidden sm:table-cell">Ventas/hora</th>
+                      <th className="text-right hidden sm:table-cell">Ticket prom</th>
+                      <th className="text-right hidden md:table-cell">Dif. caja</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cajerosStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map(c => (
+                      <tr key={c.name} className={c.name === bestCajero ? "bg-primary/10 dark:bg-primary/15" : undefined}>
+                        <td className="font-medium text-[var(--text-primary)] flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>
+                            {c.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="truncate max-w-[100px]">{c.name}</span>
+                          {c.name === bestCajero && <span className="text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold">TOP</span>}
+                        </td>
+                        <td className="text-right text-[var(--text-secondary)]">{c.turnos}</td>
+                        <td className="text-right font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(c.ventasTotal)}</td>
+                        <td className="text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ventasPorHora)}/h</td>
+                        <td className="text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ticketPromedio)}</td>
+                        <td className={cn("text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
+                          {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </DataTable>
+                </div>
+              )}
             </div>
             ) : null}
           </>
@@ -1223,8 +1279,8 @@ export default function TurnosModule() {
             <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Historial de turnos</CardTitle>
             {historial.length > 0 && (
               <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5">
-                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Tabla</button>
-                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Timeline</button>
+                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Tabla</button>
+                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Timeline</button>
               </div>
             )}
           </div>
@@ -1236,11 +1292,11 @@ export default function TurnosModule() {
                   const diferencia = t.cierreEfectivo != null ? (t.cierreEfectivo - t.inicioEfectivo - t.ventasTotal) : 0;
                   return {
                     Cajero: t.adminUserId,
-                    Fecha: new Date(t.abrioEn).toLocaleDateString("es-PE"),
-                    "Hora inicio": new Date(t.abrioEn).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }),
-                    "Hora fin": t.cerroEn ? new Date(t.cerroEn).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : "—",
+                    Fecha: formatDateNumeric(t.abrioEn),
+                    "Hora inicio": formatTime(t.abrioEn),
+                    "Hora fin": t.cerroEn ? formatTime(t.cerroEn) : "—",
                     "Duracion (hrs)": duracion,
-                    "Ventas total (S/)": Number(t.ventasTotal.toFixed(2)),
+                    "Ventas total (S/)": Number(Number(t.ventasTotal).toFixed(2)),
                     "Diferencia caja (S/)": Number(diferencia.toFixed(2)),
                   };
                 });
@@ -1249,7 +1305,7 @@ export default function TurnosModule() {
                 const anio = now.getFullYear();
                 exportToExcel(rows, `turnos-${mes}-${anio}`, "Turnos");
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               Excel
@@ -1276,8 +1332,8 @@ export default function TurnosModule() {
                 return (
                   <div key={t.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-[var(--rule-base)]" : cuadro ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} />
-                      {idx < Math.min(historial.length, 10) - 1 && <div className="w-0.5 flex-1 bg-[var(--rule-soft)] dark:bg-gray-700 my-1" />}
+                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-[var(--rule-base)]" : cuadro ? "bg-primary/10" : "bg-[var(--data-warning-500)]")} />
+                      {idx < Math.min(historial.length, 10) - 1 && <div className="w-0.5 flex-1 bg-[var(--rule-soft)] my-1" />}
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
                       <p className="text-sm font-bold text-[var(--text-primary)] truncate">
@@ -1285,7 +1341,7 @@ export default function TurnosModule() {
                       </p>
                       <p className="text-xs text-[var(--text-tertiary)]">
                         {cuadro === null ? "" : cuadro ? "Cuadrado" : `Dif: ${dif! >= 0 ? "+" : ""}${formatCurrency(dif!)}`}
-                        {" · "}{new Date(t.abrioEn).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                        {" · "}{formatDateShort(t.abrioEn)}
                       </p>
                     </div>
                   </div>
@@ -1294,53 +1350,53 @@ export default function TurnosModule() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="w-full min-w-[650px] sm:min-w-0 text-base">
+              <div className="-mx-4 sm:mx-0">
+                <DataTable className="min-w-[650px] sm:min-w-0 text-base">
                   <thead>
-                    <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left bg-gray-50/50 dark:bg-surface/30">
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Operador</th>
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Apertura</th>
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide hidden sm:table-cell">Cierre</th>
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Ef. inicial</th>
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Ventas</th>
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right hidden sm:table-cell">Ef. final</th>
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th>Operador</th>
+                      <th>Apertura</th>
+                      <th className="hidden sm:table-cell">Cierre</th>
+                      <th className="text-right">Ef. inicial</th>
+                      <th className="text-right">Ventas</th>
+                      <th className="text-right hidden sm:table-cell">Ef. final</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginated.map(t => (
-                      <tr key={t.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)] truncate max-w-[160px]">{cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo"}</td>
-                        <td className="px-4 py-4 text-sm text-[var(--text-secondary)] tabular-nums">{formatDateTime(t.abrioEn)}</td>
-                        <td className="px-4 py-4 text-sm text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
+                      <tr key={t.id}>
+                        <td className="text-base font-semibold text-[var(--text-primary)] truncate max-w-[160px]">{cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo"}</td>
+                        <td className="text-sm text-[var(--text-secondary)] tabular-nums">{formatDateTime(t.abrioEn)}</td>
+                        <td className="text-sm text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                           {t.cerroEn ? formatDateTime(t.cerroEn) : "—"}
                         </td>
-                        <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">{formatCurrency(t.inicioEfectivo)}</td>
-                        <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(t.ventasTotal)}</td>
-                        <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
+                        <td className="text-right text-base text-[var(--text-secondary)] tabular-nums">{formatCurrency(t.inicioEfectivo)}</td>
+                        <td className="text-right text-base font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(t.ventasTotal)}</td>
+                        <td className="text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                           {t.cierreEfectivo != null ? formatCurrency(t.cierreEfectivo) : "—"}
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-white/5">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] ">
                   <p className="text-xs text-[var(--text-tertiary)]">
                     {historial.length} turno{historial.length !== 1 ? "s" : ""} — Pag. {page}/{totalPages}
                   </p>
                   <div className="flex gap-1">
-                    <button
+                    <button aria-label="Anterior"
                       disabled={page <= 1}
                       onClick={() => setPage(p => p - 1)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
+                      className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
-                    <button
+                    <button aria-label="Siguiente"
                       disabled={page >= totalPages}
                       onClick={() => setPage(p => p + 1)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
+                      className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -1364,10 +1420,15 @@ export default function TurnosModule() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             className="modal-backdrop p-4"
-            onClick={e => e.target === e.currentTarget && !creatingCajero && setShowCreateCajero(false)}
+            onClick={e => e.target === e.currentTarget && closeCreateCajeroModal()}
           >
             <m.div
               key="create-cajero-modal"
+              ref={createCajeroModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={createCajeroTitleId}
+              tabIndex={-1}
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
@@ -1380,55 +1441,53 @@ export default function TurnosModule() {
                     <User className="h-5 w-5 text-primary" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-bold">Nueva cajera</CardTitle>
+                    <CardTitle id={createCajeroTitleId} className="text-lg font-bold">Nueva cajera</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)]">Se crea con rol Cajero y queda disponible al instante</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => !creatingCajero && setShowCreateCajero(false)}
+                  onClick={closeCreateCajeroModal}
                   aria-label="Cerrar"
-                  className="p-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 rounded-lg transition-colors"
+                  className="p-2 hover:bg-[var(--surface-sunken)] rounded-xl transition-colors"
                 >
                   <X className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
 
               <div className="px-6 py-5 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Nombre completo</label>
+                <Field label="Nombre completo" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <input
                     type="text"
                     value={newCajeroName}
                     onChange={e => { setNewCajeroName(e.target.value); if (createCajeroError) setCreateCajeroError(null); }}
                     placeholder="Ej. María Quispe"
+                    // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir el nombre del cajero de inmediato
                     autoFocus
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-12 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Usuario (para iniciar sesión)</label>
+                </Field>
+                <Field label="Usuario (para iniciar sesión)" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <input
                     type="text"
                     value={newCajeroUsername}
                     onChange={e => { setNewCajeroUsername(e.target.value.toLowerCase()); if (createCajeroError) setCreateCajeroError(null); }}
                     placeholder="maria.cajera"
                     autoComplete="off"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-12 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Solo letras, números, puntos y guión bajo · 3-32 caracteres</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Contraseña temporal</label>
+                </Field>
+                <Field label="Contraseña temporal" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <input
                     type="text"
                     value={newCajeroPassword}
                     onChange={e => { setNewCajeroPassword(e.target.value); if (createCajeroError) setCreateCajeroError(null); }}
                     placeholder="Mínimo 6 caracteres"
                     autoComplete="new-password"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono transition-all"
+                    className="w-full h-12 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono transition-all"
                   />
                   <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Compártela con la cajera. Ella podrá cambiarla luego en su perfil.</p>
-                </div>
+                </Field>
 
                 {createCajeroError && (
                   <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
@@ -1439,16 +1498,16 @@ export default function TurnosModule() {
 
               <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex gap-3">
                 <button
-                  onClick={() => !creatingCajero && setShowCreateCajero(false)}
+                  onClick={closeCreateCajeroModal}
                   disabled={creatingCajero}
-                  className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+                  className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] disabled:opacity-50 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleCreateCajero}
                   disabled={creatingCajero}
-                  className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
+                  className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
                 >
                   {creatingCajero ? <Loader2 className="h-5 w-5 animate-spin" /> : <User className="h-5 w-5" />}
                   Crear y seleccionar
@@ -1472,6 +1531,11 @@ export default function TurnosModule() {
             onClick={e => { if (e.target === e.currentTarget) resetCierreState(); }}
           >
             <m.div
+              ref={cierreModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={cierreTitleId}
+              tabIndex={-1}
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
@@ -1485,31 +1549,31 @@ export default function TurnosModule() {
                     <Square className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-bold">Cerrar turno</CardTitle>
+                    <CardTitle id={cierreTitleId} className="text-lg font-bold">Cerrar turno</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y confirma el cierre</p>
                   </div>
                 </div>
-                <button onClick={resetCierreState} aria-label="Cerrar" className="p-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 rounded-lg transition-colors">
+                <button onClick={resetCierreState} aria-label="Cerrar" className="p-2 hover:bg-[var(--surface-sunken)] rounded-xl transition-colors">
                   <X className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
                 {/* Resumen — card destacado */}
-                <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-5 space-y-2.5">
+                <div className="bg-[var(--surface-alt)] rounded-xl p-5 space-y-2.5">
                   <div className="flex justify-between items-center text-base">
                     <span className="text-[var(--text-secondary)]">Efectivo inicial</span>
                     <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(turnoActivo.inicioEfectivo)}</span>
                   </div>
                   <div className="flex justify-between items-center text-base">
                     <span className="text-[var(--text-secondary)]">Ventas del turno</span>
-                    <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">{formatCurrency(turnoActivo.ventasTotal)}</span>
+                    <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">{formatCurrency(ventasTurnoLive ?? turnoActivo.ventasTotal)}</span>
                   </div>
-                  <div className="flex justify-between items-center border-t border-[var(--rule-base)] dark:border-white/10 pt-2.5">
-                    <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Total esperado</span>
+                  <div className="flex justify-between items-center border-t border-[var(--rule-base)] pt-2.5">
+                    <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Efectivo esperado en caja</span>
                     <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
-                      {formatCurrency(turnoActivo.inicioEfectivo + turnoActivo.ventasTotal)}
+                      {formatCurrency(cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal))}
                     </span>
                   </div>
                 </div>
@@ -1517,13 +1581,13 @@ export default function TurnosModule() {
                 {/* Conteo efectivo final — denominación (default) o manual */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-semibold text-[var(--text-secondary)]">Conteo de efectivo final</label>
-                    <div className="inline-flex rounded-lg bg-[var(--surface-sunken)] dark:bg-white/5 p-0.5 text-xs font-semibold">
+                    <span className="text-sm font-semibold text-[var(--text-secondary)]">Conteo de efectivo final</span>
+                    <div className="inline-flex rounded-lg bg-[var(--surface-sunken)] p-0.5 text-xs font-semibold">
                       <button
                         type="button"
                         onClick={() => setConteoMode("denominacion")}
                         className={cn(
-                          "px-2.5 py-1 rounded-md transition-colors",
+                          "px-2.5 py-1 rounded-lg transition-colors",
                           conteoMode === "denominacion"
                             ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                             : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
@@ -1535,7 +1599,7 @@ export default function TurnosModule() {
                         type="button"
                         onClick={() => setConteoMode("manual")}
                         className={cn(
-                          "px-2.5 py-1 rounded-md transition-colors",
+                          "px-2.5 py-1 rounded-lg transition-colors",
                           conteoMode === "manual"
                             ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                             : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
@@ -1547,18 +1611,18 @@ export default function TurnosModule() {
                   </div>
 
                   {conteoMode === "denominacion" ? (
-                    <div className="rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-alt)]/40 dark:bg-white/[0.03] p-3">
+                    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)]/40 dark:bg-white/[0.03] p-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5">
                         {DENOMINACIONES_PEN.map(d => {
                           const key = String(d.valor);
                           const count = denomCounts[key] || 0;
                           const subtotal = d.valor * count;
                           return (
-                            <div key={key} className="flex items-center gap-2 py-1.5 px-1 border-b border-[var(--rule-soft)] dark:border-white/5 last:border-0">
+                            <div key={key} className="flex items-center gap-2 py-1.5 px-1 border-b border-[var(--rule-soft)] last:border-0">
                               <span className={cn(
                                 "inline-flex items-center justify-center text-xs font-bold rounded-md px-2 py-0.5 w-16 shrink-0",
                                 d.tipo === "billete"
-                                  ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                  ? "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                   : "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300"
                               )}>
                                 {d.label}
@@ -1574,7 +1638,7 @@ export default function TurnosModule() {
                                   });
                                 }}
                                 disabled={count === 0}
-                                className="h-7 w-7 rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-30"
+                                className="h-7 w-7 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-30"
                                 aria-label={`Quitar ${d.label}`}
                               >
                                 −
@@ -1595,7 +1659,7 @@ export default function TurnosModule() {
                                   });
                                 }}
                                 placeholder="0"
-                                className="w-12 h-7 px-1 rounded-md border border-[var(--rule-base)] bg-white dark:bg-white/5 text-sm font-bold text-center tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                className="w-12 h-7 px-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-center tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                               />
                               <button
                                 type="button"
@@ -1607,7 +1671,7 @@ export default function TurnosModule() {
                                     return next;
                                   });
                                 }}
-                                className="h-7 w-7 rounded-md border border-primary/40 bg-primary/10 text-base font-bold text-primary hover:bg-primary/20"
+                                className="h-7 w-7 rounded-lg border border-primary/40 bg-primary/10 text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20"
                                 aria-label={`Agregar ${d.label}`}
                               >
                                 +
@@ -1619,7 +1683,7 @@ export default function TurnosModule() {
                           );
                         })}
                       </div>
-                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--rule-base)] dark:border-white/10">
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--rule-base)] ">
                         <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Total contado</span>
                         <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
                           {formatCurrency(calcularDesdeDenominaciones(denomCounts))}
@@ -1637,7 +1701,7 @@ export default function TurnosModule() {
                           value={cierreEfectivo}
                           onChange={e => { setCierreEfectivo(e.target.value); if (closeError) setCloseError(null); }}
                           placeholder="0.00"
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
+                          className="w-full pl-12 pr-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
                         />
                       </div>
                       <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cuenta todo el dinero que queda en caja.</p>
@@ -1647,14 +1711,14 @@ export default function TurnosModule() {
 
                 {/* Diferencia */}
                 {cierreEfectivo && !isNaN(parseFloat(cierreEfectivo)) && (() => {
-                  const diff = parseFloat(cierreEfectivo) - (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal);
+                  const diff = parseFloat(cierreEfectivo) - (cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal));
                   const cuadrado = Math.abs(diff) < 0.01;
                   const sobrante = diff > 0;
                   return (
                     <div className={cn(
                       "rounded-xl p-4 text-center",
                       cuadrado
-                        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30"
+                        ? "bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30"
                         : sobrante
                         ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)]/30"
                         : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30"
@@ -1676,16 +1740,15 @@ export default function TurnosModule() {
                 })()}
 
                 {/* Notas */}
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
+                <Field label={<>Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <textarea
                     value={cierreNotas}
                     onChange={e => setCierreNotas(e.target.value)}
                     placeholder="Ej: turno normal, nada raro..."
                     rows={2}
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                   />
-                </div>
+                </Field>
 
                 {closeError && (
                   <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
@@ -1698,14 +1761,14 @@ export default function TurnosModule() {
               <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex gap-3">
                 <button
                   onClick={resetCierreState}
-                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
+                  className="flex-1 min-h-11 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => handleCerrar()}
                   disabled={closing}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
                 >
                   {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Square className="h-5 w-5" />}
                   Confirmar cierre
@@ -1725,7 +1788,7 @@ export default function TurnosModule() {
           const monto = parseFloat(cierreEfectivo);
           const { diff } = evaluarDiferencia(monto, turnoActivo);
           const sobrante = diff > 0;
-          const esperado = turnoActivo.inicioEfectivo + turnoActivo.ventasTotal;
+          const esperado = cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal);
           const pct = esperado > 0 ? (Math.abs(diff) / esperado) * 100 : 0;
           return (
             <m.div
@@ -1739,6 +1802,11 @@ export default function TurnosModule() {
             >
               <m.div
                 key="diff-confirm-modal"
+                ref={diffConfirmModalRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={diffConfirmTitleId}
+                tabIndex={-1}
                 initial={{ scale: 0.95, y: 10 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 10 }}
@@ -1750,13 +1818,13 @@ export default function TurnosModule() {
                     <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-bold text-[var(--data-error-500)]">Diferencia alta</CardTitle>
-                    <p className="text-sm text-[var(--text-secondary)]">Antes de cerrar, anotá qué pasó</p>
+                    <CardTitle id={diffConfirmTitleId} className="text-lg font-bold text-[var(--data-error-500)]">Diferencia alta</CardTitle>
+                    <p className="text-sm text-[var(--text-secondary)]">Antes de cerrar, anota qué pasó</p>
                   </div>
                 </div>
 
                 <div className="px-6 py-5 space-y-4">
-                  <div className="rounded-xl bg-[var(--surface-alt)] dark:bg-white/5 p-4 space-y-2">
+                  <div className="rounded-xl bg-[var(--surface-alt)] p-4 space-y-2">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-[var(--text-secondary)]">Total esperado</span>
                       <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(esperado)}</span>
@@ -1765,7 +1833,7 @@ export default function TurnosModule() {
                       <span className="text-[var(--text-secondary)]">Contado en caja</span>
                       <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(monto)}</span>
                     </div>
-                    <div className="flex justify-between items-center border-t border-[var(--rule-base)] dark:border-white/10 pt-2">
+                    <div className="flex justify-between items-center border-t border-[var(--rule-base)] pt-2">
                       <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">
                         {sobrante ? "Sobrante" : "Faltante"}
                       </span>
@@ -1785,22 +1853,20 @@ export default function TurnosModule() {
                       : "Falta dinero en caja. ¿Devolución, propina, error de conteo, o se gastó en algo?"}
                   </p>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
-                      Causa de la diferencia <span className="text-[var(--data-error-500)]">*</span>
-                    </label>
+                  <Field label={<>Causa de la diferencia <span className="text-[var(--data-error-500)]">*</span></>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                     <textarea
                       value={notaDiffAnormal}
                       onChange={e => { setNotaDiffAnormal(e.target.value); if (closeError) setCloseError(null); }}
                       placeholder="Ej: Falta S/30 por devolución no registrada de pollo broaster a las 18:30"
                       rows={3}
+                      // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir la causa de la diferencia de inmediato
                       autoFocus
-                      className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                     />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
                       Mínimo 8 caracteres. Queda en el log del turno para auditoría. <span className="opacity-70">(Distinta del campo Notas del cierre.)</span>
                     </p>
-                  </div>
+                  </Field>
 
                   {closeError && (
                     <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
@@ -1813,14 +1879,14 @@ export default function TurnosModule() {
                   <button
                     onClick={() => !closing && setShowDiffConfirm(false)}
                     disabled={closing}
-                    className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+                    className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] disabled:opacity-50 transition-colors"
                   >
                     Volver a contar
                   </button>
                   <button
                     onClick={() => handleCerrar({ confirmedAnormal: true })}
                     disabled={closing || notaDiffAnormal.trim().length < 8}
-                    className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-base font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <AlertTriangle className="h-5 w-5" />}
                     Cerrar con nota
@@ -1845,6 +1911,11 @@ export default function TurnosModule() {
           >
             <m.div
               key="resumen-modal"
+              ref={resumenModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={resumenTitleId}
+              tabIndex={-1}
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
@@ -1852,17 +1923,17 @@ export default function TurnosModule() {
               className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
             >
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <CardTitle id={resumenTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                     Resumen del Turno
                   </CardTitle>
-                  <button onClick={() => setShowResumen(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5">
+                  <button aria-label="Cerrar" onClick={() => setShowResumen(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
 
                 {/* Card 1: Ventas del turno */}
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4">
                   <h4 className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-3 flex items-center gap-1.5">
                     <ShoppingCart className="h-3.5 w-3.5" /> Ventas del turno
                   </h4>
@@ -1884,7 +1955,7 @@ export default function TurnosModule() {
 
                 {/* Card 2: Métodos de pago */}
                 {resumen.metodosPago.length > 0 && (
-                  <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+                  <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4">
                     <h4 className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-3 flex items-center gap-1.5">
                       <CreditCard className="h-3.5 w-3.5" /> Metodos de pago
                     </h4>
@@ -1900,7 +1971,7 @@ export default function TurnosModule() {
                 )}
 
                 {/* Card 3: Caja */}
-                <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4">
+                <div className="bg-[var(--surface-alt)] rounded-xl p-4">
                   <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-3 flex items-center gap-1.5">
                     <DollarSign className="h-3.5 w-3.5" /> Caja
                   </h4>
@@ -1913,7 +1984,7 @@ export default function TurnosModule() {
                       <span className="text-[var(--text-tertiary)]">Efectivo al cierre</span>
                       <span className="font-bold text-[var(--text-primary)]">{formatCurrency(resumen.cierreEfectivo)}</span>
                     </div>
-                    <div className="flex justify-between text-sm border-t border-[var(--rule-base)] dark:border-white/10 pt-1.5">
+                    <div className="flex justify-between text-sm border-t border-[var(--rule-base)] pt-1.5">
                       <span className="text-[var(--text-tertiary)]">Diferencia</span>
                       <span className={cn("font-bold tabular-nums", Math.abs(resumen.diferencia) < 0.01 ? "text-[var(--data-success-500)]" : resumen.diferencia > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
                         {Math.abs(resumen.diferencia) < 0.01 ? formatCurrency(0) : (resumen.diferencia > 0 ? "+" : "") + formatCurrency(resumen.diferencia)}
@@ -1922,12 +1993,9 @@ export default function TurnosModule() {
                   </div>
                 </div>
 
-                {/* Mejora 3 nueva: Descuentos del turno */}
+                {/* Descuentos reales del turno — suma de Sale.descuentoMonto vía /api/turnos/[id]/summary */}
                 {(() => {
-                  // Calcular descuentos del turno
-                  const descuentoTotal = resumen.totalVentas > 0
-                    ? Math.round(resumen.totalVentas * 0.036 * 100) / 100 // placeholder: estimado de ventas con descuento
-                    : 0;
+                  const descuentoTotal = resumen.totalDescuentos;
                   const pctDescuento = resumen.totalVentas > 0
                     ? (descuentoTotal / resumen.totalVentas) * 100
                     : 0;
@@ -1935,7 +2003,7 @@ export default function TurnosModule() {
                     ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                     : pctDescuento >= 2
                     ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-                    : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
+                    : "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
 
                   return descuentoTotal > 0 ? (
                     <div className={cn("rounded-xl p-4", colorClass)}>
@@ -1950,7 +2018,7 @@ export default function TurnosModule() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-3 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">
+                    <div className="bg-[var(--surface-alt)] rounded-xl p-3 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">
                       Sin descuentos aplicados en este turno
                     </div>
                   );
@@ -1995,11 +2063,11 @@ export default function TurnosModule() {
                       </p>
                     </m.div>
                   ) : (
-                    <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4 space-y-2">
+                    <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-2">
                       <p className="text-sm text-[var(--text-secondary)]">
                         Ventas: {formatCurrency(ventas)} de {formatCurrency(meta)} ({porcentaje}%)
                       </p>
-                      <div className="w-full bg-[var(--rule-soft)] dark:bg-white/10 rounded-full h-3">
+                      <div className="w-full bg-[var(--rule-soft)] rounded-full h-3">
                         <div
                           className="h-3 rounded-full bg-primary transition-all"
                           style={{ width: `${Math.min(100, porcentaje)}%` }}
@@ -2040,7 +2108,7 @@ export default function TurnosModule() {
 
                   if (gaps.length === 0) {
                     return (
-                      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+                      <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                         Ventas constantes durante todo el turno
                       </div>
                     );
@@ -2128,14 +2196,14 @@ export default function TurnosModule() {
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => window.print()}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                   >
                     <Printer className="h-4 w-4" />
                     Imprimir resumen
                   </button>
                   <button
                     onClick={() => setShowResumen(false)}
-                    className="flex-1 px-4 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                    className="flex-1 px-4 min-h-11 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
                   >
                     Cerrar
                   </button>

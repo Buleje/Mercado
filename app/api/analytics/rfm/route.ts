@@ -33,7 +33,7 @@ const SEGMENT_CONFIG: Record<string, { color: string; action: string }> = {
   Champions: { color: "var(--accent)", action: "Recompensar lealtad, ofrecer exclusividades" },
   Loyal: { color: "color-mix(in oklab, var(--accent) 70%, white)", action: "Upselling, programa de referidos" },
   New: { color: "#74c0fc", action: "Onboarding, primera experiencia memorable" },
-  AtRisk: { color: "#f97316", action: "Campana de reactivacion urgente" },
+  AtRisk: { color: "#ff6b5b", action: "Campana de reactivacion urgente" },
   Lost: { color: "#e76f51", action: "Descuento agresivo o descarte" },
   Regular: { color: "#adb5bd", action: "Incentivar frecuencia con promociones" },
 };

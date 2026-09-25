@@ -58,7 +58,7 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="group relative flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] transition-all duration-200 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"
+          className="group relative flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] transition-all duration-200 hover:border-[var(--accent)] hover:bg-primary/10"
         >
           {logoPreview ? (
             <Image src={logoPreview} alt="Logo" fill className="object-cover" sizes="96px" unoptimized />

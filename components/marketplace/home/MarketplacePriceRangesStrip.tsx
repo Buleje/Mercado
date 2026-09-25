@@ -8,7 +8,7 @@
  */
 
 import Link from "next/link";
-import { ArrowUpRight, type LucideIcon } from "@buleje/design-system/icons";
+import { ArrowUpRight } from "@buleje/design-system/icons";
 
 interface Range {
   href: string;

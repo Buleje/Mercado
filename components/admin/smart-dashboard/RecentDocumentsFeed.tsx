@@ -32,10 +32,10 @@ export function RecentDocumentsFeed() {
 
   if (docs.length === 0) return null;
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex items-center gap-2 mb-3">
         <FileText className="w-4 h-4 text-[var(--text-tertiary)]" />
-        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Ultimos documentos</span>
+        <span className="text-xs font-bold text-[var(--text-secondary)] ">Ultimos documentos</span>
       </div>
       <div className="space-y-2 max-h-[150px] overflow-auto">
         {docs.map((d, i) => {
@@ -43,10 +43,10 @@ export function RecentDocumentsFeed() {
           const timeLabel = daysAgo === 0 ? "hoy" : daysAgo === 1 ? "ayer" : `hace ${daysAgo}d`;
           return (
             <div key={i} className="flex items-center gap-2 text-sm">
-              <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300 shrink-0">{DOC_ICONS[d.type] ?? d.type}</span>
-              <span className="text-[var(--text-primary)] dark:text-zinc-200 font-medium truncate">{d.number}</span>
-              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 capitalize">{d.status}</span>
-              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-zinc-500 ml-auto shrink-0">{timeLabel}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded bg-[var(--rule-soft)] text-[var(--text-secondary)] shrink-0">{DOC_ICONS[d.type] ?? d.type}</span>
+              <span className="text-[var(--text-primary)] font-medium truncate">{d.number}</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">{d.status}</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] ml-auto shrink-0">{timeLabel}</span>
             </div>
           );
         })}

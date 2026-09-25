@@ -22,14 +22,19 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, Search, X, Menu, LayoutGrid, List, Info,
-  MapPin, Clock, Wallet, Phone, UserCircle,
-  Home as HomeIcon, Store as StoreIcon, Package, Tag, ArrowRight,
-  ShoppingCart, Star, MessageCircle,
+  ArrowLeft,
+  Search,
+  X,
+  LayoutGrid,
+  Info,
+  MapPin,
+  Clock,
+  Wallet,
+  Phone,
+  Star,
+  MessageCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { useCustomer } from "@/contexts/customer-context";
-import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 // Brandon 2026-05-21 perf v7: SharedMobileNavDrawer (400 LOC / 20KB) es un
 // drawer mobile-only que solo se monta cuando el usuario abre el menú.
 // dynamic({ ssr: false }) → chunk separado, descarga on-demand. El chunk
@@ -43,10 +48,10 @@ import StoreHero from "./StoreHero";
 // Brandon 2026-05-20 v11 audit P2: StorePromoBannersStrip below-fold +
 // hace fetch propio en mount → dynamic ssr:false ahorra ~5KB initial.
 // (Brandon 2026-05-21 v6: import de `dynamic` ya está en línea 21.)
-const StorePromoBannersStrip = dynamic(
-  () => import("./StorePromoBannersStrip"),
-  { ssr: false, loading: () => null },
-);
+const StorePromoBannersStrip = dynamic(() => import("./StorePromoBannersStrip"), {
+  ssr: false,
+  loading: () => null,
+});
 import { type StoreCategoryChip } from "./StoreCategories";
 import StoreCategoriesSidebar from "./StoreCategoriesSidebar";
 import StoreCatalog, { slugifyCat } from "./StoreCatalog";
@@ -77,11 +82,9 @@ const ClosedNowBanner = dynamic(() => import("./ClosedNowBanner"), {
   loading: () => null,
 });
 import { getStoreTagline } from "@/lib/store-tagline";
+import { formatCategoryLabel } from "@/lib/format-category";
 import type { DbStore, DbStoreProduct } from "@/lib/db/marketplace.db";
-import type {
-  MockStoreReview,
-  MockStoreRatingSummary,
-} from "@/lib/mock-store-reviews";
+import type { MockStoreReview, MockStoreRatingSummary } from "@/lib/mock-store-reviews";
 
 interface StoreDetailClientProps {
   store: DbStore;
@@ -121,7 +124,6 @@ export default function StoreDetailClient({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
@@ -129,6 +131,10 @@ export default function StoreDetailClient({
   // (Inicio, Tiendas, Mi cuenta, etc), NO el drawer de categorías.
   const [navDrawerOpen, setNavDrawerOpen] = useState(false);
   const [view, setView] = useState<"grid" | "list">("grid");
+
+  // "Guardar tienda" (favoritos): el botón vive ahora en el StoreHero (header
+  // full-width), que maneja su propio estado de favorito. La sidebar quedó solo
+  // con categorías (Brandon 2026-07-07), por eso se removió el estado local.
 
   // Cierra el drawer mobile cuando seleccionan una categoría desde el
   // drawer/sidebar — SÍ filtra (uso explícito del filtro).
@@ -147,7 +153,7 @@ export default function StoreDetailClient({
     // Categorías que matcheen
     for (const c of categories) {
       if (c.name.toLowerCase().includes(q) && !seen.has(`cat:${c.name}`)) {
-        results.push({ type: "category", label: c.name, value: c.name });
+        results.push({ type: "category", label: formatCategoryLabel(c.name), value: c.name });
         seen.add(`cat:${c.name}`);
       }
     }
@@ -283,6 +289,16 @@ export default function StoreDetailClient({
         name={store.name}
         category={store.category}
         zone={store.zone}
+        rating={store.rating ?? 0}
+        reviewCount={store.reviewCount}
+        deliveryMin={25}
+        freeDelivery
+        isOpen={isOpen}
+        scheduleLabel="Lun a Dom · 7am – 11pm"
+        paymentMethods={paymentMethods}
+        storeId={store.id}
+        storeSlug={store.slug}
+        acceptsFiado={(store as { acceptsFiado?: boolean }).acceptsFiado ?? false}
       />
 
       {/* ── MOBILE: barra slim STICKY v6 (Brandon 2026-05-18 — rediseño) ──
@@ -344,12 +360,7 @@ export default function StoreDetailClient({
                 {store.name}
               </span>
               <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-white/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-                <span
-                  aria-hidden
-                  className={cn(
-                    "relative inline-flex h-1.5 w-1.5 shrink-0",
-                  )}
-                >
+                <span aria-hidden className={cn("relative inline-flex h-1.5 w-1.5 shrink-0")}>
                   <span
                     className={cn(
                       "absolute inline-flex h-full w-full rounded-full opacity-70",
@@ -406,38 +417,40 @@ export default function StoreDetailClient({
           {paymentMethods.length > 0 && (
             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]">
               <Wallet className="h-4 w-4 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-              {paymentMethods
-                .map((m) => m.charAt(0).toUpperCase() + m.slice(1))
-                .join(" · ")}
+              {paymentMethods.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(" · ")}
             </span>
           )}
         </div>
       )}
 
-      {/* ── Hero del negocio (mobile + desktop) — como Rappi don-bajadon
-           muestra info completa: rating, descripción, horario, pagos. */}
-      <StoreHero
-        name={store.name}
-        category={store.category}
-        zone={store.zone}
-        description={getStoreTagline({
-          slug: store.slug,
-          name: store.name,
-          category: store.category,
-          existing: store.description,
-        })}
-        rating={store.rating ?? 0}
-        reviewCount={store.reviewCount}
-        scheduleLabel="Lun a Dom · 7am – 11pm"
-        isOpen={isOpen}
-        paymentMethods={paymentMethods}
-        storeId={store.id}
-        storeSlug={store.slug}
-        storeLogo={store.logo ?? null}
-        lat={(store as { lat?: number | null }).lat ?? null}
-        lng={(store as { lng?: number | null }).lng ?? null}
-        whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
-      />
+      {/* ── Hero del negocio — SOLO tablet (md). Brandon 2026-07-07: en desktop
+           (lg+) la info ahora vive DENTRO del banner (StoreBannerArea hero
+           overlay). En mobile (<md) la barra slim + trust strip la cubren. Así
+           que StoreHero queda para el rango tablet (md) únicamente. */}
+      <div className="lg:hidden">
+        <StoreHero
+          name={store.name}
+          category={store.category}
+          zone={store.zone}
+          description={getStoreTagline({
+            slug: store.slug,
+            name: store.name,
+            category: store.category,
+            existing: store.description,
+          })}
+          rating={store.rating ?? 0}
+          reviewCount={store.reviewCount}
+          scheduleLabel="Lun a Dom · 7am – 11pm"
+          isOpen={isOpen}
+          paymentMethods={paymentMethods}
+          storeId={store.id}
+          storeSlug={store.slug}
+          storeLogo={store.logo ?? null}
+          lat={(store as { lat?: number | null }).lat ?? null}
+          lng={(store as { lng?: number | null }).lng ?? null}
+          whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
+        />
+      </div>
 
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
       <StorePromoBannersStrip storeSlug={store.slug} storeName={store.name} />
@@ -445,126 +458,22 @@ export default function StoreDetailClient({
       {/* ── Sentinel para detectar sticky ─────────────────────────────────── */}
       <div ref={sentinelRef} aria-hidden className="h-px w-full" />
 
-      {/* ── Sticky toolbar consolidado (Brandon, mayo 14 v4) ──────────
-          MOBILE: solo el subnav de categorías (search + toggle ya están
-          arriba en el top sticky nav). DESKTOP: search prominente + toggle.
-          MOBILE el sticky empieza después del top nav (top-[60px]) para que
-          ambos queden apilados. */}
+      {/* ── Sticky toolbar de categorías (mobile-only) ──────────────────
+          Brandon 2026-07-07: el search + view toggle desktop se MOVIERON al
+          toolbar del catálogo (StoreCatalog), al lado de "Relevancia". Este
+          sticky bar queda solo para el subnav de categorías en mobile (en
+          desktop las categorías viven en la barra lateral). Por eso ahora es
+          lg:hidden — antes quedaba una franja vacía en desktop. */}
       <div
         className={cn(
-          "sticky z-20 bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-base)] transition-shadow duration-150",
-          // top-[108px] = 52 nav (v7 minimalista) + 56 barra slim. Desktop top-0.
-          "top-[108px] lg:top-0",
+          "lg:hidden sticky z-20 bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-base)] transition-shadow duration-150",
+          // top-[108px] = 52 nav (v7 minimalista) + 56 barra slim.
+          "top-[108px]",
           isStuck ? "shadow-[0_4px_16px_-6px_rgba(0,0,0,0.12)]" : "shadow-none",
         )}
         style={{ contain: "layout paint" }}
       >
-        <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-2.5">
-          {/* ── Desktop only: Row de Search + View toggle ── */}
-          <div className="hidden lg:flex items-center gap-2">
-            {/* Search bar grande + prominente */}
-            <div className="relative flex-1">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]"
-                aria-hidden
-              />
-              <input
-                type="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-                placeholder={`Buscar en ${store.name}…`}
-                className="w-full h-12 pl-12 pr-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-colors"
-                aria-label="Buscar productos"
-                autoComplete="off"
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm("")}
-                  aria-label="Limpiar búsqueda"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                  <X className="h-4 w-4" strokeWidth={2.5} />
-                </button>
-              )}
-
-              {/* Sugerencias dropdown */}
-              {searchFocused && suggestions.length > 0 && (
-                <div className="absolute top-full mt-1.5 left-0 right-0 z-40 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden max-h-[60vh] overflow-y-auto">
-                  {suggestions.map((s, idx) => (
-                    <button
-                      key={`${s.type}:${s.value}:${idx}`}
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        if (s.type === "category") {
-                          setActiveCategory(s.value);
-                          setSearchTerm("");
-                        } else {
-                          setSearchTerm(s.value);
-                        }
-                        setSearchFocused(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--accent-soft)]/40 transition-colors border-b border-[var(--rule-soft)] last:border-b-0"
-                    >
-                      <span className={cn(
-                        "inline-flex items-center justify-center h-8 w-8 rounded-full shrink-0",
-                        s.type === "category" ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                      )}>
-                        <Search className="h-4 w-4" />
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[var(--text-primary)] truncate">{s.label}</p>
-                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                          {s.type === "category" ? "Filtrar por categoría" : "Producto"}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* View toggle compacto — siempre visible al lado del search
-                (antes solo en mobile en una row separada). */}
-            <div
-              role="group"
-              aria-label="Cambiar entre cuadrícula y lista"
-              className="inline-flex rounded-xl border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)] shrink-0"
-            >
-              <button
-                type="button"
-                onClick={() => setView("grid")}
-                aria-pressed={view === "grid"}
-                aria-label="Vista en cuadrícula"
-                className={cn(
-                  "inline-flex items-center justify-center h-12 w-11 transition-colors",
-                  view === "grid"
-                    ? "bg-[var(--accent-600,var(--accent))] text-white"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
-                )}
-              >
-                <LayoutGrid className="h-4 w-4" strokeWidth={2.25} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setView("list")}
-                aria-pressed={view === "list"}
-                aria-label="Vista en lista"
-                className={cn(
-                  "inline-flex items-center justify-center h-12 w-11 border-l-2 border-[var(--rule-base)] transition-colors",
-                  view === "list"
-                    ? "bg-[var(--accent-600,var(--accent))] text-white"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
-                )}
-              >
-                <List className="h-4 w-4" strokeWidth={2.25} />
-              </button>
-            </div>
-          </div>
-
+        <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
           {/* ── Mobile category subnav (tabs estilo iFood/Rappi) ──
                Brandon mayo 14 v4: quitado el chip "Todos" (no aporta —
                si querés ver todo, cerrá el filtro). Pills rediseñadas
@@ -637,12 +546,12 @@ export default function StoreDetailClient({
                           : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
                       )}
                     >
-                      <span className="tracking-tight">{cat.name}</span>
+                      <span className="tracking-tight">{formatCategoryLabel(cat.name)}</span>
                       <span
                         className={cn(
                           "inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full text-[length:var(--ts-2xs)] font-black tabular-nums transition-colors",
                           active
-                            ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                            ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                             : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                         )}
                       >
@@ -672,10 +581,13 @@ export default function StoreDetailClient({
       {/* ── Layout: SIDEBAR (lg+) + CATALOG ─────────────────────────────── */}
       <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-8">
         <div className="flex gap-6 lg:gap-8">
-          {/* Sidebar desktop — sticky, vertical, scroll interno si hay muchas categorias */}
-          <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-[5.5rem]">
-              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 shadow-sm max-h-[calc(100dvh-7rem)] overflow-y-auto">
+          {/* ── Barra lateral (lg+) — SOLO categorías (Brandon 2026-07-07).
+               Toda la info del negocio (identidad, rating, delivery, horario,
+               pagos, mapa, CTAs) se movió al StoreHero (header full-width arriba).
+               La sidebar queda como navegación pura por categorías, sticky. */}
+          <aside className="hidden lg:block w-[17rem] shrink-0">
+            <div className="sticky top-[5.5rem] max-h-[calc(100dvh-7rem)] overflow-y-auto pr-1 [scrollbar-width:thin]">
+              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2">
                 <StoreCategoriesSidebar
                   categories={categories}
                   activeCategory={filterCategory}
@@ -693,12 +605,26 @@ export default function StoreDetailClient({
               storeSlug={store.slug}
               storeName={store.name}
               storeId={store.id}
+              storeRating={store.rating}
+              storeReviewCount={store.reviewCount}
+              storeCategory={store.category}
+              storeSince={store.createdAt}
               products={products}
               activeCategory={filterCategory}
               externalSearch={searchTerm}
               onExternalSearchChange={setSearchTerm}
               externalView={view}
               onExternalViewChange={setView}
+              searchSuggestions={suggestions}
+              onSelectSuggestion={(s) => {
+                if (s.type === "category") {
+                  // Filtra de verdad (filterCategory) + resalta en scrollspy.
+                  handleCategorySelect(s.value);
+                  setSearchTerm("");
+                } else {
+                  setSearchTerm(s.value);
+                }
+              }}
             />
           </main>
         </div>
@@ -781,7 +707,12 @@ export default function StoreDetailClient({
 
       {/* ── Reviews + Policies (compacto, divisores con tokens del DS) ────── */}
       <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 border-t border-[var(--rule-base)] py-8">
-        <StoreReviews summary={reviewSummary} reviews={reviews} storeSlug={store.slug} storeName={store.name} />
+        <StoreReviews
+          summary={reviewSummary}
+          reviews={reviews}
+          storeSlug={store.slug}
+          storeName={store.name}
+        />
       </div>
       <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 border-t border-[var(--rule-base)] py-8">
         <StorePoliciesBlock />
@@ -823,17 +754,17 @@ export default function StoreDetailClient({
       {/* ── Nav drawer general (hamburguesa del top nav) ────────────────
            Brandon 2026-05-18: unificado con el drawer del MarketplaceNavbar
            (/tiendas) en SharedMobileNavDrawer. Mismo UX en TODO el marketplace. */}
-      <SharedMobileNavDrawer
-        open={navDrawerOpen}
-        onClose={() => setNavDrawerOpen(false)}
-      />
+      <SharedMobileNavDrawer open={navDrawerOpen} onClose={() => setNavDrawerOpen(false)} />
       {/* ── WhatsApp FAB (md:hidden) ────────────────────────────────────
            Brandon 2026-05-30 (audit #6): el vecino de Pucallpa pide por
            WhatsApp. FAB flotante = 1 tap (antes el número estaba 2 taps adentro
            del modal). Solo mobile + solo si el dueño configuró whatsappPublic
            (Store.whatsappPublic, editable desde su panel de tienda). */}
       {(() => {
-        const raw = (store as { whatsappPublic?: string | null }).whatsappPublic?.replace(/\D/g, "");
+        const raw = (store as { whatsappPublic?: string | null }).whatsappPublic?.replace(
+          /\D/g,
+          "",
+        );
         if (!raw) return null;
         const intl = raw.startsWith("51") ? raw : `51${raw}`;
         const msg = encodeURIComponent(
@@ -980,13 +911,13 @@ function MobileSearchOverlay({
                 <button
                   type="button"
                   onClick={() => onSelectSuggestion(s)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl hover:bg-[var(--accent-soft)]/40 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl hover:bg-primary/10 transition-colors"
                 >
                   <span
                     className={cn(
                       "inline-flex items-center justify-center h-9 w-9 rounded-full shrink-0",
                       s.type === "category"
-                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                         : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                     )}
                   >
@@ -1063,7 +994,10 @@ function StoreInfoModal({
     { key: "sun", label: "Domingo" },
   ];
 
-  const hours = (hoursJson as Record<string, { open?: string; close?: string; closed?: boolean }> | undefined) ?? {};
+  const hours =
+    (hoursJson as
+      | Record<string, { open?: string; close?: string; closed?: boolean }>
+      | undefined) ?? {};
   const today = new Date().getDay(); // 0=dom, 1=lun...
   const todayKey = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][today];
 
@@ -1120,7 +1054,7 @@ function StoreInfoModal({
           {/* Zona */}
           {store.zone && (
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <MapPin className="h-5 w-5" strokeWidth={2.25} />
               </span>
               <div className="min-w-0">
@@ -1136,7 +1070,7 @@ function StoreInfoModal({
 
           {/* Horario */}
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Clock className="h-5 w-5" strokeWidth={2.25} />
             </span>
             <div className="min-w-0 flex-1">
@@ -1182,7 +1116,7 @@ function StoreInfoModal({
           {/* Métodos de pago */}
           {paymentMethods.length > 0 && (
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Wallet className="h-5 w-5" strokeWidth={2.25} />
               </span>
               <div className="min-w-0">
@@ -1200,7 +1134,7 @@ function StoreInfoModal({
               casteaba a `whatsapp` inexistente → nunca aparecía). */}
           {(store as { whatsappPublic?: string | null }).whatsappPublic && (
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Phone className="h-5 w-5" strokeWidth={2.25} />
               </span>
               <div className="min-w-0">

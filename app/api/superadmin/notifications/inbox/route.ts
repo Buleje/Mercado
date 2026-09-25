@@ -4,6 +4,8 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import { PaymentProofsDB } from "@/lib/db/payment-proofs.db";
+import { getRescueQueue } from "@/lib/db/rescue.db";
+import { getClientErrors, getClientErrorStats } from "@/lib/db/client-errors.db";
 import { logger } from "@/lib/logger";
 
 /**
@@ -32,6 +34,9 @@ export async function GET(req: NextRequest) {
       paymentProofs,
       pendingOrdersCount,
       pendingOrdersTop,
+      rescue,
+      panelErrors,
+      errorStats,
     ] = await Promise.all([
       prisma.vendorApplication.count({
         where: { status: { in: ["pending", "under_review", "info_requested"] } },
@@ -89,6 +94,11 @@ export async function GET(req: NextRequest) {
           },
         },
       }),
+      // Señales de soporte proactivo (Brandon 2026-06-20): negocios en riesgo y
+      // errores de panel ahora también aparecen en el bell.
+      getRescueQueue().catch(() => ({ queue: [], kpis: { critical: 0, high: 0 } })),
+      getClientErrors(5).catch(() => []),
+      getClientErrorStats().catch(() => ({ groups: 0 })),
     ]);
 
     // Tenants for top orders → muestra el nombre del negocio en el drawer
@@ -107,12 +117,41 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const atRiskRows = rescue.queue.filter((r) => r.riskLevel === "critical" || r.riskLevel === "high");
+    const atRiskCount = rescue.kpis.critical + rescue.kpis.high;
+    const nowIso = new Date().toISOString();
+
     const totalCount =
-      vendorAppsCount + paymentApprovals.length + paymentProofs.length + pendingOrdersCount;
+      vendorAppsCount + paymentApprovals.length + paymentProofs.length + pendingOrdersCount +
+      atRiskCount + errorStats.groups;
 
     return NextResponse.json({
       total: totalCount,
       buckets: {
+        atRisk: {
+          count: atRiskCount,
+          href: "/superadmin/rescue",
+          items: atRiskRows.slice(0, 5).map((r) => ({
+            id: r.id,
+            title: r.name,
+            subtitle: r.reasons.slice(0, 2).join(" · ") || r.riskLevel,
+            status: r.riskLevel,
+            createdAt: nowIso,
+            href: `/superadmin/tenants/${r.slug}`,
+          })),
+        },
+        panelErrors: {
+          count: errorStats.groups,
+          href: "/superadmin/tenant-errors",
+          items: panelErrors.slice(0, 5).map((e) => ({
+            id: e.id,
+            title: e.message.slice(0, 80),
+            subtitle: `${e.tenantName} · ${e.count}×`,
+            status: "error",
+            createdAt: e.lastSeenAt,
+            href: "/superadmin/tenant-errors",
+          })),
+        },
         vendorApplications: {
           count: vendorAppsCount,
           href: "/superadmin/vendor-applications",

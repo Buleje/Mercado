@@ -60,6 +60,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   // getOrSet bypass: ejecuta el factory directo para testear la DB class.
   getOrSet: vi.fn(async (_k: string, _t: number, fn: () => Promise<unknown>) => fn()),
   invalidate: mockInvalidate,

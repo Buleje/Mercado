@@ -14,7 +14,7 @@ import { StepPago } from "./steps/StepPago";
 import { StepConfirmar, StepConfirmarFooter } from "./steps/StepConfirmar";
 import { MiniCartSummary } from "./parts/MiniCartSummary";
 import { CheckoutModalShell } from "./parts/CheckoutModalShell";
-import { useCheckoutState } from "./hooks/useCheckoutState";
+import { useCheckoutFlow } from "./checkout-flow-context";
 import { useCoupon } from "./hooks/useCoupon";
 import { useLoyalty, getTierDiscountPct } from "./hooks/useLoyalty";
 import { useDniLookup } from "./hooks/useDniLookup";
@@ -26,6 +26,7 @@ import { useCheckoutSubmit } from "./hooks/useCheckoutSubmit";
 import { useCheckoutHandlers } from "./hooks/useCheckoutHandlers";
 import { useCheckoutInit } from "./hooks/useCheckoutInit";
 import { validatePhone } from "./parts/phone-validation";
+import { getSupabaseBrowser, isSupabaseAuthConfigured } from "@/lib/supabase/client";
 
 /**
  * CheckoutModal — orquestador del wizard de checkout.
@@ -60,7 +61,7 @@ export default function CheckoutModal() {
   } = useSettings();
   const { getBestPromotion } = usePromotions();
 
-  const { state, dispatch, reset } = useCheckoutState();
+  const { state, dispatch, reset } = useCheckoutFlow();
   const phoneSearch = usePhoneSearch({ findByPhone });
   const [editingCustomerData, setEditingCustomerData] = useState(false);
   const [skippedAccount, setSkippedAccount] = useState(false);
@@ -197,11 +198,29 @@ export default function CheckoutModal() {
             phoneNotFound={phoneSearch.notFound}
             onPhoneSearch={handlers.handlePhoneSearchSubmit}
             onSkipAccount={handlers.handleSkipAccount}
-            onGoogleSignIn={() => {
-              // Redirige al OAuth flow del tenant. El backend resuelve `x-tenant-id`
-              // desde middleware → la cuenta se crea/asocia al tenant actual.
+            onGoogleSignIn={async () => {
+              // IGUAL QUE EL MARKETPLACE (Brandon 2026-06-22): Google sign-in vía
+              // Supabase OAuth (el mismo flujo que `OAuthButton` usa en /marketplace
+              // y el login). Vuelve a la ruta actual; el callback
+              // `/api/auth/oauth/callback` crea la sesión de customer (tenant-aware
+              // por `x-tenant-id` del middleware, igual que el marketplace).
               const here = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
-              window.location.href = `/api/auth/google?redirect=${encodeURIComponent(here)}`;
+              if (!isSupabaseAuthConfigured()) {
+                // Fallback al flujo custom si Supabase no está configurado.
+                window.location.href = `/api/auth/google?redirect=${encodeURIComponent(here)}`;
+                return;
+              }
+              const supabase = getSupabaseBrowser();
+              const origin = typeof window !== "undefined" ? window.location.origin : "";
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: "google",
+                options: { redirectTo: `${origin}/api/auth/oauth/callback?next=${encodeURIComponent(here)}` },
+              });
+              if (error) {
+                // Si Supabase falla, degradamos al flujo custom para no dejar al
+                // cliente sin opción de continuar con Google.
+                window.location.href = `/api/auth/google?redirect=${encodeURIComponent(here)}`;
+              }
             }}
           />
         )}
@@ -264,6 +283,7 @@ export default function CheckoutModal() {
         {state.step === "exito" && (
           <CheckoutSuccessStep
             orderId={state.ui.orderId}
+            value={finalTotal}
             onClose={closeCheckout}
           />
         )}

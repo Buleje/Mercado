@@ -13,7 +13,8 @@
  * Devuelve el File listo para subir vía onApply(file).
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Cropper, { type Area } from "react-easy-crop";
 import {
   ZoomIn,
@@ -95,6 +96,12 @@ export default function ImageCropEditor({
   onApply,
   onCancel,
 }: ImageCropEditorProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  // `activo`: el uploader lo deja montado cerrado (`if (!open …) return null`).
+  useModalAccesible(cajaRef, { onCerrar: onCancel, cerrarConEscape: false, activo: open && !!srcDataUrl });
   const [crop, setCrop] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -129,7 +136,7 @@ export default function ImageCropEditor({
   if (!open || !srcDataUrl) return null;
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
       role="dialog"
       aria-modal="true"
@@ -141,7 +148,7 @@ export default function ImageCropEditor({
         if (e.key === "Escape" && !working) onCancel();
       }}
     >
-      <div className="relative w-full max-w-3xl rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden border-2 border-[var(--rule-soft)]">
+      <div className="relative w-full max-w-3xl rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden border border-[var(--rule-soft)]">
         {/* Header */}
         <header className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3">
           <div className="min-w-0 flex-1">
@@ -157,7 +164,7 @@ export default function ImageCropEditor({
             onClick={onCancel}
             disabled={working}
             aria-label="Cerrar"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[var(--rule-soft)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--text-primary)] disabled:opacity-50"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-soft)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--text-primary)] disabled:opacity-50"
           >
             <X className="h-4 w-4" strokeWidth={2.25} />
           </button>
@@ -194,7 +201,7 @@ export default function ImageCropEditor({
               type="button"
               onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
               aria-label="Alejar"
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--accent)]/40"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--accent)]/40"
             >
               <ZoomOut className="h-4 w-4" strokeWidth={2.25} />
             </button>
@@ -222,7 +229,7 @@ export default function ImageCropEditor({
               type="button"
               onClick={() => setZoom((z) => Math.min(3, +(z + 0.1).toFixed(2)))}
               aria-label="Acercar"
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--accent)]/40"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--accent)]/40"
             >
               <ZoomIn className="h-4 w-4" strokeWidth={2.25} />
             </button>
@@ -233,7 +240,7 @@ export default function ImageCropEditor({
             <button
               type="button"
               onClick={() => setRotation((r) => (r - 90 + 360) % 360)}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] transition hover:border-[var(--accent)]/40"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] transition hover:border-[var(--accent)]/40"
             >
               <RotateCcw className="h-3.5 w-3.5" strokeWidth={2.25} />
               Rotar
@@ -244,14 +251,14 @@ export default function ImageCropEditor({
             <button
               type="button"
               onClick={handleReset}
-              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)] hover:border-[var(--accent)]/40"
+              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)] hover:border-[var(--accent)]/40"
             >
               Restablecer
             </button>
           </div>
 
           {errorMsg && (
-            <div className="rounded-xl border-2 border-rose-300/60 bg-rose-50/50 px-3 py-2 text-xs font-bold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+            <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-rose-50/50 px-3 py-2 text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--data-error-500)]">
               {errorMsg}
             </div>
           )}
@@ -263,7 +270,7 @@ export default function ImageCropEditor({
             type="button"
             onClick={onCancel}
             disabled={working}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 disabled:opacity-50"
           >
             Cancelar
           </button>

@@ -1,5 +1,6 @@
 import { MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ function buildMessage(context: WhatsAppContext): string {
     case "order_ready":
       return `Hola! Tu pedido #${context.orderId} está listo para entrega/recojo. 🛍️`;
     case "payment_reminder":
-      return `Hola! Te recordamos que tienes una deuda pendiente de S/ ${Number(context.amount).toFixed(2)}. Por favor, acércate a regularizarla. Gracias!`;
+      return `Hola! Te recordamos que tienes una deuda pendiente de ${formatCurrency(Number(context.amount))}. Por favor, acércate a regularizarla. Gracias!`;
     case "custom":
       return context.message;
   }

@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { RefreshCw } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -61,7 +62,7 @@ function WaterfallTooltip({ active, payload }: { active?: boolean; payload?: Arr
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{d.name}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Monto</span>
-        <span className="font-mono font-medium" style={{ color: d.fill }}>S/ {Number(d.displayValue).toFixed(2)}</span>
+        <span className="font-mono font-medium" style={{ color: d.fill }}>{formatCurrency(Number(d.displayValue))}</span>
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>% del total</span>
@@ -126,7 +127,7 @@ export default function MarginWaterfallChart() {
         value: gastos,
         displayValue: gastos,
         base: totalRevenue - totalCost - gastos,
-        fill: "#f97316",
+        fill: "#ff6b5b",
         label: `~10%`,
       },
       {
@@ -158,7 +159,7 @@ export default function MarginWaterfallChart() {
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="h-5 w-48 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-4 animate-pulse" />
+        <div className="h-5 w-48 bg-[var(--rule-soft)] rounded mb-4 animate-pulse" />
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 h-64 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
           <div className="flex-1 space-y-3">

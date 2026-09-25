@@ -8,13 +8,17 @@ import { CUSTOMER_SESSION, getCustomerPayload } from "@/lib/auth/customer-sessio
 import { aiCostGuard } from "@/lib/ai/cost-control";
 import { makeStreamUsageHandler } from "@/lib/ai/track-usage";
 import { logger } from "@/lib/logger";
+import { groqProvider } from "@/lib/llm-providers/groq";
 
-// Modelo que se usa actualmente en `chatModel` (provider.ts → pickChatModel).
-// Si cambia ahí, sincronizar acá o exportar el slug desde provider.
+// El slug del modelo que realmente se está usando, para reportarlo en la
+// respuesta. Antes se re-tipeaba acá con un comentario que pedía «sincronizar
+// a mano» — y no se sincronizó: quedó anunciando un modelo de Groq dado de baja
+// mientras la llamada real usaba otro. Ahora se deriva de la MISMA fuente que
+// `pickChatModel`, así no puede volver a divergir.
 const CHAT_MODEL_SLUG = process.env.ANTHROPIC_API_KEY
   ? "claude-haiku-4-5-20251001"
   : process.env.GROQ_API_KEY
-    ? "llama-3.3-70b-versatile"
+    ? groqProvider.models.cheap
     : "gpt-4o-mini";
 
 const ChatInput = z.object({
@@ -69,7 +73,7 @@ export async function POST(req: NextRequest) {
     // el costo real basado en tokens (delta = corrección a la baja en Upstash
     // sigue siendo válida porque INCR es atómico aunque acumule estimación + real).
     const ESTIMATED_COST_USD = 0.0008;
-    if (!await aiCostGuard.canSpend(resolvedTenantId, ESTIMATED_COST_USD, "free")) {
+    if (!await aiCostGuard.canSpend(resolvedTenantId, ESTIMATED_COST_USD)) {
       return Response.json(
         { error: "AI quota exceeded for this tenant. Upgrade your plan or try again next month." },
         { status: 429 },

@@ -121,7 +121,7 @@ export default function CookieConsentBanner() {
     >
       <div className="p-5">
         <div className="flex items-start gap-3 mb-3">
-          <span aria-hidden className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+          <span aria-hidden className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <Cookie className="h-5 w-5" strokeWidth={2.25} />
           </span>
           <div className="flex-1 min-w-0">

@@ -18,7 +18,7 @@ export function MiniCartSummary({ items, finalTotal }: MiniCartSummaryProps) {
   if (items.length === 0) return null;
   return (
     <details className="mx-5 mt-2 mb-0 group">
-      <summary className="flex items-center justify-between cursor-pointer list-none text-xs font-semibold text-primary py-1.5 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors">
+      <summary className="flex items-center justify-between cursor-pointer list-none text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] py-1.5 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors">
         <span className="flex items-center gap-1.5">
           <ShoppingCart className="h-3.5 w-3.5" />
           {items.length} {items.length === 1 ? "producto" : "productos"} · {formatCurrency(finalTotal)}

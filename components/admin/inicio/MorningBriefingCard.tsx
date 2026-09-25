@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { m } from "framer-motion";
+import { SectionTitle } from "@buleje/design-system";
 import {
   AlertTriangle,
   Package,
@@ -10,7 +11,10 @@ import {
   Sparkles,
   X,
   Plus,
+  Wallet,
 } from "@buleje/design-system/icons";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 
 /**
  * MorningBriefingCard — rediseño del antiguo "¡Buenos días!" modal (2026-05-26).
@@ -32,6 +36,7 @@ type BriefingStats = {
   pedidosPendientes: number;
   stockBajo: number;
   fiadosVencidos: number;
+  yapeVerificar: number;
 };
 
 function formatCurrency(n: number) {
@@ -63,9 +68,16 @@ const TONE: Record<Tone, { bg: string; fg: string }> = {
 export default function MorningBriefingCard() {
   const [stats, setStats] = useState<BriefingStats | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  // Gate de rol (2026-09-14): /api/admin/stats sólo deja pasar admin
+  // (requireAdmin) — almacenero/cajero recibían 403 en cada carga del panel.
+  const rol = useMiRol();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Rol todavía no resuelto (null = cargando) o resuelto sin permiso → ni
+    // intentarlo. La tarjeta simplemente no aparece (ya es su comportamiento
+    // cuando no hay nada accionable — no deja hueco).
+    if (!puedePedir("/api/admin/stats", rol)) return;
     try {
       if (localStorage.getItem("superadmin-impersonate-tenant")) return;
       const dateKey = `briefing-dismissed-${new Date().toISOString().slice(0, 10)}`;
@@ -87,11 +99,16 @@ export default function MorningBriefingCard() {
         if (cancelled || !r.ok) return;
         const s = await r.json();
         if (cancelled || !s) return;
+        // Los nombres deben matchear EXACTO el payload de /api/admin/stats
+        // (AdminStatsPayload). Antes leían claves inexistentes (salesYesterday→
+        // todayRevenue, lowStockCount→lowStockProducts, overdueDebts→overdueFiados)
+        // y 3 de 4 señales salían siempre en 0 → la tarjeta no mostraba nada.
         setStats({
-          ventasAyer: s.salesYesterday ?? s.totalRevenue ?? 0,
+          ventasAyer: s.salesYesterday ?? 0,
           pedidosPendientes: s.pendingOrders ?? 0,
-          stockBajo: s.lowStockCount ?? 0,
-          fiadosVencidos: s.overdueDebts ?? 0,
+          stockBajo: s.lowStockProducts ?? 0,
+          fiadosVencidos: s.overdueFiados ?? 0,
+          yapeVerificar: s.pendingYape ?? 0,
         });
       } catch {
         /* silent — la tarjeta simplemente no aparece */
@@ -100,7 +117,7 @@ export default function MorningBriefingCard() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [rol]);
 
   const dismiss = () => {
     setDismissed(true);
@@ -114,12 +131,21 @@ export default function MorningBriefingCard() {
 
   const allTasks: Task[] = [
     {
+      key: "yape",
+      count: stats.yapeVerificar,
+      Icon: Wallet,
+      text: stats.yapeVerificar === 1 ? "pago Yape por verificar" : "pagos Yape por verificar",
+      cta: "Verificar",
+      href: "/admin?tab=pedidos",
+      tone: "warning",
+    },
+    {
       key: "fiados",
       count: stats.fiadosVencidos,
       Icon: AlertTriangle,
       text: stats.fiadosVencidos === 1 ? "fiado vencido" : "fiados vencidos",
       cta: "Cobrar",
-      href: "/admin?module=fiados",
+      href: "/admin?tab=fiados",
       tone: "error",
     },
     {
@@ -146,12 +172,14 @@ export default function MorningBriefingCard() {
   // Frecuencia: solo si hay algo accionable. Día tranquilo → no molesta.
   if (tasks.length === 0) return null;
 
-  // Sugerencia contextual (prioridad: fiados → pedidos → stock).
+  // Sugerencia contextual (prioridad: yape → fiados → pedidos → stock).
   let sugerencia: string;
-  if (stats.fiadosVencidos > 0) {
-    sugerencia = `Cobrá los fiados vencidos hoy — mientras más esperás, más difícil es recuperar esa plata.`;
+  if (stats.yapeVerificar > 0) {
+    sugerencia = `Verifica los pagos Yape pendientes antes de preparar el pedido — así no despachas sin tener la plata confirmada.`;
+  } else if (stats.fiadosVencidos > 0) {
+    sugerencia = `Cobra los fiados vencidos hoy — mientras más esperas, más difícil es recuperar esa plata.`;
   } else if (stats.pedidosPendientes > 0) {
-    sugerencia = `Confirmá los pedidos pendientes rápido para no perder la venta.`;
+    sugerencia = `Confirma los pedidos pendientes rápido para no perder la venta.`;
   } else {
     sugerencia = `Repón el stock bajo antes de quedarte sin vender tus productos estrella.`;
   }
@@ -183,9 +211,9 @@ export default function MorningBriefingCard() {
       <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         Para hoy · <span className="capitalize">{fecha}</span>
       </p>
-      <h2 className="mt-1 max-w-[34ch] text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)] sm:text-[1.75rem]">
-        Tenés {tasks.length} {tasks.length === 1 ? "cosa" : "cosas"} por resolver
-      </h2>
+      <SectionTitle as="h2" className="mt-1 max-w-[34ch] text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)] sm:text-[1.75rem]">
+        Tienes {tasks.length} {tasks.length === 1 ? "cosa" : "cosas"} por resolver
+      </SectionTitle>
       <p className="mt-1.5 text-sm font-medium text-[var(--text-secondary)]">
         Ayer vendiste{" "}
         <span className="font-bold tabular-nums text-[var(--text-primary)]">
@@ -227,7 +255,7 @@ export default function MorningBriefingCard() {
 
       {/* Sugerencia contextual */}
       <div className="mt-5 flex items-start gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Sparkles className="h-4 w-4" />
         </span>
         <div className="min-w-0">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import {
   subscribeAdminSSE,
   totalAdminSSEConnections,
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
   const rl = applyRateLimit(req, "GENEROUS", "admin-sse");
   if (rl) return rl;
 
-  const auth = await requireAdmin(req, ["admin", "cajero"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/admin/sse"]);
   if (auth instanceof NextResponse) return auth;
 
   if (totalAdminSSEConnections() > 1000) {

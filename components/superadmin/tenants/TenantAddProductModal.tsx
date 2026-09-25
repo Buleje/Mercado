@@ -10,7 +10,8 @@
  * Diseño minimalista — campos esenciales arriba, modifier groups colapsable.
  */
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { X, Plus, Trash2, Loader2, CheckCircle2, Package } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -39,6 +40,11 @@ export default function TenantAddProductModal({
   tenantName,
   onCreated,
 }: Props) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState<number>(0);
@@ -50,6 +56,7 @@ export default function TenantAddProductModal({
   const [isPrepared, setIsPrepared] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [saving, setSaving] = useState(false);
+  useModalAccesible(cajaRef, { onCerrar: saving ? undefined : onClose, activo: open });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -147,16 +154,18 @@ export default function TenantAddProductModal({
   };
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label={`Agregar producto a ${tenantName}`}
       className="fixed inset-0 z-[8000] flex items-end sm:items-center justify-center bg-black/55 backdrop-blur-sm p-0 sm:p-4"
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
         className="relative w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--rule-soft)] px-5 py-4">
@@ -172,7 +181,7 @@ export default function TenantAddProductModal({
           <button
             onClick={onClose}
             aria-label="Cerrar"
-            className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -191,7 +200,7 @@ export default function TenantAddProductModal({
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-base"
+                  className="rounded-xl border border-[var(--rule-base)] px-3 h-10 text-base"
                   placeholder="Pollo a la brasa"
                 />
               </label>
@@ -200,7 +209,7 @@ export default function TenantAddProductModal({
                 <input
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-base"
+                  className="rounded-xl border border-[var(--rule-base)] px-3 h-10 text-base"
                   placeholder="pollo-brasa"
                 />
               </label>
@@ -217,7 +226,7 @@ export default function TenantAddProductModal({
                       type="button"
                       onClick={() => setIsPrepared(opt.v)}
                       aria-pressed={isPrepared === opt.v}
-                      className={`rounded-lg border-2 px-3 py-2 text-left transition-colors ${
+                      className={`rounded-xl border-2 px-3 min-h-10 text-left transition-colors ${
                         isPrepared === opt.v
                           ? "border-[var(--accent)] bg-[var(--accent)]/5"
                           : "border-[var(--rule-base)] hover:border-[var(--accent)]/50"
@@ -237,7 +246,7 @@ export default function TenantAddProductModal({
                   step={0.5}
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value) || 0)}
-                  className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-base"
+                  className="rounded-xl border border-[var(--rule-base)] px-3 h-10 text-base"
                 />
               </label>
               <label className="flex flex-col gap-1">
@@ -245,7 +254,7 @@ export default function TenantAddProductModal({
                 <input
                   value={unit}
                   onChange={(e) => setUnit(e.target.value)}
-                  className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-base"
+                  className="rounded-xl border border-[var(--rule-base)] px-3 h-10 text-base"
                   placeholder="unidad / porción / kilo"
                 />
               </label>
@@ -258,7 +267,7 @@ export default function TenantAddProductModal({
                   onChange={(e) =>
                     setStock(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)))
                   }
-                  className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-base"
+                  className="rounded-xl border border-[var(--rule-base)] px-3 h-10 text-base"
                   placeholder="999"
                 />
               </label>
@@ -267,7 +276,7 @@ export default function TenantAddProductModal({
                 <input
                   value={image}
                   onChange={(e) => setImage(e.target.value)}
-                  className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-base"
+                  className="rounded-xl border border-[var(--rule-base)] px-3 h-10 text-base"
                   placeholder="https://..."
                 />
               </label>
@@ -277,7 +286,7 @@ export default function TenantAddProductModal({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-base resize-none"
+                  className="rounded-xl border border-[var(--rule-base)] px-3 py-2 text-base resize-none"
                   placeholder="Incluye ensalada y cremas"
                 />
               </label>
@@ -298,7 +307,7 @@ export default function TenantAddProductModal({
               <button
                 type="button"
                 onClick={addGroup}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 py-1.5 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
               >
                 <Plus className="h-4 w-4" /> Grupo
               </button>
@@ -320,7 +329,7 @@ export default function TenantAddProductModal({
                     value={g.name}
                     onChange={(e) => updateGroup(gIdx, { name: e.target.value })}
                     placeholder="Nombre del grupo"
-                    className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-sm font-bold col-span-2"
+                    className="rounded-xl border border-[var(--rule-base)] px-3 py-1.5 text-sm font-bold col-span-2"
                   />
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -339,7 +348,7 @@ export default function TenantAddProductModal({
                         value={o.name}
                         onChange={(e) => updateOption(gIdx, oIdx, { name: e.target.value })}
                         placeholder="Nombre opción"
-                        className="flex-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-sm"
+                        className="flex-1 rounded-xl border border-[var(--rule-base)] px-3 py-1.5 text-sm"
                       />
                       <span className="text-sm text-[var(--text-tertiary)]">+S/</span>
                       <input
@@ -350,13 +359,13 @@ export default function TenantAddProductModal({
                         onChange={(e) =>
                           updateOption(gIdx, oIdx, { priceDelta: Number(e.target.value) || 0 })
                         }
-                        className="w-20 rounded-lg border border-[var(--rule-base)] px-2 py-1.5 text-sm"
+                        className="w-20 rounded-xl border border-[var(--rule-base)] px-2 py-1.5 text-sm"
                       />
                       <button
                         type="button"
                         onClick={() => removeOption(gIdx, oIdx)}
                         aria-label="Eliminar opción"
-                        className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:bg-rose-50"
+                        className="p-1.5 rounded-xl text-[var(--data-error-500)] hover:bg-rose-50"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -365,7 +374,7 @@ export default function TenantAddProductModal({
                   <button
                     type="button"
                     onClick={() => addOption(gIdx)}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold text-[var(--accent)] hover:bg-primary/10"
                   >
                     <Plus className="h-3.5 w-3.5" /> Opción
                   </button>
@@ -384,12 +393,12 @@ export default function TenantAddProductModal({
           </section>
 
           {error && (
-            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm text-[var(--data-error-500)]">
+            <div className="rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-2.5 text-sm text-[var(--data-error-500)]">
               {error}
             </div>
           )}
           {success && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-[var(--data-success-700)] flex items-center gap-2">
+            <div className="rounded-lg border border-[var(--data-success-500)]/30 bg-[var(--data-success-50)] px-4 py-2.5 text-sm text-[var(--data-success-700)] flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" /> Producto creado en {tenantName}.
             </div>
           )}
@@ -399,14 +408,14 @@ export default function TenantAddProductModal({
         <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3.5 flex items-center justify-end gap-2 bg-[var(--surface-canvas)]">
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={saving || success}
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-semibold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {saving ? "Creando…" : "Crear producto"}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTenantTag } from "@/lib/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { toNumOrZero } from "@/lib/decimal-utils";
@@ -186,6 +187,11 @@ export async function POST(req: NextRequest) {
       `Devolucion de S/${totalRefund.toFixed(2)} para venta ${saleId.slice(0, 8)} (${refundType})`,
       saleId, auth.username,
     ).catch((err) => logger.warn("[sales/devolucion] activity log failed", { err: String(err) }));
+
+    // La devolución repone stock con `tx.product.updateMany`, salteando
+    // ProductsDB y su invalidación: sin esto el Inventario sigue mostrando el
+    // stock de antes de que la mercadería volviera.
+    revalidateTenantTag(tenantId, "products");
 
     return NextResponse.json({
       success: true,

@@ -57,7 +57,7 @@ const INTENT_STYLES: Record<ConfirmIntent, { icon: typeof AlertTriangle; iconCol
   info: {
     icon: Info,
     iconColor: "text-[var(--accent)]",
-    iconBg: "bg-[var(--accent-soft)]",
+    iconBg: "bg-primary/10",
     btn: "bg-[var(--accent)] hover:opacity-90",
   },
 };

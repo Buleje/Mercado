@@ -18,8 +18,9 @@ const VentasAdvancedCharts = dynamic(
   { ssr: false },
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision en render body.
-import { BulejeDashboardSkeleton } from "./_shared";
+import { BulejeDashboardSkeleton, KPI_GRID_6 } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -80,10 +81,10 @@ export interface VentasData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 function dateKey(iso: string) { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
-const PAY_COLORS: Record<string, string> = { efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4", tarjeta: "#3b82f6", transferencia: "#f59e0b" };
+function dayLabel(dk: string) { return formatDateShort(dk + "T12:00:00"); }
+const PAY_COLORS: Record<string, string> = { efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4", tarjeta: "#3b82f6", transferencia: "#ff6b5b" };
 const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape", plin: "Plin", tarjeta: "Tarjeta", transferencia: "Transferencia" };
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -119,7 +120,6 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
       ...mOrders.flatMap(o => o.items.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price }))),
       ...mSales.flatMap(s => s.items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price }))),
     ], cost);
-    const costo = mMargin.costo;
     const utilidadBruta = mMargin.utilidadBruta;
     const margen = mMargin.margenPct ?? 0;
     const margenIncompleto = mMargin.incompleto;
@@ -275,7 +275,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     // o "1 may – 31 may". Se inyecta en VentasData para que los charts lo
     // muestren en su header.
     const fmtDay = (d: Date) =>
-      d.toLocaleDateString("es-PE", { day: "numeric", month: "short" }).replace(/\./g, "");
+      formatDateShort(d).replace(/\./g, "");
     const dateRangeLabel = `${fmtDay(monthStart)} – ${fmtDay(monthEnd)}`;
 
     // 7-day forecast (linear regression)
@@ -300,7 +300,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     const funnelPedidos = [
       { etapa: "Recibidos", cantidad: allPeriodOrders.length, color: "#3b82f6" },
       { etapa: "Confirmados", cantidad: allPeriodOrders.filter(o => ["confirmado", "en_camino", "entregado"].includes(o.status)).length, color: "#06b6d4" },
-      { etapa: "En camino", cantidad: allPeriodOrders.filter(o => ["en_camino", "entregado"].includes(o.status)).length, color: "#f59e0b" },
+      { etapa: "En camino", cantidad: allPeriodOrders.filter(o => ["en_camino", "entregado"].includes(o.status)).length, color: "#ff6b5b" },
       { etapa: "Entregados", cantidad: allPeriodOrders.filter(o => o.status === "entregado").length, color: "var(--accent)" },
     ];
 
@@ -321,7 +321,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
-      <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
+      <button onClick={() => void refresh()} className="px-4 min-h-10 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-semibold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
   if (!data) return null;
@@ -345,7 +345,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
           eyebrow + titulo + subtitulo descriptivos arriba. */}
 
       {/* ── KPI Hero Row · ADR-068 UnifiedKPITile (armonía estricta) — con sparklines ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className={KPI_GRID_6}>
         <StatCard label="Ventas Netas" value={fmt(data.ventasNetas)} icon={DollarSign} delta={data.dVentas} sparkline={data.sparkVentas.length >= 2 ? { data: data.sparkVentas } : undefined} />
         <StatCard label="Utilidad Bruta" value={fmt(data.utilidadBruta)} icon={TrendingUp} delta={data.dUtilidad} sparkline={data.sparkUtilidad.length >= 2 ? { data: data.sparkUtilidad } : undefined} />
         <StatCard label="Margen" value={`${Number(data.margen).toFixed(1)}%`} subValue={data.margenIncompleto ? "carga costos: dato parcial" : "a costo real"} icon={Percent} delta={data.dMargen} emphasis={data.margen >= 25 ? "success" : data.margen >= 15 ? "warning" : "error"} />
@@ -364,7 +364,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
           <span className="text-[var(--text-secondary)] dark:text-muted">Ayer:</span>
           <span className="font-semibold text-[var(--text-secondary)]">{fmt(data.ventasAyer)}</span>
           {data.ventasAyer > 0 && (
-            <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded-md", data.ventasHoy >= data.ventasAyer ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]")}>
+            <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded-md", data.ventasHoy >= data.ventasAyer ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]")}>
               {data.ventasHoy >= data.ventasAyer ? "↑" : "↓"} {Math.abs(((data.ventasHoy - data.ventasAyer) / data.ventasAyer) * 100).toFixed(0)}%
             </span>
           )}
@@ -377,31 +377,6 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
 
       {/* ── Charts especializados de ventas (Pareto, heatmap, waterfall, mix, comparativa) ── */}
       <VentasAdvancedCharts />
-    </div>
-  );
-}
-
-// ── Skeleton ─────────────────────────────────────────────────────────────────
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-32" />
-        ))}
-      </div>
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-[380px]" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[300px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[300px]" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />
-      </div>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { getTenantId } from "@/lib/tenant";
 import { getCustomerUserId } from "@/lib/auth/customer-server";
 import { buildTenantTitle } from "@/lib/store-metadata";
 import CuponesClient from "@/components/customer/cupones/CuponesClient";
-import Header from "@/components/Header";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildTenantTitle(

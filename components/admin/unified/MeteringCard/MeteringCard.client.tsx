@@ -18,6 +18,7 @@ import {
 import type { MeteredEvent } from "@/lib/billing/metering";
 import type { MeteringSnapshot, TrafficLight } from "./types";
 import { EVENT_LABELS, PLAN_LABELS, computePercentage, computeTrafficLight } from "./types";
+import { formatDate, formatDateShort, formatNumber } from "@/lib/format";
 
 // ─── Sparkline por métrica ────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ function Sparkline({ data, color, label }: SparklineProps) {
 
   return (
     <div aria-label={`Gráfico de tendencia 7 días: ${label}`} role="img" className="h-12 w-full">
-      <ResponsiveContainer minWidth={0} width="100%" height="100%">
+      <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
           <Line
             type="monotone"
@@ -72,7 +73,7 @@ interface QuotaBarProps {
 }
 
 const LIGHT_COLORS: Record<TrafficLight, string> = {
-  green:  "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
+  green:  "bg-primary/10 dark:bg-primary/10",
   yellow: "bg-[var(--data-warning-500)]  dark:bg-[var(--data-warning-500)]",
   red:    "bg-[var(--data-error-500)]    dark:bg-[var(--data-error-500)]",
 };
@@ -90,7 +91,7 @@ function QuotaBar({ used, limit, light, event }: QuotaBarProps) {
   return (
     <div className="w-full" role="group" aria-label={`Cuota de ${label}`}>
       <div
-        className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
+        className="h-2 w-full rounded-full bg-[var(--rule-base)] overflow-hidden"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -103,7 +104,7 @@ function QuotaBar({ used, limit, light, event }: QuotaBarProps) {
         />
       </div>
       <p className={`text-xs mt-0.5 text-right ${LIGHT_TEXT[light]}`}>
-        {limit === Infinity ? "Sin límite" : `${used.toLocaleString("es-PE")} / ${limit.toLocaleString("es-PE")}`}
+        {limit === Infinity ? "Sin límite" : `${formatNumber(used)} / ${formatNumber(limit)}`}
       </p>
     </div>
   );
@@ -126,27 +127,27 @@ function MetricCell({ event, snapshot }: MetricCellProps) {
 
   const SPARKLINE_COLORS: Record<TrafficLight, string> = {
     green:  "#10b981",
-    yellow: "#f59e0b",
+    yellow: "#ff6b5b",
     red:    "#ef4444",
   };
 
   return (
     <div
       className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col gap-2 min-h-[44px]"
-      aria-label={`Métrica: ${label}`}
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-[var(--text-tertiary)] truncate pr-2">
           {label}
         </span>
         <span
+          role="img"
           className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${LIGHT_COLORS[light]}`}
           aria-label={`Estado: ${light === "green" ? "saludable" : light === "yellow" ? "advertencia" : "crítico"}`}
         />
       </div>
 
       <p className="text-2xl font-bold text-[var(--text-primary)] leading-tight">
-        {used.toLocaleString("es-PE")}
+        {formatNumber(used)}
       </p>
 
       <QuotaBar used={used} limit={limit} light={light} event={event} />
@@ -163,9 +164,9 @@ interface PlanBadgeProps {
 }
 
 const PLAN_BADGE_STYLES: Record<MeteringSnapshot["plan"], string> = {
-  free:       "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]",
-  starter:    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  pro:        "bg-primary-dark/10 text-primary-dark dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  free:       "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]",
+  starter:    "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
+  pro:        "bg-primary-dark/10 text-primary-dark dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   enterprise: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
 };
 
@@ -173,7 +174,6 @@ export function PlanBadge({ plan }: PlanBadgeProps) {
   return (
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${PLAN_BADGE_STYLES[plan]}`}
-      aria-label={`Plan actual: ${PLAN_LABELS[plan]}`}
     >
       {PLAN_LABELS[plan]}
     </span>
@@ -254,7 +254,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
           {(snapshot.plan === "free" || snapshot.plan === "starter") && (
             <button
               onClick={onUpgrade}
-              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-lg bg-primary-dark hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
+              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-xl bg-primary-dark hover:bg-primary-dark/90 text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
               aria-label="Mejorar plan de facturación"
             >
               Mejorar plan
@@ -285,9 +285,9 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
       {/* Período */}
       <p className="text-xs text-[var(--text-tertiary)] mt-auto">
         Período:{" "}
-        {new Date(snapshot.period.from).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+        {formatDateShort(snapshot.period.from)}
         {" – "}
-        {new Date(snapshot.period.to).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+        {formatDate(snapshot.period.to)}
       </p>
     </section>
   );

@@ -1,0 +1,347 @@
+"use client";
+
+/**
+ * resumen-tabla — las piezas compartidas de la pestaña Resúmenes: la sección
+ * con cabecera, el KPI y la tabla de grupos.
+ *
+ * Viven acá y no dentro de `CubicacionResumenes` porque las usan cinco vistas
+ * (especie×tipo, general por especie, general por tipo, agrupado libre y el
+ * reparto de rolliza). Una sola tabla = una sola forma de leer una cifra: el
+ * pie tablar entero y el m³ con tres decimales, siempre, en todas.
+ */
+
+import { useMemo, useState, type ReactNode } from "react";
+import { CardTitle, DataTable } from "@buleje/design-system";
+import { Info, type LucideIcon } from "@buleje/design-system/icons";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
+import type { GrupoResumen, ResumenLote } from "@/lib/forestal/cubicacion-resumen";
+import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
+import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
+import { TipoBadge } from "./tipo-badge";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+
+/**
+ * Tarjeta de sección: misma caja para las siete lecturas del lote.
+ *
+ * Dos ranuras de texto y NO son intercambiables (Brandon, 2026-09-02: «lo que
+ * confunde mucho es texto suelto muy amplio; quiero un icono de información y
+ * al pasar el mouse que se vea ahí»):
+ *
+ *   `hint`  → el DATO de una línea, siempre visible («155 piezas · 3.264 m³»).
+ *   `ayuda` → la EXPLICACIÓN, escondida detrás del ⓘ del título.
+ *
+ * El párrafo de cuatro renglones arriba de una tabla no se lee: se salta, y
+ * empuja la tabla fuera de la pantalla. Detrás del ⓘ sigue estando entero para
+ * quien lo necesite la primera vez.
+ */
+export function SeccionResumen({ id, icon: Icono, titulo, hint, ayuda, acciones, children, className = "" }: {
+  id?: string;
+  icon?: LucideIcon;
+  titulo: string;
+  /** El dato de una línea, siempre visible. Corto: si necesita comas, va en `ayuda`. */
+  hint?: ReactNode;
+  /** La explicación larga — vive detrás del ⓘ del título, no ocupa pantalla. */
+  ayuda?: ReactNode;
+  acciones?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      id={id}
+      /* `scroll-mt`: los chips de la cabecera saltan acá y el header pegajoso
+         del admin se comía el título de la sección al aterrizar. */
+      className={`scroll-mt-24 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 ${className}`}
+    >
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+        <div className="min-w-0">
+          <CardTitle as="h4" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+            {Icono && <Icono className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />}
+            {titulo}
+            {ayuda && (
+              <AdminTooltip content={ayuda} className="max-w-[320px] text-sm font-normal normal-case leading-relaxed tracking-normal">
+                <button
+                  type="button"
+                  aria-label={`Qué es «${titulo}»`}
+                  className="shrink-0 rounded-full text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] print:hidden"
+                >
+                  <Info className="h-4 w-4" aria-hidden />
+                </button>
+              </AdminTooltip>
+            )}
+          </CardTitle>
+          {hint && <div className="mt-0.5 text-sm text-[var(--text-tertiary)]">{hint}</div>}
+        </div>
+        {acciones && <div className="flex flex-wrap items-center gap-2 print:hidden">{acciones}</div>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** KPI del encabezado: el número grande y, debajo, de qué está hecho. */
+export function KpiResumen({ label, value, unidad, hint, icon: Icono, destacado, tono }: {
+  label: string;
+  value: string;
+  unidad?: string;
+  hint?: ReactNode;
+  icon?: LucideIcon;
+  /** El del valor del lote: es el número por el que se abre esta pantalla. */
+  destacado?: boolean;
+  /** Clase de color del número, cuando el KPI juzga (rendimiento, faltante). */
+  tono?: string;
+}) {
+  return (
+    <div
+      className={`rounded-xl border px-3 py-2.5 ${destacado
+        ? "border-[var(--accent)]/40 bg-primary/10"
+        : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]"}`}
+    >
+      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+        {Icono && <Icono className="h-3.5 w-3.5 shrink-0" aria-hidden />}
+        {label}
+      </div>
+      <div className={`mt-1 flex items-baseline gap-1 font-mono text-2xl font-extrabold tabular-nums ${tono ?? (destacado ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-primary)]")}`}>
+        <span className="truncate">{value}</span>
+        {unidad && <span className="text-sm font-bold text-[var(--text-tertiary)]">{unidad}</span>}
+      </div>
+      {/* `line-clamp` y no `truncate`: el pie del rendimiento dice «esperabas
+          55 % · sobran 14.156 m³ sin aserrar» y en una línea se cortaba justo
+          donde está la explicación. */}
+      {hint && <div className="mt-0.5 line-clamp-2 text-sm text-[var(--text-tertiary)]">{hint}</div>}
+    </div>
+  );
+}
+
+const TH_BASE = "py-2.5 text-left align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
+const TD_BASE = "py-2.5 align-middle";
+const NUM = "text-right font-mono tabular-nums";
+
+/**
+ * Tabla de grupos (piezas · PT · m³ · participación · valor) con fila de total.
+ *
+ * La participación va como barra y no como número suelto: la pregunta real es
+ * "¿en qué se me fue el volumen?", y eso se contesta comparando largos de barra,
+ * no leyendo seis porcentajes en fila.
+ */
+export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, caption, compacta, seleccion }: {
+  grupos: GrupoResumen[];
+  total: ResumenLote["total"];
+  primeraCol: string;
+  conValor: boolean;
+  esTipo?: boolean;
+  /**
+   * Tildar filas para operar con ellas (Brandon, 2026-09-09: elegir una o
+   * varias y bajar SU Anexo 04, unificado).
+   *
+   * La clave la pone quien usa la tabla (`claveDe`), no la fila: la misma
+   * medida existe en dos especies y una clave `2×8×10` sola las juntaría.
+   */
+  seleccion?: {
+    marcadas: ReadonlySet<string>;
+    claveDe: (g: GrupoResumen) => string;
+    onAlternar: (clave: string) => void;
+    /** Marca o desmarca TODAS las de esta tabla de un saque. */
+    onTodas?: (claves: string[], marcar: boolean) => void;
+  };
+  /** Nombre accesible de la tabla (va en un `<caption>` sr-only). */
+  caption?: string;
+  /**
+   * Tabla dentro de una tarjeta angosta (las de especie × tipo, dos por fila).
+   * Ahí «S/ por PT» no entraba y se cortaba contra el borde: el dato ya está en
+   * la cabecera de la especie, así que la columna se va en vez de quedar a
+   * medias detrás de un scroll que nadie descubre.
+   */
+  compacta?: boolean;
+}) {
+  /* Con muchas filas la tabla toma su propio scroll: sin eso, `sticky` no se
+     pega a nada y al llegar al final ya no se sabe qué columna era cuál. */
+  const larga = grupos.length > 12;
+  /**
+   * El PRECIO por pie tablar y el IMPORTE van juntos y en TODAS las tablas con
+   * valor, también en las angostas (Brandon, 2026-09-09: «una columna de precio
+   * y otra de importe, que es la multiplicación del pie tablar por el precio
+   * unitario, y abajo el total»).
+   *
+   * Antes «S/ por PT» se escondía en las compactas porque no entraba; ahora la
+   * tabla pide un poco más de ancho y, si no hay, scrollea — esconder el precio
+   * obligaba a hacer la división a mano para saber a cuánto sale cada tipo.
+   */
+  const conRendimiento = conValor;
+  /* Medido: la general por especie en dos columnas pedía 529 px sobre 510 —
+     el valor quedaba cortado contra el borde. Con el padding chico entra. */
+  const TH = `${compacta ? "px-2" : "px-3"} ${TH_BASE}`;
+  const TD = `${compacta ? "px-2" : "px-3"} ${TD_BASE}`;
+  /**
+   * El autofiltro de la primera columna, adentro de su `<th>` (Brandon,
+   * 2026-09-10: los filtros van en el encabezado y admiten dos o más opciones).
+   *
+   * Con dos filas no se ofrece: un desplegable para elegir entre «las dos o
+   * una» es ruido en una tabla que se lee de un vistazo.
+   */
+  const [elegidos, setElegidos] = useState<string[]>([]);
+  const opcionesCol = useMemo(
+    () => grupos.map((g) => ({ value: g.clave, label: g.label, count: g.cantidad })),
+    [grupos],
+  );
+  const visibles = useMemo(
+    () => (elegidos.length === 0 ? grupos : grupos.filter((g) => elegidos.includes(g.clave))),
+    [grupos, elegidos],
+  );
+  const filtrada = visibles.length !== grupos.length;
+  /**
+   * Con la tabla acotada el pie suma LO QUE SE VE.
+   *
+   * Dejar el total del lote debajo de tres filas filtradas es la forma más
+   * barata de que alguien copie a un papel un número que no corresponde a lo
+   * que tiene delante. La participación sigue siendo sobre el lote entero —es
+   * lo que la columna promete—, así que filtrada no llega a 100 % y el pie
+   * muestra cuánto suma.
+   */
+  const totalVisible = useMemo(() => {
+    if (!filtrada) return { ...total, pct: 100 };
+    const acum = visibles.reduce(
+      (a, g) => ({
+        cantidad: a.cantidad + g.cantidad,
+        m3: a.m3 + g.m3,
+        pieTablar: a.pieTablar + g.pieTablar,
+        valor: a.valor + g.valor,
+        pct: a.pct + g.pctPt,
+      }),
+      { cantidad: 0, m3: 0, pieTablar: 0, valor: 0, pct: 0 },
+    );
+    return acum;
+  }, [filtrada, visibles, total]);
+  const claves = seleccion ? visibles.map(seleccion.claveDe) : [];
+  const todasMarcadas = seleccion != null && claves.length > 0 && claves.every((k) => seleccion.marcadas.has(k));
+  return (
+    <div className={`overflow-x-auto rounded-xl border border-[var(--rule-base)] ${larga ? "max-h-[70vh] overflow-y-auto" : ""}`}>
+      <DataTable className={`w-full text-sm ${compacta ? (conValor ? "min-w-[560px]" : "min-w-[400px]") : "min-w-[480px]"}`}>
+        {caption && <caption className="sr-only">{caption}</caption>}
+        <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
+          <tr>
+            {seleccion && (
+              <th scope="col" className={`${TH} w-8 text-center`}>
+                <input
+                  type="checkbox"
+                  checked={todasMarcadas}
+                  onChange={() => seleccion.onTodas?.(claves, !todasMarcadas)}
+                  aria-label={todasMarcadas ? "Desmarcar todas las filas" : "Marcar todas las filas"}
+                  title={todasMarcadas ? "Desmarcar todas" : "Marcar todas"}
+                  className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                />
+              </th>
+            )}
+            <th scope="col" className={TH}>
+              <span className="block">{primeraCol}</span>
+              {grupos.length > 2 && (
+                <FiltroColumnaMulti
+                  label={primeraCol}
+                  value={elegidos}
+                  options={opcionesCol}
+                  // El primitivo compartido no tiene un `label` por opción (es
+                  // genérico): acá la clave y el rótulo del grupo son cosas
+                  // distintas («ROLLIZA» vs «Rolliza comercial»), así que se
+                  // traduce con `etiqueta` en vez de perder el texto legible.
+                  etiqueta={(v) => opcionesCol.find((o) => o.value === v)?.label ?? v}
+                  onChange={setElegidos}
+                  placeholder="Todos"
+                />
+              )}
+            </th>
+            {/* Piezas · m³ · PT, la convención del módulo (2026-09-09). */}
+            <th scope="col" className={`${TH} text-right`}>Piezas</th>
+            <th scope="col" className={`${TH} text-right`}>Volumen m³</th>
+            <th scope="col" className={`${TH} text-right`}>Pie tablar</th>
+            <th scope="col" className={`${TH} ${compacta ? "w-[22%]" : "w-[26%]"}`}>Participación</th>
+            {conRendimiento && <th scope="col" className={`${TH} text-right`} title="Precio unitario del grupo: lo que sale cada pie tablar (importe ÷ PT)">Precio S/ PT</th>}
+            {conValor && <th scope="col" className={`${TH} text-right`} title="Pie tablar × precio unitario">Importe S/</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {visibles.map((g, i) => {
+            const clave = seleccion?.claveDe(g);
+            const marcada = clave != null && seleccion!.marcadas.has(clave);
+            return (
+            <tr
+              key={g.clave}
+              className={`border-t transition-colors hover:bg-primary/5 ${marcada
+                ? "border-[var(--accent)]/40 bg-[var(--accent)]/8"
+                : "border-[var(--rule-soft)] even:bg-[var(--surface-canvas)]/50"}`}
+            >
+              {seleccion && clave != null && (
+                <td className={`${TD} text-center`}>
+                  <input
+                    type="checkbox"
+                    checked={marcada}
+                    onChange={() => seleccion.onAlternar(clave)}
+                    aria-label={`Elegir ${g.label}`}
+                    className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                  />
+                </td>
+              )}
+              {/* El grupo que manda lleva la marca al costado: es el que define
+                  el precio del lote y en una lista de doce se perdía. */}
+              <td className={`${TD} border-l-[3px] font-bold text-[var(--text-primary)] ${i === 0 && visibles.length > 1 ? "border-l-[var(--accent)]" : "border-l-transparent"}`}>
+                {esTipo ? <TipoBadge tipo={g.label as TipoComercial} /> : g.label}
+              </td>
+              <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(g.cantidad)}</td>
+              <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(g.m3)}</td>
+              <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPt(g.pieTablar)}</td>
+              <td className={TD}>
+                <div className="flex items-center gap-2">
+                  {/* En mobile la fila se vuelve card y la barra queda de un
+                      píxel: ahí manda el porcentaje solo. */}
+                  <div className="hidden h-2 min-w-[2.5rem] flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)] sm:block">
+                    <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.min(100, g.pctPt)}%` }} />
+                  </div>
+                  <span className={`shrink-0 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)] ${compacta ? "w-11" : "w-14"}`}>{fmtPct(g.pctPt)}%</span>
+                </div>
+              </td>
+              {conRendimiento && (
+                <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>
+                  {g.pieTablar > 0 ? fmtSoles(g.valor / g.pieTablar) : "—"}
+                </td>
+              )}
+              {conValor && (
+                <td
+                  className={`${TD} ${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}
+                  title={`${fmtPt(g.pieTablar)} PT × S/ ${g.pieTablar > 0 ? fmtSoles(g.valor / g.pieTablar) : "0.00"}`}
+                >
+                  {fmtSoles(g.valor)}
+                </td>
+              )}
+            </tr>
+            );
+          })}
+        </tbody>
+        {/* El fondo opaco es del `tfoot` y el tinte del `tr`: pegado abajo, un
+            tinte translúcido dejaba ver la fila que pasa por debajo. */}
+        <tfoot className="sticky bottom-0 bg-[var(--surface-raised)]">
+          <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            {seleccion && <td className={TD} />}
+            <th scope="row" className={`${TD} whitespace-nowrap text-left`}>
+              {filtrada
+                ? `Filtrado · ${visibles.length} de ${grupos.length}`
+                : compacta
+                  ? "Total"
+                  : `Total · ${grupos.length} ${grupos.length === 1 ? "grupo" : "grupos"}`}
+            </th>
+            <td className={`${TD} ${NUM}`}>{fmtPiezas(totalVisible.cantidad)}</td>
+            <td className={`${TD} ${NUM}`}>{fmtM3(totalVisible.m3)}</td>
+            <td className={`${TD} ${NUM}`}>{fmtPt(totalVisible.pieTablar)}</td>
+            <td className={`${TD} text-[length:var(--ts-2xs)] uppercase tracking-wide`}>{fmtPct(totalVisible.pct)}%</td>
+            {conRendimiento && (
+              <td className={`${TD} ${NUM}`}>
+                {totalVisible.pieTablar > 0 ? fmtSoles(totalVisible.valor / totalVisible.pieTablar) : "—"}
+              </td>
+            )}
+            {/* La suma de la columna Importe: el número por el que se abre esta
+                pantalla cuando hay precio cargado. */}
+            {conValor && <td className={`${TD} ${NUM}`}>{fmtSoles(totalVisible.valor)}</td>}
+          </tr>
+        </tfoot>
+      </DataTable>
+    </div>
+  );
+}

@@ -22,6 +22,7 @@ vi.mock("@/lib/logger", () => ({
 // ── Cache helpers — no-op ─────────────────────────────────────────────────────
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet:           vi.fn((_k: string, _t: number, fn: () => unknown) => fn()),
   invalidate:         vi.fn(),
   invalidateByPrefix: vi.fn(),

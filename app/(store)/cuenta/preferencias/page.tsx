@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
@@ -21,12 +21,9 @@ import {
   AlertTriangle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 // ── Toggle moderno ─────────────────────────────────────────────────
 
@@ -247,7 +244,7 @@ function LinkRow({
         <p
           className={cn(
             "text-sm font-extrabold",
-            danger ? "text-[var(--data-error-600)] dark:text-red-400" : "text-[var(--text-primary)]",
+            danger ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]",
           )}
         >
           {label}
@@ -374,12 +371,35 @@ export default function PreferenciasPage() {
   const [lang, setLang] = useState<LangOption>("es");
   const [saved, setSaved] = useState(false);
 
+  // Persistencia de preferencias (audit 2026-06-26): antes "Guardar" era un no-op
+  // y todo se perdía al recargar. Persistimos en localStorage; el guardado
+  // server-side llega con el rediseño de /cuenta.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("buleje-cuenta-preferencias");
+      if (!raw) return;
+      const p = JSON.parse(raw) as Partial<Record<string, unknown>>;
+      if (typeof p.notifWhatsApp === "boolean") setNotifWhatsApp(p.notifWhatsApp);
+      if (typeof p.notifEmail === "boolean") setNotifEmail(p.notifEmail);
+      if (typeof p.notifPromos === "boolean") setNotifPromos(p.notifPromos);
+      if (typeof p.notifPedidos === "boolean") setNotifPedidos(p.notifPedidos);
+      if (typeof p.theme === "string") setTheme(p.theme as ThemeOption);
+      if (typeof p.lang === "string") setLang(p.lang as LangOption);
+    } catch { /* ignore */ }
+  }, []);
+
   const activeChannelsCount =
     Number(notifWhatsApp) + Number(notifEmail);
   const activeNotifsCount =
     Number(notifPedidos) + Number(notifPromos);
 
   function handleSave() {
+    try {
+      localStorage.setItem(
+        "buleje-cuenta-preferencias",
+        JSON.stringify({ notifWhatsApp, notifEmail, notifPromos, notifPedidos, theme, lang }),
+      );
+    } catch { /* ignore */ }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -434,7 +454,7 @@ export default function PreferenciasPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end gap-4 flex-wrap">
             <Link
-              href="/mi-panel"
+              href="/cuenta"
               className="h-12 w-12 inline-flex items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm hover:bg-white/25 transition-colors text-white shrink-0 border border-white/20"
               aria-label="Volver a mi cuenta"
             >
@@ -727,7 +747,7 @@ export default function PreferenciasPage() {
             {/* Volver */}
             <div>
               <Link
-                href="/mi-panel"
+                href="/cuenta"
                 className="inline-flex items-center gap-1.5 text-sm font-extrabold text-muted hover:text-[var(--text-primary)] transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />

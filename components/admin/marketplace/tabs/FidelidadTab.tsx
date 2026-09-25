@@ -10,12 +10,17 @@ import {
   Gift,
   Star,
   TrendingUp,
+  Award,
+  Medal,
+  Trophy,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 // Extraído de MarketplaceModule.tsx (refactor 2026-05-25) — sin cambios de comportamiento.
-// TODO(follow-up): los emojis 🥉🥈🥇 violan la regla "no emojis genéricos en UI" — reemplazar por iconos/SVG.
+// 2026-09-22: los emojis 🥉🥈🥇 se reemplazaron por Award/Medal/Trophy (barrido emojis→íconos).
 
 interface LoyaltyTransaction {
   id: string;
@@ -80,10 +85,10 @@ export function MarketplaceFidelidadTab() {
   };
 
   // Datos visuales por tier (rediseño 2026-05-09)
-  const tierVisuals: Record<string, { label: string; emoji: string; gradient: string; ring: string; benefit: string; minPts: number; maxPts: number | null }> = {
-    bronce: { label: "Bronce", emoji: "🥉", gradient: "from-orange-100 to-orange-50",  ring: "ring-orange-300/40", benefit: "Acumula puntos en cada compra", minPts: 0, maxPts: 499 },
-    plata:  { label: "Plata",  emoji: "🥈", gradient: "from-slate-100 to-slate-50",    ring: "ring-slate-300/50",  benefit: "5% de descuento en pedidos",      minPts: 500, maxPts: 999 },
-    oro:    { label: "Oro",    emoji: "🥇", gradient: "from-amber-100 to-yellow-50",   ring: "ring-amber-300/50",  benefit: "10% de descuento + envío prioritario", minPts: 1000, maxPts: null },
+  const tierVisuals: Record<string, { label: string; icon: LucideIcon; gradient: string; ring: string; benefit: string; minPts: number; maxPts: number | null }> = {
+    bronce: { label: "Bronce", icon: Award,  gradient: "from-orange-100 to-orange-50",  ring: "ring-orange-300/40", benefit: "Acumula puntos en cada compra", minPts: 0, maxPts: 499 },
+    plata:  { label: "Plata",  icon: Medal,  gradient: "from-slate-100 to-slate-50",    ring: "ring-slate-300/50",  benefit: "5% de descuento en pedidos",      minPts: 500, maxPts: 999 },
+    oro:    { label: "Oro",    icon: Trophy, gradient: "from-amber-100 to-yellow-50",   ring: "ring-amber-300/50",  benefit: "10% de descuento + envío prioritario", minPts: 1000, maxPts: null },
   };
 
   // Cliente actual: barra de progreso al siguiente tier
@@ -118,7 +123,7 @@ export function MarketplaceFidelidadTab() {
                 </span>
               )}
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{tv.emoji}</span>
+                <tv.icon className="h-8 w-8 text-[var(--text-primary)]" aria-hidden />
                 <div className="min-w-0">
                   <p className="text-base font-extrabold text-[var(--text-primary)] tracking-tight">{tv.label}</p>
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums">
@@ -133,9 +138,9 @@ export function MarketplaceFidelidadTab() {
       </div>
 
       {/* ── Buscador ── */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5">
         <header className="flex items-center gap-2 mb-3">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Gift className="h-4 w-4" />
           </span>
           <div>
@@ -143,7 +148,7 @@ export function MarketplaceFidelidadTab() {
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Por número de WhatsApp para ver y gestionar puntos</p>
           </div>
         </header>
-        <div className="flex items-stretch gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+        <div className="flex items-stretch gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
           <span className="inline-flex items-center px-3 text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-r-2 border-[var(--rule-base)] whitespace-nowrap">
             +51
           </span>
@@ -153,12 +158,12 @@ export function MarketplaceFidelidadTab() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && searchCustomer()}
-            className="flex-1 min-w-0 px-3 py-3 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none tabular-nums tracking-wide"
+            className="flex-1 min-w-0 px-3 h-11 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none tabular-nums tracking-wide"
           />
           <button
             onClick={searchCustomer}
             disabled={loading || !phone.trim()}
-            className="inline-flex items-center gap-2 px-5 bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
             {loading ? (
               <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -180,19 +185,19 @@ export function MarketplaceFidelidadTab() {
           )}>
             <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-lg text-4xl shrink-0">
-                  {currentTier.emoji}
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-raised)] shadow-lg shrink-0">
+                  <currentTier.icon className="h-9 w-9 text-[var(--text-primary)]" aria-hidden />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-extrabold text-base text-[var(--text-primary)] truncate">{data.name}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-white border border-[var(--data-warning)]/30 text-[var(--data-warning)]">
+                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--surface-raised)] border border-[var(--data-warning)]/30 text-[var(--data-warning)]">
                       {currentTier.label}
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-[var(--text-secondary)] tabular-nums mt-0.5">{data.phone}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
-                    Gasto total · <span className="font-bold text-[var(--text-secondary)] tabular-nums">S/ {data.totalSpent.toFixed(2)}</span>
+                    Gasto total · <span className="font-bold text-[var(--text-secondary)] tabular-nums">{formatCurrency(data.totalSpent)}</span>
                   </p>
                 </div>
               </div>
@@ -200,7 +205,7 @@ export function MarketplaceFidelidadTab() {
               <div className="text-right">
                 <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Puntos disponibles</p>
                 <p className="text-4xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">{data.points}</p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 tabular-nums">≈ S/ {(data.points / 100).toFixed(2)} canjeable</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 tabular-nums">≈ {formatCurrency(data.points / 100)} canjeable</p>
               </div>
             </div>
 
@@ -226,7 +231,7 @@ export function MarketplaceFidelidadTab() {
           </div>
 
           {/* Asignar puntos manualmente */}
-          <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5">
             <header className="flex items-center gap-2 mb-3">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--data-success)]/10 text-[var(--data-success)]">
                 <CheckCircle className="h-4 w-4" />
@@ -236,14 +241,14 @@ export function MarketplaceFidelidadTab() {
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Para premios fuera de compra (eventos, referidos, fidelidad)</p>
               </div>
             </header>
-            <div className="flex items-stretch gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+            <div className="flex items-stretch gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
               <input
                 type="number"
                 placeholder="100"
                 value={earnPoints}
                 onChange={(e) => setEarnPoints(e.target.value)}
                 min={1}
-                className="flex-1 min-w-0 px-4 py-3 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
+                className="flex-1 min-w-0 px-4 h-11 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
               />
               <span className="inline-flex items-center px-3 text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l-2 border-[var(--rule-base)]">
                 pts
@@ -251,7 +256,7 @@ export function MarketplaceFidelidadTab() {
               <button
                 onClick={handleEarn}
                 disabled={saving || !earnPoints}
-                className="inline-flex items-center gap-2 px-5 bg-[var(--data-success)] text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 bg-[var(--data-success)] text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
               >
                 {saving ? (
                   <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -265,7 +270,7 @@ export function MarketplaceFidelidadTab() {
 
           {/* Historial de transacciones */}
           {data.transactions.length > 0 && (
-            <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
               <header className="flex items-center gap-2 px-5 py-3 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
                 <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <CardTitle className="text-sm font-extrabold text-[var(--text-primary)]">Historial reciente</CardTitle>
@@ -285,7 +290,7 @@ export function MarketplaceFidelidadTab() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tx.description}</p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
-                          {new Date(tx.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+                          {formatDate(tx.createdAt)}
                         </p>
                       </div>
                       <span className={cn(
@@ -305,9 +310,9 @@ export function MarketplaceFidelidadTab() {
 
       {/* ── Empty state: sin búsqueda ── */}
       {!data && !loading && (
-        <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-8 sm:p-10">
+        <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-2xl p-8 sm:p-10">
           <div className="text-center max-w-md mx-auto">
-            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
+            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
               <Gift className="h-6 w-6" />
             </div>
             <p className="text-base font-extrabold text-[var(--text-primary)]">Programa de fidelidad</p>
@@ -327,7 +332,7 @@ export function MarketplaceFidelidadTab() {
               const Icon = rule.icon;
               return (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white border border-[var(--rule-base)] text-primary shrink-0">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-primary shrink-0">
                     <Icon className="h-4 w-4" />
                   </span>
                   <div className="min-w-0">

@@ -63,7 +63,7 @@ export async function POST(
   }
   if (!ALLOWED_TYPES.includes(file.type)) {
     return NextResponse.json(
-      { error: `Tipo no permitido: ${file.type}. Usá JPG, PNG, WebP o HEIC.` },
+      { error: `Tipo no permitido: ${file.type}. Usa JPG, PNG, WebP o HEIC.` },
       { status: 400 },
     );
   }

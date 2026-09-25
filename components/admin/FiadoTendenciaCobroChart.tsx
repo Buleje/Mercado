@@ -12,8 +12,10 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, TrendingDown, Activity } from "@buleje/design-system/icons";
+import { TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
+import { formatNumber } from "@/lib/format";
 
 type ChartRow = {
   mes: string;    // ISO "2026-05" (raw)
@@ -34,7 +36,7 @@ function isoToLabel(iso: string): string {
 }
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/${formatNumber(n, { max: 0 })}`;
 }
 
 /**
@@ -100,7 +102,7 @@ export default function FiadoTendenciaCobroChart() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-6 w-40 bg-[var(--surface-sunken)] rounded mb-3" />
         <div className="h-[220px] bg-[var(--surface-sunken)] rounded-lg" />
       </div>
@@ -109,13 +111,11 @@ export default function FiadoTendenciaCobroChart() {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6 flex flex-col items-center justify-center gap-2">
-        <Activity className="h-8 w-8 text-[var(--text-tertiary)]" strokeWidth={1.5} />
-        <p className="text-sm font-semibold text-[var(--text-secondary)]">Sin historial de cobros aún</p>
-        <p className="text-xs text-[var(--text-tertiary)] text-center max-w-sm">
-          Cuando empieces a registrar fiados y cobros, aquí verás la tendencia mes a mes.
-        </p>
-      </div>
+      <ChartsEmptyState
+        title="Sin historial de cobros aún"
+        description="Cuando empieces a registrar fiados y cobros, acá vas a ver la tendencia mes a mes."
+        className="rounded-xl"
+      />
     );
   }
 
@@ -124,7 +124,7 @@ export default function FiadoTendenciaCobroChart() {
   const yMax = Math.ceil(maxValue * 1.15 / 50) * 50 || 100;
 
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       {/* Header con KPI mes actual y delta */}
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
         <div>
@@ -149,7 +149,7 @@ export default function FiadoTendenciaCobroChart() {
                 className={cn(
                   "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold",
                   header.deltaCobrado >= 0
-                    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                    ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                     : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
                 )}
               >
@@ -215,7 +215,7 @@ export default function FiadoTendenciaCobroChart() {
               const v = Number(value);
               const n = String(name);
               const display = n === "cobrados" ? "Cobrado" : n === "nuevos" ? "Prestado" : "Neto";
-              return [`S/${v.toLocaleString("es-PE")}`, display];
+              return [`S/${formatNumber(v)}`, display];
             }}
           />
           <Legend

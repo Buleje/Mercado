@@ -184,7 +184,7 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
 
               {/* Recharts ComposedChart: barras revenue + línea pedidos */}
               <div className="h-44">
-                <ResponsiveContainer minWidth={0} width="100%" height="100%">
+                <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
                   <ComposedChart
                     data={store.months}
                     margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
@@ -287,7 +287,7 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
 
               {/* Projection */}
               {lastMonth && prevMonth && (
-                <div className="bg-[var(--accent-soft)] rounded-xl px-4 py-2.5 text-sm flex items-center gap-2">
+                <div className="bg-primary/10 rounded-xl px-4 py-2.5 text-sm flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-[var(--accent)] shrink-0" />
                   <span className="text-[var(--text-secondary)]">
                     Proyección próximo mes:{" "}

@@ -83,7 +83,7 @@ export class CulqiProvider implements PaymentProvider {
     );
   }
 
-  async refund(input: RefundInput): Promise<RefundResult> {
+  async refund(_input: RefundInput): Promise<RefundResult> {
     if (!this.secretKey) {
       return {
         refundId: "",

@@ -21,10 +21,15 @@ import { useSearchParams, useRouter } from "next/navigation";
 // Brandon 2026-05-18 v3: iconos List, Map (toggle removido), Truck/Wallet/Gift
 // (KPIs hero removidos) ya no se usan en este archivo.
 import {
-  Store, MapPin, ArrowUpRight, Bike,
-  Search as SearchIcon, ShoppingBag, ChevronRight,
+  Store,
+  MapPin,
+  ArrowUpRight,
+  Wallet,
+  ShoppingBag,
+  X,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCategoryLabel } from "@/lib/format-category";
 import { BRAND_GEO } from "@/lib/geo";
 // Brandon 2026-05-18 + audit-sprint 2026-05-20:
 // SearchAutocomplete + MarketplaceStoresView declarados como dynamic() abajo
@@ -36,6 +41,7 @@ import MarketplaceStoresView, {
 } from "@/components/marketplace/MarketplaceStoresView";
 import SubcategoryChips from "@/components/marketplace/tiendas/SubcategoryChips";
 import QuickFilterToggle from "@/components/marketplace/tiendas/QuickFilterToggle";
+import BackToTopButton from "@/components/marketplace/BackToTopButton";
 import { useTiendasUrlSync } from "./use-tiendas-url-sync";
 import { deriveActiveZones } from "@/lib/marketplace-zones";
 import {
@@ -49,17 +55,37 @@ import { useCustomer } from "@/contexts/customer-context";
 // (PostHog/Vercel). NO afecta el render visible; bajamos a dynamic + ssr:false
 // para sacarlo del bundle inicial. Si no carga, el peor caso es que un evento
 // de analytics se pierde; el usuario nunca lo nota.
-const ExplorarTracker = dynamic(
-  () => import("@/components/marketplace/explorar/ExplorarTracker"),
-  { ssr: false },
-);
+const ExplorarTracker = dynamic(() => import("@/components/marketplace/explorar/ExplorarTracker"), {
+  ssr: false,
+});
 // Brandon 2026-05-18 perf P0 #2: MarketplaceFilters es 691 LOC y se monta
 // dos veces (mobile + desktop). Lazy-load del componente; el type sigue siendo
 // import estático para no romper el tipado de DEFAULT_FILTERS.
 import type { MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
-import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star, SlidersHorizontal, Clock, List, Map as MapIcon } from "@buleje/design-system/icons";
-// CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
-import { CupSoda } from "lucide-react";
+import {
+  Boxes,
+  Star,
+  SlidersHorizontal,
+  Clock,
+  List,
+  Map as MapIcon,
+  UtensilsCrossed,
+  ShoppingBasket,
+  Wrench,
+  Smartphone,
+  Pill,
+  type LucideIcon,
+} from "@buleje/design-system/icons";
+import { MARKETPLACE_VERTICALS, verticalForStoreCategory } from "@/lib/marketplace/verticals";
+
+// Icono por vertical — single-source con lib/marketplace/verticals.
+const VERTICAL_ICONS: Record<string, LucideIcon> = {
+  comida: UtensilsCrossed,
+  bodega: ShoppingBasket,
+  ferreteria: Wrench,
+  electro: Smartphone,
+  farmacia: Pill,
+};
 // Brandon 2026-05-21 v3: removido import default de QuickFilterChips (chips
 // legacy "Abierto ahora / 4.5 o más / Sin mínimo" eliminados del render).
 // El type sigue siendo necesario para el state `activeChips` que alimenta
@@ -76,7 +102,6 @@ import StoresSortSelector, {
 // montaban en el árbol React aunque CSS los escondiera → JS bundle + hooks
 // (fetch, geo, customer-orders) corrían en mobile sin propósito. Ahora dynamic
 // con ssr:false + gate por useMediaQuery → mobile no descarga ni ejecuta nada.
-import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader";
 import TiendasLocationBar from "@/components/marketplace/TiendasLocationBar";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 // `dynamic` ya está importado al top — usado por ExplorarTracker, MarketplaceFilters,
@@ -95,38 +120,19 @@ const TiendasMap = dynamic(() => import("@/components/marketplace/TiendasMap"), 
 // El placeholder ocupa el slot visual hasta que el chunk carga, así no hay
 // jump de layout en mobile/desktop. ssr:false porque el componente usa
 // localStorage + window.matchMedia y no aporta SEO.
-const MarketplaceFilters = dynamic(
-  () => import("@/components/marketplace/MarketplaceFilters"),
-  {
-    ssr: false,
-    // Brandon 2026-05-21 perf FOUC: placeholder con la misma altura/forma del
-    // botón "Filtros" real (h-9 rounded-full chip) — NO text, NO loader visible.
-    // Si el chunk carga en <80ms (warm bundle) el usuario nunca ve este
-    // placeholder. Si tarda, ocupa el mismo slot visual evitando layout shift.
-    loading: () => (
-      <div
-        aria-hidden
-        className="inline-flex h-9 w-24 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] animate-pulse"
-      />
-    ),
-  },
-);
-
-// Brandon 2026-05-18 perf P1 #6: SearchAutocomplete oculto en mobile (hero
-// sm+ only); el navbar mobile tiene su propio search pill. ssr:false +
-// placeholder con la misma altura/borde para evitar layout shift.
-const SearchAutocomplete = dynamic(
-  () => import("@/components/marketplace/SearchAutocomplete"),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        aria-hidden
-        className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]"
-      />
-    ),
-  },
-);
+const MarketplaceFilters = dynamic(() => import("@/components/marketplace/MarketplaceFilters"), {
+  ssr: false,
+  // Brandon 2026-05-21 perf FOUC: placeholder con la misma altura/forma del
+  // botón "Filtros" real (h-9 rounded-full chip) — NO text, NO loader visible.
+  // Si el chunk carga en <80ms (warm bundle) el usuario nunca ve este
+  // placeholder. Si tarda, ocupa el mismo slot visual evitando layout shift.
+  loading: () => (
+    <div
+      aria-hidden
+      className="inline-flex h-9 w-24 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] animate-pulse"
+    />
+  ),
+});
 
 // TiendasHeroAds (banner de promos) REMOVIDO de /tiendas — Brandon 2026-06-08
 // (opción A). El mismo banner vive en /marketplace; en el directorio estorbaba.
@@ -135,30 +141,26 @@ const SearchAutocomplete = dynamic(
 // `hidden sm:block` o `hidden sm:contents`). Convertidos a dynamic con
 // ssr:false: mobile no descarga el JS, no hidrata, no corre hooks (fetch,
 // useCustomerOrders, geolocation). Gateados además por useMediaQuery abajo.
-const TiendasPromoCards = dynamic(
-  () => import("@/components/marketplace/TiendasPromoCards"),
-  { ssr: false, loading: () => null },
-);
+const TiendasPromoCards = dynamic(() => import("@/components/marketplace/TiendasPromoCards"), {
+  ssr: false,
+  loading: () => null,
+});
 const MisTiendasFavoritasStrip = dynamic(
   () => import("@/components/marketplace/MisTiendasFavoritasStrip"),
   { ssr: false, loading: () => null },
 );
-const TusTiendasStrip = dynamic(
-  () => import("@/components/marketplace/TusTiendasStrip"),
-  { ssr: false, loading: () => null },
-);
-const RepetirUltimoPedido = dynamic(
-  () => import("@/components/marketplace/RepetirUltimoPedido"),
-  { ssr: false, loading: () => null },
-);
-const InvitaVecinoCard = dynamic(
-  () => import("@/components/marketplace/InvitaVecinoCard"),
-  { ssr: false, loading: () => null },
-);
-const CuponBienvenidaBar = dynamic(
-  () => import("@/components/marketplace/CuponBienvenidaBar"),
-  { ssr: false, loading: () => null },
-);
+const TusTiendasStrip = dynamic(() => import("@/components/marketplace/TusTiendasStrip"), {
+  ssr: false,
+  loading: () => null,
+});
+const RepetirUltimoPedido = dynamic(() => import("@/components/marketplace/RepetirUltimoPedido"), {
+  ssr: false,
+  loading: () => null,
+});
+const InvitaVecinoCard = dynamic(() => import("@/components/marketplace/InvitaVecinoCard"), {
+  ssr: false,
+  loading: () => null,
+});
 const MisPedidosFavoritosStrip = dynamic(
   () => import("@/components/marketplace/MisPedidosFavoritosStrip"),
   { ssr: false, loading: () => null },
@@ -172,16 +174,6 @@ const MisPedidosFavoritosStrip = dynamic(
 // Ver `import MarketplaceStoresView ...` arriba.
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
-
-// Mapa icono por categoría de producto — coherencia visual con la row de Zona
-const PRODUCT_CATEGORY_ICONS: Record<string, typeof Boxes> = {
-  todos: Boxes,
-  abarrotes: Package,
-  bebidas: CupSoda,
-  limpieza: Sparkles,
-  frescos: Leaf,
-  otros: MoreHorizontal,
-};
 
 const MAX_PRICE_LIMIT = 500;
 
@@ -207,10 +199,18 @@ interface TiendasClientProps {
    *  visibles. El client useEffect refresca/filtra normalmente. */
   initialStores?: MarketplaceStore[];
   /** Productos por slug para las cards Premium (beneficio superadmin). */
-  premiumProducts?: Record<string, import("@/components/marketplace/PremiumStoreCard").PremiumProduct[]>;
+  premiumProducts?: Record<
+    string,
+    import("@/components/marketplace/PremiumStoreCard").PremiumProduct[]
+  >;
 }
 
-export default function TiendasClient({ initialZone, initialCategory, initialStores = [], premiumProducts = {} }: TiendasClientProps = {}) {
+export default function TiendasClient({
+  initialZone,
+  initialCategory,
+  initialStores = [],
+  premiumProducts = {},
+}: TiendasClientProps = {}) {
   // ── TS-26 URL sync — leer estado inicial de query params ──
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -228,14 +228,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
 
   // Profile del customer — sólo lo usamos para mostrar su ubicación
   // real cuando ya lo gateamos por isLoggedIn. NO decide auth.
-  const { customer } = useCustomer();
-  const customerCity = isLoggedIn
-    ? (customer?.districtName ?? customer?.provinceName ?? null)
-    : null;
-  const customerRegion = isLoggedIn
-    ? (customer?.departmentName ?? null)
-    : null;
-  const hasLocation = isLoggedIn && Boolean(customerCity || customerRegion);
+  useCustomer();
 
   const [stores, setStores] = useState<MarketplaceStore[]>(initialStores);
   const [loading, setLoading] = useState(initialStores.length === 0);
@@ -255,9 +248,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
   const [category, setCategory] = useState(
     () => initialCategory ?? searchParams.get("cat") ?? "todos",
   );
-  const [zone, setZone] = useState(
-    () => initialZone ?? searchParams.get("zona") ?? "",
-  );
+  const [zone, setZone] = useState(() => initialZone ?? searchParams.get("zona") ?? "");
   // Sticky bar de subcategorías mobile — visible cuando la sección original
   // sale del viewport por scroll. Brandon mayo 18 2026.
   // mayo 18 v2: sincronizada con la dirección de scroll (hide-down/show-up)
@@ -269,8 +260,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
   // cajitas inline (10+ items horizontales que saturaban la UI). Ahora se
   // abre un modal lateral con la lista — un solo botón "Filtrar por zona".
   const [zoneModalOpen, setZoneModalOpen] = useState(false);
-  const [productFilters, setProductFilters] =
-    useState<MarketplaceFiltersState>(DEFAULT_FILTERS);
+  const [productFilters, setProductFilters] = useState<MarketplaceFiltersState>(DEFAULT_FILTERS);
 
   // ── Subcategorías dinámicas (alimentadas desde superadmin) ──
   interface SubCategoryOption {
@@ -286,10 +276,13 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
     () => searchParams.get("subcat") ?? null,
   );
 
+  // Categoría PRINCIPAL (vertical: comida/bodega/ferretería/…). Filtro de más
+  // alto nivel que la subcategoría (Brandon 2026-07-06). null = todas.
+  const [vertical, setVertical] = useState<string | null>(null);
+
   // Brandon 2026-05-18 perf P2 #13: el listener solo se monta cuando hay
   // subcategorías visibles. Sin chips → no hay sticky bar → no scroll listener.
   // Declarado DESPUÉS del state `subcategories` (orden léxico de hooks).
-  const hasSubcategoryChips = subcategories.length > 0;
   // Brandon 2026-05-27: el navbar ahora es FIJO siempre (no se esconde al
   // bajar). La sticky subnav de subcategorías debe aparecer apenas el usuario
   // pasa la sección original — independiente de la dirección de scroll. Antes
@@ -308,7 +301,9 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
   // un chip de subcategoría. Ahora la lectura va por ref → fetch solo cuando
   // cambia la categoría principal.
   const subCategoryIdRef = useRef(subCategoryId);
-  useEffect(() => { subCategoryIdRef.current = subCategoryId; }, [subCategoryId]);
+  useEffect(() => {
+    subCategoryIdRef.current = subCategoryId;
+  }, [subCategoryId]);
 
   useEffect(() => {
     // Flag `cancelled` en vez de AbortController: evita el stale-overwrite al
@@ -325,8 +320,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
         if (cancelled) return;
         const all = (j.subcategories ?? []) as SubCategoryOption[];
         const subs = all.filter(
-          (s) =>
-            Array.isArray(s.linkedStoreSlugs) && s.linkedStoreSlugs.length > 0,
+          (s) => Array.isArray(s.linkedStoreSlugs) && s.linkedStoreSlugs.length > 0,
         );
         setSubcategories(subs);
         // Si la subcategoría seleccionada ya no existe en este filtro, limpiarla
@@ -344,9 +338,17 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
   }, [category]);
 
   const activeSubcategory = subCategoryId
-    ? subcategories.find((s) => s.id === subCategoryId) ?? null
+    ? (subcategories.find((s) => s.id === subCategoryId) ?? null)
     : null;
   const linkedStoreSlugsForSub = activeSubcategory?.linkedStoreSlugs ?? null;
+
+  // Encadenar categoría → subcategoría (Brandon 2026-07-06): al elegir una
+  // categoría (vertical: Comida/Bodega/…), las subcategorías visibles se acotan
+  // a las de ESE mundo — client-side, sin refetch. `categoryId` de la subcat es
+  // el rubro de tienda (restaurante/bodega…); verticalForStoreCategory lo mapea.
+  const visibleSubcategories = vertical
+    ? subcategories.filter((s) => verticalForStoreCategory(s.categoryId) === vertical)
+    : subcategories;
 
   // Observer para detectar cuando la sección original sale del viewport.
   // El estado final de visibilidad de la sticky bar se combina con la
@@ -360,8 +362,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        const past =
-          !entry.isIntersecting && entry.boundingClientRect.top < 0;
+        const past = !entry.isIntersecting && entry.boundingClientRect.top < 0;
         setScrolledPastSubcategories(past);
       },
       { rootMargin: "-72px 0px 0px 0px", threshold: 0 },
@@ -374,9 +375,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
   const [activeChips, setActiveChips] = useState<Set<QuickChipId>>(() => {
     const raw = searchParams.get("chips");
     if (!raw) return new Set();
-    return new Set(
-      raw.split(",").filter(Boolean) as QuickChipId[],
-    );
+    return new Set(raw.split(",").filter(Boolean) as QuickChipId[]);
   });
 
   const handleChipToggle = useCallback((chipId: QuickChipId) => {
@@ -406,7 +405,16 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
   }, []);
 
   // ── TS-26 URL sync — escribir back al cambiar el estado (hook dedicado) ──
-  useTiendasUrlSync({ search, category, zone, sortKey, activeChips, subCategoryId, initialZone, initialCategory });
+  useTiendasUrlSync({
+    search,
+    category,
+    zone,
+    sortKey,
+    activeChips,
+    subCategoryId,
+    initialZone,
+    initialCategory,
+  });
 
   // ── Geo hook ──
   const {
@@ -418,6 +426,11 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
     setGeoActive,
     setUserCoords,
   } = useMarketplaceGeo(stores, setProductFilters);
+
+  // Fiado Digital — solo mostramos el filtro "Acepta fiado" si al menos una
+  // tienda del listado lo ofrece (evita un filtro que rinde vacío en ciudades
+  // recién lanzadas). Mismo criterio que chipHasMatch de QuickFilterChips.
+  const anyAcceptsFiado = useMemo(() => stores.some((s) => s.acceptsFiado === true), [stores]);
 
   const handleFiltersChange = useCallback(
     (patch: Partial<MarketplaceFiltersState>) => {
@@ -448,6 +461,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
   const resetAllFilters = useCallback(() => {
     setSearch("");
     setCategory("todos");
+    setVertical(null);
     setZone("");
     setSubCategoryId(null);
     setGeoActive(false);
@@ -461,12 +475,20 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
   const activeFilterCount =
     (search.trim() ? 1 : 0) +
     (category !== "todos" ? 1 : 0) +
+    (vertical ? 1 : 0) +
     (zone ? 1 : 0) +
     (subCategoryId ? 1 : 0) +
     (geoActive ? 1 : 0) +
     activeChips.size +
     (sortKey !== "relevance" ? 1 : 0) +
     (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0);
+
+  // Audit filtros (Brandon 2026-07-06): reemplaza el viejo `compactFilters` que
+  // ESCONDÍA todos los filtros con ≤6 tiendas (choca con "usar mejor los
+  // filtros"). Ahora la barra slim (orden + chips + zona + más filtros) está
+  // SIEMPRE visible; el sidebar pesado (secciones apiladas) aparece solo cuando
+  // hay muchas tiendas (>6), donde el filtrado importa de verdad.
+  const manyStores = stores.length > 6;
 
   // Retry counter — bump para re-ejecutar el useEffect del fetch
   const [retryKey, setRetryKey] = useState(0);
@@ -560,7 +582,9 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
     const softRetry = () => {
       setLoading(false);
       setRetryKey((k) => k + 1);
-      try { router.refresh(); } catch {}
+      try {
+        router.refresh();
+      } catch {}
     };
     const onPageShow = (e: PageTransitionEvent) => {
       if (!e.persisted) return;
@@ -693,14 +717,17 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
     // quedaba desincronizado con "Mostrando 1 tienda" del grid. Ahora ambos
     // derivan del mismo set (el grid re-filtra idempotente). Misma fuente de
     // verdad para el contador y el listado.
+    // Filtro por categoría PRINCIPAL (vertical) — el más alto de la jerarquía.
+    const byVertical = vertical
+      ? subcategoryFiltered.filter(
+          (s) => verticalForStoreCategory((s as { category?: string }).category) === vertical,
+        )
+      : subcategoryFiltered;
     const base =
       activeChips.size === 0
-        ? subcategoryFiltered
-        : subcategoryFiltered.filter((s) =>
-            passesChips(
-              s as MarketplaceStore & Partial<StoreChipFields>,
-              activeChips,
-            ),
+        ? byVertical
+        : byVertical.filter((s) =>
+            passesChips(s as MarketplaceStore & Partial<StoreChipFields>, activeChips),
           );
     const opened: typeof base = [];
     const closed: typeof base = [];
@@ -711,27 +738,123 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
       else opened.push(s);
     }
     return [...opened, ...closed];
-  }, [subcategoryFiltered, activeChips]);
+  }, [subcategoryFiltered, activeChips, vertical]);
 
   // Brandon 2026-05-18 perf P2 #10: antes `stores.some(...)` se evaluaba
   // inline en JSX (en cada render). Ahora memoizado contra `stores` solo.
   const hasActiveOffers = useMemo(
-    () =>
-      stores.some((s) => ((s as { activePromos?: number }).activePromos ?? 0) > 0),
+    () => stores.some((s) => ((s as { activePromos?: number }).activePromos ?? 0) > 0),
     [stores],
   );
 
-  const hasFilters =
-    category !== "todos" ||
-    zone ||
-    geoActive ||
-    activeChips.size > 0 ||
-    search.trim().length > 0 ||
-    sortKey !== "relevance" ||
-    subCategoryId !== null;
+  // Verticales presentes (categoría PRINCIPAL) — solo los que tienen tiendas,
+  // en el orden de MARKETPLACE_VERTICALS. Alimentan el filtro de arriba.
+  const presentVerticals = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const s of stores) {
+      const v = verticalForStoreCategory((s as { category?: string }).category);
+      if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+    }
+    return MARKETPLACE_VERTICALS.filter((v) => counts.has(v.id)).map((v) => ({
+      id: v.id,
+      label: v.label,
+      Icon: VERTICAL_ICONS[v.id] ?? Boxes,
+      count: counts.get(v.id) ?? 0,
+    }));
+  }, [stores]);
 
-  const navMode = useMarketplaceNavMode();
-  const isTiendasOnly = navMode === "tiendas-only";
+
+  /**
+   * ¿Los filtros van como tiles grandes o como chips?
+   *
+   * Con cuatro tiendas y tres verticales, dos filas de tiles de 112-128px son
+   * MÁS CONTROLES QUE RESULTADOS: ocupan media pantalla para elegir entre cosas
+   * que se ven todas de un vistazo, y en escritorio dejan ~750px de aire a la
+   * derecha.
+   *
+   * No se esconden —un filtro invisible es una función que nadie puede usar—:
+   * se degrada la FORMA. Pocas tiendas → chips en una fila; cuando el
+   * directorio crezca, vuelven los tiles con su jerarquía.
+   *
+   * El umbral es "más tiendas de las que entran de un vistazo". Ocho es una
+   * pantalla de scroll en mobile.
+   */
+  const UMBRAL_TILES = 8;
+  const filtrosCompactos = stores.length < UMBRAL_TILES;
+
+  // Chips de filtro activo (audit filtros #4) — feedback claro de qué está
+  // filtrado + remoción por chip. Cada uno se pinta arriba del grid con una ×.
+  const activeFilterPills: { key: string; label: string; remove: () => void }[] = [];
+  if (search.trim()) {
+    activeFilterPills.push({ key: "q", label: `"${search.trim()}"`, remove: () => setSearch("") });
+  }
+  if (vertical) {
+    activeFilterPills.push({
+      key: "vertical",
+      label: MARKETPLACE_VERTICALS.find((v) => v.id === vertical)?.label ?? "Categoría",
+      remove: () => setVertical(null),
+    });
+  }
+  if (category !== "todos") {
+    activeFilterPills.push({
+      key: "cat",
+      label: formatCategoryLabel(category),
+      remove: () => setCategory("todos"),
+    });
+  }
+  if (subCategoryId) {
+    activeFilterPills.push({
+      key: "sub",
+      label: activeSubcategory?.label ?? "Subcategoría",
+      remove: () => setSubCategoryId(null),
+    });
+  }
+  if (zone) {
+    activeFilterPills.push({
+      key: "zone",
+      label: zonesForFilter.find((z) => z.id === zone)?.label ?? "Zona",
+      remove: () => setZone(""),
+    });
+  }
+  if (geoActive) {
+    activeFilterPills.push({
+      key: "geo",
+      label: "Cerca de mí",
+      remove: () => {
+        setGeoActive(false);
+        setUserCoords(null);
+      },
+    });
+  }
+  if (activeChips.has("top_rated")) {
+    activeFilterPills.push({ key: "top", label: "4+ estrellas", remove: () => handleChipToggle("top_rated") });
+  }
+  if (activeChips.has("open_now")) {
+    activeFilterPills.push({ key: "open", label: "Abierto ahora", remove: () => handleChipToggle("open_now") });
+  }
+  if (activeChips.has("accepts_fiado")) {
+    activeFilterPills.push({ key: "fiado", label: "Acepta fiado", remove: () => handleChipToggle("accepts_fiado") });
+  }
+  if (sortKey !== "relevance") {
+    activeFilterPills.push({
+      key: "sort",
+      label: STORES_SORT_OPTIONS.find((o) => o.id === sortKey)?.label ?? "Orden",
+      remove: () => setSortKey("relevance"),
+    });
+  }
+
+  // Contador por chip (audit comodidad) — cuántas tiendas matchean cada filtro
+  // rápido, para mostrarlo en el chip ("Abierto ahora (2)") antes de aplicarlo.
+  const chipCounts = useMemo(
+    () => ({
+      top_rated: stores.filter((s) => (s.rating ?? 0) >= 4).length,
+      open_now: stores.filter((s) => (s as { isOpenNow?: boolean }).isOpenNow !== false).length,
+      accepts_fiado: stores.filter((s) => s.acceptsFiado === true).length,
+    }),
+    [stores],
+  );
+
+  useMarketplaceNavMode();
 
   // Brandon 2026-05-20 v2 — fix flash desktop↔mobile:
   // El gate JS `useMediaQuery` (anterior) arrancaba en `false` durante SSR/primer
@@ -748,19 +871,18 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
   return (
     <div className="min-h-screen overflow-x-clip bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="tiendas_directorio" />
+      <BackToTopButton />
 
       {/* ── Sticky subcategory bar (mobile only) ──
            Aparece debajo del nav cuando el usuario hace scroll past
            la sección original. Sigue la misma lógica de visibilidad
            que el nav (hide-down / show-up) + clase
            `nav-smooth-transition` para timing/easing idéntico. */}
-      {subcategories.length > 0 && (
+      {visibleSubcategories.length > 0 && (
         <div
           aria-hidden={!showStickySubcategoryBar}
           style={{
-            transform: showStickySubcategoryBar
-              ? "translateY(0)"
-              : "translateY(-110%)",
+            transform: showStickySubcategoryBar ? "translateY(0)" : "translateY(-110%)",
             opacity: showStickySubcategoryBar ? 1 : 0,
             visibility: showStickySubcategoryBar ? "visible" : "hidden",
             transitionProperty: "transform, opacity, visibility",
@@ -770,9 +892,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
           }}
           className={cn(
             "sm:hidden fixed left-0 right-0 top-[52px] z-40 will-change-transform",
-            showStickySubcategoryBar
-              ? "pointer-events-auto"
-              : "pointer-events-none",
+            showStickySubcategoryBar ? "pointer-events-auto" : "pointer-events-none",
           )}
         >
           <div className="border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur-md shadow-[0_4px_16px_-8px_rgba(0,0,0,0.15)]">
@@ -791,7 +911,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                 Todas
               </button>
               <SubcategoryChips
-                subcategories={subcategories}
+                subcategories={visibleSubcategories}
                 activeId={subCategoryId}
                 onSelect={setSubCategoryId}
                 variant="pill"
@@ -811,10 +931,10 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
           información comercial (h1 "Las mejores tiendas de tu barrio",
           stats, descripción) vive en home (/). */}
 
-      {/* ── Cupón de bienvenida (Brandon 2026-06-02) — ARRIBA del hero, visible
-           al abrir, solo para usuarios nuevos (el componente se auto-gatea por
-           primer-pedido + dismiss). Saca el cupón de adentro del hero rotante. */}
-      {search.trim().length === 0 && <CuponBienvenidaBar />}
+      {/* Cupón de bienvenida (CuponBienvenidaBar) REMOVIDO — Brandon 2026-07-06:
+           el 10% ya aparece en la barra superior global (MarketplacePromoBar) y
+           como card en la fila de promos del banner. Una franja full-width propia
+           duplicaba el mensaje y robaba una fila entera. */}
 
       {/* Banner de promos REMOVIDO de /tiendas (Brandon 2026-06-08, opción A):
           el mismo banner ya vive en /marketplace; acá —directorio donde el
@@ -826,7 +946,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
            promocionales. Especialmente útil en modo tiendas-only. */}
       {search.trim().length > 0 && stores.length > 0 && (
         <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-5 sm:p-6">
+          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10 p-5 sm:p-6">
             <div className="flex items-end justify-between gap-4 mb-4">
               <div>
                 <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
@@ -854,9 +974,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                   href={`/tienda/${s.slug}`}
                   className="group flex items-center gap-3 rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] p-3 hover:border-[var(--text-primary)]/40 transition-colors"
                 >
-                  <div
-                    className="h-14 w-14 shrink-0 rounded-xl overflow-hidden flex items-center justify-center bg-[var(--accent-soft)]"
-                  >
+                  <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden flex items-center justify-center bg-primary/10">
                     {s.logo ? (
                       // Brandon 2026-05-18 perf P2 #11: logos "Activas ahora"
                       // — next/image con sizes 56px, lazy decode automático.
@@ -869,10 +987,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <Store
-                        className="h-6 w-6 text-[var(--accent)]"
-                        strokeWidth={1.75}
-                      />
+                      <Store className="h-6 w-6 text-[var(--accent)]" strokeWidth={1.75} />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -880,7 +995,8 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                       {s.name}
                     </p>
                     <p className="text-xs text-[var(--text-tertiary)] truncate">
-                      {(s as { zone?: string }).zone ?? s.category ?? "Tienda local"}
+                      {(s as { zone?: string }).zone ??
+                        (s.category ? formatCategoryLabel(s.category) : "Tienda local")}
                     </p>
                   </div>
                   <ArrowUpRight
@@ -901,9 +1017,9 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                 productos en TODAS las tiendas (que sí matchea por producto). */}
             <Link
               href={`/marketplace/buscar?q=${encodeURIComponent(search.trim())}`}
-              className="mt-4 flex items-center gap-3 rounded-xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-3.5 transition-all hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/40"
+              className="mt-4 flex items-center gap-3 rounded-xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-3.5 transition-all hover:border-[var(--accent)] hover:bg-primary/10"
             >
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <ShoppingBag className="h-5 w-5" strokeWidth={2} aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
@@ -914,7 +1030,11 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                   Ver &quot;{search.trim()}&quot; en productos de todas las tiendas
                 </span>
               </span>
-              <ArrowUpRight className="h-4.5 w-4.5 shrink-0 text-[var(--accent)]" strokeWidth={2.25} aria-hidden />
+              <ArrowUpRight
+                className="h-4.5 w-4.5 shrink-0 text-[var(--accent)]"
+                strokeWidth={2.25}
+                aria-hidden
+              />
             </Link>
           </div>
         </section>
@@ -1020,23 +1140,160 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
         {/* h2 — el H1 único de la página es el sr-only en app/tiendas/page.tsx
             (server, SSR). Estos eran H1 duplicados (3 H1 → audit SEO 2026-05-31);
             degradados a H2 para jerarquía limpia H1→H2→H3 (cards). */}
-        <h2 className="sm:hidden sr-only">
-          Tiendas y bodegas en {BRAND_GEO.city} con delivery
-        </h2>
+        <h2 className="sm:hidden sr-only">Tiendas y bodegas en {BRAND_GEO.city} con delivery</h2>
 
-        {/* h2 desktop compacto — 1 línea, sin párrafos extra */}
-        <h2 className="hidden sm:block text-2xl lg:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight mb-6">
-          Tiendas en{" "}
-          <span className="text-[var(--accent)]">{BRAND_GEO.city}</span>
-        </h2>
+        {/* Título "Tiendas en {ciudad}" REMOVIDO (Brandon 2026-07-06): el banner
+            + las categorías ya orientan; el h1 SEO vive sr-only en el server. */}
+
+        {/* ── CATEGORÍAS PRINCIPALES (Comida/Bodega/Ferretería/…) — el filtro de
+             MÁS ALTO nivel, ANTES de las subcategorías (Brandon 2026-07-06).
+             Mejor jerarquía: primero el "mundo", después el antojo. Filtra el
+             directorio por vertical. ── */}
+        {presentVerticals.length > 1 && (
+          <div className="mb-4">
+            {/* Categorías como TILES grandes (Brandon 2026-07-06): mismo formato
+                que las subcategorías pero con MÁS jerarquía — tiles más grandes,
+                border-2, badge de ícono prominente + conteo de tiendas. */}
+            <div
+              className={cn(
+                "-mx-4 flex overflow-x-auto px-4 [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0",
+                filtrosCompactos ? "gap-2 sm:flex-wrap" : "gap-2.5",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => setVertical(null)}
+                aria-pressed={vertical === null}
+                className={cn(
+                  "group shrink-0 items-center justify-center transition-all",
+                  filtrosCompactos
+                    ? "inline-flex h-11 gap-2 rounded-full border-2 px-4"
+                    : "flex h-[112px] w-[112px] flex-col gap-2 rounded-2xl border-2 sm:h-[128px] sm:w-[128px]",
+                  vertical === null
+                    ? "border-[var(--accent)] bg-primary/10"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-flex items-center justify-center transition-colors",
+                    filtrosCompactos
+                      ? "h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : cn(
+                          "h-11 w-11 rounded-2xl",
+                          vertical === null ? "bg-[var(--accent)] text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+                        ),
+                  )}
+                >
+                  <Boxes className="h-5 w-5" strokeWidth={2} aria-hidden />
+                </span>
+                <span className="text-sm font-bold text-[var(--text-primary)]">Todas</span>
+              </button>
+              {presentVerticals.map((v) => {
+                const active = vertical === v.id;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setVertical(active ? null : v.id)}
+                    aria-pressed={active}
+                    className={cn(
+                      "group shrink-0 items-center justify-center text-center transition-all",
+                      filtrosCompactos
+                        ? "inline-flex h-11 gap-2 rounded-full border-2 px-4"
+                        : "flex h-[112px] w-[112px] flex-col gap-1.5 rounded-2xl border-2 px-1 sm:h-[128px] sm:w-[128px]",
+                      active
+                        ? "border-[var(--accent)] bg-primary/10"
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center transition-colors",
+                        filtrosCompactos
+                          ? "h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                          : cn(
+                              "h-11 w-11 rounded-2xl",
+                              active ? "bg-[var(--accent)] text-white" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white",
+                            ),
+                      )}
+                    >
+                      <v.Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                    </span>
+                    <span className="text-sm font-bold text-[var(--text-primary)] leading-tight line-clamp-1">
+                      {v.label}
+                    </span>
+                    {/* En compacto el conteo va INLINE: una segunda línea dentro
+                        de un chip de 44px no entra, y el número es justo lo que
+                        dice si vale la pena tocar el filtro. */}
+                    <span
+                      className={cn(
+                        "font-semibold tabular-nums text-[var(--text-tertiary)]",
+                        filtrosCompactos ? "text-sm" : "text-[length:var(--ts-2xs)]",
+                      )}
+                    >
+                      {filtrosCompactos ? v.count : `${v.count} ${v.count === 1 ? "tienda" : "tiendas"}`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── ¿QUÉ SE TE ANTOJA HOY? — subcategorías (Pollos/Pizzas), el nivel
+             MÁS FINO, DESPUÉS de las categorías principales. Solo si hay. */}
+        {visibleSubcategories.length > 0 && (
+          <div ref={subcategorySectionRef} className="mb-4">
+            {/* El título sobra en compacto: con dos opciones, «Todas · Pollos ·
+                Pizzas» en una fila se entiende sin encabezarlo, y el h2 costaba
+                otra línea. En modo tile sí ayuda a separar los dos niveles. */}
+            {!filtrosCompactos && (
+              <h2 className="mb-2.5 text-base font-extrabold tracking-tight text-[var(--text-primary)] sm:text-lg">
+                ¿Qué se te antoja hoy?
+              </h2>
+            )}
+            <div
+              className={cn(
+                "-mx-4 flex overflow-x-auto px-4 [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+                filtrosCompactos ? "gap-2 sm:flex-wrap" : "gap-2",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => setSubCategoryId(null)}
+                aria-pressed={subCategoryId === null}
+                className={cn(
+                  "group shrink-0 items-center justify-center transition-all",
+                  filtrosCompactos
+                    ? "inline-flex h-10 gap-1.5 rounded-full border px-3.5"
+                    : "flex h-[84px] w-[84px] flex-col gap-1 rounded-2xl border sm:h-[100px] sm:w-[100px]",
+                  subCategoryId === null
+                    ? "border-[var(--accent)] bg-primary/10"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
+                )}
+              >
+                <Boxes className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+                <span className="text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)]">
+                  Todas
+                </span>
+              </button>
+              <SubcategoryChips
+                subcategories={visibleSubcategories}
+                activeId={subCategoryId}
+                onSelect={setSubCategoryId}
+                variant={filtrosCompactos ? "pill" : "tile"}
+              />
+            </div>
+          </div>
+        )}
 
         {/* ── DESKTOP SIDEBAR LAYOUT — lg:grid-cols-[280px_1fr]
              En < lg (mobile + tablet): los filtros y el grid quedan en flujo
              normal (columna única) igual que antes.
              En lg+: aside sticky izquierda + main derecha. */}
-        <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-8 lg:items-start">
-
-        {/*
+        <div className={manyStores ? "lg:grid lg:grid-cols-[280px_1fr] lg:gap-8 lg:items-start" : ""}>
+          {/*
           Brandon 2026-05-21 v3 — eliminados los chips legacy "Abierto ahora /
           4.5 o más / Sin mínimo" (componente QuickFilterChips) que se
           renderizaban arriba del filter bar.
@@ -1057,477 +1314,576 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
           retiró el render UI duplicado.
         */}
 
-        {/* ── ASIDE: Filtros (sidebar en lg+, flujo inline en <lg) ──
+          {/* ── ASIDE: Filtros (sidebar en lg+, flujo inline en <lg) ──
              En desktop: 280px sticky, separado del grid por gap-8.
              En mobile/tablet: flujo inline idéntico al anterior (mb-4). */}
-        {/* Sidebar de filtros — rediseño minimalista (Brandon 2026-06-10):
+          {/* Sidebar de filtros — rediseño minimalista (Brandon 2026-06-10):
             SIN tarjeta redondeada/sombra. Los filtros viven sobre el canvas,
             separados del grid por un hairline a la derecha (lg:border-r). Mismo
             lenguaje que QuickFilterToggle: radios sutiles, contornos en vez de
             fondos difuminados, estado activo = contorno oscuro sólido. */}
-        <aside
-          aria-label="Filtros de tiendas"
-          className="space-y-4 mb-3 lg:space-y-5 lg:mb-0 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]"
-        >
-          {/* Encabezado sidebar — solo visible en desktop. Muestra el nº de
-              filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}
-          <div className="hidden lg:flex items-center justify-between gap-2 pb-3 border-b border-[var(--rule-base)]">
-            <div className="flex min-w-0 items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={2} aria-hidden />
-              <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">Filtros</h2>
+          {/* Audit filtros: aside SIEMPRE presente (barra slim). Los estilos de
+              sidebar sticky/borde solo se aplican con muchas tiendas (columna
+              280px); con pocas, la barra fluye a ancho completo arriba del grid. */}
+          <aside
+            aria-label="Filtros de tiendas"
+            className={cn(
+              // Compacto por defecto (barra slim); roomier solo como sidebar.
+              "mb-2 space-y-2",
+              // Filtros STICKY (Brandon 2026-07-06 v2): FLUSH al top (top-0), tipo
+              // nav. Antes top-16 dejaba un hueco de 64px cuando el navbar se
+              // escondía al scrollear → se veía "flotando". Ahora se pega arriba
+              // de todo (fondo + blur tapan lo de atrás; el navbar z-50 lo cubre
+              // al reaparecer). Con sidebar (muchas tiendas) usa su propio sticky.
+              !manyStores &&
+                "sticky top-0 z-30 -mx-4 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]/95 px-4 py-2.5 backdrop-blur-md shadow-[0_4px_16px_-10px_rgba(0,0,0,0.2)] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+              manyStores &&
+                "lg:mb-0 lg:space-y-5 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]",
+            )}
+          >
+            {/* Chips COMPACTOS de categoría/subcategoría en la barra sticky
+                (Brandon 2026-07-06 task 2): viajan con la barra al scrollear
+                para quick-switch sin volver arriba. Solo cuando ya scrolleaste
+                más allá de los tiles (evita duplicar los tiles grandes de
+                arriba). Solo en la barra slim (!manyStores). */}
+            {!manyStores && scrolledPastSubcategories && presentVerticals.length > 1 && (
+              <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
+                <button
+                  type="button"
+                  onClick={() => setVertical(null)}
+                  aria-pressed={vertical === null}
+                  className={cn(
+                    "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-[length:var(--ts-xs)] font-bold whitespace-nowrap transition-colors",
+                    vertical === null
+                      ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  Todas
+                </button>
+                {presentVerticals.map((v) => {
+                  const active = vertical === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setVertical(active ? null : v.id)}
+                      aria-pressed={active}
+                      className={cn(
+                        "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-[length:var(--ts-xs)] font-bold whitespace-nowrap transition-colors",
+                        active
+                          ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]",
+                      )}
+                    >
+                      <v.Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                      {v.label}
+                    </button>
+                  );
+                })}
+                {visibleSubcategories.length > 0 && (
+                  <>
+                    <span aria-hidden className="mx-0.5 h-5 w-px shrink-0 bg-[var(--rule-base)]" />
+                    <button
+                      type="button"
+                      onClick={() => setSubCategoryId(null)}
+                      aria-pressed={subCategoryId === null}
+                      className={cn(
+                        "shrink-0 inline-flex items-center rounded-full border px-3 h-8 text-[length:var(--ts-xs)] font-bold whitespace-nowrap transition-colors",
+                        subCategoryId === null
+                          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]",
+                      )}
+                    >
+                      Todas
+                    </button>
+                    <SubcategoryChips
+                      subcategories={visibleSubcategories}
+                      activeId={subCategoryId}
+                      onSelect={setSubCategoryId}
+                      variant="pill"
+                    />
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Encabezado "Filtros · N | Limpiar" — SOLO en modo sidebar (muchas
+              tiendas). Con la barra slim es redundante (la fila de chips activos
+              ya trae "Limpiar todo"). Brandon 2026-07-06 (compactar). */}
+            {manyStores && (
+            <div className="hidden lg:flex items-center justify-between gap-2 pb-3 border-b border-[var(--rule-base)]">
+              <div className="flex min-w-0 items-center gap-2">
+                <SlidersHorizontal
+                  className="h-4 w-4 shrink-0 text-[var(--text-secondary)]"
+                  strokeWidth={2}
+                  aria-hidden
+                />
+                <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
+                  Filtros
+                </h2>
+                {activeFilterCount > 0 && (
+                  <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
+                    · {activeFilterCount}
+                  </span>
+                )}
+              </div>
               {activeFilterCount > 0 && (
-                <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
-                  · {activeFilterCount}
-                </span>
+                <button
+                  type="button"
+                  onClick={resetAllFilters}
+                  className="shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] transition-opacity hover:opacity-70"
+                >
+                  Limpiar
+                </button>
               )}
             </div>
-            {activeFilterCount > 0 && (
-              <button
-                type="button"
-                onClick={resetAllFilters}
-                className="shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] transition-opacity hover:opacity-70"
-              >
-                Limpiar
-              </button>
             )}
-          </div>
 
-          {/* Chip "Repetir pedido" (Brandon 2026-06-10) — antes era una barra en
+            {/* Chip "Repetir pedido" (Brandon 2026-06-10) — antes era una barra en
               la primera sección. Ahora pastilla compacta en los filtros. Solo
               logueado, sin búsqueda, md+. `empty:hidden` evita gap fantasma del
               space-y cuando el cliente no tiene un pedido reciente. */}
-          {isLoggedIn && search.trim().length === 0 && (
-            <div className="hidden md:flex empty:!hidden">
-              <RepetirUltimoPedido variant="chip" />
-            </div>
-          )}
+            {isLoggedIn && search.trim().length === 0 && (
+              <div className="hidden md:flex empty:!hidden">
+                <RepetirUltimoPedido variant="chip" />
+              </div>
+            )}
 
-          {/* Vista lista / mapa — solo TABLET (md..lg). En desktop (lg+) vive en
-              la toolbar arriba del grid; en mobile siempre lista. */}
-          <div className="hidden md:grid lg:hidden grid-cols-2 rounded-sm border border-[var(--rule-base)] overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              aria-pressed={viewMode === "list"}
-              aria-label="Ver como lista"
-              className={cn(
-                "inline-flex h-10 items-center justify-center gap-1.5 text-sm font-bold transition-colors",
-                viewMode === "list"
-                  ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
-              )}
-            >
-              <List className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-              Lista
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("map")}
-              aria-pressed={viewMode === "map"}
-              aria-label="Ver en el mapa"
-              className={cn(
-                "inline-flex h-10 items-center justify-center gap-1.5 border-l border-[var(--rule-base)] text-sm font-bold transition-colors",
-                viewMode === "map"
-                  ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
-              )}
-            >
-              <MapIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-              Mapa
-            </button>
-          </div>
+            {/* View-toggle de tablet REMOVIDO (Brandon 2026-07-06): Lista/Mapa
+                ahora vive inline en la fila de filtros de arriba. */}
 
-          {/* ── LO QUE SE TE ANTOJA — filtro PRINCIPAL por subcategoría.
+            {/* ── LO QUE SE TE ANTOJA — filtro PRINCIPAL por subcategoría.
                Brandon 2026-06-02: movido al TOPE del sidebar (lo primero que ve
                el cliente para filtrar por antojo) + tamaño grande. En mobile
                aparece como tira scrollable; en desktop como cards apiladas. */}
-          {subcategories.length > 0 && (
-            <div
-              ref={subcategorySectionRef}
-              /* Brandon 2026-06-07: filtro de categoría "Lo que se te antoja"
-                 (Pollos, Pizzas…) oculto en celular (max-md-) — /tiendas mobile
-                 minimalista, sin filtros de categoría. Visible en tablet/desktop. */
-              className="max-md:hidden lg:pb-4 lg:mb-1 lg:border-b lg:border-[var(--rule-soft)]"
-            >
-              <p className="mb-2.5 text-sm font-semibold text-[var(--text-primary)]">
-                Categoría
-              </p>
-              {/* Mobile/tablet: tira horizontal con cards icono + label */}
-              <div
-                role="group"
-                aria-label="Filtrá por categoría"
-                className="flex lg:hidden items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
-              >
-                <SubcategoryChips
-                  subcategories={subcategories}
-                  activeId={subCategoryId}
-                  onSelect={setSubCategoryId}
-                  variant="card"
-                />
-              </div>
-              {/* Desktop sidebar: cards grandes apiladas (filtro estrella) */}
-              <div
-                role="group"
-                aria-label="Filtrá por categoría"
-                className="hidden lg:flex flex-col gap-2"
-              >
-                <SubcategoryChips
-                  subcategories={subcategories}
-                  activeId={subCategoryId}
-                  onSelect={setSubCategoryId}
-                  variant="row"
-                />
-              </div>
-            </div>
-          )}
+            {/* Subcategorías ("¿Qué se te antoja?") MOVIDAS del aside a la fila de
+                tiles grandes bajo el banner (Brandon 2026-07-06). Acá ya no van. */}
 
-          {/* "Lo más pedido" — antes label era "Subcategoría" (técnico, suena
+            {/* "Lo más pedido" — antes label era "Subcategoría" (técnico, suena
               a panel admin). Brandon 2026-05-18 v3: renombrado a copy comercial
               que activa social proof y guía la elección del cliente.
               v4 (Brandon 2026-05-18): el botón "Filtros" del toolbar se MOVIÓ
               acá al lado del eyebrow — entrada principal de filtrado, al
               inicio del flujo de búsqueda de tiendas. Si no hay subcategorías,
               el botón sigue visible con eyebrow "Refiná tu búsqueda". */}
-          {/* Brandon 2026-05-20 v7: eyebrow "LO MÁS PEDIDO / REFINÁ TU BÚSQUEDA"
+            {/* Brandon 2026-05-20 v7: eyebrow "LO MÁS PEDIDO / REFINÁ TU BÚSQUEDA"
               eliminado — redundaba con el h1 + chips de subcategoría justo
               debajo. El botón de filtros queda alineado a la derecha en el
               mismo bloque que las chips.
               Brandon 2026-05-21: agregamos chips inline en la fila (Sort
               dropdown + ⭐ 4+ toggle) para que no quede vacía y dar acción
               rápida sin abrir el drawer pesado. Modelo Doordash/Yelp. */}
-          {/* Brandon 2026-05-21 v3: row de filtros estilo Rappi.
+            {/* Brandon 2026-05-21 v3: row de filtros estilo Rappi.
               - Sin justify-end (rompía mobile: el primer chip quedaba oculto).
               - Mobile: chips h-9 compactos, scroll-x natural desde la izquierda.
               - Desktop: tamaño normal con flex-wrap, sin scroll. */}
-          {/* ── MOBILE/TABLET: fila compacta con scroll (orden + 4+ + abierto + drawer) ──
+            {/* ── MOBILE/TABLET: fila compacta con scroll (orden + 4+ + abierto + drawer) ──
                Brandon 2026-05-31: gap más ajustado y sin margen extra (lo da el
                space-y del aside) → menos aire entre filtros y subcategorías. */}
-          <div className="flex lg:hidden items-center gap-1.5 sm:gap-2.5 overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
-            {/* Sort "Relevancia" — OCULTO en celular (Brandon 2026-05-31): el
+            <div
+              className={cn(
+                "flex items-center gap-1.5 sm:gap-2.5 overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]",
+                manyStores && "lg:hidden",
+              )}
+            >
+              {/* Sort "Relevancia" — OCULTO en celular (Brandon 2026-05-31): el
                 orden vive dentro del drawer "Filtros" (extraSort) para que la
                 fila quede limpia → 4+ · Abierto · Filtros. Visible desde sm
                 (tablet) donde hay más ancho. */}
-            <div className="hidden sm:flex shrink-0 [scroll-snap-align:start]">
-              <StoresSortSelector value={sortKey} onChange={handleSortChange} />
-            </div>
-            <QuickFilterToggle
-              active={activeChips.has("top_rated")}
-              onToggle={() => handleChipToggle("top_rated")}
-              icon={Star}
-              label="4+ estrellas"
-              variant="pill"
-              fillIconWhenActive
-              title="Solo tiendas con rating 4 estrellas o más"
-            />
-            {/* audit #11: toggle "Abierto ahora" — chip open_now + filtro ya
-                cableados (MarketplaceStoresView.passesChips). */}
-            <QuickFilterToggle
-              active={activeChips.has("open_now")}
-              onToggle={() => handleChipToggle("open_now")}
-              icon={Clock}
-              label="Abierto ahora"
-              variant="pill"
-              title="Solo tiendas abiertas en este momento"
-            />
-            <div className="shrink-0 [scroll-snap-align:start]">
-              <MarketplaceFilters
-                filters={productFilters}
-                userCoords={userCoords}
-                geoLoading={geoLoading}
-                onChange={handleFiltersChange}
-                onRequestGeo={handleGeoSort}
-                hideProductCategory
-                zones={zonesForFilter}
-                zone={zone}
-                onZoneChange={setZone}
-                extraSort={{
-                  value: sortKey,
-                  onChange: (v) => handleSortChange(v as StoresSortKey),
-                  options: STORES_SORT_OPTIONS,
-                }}
-                onClearAll={resetAllFilters}
-                globalActiveCount={activeFilterCount}
-                triggerCompact
-              />
-            </div>
-          </div>
-
-          {/* ── DESKTOP: filtros reales apilados, lenguaje único (Brandon
-              2026-06-14). "Ordenar" se movió a la toolbar de arriba; títulos
-              normales (no eyebrows tipo admin), consistente con el resto. ── */}
-          <div className="hidden lg:flex lg:flex-col lg:gap-4">
-            {/* CALIFICACIÓN */}
-            <div className="border-t border-[var(--rule-soft)] pt-4">
-              <p className="mb-2 text-sm font-semibold text-[var(--text-primary)]">
-                Calificación
-              </p>
+              <div className="hidden sm:flex shrink-0 [scroll-snap-align:start]">
+                <StoresSortSelector value={sortKey} onChange={handleSortChange} />
+              </div>
               <QuickFilterToggle
                 active={activeChips.has("top_rated")}
                 onToggle={() => handleChipToggle("top_rated")}
                 icon={Star}
-                label="4 estrellas o más"
-                variant="full"
+                label={`4+ estrellas${chipCounts.top_rated ? ` (${chipCounts.top_rated})` : ""}`}
+                variant="pill"
                 fillIconWhenActive
+                title="Solo tiendas con rating 4 estrellas o más"
               />
-            </div>
-            {/* DISPONIBILIDAD */}
-            <div className="border-t border-[var(--rule-soft)] pt-4">
-              <p className="mb-2 text-sm font-semibold text-[var(--text-primary)]">
-                Disponibilidad
-              </p>
+              {/* audit #11: toggle "Abierto ahora" — chip open_now + filtro ya
+                cableados (MarketplaceStoresView.passesChips). */}
               <QuickFilterToggle
                 active={activeChips.has("open_now")}
                 onToggle={() => handleChipToggle("open_now")}
                 icon={Clock}
-                label="Abierto ahora"
-                variant="full"
+                label={`Abierto ahora${chipCounts.open_now ? ` (${chipCounts.open_now})` : ""}`}
+                variant="pill"
+                title="Solo tiendas abiertas en este momento"
               />
-            </div>
-          </div>
+              {/* Fiado Digital — solo si alguna tienda lo ofrece. */}
+              {anyAcceptsFiado && (
+                <QuickFilterToggle
+                  active={activeChips.has("accepts_fiado")}
+                  onToggle={() => handleChipToggle("accepts_fiado")}
+                  icon={Wallet}
+                  label={`Acepta fiado${chipCounts.accepts_fiado ? ` (${chipCounts.accepts_fiado})` : ""}`}
+                  variant="pill"
+                  title="Solo tiendas que aceptan fiado (compra ahora, paga después)"
+                />
+              )}
 
-          {/* "Lo que se te antoja" se movió al TOPE del sidebar (Brandon
+              {/* Zona — en la MISMA fila (Brandon 2026-07-06). Abre el modal. */}
+              {zonesForFilter.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setZoneModalOpen(true)}
+                  aria-haspopup="dialog"
+                  className={cn(
+                    "shrink-0 inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-bold transition-colors [scroll-snap-align:start]",
+                    zone
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <MapPin className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                  <span className="max-w-[120px] truncate">
+                    {zone ? (zonesForFilter.find((z) => z.id === zone)?.label ?? "Zona") : "Zona"}
+                  </span>
+                </button>
+              )}
+
+              {/* Lista / Mapa — en la MISMA fila, ACOPLADO junto a los demás
+                  controles a la izquierda (Brandon 2026-07-06 v2: el ml-auto
+                  dejaba un hueco vacío en el medio de la barra sticky; ahora
+                  todo va tight y el conteo de tiendas ancla la derecha). */}
+              <div className="shrink-0 inline-flex overflow-hidden rounded-full border border-[var(--rule-base)] [scroll-snap-align:start]">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  aria-pressed={viewMode === "list"}
+                  aria-label="Ver como lista"
+                  className={cn(
+                    "inline-flex h-9 items-center gap-1.5 px-3 text-sm font-bold transition-colors",
+                    viewMode === "list"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <List className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("map")}
+                  aria-pressed={viewMode === "map"}
+                  aria-label="Ver en el mapa"
+                  className={cn(
+                    "inline-flex h-9 items-center gap-1.5 border-l border-[var(--rule-base)] px-3 text-sm font-bold transition-colors",
+                    viewMode === "map"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <MapIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Mapa
+                </button>
+              </div>
+
+              <div className="shrink-0 [scroll-snap-align:start]">
+                <MarketplaceFilters
+                  filters={productFilters}
+                  userCoords={userCoords}
+                  geoLoading={geoLoading}
+                  onChange={handleFiltersChange}
+                  onRequestGeo={handleGeoSort}
+                  hideProductCategory
+                  hidePrice
+                  zones={zonesForFilter}
+                  zone={zone}
+                  onZoneChange={setZone}
+                  extraSort={{
+                    value: sortKey,
+                    onChange: (v) => handleSortChange(v as StoresSortKey),
+                    options: STORES_SORT_OPTIONS,
+                  }}
+                  onClearAll={resetAllFilters}
+                  globalActiveCount={activeFilterCount}
+                  triggerCompact
+                />
+              </div>
+
+              {/* Conteo de resultados — ANCLA la barra sticky a la derecha para
+                  que no quede un hueco vacío (Brandon 2026-07-06 v2). Solo
+                  desktop: en mobile la fila scrollea y el conteo estorbaría. */}
+              <span className="ml-auto hidden shrink-0 items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-[var(--text-secondary)] lg:inline-flex">
+                <Store
+                  className="h-4 w-4 text-[var(--text-tertiary)]"
+                  strokeWidth={2}
+                  aria-hidden
+                />
+                <span className="tabular-nums text-[var(--text-primary)]">
+                  {finalStores.length}
+                </span>
+                {finalStores.length === 1 ? "tienda" : "tiendas"}
+              </span>
+            </div>
+
+            {/* Chips de filtro activo — feedback + remoción por chip (audit
+              filtros #4). Visibles apenas hay ≥1 filtro, en todos los breakpoints. */}
+            {activeFilterPills.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {activeFilterPills.map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={f.remove}
+                    aria-label={`Quitar filtro ${f.label}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 h-7 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/15"
+                  >
+                    <span className="max-w-[140px] truncate">{f.label}</span>
+                    <X className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={resetAllFilters}
+                  className="inline-flex h-7 items-center px-2 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] underline underline-offset-2 transition-colors hover:text-[var(--accent)]"
+                >
+                  Limpiar todo
+                </button>
+              </div>
+            )}
+
+            {/* ── DESKTOP: sidebar expandido (secciones apiladas) — SOLO con
+              muchas tiendas (>6). Con pocas, la barra slim de arriba ya trae
+              4+/Abierto/Fiado como pills. Brandon 2026-07-06 (audit filtros). ── */}
+            {manyStores && (
+            <div className="hidden lg:flex lg:flex-col lg:gap-4">
+              {/* CALIFICACIÓN */}
+              <div className="border-t border-[var(--rule-soft)] pt-4">
+                <p className="mb-2 text-sm font-semibold text-[var(--text-primary)]">
+                  Calificación
+                </p>
+                <QuickFilterToggle
+                  active={activeChips.has("top_rated")}
+                  onToggle={() => handleChipToggle("top_rated")}
+                  icon={Star}
+                  label="4 estrellas o más"
+                  variant="full"
+                  fillIconWhenActive
+                />
+              </div>
+              {/* DISPONIBILIDAD */}
+              <div className="border-t border-[var(--rule-soft)] pt-4">
+                <p className="mb-2 text-sm font-semibold text-[var(--text-primary)]">
+                  Disponibilidad
+                </p>
+                <QuickFilterToggle
+                  active={activeChips.has("open_now")}
+                  onToggle={() => handleChipToggle("open_now")}
+                  icon={Clock}
+                  label="Abierto ahora"
+                  variant="full"
+                />
+              </div>
+              {/* PAGO — Fiado Digital (solo si alguna tienda lo ofrece) */}
+              {anyAcceptsFiado && (
+                <div className="border-t border-[var(--rule-soft)] pt-4">
+                  <p className="mb-2 text-sm font-semibold text-[var(--text-primary)]">Pago</p>
+                  <QuickFilterToggle
+                    active={activeChips.has("accepts_fiado")}
+                    onToggle={() => handleChipToggle("accepts_fiado")}
+                    icon={Wallet}
+                    label="Acepta fiado"
+                    variant="full"
+                  />
+                </div>
+              )}
+            </div>
+            )}
+
+            {/* "Lo que se te antoja" se movió al TOPE del sidebar (Brandon
               2026-06-02) — ver bloque justo debajo del header "Filtrar tiendas". */}
 
-          {/* Filtrar por zona = botón único que abre modal.
-              Brandon mayo 14 2026: las cajitas inline de zonas saturaban
-              la UI cuando había muchas zonas. Ahora un solo botón con la
-              zona activa visible (o "Todas las zonas") + modal con la
-              lista completa al tap.
-              Brandon mayo 18 2026: en mobile, la zona vive dentro del modal
-              de filtros (chips junto a categoría/precio) — escondemos este
-              botón inline. En desktop sigue visible. */}
-          {zonesForFilter.length > 1 && (
-          <div className="hidden sm:block lg:border-t lg:border-[var(--rule-soft)] lg:pt-3">
-            {/* Label solo visible en desktop sidebar */}
-            <p className="mb-2 hidden lg:block text-sm font-semibold text-[var(--text-primary)]">
-              Zona
-            </p>
-            <button
-              type="button"
-              onClick={() => setZoneModalOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={zoneModalOpen}
-              className={cn(
-                "w-full sm:w-auto lg:w-full inline-flex items-center gap-2.5 rounded-md border transition-colors px-3.5 h-12 sm:h-14 lg:h-11",
-                zone
-                  ? "border-[var(--text-primary)] bg-[var(--surface-sunken)] text-[var(--text-primary)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)]/40",
-              )}
-            >
-              <MapPin className={cn("h-4 w-4 shrink-0", zone ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]")} strokeWidth={2.25} aria-hidden />
-              <span className="flex flex-col items-start gap-0.5 min-w-0">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
-                  {zone ? "Zona activa" : "Filtrar por zona"}
-                </span>
-                <span className="text-sm font-extrabold tracking-tight leading-tight truncate max-w-[180px] sm:max-w-[240px]">
-                  {zone
-                    ? zonesForFilter.find((z) => z.id === zone)?.label ?? "Zona"
-                    : "Todas las zonas"}
-                </span>
-              </span>
-              {zone && (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setZone("");
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setZone("");
-                    }
-                  }}
-                  aria-label="Quitar filtro de zona"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors shrink-0 cursor-pointer"
-                >
-                  <span aria-hidden className="text-base font-black leading-none">×</span>
-                </span>
-              )}
-              <ChevronRight className="h-4 w-4 opacity-50 shrink-0 ml-1" strokeWidth={2.5} aria-hidden />
-            </button>
-          </div>
-          )}
+            {/* Botón de zona separado REMOVIDO (Brandon 2026-07-06): la Zona
+                ahora vive inline en la fila de filtros de arriba (abre el mismo
+                modal). El modal se conserva abajo. */}
 
-          {/* ── Modal de zonas ────────────────────────────────────────── */}
-          {zoneModalOpen && (
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Filtrar por zona"
-              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6 backdrop-blur-md bg-slate-950/60"
-              onClick={() => setZoneModalOpen(false)}
-            >
+            {/* ── Modal de zonas ────────────────────────────────────────── */}
+            {zoneModalOpen && (
               <div
-                onClick={(e) => e.stopPropagation()}
-                className="relative w-full sm:max-w-md max-h-[85svh] flex flex-col rounded-t-3xl sm:rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Filtrar por zona"
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6 backdrop-blur-md bg-slate-950/60"
+                onClick={() => setZoneModalOpen(false)}
               >
-                {/* Header */}
-                <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)]">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
-                      <MapPin className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] leading-tight">
-                        Filtrar
-                      </p>
-                      <h3 className="text-lg font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-                        Elegí tu zona
-                      </h3>
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative w-full sm:max-w-md max-h-[85svh] flex flex-col rounded-t-3xl sm:rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden"
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)]">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
+                        <MapPin className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] leading-tight">
+                          Filtrar
+                        </p>
+                        <h3 className="text-lg font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+                          Elegí tu zona
+                        </h3>
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setZoneModalOpen(false)}
+                      aria-label="Cerrar"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] text-[var(--text-primary)] transition-colors shrink-0"
+                    >
+                      <span aria-hidden className="text-xl font-black leading-none">
+                        ×
+                      </span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setZoneModalOpen(false)}
-                    aria-label="Cerrar"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] text-[var(--text-primary)] transition-colors shrink-0"
-                  >
-                    <span aria-hidden className="text-xl font-black leading-none">×</span>
-                  </button>
-                </div>
 
-                {/* Lista de zonas */}
-                <div className="flex-1 overflow-y-auto p-3 sm:p-4">
-                  <ul className="space-y-2">
-                    {zonesForFilter.map((z) => {
-                      const active = zone === z.id;
-                      return (
-                        <li key={z.id || "todas"}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setZone(z.id);
-                              setZoneModalOpen(false);
-                            }}
-                            aria-pressed={active}
-                            className={cn(
-                              "w-full flex items-center gap-3 rounded-2xl border-2 p-3 sm:p-4 text-left transition-all",
-                              active
-                                ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
-                                : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/30",
-                            )}
-                          >
-                            <span
+                  {/* Lista de zonas */}
+                  <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+                    <ul className="space-y-2">
+                      {zonesForFilter.map((z) => {
+                        const active = zone === z.id;
+                        return (
+                          <li key={z.id || "todas"}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setZone(z.id);
+                                setZoneModalOpen(false);
+                              }}
+                              aria-pressed={active}
                               className={cn(
-                                "inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl shrink-0",
+                                "w-full flex items-center gap-3 rounded-2xl border-2 p-3 sm:p-4 text-left transition-all",
                                 active
-                                  ? "bg-[var(--accent-600,var(--accent))] text-white"
-                                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                                  ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
+                                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50 hover:bg-primary/10",
                               )}
                             >
-                              <MapPin className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                            </span>
-                            <span
-                              className={cn(
-                                "flex-1 min-w-0 text-base font-extrabold tracking-tight",
-                                active ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
-                              )}
-                            >
-                              {z.label}
-                            </span>
-                            {active && (
                               <span
-                                aria-hidden
-                                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white font-black text-xs shrink-0"
+                                className={cn(
+                                  "inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl shrink-0",
+                                  active
+                                    ? "bg-[var(--accent-600,var(--accent))] text-white"
+                                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                                )}
                               >
-                                ✓
+                                <MapPin className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                               </span>
-                            )}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                              <span
+                                className={cn(
+                                  "flex-1 min-w-0 text-base font-extrabold tracking-tight",
+                                  active ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
+                                )}
+                              >
+                                {z.label}
+                              </span>
+                              {active && (
+                                <span
+                                  aria-hidden
+                                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white font-black text-xs shrink-0"
+                                >
+                                  ✓
+                                </span>
+                              )}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Brandon 2026-05-18 v4: toolbar de filtros REMOVIDO. El botón de
+            {/* Brandon 2026-05-18 v4: toolbar de filtros REMOVIDO. El botón de
               filtros se movió al header "Lo más pedido" arriba (entrada
               principal del flujo de filtrado). El sort, zone, price y
               clear-all ya viven dentro del drawer de filtros — no necesitamos
               un toolbar separado para ellos. */}
-        </aside>
+          </aside>
 
-        {/* ── MAIN: Grid de tiendas ── */}
-        <div className="min-w-0">
-          {/* Toolbar superior (desktop) — Brandon 2026-06-14: Ordenar + Vista
-              (Lista/Mapa) viven ARRIBA del grid, NO mezclados con los filtros.
-              El sidebar queda solo con filtros reales. */}
-          <div className="hidden lg:flex items-center justify-end gap-3 mb-4 pb-3 border-b border-[var(--rule-soft)]">
-            <StoresSortSelector
-              value={sortKey}
-              onChange={handleSortChange}
-              className="!rounded-sm hover:!bg-[var(--surface-sunken)] hover:!border-[var(--text-primary)]/40"
-            />
-            <div className="grid grid-cols-2 rounded-sm border border-[var(--rule-base)] overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                aria-pressed={viewMode === "list"}
-                aria-label="Ver como lista"
-                className={cn(
-                  "inline-flex h-9 items-center justify-center gap-1.5 px-3 text-sm font-medium transition-colors",
-                  viewMode === "list"
-                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
-                )}
-              >
-                <List className="h-4 w-4" strokeWidth={2} aria-hidden />
-                Lista
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("map")}
-                aria-pressed={viewMode === "map"}
-                aria-label="Ver en el mapa"
-                className={cn(
-                  "inline-flex h-9 items-center justify-center gap-1.5 border-l border-[var(--rule-base)] px-3 text-sm font-medium transition-colors",
-                  viewMode === "map"
-                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
-                )}
-              >
-                <MapIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
-                Mapa
-              </button>
+          {/* ── MAIN: Grid de tiendas ── */}
+          <div className="min-w-0">
+            {/* Toolbar superior (desktop) — SOLO en modo sidebar (muchas tiendas).
+              Con pocas tiendas, Ordenar + Lista/Mapa ya viven en la fila slim de
+              filtros de arriba (Brandon 2026-07-06). Evita el toolbar duplicado. */}
+            {manyStores && (
+            <div className="hidden lg:flex items-center justify-end gap-3 mb-4 pb-3 border-b border-[var(--rule-soft)]">
+              <StoresSortSelector
+                value={sortKey}
+                onChange={handleSortChange}
+                className="!rounded-sm hover:!bg-[var(--surface-sunken)] hover:!border-[var(--text-primary)]/40"
+              />
+              <div className="grid grid-cols-2 rounded-sm border border-[var(--rule-base)] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  aria-pressed={viewMode === "list"}
+                  aria-label="Ver como lista"
+                  className={cn(
+                    "inline-flex h-9 items-center justify-center gap-1.5 px-3 text-sm font-medium transition-colors",
+                    viewMode === "list"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <List className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("map")}
+                  aria-pressed={viewMode === "map"}
+                  aria-label="Ver en el mapa"
+                  className={cn(
+                    "inline-flex h-9 items-center justify-center gap-1.5 border-l border-[var(--rule-base)] px-3 text-sm font-medium transition-colors",
+                    viewMode === "map"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <MapIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  Mapa
+                </button>
+              </div>
             </div>
+            )}
+
+            {/* Listado o Mapa según viewMode (Brandon 2026-06-02). */}
+            {viewMode === "map" ? (
+              <TiendasMap stores={finalStores} userCoords={userCoords} />
+            ) : (
+              <MarketplaceStoresView
+                stores={stores}
+                premiumProducts={premiumProducts}
+                loading={loading}
+                error={error}
+                search={search}
+                category={category}
+                zone={zone}
+                geoActive={geoActive}
+                userCoords={userCoords}
+                filteredStores={finalStores}
+                activeChips={activeChips}
+                onRetry={fetchStores}
+                onClearAll={() => {
+                  setSearch("");
+                  setCategory("todos");
+                  setZone("");
+                  setGeoActive(false);
+                  setUserCoords(null);
+                  setSortKey("relevance");
+                }}
+              />
+            )}
           </div>
-
-          {/* Listado o Mapa según viewMode (Brandon 2026-06-02). */}
-          {viewMode === "map" ? (
-            <TiendasMap stores={finalStores} userCoords={userCoords} />
-          ) : (
-          <MarketplaceStoresView
-            stores={stores}
-            premiumProducts={premiumProducts}
-            loading={loading}
-            error={error}
-            search={search}
-            category={category}
-            zone={zone}
-            geoActive={geoActive}
-            userCoords={userCoords}
-            filteredStores={finalStores}
-            activeChips={activeChips}
-            onRetry={fetchStores}
-            onClearAll={() => {
-              setSearch("");
-              setCategory("todos");
-              setZone("");
-              setGeoActive(false);
-              setUserCoords(null);
-              setSortKey("relevance");
-            }}
-          />
-          )}
-        </div>{/* /main grid */}
-
-        </div>{/* /lg:grid sidebar layout */}
+          {/* /main grid */}
+        </div>
+        {/* /lg:grid sidebar layout */}
       </section>
 
       {/* ── Referido por WhatsApp (Brandon 2026-06-02) — crecimiento viral.
@@ -1536,12 +1892,9 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
            share genérico que igual trae tráfico. ── */}
       {search.trim().length === 0 && <InvitaVecinoCard />}
 
-      {/* Brandon 2026-05-20 v7: SECCIÓN "Sumate a Buleje" REMOVIDA de /tiendas.
-          Era una intrusión B2B (bodegueros/repartidores) en una página B2C
-          de compra — distraía al cliente del flujo "ver tienda → comprar".
-          Esos CTAs viven naturalmente en home (/), /negocios y /abrir-tienda.
-          El footer (BottomNav + Footer del chrome unificado) ya tiene links
-          a "Abre tu tienda" y "Para repartidores" para quien los necesite. */}
+      {/* "Sumate a Buleje" vive UNA sola vez: la sección JoinUsSection que
+          renderiza tiendas/page.tsx (mejorada creativa). Antes había un
+          SumateBulejeSection duplicado acá — removido (Brandon 2026-07-06). */}
 
       {/* Footer vive en el layout `/tiendas/layout.tsx` (persistente). */}
     </div>

@@ -355,7 +355,8 @@ export class PlatformChatDB {
    * lista ya resuelta. Crea/reusa una conversación abierta por tenant.
    */
   static async broadcast(input: {
-    tenants: { tenantId: string; tenantName: string }[];
+    /** `body` por-tenant opcional (plantilla renderizada); si falta usa input.body. */
+    tenants: { tenantId: string; tenantName: string; body?: string }[];
     body: string;
     subject?: string | null;
     createdBy?: string;
@@ -383,7 +384,7 @@ export class PlatformChatDB {
         conversationId: convId,
         senderType: "platform",
         senderName: input.createdBy ?? "Buleje",
-        body: input.body,
+        body: t.body ?? input.body,
         messageType: "broadcast",
         metadataJson: JSON.stringify({ broadcast: true }),
       });

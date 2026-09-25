@@ -22,9 +22,10 @@ import {
 } from "@/components/ui-system/charts";
 import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { formatNumber } from "@/lib/format";
 
 function fmtS(v: number) {
-  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(v, { max: 0 })}`;
 }
 
 export default function ComprasCharts({ data }: { data: ComprasData }) {

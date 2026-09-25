@@ -29,7 +29,17 @@ vi.mock("next/image", () => ({
 }));
 
 // ── lucide-react (iconos) ────────────────────────────────────────────────────
-vi.mock("lucide-react", () => ({
+/**
+ * Los iconos: el módulo REAL, con los que este test observa sobrescritos.
+ *
+ * Antes era una lista cerrada y se rompió el 2026-09-15: `AdminModal` empezó a
+ * usar `Pin`/`Maximize2`/`RotateCcw` para los controles de ventana, el mock los
+ * devolvió `undefined` y React tiró «Element type is invalid» en un test que no
+ * tiene nada que ver con iconos. Un icono nuevo en un componente hijo no puede
+ * romper el test de otra pantalla.
+ */
+vi.mock("lucide-react", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
   Search: () => <span data-testid="icon-search" />,
   X: () => <span data-testid="icon-x" />,
   Upload: () => <span data-testid="icon-upload" />,
@@ -42,7 +52,6 @@ vi.mock("lucide-react", () => ({
   ToggleLeft: () => <span data-testid="icon-toggle-off" />,
   ToggleRight: () => <span data-testid="icon-toggle-on" />,
 }));
-
 // ── lib/utils ─────────────────────────────────────────────────────────────────
 vi.mock("@/lib/utils", () => ({
   cn: (...args: (string | undefined | null | false)[]) => args.filter(Boolean).join(" "),

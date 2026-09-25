@@ -75,6 +75,28 @@ export const NotificationLogsDB = {
     const row = await prisma.notificationLog.create({ data: { ...data, tenantId } });
     return mapNotificationLog(row);
   },
+  /**
+   * El último envío de cada tipo dentro de una familia («ctp_plazos_»).
+   *
+   * Para poder contestar «¿el aviso de ayer llegó?» sin leer el log del
+   * servidor: un aviso que falla en silencio es un aviso que no existe, y hoy
+   * el correo del Libro CTP vuelve rechazado por dominio sin verificar sin que
+   * nadie se entere desde el panel.
+   *
+   * Se traen pocos y se agrupa en memoria: son dos o tres canales por familia,
+   * y un `distinct on` por tipo no existe en todos los motores.
+   */
+  async ultimosPorTipo(tenantId: string, prefijo: string): Promise<DbNotificationLog[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.notificationLog.findMany({
+      where: { tenantId, type: { startsWith: prefijo } },
+      orderBy: { createdAt: "desc" },
+      take: 60,
+    });
+    const visto = new Map<string, PNotificationLog>();
+    for (const f of filas) if (!visto.has(f.type)) visto.set(f.type, f);
+    return [...visto.values()].map(mapNotificationLog);
+  },
 };
 
 // ── Admin Chat DB ─────────────────────────────────────────────────────────────

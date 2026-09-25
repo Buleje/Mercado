@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 // TD-116 (2026-06-10): lecturas de Sale envueltas en withRlsTx (ver orders.db).
 import { withRlsTx } from "@/lib/prisma-rls";
 import { logger } from "@/lib/logger";
+import { invalidate } from "@/lib/cache";
 import type {
   Sale as PSale,
   SaleItem as PSaleItem,
@@ -272,6 +273,8 @@ export const CashRegistersDB = {
       },
       include: { movements: { orderBy: { createdAt: "desc" } } },
     });
+    // El banner avisa de cajas abiertas desde un día anterior (AlertsDB, cache 60 s).
+    invalidate(`admin:alerts-summary:${tenantId}`);
     return mapCashRegister(row);
   },
   async close(tenantId: string, id: string, closingAmount: number, notes?: string): Promise<DbCashRegister | null> {
@@ -312,6 +315,7 @@ export const CashRegistersDB = {
       });
     });
 
+    if (row) invalidate(`admin:alerts-summary:${tenantId}`);
     return row ? mapCashRegister(row) : null;
   },
   async addMovement(cashRegisterId: string, movement: { type: string; amount: number; method: string; description: string; saleId?: string }, tenantId?: string): Promise<DbCashMovement> {

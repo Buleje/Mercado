@@ -90,7 +90,9 @@ export function OnboardingChecklist({
       <header
         className="flex items-center justify-between p-4 cursor-pointer hover:bg-[var(--surface-sunken)] transition-colors"
         onClick={() => setExpanded(!expanded)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(!expanded); } }}
         role="button"
+        tabIndex={0}
         aria-expanded={expanded}
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -148,7 +150,7 @@ export function OnboardingChecklist({
                 e.stopPropagation();
                 handleDismiss();
               }}
-              className="p-1 rounded-md hover:bg-[var(--surface-sunken)] transition-colors"
+              className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
               aria-label="Cerrar checklist"
             >
               <X className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.75} />

@@ -381,7 +381,7 @@ export default function SearchAutocomplete({
               "absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full transition-all",
               isListening
                 ? "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)] ring-2 ring-[var(--data-error-500)]/40 animate-pulse"
-                : "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)]/15 hover:scale-105",
+                : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/15 hover:scale-105",
             )}
           >
             {isListening ? (

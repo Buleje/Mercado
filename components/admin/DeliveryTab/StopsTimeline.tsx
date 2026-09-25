@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, XCircle, Clock, MapPin, Phone, AlertCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DeliveryStopView, StopStatus } from "./types";
+import { formatTime } from "@/lib/format";
 
 const STATUS_LABELS: Record<StopStatus, string> = {
   pending: "Pendiente",
@@ -16,7 +17,7 @@ const STATUS_LABELS: Record<StopStatus, string> = {
 const STATUS_COLORS: Record<StopStatus, string> = {
   pending: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
   arrived: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  delivered: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  delivered: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
   failed: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
   skipped: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
 };
@@ -56,7 +57,7 @@ export function StopsTimeline({ stops, loading, onMarkStop }: StopsTimelineProps
 
   async function handleConfirmFail(stopId: string) {
     if (!failureReason.trim()) {
-      setError("Indicá un motivo de fallo.");
+      setError("Indica un motivo de fallo.");
       return;
     }
     setBusyId(stopId);
@@ -176,10 +177,7 @@ export function StopsTimeline({ stops, loading, onMarkStop }: StopsTimelineProps
                 <div className="mt-2 flex items-center gap-1 text-sm text-[var(--text-tertiary)] font-bold">
                   <Clock className="h-4 w-4" />
                   ETA{" "}
-                  {new Date(stop.estimatedArrivalAt).toLocaleTimeString("es-PE", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatTime(stop.estimatedArrivalAt)}
                 </div>
               )}
 
@@ -201,7 +199,7 @@ export function StopsTimeline({ stops, loading, onMarkStop }: StopsTimelineProps
                     value={failureReason}
                     onChange={(e) => setFailureReason(e.target.value)}
                     placeholder="Cliente ausente, dirección incorrecta…"
-                    className="w-full px-3 h-10 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-error-500)]/30"
+                    className="w-full px-3 h-10 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-error-500)]/30"
                     autoFocus
                   />
                   <div className="flex gap-2">

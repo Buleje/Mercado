@@ -12,13 +12,10 @@
  */
 
 import dynamic from "next/dynamic";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import CuentaSidebar from "@/components/customer/cuenta-layout/CuentaSidebar";
 import CuentaMobileTabs from "@/components/customer/cuenta-layout/CuentaMobileTabs";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 export interface CuentaLayoutShellProps {
   children: React.ReactNode;

@@ -9,6 +9,7 @@ import {
   ArrowRight,
   MessageCircle,
 } from "@buleje/design-system/icons";
+import { StatCard, type StatCardEmphasis } from "@buleje/design-system";
 import { cn, formatCurrency } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -101,46 +102,18 @@ function SkeletonRow() {
   );
 }
 
-interface KPICardProps {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  sub?: string;
-  accent?: "emerald" | "red" | "amber" | "gray";
-}
-
-function KPICard({ icon: Icon, label, value, sub, accent = "gray" }: KPICardProps) {
-  const iconColor = {
-    emerald: "text-[var(--data-success-500)]",
-    red: "text-[var(--data-error-500)]",
-    amber: "text-[var(--data-warning-500)]",
-    gray: "text-[var(--text-tertiary)]",
-  }[accent];
-
-  const valueColor = {
-    emerald: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    red: "text-[var(--data-error-700)] dark:text-red-400",
-    amber: "text-[var(--data-warning-700)] dark:text-amber-400",
-    gray: "text-[var(--text-primary)]",
-  }[accent];
-
-  return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 h-full flex flex-col justify-between gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">
-          {label}
-        </span>
-        <Icon className={cn("w-4 h-4 shrink-0", iconColor)} />
-      </div>
-      <p className={cn("text-2xl sm:text-3xl font-extrabold leading-none tabular-nums tracking-tight", valueColor)}>
-        {value}
-      </p>
-      {sub && (
-        <p className="text-xs font-medium text-[var(--text-secondary)]">{sub}</p>
-      )}
-    </div>
-  );
-}
+// El KPICard local migró a StatCard (canon KPI 2026-09-22), inline en los 4
+// usos: `accent` → `emphasis` (emerald→success, red→error, amber→warning,
+// gray→neutral) + `iconEmphasis` para que el ícono siga el mismo tono que
+// antes. Sin wrapper propio — un componente puente que sólo reenvía a
+// StatCard dispara igual el gate ds-no-kpi-card-clone.
+type AccentFiado = "emerald" | "red" | "amber" | "gray";
+const ACCENT_TO_EMPHASIS: Record<AccentFiado, StatCardEmphasis> = {
+  emerald: "success",
+  red: "error",
+  amber: "warning",
+  gray: "neutral",
+};
 
 interface StatusBadgeProps {
   status: FiadoEntry["status"];
@@ -159,17 +132,17 @@ function StatusBadge({ status }: StatusBadgeProps) {
     ACTIVO: {
       label: "Activo",
       className:
-        "bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30",
+        "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 dark:bg-primary/15 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30",
     },
     PAGADO: {
       label: "Pagado",
       className:
-        "bg-gray-50 text-[var(--text-secondary)] border border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)] dark:border-[var(--rule-base)]",
+        "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:border-[var(--rule-base)]",
     },
     CANCELADO: {
       label: "Cancelado",
       className:
-        "bg-gray-50 text-[var(--text-tertiary)] border border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-secondary)] dark:border-[var(--rule-base)] line-through",
+        "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] border border-[var(--rule-base)] dark:text-[var(--text-secondary)] dark:border-[var(--rule-base)] line-through",
     },
   };
 
@@ -309,39 +282,43 @@ export default function FiadosSection() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <KPICard
+          <StatCard
             icon={CreditCard}
             label="Total fiados activos"
             value={formatCurrency(kpis.totalBalance)}
-            sub={`${kpis.activosCount + kpis.vencidosCount} registros`}
-            accent="gray"
+            subValue={`${kpis.activosCount + kpis.vencidosCount} registros`}
+            emphasis={ACCENT_TO_EMPHASIS.gray}
+            iconEmphasis
           />
-          <KPICard
+          <StatCard
             icon={AlertTriangle}
             label="Vencidos"
             value={String(kpis.vencidosCount)}
-            sub={kpis.vencidosCount === 1 ? "cuenta" : "cuentas"}
-            accent={kpis.vencidosCount > 0 ? "red" : "gray"}
+            subValue={kpis.vencidosCount === 1 ? "cuenta" : "cuentas"}
+            emphasis={ACCENT_TO_EMPHASIS[kpis.vencidosCount > 0 ? "red" : "gray"]}
+            iconEmphasis
           />
-          <KPICard
+          <StatCard
             icon={Users}
             label="Clientes con fiado"
             value={String(kpis.uniqueCustomers)}
-            sub="activos o vencidos"
-            accent="gray"
+            subValue="activos o vencidos"
+            emphasis={ACCENT_TO_EMPHASIS.gray}
+            iconEmphasis
           />
-          <KPICard
+          <StatCard
             icon={ShieldAlert}
             label="Nivel de riesgo"
             value={kpis.risk}
-            sub={
+            subValue={
               kpis.risk === "ALTO"
                 ? "Mas del 30% vencido"
                 : kpis.risk === "MEDIO"
                 ? "Entre 10-30% vencido"
                 : "Menos del 10% vencido"
             }
-            accent={riskColor[kpis.risk] as "red" | "amber" | "emerald"}
+            emphasis={ACCENT_TO_EMPHASIS[riskColor[kpis.risk] as AccentFiado]}
+            iconEmphasis
           />
         </div>
       )}
@@ -355,8 +332,8 @@ export default function FiadosSection() {
             className={cn(
               "px-3 py-1 text-xs rounded border transition-colors",
               filter === f.key
-                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30"
-                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-gray-300 dark:bg-gray-900 dark:text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:hover:border-gray-600"
+                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:bg-primary/15 dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-gray-300 dark:text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:hover:border-gray-600"
             )}
           >
             {f.label}
@@ -443,7 +420,7 @@ export default function FiadosSection() {
                     }
                     title="Recordar pago por WhatsApp"
                     aria-label={`Recordar pago a ${entry.customerName ?? "cliente"}`}
-                    className="inline-flex items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/10 px-2 py-1 text-xs font-bold text-[#1a8a4a] hover:bg-[#25D366]/20 transition-colors"
+                    className="inline-flex items-center gap-1 rounded-lg border border-[#25D366]/40 bg-[#25D366]/10 px-2 py-1 text-xs font-bold text-[#1a8a4a] hover:bg-[#25D366]/20 transition-colors"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
                     Cobrar
@@ -464,7 +441,7 @@ export default function FiadosSection() {
         </p>
         <button
           type="button"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded border border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded border border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors shrink-0"
           onClick={() => {}}
         >
           Ir a Gestion de Fiados

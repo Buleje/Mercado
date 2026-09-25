@@ -16,7 +16,7 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { m as motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ZoomIn, X } from "@buleje/design-system/icons";
+import { ChevronLeft, ChevronRight, ZoomIn, X, Camera } from "@buleje/design-system/icons";
 import { cn, ProductBadge, type ProductBadgeIntent } from "@buleje/design-system";
 import {
   VerduraFresca,
@@ -32,6 +32,8 @@ import { Package } from "@buleje/design-system/icons";
 export interface GalleryImage {
   url: string;
   alt?: string;
+  /** Foto subida por un cliente en una reseña (UGC). */
+  ugc?: boolean;
 }
 
 export interface ProductGalleryDSProps {
@@ -122,6 +124,13 @@ export function ProductGalleryDS({ images, productName, category, badge }: Produ
             <div className="absolute top-3 left-3 z-10">
               <ProductBadge intent={badge.intent}>{badge.label}</ProductBadge>
             </div>
+          )}
+
+          {/* Sello UGC: foto real de un cliente */}
+          {activeImage?.ugc && (
+            <span className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--text-primary)]/70 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--surface-canvas)] backdrop-blur-sm">
+              <Camera className="h-3 w-3" aria-hidden /> Foto de cliente
+            </span>
           )}
 
           {hasImages ? (

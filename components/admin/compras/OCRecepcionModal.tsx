@@ -1,14 +1,16 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   X, ChevronRight, ChevronLeft, Check,
   Loader2, AlertTriangle, Package,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { formatCurrency } from "@/lib/format";
 
 type OCItem = {
   productId: number;
@@ -20,10 +22,25 @@ type OCItem = {
 
 interface OCRecepcionModalProps {
   ocId: string;
+  /**
+   * Nombre del proveedor. El endpoint lo exige (`supplier`, requerido): sin él
+   * el POST volvía 400 «Datos inválidos» SIEMPRE, así que este botón nunca
+   * llegó a registrar una recepción.
+   */
+  supplier: string;
   items: OCItem[];
   onComplete: () => void;
   onClose: () => void;
 }
+
+/** Los mismos estados que acepta el endpoint y que ya usa Recepción. */
+type CondicionItem = "ok" | "dañado" | "vencido" | "faltante";
+
+const CONDICIONES: Array<{ v: CondicionItem; l: string }> = [
+  { v: "ok", l: "Bien" },
+  { v: "dañado", l: "Dañado" },
+  { v: "vencido", l: "Vencido" },
+];
 
 type ReceivedItem = {
   productId: number;
@@ -34,10 +51,15 @@ type ReceivedItem = {
   originalPrice: number;
   unit: string;
   noLlego: boolean;
+  /** Cómo llegó la mercadería. Lo dañado y lo vencido no entra a stock vendible. */
+  condition: CondicionItem;
 };
 
-export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: OCRecepcionModalProps) {
+export default function OCRecepcionModal({ ocId, supplier, items, onComplete, onClose }: OCRecepcionModalProps) {
   useScrollLock(true);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   const [step, setStep] = useState(1);
   const [receivedItems, setReceivedItems] = useState<ReceivedItem[]>(
@@ -50,6 +72,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
       originalPrice: i.unitCost,
       unit: i.unit,
       noLlego: false,
+      condition: "ok",
     })),
   );
   const [notas, setNotas] = useState("");
@@ -85,19 +108,35 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
     setError(null);
 
     try {
+      // El shape es el que valida `RecepcionSchema` en el endpoint, no el que
+      // parecía razonable desde acá: `orderRef` (no `ocId`), `supplier`
+      // requerido, y cada ítem con `product` (el nombre) además del id. Mandar
+      // otra cosa devolvía 400 en cada intento.
       const res = await fetch("/api/compras/recepciones", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          ocId,
+          orderRef: ocId,
+          supplier,
           items: receivedItems
-            .filter((i) => i.receivedQty > 0)
+            .filter((i) => i.receivedQty > 0 || i.noLlego)
             .map((i) => ({
+              product: i.name,
               productId: i.productId,
+              expectedQty: i.orderedQty,
               receivedQty: i.receivedQty,
-              unitPrice: i.unitPrice,
+              // Lo que no llegó se declara como faltante: es la diferencia que
+              // el proveedor tiene que responder, no una recepción normal de 0.
+              condition: i.noLlego ? "faltante" : i.condition,
+              notes: "",
             })),
-          notas: notas || undefined,
+          status: receivedItems.some((i) => i.noLlego || i.condition !== "ok" || i.receivedQty !== i.orderedQty)
+            ? "parcial"
+            : "aceptada",
+          nonConformities: receivedItems.filter((i) => i.noLlego || i.condition !== "ok").length,
+          // `notes`, no `notas`: con el nombre en castellano Zod lo descartaba
+          // y la anotación de la recepción se perdía sin decir nada.
+          notes: notas || undefined,
         }),
       });
 
@@ -117,18 +156,18 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div>
-            <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+            <SectionTitle id={titleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Recepcion de Pedido
             </SectionTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
               OC #{ocId.slice(-8).toUpperCase()} - Paso {step} de 3
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+          <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-secondary)]" />
           </button>
         </div>
@@ -140,7 +179,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               key={s}
               className={cn(
                 "flex-1 h-1.5 rounded-full transition-colors",
-                s <= step ? "bg-primary" : "bg-gray-200 dark:bg-gray-700",
+                s <= step ? "bg-primary" : "bg-[var(--rule-base)] ",
               )}
             />
           ))}
@@ -156,13 +195,14 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                 Verificar cantidades recibidas
               </p>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
                       <th className="text-center py-2 px-1">Pedido</th>
                       <th className="text-center py-2 px-1">Recibido</th>
                       <th className="text-center py-2 px-1">Dif.</th>
+                      <th className="text-center py-2 px-1">Cómo llegó</th>
                       <th className="text-center py-2 px-1">No llego</th>
                     </tr>
                   </thead>
@@ -192,7 +232,8 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                                 setError(null);
                                 updateItem(idx, { receivedQty: val, noLlego: false });
                               }}
-                              className="w-16 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                              aria-label={`Cantidad recibida de ${item.name}`}
+                              className="w-16 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                               disabled={item.noLlego}
                             />
                           </td>
@@ -203,19 +244,39 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                               </span>
                             )}
                           </td>
+                          {/* Lo dañado o vencido llegó, pero no se puede
+                              vender: el backend lo registra como merma en vez
+                              de sumarlo al stock. */}
+                          <td className="py-2 px-1 text-center">
+                            <label className="sr-only" htmlFor={`cond-${item.productId}`}>
+                              Cómo llegó {item.name}
+                            </label>
+                            <select
+                              id={`cond-${item.productId}`}
+                              value={item.condition}
+                              disabled={item.noLlego}
+                              onChange={(e) => updateItem(idx, { condition: e.target.value as CondicionItem })}
+                              className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary disabled:opacity-50"
+                            >
+                              {CONDICIONES.map((c) => (
+                                <option key={c.v} value={c.v}>{c.l}</option>
+                              ))}
+                            </select>
+                          </td>
                           <td className="py-2 px-1 text-center">
                             <input
                               type="checkbox"
                               checked={item.noLlego}
                               onChange={(e) => updateItem(idx, { noLlego: e.target.checked })}
                               className="h-4 w-4 accent-primary"
+                              aria-label={`${item.name} no llegó`}
                             />
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             </>
           )}
@@ -228,7 +289,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                 Ajustar precios segun factura
               </p>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
@@ -254,7 +315,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                               {item.name}
                             </td>
                             <td className="py-2 px-1 text-right text-[var(--text-secondary)] dark:text-muted">
-                              S/ {Number(item.originalPrice).toFixed(2)}
+                              {formatCurrency(Number(item.originalPrice))}
                             </td>
                             <td className="py-2 px-1 text-center">
                               <input
@@ -263,7 +324,8 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                                 step={0.01}
                                 value={item.unitPrice}
                                 onChange={(e) => updateItem(idx, { unitPrice: Math.max(0, parseFloat(e.target.value) || 0) })}
-                                className="w-24 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                                aria-label={`Precio de factura de ${item.name}`}
+                                className="w-24 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                               />
                             </td>
                             <td className="py-2 px-1 text-right">
@@ -283,12 +345,12 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                         );
                       })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
               <div className="text-right">
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Total factura:</p>
                 <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                  S/ {totalFactura.toFixed(2)}
+                  {formatCurrency(totalFactura)}
                 </p>
               </div>
             </>
@@ -303,7 +365,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               </p>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Recibidos</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsRecibidos.length}</p>
                 </div>
@@ -311,21 +373,21 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                   <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase">Con diferencia</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsConDiferencia.length}</p>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Total factura</p>
-                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/ {totalFactura.toFixed(2)}</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(totalFactura)}</p>
                 </div>
               </div>
 
               {/* Items summary */}
-              <div className="bg-gray-50 dark:bg-accent/50 rounded-xl p-3 space-y-1 max-h-40 overflow-y-auto">
+              <div className="bg-[var(--surface-sunken)] dark:bg-accent/50 rounded-xl p-3 space-y-1 max-h-40 overflow-y-auto">
                 {receivedItems.map((item) => (
                   <div key={item.productId} className="flex justify-between text-xs">
                     <span className={cn("text-[var(--text-primary)] dark:text-[var(--text-primary)]", item.receivedQty === 0 && "line-through text-[var(--text-tertiary)]")}>
                       {item.name}
                     </span>
                     <span className="text-[var(--text-secondary)] dark:text-muted font-semibold">
-                      {item.receivedQty}/{item.orderedQty} - S/ {(item.receivedQty * item.unitPrice).toFixed(2)}
+                      {item.receivedQty}/{item.orderedQty} - {formatCurrency(item.receivedQty * item.unitPrice)}
                     </span>
                   </div>
                 ))}
@@ -364,7 +426,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
           {step < 3 ? (
             <button
               onClick={() => setStep((s) => s + 1)}
-              className="flex items-center gap-1 px-4 py-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm rounded-lg transition-colors"
+              className="flex items-center gap-1 px-4 min-h-10 bg-primary hover:bg-primary/90 text-white font-semibold text-sm rounded-xl transition-colors"
             >
               Siguiente <ChevronRight className="h-4 w-4" />
             </button>
@@ -372,7 +434,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
             <button
               onClick={handleConfirm}
               disabled={saving || itemsRecibidos.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 min-h-10 bg-primary/10 hover:bg-primary/10 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Confirmar recepción

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
+import { ForestGtfDB, GtfDuplicateError, GtfSpeciesNotAuthorizedError } from "@/lib/db/forest-gtf.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -34,11 +34,13 @@ const createSchema = z.object({
   titularName: z.string().trim().max(200).nullable().optional(),
   tituloHabilitante: z.string().trim().max(120).nullable().optional(),
   parcelaCorta: z.string().trim().max(120).nullable().optional(),
-  transportista: z.string().trim().max(200).nullable().optional(),
+  // Sin estos tres, un puesto de control no puede cruzar quién transporta la
+  // madera contra este registro interno — el gap que dejaba la ronda QA.
+  transportista: z.string().trim().min(1, "El transportista es obligatorio").max(200),
   transportistaDoc: z.string().trim().max(20).nullable().optional(),
-  conductor: z.string().trim().max(200).nullable().optional(),
+  conductor: z.string().trim().min(1, "El conductor es obligatorio").max(200),
   conductorLicencia: z.string().trim().max(40).nullable().optional(),
-  placaVehiculo: z.string().trim().max(20).nullable().optional(),
+  placaVehiculo: z.string().trim().min(1, "La placa del vehículo es obligatoria").max(20),
   origen: z.string().trim().max(200).nullable().optional(),
   destino: z.string().trim().max(200).nullable().optional(),
   items: z.array(itemSchema).min(1).max(500),
@@ -50,20 +52,43 @@ async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
   return ok ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
 }
+/** Lectura: LOTH (emisor) o CTP (recibe con la guía) pueden consultar guías. */
+async function ensureReadSpec(tenantId: string) {
+  const loth = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
+  const ctp = await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro");
+  return loth || ctp ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
+}
 
 export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
-  const guard = await ensureSpec(auth.tenantId);
+  const guard = await ensureReadSpec(auth.tenantId);
   if (guard) return guard;
-  const id = new URL(req.url).searchParams.get("id");
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
+  const gtfNumber = url.searchParams.get("gtfNumber");
   try {
+    if (gtfNumber) {
+      // Importar al ingreso CTP: buscar la guía emitida por su número.
+      const gtf = await ForestGtfDB.findByNumber(auth.tenantId, gtfNumber);
+      if (!gtf) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ gtf });
+    }
     if (id) {
       const gtf = await ForestGtfDB.getById(auth.tenantId, id);
       if (!gtf) return NextResponse.json({ error: "not_found" }, { status: 404 });
       return NextResponse.json({ gtf });
+    }
+    // Bandeja monte→planta: guías de trozas emitidas sin ingreso vigente en el CTP.
+    if (url.searchParams.get("sinIngresar") === "1") {
+      return NextResponse.json({ gtfs: await ForestGtfDB.sinIngresarAlCtp(auth.tenantId) });
+    }
+    // Sugerencia de correlativo para una serie (el operador la acepta o la pisa).
+    const serie = url.searchParams.get("sugerir");
+    if (serie) {
+      return NextResponse.json({ sugerido: await ForestGtfDB.sugerirNumero(auth.tenantId, serie) });
     }
     return NextResponse.json({ gtfs: await ForestGtfDB.list(auth.tenantId) });
   } catch (err) {
@@ -87,6 +112,13 @@ export const POST = withApiHandler("forestal-gtf-post", async (req: NextRequest)
     const gtf = await ForestGtfDB.create(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" });
     return NextResponse.json({ gtf }, { status: 201 });
   } catch (err) {
+    // GTF duplicada = dato del operador (una guía no se anota dos veces), no 500.
+    if (err instanceof GtfDuplicateError) {
+      return NextResponse.json({ error: "duplicate", message: err.message }, { status: 409 });
+    }
+    if (err instanceof GtfSpeciesNotAuthorizedError) {
+      return NextResponse.json({ error: "species_not_authorized", message: err.message }, { status: 422 });
+    }
     logger.error("[gtf.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
@@ -104,7 +136,7 @@ export const PATCH = withApiHandler("forestal-gtf-patch", async (req: NextReques
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
   try {
-    return NextResponse.json({ gtf: await ForestGtfDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason) });
+    return NextResponse.json({ gtf: await ForestGtfDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason, auth.username ?? "unknown") });
   } catch (err) {
     logger.error("[gtf.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

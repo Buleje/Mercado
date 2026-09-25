@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { Calendar, CalendarDays, ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatDate, formatDateShort } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ export interface DateRange {
 /** Etiqueta humana legible de un rango — para empty-states y headers. */
 export function describeRange(r: DateRange): string {
   const fmtDay = (d: Date) =>
-    d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+    formatDateShort(d);
   switch (r.preset) {
     case "diario":
       return "hoy";
@@ -165,9 +166,9 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
 
   const summaryLabel =
     value.preset === "especifica"
-      ? value.from.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })
+      ? formatDate(value.from)
       : value.preset === "personalizado"
-        ? `${value.from.toLocaleDateString("es-PE", { day: "2-digit", month: "short" })} — ${value.to.toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}`
+        ? `${formatDateShort(value.from)} — ${formatDateShort(value.to)}`
         : null;
 
   return (
@@ -179,10 +180,10 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             key={p.id}
             onClick={() => handlePreset(p.id)}
             className={cn(
-              "px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap",
+              "px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap",
               value.preset === p.id && mode === "none"
                 ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-sm"
-                : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
+                : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] ",
             )}
           >
             <span className="hidden sm:inline">{p.label}</span>
@@ -193,10 +194,10 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
         <button
           onClick={handleSpecificToggle}
           className={cn(
-            "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+            "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
             mode === "specific" || value.preset === "especifica"
               ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-sm"
-              : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
+              : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] ",
           )}
           title="Día específico"
         >
@@ -207,10 +208,10 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
         <button
           onClick={handleRangeToggle}
           className={cn(
-            "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+            "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
             mode === "range" || value.preset === "personalizado"
               ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-sm"
-              : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
+              : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] ",
           )}
           title="Rango personalizado"
         >
@@ -232,7 +233,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             type="date"
             value={toInputDate(value.from)}
             onChange={handleSpecific}
-            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
             aria-label="Fecha específica"
           />
         </div>
@@ -245,7 +246,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             type="date"
             value={toInputDate(value.from)}
             onChange={handleCustomFrom}
-            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
             aria-label="Fecha desde"
           />
           <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-medium">a</span>
@@ -253,7 +254,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             type="date"
             value={toInputDate(value.to)}
             onChange={handleCustomTo}
-            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
             aria-label="Fecha hasta"
           />
         </div>

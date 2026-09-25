@@ -1,14 +1,18 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useId, useRef } from "react";
 import {
   FileText, Download, Search, Eye, X, CheckCircle2,
   XCircle, Clock, Send, AlertTriangle, Receipt, Loader2,
 } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn, exportToCSV } from "@/lib/utils";
 import dynamic from "next/dynamic";
+import { formatDateNumeric, formatNumber } from "@/lib/format";
 
 // Estado del Modo SUNAT Oficial (read-only para el admin). Toggle = superadmin.
 const SunatModoOficialCard = dynamic(() => import("@/components/admin/sunat/SunatModoOficialCard"), { ssr: false });
@@ -47,11 +51,11 @@ type EmitForm = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
+const fmt = (n: number) => "S/ " + formatNumber(n, { min: 2 });
 
 const TYPE_META: Record<DocType, { label: string; color: string; bg: string }> = {
-  boleta:         { label: "Boleta",          color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  factura:        { label: "Factura",         color: "text-[var(--data-success-500)]",  bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  boleta:         { label: "Boleta",          color: "text-primary",     bg: "bg-primary/10 dark:bg-primary/15" },
+  factura:        { label: "Factura",         color: "text-primary",  bg: "bg-primary/10 dark:bg-primary/15" },
   "nota-credito": { label: "Nota de crédito", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   "nota-debito":  { label: "Nota de débito",  color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
@@ -78,10 +82,12 @@ const EMPTY_FORM: EmitForm = {
 export default function EInvoiceTab() {
   const [docs, setDocs] = useState<EDocument[]>([]);
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState<DocType | "todos">("todos");
-  const [filterStatus, setFilterStatus] = useState<DocStatus | "todos">("todos");
+  // Tipo y Estado son columnas de la tabla: autofiltro en su `<th>` (Brandon
+  // 2026-09-24), `[]` = todos, admite varios a la vez.
+  const [filterType, setFilterType] = useState<DocType[]>([]);
+  const [filterStatus, setFilterStatus] = useState<DocStatus[]>([]);
   const [detail, setDetail] = useState<EDocument | null>(null);
-  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [, setLoadingDocs] = useState(true);
 
   // Emisión
   const [emitForm, setEmitForm] = useState<EmitForm | null>(null);
@@ -96,41 +102,58 @@ export default function EInvoiceTab() {
       const res = await fetch("/api/admin/sunat/invoices?limit=100");
       if (!res.ok) { setLoadingDocs(false); return; }
       const data = await res.json();
+      // El endpoint /api/admin/sunat/invoices devuelve { data: [...] } con campos
+      // en inglés (series/number/type/sunatStatus/customerName). El mapeo previo
+      // leía serie/número/tipo/status/clienteNombre → todo caía a defaults
+      // ("0", "boleta", "emitido", "-"). Verificado contra el route 2026-07-05.
       const invoices = (data.data ?? data.invoices ?? []) as Array<{
         id: string;
-        serie: string;
-        número: string;
-        tipo: string;
-        status: string;
-        clienteNombre?: string;
-        clienteDocumento?: string;
+        series?: string;
+        number?: number | string;
+        type?: string;
+        sunatStatus?: string;
+        customerName?: string;
+        customerRuc?: string;
         subtotal?: number;
         igv?: number;
         total?: number;
-        items?: number;
-        sunatResponse?: string;
+        errorMessage?: string | null;
         pdfUrl?: string | null;
         createdAt?: string;
       }>;
+      const TYPE_MAP: Record<string, DocType> = {
+        factura: "factura",
+        nota_credito: "nota-credito",
+        "nota-credito": "nota-credito",
+        nota_debito: "nota-debito",
+        "nota-debito": "nota-debito",
+        boleta: "boleta",
+      };
+      const STATUS_MAP: Record<string, DocStatus> = {
+        pending: "pendiente",
+        accepted: "aceptado",
+        rejected: "rechazado",
+        voided: "anulado",
+      };
       const mapped: EDocument[] = invoices.map(inv => ({
         id: inv.id,
-        serie: inv.serie || (inv.tipo === "factura" ? "F001" : "B001"),
-        number: inv.número || "0",
-        date: inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("es-PE") : "-",
-        type: (inv.tipo === "factura" ? "factura" : inv.tipo === "nota-credito" ? "nota-credito" : inv.tipo === "nota-debito" ? "nota-debito" : "boleta") as DocType,
-        status: (["emitido", "aceptado", "rechazado", "anulado", "pendiente"].includes(inv.status) ? inv.status : "emitido") as DocStatus,
-        clientName: inv.clienteNombre || "-",
-        clientRUC: inv.clienteDocumento || "-",
+        serie: inv.series || (inv.type === "factura" ? "F001" : "B001"),
+        number: inv.number != null ? String(inv.number) : "0",
+        date: inv.createdAt ? formatDateNumeric(inv.createdAt) : "-",
+        type: TYPE_MAP[inv.type ?? ""] ?? "boleta",
+        status: STATUS_MAP[inv.sunatStatus ?? ""] ?? "emitido",
+        clientName: inv.customerName || "-",
+        clientRUC: inv.customerRuc || "-",
         subtotal: inv.subtotal ?? 0,
         igv: inv.igv ?? 0,
         total: inv.total ?? 0,
-        items: inv.items ?? 0,
-        sunatResponse: inv.sunatResponse || "-",
+        items: 0,
+        sunatResponse: inv.errorMessage || "-",
         pdfUrl: inv.pdfUrl,
       }));
       setDocs(mapped);
-    } catch {
-      // silently fail — user sees empty state
+    } catch (e) {
+      console.error("[EInvoiceTab] no se pudo cargar comprobantes", e);
     } finally {
       setLoadingDocs(false);
     }
@@ -140,8 +163,8 @@ export default function EInvoiceTab() {
 
   const filtered = useMemo(() => {
     let list = [...docs];
-    if (filterType !== "todos") list = list.filter(d => d.type === filterType);
-    if (filterStatus !== "todos") list = list.filter(d => d.status === filterStatus);
+    if (filterType.length > 0) list = list.filter(d => filterType.includes(d.type));
+    if (filterStatus.length > 0) list = list.filter(d => filterStatus.includes(d.status));
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(d =>
@@ -216,7 +239,7 @@ export default function EInvoiceTab() {
       id: data.invoice?.id || `${serie}-${Date.now()}`,
       serie,
       number: data.invoice?.número || String(Math.floor(Date.now() / 1000) % 99999999).padStart(8, "0"),
-      date: new Date().toLocaleDateString("es-PE"),
+      date: formatDateNumeric(new Date()),
       type: tipo,
       status: "emitido",
       clientName: emitForm.clienteNombre,
@@ -238,6 +261,15 @@ export default function EInvoiceTab() {
     }
   }
 
+  const cerrarDetail = useCallback(() => setDetail(null), []);
+  const cerrarEmit = useCallback(() => { if (!emitLoading) setEmitForm(null); }, [emitLoading]);
+  const detailModalRef = useRef<HTMLDivElement>(null);
+  const emitModalRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const emitTitleId = useId();
+  useModalAccesible(detailModalRef, { onCerrar: cerrarDetail, activo: !!detail });
+  useModalAccesible(emitModalRef, { onCerrar: cerrarEmit, activo: emitForm !== null });
+
   return (
     <div className="space-y-3 sm:space-y-6">
       {/* Estado del Modo SUNAT Oficial — el admin ve si está activo + requisitos */}
@@ -245,7 +277,7 @@ export default function EInvoiceTab() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[var(--accent-soft)] text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
+        <div className="fixed bottom-6 right-6 z-50 bg-primary/10 text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 shrink-0" /> {toast}
         </div>
       )}
@@ -254,13 +286,13 @@ export default function EInvoiceTab() {
       <div className="flex items-center justify-end gap-2">
         <button
           onClick={() => openEmitModal()}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <Send className="h-4 w-4" /> Emitir comprobante
         </button>
         <button
           onClick={() => exportToCSV(docs.map(d => ({ serie: d.serie, número: d.number, fecha: d.date, tipo: TYPE_META[d.type].label, estado: STATUS_META[d.status].label, cliente: d.clientName, ruc: d.clientRUC, subtotal: d.subtotal, igv: d.igv, total: d.total })), "e-facturacion")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -324,65 +356,106 @@ export default function EInvoiceTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cliente, serie, número..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+            className="w-full pl-9 pr-3 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           />
         </div>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as DocType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <option value="todos">Todos los tipos</option>
-          {(Object.keys(TYPE_META) as DocType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
-        </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as DocStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <option value="todos">Todos los estados</option>
-          {(Object.keys(STATUS_META) as DocStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
-        </select>
       </div>
 
+      {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
+          <thead>): Tipo y Estado se repiten acá, mismo estado, sólo visibles
+          ahí. */}
+      {docs.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:hidden">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Tipo</span>
+            <FiltroColumnaMulti
+              label="Tipo"
+              value={filterType}
+              options={(Object.keys(TYPE_META) as DocType[]).map(t => ({ value: t, count: docs.filter(d => d.type === t).length }))}
+              etiqueta={(v) => TYPE_META[v as DocType]?.label ?? v}
+              onChange={(v) => setFilterType(v as DocType[])}
+              placeholder="Todos"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Estado</span>
+            <FiltroColumnaMulti
+              label="Estado"
+              value={filterStatus}
+              options={(Object.keys(STATUS_META) as DocStatus[]).map(s => ({ value: s, count: docs.filter(d => d.status === s).length }))}
+              etiqueta={(v) => STATUS_META[v as DocStatus]?.label ?? v}
+              onChange={(v) => setFilterStatus(v as DocStatus[])}
+              placeholder="Todos"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Documents table */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
         {docs.length === 0 ? (
-          <div className="py-16 text-center text-[var(--text-tertiary)] dark:text-muted text-sm">
+          <div className="py-16 text-center text-[var(--text-tertiary)] dark:text-muted text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
             <Receipt className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <p className="font-semibold">Sin comprobantes emitidos</p>
             <p className="text-xs mt-1">Usa el botón &quot;Emitir comprobante&quot; para registrar el primer comprobante electrónico.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+          <DataTable className="min-w-[640px]">
               <thead>
-                <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface">
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Serie-Nro</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Tipo</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Cliente</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Total</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3"></th>
+                <tr>
+                  <th>Serie-Nro</th>
+                  <th>Fecha</th>
+                  <th>
+                    <span className="block">Tipo</span>
+                    <FiltroColumnaMulti
+                      label="Tipo"
+                      value={filterType}
+                      options={(Object.keys(TYPE_META) as DocType[]).map(t => ({ value: t, count: docs.filter(d => d.type === t).length }))}
+                      etiqueta={(v) => TYPE_META[v as DocType]?.label ?? v}
+                      onChange={(v) => setFilterType(v as DocType[])}
+                      placeholder="Todos"
+                    />
+                  </th>
+                  <th>Cliente</th>
+                  <th>Total</th>
+                  <th>
+                    <span className="block">Estado</span>
+                    <FiltroColumnaMulti
+                      label="Estado"
+                      value={filterStatus}
+                      options={(Object.keys(STATUS_META) as DocStatus[]).map(s => ({ value: s, count: docs.filter(d => d.status === s).length }))}
+                      etiqueta={(v) => STATUS_META[v as DocStatus]?.label ?? v}
+                      onChange={(v) => setFilterStatus(v as DocStatus[])}
+                      placeholder="Todos"
+                    />
+                  </th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(d => {
                   const StatusIcon = STATUS_META[d.status].icon;
                   return (
-                    <tr key={d.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20 transition-colors">
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{d.serie}-{d.number}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)]">{d.date}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                    <tr key={d.id}>
+                      <td className="font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{d.serie}-{d.number}</td>
+                      <td className="text-[var(--text-secondary)]">{d.date}</td>
+                      <td>
                         <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", TYPE_META[d.type].bg, TYPE_META[d.type].color)}>
                           {TYPE_META[d.type].label}
                         </span>
                       </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                      <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                         {d.clientName}<br />
                         <span className="text-xs text-[var(--text-tertiary)]">{d.clientRUC}</span>
                       </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(d.total)}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(d.total)}</td>
+                      <td>
                         <span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_META[d.status].color)}>
                           <StatusIcon className="h-3 w-3" />{STATUS_META[d.status].label}
                         </span>
                       </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 flex items-center gap-2">
-                        <button onClick={() => setDetail(d)} className="text-primary hover:underline text-xs font-bold">
+                      <td className="flex items-center gap-2">
+                        <button aria-label="Ver" onClick={() => setDetail(d)} className="text-primary hover:underline text-xs font-bold">
                           <Eye className="h-3.5 w-3.5 inline" />
                         </button>
                         {d.pdfUrl && (
@@ -390,7 +463,7 @@ export default function EInvoiceTab() {
                             href={d.pdfUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-bold text-[var(--data-success-500)] hover:underline"
+                            className="text-xs font-bold text-primary hover:underline"
                             title="Ver PDF"
                           >
                             PDF
@@ -401,18 +474,17 @@ export default function EInvoiceTab() {
                   );
                 })}
               </tbody>
-            </table>
-          </div>
+            </DataTable>
         )}
       </div>
 
       {/* Detail modal */}
       {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && setDetail(null)}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.serie}-{detail.number}</CardTitle>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.serie}-{detail.number}</CardTitle>
+              <button aria-label="Cerrar" onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {([
@@ -434,14 +506,14 @@ export default function EInvoiceTab() {
             </div>
             <div>
               <p className="text-xs text-[var(--text-tertiary)] mb-1">Respuesta SUNAT</p>
-              <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 font-mono text-xs">{detail.sunatResponse}</p>
+              <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-alt)] rounded-xl p-3 font-mono text-xs">{detail.sunatResponse}</p>
             </div>
             {detail.pdfUrl && (
               <a
                 href={detail.pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-semibold hover:bg-[var(--accent-soft)] transition-colors"
+                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-primary/10 text-white text-sm font-semibold hover:bg-primary/10 transition-colors"
               >
                 <Download className="h-4 w-4" /> Descargar PDF
               </a>
@@ -452,14 +524,14 @@ export default function EInvoiceTab() {
 
       {/* Emit modal */}
       {emitForm !== null && (
-        <div className="modal-backdrop p-4" onClick={() => !emitLoading && setEmitForm(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && !emitLoading && setEmitForm(null)}>
+          <div ref={emitModalRef} role="dialog" aria-modal="true" aria-labelledby={emitTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+              <CardTitle id={emitTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Send className="h-4 w-4 text-primary" /> Emitir comprobante SUNAT
               </CardTitle>
               {!emitLoading && (
-                <button onClick={() => setEmitForm(null)}>
+                <button aria-label="Cerrar" onClick={() => setEmitForm(null)}>
                   <X className="h-4 w-4 text-[var(--text-tertiary)]" />
                 </button>
               )}
@@ -467,75 +539,69 @@ export default function EInvoiceTab() {
 
             <div className="space-y-3">
               {/* Tipo de comprobante */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Tipo de comprobante</label>
+              <Field label="Tipo de comprobante" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <select
                   value={emitForm.tipoDoc}
                   onChange={e => setEmitForm(f => f && { ...f, tipoDoc: e.target.value as "01" | "03" })}
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 >
                   <option value="03">Boleta (B001)</option>
                   <option value="01">Factura (F001)</option>
                 </select>
-              </div>
+              </Field>
 
               {/* ID del pedido */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">ID del pedido</label>
+              <Field label="ID del pedido" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <input
                   value={emitForm.orderId}
                   onChange={e => setEmitForm(f => f && { ...f, orderId: e.target.value })}
                   placeholder="ej. cm3abc123..."
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
-              </div>
+              </Field>
 
               {/* Nombre del cliente */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Nombre del cliente</label>
+              <Field label="Nombre del cliente" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <input
                   value={emitForm.clienteNombre}
                   onChange={e => setEmitForm(f => f && { ...f, clienteNombre: e.target.value })}
                   placeholder="Nombre o razón social"
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
-              </div>
+              </Field>
 
               {/* DNI o RUC según tipo */}
               {emitForm.tipoDoc === "03" ? (
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">DNI <span className="font-normal">(opcional)</span></label>
+                <Field label={<>DNI <span className="font-normal">(opcional)</span></>} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                   <input
                     value={emitForm.clienteDni}
                     onChange={e => setEmitForm(f => f && { ...f, clienteDni: e.target.value })}
                     placeholder="12345678"
                     maxLength={8}
-                    className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                    className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   />
-                </div>
+                </Field>
               ) : (
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">RUC</label>
+                <Field label="RUC" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                   <input
                     value={emitForm.clienteRuc}
                     onChange={e => setEmitForm(f => f && { ...f, clienteRuc: e.target.value })}
                     placeholder="20123456789"
                     maxLength={11}
-                    className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                    className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   />
-                </div>
+                </Field>
               )}
 
               {/* Dirección */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Dirección <span className="font-normal">(opcional)</span></label>
+              <Field label={<>Dirección <span className="font-normal">(opcional)</span></>} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <input
                   value={emitForm.clienteDireccion}
                   onChange={e => setEmitForm(f => f && { ...f, clienteDireccion: e.target.value })}
                   placeholder="Av. Centenario 123, Pucallpa"
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
-              </div>
+              </Field>
             </div>
 
             {emitError && (
@@ -548,14 +614,14 @@ export default function EInvoiceTab() {
               <button
                 onClick={() => setEmitForm(null)}
                 disabled={emitLoading}
-                className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors disabled:opacity-50"
+                className="flex-1 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleEmitir}
                 disabled={emitLoading || !emitForm.orderId.trim() || !emitForm.clienteNombre.trim()}
-                className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {emitLoading ? (
                   <><Loader2 className="h-4 w-4 animate-spin" /> Emitiendo...</>

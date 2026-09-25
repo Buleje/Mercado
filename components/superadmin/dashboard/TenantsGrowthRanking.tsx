@@ -58,21 +58,22 @@ const RANGE_LABELS: Record<Range, string> = {
 };
 
 const PLAN_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  free: { bg: "bg-zinc-100 dark:bg-zinc-800", text: "text-zinc-700 dark:text-zinc-300", label: "Free" },
-  pro: { bg: "bg-amber-100 dark:bg-amber-950/40", text: "text-amber-800 dark:text-amber-300", label: "Pro" },
+  free: { bg: "bg-[var(--rule-soft)] ", text: "text-[var(--text-primary)] ", label: "Free" },
+  pro: { bg: "bg-teal-100 dark:bg-teal-950/40", text: "text-teal-800 dark:text-teal-300", label: "Pro" },
   business: { bg: "bg-sky-100 dark:bg-sky-950/40", text: "text-sky-800 dark:text-sky-300", label: "Business" },
-  enterprise: { bg: "bg-emerald-100 dark:bg-emerald-950/40", text: "text-emerald-800 dark:text-emerald-300", label: "Enterprise" },
+  enterprise: { bg: "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/40", text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Enterprise" },
 };
 
 const fmtSoles = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN", maximumFractionDigits: 0 }).format(n);
 
 function PodiumIcon({ position }: { position: number }) {
-  // Medallas para top 3
+  // Medallas para top 3 — Brandon 2026-06-17: sin oro/bronce (naranja/amarillo).
+  // Paleta de marca: 1º teal, 2º plata (zinc), 3º cielo. Distintos y sin cálidos.
   const styles = [
-    "bg-linear-to-br from-yellow-300 to-yellow-500 text-yellow-950 ring-2 ring-yellow-200",
-    "bg-linear-to-br from-zinc-300 to-zinc-400 text-zinc-900 ring-2 ring-zinc-200",
-    "bg-linear-to-br from-orange-300 to-orange-400 text-orange-950 ring-2 ring-orange-200",
+    "bg-linear-to-br from-teal-300 to-teal-500 text-teal-950 ring-2 ring-teal-200",
+    "bg-linear-to-br from-zinc-300 to-zinc-400 text-[var(--text-primary)] ring-2 ring-gray-200",
+    "bg-linear-to-br from-sky-300 to-sky-400 text-sky-950 ring-2 ring-sky-200",
   ];
   return (
     <div className={`h-9 w-9 rounded-full flex items-center justify-center font-extrabold text-base shrink-0 ${styles[position - 1]}`}>
@@ -93,7 +94,7 @@ function DeltaPill({ value }: { value: number }) {
   return (
     <span
       className={`inline-flex items-center gap-1 text-sm font-bold ${
-        positive ? "text-[var(--data-success-600)] dark:text-emerald-400" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+        positive ? "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
       }`}
     >
       {positive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
@@ -179,7 +180,7 @@ export default function TenantsGrowthRanking() {
       actions={
         <>
           {/* Range picker */}
-          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] p-1 text-base">
+          <div className="inline-flex rounded-xl border border-[var(--rule-base)] p-1 text-base">
             {(["1d", "7d", "30d", "90d", "1y"] as const).map((r) => (
               <button
                 key={r}
@@ -198,7 +199,7 @@ export default function TenantsGrowthRanking() {
           </div>
 
           {/* Indicador combinado: ambas métricas siempre visibles */}
-          <div className="inline-flex items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] px-3 py-1.5">
+          <div className="inline-flex items-center gap-3 rounded-xl border border-[var(--rule-base)] px-3 py-1.5">
             <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)]">
               <ShoppingBag className="h-4 w-4" /> Pedidos
             </span>
@@ -236,7 +237,7 @@ export default function TenantsGrowthRanking() {
                 className={[
                   "flex items-center gap-4 rounded-xl px-4 py-3 transition-colors border",
                   isPodium
-                    ? "bg-[var(--accent-soft)] border-[var(--accent)]/30"
+                    ? "bg-primary/10 border-[var(--accent)]/30"
                     : "bg-[var(--surface-canvas)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
                 ].join(" ")}
               >
@@ -264,7 +265,7 @@ export default function TenantsGrowthRanking() {
 
                 {/* Sparkline de revenue */}
                 <div className="hidden sm:block w-32 h-14 shrink-0">
-                  <ResponsiveContainer minWidth={0} width="100%" height="100%">
+                  <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
                     <AreaChart data={tenant.revenuePoints} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
                       <defs>
                         <linearGradient id={`spark-${tenant.tenantId}`} x1="0" y1="0" x2="0" y2="1">

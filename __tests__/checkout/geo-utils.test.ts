@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   coordsFromLocation,
+  parseGpsCoords,
   haversineKm,
   getDeliveryETA,
   isWithinDeliveryZone,
@@ -38,6 +39,31 @@ describe("coordsFromLocation", () => {
     const c = coordsFromLocation("GPS: 12.0464, -77.0428");
     expect(c.lat).toBeCloseTo(12.0464, 4);
     expect(c.lon).toBeCloseTo(-77.0428, 4);
+  });
+});
+
+describe("parseGpsCoords (estricto — null si no hay coords reales)", () => {
+  it("extrae lat/lon de un string con GPS bien formado", () => {
+    const c = parseGpsCoords("Jr. Ucayali 450, GPS: -8.3791, -74.5539");
+    expect(c).not.toBeNull();
+    expect(c!.lat).toBeCloseTo(-8.3791, 4);
+    expect(c!.lon).toBeCloseTo(-74.5539, 4);
+  });
+
+  it("devuelve null cuando NO hay marcador GPS (no cae a la bodega)", () => {
+    expect(parseGpsCoords("Jr. Ucayali 450")).toBeNull();
+    expect(parseGpsCoords("")).toBeNull();
+  });
+
+  it("devuelve null cuando el GPS está mal formado (sin números válidos)", () => {
+    expect(parseGpsCoords("GPS: foo, bar")).toBeNull();
+  });
+
+  it("no finge la ubicación del local ante texto sin coords", () => {
+    const c = parseGpsCoords("Centro Pucallpa");
+    expect(c).toBeNull();
+    // coordsFromLocation SÍ cae a la bodega — contraste intencional.
+    expect(coordsFromLocation("Centro Pucallpa").lat).toBeCloseTo(DEFAULT_STORE_LAT, 4);
   });
 });
 

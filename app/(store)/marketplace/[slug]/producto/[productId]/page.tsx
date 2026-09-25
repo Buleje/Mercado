@@ -40,6 +40,11 @@ interface ApiProduct {
   unit: string | null;
   badge: string | null;
   stock: number | null;
+  brand: string | null;
+  weightKg: number | null;
+  dimensions: string | null;
+  specsJson: string | null;
+  richContentJson: string | null;
   image: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
@@ -73,6 +78,7 @@ interface ApiCatalogProduct {
   storeId: string;
   storeSlug: string;
   storeName: string;
+  storeLogo: string | null;
   storeZone: string | null;
   storeRating: number;
 }
@@ -133,8 +139,10 @@ async function fetchRelated(
         p.productId !== excludeId &&
         !sameCategory.some((s) => s.productId === p.productId),
     );
+    // Brandon 2026-06-25: 12 (antes 4) para llenar la grilla densa estilo home
+    // en "Clientes también compraron".
     return [...sameCategory, ...fallback]
-      .slice(0, 4)
+      .slice(0, 12)
       .map((p) => ({
         id: p.productId,
         name: p.name,
@@ -143,11 +151,38 @@ async function fetchRelated(
         storeName: p.storeName,
         storeSlug: p.storeSlug,
         storeId: p.storeId,
+        storeLogo: p.storeLogo,
         storeProductId: p.storeProductId,
         unit: p.unit,
         category: p.category,
         stock: p.stock ?? undefined,
       }));
+  } catch {
+    return [];
+  }
+}
+
+// ── Parsers de contenido rico (JSON string → estructura) ───────────────────────
+
+function parseSpecs(json: string | null): Array<{ label: string; value: string }> {
+  if (!json) return [];
+  try {
+    const arr = JSON.parse(json);
+    return Array.isArray(arr)
+      ? arr.filter((x) => x && typeof x.label === "string" && typeof x.value === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseRichContent(
+  json: string | null,
+): Array<{ heading?: string; body?: string; imageUrl?: string }> {
+  if (!json) return [];
+  try {
+    const arr = JSON.parse(json);
+    return Array.isArray(arr) ? arr.filter((x) => x && typeof x === "object") : [];
   } catch {
     return [];
   }
@@ -345,11 +380,14 @@ export default async function ProductDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const relatedProducts = await fetchRelated(
-    product.category,
-    product.store.slug,
-    product.id
-  );
+  // Perf 2026-06-24: los 3 fetches post-producto corren en PARALELO (antes eran
+  // awaits secuenciales en cascada → el detalle esperaba a los 3). Solo dependen
+  // de `product`, no entre sí → Promise.all = 2 saltos de red en vez de 4.
+  const [relatedProducts, priceValidUntil, storeRealAgg] = await Promise.all([
+    fetchRelated(product.category, product.store.slug, product.id),
+    getPriceValidUntil(),
+    StoreReviewsDB.getApprovedAggregate(product.store.id),
+  ]);
 
   // Construir gallery images
   const images =
@@ -371,15 +409,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
     { name: product.name, url: `${base}/marketplace/${slug}/producto/${productId}` },
   ];
 
-  // priceValidUntil vía "use cache" — evita Date.now() directo en el Server
-  // Component (next-prerender-current-time bajo cacheComponents).
-  const priceValidUntil = await getPriceValidUntil();
-
-  // Audit SEO 2026-05-31 ("schema honesto, UI sembrada"): el aggregateRating
-  // del Product solo si la TIENDA tiene reseñas REALES (tabla Review), no la
-  // columna sembrada store.rating/reviewCount. null hoy → sin estrellas falsas;
-  // se auto-activa cuando la tienda acumule reseñas reales.
-  const storeRealAgg = await StoreReviewsDB.getApprovedAggregate(product.store.id);
+  // priceValidUntil + storeRealAgg ya se resolvieron arriba en el Promise.all.
+  // (priceValidUntil vía "use cache" evita Date.now() directo bajo cacheComponents;
+  // storeRealAgg → aggregateRating SOLO si la tienda tiene reseñas reales, sin
+  // estrellas falsas; se auto-activa cuando acumule reseñas.)
 
   return (
     <>
@@ -414,6 +447,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
           stock: product.stock,
           imageUrl: product.image,
           badge: product.badge,
+          brand: product.brand,
+          weightKg: product.weightKg,
+          dimensions: product.dimensions,
+          customSpecs: parseSpecs(product.specsJson),
+          richContent: parseRichContent(product.richContentJson),
         }}
         store={{
           id: product.store.id,

@@ -158,7 +158,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}
@@ -344,7 +344,7 @@ export function AuthSessionsTab() {
           onClick={() => reload()}
           disabled={refreshing}
           title="Recargar (R)"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <RefreshCw
             className={cn("h-4 w-4", refreshing && "animate-spin")}
@@ -352,7 +352,7 @@ export function AuthSessionsTab() {
           />
           Recargar
         </button>
-        <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+        <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
           <input
             type="checkbox"
             checked={autoRefresh}
@@ -364,7 +364,7 @@ export function AuthSessionsTab() {
         <button
           onClick={() => exportSessionsCSV(filteredSessions)}
           disabled={filteredSessions.length === 0}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <Download className="h-4 w-4" aria-hidden />
           CSV ({filteredSessions.length})
@@ -472,7 +472,7 @@ export function AuthSessionsTab() {
               onChange={(e) => setSearchRaw(e.target.value)}
               placeholder="Buscar user, IP, UA…"
               aria-label="Buscar sesiones"
-              className="w-full h-9 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+              className="w-full h-9 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
             />
           </div>
         </header>
@@ -480,7 +480,7 @@ export function AuthSessionsTab() {
         {error ? (
           <div
             role="alert"
-            className="m-5 rounded-xl border-2 border-rose-300 bg-rose-50 p-4 flex items-start gap-2 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/10 dark:text-rose-300"
+            className="m-5 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 flex items-start gap-2 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/10 dark:text-[var(--data-error-500)]"
           >
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <span className="text-sm">{error}</span>
@@ -503,7 +503,7 @@ export function AuthSessionsTab() {
             {search && (
               <button
                 onClick={() => setSearchRaw("")}
-                className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                className="mt-3 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
               >
                 Limpiar búsqueda
               </button>
@@ -604,13 +604,13 @@ export function AuthSessionsTab() {
                               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
                               s.isCurrent
                                 ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                                : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+                                : "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
                             )}
                           >
                             <span
                               className={cn(
                                 "h-1.5 w-1.5 rounded-full",
-                                s.isCurrent ? "bg-[var(--accent)]" : "bg-emerald-500",
+                                s.isCurrent ? "bg-[var(--accent)]" : "bg-[var(--data-success-500)]",
                               )}
                             />
                             {s.isCurrent ? "Tú" : "Activa"}
@@ -661,8 +661,8 @@ export function AuthSessionsTab() {
                       className={cn(
                         "inline-flex h-8 w-8 items-center justify-center rounded-lg",
                         u.totpEnabled
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+                          ? "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]"
+                          : "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
                       )}
                     >
                       <Key className="h-4 w-4" strokeWidth={1.75} aria-hidden />
@@ -682,14 +682,14 @@ export function AuthSessionsTab() {
                     className={cn(
                       "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
                       u.totpEnabled
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-                        : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+                        ? "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]"
+                        : "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
                     )}
                   >
                     <span
                       className={cn(
                         "h-1.5 w-1.5 rounded-full",
-                        u.totpEnabled ? "bg-emerald-500" : "bg-amber-500",
+                        u.totpEnabled ? "bg-[var(--data-success-500)]" : "bg-teal-500",
                       )}
                     />
                     {u.totpEnabled ? "Habilitado" : "Pendiente"}
@@ -769,7 +769,7 @@ export function AuthSessionsTab() {
           <AlertDialog.Overlay className="fixed inset-0 z-[60] bg-black/65 backdrop-blur-sm" />
           <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-[var(--shadow-xl)] p-6">
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]">
                 <AlertTriangle className="h-5 w-5" strokeWidth={1.75} aria-hidden />
               </span>
               <div className="flex-1 min-w-0">
@@ -791,7 +791,7 @@ export function AuthSessionsTab() {
               <AlertDialog.Cancel asChild>
                 <button
                   disabled={revoking}
-                  className="h-11 px-4 rounded-xl text-sm font-bold border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--rule-base)] disabled:opacity-50"
+                  className="h-11 px-4 rounded-xl text-sm font-semibold border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--rule-base)] disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -836,9 +836,9 @@ function MiniKpi({
 }) {
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-    success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+    success: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
+    danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   return (
@@ -927,7 +927,7 @@ function LoginFailuresChart({
               >
                 <div className="relative w-full flex-1 flex items-end gap-1">
                   <div
-                    className="flex-1 rounded-t-md bg-emerald-500/30 transition-all group-hover:bg-emerald-500/60"
+                    className="flex-1 rounded-t-md bg-[var(--data-success-500)]/30 transition-all group-hover:bg-[var(--data-success-500)]/60"
                     style={{ height: `${successH}%` }}
                     title={`${d.succeeded} éxitos`}
                   />
@@ -937,7 +937,7 @@ function LoginFailuresChart({
                       d.failed > 5
                         ? "bg-rose-500 group-hover:brightness-110"
                         : d.failed > 0
-                          ? "bg-amber-500 group-hover:brightness-110"
+                          ? "bg-teal-500 group-hover:brightness-110"
                           : "bg-[var(--surface-sunken)]",
                     )}
                     style={{
@@ -957,11 +957,11 @@ function LoginFailuresChart({
       {/* Legend */}
       <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[var(--rule-soft)]">
         <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-          <span className="h-3 w-3 rounded bg-emerald-500/30" />
+          <span className="h-3 w-3 rounded bg-[var(--data-success-500)]/30" />
           Éxitos
         </span>
         <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-          <span className="h-3 w-3 rounded bg-amber-500" />
+          <span className="h-3 w-3 rounded bg-teal-500" />
           Fallidos (≤5)
         </span>
         <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">

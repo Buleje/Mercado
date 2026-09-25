@@ -1,17 +1,20 @@
 "use client";
 
-import { CardTitle, LoadingState, StatCard } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, StatCard, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { ReactNode } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   Truck, User, Calendar, Printer, MapPin, Package,
-  FileText, CheckCircle, XCircle, Filter, Copy, ChevronDown, ChevronUp } from "@buleje/design-system/icons";
+  FileText, CheckCircle, XCircle, Copy } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { Field } from "@/components/admin/shared/Field";
+import { formatDate, formatDateTime } from "@/lib/format";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type GuiaStatus = "BORRADOR" | "EMITIDA" | "EN_TRANSITO" | "ENTREGADA" | "ANULADA";
@@ -26,7 +29,8 @@ type GuiaItem = {
 
 type GuiaRemision = {
   id: string;
-  número: string;
+  /** Ya viene formateado del backend (ej. "T001-0001"). */
+  numero: string;
   tenantId: string;
   orderId?: string;
   fechaTraslado: string;
@@ -90,9 +94,9 @@ type DraftItem = {
 
 const STATUS_META: Record<GuiaStatus, { label: string; color: string; bg: string; dot: string }> = {
   BORRADOR:    { label: "Borrador",    color: "text-[var(--text-primary)]",       bg: "bg-[var(--surface-sunken)]",       dot: "bg-[var(--rule-mid)]" },
-  EMITIDA:     { label: "Emitida",     color: "text-[var(--data-success-500)]",       bg: "bg-[var(--accent-soft)]",       dot: "bg-[var(--accent-soft)]" },
+  EMITIDA:     { label: "Emitida",     color: "text-[var(--data-success-500)]",       bg: "bg-primary/10",       dot: "bg-primary/10" },
   EN_TRANSITO: { label: "En tránsito", color: "text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-100)]",     dot: "bg-[var(--data-warning-500)]" },
-  ENTREGADA:   { label: "Entregada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
+  ENTREGADA:   { label: "Entregada",   color: "text-[var(--data-success-500)]", bg: "bg-primary/10", dot: "bg-primary/10" },
   ANULADA:     { label: "Anulada",     color: "text-[var(--data-error-500)]",         bg: "bg-[var(--data-error-100)]",         dot: "bg-[var(--data-error-500)]" },
 };
 
@@ -109,21 +113,14 @@ const MOTIVOS = [
 
 const _PILL_COLORS: Record<string, { active: string; inactive: string }> = {
   "":          { active: "bg-primary text-white",  inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
-  BORRADOR:    { active: "bg-gray-600 text-white",    inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
-  EMITIDA:     { active: "bg-[var(--accent-soft)] text-white",    inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  BORRADOR:    { active: "bg-[var(--surface-sunken)] text-white",    inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
+  EMITIDA:     { active: "bg-primary/10 text-white",    inactive: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
   EN_TRANSITO: { active: "bg-[var(--data-warning-500)] text-white",   inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" },
-  ENTREGADA:   { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  ENTREGADA:   { active: "bg-primary/10 text-white", inactive: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
   ANULADA:     { active: "bg-[var(--data-error-500)] text-white",     inactive: "bg-[var(--data-error-50)] text-[var(--data-error-500)]" },
 };
 
 const PER_PAGE = 10;
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-}
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
 
 function validateRuc(ruc: string): "valid" | "invalid" | "empty" {
   if (!ruc || ruc.trim() === "") return "empty";
@@ -161,9 +158,9 @@ function GuiaPreview({ guia }: { guia: GuiaRemision }) {
   const meta = STATUS_META[guia.status];
   const placa = getPlaca(guia);
   return (
-    <div className="w-75 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
+    <div className="w-75 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-[var(--text-secondary)]">{guia.número}</span>
+        <span className="font-mono text-xs text-[var(--text-secondary)]">{guia.numero}</span>
         <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>
           <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />{meta.label}
         </span>
@@ -173,7 +170,7 @@ function GuiaPreview({ guia }: { guia: GuiaRemision }) {
       {guia.transportistaNombre && (
         <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] flex items-center gap-1">
           <Truck className="h-3 w-3" /> {guia.transportistaNombre}
-          {placa && <span className="ml-1 px-1 bg-[var(--accent-soft)] text-[var(--data-success-500)] rounded text-[length:var(--ts-2xs)] font-bold">{placa}</span>}
+          {placa && <span className="ml-1 px-1 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] rounded text-[length:var(--ts-2xs)] font-bold">{placa}</span>}
         </p>
       )}
       <div className="border-t border-[var(--rule-soft)] pt-2">
@@ -228,10 +225,10 @@ function _OrderPickerCard({ order, isSelected, onSelect }: {
         "w-full text-left rounded-xl border-2 p-4 transition-all duration-[var(--dur-base)] relative overflow-hidden",
         isSelected
           ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-          : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] hover:shadow-[var(--shadow-lg)] hover:border-primary/40"
+          : "bg-[var(--surface-raised)] border-[var(--rule-base)] hover:shadow-[var(--shadow-lg)] hover:border-primary/40"
       )}
     >
-      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" : "bg-[var(--accent-soft)]")} />
+      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" : "bg-primary/10")} />
       <div className="pl-2">
         <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
           <span className="font-mono text-xs font-bold text-[var(--text-primary)]">#{order.número}</span>
@@ -261,7 +258,7 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 animate-pulse">
+          <div key={i} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 animate-pulse">
             <div className="h-7 w-7 rounded-lg bg-[var(--surface-sunken)] mb-2" />
             <div className="h-3 w-20 rounded bg-[var(--surface-sunken)] mb-1.5" />
             <div className="h-7 w-10 rounded bg-[var(--surface-sunken)]" />
@@ -273,9 +270,9 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
   if (!resumen) return null;
 
   const kpis = [
-    { label: "Guías este mes", value: resumen.totalMes, icon: FileText, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
+    { label: "Guías este mes", value: resumen.totalMes, icon: FileText, color: "text-[var(--data-success-500)]", bg: "bg-primary/10" },
     { label: "En tránsito", value: resumen.enTransito, icon: Truck, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)]" },
-    { label: "Entregadas", value: resumen.entregadas, icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
+    { label: "Entregadas", value: resumen.entregadas, icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-primary/10" },
     { label: "Anuladas", value: resumen.anuladas, icon: XCircle, color: resumen.anuladas > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]", bg: resumen.anuladas > 0 ? "bg-[var(--data-error-100)]" : "bg-[var(--surface-sunken)]" },
   ];
 
@@ -286,7 +283,7 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
           const Icon = card.icon;
           return (
             <m.div key={card.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  p-3">
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center mb-2", card.bg)}>
                 <Icon className={cn("h-3.5 w-3.5", card.color)} />
               </div>
@@ -297,14 +294,14 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
         })}
       </div>
       {resumen.transportistasFrecuentes.length > 0 && (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold mb-3 flex items-center gap-1.5">
             <Truck className="h-3 w-3" /> Transportistas frecuentes
           </p>
           <div className="space-y-2">
             {resumen.transportistasFrecuentes.slice(0, 3).map((t, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-full bg-[var(--accent-soft)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] shrink-0">{i + 1}</div>
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] shrink-0">{i + 1}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{t.nombre}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono">{t.ruc}</p>
@@ -333,7 +330,7 @@ function printGuiaSunat(g: GuiaRemision, formatDate: (d: string) => string) {
     condition ? '<div class="row"><span class="row-label">' + label + ':</span><span class="row-value">' + value + "</span></div>" : "";
 
   const html = [
-    '<!DOCTYPE html><html><head><title>GRR ' + g.número + "</title><style>",
+    '<!DOCTYPE html><html><head><title>GRR ' + g.numero + "</title><style>",
     "@media print { @page { size: A4; margin: 15mm; } }",
     "body { font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; font-size: 13px; }",
     "h1 { text-align: center; font-size: 18px; margin: 0; }",
@@ -350,7 +347,7 @@ function printGuiaSunat(g: GuiaRemision, formatDate: (d: string) => string) {
     "</style></head><body>",
     '<div class="sep-double"></div>',
     "<h1>GUIA DE REMISION REMITENTE</h1>",
-    "<h2>N. " + g.número + "</h2>",
+    "<h2>N. " + g.numero + "</h2>",
     '<div class="sep-double"></div>',
     '<div class="section"><div class="section-title">Remitente</div>',
     '<div class="row"><span class="row-label">Nombre/Razon Social:</span><span class="row-value">Buleje</span></div>',
@@ -365,7 +362,11 @@ function printGuiaSunat(g: GuiaRemision, formatDate: (d: string) => string) {
     '<div class="section"><div class="section-title">Transporte</div>',
     conditionalRow(g.transportistaNombre, "Transportista", g.transportistaNombre || ""),
     conditionalRow(g.transportistaRuc, "RUC", g.transportistaRuc || ""),
-    conditionalRow(g.transportistaPlaca, "Placa", g.transportistaPlaca || ""),
+    // La placa se guarda como `vehiculoPlaca`; `transportistaPlaca` es el
+    // nombre viejo. Preguntando sólo por el viejo, la guía impresa salía SIN
+    // placa — y una guía de remisión sin placa del vehículo no sirve en un
+    // control de carretera. `placaDe` ya sabe leer las dos.
+    conditionalRow(getPlaca(g), "Placa", getPlaca(g)),
     conditionalRow(g.conductorNombre, "Conductor", g.conductorNombre || ""),
     conditionalRow(g.conductorDni, "DNI Conductor", g.conductorDni || ""),
     "</div>",
@@ -419,9 +420,15 @@ export default function GuiasRemisionModule() {
   const [_actionLoading, setActionLoading] = useState(false);
   const [showAnular, setShowAnular] = useState(false);
   const [_copiedLink, setCopiedLink] = useState(false);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const cerrarSelected = useCallback(() => setSelected(null), []);
 
   // ── New form ──
   const [showNew, setShowNew] = useState(false);
+  const newPanelRef = useRef<HTMLDivElement>(null);
+  const newTitleId = useId();
+  const cerrarNew = useCallback(() => setShowNew(false), []);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -483,6 +490,13 @@ export default function GuiasRemisionModule() {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [showNew, selected, showAnular]);
+
+  // El detalle deja Escape al listener global de arriba: coordina con «Anular»,
+  // que se abre encima. La guía NUEVA no: ese listener ignora las teclas que
+  // vienen de un campo, y el hook deja el foco justo en el primer campo — Escape
+  // no cerraba nunca (smoke 2026-09-13). El hook la cierra desde cualquier foco.
+  useModalAccesible(detailPanelRef, { onCerrar: cerrarSelected, activo: !!selected, cerrarConEscape: false });
+  useModalAccesible(newPanelRef, { onCerrar: cerrarNew, activo: showNew });
 
   // ── Fetch guias ──
   const fetchGuias = useCallback(async () => {
@@ -693,7 +707,7 @@ export default function GuiasRemisionModule() {
     const items = g.items ?? [];
     const pesoTotal = items.reduce((sum, it) => sum + it.cantidad * (it.pesoUnitario || 0), 0);
     const verifyUrl = `buleje.pe/verify/guia/${g.id}`;
-    const html = `<!DOCTYPE html><html><head><title>GRR ${g.número}</title><style>
+    const html = `<!DOCTYPE html><html><head><title>GRR ${g.numero}</title><style>
       @media print { @page { size: A4; margin: 15mm; } }
       body { font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; font-size: 13px; }
       h1 { text-align: center; font-size: 18px; margin: 0; }
@@ -717,7 +731,7 @@ export default function GuiasRemisionModule() {
     </style></head><body>
       <div class="sep-double"></div>
       <h1>GUIA DE REMISION REMITENTE</h1>
-      <h2>N.&deg; ${g.número}</h2>
+      <h2>N.&deg; ${g.numero}</h2>
       <div class="sep-double"></div>
       <div class="section">
         <div class="section-title">Remitente</div>
@@ -819,7 +833,7 @@ export default function GuiasRemisionModule() {
             aria-label="Buscar guías de remisión"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         {/* Mejora 12: Pills coloreadas con count */}
@@ -828,10 +842,10 @@ export default function GuiasRemisionModule() {
             const count = s === "" ? guias.length : guias.filter(g => g.status === s).length;
             const pillColors: Record<string, { active: string; inactive: string }> = {
               "": { active: "bg-primary text-white", inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
-              BORRADOR: { active: "bg-gray-600 text-white", inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
-              EMITIDA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+              BORRADOR: { active: "bg-[var(--surface-sunken)] text-white", inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
+              EMITIDA: { active: "bg-primary/10 text-white", inactive: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
               EN_TRANSITO: { active: "bg-[var(--data-warning-500)] text-white", inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" },
-              ENTREGADA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+              ENTREGADA: { active: "bg-primary/10 text-white", inactive: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
               ANULADA: { active: "bg-[var(--data-error-500)] text-white", inactive: "bg-[var(--data-error-50)] text-[var(--data-error-500)]" },
             };
             const colors = pillColors[s] ?? pillColors[""];
@@ -857,7 +871,7 @@ export default function GuiasRemisionModule() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+      <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
         {loading ? (
           <LoadingState />
         ) : error ? (
@@ -871,19 +885,19 @@ export default function GuiasRemisionModule() {
             <Truck className="h-14 w-14 mb-4 text-[var(--text-tertiary)] mx-auto" />
             <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin guías de remisión</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Documenta tus envíos de mercadería</p>
-            <button onClick={() => { setShowNew(true); setCreateError(null); }} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Crear guía</button>
+            <button onClick={() => { setShowNew(true); setCreateError(null); }} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Crear guía</button>
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <table className="w-full min-w-150 sm:min-w-0 text-sm">
+            <div className="-mx-4 sm:mx-0">
+              <DataTable className="min-w-150 sm:min-w-0">
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)] text-left">
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">N° GRR</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Fecha traslado</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Destinatario</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden md:table-cell">Motivo</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Status</th>
+                  <tr>
+                    <th>N° GRR</th>
+                    <th className="hidden sm:table-cell">Fecha traslado</th>
+                    <th>Destinatario</th>
+                    <th className="hidden md:table-cell">Motivo</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -893,25 +907,29 @@ export default function GuiasRemisionModule() {
                       <tr
                         key={g.id}
                         onClick={() => setSelected(g)}
-                        className="border-b border-gray-50 hover:bg-[var(--surface-alt)] cursor-pointer transition-colors"
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Ver guía ${g.numero} de ${g.destinatarioNombre}`}
+                        onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(g); } }}
+                        className="cursor-pointer"
                       >
-                        <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
+                        <td className="font-mono text-xs text-[var(--text-secondary)]">
                           {/* Mejora 17: Preview al hover */}
                           <GuiaHoverRow preview={<GuiaPreview guia={g} />}>
-                            <span>{g.número}</span>
+                            <span>{g.numero}</span>
                           </GuiaHoverRow>
                         </td>
-                        <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(g.fechaTraslado)}</td>
-                        <td className="px-4 py-3">
+                        <td className="text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(g.fechaTraslado)}</td>
+                        <td>
                           <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                               <Truck className="h-4 w-4 text-[var(--data-success-500)]" />
                             </div>
                             <p className="font-medium text-[var(--text-primary)] truncate">{g.destinatarioNombre}</p>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">{g.motivoTraslado}</td>
-                        <td className="px-4 py-3">
+                        <td className="text-[var(--text-secondary)] hidden md:table-cell">{g.motivoTraslado}</td>
+                        <td>
                           <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
                             {meta.label}
                           </span>
@@ -920,7 +938,7 @@ export default function GuiasRemisionModule() {
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
@@ -928,10 +946,10 @@ export default function GuiasRemisionModule() {
                   {guias.length} guía{guias.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}
                 </p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
+                  <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
+                  <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -947,30 +965,31 @@ export default function GuiasRemisionModule() {
           <>
             <m.div key="grr-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="modal-backdrop" style={{ zIndex: 40 }} onClick={() => setSelected(null)} />
-            <m.div key="grr-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+            <m.div key="grr-panel" ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1}
+              initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto">
-              <div className="p-4 sm:p-6 space-y-5">
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto">
+              <div className="p-4 sm:p-6 space-y-4">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)] font-mono">{selected.número}</CardTitle>
+                    <CardTitle id={detailTitleId} className="text-lg font-bold text-[var(--text-primary)] font-mono">{selected.numero}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada: {formatDateTime(selected.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {selected.status === "BORRADOR" && (
                       <AdminTooltip content="Crear una copia de esta guía">
-                        <button onClick={handleDuplicate} aria-label="Duplicar" className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+                        <button onClick={handleDuplicate} aria-label="Duplicar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                           <Copy className="h-4 w-4 text-[var(--text-tertiary)]" />
                         </button>
                       </AdminTooltip>
                     )}
                     {selected.status !== "ANULADA" && selected.status !== "ENTREGADA" && (
-                      <button onClick={() => setShowAnular(true)} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] transition-colors" title="Anular">
+                      <button onClick={() => setShowAnular(true)} className="p-2 rounded-xl hover:bg-[var(--data-error-50)] transition-colors" title="Anular">
                         <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
                       </button>
                     )}
-                    <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+                    <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                       <X className="h-5 w-5 text-[var(--text-secondary)]" />
                     </button>
                   </div>
@@ -995,7 +1014,7 @@ export default function GuiasRemisionModule() {
                     <p className="font-bold text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] uppercase">Transportista</p>
                     {selected.transportistaNombre ? (
                       <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
-                        <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                           <Truck className="h-4 w-4 text-[var(--data-success-500)]" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1003,7 +1022,7 @@ export default function GuiasRemisionModule() {
                           {selected.transportistaRuc && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">RUC: {selected.transportistaRuc}</p>}
                         </div>
                         {selected.transportistaPlaca ? (
-                          <span className="px-2 py-1 rounded-lg bg-[var(--accent-soft)] text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1">
+                          <span className="px-2 py-1 rounded-lg bg-primary/10 text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1">
                             {selected.transportistaPlaca}
                           </span>
                         ) : (
@@ -1079,15 +1098,15 @@ export default function GuiasRemisionModule() {
                             <div className="flex flex-col items-center">
                               <div className={cn(
                                 "h-5 w-5 rounded-full flex items-center justify-center",
-                                isDone ? "bg-[var(--accent-soft)]" : "bg-[var(--surface-sunken)]"
+                                isDone ? "bg-primary/10" : "bg-[var(--surface-sunken)]"
                               )}>
                                 {isDone ? (
-                                  <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]" />
+                                  <div className="h-2 w-2 rounded-full bg-primary/10" />
                                 ) : (
                                   <div className="h-2 w-2 rounded-full bg-[var(--rule-base)]" />
                                 )}
                               </div>
-                              {idx < 3 && <div className={cn("w-0.5 h-5", isDone ? "bg-[var(--accent-soft)]" : "bg-[var(--rule-soft)]")} />}
+                              {idx < 3 && <div className={cn("w-0.5 h-5", isDone ? "bg-primary/10" : "bg-[var(--rule-soft)]")} />}
                             </div>
                             <div className="pb-2">
                               <p className={cn("text-xs font-bold", isDone ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{meta.label}</p>
@@ -1115,11 +1134,11 @@ export default function GuiasRemisionModule() {
 
                 {/* Items */}
                 <div>
-                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Items</h4>
+                  <BlockTitle className="mb-3">Items</BlockTitle>
                   <div className="space-y-2">
                     {(selected.items ?? []).map((item, i) => (
                       <div key={i} className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl">
-                        <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                           <Package className="h-4 w-4 text-[var(--data-success-500)]" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1157,12 +1176,12 @@ export default function GuiasRemisionModule() {
                 {/* Mejora 12: Imprimir GRR formato SUNAT */}
                 <div className="flex gap-2">
                   <button onClick={() => window.print()}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                     <Printer className="h-4 w-4" /> Imprimir
                   </button>
                   <button
                     onClick={() => printGuiaSunat(selected, formatDate)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
                   >
                     <Printer className="h-4 w-4" /> GRR SUNAT
                   </button>
@@ -1184,14 +1203,15 @@ export default function GuiasRemisionModule() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
+              className="fixed inset-0 z-modal flex items-start justify-center p-4 overflow-y-auto"
               onClick={e => e.target === e.currentTarget && setShowNew(false)}
             >
-              <div className="w-full max-w-3xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
+              <div ref={newPanelRef} role="dialog" aria-modal="true" aria-labelledby={newTitleId} tabIndex={-1}
+                className="w-full max-w-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-[var(--color-card)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
-                  <button onClick={() => setShowNew(false)} className="p-1 hover:bg-[var(--surface-sunken)] rounded-lg transition-colors">
+                <div className="sticky top-0 z-10 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                  <CardTitle id={newTitleId} className="text-lg font-semibold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
+                  <button aria-label="Cerrar" onClick={() => setShowNew(false)} className="p-1 hover:bg-[var(--surface-sunken)] rounded-xl transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1199,125 +1219,115 @@ export default function GuiasRemisionModule() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Order ID optional */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Vincular pedido (opcional)</label>
+                  <Field label="Vincular pedido (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.orderIds} onChange={e => setForm(p => ({ ...p, orderIds: e.target.value }))} placeholder="N° de orden"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </Field>
                   {/* Motivo */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Motivo de traslado</label>
+                  <Field label="Motivo de traslado" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <select value={form.motivoTraslado} onChange={e => setForm(p => ({ ...p, motivoTraslado: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                       {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
-                  </div>
+                  </Field>
                   {/* Destinatario */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Destinatario</label>
+                  <Field label="Destinatario" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.destinatarioNombre} onChange={e => setForm(p => ({ ...p, destinatarioNombre: e.target.value }))} placeholder="Nombre"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">RUC destinatario</label>
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </Field>
+                  <Field label="RUC destinatario" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.destinatarioRuc} onChange={e => setForm(p => ({ ...p, destinatarioRuc: e.target.value }))} placeholder="20XXXXXXXXX"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Dirección destinatario</label>
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </Field>
+                  <Field label="Dirección destinatario" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1" className="sm:col-span-2">
                     <input type="text" value={form.destinatarioDireccion} onChange={e => setForm(p => ({ ...p, destinatarioDireccion: e.target.value }))} placeholder="Dirección"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </Field>
                   {/* Transportista */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Transportista</label>
+                  <Field label="Transportista" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.transportistaNombre} onChange={e => setForm(p => ({ ...p, transportistaNombre: e.target.value }))} placeholder="Nombre"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </Field>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">RUC transp.</label>
+                    <Field label="RUC transp." labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input type="text" value={form.transportistaRuc} onChange={e => setForm(p => ({ ...p, transportistaRuc: e.target.value }))} placeholder="RUC"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Placa</label>
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </Field>
+                    <Field label="Placa" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input type="text" value={form.vehiculoPlaca} onChange={e => setForm(p => ({ ...p, vehiculoPlaca: e.target.value }))} placeholder="ABC-123"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </Field>
                   </div>
                   {/* Partida / Llegada */}
                   {/* Conductor */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Conductor</label>
+                  <Field label="Conductor" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.conductorNombre} onChange={e => setForm(p => ({ ...p, conductorNombre: e.target.value }))} placeholder="Nombre del conductor"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">DNI Conductor</label>
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </Field>
+                  <Field label="DNI Conductor" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.conductorDni} onChange={e => setForm(p => ({ ...p, conductorDni: e.target.value.replace(/\D/g, "").slice(0, 8) }))} placeholder="12345678" maxLength={8}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </Field>
                   {/* Bultos / Doc Referencia / Peso Bruto */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° Bultos</label>
+                  <Field label="N° Bultos" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="number" min="0" value={form.bultos} onChange={e => setForm(p => ({ ...p, bultos: e.target.value }))} placeholder="0"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Doc. Referencia</label>
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </Field>
+                  <Field label="Doc. Referencia" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.documentoRef} onChange={e => setForm(p => ({ ...p, documentoRef: e.target.value }))} placeholder="Factura, boleta u orden"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Peso Bruto (kg)</label>
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </Field>
+                  <Field label="Peso Bruto (kg)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="number" min="0" step="0.001" value={form.pesoBruto} onChange={e => setForm(p => ({ ...p, pesoBruto: e.target.value }))} placeholder="0.000"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </Field>
                   {/* Ruta */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Punto de partida</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                      <input type="text" value={form.puntoPartida} onChange={e => setForm(p => ({ ...p, puntoPartida: e.target.value }))} placeholder="Dirección origen"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Punto de llegada</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                      <input type="text" value={form.puntoLlegada} onChange={e => setForm(p => ({ ...p, puntoLlegada: e.target.value }))} placeholder="Dirección destino"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                  </div>
+                  <Field label="Punto de partida" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                    {(id) => (
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                        <input id={id} type="text" value={form.puntoPartida} onChange={e => setForm(p => ({ ...p, puntoPartida: e.target.value }))} placeholder="Dirección origen"
+                          className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </div>
+                    )}
+                  </Field>
+                  <Field label="Punto de llegada" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                    {(id) => (
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                        <input id={id} type="text" value={form.puntoLlegada} onChange={e => setForm(p => ({ ...p, puntoLlegada: e.target.value }))} placeholder="Dirección destino"
+                          className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </div>
+                    )}
+                  </Field>
                   {/* Fecha */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha y hora de traslado</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                      <input type="datetime-local" value={form.fechaTraslado} onChange={e => setForm(p => ({ ...p, fechaTraslado: e.target.value }))}
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                  </div>
+                  <Field label="Fecha y hora de traslado" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                    {(id) => (
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                        <input id={id} type="datetime-local" value={form.fechaTraslado} onChange={e => setForm(p => ({ ...p, fechaTraslado: e.target.value }))}
+                          className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </div>
+                    )}
+                  </Field>
                 </div>
 
                 {/* Items */}
                 <div>
-                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2">Items</h4>
+                  <BlockTitle className="mb-2">Items</BlockTitle>
                   <div className="space-y-2">
                     {newItems.map((item, idx) => (
                       <div key={idx} className="flex gap-2 items-center">
                         <input type="text" value={item.descripcion} onChange={e => updateItem(idx, "descripcion", e.target.value)} placeholder="Descripción"
-                          className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="flex-1 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="number" min="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)} placeholder="Cant."
-                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="w-16 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="text" value={item.unidad} onChange={e => updateItem(idx, "unidad", e.target.value)} placeholder="Und"
-                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="w-16 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="number" min="0" step="0.1" value={item.pesoUnitario} onChange={e => updateItem(idx, "pesoUnitario", e.target.value)} placeholder="Peso kg"
-                          className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-center text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         {newItems.length > 1 && (
-                          <button onClick={() => removeItem(idx)} className="p-1 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-4 w-4" /></button>
+                          <button aria-label="Quitar" onClick={() => removeItem(idx)} className="p-1 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-4 w-4" /></button>
                         )}
                       </div>
                     ))}
@@ -1350,13 +1360,13 @@ export default function GuiasRemisionModule() {
                 {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-[var(--surface-raised)] border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   <button onClick={() => setShowNew(false)}
-                    className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] rounded-lg transition-colors">
+                    className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] rounded-xl transition-colors">
                     Cancelar
                   </button>
                   <button onClick={handleCreate} disabled={creating}
-                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 rounded-lg  transition-colors">
+                    className="flex items-center justify-center gap-2 px-4 min-h-10 text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 rounded-xl transition-colors">
                     {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     Crear Guía
                   </button>

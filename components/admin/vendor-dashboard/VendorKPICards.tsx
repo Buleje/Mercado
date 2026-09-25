@@ -14,7 +14,7 @@ function formatSoles(value: number): string {
 
 /**
  * TrendBadge — delta vs referencia, siempre via tokens.
- * (ADR-074 Phase 2: eliminado bg-[var(--accent-soft)]/red-50 hardcoded).
+ * (ADR-074 Phase 2: eliminado bg-primary/10/red-50 hardcoded).
  */
 function TrendBadge({ today, reference, label }: { today: number; reference: number; label: string }) {
   if (reference === 0) return null;

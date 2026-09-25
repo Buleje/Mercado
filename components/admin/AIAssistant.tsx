@@ -4,6 +4,9 @@ import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Bot, X, Send, Mic, MicOff, Sparkles,
   AlertTriangle, TrendingUp, Package, Users, Lightbulb,
@@ -13,6 +16,7 @@ import {
   Table, BarChart, Activity, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
+import { formatDateTimeShort } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,9 +64,9 @@ type WidgetSize = "mini" | "medium" | "large";
 // Mejora 30: Grouped Quick Actions by category
 const QUICK_ACTIONS: QuickAction[] = [
   { label: "¿Qué debo hacer ahora?", icon: Lightbulb, prompt: "Analiza la situación actual del negocio y dime las 5 acciones más urgentes que debo tomar HOY, en orden de prioridad. Incluye a qué módulo ir para cada acción.", color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/30 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40", category: "Prioridades" },
-  { label: "Estado del negocio", icon: TrendingUp, prompt: "Dame un diagnóstico ejecutivo completo del estado actual del negocio: ventas, inventario, clientes, deudas. Resalta lo positivo y lo que necesita atención urgente.", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", category: "Análisis" },
+  { label: "Estado del negocio", icon: TrendingUp, prompt: "Dame un diagnóstico ejecutivo completo del estado actual del negocio: ventas, inventario, clientes, deudas. Resalta lo positivo y lo que necesita atención urgente.", color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", category: "Análisis" },
   { label: "Alertas urgentes", icon: AlertTriangle, prompt: "¿Hay alguna alerta urgente? Stock agotado, pedidos sin atender, facturas vencidas, clientes en riesgo. Solo lo crítico.", color: "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40", category: "Prioridades" },
-  { label: "Ideas de productos", icon: Package, prompt: "Basándote en mis productos más vendidos y tendencias, ¿qué productos nuevos me recomiendas agregar al catálogo? Dame 5 ideas con precio sugerido y por qué.", color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", category: "Estrategia" },
+  { label: "Ideas de productos", icon: Package, prompt: "Basándote en mis productos más vendidos y tendencias, ¿qué productos nuevos me recomiendas agregar al catálogo? Dame 5 ideas con precio sugerido y por qué.", color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", category: "Estrategia" },
   { label: "Retener clientes", icon: Users, prompt: "¿Cómo puedo retener mejor a mis clientes actuales? Dame estrategias basadas en los datos reales de mis clientes top y su comportamiento de compra.", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)] border-[var(--rule-base)]", category: "Estrategia" },
   { label: "Plan semanal", icon: Sparkles, prompt: "Crea un plan semanal de tareas ejecutivas para esta semana. Incluye: qué revisar cada día, qué módulo usar, y qué métricas monitorear. Formato tabla o bullets.", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)] border-[var(--rule-base)]", category: "Análisis" },
   { label: "Ventas de hoy", icon: BarChart, prompt: "Dame un resumen detallado de las ventas de hoy: total vendido, cantidad de pedidos, ticket promedio, productos más vendidos, y comparación con ayer.", color: "text-[var(--data-info-500)] bg-[var(--data-info-50)] dark:bg-cyan-950/30 border-[var(--data-info-500)] dark:border-[var(--data-info-500)]/40", category: "Análisis" },
@@ -161,7 +165,7 @@ function saveSession(messages: Message[]) {
   const summary = userMsgs.slice(0, 3).map(m => m.content.slice(0, 60)).join(" · ");
   const session: SessionSummary = {
     id: `s-${Date.now()}`,
-    date: new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+    date: formatDateTimeShort(new Date()),
     messageCount: userMsgs.length + assistantMsgs.length,
     summary: summary.slice(0, 120),
   };
@@ -275,6 +279,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   // Mejora 21: Command palette
   const [showCmdPalette, setShowCmdPalette] = useState(false);
   const [cmdSearch, setCmdSearch] = useState("");
+  const cmdPalettePanelRef = useRef<HTMLDivElement>(null);
+  const cerrarCmdPalette = useCallback(() => { setShowCmdPalette(false); setCmdSearch(""); }, []);
+  useModalAccesible(cmdPalettePanelRef, { onCerrar: cerrarCmdPalette, activo: showCmdPalette && !open });
+
+  const { confirm } = useConfirm();
 
   // Mejora 34: Favorites
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -394,7 +403,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   const speak = useCallback((text: string) => {
     if (!ttsEnabled || typeof speechSynthesis === "undefined") return;
     speechSynthesis.cancel();
-    const clean = text.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1").replace(/[#*`>\-]/g, "").replace(/\[ACTION:[^\]]+\]/g, "").replace(/\n{2,}/g, ". ").replace(/\n/g, ". ").slice(0, 800);
+    const clean = text.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1").replace(/[#*`>-]/g, "").replace(/\[ACTION:[^\]]+\]/g, "").replace(/\n{2,}/g, ". ").replace(/\n/g, ". ").slice(0, 800);
     const utter = new SpeechSynthesisUtterance(clean);
     utter.lang = "es-PE";
     utter.rate = 1.05;
@@ -405,7 +414,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   // Speech recognition
   const toggleVoice = useCallback(() => {
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      alert("Tu navegador no soporta reconocimiento de voz.");
+      toast.error("Tu navegador no soporta reconocimiento de voz.");
       return;
     }
     if (isListening && recognitionRef.current) {
@@ -575,7 +584,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     const action = msg?.actions?.[actionIndex];
     if (!action) return;
     const destructive = ["toggle_product", "update_order_status"].includes(action.type);
-    if (destructive && !window.confirm(`¿Confirmas ejecutar: ${action.label}?`)) return;
+    if (destructive && !(await confirm({
+      title: `¿Confirmas ejecutar: ${action.label}?`,
+      intent: "warning",
+      confirmLabel: "Sí, ejecutar",
+    }))) return;
 
     setMessages(prev => prev.map(m => {
       if (m.id !== msgId || !m.actions) return m;
@@ -633,7 +646,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
               <span className="font-bold">{pct}%</span>
             </div>
             <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-              <div className={cn("h-full rounded-full transition-all", pct > 70 ? "bg-[var(--accent-soft)]" : pct > 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${pct}%` }} />
+              <div className={cn("h-full rounded-full transition-all", pct > 70 ? "bg-primary/10" : pct > 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${pct}%` }} />
             </div>
           </div>
         );
@@ -654,7 +667,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       if (numMatch) {
         return (
           <div key={i} className="flex flex-wrap items-start gap-2 py-0.5">
-            <span className="text-primary font-bold shrink-0 text-xs w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">{numMatch[1]}</span>
+            <span className="text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold shrink-0 text-xs w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">{numMatch[1]}</span>
             <span dangerouslySetInnerHTML={{ __html: formatInline(line.slice(numMatch[0].length), moduleRegex) }} />
           </div>
         );
@@ -691,10 +704,10 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         {msg.actions.map((action, i) => (
           <div key={i} className={cn(
             "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] border transition-all",
-            action.status === "done" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+            action.status === "done" ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
             action.status === "error" ? "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
             action.status === "executing" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)]" :
-            "bg-white dark:bg-accent/30 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)]"
+            "bg-[var(--surface-raised)] dark:bg-accent/30 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)]"
           )}>
             {action.status === "pending" && (
               <button onClick={() => handleExecuteAction(msg.id, i)} className="flex items-center gap-1.5 font-semibold text-primary hover:underline">
@@ -763,7 +776,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       <div className="flex flex-wrap gap-1.5 px-3 py-1.5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
         {chips.map((chip, idx) => (
           <button key={`${chip}-${idx}`} onClick={() => sendMessage(chip)}
-            className="px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--accent-muted)]/50 transition-colors">
+            className="px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-primary/15 transition-colors">
             {chip}
           </button>
         ))}
@@ -865,7 +878,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             placeholder={isListening ? "Escuchando..." : isOffline ? "Modo offline..." : "Pregunta algo... (/ para comandos)"}
             rows={1}
             className={cn(
-              "w-full resize-none rounded-lg border px-3 py-2 text-xs bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+              "w-full resize-none rounded-xl border px-3 py-2 text-xs bg-[var(--surface-alt)] text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
               isListening ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)]/30 dark:bg-red-950/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
             )}
             style={{ maxHeight: compact ? 60 : 80 }}
@@ -874,16 +887,16 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         </div>
         <button onClick={toggleVoice}
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
-            isListening ? "bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] animate-pulse" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent"
+            isListening ? "bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] animate-pulse" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
           )}
           title={isListening ? "Detener" : "Hablar"}>
           {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
         </button>
-        <button onClick={() => sendMessage()} disabled={!input.trim() || loading}
+        <button aria-label="Enviar" onClick={() => sendMessage()} disabled={!input.trim() || loading}
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
             input.trim() && !loading
               ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90 "
-              : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
+              : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
           )}>
           <Send className="h-3.5 w-3.5" />
         </button>
@@ -922,7 +935,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                   if (cmd.navTo && onNavigate) onNavigate(cmd.navTo);
                   else if (cmd.prompt) sendMessage(cmd.prompt);
                 }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors">
                   <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                   <span className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{cmd.cmd}</span>
                   <span className="flex-1">{cmd.label}</span>
@@ -952,11 +965,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             </p>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={() => setTtsEnabled(!ttsEnabled)} className={cn("p-1.5 rounded-lg transition-colors", ttsEnabled ? "bg-white/30" : "hover:bg-white/20")} title={ttsEnabled ? "Silenciar voz" : "Activar voz"}>
+            <button onClick={() => setTtsEnabled(!ttsEnabled)} className={cn("p-1.5 rounded-xl transition-colors", ttsEnabled ? "bg-white/30" : "hover:bg-white/20")} title={ttsEnabled ? "Silenciar voz" : "Activar voz"}>
               {ttsEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
             </button>
             <AdminTooltip content="Borrar toda la conversación con el asistente">
-              <button onClick={clearHistory} aria-label="Limpiar historial" className="p-1.5 rounded-lg hover:bg-white/20 transition-colors">
+              <button onClick={clearHistory} aria-label="Limpiar historial" className="p-1.5 rounded-xl hover:bg-white/20 transition-colors">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </AdminTooltip>
@@ -1004,7 +1017,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {!open && (
         <button onClick={() => setOpen(true)}
           className={cn(
-            "fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 h-14 w-14 rounded-xl flex items-center justify-center transition-all duration-[var(--dur-base)]",
+            "fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-modal h-14 w-14 rounded-xl flex items-center justify-center transition-all duration-[var(--dur-base)]",
             "bg-[var(--text-primary)] hover:opacity-90 hover:scale-105",
             "text-[var(--surface-canvas)]",
             pulse && "animate-bounce"
@@ -1021,8 +1034,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           {notifications.length === 0 && (
             <span className={cn("absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-card",
               healthScore !== null
-                ? healthScore > 70 ? "bg-[var(--accent-soft)]" : healthScore > 40 ? "bg-[var(--data-warning-500)] animate-pulse" : "bg-[var(--data-error-500)] animate-pulse"
-                : "bg-[var(--accent-soft)] animate-pulse"
+                ? healthScore > 70 ? "bg-primary/10" : healthScore > 40 ? "bg-[var(--data-warning-500)] animate-pulse" : "bg-[var(--data-error-500)] animate-pulse"
+                : "bg-primary/10 animate-pulse"
             )} />
           )}
           {/* Mejora 33: Mini health score label */}
@@ -1037,9 +1050,9 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {/* Mejora 21: Global command palette */}
       {showCmdPalette && !open && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => { setShowCmdPalette(false); setCmdSearch(""); }} />
-          <div className="fixed top-1/4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md mx-4">
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+          <div className="fixed inset-0 z-modal bg-black/30 backdrop-blur-sm" onClick={() => { setShowCmdPalette(false); setCmdSearch(""); }} />
+          <div className="fixed top-1/4 left-1/2 -translate-x-1/2 z-modal w-full max-w-md mx-4">
+            <div ref={cmdPalettePanelRef} role="dialog" aria-modal="true" aria-label="Comandos rápidos del asistente" tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden outline-none">
               <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <input autoFocus type="text" value={cmdSearch} onChange={e => setCmdSearch(e.target.value)} placeholder="¿Qué quieres hacer?"
@@ -1057,7 +1070,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                       if (cmd.navTo && onNavigate) onNavigate(cmd.navTo);
                       else if (cmd.prompt) { setOpen(true); setTimeout(() => sendMessage(cmd.prompt), 200); }
                     }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors">
                       <Icon className="h-4 w-4 text-[var(--text-tertiary)]" />
                       <span className="font-mono text-xs text-[var(--text-secondary)]">{cmd.cmd}</span>
                       <span className="flex-1 text-left">{cmd.label}</span>
@@ -1074,7 +1087,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {/* Mejora 28: Chat panel with 3 sizes */}
       {open && (
         <div className={cn(
-          "fixed z-50 flex flex-col bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] transition-all duration-[var(--dur-base)]",
+          "fixed z-modal flex flex-col bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] transition-all duration-[var(--dur-base)]",
           expanded ? "inset-4 rounded-xl" :
           widgetSize === "mini" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-80 h-96 max-h-[70vh] rounded-xl" :
           widgetSize === "large" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-[480px] h-[700px] max-h-[90vh] rounded-xl" :
@@ -1092,7 +1105,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                 {isOffline ? "Modo offline" : "IA en tiempo real"}
                 {healthScore !== null && !isOffline && (
                   <span className={cn("px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
-                    healthScore > 70 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : healthScore > 40 ? "bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]"
+                    healthScore > 70 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : healthScore > 40 ? "bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]"
                   )}>
                     Salud: {healthScore}%
                   </span>
@@ -1100,25 +1113,25 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
               </p>
             </div>
             <div className="flex items-center gap-1">
-              <button onClick={() => setTtsEnabled(!ttsEnabled)} className={cn("p-1.5 rounded-lg transition-colors", ttsEnabled ? "bg-white/30" : "hover:bg-white/20")} title={ttsEnabled ? "Silenciar" : "Voz"}>
+              <button onClick={() => setTtsEnabled(!ttsEnabled)} className={cn("p-1.5 rounded-xl transition-colors", ttsEnabled ? "bg-white/30" : "hover:bg-white/20")} title={ttsEnabled ? "Silenciar" : "Voz"}>
                 {ttsEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
               </button>
-              <button onClick={() => setShowPanel(showPanel === "history" ? "chat" : "history")} className={cn("p-1.5 rounded-lg transition-colors", showPanel === "history" ? "bg-white/30" : "hover:bg-white/20")} title="Historial">
+              <button onClick={() => setShowPanel(showPanel === "history" ? "chat" : "history")} className={cn("p-1.5 rounded-xl transition-colors", showPanel === "history" ? "bg-white/30" : "hover:bg-white/20")} title="Historial">
                 <History className="h-3.5 w-3.5" />
               </button>
-              <button onClick={() => setShowPanel(showPanel === "stats" ? "chat" : "stats")} className={cn("p-1.5 rounded-lg transition-colors", showPanel === "stats" ? "bg-white/30" : "hover:bg-white/20")} title="Stats">
+              <button onClick={() => setShowPanel(showPanel === "stats" ? "chat" : "stats")} className={cn("p-1.5 rounded-xl transition-colors", showPanel === "stats" ? "bg-white/30" : "hover:bg-white/20")} title="Stats">
                 <BarChart3 className="h-3.5 w-3.5" />
               </button>
-              <AdminTooltip content="Borrar historial de la conversación"><button onClick={clearHistory} aria-label="Limpiar" className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button></AdminTooltip>
+              <AdminTooltip content="Borrar historial de la conversación"><button onClick={clearHistory} aria-label="Limpiar" className="p-1.5 rounded-xl hover:bg-white/20 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button></AdminTooltip>
               {/* Mejora 28: Size cycle */}
               <button onClick={() => setWidgetSize(s => s === "mini" ? "medium" : s === "medium" ? "large" : "mini")}
-                className="p-1.5 rounded-lg hover:bg-white/20 transition-colors" title="Cambiar tamaño">
+                className="p-1.5 rounded-xl hover:bg-white/20 transition-colors" title="Cambiar tamaño">
                 {widgetSize === "mini" ? <Minimize2 className="h-3.5 w-3.5" /> : widgetSize === "large" ? <Maximize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </button>
-              <button onClick={() => setExpanded(!expanded)} className="p-1.5 rounded-lg hover:bg-white/20 transition-colors" title={expanded ? "Reducir" : "Expandir"}>
+              <button onClick={() => setExpanded(!expanded)} className="p-1.5 rounded-xl hover:bg-white/20 transition-colors" title={expanded ? "Reducir" : "Expandir"}>
                 {expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </button>
-              <button onClick={() => { setOpen(false); if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel(); }} className="p-1.5 rounded-lg hover:bg-white/20 transition-colors" title="Cerrar">
+              <button onClick={() => { setOpen(false); if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel(); }} className="p-1.5 rounded-xl hover:bg-white/20 transition-colors" title="Cerrar">
                 <X className="h-4 w-4" />
               </button>
             </div>

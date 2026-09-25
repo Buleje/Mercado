@@ -34,6 +34,11 @@ export type DbMarketplaceProduct = {
   unit: string;
   badge: string | null;
   stock: number | null;
+  brand: string | null;
+  weightKg: number | null;
+  dimensions: string | null;
+  specsJson: string | null;
+  richContentJson: string | null;
   image: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
@@ -207,6 +212,12 @@ export const MarketplacePublicDB = {
             unit: true,
             badge: true,
             stock: true,
+            // Ficha técnica — datos reales del producto ya cargados en admin.
+            brand: true,
+            weightKg: true,
+            dimensions: true,
+            specsJson: true,
+            richContentJson: true,
             metaTitle: true,
             metaDescription: true,
             ogImage: true,
@@ -267,6 +278,11 @@ export const MarketplacePublicDB = {
           unit: product.unit,
           badge: product.badge,
           stock: product.stock,
+          brand: product.brand,
+          weightKg: product.weightKg,
+          dimensions: product.dimensions,
+          specsJson: product.specsJson,
+          richContentJson: product.richContentJson,
           image: product.image,
           metaTitle: product.metaTitle,
           metaDescription: product.metaDescription,
@@ -692,6 +708,48 @@ export const MarketplacePublicDB = {
       return [...counts.entries()]
         .map(([id, count]) => ({ id, count }))
         .sort((a, b) => b.count - a.count);
+    });
+  },
+
+  /**
+   * getCategorySampleImages — una foto REAL representativa por categoría de
+   * producto (Brandon 2026-07-06, bento "Explora por categoría"). Para cada key
+   * (categoría en minúsculas) devuelve la URL de imagen de un producto activo de
+   * una tienda publicada. Descarta base64 (`data:`) para no inflar el payload.
+   * Pensado para pocas categorías destacadas (las "hero" del bento). Cache 300s.
+   *
+   * @cross-tenant intentional (ADR-082) — igual que getProductCategories.
+   */
+  async getCategorySampleImages(categoryKeys: string[]): Promise<Record<string, string>> {
+    const keys = categoryKeys.map((c) => c.trim().toLowerCase()).filter(Boolean);
+    if (keys.length === 0) return {};
+    const cacheKey = `marketplace:category-sample-images:v1:${[...keys].sort().join(",")}`;
+    return getOrSet(cacheKey, 300, async () => {
+      const rows = await prisma.product.findMany({
+        where: {
+          active: true,
+          deletedAt: null,
+          isPrepared: { not: true },
+          image: { not: "" },
+          OR: keys.map((c) => ({ category: { equals: c, mode: "insensitive" as const } })),
+          storeProducts: {
+            some: {
+              isActive: true,
+              store: { isPublished: true, vacationMode: { not: true }, tenant: { active: true } },
+            },
+          },
+        },
+        select: { category: true, image: true },
+        orderBy: { id: "desc" },
+        take: keys.length * 6,
+      });
+      const out: Record<string, string> = {};
+      for (const r of rows) {
+        const key = r.category?.trim().toLowerCase();
+        if (!key || out[key] || !r.image || r.image.startsWith("data:")) continue;
+        out[key] = r.image;
+      }
+      return out;
     });
   },
 

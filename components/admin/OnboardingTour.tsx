@@ -39,7 +39,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     tabId: "pedidos",
     title: "Vender y cobrar",
-    text: "Aquí gestionás los pedidos, cobrás a tus clientes y llevás la cuenta de quién te debe.",
+    text: "Aquí gestionas los pedidos, cobras a tus clientes y llevas la cuenta de quién te debe.",
     example: "Ej: Cobrar S/.25 de fideos a doña Rosa",
     Icon: ShoppingCart,
   },
@@ -53,7 +53,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     tabId: "productos",
     title: "Tus productos y sus precios",
-    text: "Aquí agregas productos nuevos, cambiás precios y creas ofertas para tus clientes.",
+    text: "Aquí agregas productos nuevos, cambias precios y creas ofertas para tus clientes.",
     example: "Ej: Subir el aceite de S/.8 a S/.8.50 o hacer 2x1 en galletas",
     Icon: Tag,
   },
@@ -81,7 +81,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     tabId: "config",
     title: "Ajustes del sistema",
-    text: "Aquí agregas cajeros, cambiás permisos y configurás tu página web.",
+    text: "Aquí agregas cajeros, cambias permisos y configuras tu página web.",
     example: "Ej: Dar permiso a Juan para que solo vea ventas, no precios de compra",
     Icon: Settings,
   },
@@ -134,7 +134,7 @@ export function OnboardingTour({
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === "Enter") {
         e.preventDefault();
-        isLastStep ? onComplete() : onNext();
+        if (isLastStep) onComplete(); else onNext();
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         onPrev();
@@ -155,18 +155,18 @@ export function OnboardingTour({
   const targetSelector = `[data-tour-tab="${step.tabId}"]`;
 
   return (
-    <TourSpotlight targetSelector={targetSelector}>
-      <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-xl border border-[var(--rule-base)] overflow-hidden">
+    <TourSpotlight targetSelector={targetSelector} onMissingTarget={onSkip}>
+      <div className="w-[320px] sm:w-[340px] bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden">
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#2563EB] dark:text-[var(--data-success-500)]">
+            <span className="text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--data-success-500)]">
               Paso {currentStep + 1} de {totalSteps}
             </span>
           </div>
           <button
             onClick={onSkip}
-            className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-1 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)] transition-colors"
             title="Saltar tour"
           >
             <X className="h-4 w-4" />
@@ -177,7 +177,7 @@ export function OnboardingTour({
         <div className="px-4 pb-2">
           <div className="h-1 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#2563EB] rounded-full transition-all duration-[var(--dur-slow)] ease-out"
+              className="h-full bg-[var(--accent-ink)] rounded-full transition-all duration-[var(--dur-slow)] ease-out"
               style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
             />
           </div>
@@ -198,7 +198,7 @@ export function OnboardingTour({
               </p>
             </div>
           </div>
-          <div className="bg-[#f0fdf4] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
+          <div className="bg-[var(--data-success-50)] border border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
             <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
               {step.example}
             </p>
@@ -210,7 +210,7 @@ export function OnboardingTour({
           <button
             onClick={onPrev}
             disabled={currentStep === 0}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="h-4 w-4" />
             Anterior
@@ -225,7 +225,7 @@ export function OnboardingTour({
 
           <button
             onClick={isLastStep ? onComplete : onNext}
-            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
+            className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-dark)] hover:brightness-110 transition-colors"
           >
             {isLastStep ? (
               <>

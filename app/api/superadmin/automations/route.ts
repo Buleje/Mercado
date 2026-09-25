@@ -7,7 +7,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { notifyTenantOwnerSecurity } from "@/lib/auth/security-alerts";
-import { RULES, computeMatches, getAutomationState, setAutomationState, type RuleKey } from "@/lib/superadmin/automations";
+import { RULES, computeMatches, getAutomationState, setAutomationState, getNotifyLog, setNotifyLog, type RuleKey } from "@/lib/superadmin/automations";
+import { recordNotified, getCooldownDays } from "@/lib/superadmin/automation-cooldown";
 import { logger } from "@/lib/logger";
 
 // GET — reglas con su estado + cuántas tiendas matchean AHORA.
@@ -16,7 +17,13 @@ export async function GET(req: NextRequest) {
   if ("status" in auth) return auth;
   try {
     const state = await getAutomationState();
-    const counts = await Promise.all(RULES.map((r) => computeMatches(r.key).then((m) => m.length).catch(() => 0)));
+    // Conservamos la lista (no solo el conteo) para el dry-run preview: el
+    // operador ve QUÉ tiendas recibirán el aviso antes de ejecutar.
+    const matchLists = await Promise.all(
+      RULES.map((r) =>
+        computeMatches(r.key).catch(() => [] as Awaited<ReturnType<typeof computeMatches>>),
+      ),
+    );
     const rules = RULES.map((r, i) => ({
       key: r.key,
       title: r.title,
@@ -24,7 +31,8 @@ export async function GET(req: NextRequest) {
       action: r.action,
       enabled: state[r.key]?.enabled ?? false,
       lastRunAt: state[r.key]?.lastRunAt ?? null,
-      matchCount: counts[i],
+      matchCount: matchLists[i].length,
+      matches: matchLists[i].slice(0, 100),
     }));
     return NextResponse.json({ rules });
   } catch (e) {
@@ -64,11 +72,18 @@ export async function POST(req: NextRequest) {
       logSuperadminAction("automation_toggle", `Regla ${key} → ${state[key].enabled ? "ON" : "OFF"}`, { key }, session.username).catch((err) => logger.warn("[automations] audit failed", { error: String(err) }));
       return NextResponse.json({ ok: true, enabled: state[key].enabled });
     }
-    // op === "run": notificar a cada tienda que matchea (cap 200).
+    // op === "run": notificar a cada tienda que matchea (cap 200). Es un
+    // override manual (ignora cooldown) pero registra en el log para que el
+    // cron no re-notifique al dia siguiente.
     const matches = (await computeMatches(key as RuleKey)).slice(0, 200);
     for (const t of matches) {
       notifyTenantOwnerSecurity(t.id, { title: rule.message.title, body: rule.message.body, url: "/admin" })
         .catch((err) => logger.warn("[automations] notify failed", { tenantId: t.id, error: String(err) }));
+    }
+    if (matches.length > 0) {
+      const now = Date.now();
+      const log = recordNotified(await getNotifyLog(), key, matches.map((t) => t.id), now, getCooldownDays() * 86_400_000);
+      await setNotifyLog(log, session.username);
     }
     state[key] = { ...state[key], lastRunAt: new Date().toISOString() };
     await setAutomationState(state, session.username);

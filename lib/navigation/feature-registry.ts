@@ -62,7 +62,7 @@ export const FEATURES = {
     description:
       "Delivery gratis ilimitado, 5% cashback y precios exclusivos cada mes.",
     href: "/socio-buleje",
-    cta: "Hacete socio",
+    cta: "Hazte socio",
     category: "membership",
     priority: 1,
   },
@@ -71,7 +71,7 @@ export const FEATURES = {
     icon: "Package",
     title: "Bodega al Mes",
     description:
-      "Suscripción recurrente con 5% off. Pausá o cancela cuando quieras.",
+      "Suscripción recurrente con 5% off. Pausa o cancela cuando quieras.",
     href: "/cuenta/suscripciones",
     cta: "Ver planes",
     category: "ahorro",

@@ -1,5 +1,6 @@
 import "server-only";
 import { logger } from "@/lib/logger";
+import { TenantBillingDB } from "@/lib/db/tenant-billing.db";
 
 /**
  * lib/ai/cost-control.ts — Roadmap item #68
@@ -83,8 +84,16 @@ function monthKey(): string {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 export const aiCostGuard = {
-  async canSpend(tenantId: string, estimatedCostUsd: number, plan = "free"): Promise<boolean> {
-    const budget = PLAN_BUDGETS_CENTS[plan] ?? PLAN_BUDGETS_CENTS.free;
+  /**
+   * @param plan  Opcional. Si NO se pasa y `tenantId` es un tenant real, se
+   *   resuelve el plan REAL del tenant (Tenant.plan, cacheado). Antes el default
+   *   era "free" y todos los call sites lo hardcodeaban → los planes pagos
+   *   quedaban capados al presupuesto free. Pasar un plan explícito (ej. buckets
+   *   por IP que no son tenants, o un override) preserva el comportamiento viejo.
+   */
+  async canSpend(tenantId: string, estimatedCostUsd: number, plan?: string): Promise<boolean> {
+    const resolvedPlan = plan ?? (await TenantBillingDB.getPlan(tenantId));
+    const budget = PLAN_BUDGETS_CENTS[resolvedPlan] ?? PLAN_BUDGETS_CENTS.free;
     const estimatedCents = Math.round(estimatedCostUsd * 100);
     const redis = await getRedis();
 

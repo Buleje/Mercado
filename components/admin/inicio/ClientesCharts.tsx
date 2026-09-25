@@ -13,9 +13,10 @@ import {
 } from "@/components/ui-system/charts";
 import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { formatNumber } from "@/lib/format";
 
 function fmtS(v: number) {
-  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(v, { max: 0 })}`;
 }
 
 export default function ClientesCharts({ data }: { data: ClientesData }) {
@@ -105,7 +106,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
           {topRows.length > 0 ? (
             <MicroList items={topRows} barColor="var(--brand-primary)" showRank />
           ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
               Aún no hay clientes en el periodo.
             </div>
           )}

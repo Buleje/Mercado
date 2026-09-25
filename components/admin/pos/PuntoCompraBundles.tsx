@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Package, Boxes, Plus } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 interface BundleItemData {
   productId: number;
@@ -110,7 +111,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
         return (
           <div
             key={bundle.id}
-            className="p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-white/5 space-y-2"
+            className="p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] space-y-2"
           >
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
@@ -126,7 +127,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
               </div>
               <div className="text-right shrink-0">
                 <p className="text-xs font-bold font-mono text-primary">
-                  S/{Number(bundle.price).toFixed(2)}
+                  {formatCurrency(Number(bundle.price))}
                 </p>
                 {savings > 0 && (
                   <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
@@ -169,8 +170,8 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
               }
               className={cn(
                 "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                "bg-[var(--data-warning-500)] hover:bg-[#e8954f] text-white",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f97316]",
+                "bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-600)] text-white",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-warning-500)]",
               )}
             >
               <Plus className="h-3 w-3" />
