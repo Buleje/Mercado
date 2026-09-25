@@ -98,8 +98,7 @@ import CtpPaqueteFicha from "./CtpPaqueteFicha";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
 import type { WoodEntry } from "./ctp-shared";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
-import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
-import SoloEstePermisoSwitch from "@/components/admin/forestal/SoloEstePermisoSwitch";
+import BandaPermiso from "@/components/admin/forestal/BandaPermiso";
 import CtpResumenesSerfor from "./CtpResumenesSerfor";
 import CtpConsumosView from "./CtpConsumosView";
 import CtpProductosDisponibles from "./CtpProductosDisponibles";
@@ -322,7 +321,7 @@ export default function CTPLibroOperaciones() {
     setView(v as CtpView);
     // El contador hace que repetir el MISMO salto vuelva a aplicar el filtro.
     if (filtro) setFiltroIngresos((prev) => ({ tipo: filtro, n: (prev?.n ?? 0) + 1 }));
-  }, []);
+  }, [setView]);
 
   // Levanta el handoff de sessionStorage → abre Ingresos pre-llenado. Se
   // dispara al montar (tab abierto en frío) y cada vez que el tab se re-activa
@@ -339,7 +338,7 @@ export default function CTPLibroOperaciones() {
       setView("ingresos");
       setPendingIngresoGtf(gtf);
     }
-  }, []);
+  }, [setView]);
 
   useEffect(() => {
     consumirHandoff();
@@ -532,10 +531,9 @@ export default function CTPLibroOperaciones() {
           /* «Solo este permiso» (radar 2026-09-19): prendido, Ingresos, GTF
              ingresadas, Producción, Despacho y Disponibles se acotan al
              contrato del chip — el filtro lo hace el servidor. */
-          <>
-            <ContratoActivoChip />
-            <SoloEstePermisoSwitch />
-          </>
+          /* Chip e interruptor son UN control (`BandaPermiso`, 2026-09-24):
+             comparten borde para que la banda entre en una fila. */
+          <BandaPermiso />
         }
         status={
           view !== "cumplimiento" ? (

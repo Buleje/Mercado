@@ -220,26 +220,33 @@ export default function LibroChrome({
     <div className="space-y-4">
       <section
         data-module={moduleId}
-        className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
+        className="@container/banda overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
       >
-        {/* Identidad + estado + contexto + acciones — una sola fila. */}
-        {/* `lg:gap-x-2`: con carátula cargada el chip del LOTH es ~85 px más
-            ancho, y a 1650 px la fila se partía por 9 px (medido). Los gaps de
-            la banda ceden 4 px cada uno antes que truncar el título. */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4 lg:gap-x-2">
+        {/* Identidad + estado + contexto + acciones — una sola fila (Brandon
+            2026-09-24, señalando la banda del LO-CTP a 1920 px: el grupo de la
+            derecha medía 821 px y caía a un segundo renglón por 65 px).
+            Desde 78rem de banda la fila NO se parte: lo que cede es el grupo de
+            la derecha, que se compacta por su propio ancho (`/acciones`) —
+            primero el titular del permiso, después los rótulos—. Debajo de
+            78rem el grupo baja entero a su renglón y ahí se ve completo.
+            Se mide la BANDA y no la ventana: la barra lateral abierta o
+            cerrada cambia 300 px el ancho real, y un `min-[1800px]` mentía. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4 lg:gap-x-2 @min-[78rem]/banda:flex-nowrap">
           <span
             aria-hidden="true"
             className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white shadow-[var(--shadow-sm)]"
           >
             <Icon className="h-5 w-5" />
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 @min-[78rem]/banda:shrink-0">
             {/* `libro-kicker`/`libro-title`: tamaño propio del título de libro
                 y kicker legible (globals.css, bloque «PANEL ADMIN —
                 Tipografía»). El título usa `--ts-libro-title` para que no lo
-                encoja el `max-height` de las laptops. */}
+                encoja el `max-height` de las laptops; en una banda de menos de
+                88rem baja a 20 px para dejarle lugar al permiso en la misma
+                fila (se pisa la variable, no la regla de globals). */}
             <Kicker className="libro-kicker block leading-none">{eyebrow}</Kicker>
-            <PageTitle className="libro-title font-display text-[length:var(--ts-xl)] font-normal sm:text-[length:var(--ts-2xl)]">
+            <PageTitle className="libro-title font-display text-[length:var(--ts-xl)] font-normal sm:text-[length:var(--ts-2xl)] @max-[88rem]/banda:[--ts-libro-title:1.25rem]">
               {title}
             </PageTitle>
           </div>
@@ -252,7 +259,7 @@ export default function LibroChrome({
           <div
             role="tablist"
             aria-label="Fase del libro"
-            className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-1 scrollbar-none sm:ml-1"
+            className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-1 scrollbar-none sm:ml-1 @min-[78rem]/banda:shrink-0"
             /* `contain: layout paint` (patrón de `StoreDetailClient.tsx`): sin
                esto, el scroll horizontal de ESTE riel se filtraba al
                `document.documentElement.scrollWidth` de toda la página (medido
@@ -272,7 +279,7 @@ export default function LibroChrome({
                   role="tab"
                   aria-selected={activo}
                   onClick={() => !activo && onView?.(g.views[0].key)}
-                  className={`relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors ${
+                  className={`relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors @max-[88rem]/banda:px-2 ${
                     activo
                       ? "bg-[var(--surface-raised)] text-[var(--accent-dark)] shadow-[var(--shadow-sm)] dark:text-[var(--accent)]"
                       : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
@@ -305,25 +312,38 @@ export default function LibroChrome({
               sueltas ocupaban una fila entera, y la fila de abajo es de las
               pestañas. El score y el menú de acciones quedan a la vista: son
               un vistazo y un clic. */}
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-            {/* El permiso de trabajo va ANTES del estado: es bajo qué papel se
-                está parado, y eso manda sobre cualquier indicador. Lo pasa cada
-                libro (los forestales) en vez de importarlo acá: `shared` no
-                depende de `forestal`. */}
-            {contrato}
-            {status}
-            {(context || tools) ? (
-              <HerramientasDelLibro>
-                {context}
-                {tools}
-                {flat.length > 1 && <BotonAtajos onClick={abrirAyuda} enPanel />}
-              </HerramientasDelLibro>
-            ) : (
-              flat.length > 1 && <BotonAtajos onClick={abrirAyuda} />
-            )}
-            {actions && actions.length > 0 && (
-              <ActionMenu label={actionsLabel} title={actionsLabel} actions={actions} soloIcono />
-            )}
+          {/* El grupo `acciones` sólo es contenedor en la fila completa (≥78rem
+              de banda): ahí ocupa lo que sobra (`flex-1 basis-0`) y el chip del
+              permiso, su interruptor y el puntaje se compactan contra SU ancho
+              con `@max-[..]/acciones` —primero el titular, después los
+              rótulos—. En una banda angosta no es contenedor: se ajusta a su
+              contenido, baja de renglón como antes y los `@max` no aplican, así
+              que se ve completo. */}
+          <div className="ml-auto min-w-0 [container-name:acciones] @min-[78rem]/banda:flex-1 @min-[78rem]/banda:basis-0 @min-[78rem]/banda:[container-type:inline-size]">
+            <div className="flex flex-wrap items-center justify-end gap-2 @min-[78rem]/banda:flex-nowrap @max-[36rem]/acciones:gap-1.5">
+              {/* El permiso de trabajo va ANTES del estado: es bajo qué papel se
+                  está parado, y eso manda sobre cualquier indicador. Lo pasa cada
+                  libro (los forestales) en vez de importarlo acá: `shared` no
+                  depende de `forestal`. */}
+              {contrato}
+              {status}
+              {(context || tools) ? (
+                <HerramientasDelLibro>
+                  {context}
+                  {tools}
+                  {flat.length > 1 && <BotonAtajos onClick={abrirAyuda} enPanel />}
+                </HerramientasDelLibro>
+              ) : (
+                flat.length > 1 && <BotonAtajos onClick={abrirAyuda} />
+              )}
+              {actions && actions.length > 0 && (
+                /* `shrink-0`: en la fila sin cortes lo único que cede es el
+                   permiso; el menú se encogía a 23 px (medido a 1600). */
+                <div className="shrink-0">
+                  <ActionMenu label={actionsLabel} title={actionsLabel} actions={actions} soloIcono />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

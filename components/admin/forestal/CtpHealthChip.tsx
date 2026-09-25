@@ -47,11 +47,13 @@ export default function CtpHealthChip({
       type="button"
       onClick={onNavigate}
       title="Score de cumplimiento del período — clic para ver el detalle"
-      className={`inline-flex h-9 items-center gap-1.5 rounded-full border-2 px-3.5 text-sm font-bold transition hover:brightness-105 ${TONE_CLS[tone]}`}
+      className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3.5 text-sm font-bold transition hover:brightness-105 @max-[36rem]/acciones:px-2.5 ${TONE_CLS[tone]}`}
     >
-      <Gauge className="h-4 w-4" aria-hidden="true" />
+      <Gauge className="h-4 w-4 @max-[30rem]/acciones:hidden" aria-hidden="true" />
       <span className="font-mono tabular-nums">{data.score}</span>
-      <span className="text-xs font-normal opacity-70">/100</span>
+      {/* «/100» cede cuando la banda aprieta (libro-chrome, `/acciones`); el
+          title y el lector siguen diciendo sobre cuánto es. */}
+      <span className="text-xs font-normal opacity-70 @max-[36rem]/acciones:sr-only">/100</span>
     </button>
   );
 }

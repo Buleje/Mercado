@@ -38,7 +38,16 @@ function estaVencido(vigenciaHasta: string | null): boolean {
   return hasta.getTime() < Date.now();
 }
 
-export default function ContratoActivoChip() {
+export default function ContratoActivoChip({
+  enGrupo = false,
+}: {
+  /**
+   * Dentro de `BandaPermiso` (LO-CTP), pegado a «Solo este permiso»: el borde
+   * lo pone el grupo y el chip sólo redondea su lado izquierdo. Los dos son UN
+   * control —qué permiso y si se filtra por él— y se leen como uno.
+   */
+  enGrupo?: boolean;
+} = {}) {
   const { activo, fijar, listo } = useContratoActivo();
   const [abierto, setAbierto] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
@@ -142,7 +151,7 @@ export default function ContratoActivoChip() {
   }
 
   return (
-    <div ref={caja} className="relative">
+    <div ref={caja} className="relative flex min-w-0">
       <button
         ref={boton}
         type="button"
@@ -155,21 +164,27 @@ export default function ContratoActivoChip() {
             : "Ningún permiso fijado: cada operación te va a pedir el suyo. Clic para elegir uno."
         }
         /* Mismo lenguaje que el chip de carátula del LO-TH (ADR-068): con dato
-           es un borde neutro de 1 px; sin dato, aviso de 2 px. El titular sólo
-           aparece desde 1800 px — a 1650 con «17-CPO/C-J-045-26» el código ya
-           se comía el ancho. */
-        className={`inline-flex h-10 max-w-[13rem] items-center gap-2 rounded-xl px-3 text-sm transition-colors min-[1800px]:max-w-[24rem] ${
-          activo
-            ? "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-            : "border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+           es un borde neutro de 1 px; sin dato, aviso de 2 px (en grupo, el
+           borde lo pone `BandaPermiso`).
+           El titular ya no depende del ancho de la VENTANA (`min-[1800px]`
+           mentía con la barra lateral abierta): va con `basis-0`, así que sólo
+           ocupa lo que sobra después del código y es lo primero que cede
+           cuando la banda aprieta; con menos de 46rem de grupo se esconde
+           entero (un «C…» suelto no dice nada). El código se corta último. */
+        className={`inline-flex min-w-0 max-w-[24rem] items-center gap-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+          enGrupo
+            ? `h-full rounded-l-[11px] px-2.5 hover:bg-[var(--surface-canvas)] ${activo ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`
+            : activo
+              ? "h-10 rounded-xl border border-[var(--rule-base)] px-3 bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              : "h-10 rounded-xl border-2 border-dashed px-3 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
         }`}
       >
         <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
         {activo ? (
           <>
-            <span className="min-w-0 truncate font-mono text-xs font-bold tabular-nums">{activo.codigo}</span>
+            <span className="min-w-0 shrink truncate font-mono text-xs font-bold tabular-nums">{activo.codigo}</span>
             {activo.titular && (
-              <span className="hidden min-w-0 flex-1 basis-0 truncate text-[var(--text-tertiary)] min-[1800px]:inline">
+              <span className="min-w-0 flex-1 basis-0 truncate text-[var(--text-tertiary)] max-lg:hidden @max-[46rem]/acciones:hidden">
                 {activo.titular}
               </span>
             )}
@@ -214,7 +229,7 @@ export default function ContratoActivoChip() {
             <p className="px-2.5 py-3 text-sm text-[var(--text-tertiary)]">Cargando permisos…</p>
           )}
           {error && !cargando && (
-            <p className="px-2.5 py-3 text-sm text-[var(--data-danger-600)]">{error}</p>
+            <p className="px-2.5 py-3 text-sm text-[var(--data-error-600)]">{error}</p>
           )}
           {!cargando && !error && contratos.length === 0 && (
             <p className="px-2.5 py-3 text-sm text-[var(--text-tertiary)]">

@@ -35,9 +35,19 @@
  * se deduce de `value === activo`: un registro que ya traía ese contrato (o
  * una elección a mano del mismo) no fue propuesto por nadie. Apenas el
  * usuario toca el selector, el aviso se va.
+ *
+ * ## «Sin contrato» elegido a mano se respeta (2026-09-24)
+ *
+ * Medido en el navegador: con un permiso activo, elegir «Sin contrato» volvía
+ * solo al permiso en menos de 1,5 s — el efecto veía `value == null` y lo leía
+ * como «nunca se tocó». Así no había forma de registrar un ingreso sin
+ * contrato. En el estado, «sin contrato elegido a mano» y «todavía nada» son el
+ * mismo `null`; lo que los distingue es haber tocado el selector, y eso se
+ * recuerda en un ref. Vale para las dos propuestas: la del documento y la del
+ * permiso activo.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FileText, TriangleAlert } from "@buleje/design-system/icons";
 import { normalizarCodigoContrato } from "@/lib/forestal/contratos";
 import { useContratos } from "@/hooks/use-contratos";
@@ -99,12 +109,18 @@ export default function SelectorContrato({
    *  borra. */
   const [propuestoPorActivo, setPropuestoPorActivo] = useState<string | null>(null);
 
+  /** El usuario ya eligió en este selector (cualquier opción, también «Sin
+   *  contrato»). Desde ahí ninguna propuesta vuelve a escribir el valor. Ref y
+   *  no estado: sólo lo leen los efectos y no cambia nada de lo dibujado. */
+  const tocadoRef = useRef(false);
+
   /**
    * Auto-elegir el sugerido, SÓLO si el usuario todavía no eligió nada.
    * Pisar una elección hecha a mano porque llegó la lista sería decidir por él
    * —el bug de «la carga vieja pisa lo optimista», con otra cara—.
    */
   useEffect(() => {
+    if (tocadoRef.current) return;
     if (value == null && sugerido) onChange(sugerido.id);
   }, [sugerido, value, onChange]);
 
@@ -116,6 +132,7 @@ export default function SelectorContrato({
    * terminar imputado a otro permiso distinto sólo porque el activo sí carga.
    */
   useEffect(() => {
+    if (tocadoRef.current) return;
     if (!sugerirActivo || value != null || hayCodigoSugerido || !activoCargado) return;
     setPropuestoPorActivo(activoCargado.id);
     onChange(activoCargado.id);
@@ -125,7 +142,10 @@ export default function SelectorContrato({
 
   /** Sigue en pie lo que propuso el activo: mismo id, todavía cargado. */
   const propuestoActivo =
-    sugerirActivo && activoCargado && propuestoPorActivo === activoCargado.id && value === activoCargado.id
+    sugerirActivo &&
+    activoCargado &&
+    propuestoPorActivo === activoCargado.id &&
+    value === activoCargado.id
       ? activoCargado
       : null;
 
@@ -133,7 +153,9 @@ export default function SelectorContrato({
     <div>
       <label htmlFor={id} className="mb-1.5 block text-sm font-bold text-[var(--text-secondary)]">
         {label}
-        {!requerido && <span className="ml-1 font-medium text-[var(--text-tertiary)]">(opcional)</span>}
+        {!requerido && (
+          <span className="ml-1 font-medium text-[var(--text-tertiary)]">(opcional)</span>
+        )}
       </label>
 
       <div className="relative">
@@ -146,6 +168,7 @@ export default function SelectorContrato({
           value={value ?? ""}
           disabled={disabled || cargando}
           onChange={(e) => {
+            tocadoRef.current = true;
             setPropuestoPorActivo(null);
             onChange(e.target.value || null);
           }}
@@ -170,8 +193,9 @@ export default function SelectorContrato({
         <p className="mt-1.5 flex items-start gap-1.5 text-sm font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
-            El documento dice «{codigoSugerido}» y ese permiso todavía no está cargado como contrato. Se puede
-            crear desde Gestión › Contratos; mientras tanto, esto queda sin imputar.
+            El documento dice «{codigoSugerido}» y ese permiso todavía no está cargado como
+            contrato. Se puede crear desde Gestión › Contratos; mientras tanto, esto queda sin
+            imputar.
           </span>
         </p>
       ) : propuestoActivo ? (
