@@ -51,6 +51,8 @@ export interface TrozaConsumible {
   fechaRecepcion?: string | null;
   /** Fecha del asiento de la guía en el libro — NO es la recepción. */
   fechaIngreso?: string | null;
+  /** Cuándo se recepcionó la GUÍA (la pieza puede no tener la suya). */
+  guiaFechaRecepcion?: string | null;
   /** La guía ya se recibió (ADR-339): sólo esas piezas van a la sierra. */
   guiaRecepcionada?: boolean;
   /** (6) N° del título habilitante que ampara la madera — «el permiso». */
@@ -142,6 +144,27 @@ export const LABEL_BLOQUEO: Record<MotivoBloqueo, string> = {
   madre_retrozada: "Se cortó en pedazos: consumí los pedazos",
   sin_volumen: "Sin volumen registrado",
 };
+
+/**
+ * Desde cuándo está esta troza en el patio, para la regla 4 de la vinculación
+ * («la madera no se asierra antes de entrar»): la recepción de la pieza; si no
+ * la tiene, la de su guía; si la guía tampoco, el asiento. AAAA-MM-DD o `null`.
+ *
+ * Hasta el 25-09 ningún vinculador la pasaba y la regla estaba muerta: en Blas,
+ * la corrida N° 32 del 07/09 recibía una troza de una guía recibida el 23/09.
+ */
+export function fechaIngresoDeTroza(
+  t: Pick<TrozaConsumible, "fechaRecepcion" | "guiaFechaRecepcion" | "fechaIngreso">,
+): string | null {
+  /* La MISMA fuente y el mismo día UTC que la invariante T3 del servidor
+     (ADR-433): si no coincidieran, la pantalla ofrecería lo que el servidor
+     rechaza. Del JSON llega string; leída directo de la base, `Date` (y
+     `String(date)` daba «Wed Sep 23»): los dos a AAAA-MM-DD en UTC. */
+  const f: unknown = t.fechaRecepcion ?? t.guiaFechaRecepcion ?? t.fechaIngreso ?? null;
+  if (f instanceof Date) return Number.isNaN(f.getTime()) ? null : f.toISOString().slice(0, 10);
+  if (typeof f !== "string" || !f.trim()) return null;
+  return /^\d{4}-\d{2}-\d{2}/.test(f) ? f.slice(0, 10) : null;
+}
 
 export function estaDisponible(t: TrozaConsumible): boolean {
   return motivoBloqueo(t) === null;

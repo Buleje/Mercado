@@ -17,7 +17,10 @@ import { ESTADOS_CONTRATO, TIPOS_CONTRATO } from "@/lib/forestal/contratos";
  *        `?usos=1` cuenta lo que cuelga de él (para avisar antes de la baja).
  *        `?volumen=1` agrega el volumen y la trazabilidad (ADR-432): ingresado,
  *        consumido, producido por especie y tipo, despachado y el hilo guía →
- *        corrida → despacho (`VolumenDelPermiso`).
+ *        corrida → despacho (`VolumenDelPermiso`). `?volumen=totales` es el
+ *        mismo cálculo pero responde sólo `{ totales }` — lo que pide el
+ *        semáforo del chip (`useSemaforoPermiso`), que no necesita ni las
+ *        filas por especie ni la trazabilidad completa para pintar una barra.
  * PATCH  edita los datos del papel, o `{ accion: "vincular" }` ata todo lo que
  *        ya trae ese código escrito en el libro.
  */
@@ -85,6 +88,11 @@ export const GET = withApiHandler("forestal-contrato-get", async (req: NextReque
       const volumen = await ForestContratoDB.volumen(auth.tenantId, id);
       if (!volumen) return NextResponse.json({ error: "not_found" }, { status: 404 });
       return NextResponse.json({ contrato, volumen });
+    }
+    if (url.searchParams.get("volumen") === "totales") {
+      const volumen = await ForestContratoDB.volumen(auth.tenantId, id);
+      if (!volumen) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ totales: volumen.totales });
     }
     if (url.searchParams.get("balance") !== "1") return NextResponse.json({ contrato });
     const balance = await ForestContratoDB.balance(auth.tenantId, id, {

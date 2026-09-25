@@ -15,9 +15,11 @@
 
 import { useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { Layers } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
 import type { DespachoDelPermiso, VolumenDelPermiso } from "@/lib/forestal/volumen-del-permiso";
+import CtpDescontarMaderaModal from "./CtpDescontarMaderaModal";
 import CtpPermisoTrazaGuia, { MarcaDeCorrida, nLinea } from "./CtpPermisoTrazaGuia";
 import { fechaDelLibro, m3, tipoCorto } from "./permiso-volumen-ui";
 
@@ -37,9 +39,18 @@ function Titulo({ id, texto, n, what }: { id: string; texto: string; n: number; 
   );
 }
 
-export default function CtpPermisoTraza({ volumen }: { volumen: VolumenDelPermiso }) {
+export default function CtpPermisoTraza({
+  volumen,
+  onRecargar,
+}: {
+  volumen: VolumenDelPermiso;
+  /** Vuelve a sumar la ficha después de vincular una corrida. */
+  onRecargar?: () => void;
+}) {
   const { guias, corridas, despachos, avisos } = volumen;
   const [abiertas, setAbiertas] = useState<Set<string>>(() => new Set());
+  /** La corrida que se está vinculando desde «Producción sin guía de ingreso». */
+  const [vincular, setVincular] = useState<string | null>(null);
 
   const porId = useMemo(() => new Map(corridas.map((c) => [c.id, c])), [corridas]);
   const despachosPorCorrida = useMemo(() => {
@@ -131,9 +142,28 @@ export default function CtpPermisoTraza({ volumen }: { volumen: VolumenDelPermis
                     : `${m3(c.m3DelPermiso)} m³`}
                 </span>
                 <MarcaDeCorrida origen={c.origen} />
+                {c.m3 != null && c.m3 > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setVincular(c.id)}
+                    aria-label={`Vincular la corrida ${nLinea(c.lineNo)} con sus trozas`}
+                    className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]"
+                  >
+                    <Layers className="h-4 w-4" aria-hidden /> Vincular
+                  </button>
+                )}
               </li>
             ))}
           </ul>
+          {vincular && (
+            <CtpDescontarMaderaModal
+              volumen={volumen}
+              ids={[vincular]}
+              individual
+              onCerrar={() => setVincular(null)}
+              onRecargar={onRecargar}
+            />
+          )}
         </section>
       )}
 

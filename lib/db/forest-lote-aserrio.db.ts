@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { precioManualDelDetalle } from "@/lib/forestal/aserrio-cobro";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
-import { CtpInvariantError, ForestCtpConsumoDB } from "./forest-ctp-consumo.db";
+import { CtpInvariantError, ForestCtpConsumoDB, exigirIngresoAntesDeLaCorrida } from "./forest-ctp-consumo.db";
 import { ForestCtpDB } from "./forest-ctp.db";
 import { agruparPorGuia, guiaRecibida } from "@/lib/forestal/consumo-trozas";
 import { invalidateByPrefix } from "@/lib/cache";
@@ -1119,6 +1119,8 @@ export class ForestLoteAserrioDB {
             // de que este lote entrara a la sierra — sin esto quedaba con
             // despachadaEnId Y consumidaEnId vivos a la vez, doble-contada.
             despachadaEn: { select: { status: true, deletedAt: true } },
+            codigoPlanta: true,
+            codificacion: true,
             entry: {
               select: {
                 status: true,
@@ -1127,6 +1129,8 @@ export class ForestLoteAserrioDB {
                    sin estos dos campos `motivoNoElegible` no puede verla. */
                 fechaRecepcion: true,
                 gtfNumber: true,
+                /* T3 (ADR-433): sin recepción, el ingreso de la pieza es el asiento. */
+                entryDate: true,
               },
             },
           },
@@ -1151,6 +1155,20 @@ export class ForestLoteAserrioDB {
           : `El lote ${lote.code} no tiene piezas que consumir.`,
         "LOTE_NO_EDITABLE",
       );
+    }
+
+    /* T3 (ADR-433) ANTES de escribir nada: ni m³ por guía ni piezas. Una troza
+       que llegó después de la fecha de la corrida no pudo estar en esa sierra. */
+    const corridaFechada = await prisma.forestCtpEntry.findFirst({
+      where: { id: corridaId, tenantId, deletedAt: null },
+      select: { id: true, lineNo: true, entryDate: true },
+    });
+    if (corridaFechada) {
+      exigirIngresoAntesDeLaCorrida(libres, {
+        id: corridaFechada.id,
+        lineNo: corridaFechada.lineNo,
+        fecha: corridaFechada.entryDate,
+      });
     }
 
     /* Los m³ por guía, ANTES de marcar nada: si I1/I2 rechazan, el lote queda
@@ -1255,6 +1273,22 @@ export class ForestLoteAserrioDB {
     if (!tenantId) throw new Error("tenantId is required");
     const { loteId, trozaIds = [], fecha, observaciones, user } = input;
 
+    /* T3 (ADR-433) ANTES de apartarlas: si se revisara recién después, un 422
+       dejaba las piezas pedidas metidas en el lote sin corrida que las use. */
+    if (trozaIds.length > 0) {
+      const pedidasAntes = await prisma.woodEntryTroza.findMany({
+        where: { tenantId, id: { in: trozaIds } },
+        select: {
+          id: true,
+          fechaRecepcion: true,
+          codigoPlanta: true,
+          codificacion: true,
+          entry: { select: { gtfNumber: true, fechaRecepcion: true, entryDate: true } },
+        },
+      });
+      exigirIngresoAntesDeLaCorrida(pedidasAntes, { id: null, lineNo: null, fecha: fecha ?? new Date() });
+    }
+
     /* Primero las piezas al lote: si alguna no entra, se dice cuál y por qué
        ANTES de abrir nada en el libro. */
     const agregado =
@@ -1279,6 +1313,8 @@ export class ForestLoteAserrioDB {
             descarte: true,
             _count: { select: { retrozos: true } },
             despachadaEn: { select: { status: true, deletedAt: true } },
+            codigoPlanta: true,
+            codificacion: true,
             entry: {
               select: {
                 status: true,
@@ -1287,6 +1323,7 @@ export class ForestLoteAserrioDB {
                    sin estos dos campos `motivoNoElegible` no puede verla. */
                 fechaRecepcion: true,
                 gtfNumber: true,
+                entryDate: true,
               },
             },
           },
@@ -1308,6 +1345,11 @@ export class ForestLoteAserrioDB {
     }
     const volumenM3 =
       Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000;
+
+    /* T3 (ADR-433) antes de abrir la corrida: rechazar después quemaría su N°
+       de línea (la corrida fallida se retira, pero el número no se recicla).
+       Sin fecha, la corrida nace hoy — es lo que pone `ForestCtpDB.create`. */
+    exigirIngresoAntesDeLaCorrida(libres, { id: null, lineNo: null, fecha: fecha ?? new Date() });
 
     const corrida = await ForestCtpDB.create(tenantId, {
       section: "produccion",
@@ -1417,9 +1459,11 @@ export class ForestLoteAserrioDB {
             /* El denominador sólo vale si las dos puntas están en m³: pie
                tablar ÷ m³ no es un rendimiento, es un número inventado. */
             unit: string | null;
+            /* T3 (ADR-433): ninguna troza entra a una corrida anterior a su ingreso. */
+            entryDate: Date;
           }[]
         >`
-          SELECT "id", "lineNo", "section", "status", "quantity", "volumeInputM3", "speciesCommon", "unit"
+          SELECT "id", "lineNo", "section", "status", "quantity", "volumeInputM3", "speciesCommon", "unit", "entryDate"
           FROM "ForestCtpEntry"
           WHERE "id" = ${corridaId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
           FOR UPDATE
@@ -1482,6 +1526,8 @@ export class ForestLoteAserrioDB {
                 descarte: true,
                 _count: { select: { retrozos: true } },
                 despachadaEn: { select: { status: true, deletedAt: true } },
+                codigoPlanta: true,
+                codificacion: true,
                 entry: {
                   select: {
                     status: true,
@@ -1490,6 +1536,7 @@ export class ForestLoteAserrioDB {
                        sin estos dos campos `motivoNoElegible` no puede verla. */
                     fechaRecepcion: true,
                     gtfNumber: true,
+                    entryDate: true,
                   },
                 },
               },
@@ -1527,6 +1574,17 @@ export class ForestLoteAserrioDB {
             "LOTE_NO_EDITABLE",
           );
         }
+
+        /* T3 (ADR-433), bajo el lock de la corrida y antes de escribir nada: la
+           pantalla lo avisa (`revisarVinculacion`, regla 4), pero una regla que
+           vive sólo en la pantalla la saltea cualquier POST. Medido el 25-09: la
+           vinculación de 10-HUA escribía 20 corridas del 07/09 al 22/09 con
+           trozas de guías recibidas el 23/09. */
+        exigirIngresoAntesDeLaCorrida(libres, {
+          id: corrida.id,
+          lineNo: corrida.lineNo,
+          fecha: corrida.entryDate,
+        });
 
         const delta = r4(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0));
         const volumenPrevio = corrida.volumeInputM3 == null ? 0 : Number(corrida.volumeInputM3);

@@ -482,6 +482,11 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
            corrida NO se pierde: queda con sus m³ y el operador marca las piezas
            después. Romper acá dejaría media importación escrita. */
         let piezas = 0;
+        /* Si las piezas no se pudieron marcar, la fila lo DICE: antes el error
+           iba sólo al log y el reporte decía «Corrida importada» con todas las
+           trozas libres en el patio (ADR-433: una T3, un mes cerrado o una ya
+           consumida frenan el marcado entero). */
+        let avisoPiezas = "";
         if (corrida?.id && d.trozasConsumidas.length > 0) {
           try {
             const ids: string[] = [];
@@ -501,6 +506,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
               corrida: corrida.id,
               error: String(e),
             });
+            avisoPiezas = ` · AVISO: las ${d.trozasConsumidas.length} troza${d.trozasConsumidas.length === 1 ? "" : "s"} no se marcaron consumidas (siguen libres en el patio) — ${e instanceof Error ? e.message : String(e)}`;
           }
         }
 
@@ -522,6 +528,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
                antes quedaba adentro de un mensaje que sólo se contaba, nunca
                se mostraba, y un código renombrado o un bulto sin paquete
                pasaban inadvertidos. */
+            avisoPiezas +
             (renombrado ? ` · AVISO: el código "${base}" ya estaba en uso — este paquete quedó como "${codigo}"` : "") +
             (sinPaquetePorque ? ` · AVISO: sin paquete — ${sinPaquetePorque}` : ""),
         });

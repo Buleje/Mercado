@@ -27,7 +27,7 @@ import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retroza
 import type { CambioRecepcion } from "@/lib/forestal/recepcion-trozas";
 import { guiaRecibida, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
-import { CtpInvariantError } from "./forest-ctp-consumo.db";
+import { CtpInvariantError, exigirIngresoAntesDeLaCorrida } from "./forest-ctp-consumo.db";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 
 /**
@@ -1481,6 +1481,9 @@ export class WoodEntriesDB {
       proveedor: t.entry.providerName,
       fechaIngreso: t.entry.entryDate as unknown as string,
       fechaRecepcion: t.fechaRecepcion as unknown as string | null,
+      /* Para la regla de fechas al vincular (`fechaIngresoDeTroza`): la pieza
+         sin recepción propia hereda la de su guía, no el asiento. */
+      guiaFechaRecepcion: (t.entry.fechaRecepcion ?? null) as unknown as string | null,
       /* La MISMA derivación que usa el escritor de lotes (`motivoNoElegible`):
          vive una sola vez en `guiaRecibida` para que la pantalla y el POST no
          puedan discrepar sobre si esa madera llegó. */
@@ -2052,7 +2055,12 @@ export class WoodEntriesDB {
             // contada dos veces en el libro oficial.
             despachadaEnId: true,
             despachadaEn: { select: { status: true, deletedAt: true } },
-            entry: { select: { status: true, deletedAt: true } },
+            /* T3 (ADR-433): el ingreso de la pieza — su recepción, la de su guía o el asiento. */
+            codigoPlanta: true,
+            fechaRecepcion: true,
+            entry: {
+              select: { status: true, deletedAt: true, gtfNumber: true, fechaRecepcion: true, entryDate: true },
+            },
             _count: { select: { retrozos: true } },
           },
         });
@@ -2088,6 +2096,13 @@ export class WoodEntriesDB {
             { trozas: malas.map((t) => t.id) },
           );
         }
+        /* T3 (ADR-433) sólo sobre las que ENTRAN ahora: las que esta corrida ya
+           tenía no se revisan, así una corrida vieja que ya viola la regla
+           todavía se puede corregir (soltarle piezas, cambiar la selección). */
+        exigirIngresoAntesDeLaCorrida(
+          candidatas.filter((t) => t.consumidaEnId !== ctpEntryId),
+          { id: corrida.id, lineNo: corrida.lineNo, fecha: corrida.entryDate },
+        );
       }
 
       // Primero se sueltan las que ya no están en la selección, después se toman

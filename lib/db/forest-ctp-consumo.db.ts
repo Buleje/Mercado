@@ -23,6 +23,11 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import {
+  diaDelLibro,
+  mensajeEntroDespues,
+  trozasQueEntraronDespues,
+} from "@/lib/forestal/recepcion-antes-de-la-sierra";
 
 const CACHE_PREFIX = "forest-ctp";
 
@@ -148,6 +153,9 @@ export class CtpInvariantError extends Error {
       /** La pieza no puede entrar a la sierra: ya la comió otra corrida, no
        *  llegó al patio, es descarte, o se partió en pedazos (van los pedazos). */
       | "T1_TROZA_NO_CONSUMIBLE"
+      /** T3 (ADR-433): la troza entró al patio DESPUÉS de la fecha de la
+       *  corrida. El libro diría que se aserró madera que todavía no llegó. */
+      | "T3_ASERRADA_ANTES_DE_LLEGAR"
       // ── Salida de trozas sin aserrar (ADR-363) ──
       /** La pieza no puede subir al camión entera: ya la comió una corrida, ya
        *  salió en otro despacho, no llegó al patio, es descarte o es la madre
@@ -197,6 +205,48 @@ export interface CostoDeLinea {
   congelado: boolean;
   atribuidoM3: number;
   sinAtribuirM3: number;
+}
+
+/** Una troza como la leen los escritores de consumo por pieza: sus fechas y las de su guía. */
+export interface TrozaConGuiaFechada {
+  id: string;
+  codigoPlanta?: string | null;
+  codificacion?: string | null;
+  fechaRecepcion: Date | null;
+  entry: { gtfNumber: string; fechaRecepcion: Date | null; entryDate: Date };
+}
+
+/**
+ * T3 (ADR-433): ninguna troza entra a una corrida con fecha ANTERIOR a su
+ * ingreso al patio (su recepción → la de su guía → el asiento de la guía).
+ *
+ * Vale para escrituras NUEVAS: cada escritor la llama sólo con las piezas que
+ * AGREGA. Soltar piezas, anular una corrida o deshacer no pasan por acá, así
+ * que un consumo viejo que ya la viola no traba ninguna corrección.
+ */
+export function exigirIngresoAntesDeLaCorrida(
+  trozas: readonly TrozaConGuiaFechada[],
+  /** `id` null = la corrida todavía no existe (se valida antes de abrirla, para no quemar un N° de línea). */
+  corrida: { id: string | null; lineNo: number | null; fecha: Date | string | null | undefined },
+): void {
+  const fuera = trozasQueEntraronDespues(
+    trozas.map((t) => ({
+      id: t.id,
+      codigo: (t.codigoPlanta ?? "").trim() || (t.codificacion ?? "").trim() || null,
+      gtf: t.entry.gtfNumber,
+      fechaRecepcionTroza: t.fechaRecepcion,
+      fechaRecepcionGuia: t.entry.fechaRecepcion,
+      fechaAsientoGuia: t.entry.entryDate,
+    })),
+    corrida.fecha,
+  );
+  if (fuera.length === 0) return;
+  throw new CtpInvariantError(mensajeEntroDespues(fuera, corrida), "T3_ASERRADA_ANTES_DE_LLEGAR", {
+    corridaId: corrida.id,
+    lineNo: corrida.lineNo,
+    fechaCorrida: diaDelLibro(corrida.fecha),
+    trozas: fuera,
+  });
 }
 
 export class ForestCtpConsumoDB {

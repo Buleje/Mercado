@@ -14,11 +14,14 @@
  * del servidor para leerlas juntas.
  */
 
+import { useState } from "react";
 import { Boxes, PackageOpen, Scale, TreePine, Truck, Layers } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtPct, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import type { VolumenDelPermiso } from "@/lib/forestal/volumen-del-permiso";
+import { TOLERANCIA_EXCESO_PT } from "@/lib/forestal/semaforo-permiso";
+import CtpDescontarMaderaModal from "./CtpDescontarMaderaModal";
 import CtpPermisoAvisos from "./CtpPermisoAvisos";
 import { TablaPorEspecie, TablaPorTipo } from "./CtpPermisoTablas";
 import { Cifra, esNegativo, m3, plural } from "./permiso-volumen-ui";
@@ -27,8 +30,16 @@ const SIN = (texto: string) => (
   <span className="text-base font-bold text-[var(--text-secondary)]">{texto}</span>
 );
 
-export default function CtpPermisoVolumen({ volumen }: { volumen: VolumenDelPermiso }) {
+export default function CtpPermisoVolumen({
+  volumen,
+  onRecargar,
+}: {
+  volumen: VolumenDelPermiso;
+  /** Vuelve a sumar la ficha después de vincular: el saldo baja a la vista. */
+  onRecargar?: () => void;
+}) {
   const t = volumen.totales;
+  const [descontar, setDescontar] = useState(false);
   const hayIngreso = t.guias > 0;
   const pctConsumido =
     hayIngreso && t.ingresadoM3 > 0 ? (t.consumidoM3 / t.ingresadoM3) * 100 : null;
@@ -36,7 +47,7 @@ export default function CtpPermisoVolumen({ volumen }: { volumen: VolumenDelPerm
   /* Sin ingreso no hay techo que medir: el «saldo» sería 0 − lo producido y
      saldría en rojo como exceso (3 permisos REG-PLT de Blas, 25-09). Rojo
      sólo cuando HAY madera ingresada contra la cual comparar. */
-  const saldoPtNeg = hayIngreso && esNegativo(t.saldoPt, 0.5);
+  const saldoPtNeg = hayIngreso && esNegativo(t.saldoPt, TOLERANCIA_EXCESO_PT);
 
   return (
     <div className="space-y-4">
@@ -138,7 +149,15 @@ export default function CtpPermisoVolumen({ volumen }: { volumen: VolumenDelPerm
         />
       </div>
 
-      <CtpPermisoAvisos avisos={volumen.avisos} />
+      <CtpPermisoAvisos avisos={volumen.avisos} onVincular={() => setDescontar(true)} />
+      {descontar && (
+        <CtpDescontarMaderaModal
+          volumen={volumen}
+          ids={volumen.avisos.corridasSinMateriaPrima.ids}
+          onCerrar={() => setDescontar(false)}
+          onRecargar={onRecargar}
+        />
+      )}
 
       {volumen.especies.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-3 text-sm text-[var(--text-secondary)]">

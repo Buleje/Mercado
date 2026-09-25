@@ -267,12 +267,28 @@ export default function CtpVincularMateriaPrimaModal({
   lotes,
   onCerrar,
   onListo,
+  loteInicialId,
+  trozasSugeridas,
+  fechasIngreso,
+  bloqueadas,
 }: {
   corrida: CorridaAVincular & { id: string };
   /** Los lotes del tenant (ya vienen con sus trozas del hook). */
   lotes: LoteAserrio[];
   onCerrar: () => void;
   onListo: (mensaje: string) => void;
+  /** Opcional (ficha del permiso): el lote llega elegido. */
+  loteInicialId?: string;
+  /**
+   * Opcional (ficha del permiso): las piezas del lote que alcanzan para esta
+   * corrida al 56 %. Se tildan ésas y no el lote entero — un lote armado para
+   * varias corridas, tildado completo, se lo comería una sola.
+   */
+  trozasSugeridas?: readonly string[];
+  /** Desde cuándo está cada troza en el patio (regla 4). Lo pasan Producción y la ficha. */
+  fechasIngreso?: Readonly<Record<string, string | null>>;
+  /** Piezas del lote que no van, con su motivo (ficha del permiso: fila, I2, otro permiso). */
+  bloqueadas?: Readonly<Record<string, string>>;
 }) {
   /**
    * El lote que se acaba de armar desde la propuesta.
@@ -307,7 +323,7 @@ export default function CtpVincularMateriaPrimaModal({
     tieneMateriaPrima: corrida.tieneMateriaPrima,
   });
 
-  const [loteId, setLoteId] = useState<string>("");
+  const [loteId, setLoteId] = useState<string>(loteInicialId ?? "");
   const lote = candidatos.find((l) => l.id === loteId) ?? null;
 
   /**
@@ -348,10 +364,16 @@ export default function CtpVincularMateriaPrimaModal({
      Con una propuesta encima se tildan SÓLO las que los códigos señalan: tildar
      el lote entero convertiría la propuesta en otra cosa sin que se note. */
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
+  /* Clave de texto: un array nuevo por render del padre no puede re-tildar lo
+     que el operario destildó. */
+  const sugeridasKey = trozasSugeridas?.join("|") ?? "";
   const propuestasEnLote = useMemo(() => {
     const ids = new Set(propuesta?.trozas.map((t) => t.id) ?? []);
-    return libres.filter((t) => ids.has(t.id)).map((t) => t.id);
-  }, [libres, propuesta]);
+    const dePropuesta = libres.filter((t) => ids.has(t.id)).map((t) => t.id);
+    if (dePropuesta.length > 0 || !sugeridasKey) return dePropuesta;
+    const sug = new Set(sugeridasKey.split("|"));
+    return libres.filter((t) => sug.has(t.id)).map((t) => t.id);
+  }, [libres, propuesta, sugeridasKey]);
   useEffect(() => {
     setElegidas(new Set(propuestasEnLote.length > 0 ? propuestasEnLote : libres.map((t) => t.id)));
   }, [libres, propuestasEnLote]);
@@ -411,11 +433,12 @@ export default function CtpVincularMateriaPrimaModal({
       codigo: t.codigoPlanta ?? t.codificacion,
       volumenM3: Number(t.volumenM3 ?? 0),
       largoM: t.largoM == null ? null : Number(t.largoM),
-      /* El hook ya filtró las consumidas; lo que llegue acá está libre. Si el
-         servidor ve otra cosa (T1, cierre, congelado), manda él. */
-      noDisponible: null,
+      fechaIngreso: fechasIngreso?.[t.id] ?? null,
+      /* El hook ya filtró las consumidas. Si el servidor ve otra cosa (T1,
+         cierre, congelado), manda él. */
+      noDisponible: bloqueadas?.[t.id] ?? null,
     })),
-    [libres, elegidas],
+    [libres, elegidas, fechasIngreso, bloqueadas],
   );
 
   const revision = useMemo(

@@ -47,17 +47,51 @@ const num = (v: number | string | null | undefined): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+/** Las piezas en el orden dado; las que no están en la lista, detrás y como venían. */
+function ordenarPor<T extends { id: string }>(xs: readonly T[], orden?: readonly string[]): readonly T[] {
+  if (!orden || orden.length === 0) return xs;
+  const pos = new Map(orden.map((id, i) => [id, i]));
+  const fuera = orden.length;
+  return [...xs].sort((a, b) => (pos.get(a.id) ?? fuera) - (pos.get(b.id) ?? fuera));
+}
+
 export default function CtpVincularEnTandaModal({
   corridas,
   lotes,
   onCerrar,
   onListo,
+  loteInicialId,
+  rendimientoMeta,
+  ordenTrozas,
+  onAvance,
+  fechasIngreso,
+  bloqueadas,
 }: {
   /** Las producciones sin lote que se marcaron en la pantalla. */
   corridas: CorridaEnTanda[];
   lotes: LoteAserrio[];
   onCerrar: () => void;
   onListo: (mensaje: string) => void;
+  /*
+   * Opcionales de «Descontar la madera usada» (ficha del permiso). Sin ellos,
+   * la tanda de Producción queda exactamente como estaba.
+   */
+  /** El lote recién armado (o el del permiso): llega elegido. */
+  loteInicialId?: string;
+  /** Reparto al rendimiento (0,56): cada corrida recibe lo producido ÷ meta de troza. */
+  rendimientoMeta?: number;
+  /** Ids de troza en el orden en que entran a la sierra — el mismo con que se armó el lote. */
+  ordenTrozas?: readonly string[];
+  /** Tras CADA corrida escrita: cuántas van, cuántos m³ de troza se atribuyeron y cuál fue. */
+  onAvance?: (vinculadas: number, trozaM3: number, corridaId: string) => void;
+  /**
+   * Desde cuándo está cada troza en el patio (AAAA-MM-DD, `fechaIngresoDeTroza`).
+   * Sin esto la regla 4 («no se asierra antes de entrar») no tenía con qué
+   * comparar y estaba muerta (revisión 25-09). Lo pasan Producción y la ficha.
+   */
+  fechasIngreso?: Readonly<Record<string, string | null>>;
+  /** Piezas del lote que NO van, con su motivo (fila de otra especie, I2, otro permiso). */
+  bloqueadas?: Readonly<Record<string, string>>;
 }) {
   /* Las especies que hay entre las marcadas: un lote es de UNA sola, así que si
      se marcaron dos maderas distintas conviene decirlo antes de que la tabla se
@@ -81,7 +115,7 @@ export default function CtpVincularEnTandaModal({
     [lotes, especies],
   );
 
-  const [loteId, setLoteId] = useState<string>("");
+  const [loteId, setLoteId] = useState<string>(loteInicialId ?? "");
   const lote = candidatos.find((l) => l.id === loteId) ?? null;
   const libres = useMemo(() => (lote ? piezasLibres(lote) : []), [lote]);
 
@@ -114,6 +148,11 @@ export default function CtpVincularEnTandaModal({
    * de 3 m salió una tabla de 6.
    */
   const [largos, setLargos] = useState<Record<string, number | null>>({});
+  /* Las que el detalle muestra con volumen de entrada: YA tienen origen. El
+     listado que las marcó puede no saberlo (la ficha del permiso sólo ve el
+     consumo de sus propias guías); el servidor las rechazaría y la tanda se
+     pararía en la primera. Mejor decirlo en la fila antes de firmar. */
+  const [conOrigen, setConOrigen] = useState<Record<string, true>>({});
   useEffect(() => {
     let vivo = true;
     /* En serie y no en paralelo: son pocas y el libro ya está cargando otras
@@ -121,10 +160,11 @@ export default function CtpVincularEnTandaModal({
     void (async () => {
       for (const c of corridasRef.current) {
         try {
-          const j = await ctpGet<{ entry?: { paquetes?: { largoM?: number | string | null }[] } }>(
-            `/api/admin/forestal/ctp?entryId=${encodeURIComponent(c.id)}`,
-          );
+          const j = await ctpGet<{
+            entry?: { paquetes?: { largoM?: number | string | null }[]; volumeInputM3?: number | string | null };
+          }>(`/api/admin/forestal/ctp?entryId=${encodeURIComponent(c.id)}`);
           if (!vivo) return;
+          if ((num(j.entry?.volumeInputM3) ?? 0) > 0) setConOrigen((m) => ({ ...m, [c.id]: true }));
           const ps = j.entry?.paquetes ?? [];
           if (ps.length > 0) {
             setLargos((m) => ({ ...m, [c.id]: largoMaxEnMetros(ps.map((x) => ({ largoM: num(x.largoM) }))) }));
@@ -139,29 +179,36 @@ export default function CtpVincularEnTandaModal({
 
   const trozasDelLote: TrozaAVincular[] = useMemo(
     () =>
-      libres.map((t) => ({
+      ordenarPor(libres, ordenTrozas).map((t) => ({
         id: t.id,
         codigo: t.codigoPlanta ?? t.codificacion,
         volumenM3: Number(t.volumenM3 ?? 0),
         largoM: t.largoM == null ? null : Number(t.largoM),
-        /* El hook ya filtró las consumidas; lo que llegue acá está libre. Si el
-           servidor ve otra cosa (T1, cierre, congelado), manda él. */
-        noDisponible: null,
+        fechaIngreso: fechasIngreso?.[t.id] ?? null,
+        /* El hook ya filtró las consumidas. Lo que la pantalla de origen sabe que
+           no va (fila, I2, otro permiso) sale del reparto; lo demás (T1, cierre,
+           congelado) lo decide el servidor. */
+        noDisponible: bloqueadas?.[t.id] ?? null,
       })),
-    [libres],
+    [libres, ordenTrozas, fechasIngreso, bloqueadas],
   );
 
   const reparto = useMemo(() => {
     if (!lote) return null;
     const elegidas = corridas
       .filter((c) => incluidas.has(c.id))
-      .map((c) => ({ ...c, largoMaxPiezaM: largos[c.id] ?? c.largoMaxPiezaM }));
+      .map((c) => ({
+        ...c,
+        largoMaxPiezaM: largos[c.id] ?? c.largoMaxPiezaM,
+        tieneMateriaPrima: c.tieneMateriaPrima || conOrigen[c.id] === true,
+      }));
     return repartirEnTanda(
       elegidas,
       { code: lote.code, especie: lote.speciesCommon, status: lote.status },
       trozasDelLote,
+      { rendimientoMeta },
     );
-  }, [corridas, incluidas, largos, lote, trozasDelLote]);
+  }, [corridas, incluidas, largos, conOrigen, lote, trozasDelLote, rendimientoMeta]);
 
   const [guardando, setGuardando] = useState(false);
   const [hechas, setHechas] = useState(0);
@@ -176,6 +223,7 @@ export default function CtpVincularEnTandaModal({
     setHechas(0);
     const aEscribir = reparto.filas.filter((f) => f.alcanzo && f.revision.puedeVincular);
     let ok = 0;
+    let m3Hechos = 0;
     try {
       for (const f of aEscribir) {
         const r = await fetch("/api/admin/forestal/lotes-aserrio", {
@@ -197,7 +245,9 @@ export default function CtpVincularEnTandaModal({
           );
         }
         ok += 1;
+        m3Hechos = Math.round((m3Hechos + f.revision.trozaM3) * 10_000) / 10_000;
         setHechas(ok);
+        onAvance?.(ok, m3Hechos, f.corrida.id);
       }
       invalidarCtp();
       onListo(
@@ -358,7 +408,9 @@ export default function CtpVincularEnTandaModal({
                           <td className={`${TD} min-w-[16rem]`}>
                             {!f.alcanzo ? (
                               <span className="text-[var(--text-tertiary)]">
-                                La madera del lote se acabó antes de llegarle. Queda sin vincular.
+                                {f.sinMadera === "fecha"
+                                  ? `Ninguna troza del lote había entrado al patio el ${f.corrida.fecha.slice(0, 10)}. Queda sin vincular.`
+                                  : "La madera del lote se acabó antes de llegarle. Queda sin vincular."}
                               </span>
                             ) : errores.length > 0 ? (
                               <ul className="space-y-0.5">
@@ -418,7 +470,9 @@ export default function CtpVincularEnTandaModal({
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[var(--rule-base)] px-5 py-3.5 sm:px-6">
-          <p className="min-w-0 flex-1 text-xs text-[var(--text-secondary)]">
+          {/* `max-sm:basis-full`: con `flex-1` (base 0 %) la frase no pedía renglón
+              y a 400 px quedaba en una columna de 90 px al lado de los botones. */}
+          <p className="min-w-0 flex-1 text-xs text-[var(--text-secondary)] max-sm:basis-full">
             {reparto ? resumenDeTanda(reparto, fmtM3) : "Elige el lote para ver qué le toca a cada una."}
           </p>
           <div className="flex items-center gap-2">

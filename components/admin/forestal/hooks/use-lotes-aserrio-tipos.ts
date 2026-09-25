@@ -65,6 +65,12 @@ export interface EstadoLotesAserrio {
     finProceso?: string | null;
     /** Código a mano; vacío = correlativo automático `LA-2026-00N`. */
     code?: string | null;
+    /**
+     * El título habilitante que el lote va a consumir (ADR-393). Opcional: sin
+     * él el lote nace «de todos», como los que ya existen. Lo manda «Descontar
+     * la madera usada» (ficha del permiso), que sí sabe de qué papel son sus trozas.
+     */
+    permiso?: string | null;
     /** Vacío = el lote se declara y se carga después, en Consumos. */
     trozaIds: string[];
   }) => Promise<ResultadoGuardado>;

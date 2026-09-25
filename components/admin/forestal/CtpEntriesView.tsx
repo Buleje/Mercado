@@ -58,6 +58,7 @@ import BarraDeuda, { type DeudaItem } from "@/components/admin/shared/BarraDeuda
 import CtpElegirLoteModal from "./CtpElegirLoteModal";
 import CtpSinCertificar, { type DespachoSinCertificar } from "./CtpSinCertificar";
 import { esLoteDeInventario, margenLote } from "@/lib/forestal/lotes-aserrio";
+import { fechaIngresoDeTroza } from "@/lib/forestal/consumo-trozas";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useCtpSeccion } from "@/hooks/use-ctp-secciones";
 import CtpSimuladorModal from "./CtpSimuladorModal";
@@ -791,6 +792,12 @@ export function CtpEntriesView({
     };
   }, [section, period.from, period.to, entries.length]);
   const lotes = useLotesAserrio();
+  /* Desde cuándo está cada troza en el patio: sin esto la regla 4 de la
+     vinculación («no se asierra antes de entrar») no tenía con qué comparar. */
+  const fechasIngreso = useMemo(
+    () => Object.fromEntries(lotes.trozas.map((t) => [t.id, fechaIngresoDeTroza(t)])),
+    [lotes.trozas],
+  );
   /** Los lotes que se pueden aserrar hoy, con lo que tienen esperando: se elige
    *  por peso (piezas y m³), no por nombre — el código del lote no dice nada. */
   /**
@@ -1690,6 +1697,7 @@ export function CtpEntriesView({
                 tieneMateriaPrima: e.volumeInputM3 != null && Number(e.volumeInputM3) > 0,
               }}
               lotes={lotes.lotes}
+              fechasIngreso={fechasIngreso}
               onCerrar={() => setVincularA(null)}
               onListo={(msg) => {
                 setVincularA(null);
@@ -1705,6 +1713,7 @@ export function CtpEntriesView({
         <CtpVincularEnTandaModal
           corridas={corridasEnTanda}
           lotes={lotes.lotes}
+          fechasIngreso={fechasIngreso}
           onCerrar={() => setVincularEnTanda(false)}
           onListo={(msg) => {
             setVincularEnTanda(false);
@@ -1744,6 +1753,7 @@ export function CtpEntriesView({
             tieneMateriaPrima: false,
           }}
           lotes={lotes.lotes}
+          fechasIngreso={fechasIngreso}
           onCerrar={() => setVincularDelSaldo(null)}
           onListo={(msg) => {
             setVincularDelSaldo(null);

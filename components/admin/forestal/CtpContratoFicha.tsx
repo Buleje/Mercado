@@ -23,15 +23,24 @@ import {
   AlertTriangle,
   ArrowLeft,
   Coins,
+  FileSpreadsheet,
   Layers,
+  Loader2,
+  Printer,
   RefreshCw,
   Route,
 } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { logger } from "@/lib/logger";
 import { useBalanceContrato, useVolumenContrato } from "@/hooks/use-contratos";
 import type { Contrato } from "@/lib/forestal/contratos";
+import {
+  exportarFichaDelPermiso,
+  imprimirFichaDelPermiso,
+} from "@/lib/forestal/permiso-ficha-export";
+import type { VolumenDelPermiso } from "@/lib/forestal/volumen-del-permiso";
 import CtpContratoBalance from "./CtpContratoBalance";
 import CtpPermisoTraza from "./CtpPermisoTraza";
 import CtpPermisoVolumen from "./CtpPermisoVolumen";
@@ -42,6 +51,21 @@ import {
   seccionDeUrl,
   type SeccionFicha,
 } from "./ficha-del-permiso-url";
+
+/**
+ * Identidad del CTP para el papel/Excel, best-effort (2026-09-25): si el
+ * fetch falla el documento igual sale, sólo sin el bloque de identidad —
+ * mismo criterio que el reporte de cumplimiento (`CtpCompliancePanel.tsx`).
+ */
+async function obtenerFichaCtp() {
+  return fetch("/api/admin/forestal/ctp-ficha", { credentials: "include" })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((body) => body?.ficha ?? null)
+    .catch((err) => {
+      logger.warn("[ficha-del-permiso] no se pudo traer la ficha del CTP", { error: String(err) });
+      return null;
+    });
+}
 
 /* El ícono sólo desde `sm`: a 400 px, con íconos, las tres no entran en la
    fila y el control empujaba el borde de la tarjeta (medido). */
@@ -128,11 +152,38 @@ export default function CtpContratoFicha({
   onVolver: () => void;
 }) {
   const [seccion, irA] = useSeccionDeFicha();
+  const [bajandoFicha, setBajandoFicha] = useState(false);
+  /* El botón vive en las tres secciones porque «Plata» también imprime el
+     volumen (Brandon, 2026-09-25), pero «Plata» NO lo carga sola
+     (`useVolumenContrato(contratoId, !plata)`: es la consulta más cara del
+     libro y nadie la mira desde ahí). `accionPendiente` es lo que el click
+     está esperando — se resuelve solo cuando `vol.volumen` (o `vol.error`)
+     llega, así el botón nunca queda deshabilitado para siempre. */
+  const [accionPendiente, setAccionPendiente] = useState<"imprimir" | "excel" | null>(null);
+  const [errorFicha, setErrorFicha] = useState<string | null>(null);
   const plata = seccion === "plata";
   const bal = useBalanceContrato(contratoId, plata);
   const vol = useVolumenContrato(contratoId, !plata);
   const activa = plata ? bal : vol;
   const contrato = vol.contrato ?? bal.contrato ?? inicial ?? null;
+
+  useEffect(() => {
+    if (!accionPendiente) return;
+    if (vol.volumen) {
+      const accion = accionPendiente;
+      const volumen = vol.volumen;
+      setAccionPendiente(null);
+      setErrorFicha(null);
+      if (accion === "imprimir") void imprimirConVolumen(volumen);
+      else void exportarConVolumen(volumen);
+      return;
+    }
+    if (vol.error && !vol.cargando) {
+      setAccionPendiente(null);
+      setErrorFicha(vol.error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accionPendiente, vol.volumen, vol.error, vol.cargando]);
 
   if (!contrato) {
     if (activa.error) {
@@ -145,6 +196,46 @@ export default function CtpContratoFicha({
       );
     }
     return <Cargando texto="Abriendo el permiso…" />;
+  }
+
+  async function imprimirConVolumen(volumen: VolumenDelPermiso) {
+    if (!contrato) return;
+    const ficha = await obtenerFichaCtp();
+    imprimirFichaDelPermiso({ contrato, volumen, ficha });
+  }
+
+  async function exportarConVolumen(volumen: VolumenDelPermiso) {
+    if (!contrato) return;
+    setBajandoFicha(true);
+    try {
+      const ficha = await obtenerFichaCtp();
+      await exportarFichaDelPermiso({ contrato, volumen, ficha });
+    } finally {
+      setBajandoFicha(false);
+    }
+  }
+
+  /* Con el volumen ya en memoria (Volumen/Trazabilidad, o Plata después de la
+     primera vez) el click actúa al toque. Si no, pide el volumen ahora mismo
+     y el efecto de arriba dispara la acción en cuanto llegue. */
+  function handleImprimirFicha() {
+    setErrorFicha(null);
+    if (vol.volumen) {
+      void imprimirConVolumen(vol.volumen);
+      return;
+    }
+    setAccionPendiente("imprimir");
+    if (!vol.cargando) void vol.recargar();
+  }
+
+  function handleExportarFicha() {
+    setErrorFicha(null);
+    if (vol.volumen) {
+      void exportarConVolumen(vol.volumen);
+      return;
+    }
+    setAccionPendiente("excel");
+    if (!vol.cargando) void vol.recargar();
   }
 
   return (
@@ -181,12 +272,48 @@ export default function CtpContratoFicha({
             </p>
           </div>
           <div className="flex flex-col items-end gap-2 max-sm:w-full max-sm:items-start">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${ESTADO_CLASE[contrato.estado]}`}
               >
                 {ESTADO_LABEL[contrato.estado]}
               </span>
+              <button
+                type="button"
+                onClick={() => handleImprimirFicha()}
+                disabled={accionPendiente !== null}
+                title={
+                  accionPendiente === "imprimir"
+                    ? "Trayendo el volumen del permiso…"
+                    : "Imprimir la ficha del permiso para SERFOR/OSINFOR (guarda como PDF)"
+                }
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
+              >
+                {accionPendiente === "imprimir" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Printer className="h-4 w-4" aria-hidden />
+                )}
+                Papel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExportarFicha()}
+                disabled={accionPendiente !== null || bajandoFicha}
+                title={
+                  accionPendiente === "excel"
+                    ? "Trayendo el volumen del permiso…"
+                    : "Bajar la ficha del permiso en Excel (guías, por especie, por tipo, corridas y despachos)"
+                }
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
+              >
+                {accionPendiente === "excel" || bajandoFicha ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <FileSpreadsheet className="h-4 w-4" aria-hidden />
+                )}
+                Excel
+              </button>
               <button
                 type="button"
                 onClick={() => void activa.recargar()}
@@ -201,6 +328,11 @@ export default function CtpContratoFicha({
                 />
               </button>
             </div>
+            {errorFicha && (
+              <p role="alert" className="text-xs font-semibold text-[var(--data-error-ink)]">
+                No se pudo traer el volumen para imprimir/exportar: {errorFicha}
+              </p>
+            )}
             <SegmentedControl<SeccionFicha>
               value={seccion}
               onChange={irA}
@@ -222,9 +354,9 @@ export default function CtpContratoFicha({
         />
       ) : vol.volumen ? (
         seccion === "volumen" ? (
-          <CtpPermisoVolumen volumen={vol.volumen} />
+          <CtpPermisoVolumen volumen={vol.volumen} onRecargar={() => void vol.recargar()} />
         ) : (
-          <CtpPermisoTraza volumen={vol.volumen} />
+          <CtpPermisoTraza volumen={vol.volumen} onRecargar={() => void vol.recargar()} />
         )
       ) : vol.error ? (
         <ErrorDeCarga error={vol.error} onReintentar={() => void vol.recargar()} />

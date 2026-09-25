@@ -167,7 +167,19 @@ export function InfoTip({ title, what, body, affects, example, side = "right", c
         aria-expanded={open}
         aria-describedby={open ? id : undefined}
         onClick={() => setOpen(true)}
-        onFocus={show}
+        /* Sólo el foco de TECLADO abre (`:focus-visible`): el clic ya abre por
+           `onClick`, y el foco que un modal pone solo al abrirse (su primer
+           enfocable suele ser este ⓘ) abría el cartel encima de lo que el
+           modal venía a mostrar (la tanda de «Ponerles el lote», 25-09). */
+        onFocus={(e) => {
+          let teclado = true;
+          try {
+            teclado = e.currentTarget.matches(":focus-visible");
+          } catch {
+            /* Un navegador sin `:focus-visible`: se abre como antes. */
+          }
+          if (teclado) show();
+        }}
         onBlur={alPerderFoco}
         className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
       >

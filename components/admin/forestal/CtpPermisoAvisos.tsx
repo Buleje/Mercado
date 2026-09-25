@@ -9,11 +9,12 @@
  * ruido que enseña a no mirar.
  */
 
-import { AlertTriangle, Info } from "@buleje/design-system/icons";
+import { AlertTriangle, Info, Layers } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import type { AvisosDelPermiso } from "@/lib/forestal/volumen-del-permiso";
+import { Btn } from "./ctp-shared";
 import { m3, plural } from "./permiso-volumen-ui";
 
 interface Linea {
@@ -86,7 +87,7 @@ export function lineasDeAvisos(a: AvisosDelPermiso): Linea[] {
       grave: false,
       texto: `${plural(a.corridasSinMateriaPrima.cantidad, "corrida", "corridas")} sin materia prima registrada · ${m3(a.corridasSinMateriaPrima.m3)} m³`,
       titulo: "Corridas sin materia prima",
-      what: "Están atadas al permiso sin un solo m³ de consumo: la rolliza que usaron sigue contando como saldo.",
+      what: "Están atadas al permiso sin un solo m³ de consumo: la rolliza que usaron sigue contando como saldo. «Vincular» dice de qué trozas salieron y el saldo baja.",
       detalle: ["Se ven una por una en Trazabilidad → «Producción sin guía de ingreso»."],
     });
   }
@@ -117,7 +118,14 @@ export function lineasDeAvisos(a: AvisosDelPermiso): Linea[] {
   return lineas;
 }
 
-export default function CtpPermisoAvisos({ avisos }: { avisos: AvisosDelPermiso }) {
+export default function CtpPermisoAvisos({
+  avisos,
+  onVincular,
+}: {
+  avisos: AvisosDelPermiso;
+  /** «Descontar la madera usada»: abre la vinculación de las corridas sin materia prima. */
+  onVincular?: () => void;
+}) {
   const lineas = lineasDeAvisos(avisos);
   if (lineas.length === 0) return null;
   return (
@@ -137,6 +145,11 @@ export default function CtpPermisoAvisos({ avisos }: { avisos: AvisosDelPermiso 
               aria-hidden
             />
             <span className="min-w-0 flex-1">{l.texto}</span>
+            {l.clave === "sin-mp" && onVincular && (
+              <Btn variant="primary" onClick={onVincular} className="shrink-0">
+                <Layers className="h-4 w-4" aria-hidden /> Vincular
+              </Btn>
+            )}
             <InfoTip
               title={l.titulo}
               what={l.what}

@@ -45,6 +45,8 @@ La DB class hace **dos tandas en paralelo**, sin una consulta por fila: (1) cont
 - Las 4 especies producidas sin ingreso (5,96 m³) y los 3 permisos REG-PLT con producción y 0 guías aparecen como aviso y no como error: el libro admite huecos.
 - La producción que ve esta ficha **no es la de `balance()`**: esa suma sólo las atadas y mezcla unidades. Con los datos de hoy coinciden (todo es `m3` y no hay heredadas vivas en Blas), pero pueden separarse.
 
+- **Relacionado — ADR-433 (T3):** la vinculación que completa estas corridas ya no puede escribir una troza en una corrida anterior a su ingreso al patio. En Blas, 18 de las 30 corridas de 10-HUA (07/09-10/09) quedan sin madera vinculable hasta corregir las recepciones en Ingresos.
+
 ## Fuera de alcance (deuda anotada)
 
 - `balance()` / `balances()` siguen sumando producción sólo por `contratoId` (sin heredadas) y `quantity` sin convertir la unidad.

@@ -10,6 +10,7 @@
  */
 
 import { CardTitle, DataTable } from "@buleje/design-system";
+import { TOLERANCIA_EXCESO_PT } from "@/lib/forestal/semaforo-permiso";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import type {
@@ -59,7 +60,7 @@ function PtCelda({ v }: { v: number }) {
 /** `hay` = hubo ingreso contra el cual medir: sin él, «—» (no un exceso rojo). */
 function SaldoPt({ v, hay }: { v: number; hay: boolean }) {
   if (!hay) return GUION;
-  return esNegativo(v, 0.5) ? (
+  return esNegativo(v, TOLERANCIA_EXCESO_PT) ? (
     <Saldo texto={`≈ ${fmtPt(v)}`} negativo queDice="pt de más" />
   ) : (
     <PtCelda v={v} />

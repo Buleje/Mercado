@@ -36,7 +36,9 @@ import {
 } from "@buleje/design-system/icons";
 import { useContratoActivo, type ContratoActivo } from "@/contexts/contrato-activo-context";
 import { useContratos } from "@/hooks/use-contratos";
+import { useSemaforoPermiso } from "@/hooks/use-semaforo-permiso";
 import { abrirFichaDelPermiso } from "./ficha-del-permiso-url";
+import { PermisoSemaforoBoton, PermisoSemaforoLinea, fraseSemaforoPermiso } from "./PermisoSemaforo";
 
 /** Un contrato vencido no debería seguir recibiendo operaciones sin que se vea. */
 function estaVencido(vigenciaHasta: string | null): boolean {
@@ -111,6 +113,10 @@ export default function ContratoActivoChip({
 
   // La lista sólo se pide cuando de verdad se va a mostrar.
   const { contratos, cargando, error } = useContratos();
+  /* Semáforo (Brandon 2026-09-25): lo que queda por producir del permiso
+     activo. No bloquea nada — el chip ya se pintó con lo de `localStorage`
+     antes de que esto llegue. */
+  const { semaforo } = useSemaforoPermiso(activo?.id ?? null);
 
   const vencidoElActivo = useMemo(() => {
     const c = contratos.find((x) => x.id === activo?.id);
@@ -173,7 +179,9 @@ export default function ContratoActivoChip({
         aria-expanded={abierto}
         title={
           activo
-            ? `Trabajando bajo ${activo.codigo}${activo.titular ? ` · ${activo.titular}` : ""}. Se propone en cada operación que registres. Clic para cambiarlo.`
+            ? `Trabajando bajo ${activo.codigo}${activo.titular ? ` · ${activo.titular}` : ""}. Se propone en cada operación que registres. Clic para cambiarlo.${
+                semaforo ? ` ${fraseSemaforoPermiso(semaforo)}` : ""
+              }`
             : "Ningún permiso fijado: cada operación te va a pedir el suyo. Clic para elegir uno."
         }
         /* Mismo lenguaje que el chip de carátula del LO-TH (ADR-068): con dato
@@ -198,6 +206,7 @@ export default function ContratoActivoChip({
             <span className="min-w-0 shrink truncate font-mono text-xs font-bold tabular-nums">
               {activo.codigo}
             </span>
+            {semaforo && <PermisoSemaforoBoton semaforo={semaforo} />}
             {activo.titular && (
               <span className="min-w-0 flex-1 basis-0 truncate text-[var(--text-tertiary)] max-lg:hidden @max-[46rem]/acciones:hidden">
                 {activo.titular}
@@ -235,26 +244,29 @@ export default function ContratoActivoChip({
             {activo && (
               /* ADR-432: del permiso elegido a su ficha — Libro CTP → Contratos
                → este permiso → Volumen, desde cualquier libro que lleve el chip. */
-              <button
-                type="button"
-                onClick={() => {
-                  setAbierto(false);
-                  abrirFichaDelPermiso(activo.id, "volumen");
-                }}
-                className="mb-1.5 flex w-full items-center gap-2 rounded-lg border border-[var(--rule-base)] px-2.5 py-2 text-left text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-              >
-                <Layers className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" aria-hidden="true" />
-                <span className="min-w-0 flex-1">
-                  Ver volumen y trazabilidad
-                  <span className="block truncate font-mono text-xs font-normal text-[var(--text-tertiary)]">
-                    {activo.codigo}
+              <>
+                {semaforo && <PermisoSemaforoLinea semaforo={semaforo} />}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAbierto(false);
+                    abrirFichaDelPermiso(activo.id, "volumen");
+                  }}
+                  className="mb-1.5 flex w-full items-center gap-2 rounded-lg border border-[var(--rule-base)] px-2.5 py-2 text-left text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                >
+                  <Layers className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    Ver volumen y trazabilidad
+                    <span className="block truncate font-mono text-xs font-normal text-[var(--text-tertiary)]">
+                      {activo.codigo}
+                    </span>
                   </span>
-                </span>
-                <ArrowRight
-                  className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]"
-                  aria-hidden="true"
-                />
-              </button>
+                  <ArrowRight
+                    className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]"
+                    aria-hidden="true"
+                  />
+                </button>
+              </>
             )}
 
             <div role="listbox" aria-label="Permiso de trabajo">
