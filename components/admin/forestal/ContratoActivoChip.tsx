@@ -26,9 +26,17 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, FileText, TriangleAlert } from "@buleje/design-system/icons";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  FileText,
+  Layers,
+  TriangleAlert,
+} from "@buleje/design-system/icons";
 import { useContratoActivo, type ContratoActivo } from "@/contexts/contrato-activo-context";
 import { useContratos } from "@/hooks/use-contratos";
+import { abrirFichaDelPermiso } from "./ficha-del-permiso-url";
 
 /** Un contrato vencido no debería seguir recibiendo operaciones sin que se vea. */
 function estaVencido(vigenciaHasta: string | null): boolean {
@@ -56,7 +64,12 @@ export default function ContratoActivoChip({
   /* El menú va en un portal: la tarjeta del libro tiene `overflow-hidden` para
      su borde redondeado y recortaba la lista a media altura (visto a 400 px,
      2026-09-19). Por eso se posiciona a mano contra el rect del botón. */
-  const [pos, setPos] = useState<{ top?: number; bottom?: number; right: number; maxHeight: number } | null>(null);
+  const [pos, setPos] = useState<{
+    top?: number;
+    bottom?: number;
+    right: number;
+    maxHeight: number;
+  } | null>(null);
 
   const ubicar = useCallback(() => {
     const r = boton.current?.getBoundingClientRect();
@@ -182,7 +195,9 @@ export default function ContratoActivoChip({
         <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
         {activo ? (
           <>
-            <span className="min-w-0 shrink truncate font-mono text-xs font-bold tabular-nums">{activo.codigo}</span>
+            <span className="min-w-0 shrink truncate font-mono text-xs font-bold tabular-nums">
+              {activo.codigo}
+            </span>
             {activo.titular && (
               <span className="min-w-0 flex-1 basis-0 truncate text-[var(--text-tertiary)] max-lg:hidden @max-[46rem]/acciones:hidden">
                 {activo.titular}
@@ -201,78 +216,122 @@ export default function ContratoActivoChip({
         <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
       </button>
 
-      {abierto && pos && createPortal(
-        <div
-          ref={menu}
-          role="listbox"
-          aria-label="Permiso de trabajo"
-          style={{ top: pos.top, bottom: pos.bottom, right: pos.right, maxHeight: pos.maxHeight }}
-          className="fixed z-[70] w-[24rem] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-lg"
-        >
-          <p className="px-2.5 pb-1.5 pt-1 text-xs text-[var(--text-tertiary)]">
-            Lo que elijas queda fijo en todo el panel y se propone en cada operación que registres.
-          </p>
-
-          <button
-            type="button"
-            role="option"
-            aria-selected={!activo}
-            onClick={() => elegir(null)}
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+      {abierto &&
+        pos &&
+        createPortal(
+          /* El contenedor no es el `listbox`: adentro va también «Ver volumen y
+           trazabilidad», que es una acción y no una opción (un listbox sólo
+           admite opciones, y un lector de pantalla la anunciaría como una). */
+          <div
+            ref={menu}
+            style={{ top: pos.top, bottom: pos.bottom, right: pos.right, maxHeight: pos.maxHeight }}
+            className="fixed z-[70] w-[24rem] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-lg"
           >
-            <Check className={`h-4 w-4 shrink-0 ${activo ? "opacity-0" : "opacity-100"}`} aria-hidden="true" />
-            <span>Sin permiso fijo</span>
-            <span className="ml-auto text-xs text-[var(--text-tertiary)]">cada operación pide el suyo</span>
-          </button>
-
-          {cargando && (
-            <p className="px-2.5 py-3 text-sm text-[var(--text-tertiary)]">Cargando permisos…</p>
-          )}
-          {error && !cargando && (
-            <p className="px-2.5 py-3 text-sm text-[var(--data-error-600)]">{error}</p>
-          )}
-          {!cargando && !error && contratos.length === 0 && (
-            <p className="px-2.5 py-3 text-sm text-[var(--text-tertiary)]">
-              Todavía no hay permisos cargados. Se cargan en Libro CTP · Contratos.
+            <p className="px-2.5 pb-1.5 pt-1 text-xs text-[var(--text-tertiary)]">
+              Lo que elijas queda fijo en todo el panel y se propone en cada operación que
+              registres.
             </p>
-          )}
 
-          {contratos.map((c) => {
-            const elegido = c.id === activo?.id;
-            const vencido = estaVencido(c.vigenciaHasta);
-            return (
+            {activo && (
+              /* ADR-432: del permiso elegido a su ficha — Libro CTP → Contratos
+               → este permiso → Volumen, desde cualquier libro que lleve el chip. */
               <button
-                key={c.id}
                 type="button"
-                role="option"
-                aria-selected={elegido}
-                onClick={() => elegir({ id: c.id, codigo: c.codigo, titular: c.alias ?? c.titularNombre ?? null })}
-                className="flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-[var(--surface-sunken)]"
+                onClick={() => {
+                  setAbierto(false);
+                  abrirFichaDelPermiso(activo.id, "volumen");
+                }}
+                className="mb-1.5 flex w-full items-center gap-2 rounded-lg border border-[var(--rule-base)] px-2.5 py-2 text-left text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               >
-                <Check
-                  className={`mt-0.5 h-4 w-4 shrink-0 ${elegido ? "opacity-100" : "opacity-0"}`}
-                  aria-hidden="true"
-                />
+                <Layers className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
-                    {c.codigo}
-                  </span>
-                  <span className="block truncate text-xs text-[var(--text-tertiary)]">
-                    {c.alias ?? c.titularNombre}
-                    {c.tipo ? ` · ${c.tipo}` : ""}
+                  Ver volumen y trazabilidad
+                  <span className="block truncate font-mono text-xs font-normal text-[var(--text-tertiary)]">
+                    {activo.codigo}
                   </span>
                 </span>
-                {vencido && (
-                  <span className="mt-0.5 shrink-0 rounded-md bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
-                    vencido
-                  </span>
-                )}
+                <ArrowRight
+                  className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]"
+                  aria-hidden="true"
+                />
               </button>
-            );
-          })}
-        </div>,
-        document.body,
-      )}
+            )}
+
+            <div role="listbox" aria-label="Permiso de trabajo">
+              <button
+                type="button"
+                role="option"
+                aria-selected={!activo}
+                onClick={() => elegir(null)}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              >
+                <Check
+                  className={`h-4 w-4 shrink-0 ${activo ? "opacity-0" : "opacity-100"}`}
+                  aria-hidden="true"
+                />
+                <span>Sin permiso fijo</span>
+                <span className="ml-auto text-xs text-[var(--text-tertiary)]">
+                  cada operación pide el suyo
+                </span>
+              </button>
+
+              {cargando && (
+                <p className="px-2.5 py-3 text-sm text-[var(--text-tertiary)]">
+                  Cargando permisos…
+                </p>
+              )}
+              {error && !cargando && (
+                <p className="px-2.5 py-3 text-sm text-[var(--data-error-600)]">{error}</p>
+              )}
+              {!cargando && !error && contratos.length === 0 && (
+                <p className="px-2.5 py-3 text-sm text-[var(--text-tertiary)]">
+                  Todavía no hay permisos cargados. Se cargan en Libro CTP · Contratos.
+                </p>
+              )}
+
+              {contratos.map((c) => {
+                const elegido = c.id === activo?.id;
+                const vencido = estaVencido(c.vigenciaHasta);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    role="option"
+                    aria-selected={elegido}
+                    onClick={() =>
+                      elegir({
+                        id: c.id,
+                        codigo: c.codigo,
+                        titular: c.alias ?? c.titularNombre ?? null,
+                      })
+                    }
+                    className="flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-[var(--surface-sunken)]"
+                  >
+                    <Check
+                      className={`mt-0.5 h-4 w-4 shrink-0 ${elegido ? "opacity-100" : "opacity-0"}`}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
+                        {c.codigo}
+                      </span>
+                      <span className="block truncate text-xs text-[var(--text-tertiary)]">
+                        {c.alias ?? c.titularNombre}
+                        {c.tipo ? ` · ${c.tipo}` : ""}
+                      </span>
+                    </span>
+                    {vencido && (
+                      <span className="mt-0.5 shrink-0 rounded-md bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+                        vencido
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

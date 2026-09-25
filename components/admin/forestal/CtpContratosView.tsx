@@ -9,12 +9,16 @@
  *  2. el balance del que se elija: lo que se puso, lo que debería volver y a
  *     cuánto sale el m³.
  *
+ * La ficha abierta vive en la URL (`?contrato=<id>`, ADR-432): un link abre ese
+ * permiso, el «atrás» del navegador vuelve a la lista y el chip de la banda
+ * («Ver volumen y trazabilidad») salta directo acá.
+ *
  * No lee el período del libro a propósito: un contrato se mira entero —desde
  * que se firmó hasta hoy—, no por trimestre. El endpoint acepta rango por si
  * alguna vez hace falta acotarlo.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, FileSignature, RefreshCw } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -23,10 +27,11 @@ import {
   type CandidatoContrato,
   type ResultadoSembrado,
 } from "@/hooks/use-contratos";
-import CtpContratoBalance from "./CtpContratoBalance";
+import CtpContratoFicha from "./CtpContratoFicha";
 import CtpContratosCandidatos from "./CtpContratosCandidatos";
 import CtpContratosLista from "./CtpContratosLista";
 import CtpPermisosIncompletos from "./CtpPermisosIncompletos";
+import { contratoDeUrl, escribirContratoEnUrl } from "./ficha-del-permiso-url";
 
 /** «3 ingresos, 1 corrida y 2 lotes», sin listar los bloques en cero. */
 function loAtado(r: ResultadoSembrado): string {
@@ -40,11 +45,24 @@ function loAtado(r: ResultadoSembrado): string {
 }
 
 export default function CtpContratosView() {
-  const { contratos,
-    balances, candidatos, cargando, error, sembrando, recargar, sembrar } = useContratos();
-  /** Qué contrato está abierto. Null = la lista. */
-  const [elegido, setElegido] = useState<string | null>(null);
+  const { contratos, balances, candidatos, cargando, error, sembrando, recargar, sembrar } =
+    useContratos();
+  /** Qué contrato está abierto. Null = la lista. Lo dice la URL. */
+  const [elegido, setElegido] = useState<string | null>(() => contratoDeUrl());
   const [ultimoSembrado, setUltimoSembrado] = useState<ResultadoSembrado | null>(null);
+
+  /* El «atrás» del navegador, y el salto desde el chip de la banda con el
+     libro ya abierto (`abrirFichaDelPermiso` dispara un popstate). */
+  useEffect(() => {
+    const onPop = () => setElegido(contratoDeUrl());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const abrir = (id: string | null) => {
+    setElegido(id);
+    escribirContratoEnUrl(id);
+  };
 
   const alSembrar = (lista: CandidatoContrato[]) => {
     setUltimoSembrado(null);
@@ -54,7 +72,16 @@ export default function CtpContratosView() {
   };
 
   if (elegido) {
-    return <CtpContratoBalance contratoId={elegido} onVolver={() => setElegido(null)} />;
+    /* `key`: al saltar de un permiso a otro la ficha se monta de nuevo, así
+       nunca pinta las cifras del anterior bajo el código del nuevo. */
+    return (
+      <CtpContratoFicha
+        key={elegido}
+        contratoId={elegido}
+        inicial={contratos.find((c) => c.id === elegido) ?? null}
+        onVolver={() => abrir(null)}
+      />
+    );
   }
 
   return (
@@ -121,7 +148,11 @@ export default function CtpContratosView() {
           libro…
         </p>
       ) : (
-        <CtpContratosLista contratos={contratos} balances={balances} onElegir={(c) => setElegido(c.id)} />
+        <CtpContratosLista
+          contratos={contratos}
+          balances={balances}
+          onElegir={(c) => abrir(c.id)}
+        />
       )}
     </div>
   );

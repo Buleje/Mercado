@@ -63,7 +63,8 @@ import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-ex
 import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
 import { abrirDossierFiscalizacion } from "@/lib/forestal/ctp-dossier-abrir";
 import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
-import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { useVistaModulo, type ParamsDeVista } from "@/hooks/use-vista-modulo";
+import { PARAM_CONTRATO, PARAM_SECCION_FICHA } from "./ficha-del-permiso-url";
 import CtpPeriodPicker, { type CtpCustomRange } from "./CtpPeriodPicker";
 import CtpIngresosView from "./CtpIngresosView";
 import CtpOperacionSwitcher from "./CtpOperacionSwitcher";
@@ -261,6 +262,10 @@ const SIN_PERIODO: CtpView[] = [
   "reportes",
 ];
 
+const PARAMS_DE_VISTA_CTP: ParamsDeVista<CtpView> = {
+  contratos: [PARAM_CONTRATO, PARAM_SECCION_FICHA],
+};
+
 export default function CTPLibroOperaciones() {
   /** Un solo estado de cierres para el asistente y el historial. */
   const cierres = useCtpCierres();
@@ -272,6 +277,10 @@ export default function CTPLibroOperaciones() {
     CTP_MODULE_ID,
     CTP_VIEW_KEYS_TIPADAS,
     "ingresos",
+    undefined,
+    /* La ficha abierta en Contratos (ADR-432) es de esa vista: al irse, se
+       borra, y volver a «Contratos» muestra la lista. */
+    { paramsDeVista: PARAMS_DE_VISTA_CTP },
   );
   // Default = trimestre, no "mes actual": una planta con un mes flojo abriría el
   // libro vacío teniendo datos, y "vacío al abrir" se lee como "roto".
@@ -317,11 +326,14 @@ export default function CTPLibroOperaciones() {
 
   /** Estable: la cabina y los paneles la pasan a efectos (atajos de teclado).
    *  El 2° argumento deja el destino filtrado — hoy sólo Ingresos lo entiende. */
-  const irA = useCallback((v: string, filtro?: CtpIngresosFiltroRapido) => {
-    setView(v as CtpView);
-    // El contador hace que repetir el MISMO salto vuelva a aplicar el filtro.
-    if (filtro) setFiltroIngresos((prev) => ({ tipo: filtro, n: (prev?.n ?? 0) + 1 }));
-  }, [setView]);
+  const irA = useCallback(
+    (v: string, filtro?: CtpIngresosFiltroRapido) => {
+      setView(v as CtpView);
+      // El contador hace que repetir el MISMO salto vuelva a aplicar el filtro.
+      if (filtro) setFiltroIngresos((prev) => ({ tipo: filtro, n: (prev?.n ?? 0) + 1 }));
+    },
+    [setView],
+  );
 
   // Levanta el handoff de sessionStorage → abre Ingresos pre-llenado. Se
   // dispara al montar (tab abierto en frío) y cada vez que el tab se re-activa

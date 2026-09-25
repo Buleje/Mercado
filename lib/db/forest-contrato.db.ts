@@ -13,6 +13,13 @@ import {
   type EstadoContrato,
   type TipoContrato,
 } from "@/lib/forestal/contratos";
+import {
+  armarVolumenDelPermiso,
+  type CorridaEntrada,
+  type DespachoEntrada,
+  type VolumenDelPermiso,
+} from "@/lib/forestal/volumen-del-permiso";
+import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 
 /**
  * ForestContratoDB — el permiso como eje del movimiento (ADR-421).
@@ -674,5 +681,202 @@ export class ForestContratoDB {
       cuentaCargos: { documentos: cargos._count._all, monto: n(cargos._sum.monto) },
       cuentaAbonos: { documentos: abonos._count._all, monto: n(abonos._sum.monto) },
     };
+  }
+
+  /**
+   * Volumen y trazabilidad del permiso (ADR-432): lo ingresado, lo consumido,
+   * lo producido por especie y tipo, lo despachado y el hilo guía → corrida →
+   * despacho. `null` si el contrato no es de este negocio (la ruta da 404).
+   *
+   * Dos tandas en paralelo, ninguna consulta por fila:
+   *  1. el contrato, sus guías vivas (mismo filtro que `balance()`), sus trozas
+   *     con el mapeo del patio (`trozasComoConsumibles`, ADR-431: el mismo
+   *     criterio de «recepcionada» y de «consumida/despachada vigente»), las
+   *     corridas atadas y los consumos de sus guías (con la corrida que comió,
+   *     para saber si es heredada o de otro permiso sin otra ida a la base);
+   *  2. todos los consumos de las corridas del permiso (la proporción de una
+   *     heredada), los tramos de despacho de esas corridas, los despachos que se
+   *     llevaron trozas y el código de los otros contratos.
+   *
+   * El criterio entero vive en `armarVolumenDelPermiso` (puro, testeado).
+   */
+  static async volumen(tenantId: string, contratoId: string): Promise<VolumenDelPermiso | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const vivaCorrida = { tenantId, deletedAt: null, status: { not: "anulado" } } as const;
+    const guiaViva = {
+      tenantId,
+      contratoId,
+      deletedAt: null,
+      status: { notIn: ["rechazado", "anulado"] },
+    } satisfies Prisma.WoodEntryWhereInput;
+    const corridaSelect = {
+      id: true,
+      lineNo: true,
+      entryDate: true,
+      section: true,
+      contratoId: true,
+      speciesCommon: true,
+      productType: true,
+      quantity: true,
+      unit: true,
+      pieces: true,
+      materiaPrimaRef: true,
+    } satisfies Prisma.ForestCtpEntrySelect;
+
+    const [contrato, guias, trozas, atadas, consumosDeGuias] = await Promise.all([
+      prisma.forestContrato.findFirst({ where: { tenantId, id: contratoId, deletedAt: null }, select: { id: true, codigo: true } }),
+      prisma.woodEntry.findMany({
+        where: guiaViva,
+        select: {
+          id: true,
+          gtfNumber: true,
+          entryDate: true,
+          fechaRecepcion: true,
+          speciesCommonName: true,
+          productType: true,
+          volumeM3: true,
+          pieces: true,
+          providerName: true,
+        },
+      }),
+      WoodEntriesDB.trozasComoConsumibles(tenantId, { contratoId }),
+      prisma.forestCtpEntry.findMany({
+        where: { ...vivaCorrida, contratoId, section: "produccion" },
+        select: corridaSelect,
+      }),
+      prisma.forestCtpConsumo.findMany({
+        where: { tenantId, woodEntry: guiaViva, ctpEntry: vivaCorrida },
+        select: { id: true, woodEntryId: true, volumeM3: true, ctpEntry: { select: corridaSelect } },
+      }),
+    ]);
+    if (!contrato) return null;
+
+    type CorridaFila = (typeof atadas)[number];
+    const aCorrida = (c: CorridaFila): CorridaEntrada => ({
+      id: c.id,
+      lineNo: c.lineNo,
+      fecha: c.entryDate.toISOString(),
+      contratoId: c.contratoId,
+      especie: txt(c.speciesCommon),
+      tipo: txt(c.productType),
+      cantidad: Number(c.quantity ?? 0),
+      unidad: txt(c.unit),
+      piezas: c.pieces,
+      lote: txt(c.materiaPrimaRef),
+    });
+
+    /* Las corridas del permiso: atadas + las de producción que comieron de acá
+       (con o sin contrato — la pura decide si es heredada o de otro permiso). */
+    const corridasPorId = new Map<string, CorridaFila>(atadas.map((c) => [c.id, c]));
+    for (const cs of consumosDeGuias) {
+      if (cs.ctpEntry.section === "produccion" && !corridasPorId.has(cs.ctpEntry.id)) {
+        corridasPorId.set(cs.ctpEntry.id, cs.ctpEntry);
+      }
+    }
+    const idsDelPermiso = [...corridasPorId.values()]
+      .filter((c) => c.contratoId === contratoId || c.contratoId == null)
+      .map((c) => c.id);
+    const otrosContratos = [
+      ...new Set(
+        [...corridasPorId.values()]
+          .map((c) => c.contratoId)
+          .filter((id): id is string => id != null && id !== contratoId),
+      ),
+    ];
+    const despachosDeTrozas = [
+      ...new Set(trozas.map((t) => t.despachadaEnId).filter((id): id is string => Boolean(id))),
+    ];
+
+    const [consumosDeCorridas, origenes, despachosSueltos, codigos] = await Promise.all([
+      idsDelPermiso.length
+        ? prisma.forestCtpConsumo.findMany({
+            where: { tenantId, ctpEntryId: { in: idsDelPermiso } },
+            select: { id: true, woodEntryId: true, ctpEntryId: true, volumeM3: true },
+          })
+        : Promise.resolve([]),
+      idsDelPermiso.length
+        ? prisma.forestCtpDespachoOrigen.findMany({
+            where: { tenantId, produccionEntryId: { in: idsDelPermiso }, despacho: vivaCorrida },
+            select: {
+              despachoEntryId: true,
+              produccionEntryId: true,
+              quantity: true,
+              despacho: {
+                select: { id: true, lineNo: true, entryDate: true, gtfNumber: true, destino: true, speciesCommon: true, productType: true },
+              },
+            },
+          })
+        : Promise.resolve([]),
+      despachosDeTrozas.length
+        ? prisma.forestCtpEntry.findMany({
+            where: { ...vivaCorrida, id: { in: despachosDeTrozas } },
+            select: { id: true, lineNo: true, entryDate: true, gtfNumber: true, destino: true, speciesCommon: true, productType: true },
+          })
+        : Promise.resolve([]),
+      otrosContratos.length
+        ? /* Sin filtrar la baja: una corrida atada a un permiso dado de baja sigue diciendo a cuál. */
+          prisma.forestContrato.findMany({ where: { tenantId, id: { in: otrosContratos } }, select: { id: true, codigo: true } })
+        : Promise.resolve([]),
+    ]);
+
+    const despachos = new Map<string, DespachoEntrada>();
+    for (const d of [...origenes.map((o) => o.despacho), ...despachosSueltos]) {
+      despachos.set(d.id, {
+        id: d.id,
+        lineNo: d.lineNo,
+        fecha: d.entryDate.toISOString(),
+        gtf: txt(d.gtfNumber),
+        destino: txt(d.destino),
+        especie: txt(d.speciesCommon),
+        tipo: txt(d.productType),
+      });
+    }
+
+    return armarVolumenDelPermiso({
+      contratoId,
+      codigo: contrato.codigo,
+      guias: guias.map((g) => ({
+        id: g.id,
+        gtf: g.gtfNumber,
+        fechaAsiento: g.entryDate.toISOString(),
+        fechaRecepcion: iso(g.fechaRecepcion),
+        especie: g.speciesCommonName,
+        producto: g.productType,
+        m3: Number(g.volumeM3 ?? 0),
+        piezas: g.pieces,
+        proveedor: txt(g.providerName),
+      })),
+      trozas,
+      consumos: [
+        ...consumosDeGuias.map((cs) => ({
+          id: cs.id,
+          woodEntryId: cs.woodEntryId,
+          corridaId: cs.ctpEntry.id,
+          corridaLineNo: cs.ctpEntry.lineNo,
+          corridaFecha: cs.ctpEntry.entryDate.toISOString(),
+          m3: Number(cs.volumeM3 ?? 0),
+        })),
+        /* Repite los de arriba cuando la corrida comió de acá: la pura deduplica por id. */
+        ...consumosDeCorridas.map((cs) => {
+          const c = corridasPorId.get(cs.ctpEntryId);
+          return {
+            id: cs.id,
+            woodEntryId: cs.woodEntryId,
+            corridaId: cs.ctpEntryId,
+            corridaLineNo: c?.lineNo ?? null,
+            corridaFecha: c?.entryDate.toISOString() ?? "",
+            m3: Number(cs.volumeM3 ?? 0),
+          };
+        }),
+      ],
+      corridas: [...corridasPorId.values()].map(aCorrida),
+      codigosDeContratos: Object.fromEntries(codigos.map((c) => [c.id, c.codigo])),
+      origenes: origenes.map((o) => ({
+        despachoId: o.despachoEntryId,
+        corridaId: o.produccionEntryId,
+        cantidad: Number(o.quantity ?? 0),
+      })),
+      despachos: [...despachos.values()],
+    });
   }
 }

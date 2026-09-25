@@ -24,6 +24,7 @@ import {
   type Contrato,
   type TipoContrato,
 } from "@/lib/forestal/contratos";
+import type { VolumenDelPermiso } from "@/lib/forestal/volumen-del-permiso";
 
 /** Un código que ya está escrito en el libro y todavía no es contrato. */
 export interface CandidatoContrato {
@@ -94,7 +95,10 @@ export function useContratos() {
       ]);
       if (!rl.ok) throw new Error(await motivo(rl, "cargar los contratos"));
       if (!rc.ok) throw new Error(await motivo(rc, "buscar los permisos del libro"));
-      const lista = (await rl.json()) as { contratos?: Contrato[]; balances?: Record<string, BalanceContrato> };
+      const lista = (await rl.json()) as {
+        contratos?: Contrato[];
+        balances?: Record<string, BalanceContrato>;
+      };
       const cand = (await rc.json()) as { candidatos?: CandidatoContrato[] };
       if (esta === cargasRef.current.ultima && cambiosAlSalir === cargasRef.current.cambios) {
         setContratos(lista.contratos ?? []);
@@ -189,7 +193,13 @@ export function useContratos() {
  * llegar después de la del segundo y pintar el balance equivocado bajo el
  * título correcto — que es la peor forma de mentir de una pantalla de plata.
  */
-export function useBalanceContrato(contratoId: string | null) {
+export function useBalanceContrato(
+  contratoId: string | null,
+  /** La ficha lo pide recién cuando se abre «Plata» (ADR-432): la sección
+   *  por defecto es «Volumen» y sumar la plata de un permiso que nadie mira
+   *  es una consulta tirada. Al volver a abrirla se refresca. */
+  activo = true,
+) {
   const [contrato, setContrato] = useState<Contrato | null>(null);
   const [balance, setBalance] = useState<BalanceContrato | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -226,8 +236,8 @@ export function useBalanceContrato(contratoId: string | null) {
   }, [contratoId]);
 
   useEffect(() => {
-    void cargar();
-  }, [cargar]);
+    if (activo) void cargar();
+  }, [cargar, activo]);
 
   return {
     contrato,
@@ -238,4 +248,67 @@ export function useBalanceContrato(contratoId: string | null) {
     error,
     recargar: cargar,
   };
+}
+
+/**
+ * Volumen y trazabilidad de UN permiso (ADR-432): lo ingresado, lo consumido,
+ * lo producido por especie y por tipo, lo despachado y el hilo guía → corrida →
+ * despacho. Llega armado del servidor (`armarVolumenDelPermiso`); acá no se
+ * suma nada.
+ *
+ * `activo`: se pide sólo con «Volumen» o «Trazabilidad» abiertas — las dos
+ * leen la misma respuesta, así que pasar de una a la otra no vuelve a pedirla.
+ *
+ * Misma guarda que el balance: al saltar de un permiso a otro, la respuesta
+ * vieja no pinta sus especies bajo el código nuevo.
+ */
+export function useVolumenContrato(contratoId: string | null, activo = true) {
+  const [contrato, setContrato] = useState<Contrato | null>(null);
+  const [volumen, setVolumen] = useState<VolumenDelPermiso | null>(null);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const cargasRef = useRef(0);
+
+  const cargar = useCallback(async () => {
+    if (!contratoId) {
+      setContrato(null);
+      setVolumen(null);
+      return;
+    }
+    const esta = ++cargasRef.current;
+    setCargando(true);
+    setError(null);
+    try {
+      const r = await fetch(`${BASE}/${encodeURIComponent(contratoId)}?volumen=1`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!r.ok) throw new Error(await motivo(r, "cargar el volumen del permiso"));
+      const j = (await r.json()) as { contrato?: Contrato; volumen?: VolumenDelPermiso };
+      if (esta !== cargasRef.current) return;
+      setContrato(j.contrato ?? null);
+      /* Un volumen de OTRO permiso (o ninguno) no se pinta: sin esto, un
+         servidor que todavía no arma el volumen dejaría la sección en blanco
+         sin decir nada. */
+      if (!j.volumen || j.volumen.contratoId !== contratoId) {
+        setVolumen(null);
+        setError("El servidor no devolvió el volumen de este permiso. Reintenta en un momento.");
+        return;
+      }
+      setVolumen(j.volumen);
+    } catch (e) {
+      if (esta === cargasRef.current) {
+        setError(e instanceof Error ? e.message : String(e));
+        setVolumen(null);
+      }
+    } finally {
+      if (esta === cargasRef.current) setCargando(false);
+    }
+  }, [contratoId]);
+
+  useEffect(() => {
+    if (activo) void cargar();
+  }, [cargar, activo]);
+
+  return { contrato, volumen, cargando, error, recargar: cargar };
 }

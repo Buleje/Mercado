@@ -7,6 +7,11 @@
  * pregunta real —«¿cuánto llevo puesto en este permiso y a cuánto me sale el
  * m³?»— y recién después el detalle por bloque.
  *
+ * Desde ADR-432 es la sección «Plata» de la ficha del permiso
+ * (`CtpContratoFicha`): la identidad del papel y el botón de volver viven en la
+ * ficha; acá queda todo lo que había debajo, sin cambios. Los datos llegan de
+ * la ficha, que los pide recién cuando se abre esta sección.
+ *
  * Dos honestidades que la pantalla NO puede saltear:
  *  · lo que no se puede calcular se escribe «—», nunca «S/ 0»;
  *  · si hay ingresos sin precio, se dice CUÁNTOS arriba de todo: un balance al
@@ -16,27 +21,17 @@
 
 import {
   AlertTriangle,
-  ArrowLeft,
   Boxes,
   Coins,
   RefreshCw,
   Scale,
   TreePine,
 } from "@buleje/design-system/icons";
-import { Kicker, SectionTitle, StatCard, WarningAlert } from "@buleje/design-system";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { Kicker, StatCard, WarningAlert } from "@buleje/design-system";
 import { fmtM3, fmtPct } from "@/lib/forestal/cubicacion-formato";
-import { useBalanceContrato } from "@/hooks/use-contratos";
+import type { BalanceContrato, resumirBalance } from "@/lib/forestal/contratos";
 import CtpContratoCuentas from "./CtpContratoCuentas";
-import {
-  ESTADO_CLASE,
-  ESTADO_LABEL,
-  TIPO_LABEL,
-  hayEgresosImputados,
-  hayMovimiento,
-  soles,
-  vigenciaTexto,
-} from "./contratos-ui";
+import { hayEgresosImputados, hayMovimiento, soles } from "./contratos-ui";
 
 /** Una cifra grande del encabezado: rótulo arriba, número en mono abajo. */
 function CifraHero({
@@ -73,15 +68,21 @@ function CifraHero({
 }
 
 export default function CtpContratoBalance({
-  contratoId,
-  onVolver,
+  balance,
+  resumen,
+  cargando,
+  error,
+  recargar,
 }: {
-  contratoId: string;
-  onVolver: () => void;
+  balance: BalanceContrato | null;
+  resumen: ReturnType<typeof resumirBalance> | null;
+  cargando: boolean;
+  error: string | null;
+  recargar: () => Promise<void>;
 }) {
-  const { contrato, balance, resumen, cargando, error, recargar } = useBalanceContrato(contratoId);
-
-  if (cargando && !balance) {
+  /* Sin balance y sin error = todavía viaja (el primer cuadro después de abrir
+     «Plata», antes de que el efecto marque `cargando`, también cuenta). */
+  if ((cargando || !error) && !balance) {
     return (
       <p className="flex items-center gap-2 px-1 py-8 text-sm text-[var(--text-tertiary)]">
         <RefreshCw className="h-4 w-4 animate-spin" aria-hidden /> Sumando los movimientos del
@@ -96,26 +97,17 @@ export default function CtpContratoBalance({
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>{error}</span>
         </p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => void recargar()}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-4 text-sm font-bold text-[var(--accent-dark)] hover:bg-primary/10 dark:text-[var(--accent)]"
-          >
-            <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
-          </button>
-          <button
-            type="button"
-            onClick={onVolver}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden /> Volver a la lista
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => void recargar()}
+          className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-4 text-sm font-bold text-[var(--accent-dark)] hover:bg-primary/10 dark:text-[var(--accent)]"
+        >
+          <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
+        </button>
       </div>
     );
   }
-  if (!contrato || !balance || !resumen) return null;
+  if (!balance || !resumen) return null;
 
   const m = balance.madera;
   const sinValorizar = m.sinValorizar ?? 0;
@@ -133,57 +125,6 @@ export default function CtpContratoBalance({
 
   return (
     <div className="space-y-4">
-      {/* ── Identidad del papel ── */}
-      <header className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <button
-              type="button"
-              onClick={onVolver}
-              className="mb-2 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Todos los contratos
-            </button>
-            <div className="flex items-center gap-1.5">
-              <SectionTitle as="h2" className="font-mono break-all">
-                {contrato.codigo}
-              </SectionTitle>
-              <InfoTip
-                title="Balance del contrato"
-                what="Todo se calcula al leer: nada se guarda como saldo."
-                affects="Un movimiento entra a este balance cuando se registra con este contrato."
-              />
-            </div>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              {contrato.alias ? `${contrato.alias} · ` : ""}
-              <b className="text-[var(--text-primary)]">{contrato.titularNombre}</b>
-              {contrato.region ? ` · ${contrato.region}` : ""}
-            </p>
-            <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
-              {contrato.tipo ? TIPO_LABEL[contrato.tipo] : "Tipo sin definir"} ·{" "}
-              {vigenciaTexto(contrato.vigenciaDesde, contrato.vigenciaHasta)}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${ESTADO_CLASE[contrato.estado]}`}
-            >
-              {ESTADO_LABEL[contrato.estado]}
-            </span>
-            <button
-              type="button"
-              onClick={() => void recargar()}
-              disabled={cargando}
-              aria-label="Volver a sumar los movimientos"
-              title="Volver a sumar los movimientos"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} aria-hidden />
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* ── Las dos cifras que se preguntan primero ── */}
       <section className="grid gap-5 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--surface-sunken)] p-5 sm:grid-cols-2">
         <CifraHero

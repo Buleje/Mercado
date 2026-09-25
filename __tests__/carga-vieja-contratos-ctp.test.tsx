@@ -104,7 +104,12 @@ beforeEach(() => {
   );
 });
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  /* La ficha abierta vive en la URL (`?contrato=`, ADR-432): sin limpiarla, el
+     test siguiente montaría la pantalla ya parada en un permiso. */
+  window.history.replaceState(null, "", "/");
+});
 
 const de = (url: string, metodo = "GET") =>
   pendientes.filter((p) => p.metodo === metodo && p.url === url);
@@ -184,7 +189,15 @@ describe("Balance del contrato — lo que no se puede saber es «—», nunca «
     await act(async () => {
       screen.getByRole("button", { name: /Ver el balance de CON-25-PAS-0033/ }).click();
     });
+    /* ADR-432: la ficha abre en «Volumen» y la plata se pide recién al abrir
+       «Plata» — sumarla para una sección que nadie mira es una consulta tirada. */
     const balanceUrl = `${BASE}/CON-25-PAS-0033?balance=1`;
+    await waitFor(() => expect(de(`${BASE}/CON-25-PAS-0033?volumen=1`)).toHaveLength(1));
+    expect(de(balanceUrl)).toHaveLength(0);
+    expect(window.location.search).toBe("?contrato=CON-25-PAS-0033");
+    await act(async () => {
+      screen.getByRole("radio", { name: /Plata/ }).click();
+    });
     await waitFor(() => expect(de(balanceUrl)).toHaveLength(1));
     await resolver(de(balanceUrl)[0], {
       contrato: contrato("CON-25-PAS-0033"),

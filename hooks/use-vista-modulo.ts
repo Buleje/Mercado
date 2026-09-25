@@ -54,6 +54,9 @@ export const PARAMS_DE_VISTA = [
   /* La especie de los indicadores de Saldos: su propio parámetro (ver
      `PARAM_ESPECIE_KPI`), y se limpia igual que los otros. */
   "especieKpi",
+  /* El permiso abierto en Libro CTP → Contratos (ADR-432,
+     `ficha-del-permiso-url`). Su sección viaja en `seccion`, ya listado. */
+  "contrato",
 ] as const;
 
 /** Lee la vista que pide la URL, validada contra las que el módulo declara. */
@@ -62,6 +65,20 @@ function vistaDeUrl(validas: readonly string[], param: string): string | null {
   const v = new URLSearchParams(window.location.search).get(param);
   return v && validas.includes(v) ? v : null;
 }
+
+/**
+ * Parámetros de la URL que son de UNA vista y se borran al salir de ella.
+ *
+ * `navigateTab` ya limpia `PARAMS_DE_VISTA` al cambiar de MÓDULO; esto es lo
+ * mismo pero entre vistas del mismo módulo, y sólo para las que lo declaran.
+ * Sin esto, en el Libro CTP un `?contrato=` quedaba vivo al pasar a Consumos y
+ * «Contratos» reabría la última ficha en vez de la lista (ADR-432). Es opt-in y
+ * por vista a propósito: Saldos conserva su `?seccion=` y sus filtros al ir y
+ * volver, y eso no cambia.
+ *
+ * El «atrás» no pasa por acá: cada entrada del historial trae su propia URL.
+ */
+export type ParamsDeVista<T extends string> = Partial<Record<T, readonly string[]>>;
 
 export interface UseVistaModuloResult<T extends string> {
   vista: T;
@@ -89,8 +106,17 @@ export function useVistaModulo<T extends string>(
    * módulo, así que sólo sobrevive el que se eligió DENTRO de este.
    */
   forzada?: string,
+  opciones?: { paramsDeVista?: ParamsDeVista<T> },
 ): UseVistaModuloResult<T> {
-  return useVistaEnParam(moduleId, validas, porDefecto, forzada, PARAM_VISTA);
+  return useVistaEnParam(
+    moduleId,
+    validas,
+    porDefecto,
+    forzada,
+    PARAM_VISTA,
+    true,
+    opciones?.paramsDeVista,
+  );
 }
 
 /**
@@ -127,8 +153,13 @@ function useVistaEnParam<T extends string>(
   forzada: string | undefined,
   param: string,
   recordar = true,
+  paramsDeVista?: ParamsDeVista<T>,
 ): UseVistaModuloResult<T> {
   const storageKey = `admin-last-tab-${moduleId}`;
+  /* En un ref: quien llama lo pasa como literal y un objeto nuevo en cada
+     render no tiene que regenerar `irA`. */
+  const paramsDeVistaRef = useRef(paramsDeVista);
+  paramsDeVistaRef.current = paramsDeVista;
 
   const [vista, setVista] = useState<T>(() => {
     if (typeof window === "undefined") {
@@ -192,7 +223,9 @@ function useVistaEnParam<T extends string>(
       setVista(v as T);
       try {
         const url = new URL(window.location.href);
-        if (url.searchParams.get(param) === v) return;
+        const saliendo = url.searchParams.get(param);
+        if (saliendo === v) return;
+        for (const p of paramsDeVistaRef.current?.[saliendo as T] ?? []) url.searchParams.delete(p);
         url.searchParams.set(param, v);
         window.history.pushState(null, "", url.toString());
       } catch {

@@ -14,6 +14,10 @@ import { ESTADOS_CONTRATO, TIPOS_CONTRATO } from "@/lib/forestal/contratos";
  * GET    el contrato · `?balance=1` agrega madera, producción, gastos, fletes,
  *        adelantos y cuenta corriente. `desde`/`hasta` acotan el período; sin
  *        ellos es la vida entera del permiso, que es como se mira un contrato.
+ *        `?usos=1` cuenta lo que cuelga de él (para avisar antes de la baja).
+ *        `?volumen=1` agrega el volumen y la trazabilidad (ADR-432): ingresado,
+ *        consumido, producido por especie y tipo, despachado y el hilo guía →
+ *        corrida → despacho (`VolumenDelPermiso`).
  * PATCH  edita los datos del papel, o `{ accion: "vincular" }` ata todo lo que
  *        ya trae ese código escrito en el libro.
  */
@@ -76,6 +80,11 @@ export const GET = withApiHandler("forestal-contrato-get", async (req: NextReque
     if (!contrato) return NextResponse.json({ error: "not_found" }, { status: 404 });
     if (url.searchParams.get("usos") === "1") {
       return NextResponse.json({ contrato, usos: await ForestContratoDB.usos(auth.tenantId, id) });
+    }
+    if (url.searchParams.get("volumen") === "1") {
+      const volumen = await ForestContratoDB.volumen(auth.tenantId, id);
+      if (!volumen) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ contrato, volumen });
     }
     if (url.searchParams.get("balance") !== "1") return NextResponse.json({ contrato });
     const balance = await ForestContratoDB.balance(auth.tenantId, id, {
