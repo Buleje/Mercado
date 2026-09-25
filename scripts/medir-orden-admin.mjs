@@ -13,6 +13,10 @@
  *   titulos     cuántos h2/h3/h4 hay y si alguno MANDA (sin h2, ninguno manda)
  *   botones     botones visibles con texto (los de sólo ícono no suman ruido)
  *   tablas      cuántas <table> visibles hay en la misma pantalla
+ *   ayuda       palabras de texto corrido a la vista (párrafos de 6+ palabras
+ *               fuera de tablas, botones y popovers): subtítulos, consejos y
+ *               notas que van en un ⓘ (`InfoTip`) — Brandon 2026-09-24,
+ *               «mucho texto por todos lados».
  *   gemelos     pares de títulos casi iguales («El patio, troza por troza» vs
  *               «El patio, pieza por pieza»: el síntoma que destapó todo esto)
  *
@@ -37,7 +41,7 @@ const ESPERA_MS = Number(process.env.ESPERA_MS ?? 9000);
 
 /* Los umbrales de la ley (ui-components.md). Un número por regla, para que
    cambiar la ley sea cambiar una línea y no buscarla en el código. */
-const LEY = { pantallas: 2.5, botones: 25, tablas: 3, titulosSinJerarquia: 5 };
+const LEY = { pantallas: 2.5, botones: 25, tablas: 3, titulosSinJerarquia: 5, ayuda: 60 };
 
 /** Las pestañas que resuelve el router del admin — la fuente es el propio código,
  *  no una lista escrita a mano que se desactualiza. */
@@ -68,6 +72,7 @@ function puntaje(m) {
   if (m.pantallas > LEY.pantallas) p += (m.pantallas - LEY.pantallas) * 10;
   if (m.botones > LEY.botones) p += (m.botones - LEY.botones) * 0.5;
   if (m.tablas > LEY.tablas) p += (m.tablas - LEY.tablas) * 5;
+  if ((m.ayuda ?? 0) > LEY.ayuda) p += (m.ayuda - LEY.ayuda) * 0.1;
   const planos = m.h3 + m.h4;
   if (m.h2 === 0 && planos > LEY.titulosSinJerarquia) p += (planos - LEY.titulosSinJerarquia) * 2;
   p += m.gemelos.length * 8;
@@ -114,6 +119,12 @@ async function main() {
           titulos: heads.map((h) => (h.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 60)).filter(Boolean),
           botones: visibles("button").filter((b) => (b.textContent ?? "").trim().length > 2).length,
           tablas: visibles("table").length,
+          /* Texto corrido a la vista: lo que debería vivir en un ⓘ. */
+          ayuda: visibles("p")
+            .filter((e) => !e.closest("table,button,[role=tooltip],[role=dialog],[role=menu],label,nav,[role=tablist]"))
+            .map((e) => (e.innerText ?? "").trim().split(/\s+/).filter(Boolean).length)
+            .filter((n) => n >= 6)
+            .reduce((a, n) => a + n, 0),
         };
       });
       const fila = { tab, ...m, gemelos: gemelos(m.titulos) };
@@ -121,7 +132,7 @@ async function main() {
       filas.push(fila);
       const marca = fila.puntaje === 0 ? "✅" : fila.puntaje < 10 ? "🟡" : "🔴";
       console.log(
-        `${marca} ${String(fila.puntaje).padStart(5)}  ${tab.padEnd(26)} ${String(m.pantallas).padStart(5)} pant · ${String(m.botones).padStart(3)} bot · ${m.tablas} tab · h2/h3/h4 ${m.h2}/${m.h3}/${m.h4}${fila.gemelos.length ? ` · ${fila.gemelos.length} gemelos` : ""}`,
+        `${marca} ${String(fila.puntaje).padStart(5)}  ${tab.padEnd(26)} ${String(m.pantallas).padStart(5)} pant · ${String(m.botones).padStart(3)} bot · ${m.tablas} tab · ${String(m.ayuda).padStart(4)} pal. ayuda · h2/h3/h4 ${m.h2}/${m.h3}/${m.h4}${fila.gemelos.length ? ` · ${fila.gemelos.length} gemelos` : ""}`,
       );
     } catch (err) {
       filas.push({ tab, error: String(err).slice(0, 160), puntaje: -1 });

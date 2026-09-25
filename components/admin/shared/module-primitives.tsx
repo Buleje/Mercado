@@ -10,6 +10,7 @@
  */
 
 import type React from "react";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 // ── Esqueletos de carga ─────────────────────────────────────────────────────
 // Un spinner centrado con "Cargando registros…" no dice nada mientras se
@@ -72,15 +73,19 @@ export function VistaHeader({
   titulo: string;
   /** Contexto corto: período, conteo. En mono, alineado al título. */
   meta?: string;
-  /** La explicación larga: tooltip, no pantalla. */
+  /** La explicación larga: va en el ⓘ al lado del título, no en pantalla. */
   hint?: string;
   /** Acciones de la vista, a la derecha. */
   children?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <p className="flex min-w-0 flex-wrap items-baseline gap-x-2" title={hint}>
+      {/* El `hint` era un `title` nativo: no se abre con el dedo ni con el
+          teclado. Ahora es el ⓘ del panel (2026-09-24), el mismo en todas las
+          vistas que explican con un ícono. */}
+      <p className="flex min-w-0 flex-wrap items-center gap-x-2">
         <strong className="text-sm font-bold text-[var(--text-primary)]">{titulo}</strong>
+        {hint && <InfoTip title={titulo} what={hint} />}
         {meta && <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>}
       </p>
       {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}

@@ -65,11 +65,12 @@ export function SecurityHero({
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Plataforma · Seguridad
               </p>
+              <div className="inline-flex flex-wrap items-center gap-2">
               <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                 Security Center
-              
-            <InfoTip side="bottom" title="Security Center" what="Monitorea la seguridad del superadmin: sesiones activas, accesos, auditoría y credenciales." affects="Solo el superadmin. Acá detectás y cortás accesos sospechosos a la plataforma." example="Si hay un login raro desde otra IP, lo ves acá y cerrás esa sesión." />
-          </h1>
+              </h1>
+              <InfoTip side="bottom" title="Security Center" what="Monitorea la seguridad del superadmin: sesiones activas, accesos, auditoría y credenciales." affects="Solo el superadmin. Acá detectas y cortas accesos sospechosos a la plataforma." example="Si hay un login raro desde otra IP, lo ves acá y cierras esa sesión." />
+              </div>
               <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
                 Estado consolidado de seguridad de la plataforma — sesiones, permisos,
                 vulnerabilidades, compliance y registro de auditoría.

@@ -37,5 +37,6 @@ Aplicada y medida en Trozas (5,4 → 1,7 pantallas), Secciones del LOTH (tabla d
 6. **Cabecera en una fila**: sin botones huérfanos en una fila propia. Si no entra, se compactan los botones (ícono + tooltip) antes que partir la fila.
 7. **≤ 2,5 pantallas de scroll** con todo en su estado por defecto.
 8. **Nada se borra al reorganizar.** Si algo parece sobrar, se dice; no se saca.
+9. **Explicar con ⓘ, no con párrafos** (Brandon 2026-09-24: «mucho texto por todos lados… un ícono y al pasar el mouse sus datos con ejemplos»). A la vista: título, dato y acción. Subtítulos, consejos, notas de «cómo se lee esta cifra» y leyendas → `InfoTip` (`components/superadmin/_shared/InfoTip.tsx`: `what` / `affects` / `example`, portal, abre con hover, clic, foco o toque) al lado del título. Avisos que piden acción: una línea + ⓘ con el detalle. Estado vacío: una frase. Lo que va dentro del ⓘ es texto o `<span>`, nunca `<p>`/`<div>`. Se mide en `medir-orden-admin.mjs` (columna «pal. ayuda», tope 60).
 
 Medir antes y después con `node scripts/medir-orden-admin.mjs` (pantallas, títulos por nivel, botones, tablas). «Quedó más ordenado» sin número es opinión.
