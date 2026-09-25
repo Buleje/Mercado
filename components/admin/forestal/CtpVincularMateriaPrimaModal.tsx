@@ -28,6 +28,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, Layers, Loader2, Ruler, X } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
@@ -518,9 +519,9 @@ export default function CtpVincularMateriaPrimaModal({
           className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
         >
           <div className="min-w-0">
-            <h3 className="flex items-center gap-2 font-display text-lg text-[var(--text-primary)]">
+            <CardTitle as="h3" className="flex items-center gap-2 font-display text-lg">
               <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Vincular materia prima
-            </h3>
+            </CardTitle>
             <p className="flex flex-wrap items-center gap-x-2 text-xs text-[var(--text-tertiary)]">
               <span>
                 Corrida N° {corrida.lineNo ?? "—"} · {corrida.especie ?? "sin especie"} ·{" "}

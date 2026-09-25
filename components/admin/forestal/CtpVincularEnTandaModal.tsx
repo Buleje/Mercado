@@ -23,6 +23,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, Layers, Loader2, X } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
@@ -283,9 +284,9 @@ export default function CtpVincularEnTandaModal({
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h3 className="flex items-center gap-2 font-display text-lg text-[var(--text-primary)]">
+              <CardTitle as="h3" className="flex items-center gap-2 font-display text-lg">
                 <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Ponerles el lote
-              </h3>
+              </CardTitle>
               <InfoTip
                 title="Ponerles el lote"
                 what="Las corridas no cambian: siguen siendo las mismas, sólo pasan a decir de qué madera salieron."
