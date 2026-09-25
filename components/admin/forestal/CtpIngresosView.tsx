@@ -14,6 +14,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { formatDateNumeric } from "@/lib/format";
 import { AlertCircle, PackageCheck, ThumbsDown, ThumbsUp } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import BulkActionsBar from "@/components/admin/shared/BulkActionsBar";
@@ -136,8 +137,7 @@ const costeableDeGuia = (guia: GuiaIngreso<WoodEntry>): GuiaACostear => ({
 });
 
 /** La fecha de hoy como se escribe en el papel. */
-const hoyPE = () =>
-  new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
+const hoyPE = () => formatDateNumeric(new Date());
 
 export default function CtpIngresosView({
   period,
@@ -337,7 +337,7 @@ export default function CtpIngresosView({
   const componerLegajo = useCallback((elegidos: WoodEntry[], acotado: number) => {
     if (elegidos.length === 0) return;
 
-    const hoy = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const hoy = formatDateNumeric(new Date());
     const cuerpos: string[] = [
       portadaLegajo({
         titular: "Libro de Operaciones del CTP",
