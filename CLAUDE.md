@@ -6,7 +6,7 @@
 
 **Quién pide y cómo (Brandon, 2026-09-11):** dueño-operador que prueba todo en el navegador; un mensaje trae 3-6 pedidos → hacer **todos**; «aplicarlo en general» → buscar las pantallas hermanas; elige **todas** las opciones y agrega texto libre (prioridad 1). Perfil completo: memoria `perfil-brandon-como-trabaja`.
 
-**Cierre proactivo (DEFAULT, Brandon 2026-06-29 → afilado 2026-09-11):** al terminar CASI SIEMPRE una tarea, cerrá con `AskUserQuestion` (multiSelect) de 3-4 opciones **independientes** + 1 recomendada, cada una con **evidencia medida** — una propuesta sin medición es una opinión. Antes de escribirlas, pasar las **8 lentes** (datos reales del tenant real · construido sin estrenar · pantalla hermana · unidad y vocabulario · accesibilidad real · cifra declarada · lo que entra sin tipear · capstone + quick win): skill `/ronda-de-mejoras`, memoria `propuestas-con-lentes`. No cierres en seco salvo «para acá» o paso intermedio.
+**Cierre proactivo (DEFAULT, Brandon 2026-06-29 → afilado 2026-09-11):** al terminar CASI SIEMPRE una tarea, cerrá con `AskUserQuestion` (multiSelect) de 3-4 opciones **independientes** + 1 recomendada, cada una con **evidencia medida** — una propuesta sin medición es una opinión — y **escrita en su idioma** (Hoy / Con esto / Ejemplo; sin nombres de código; tabla «Opción | Qué ganas | Ejemplo» antes del menú, Brandon 2026-09-25). Antes de escribirlas, pasar las **8 lentes** (datos reales del tenant real · construido sin estrenar · pantalla hermana · unidad y vocabulario · accesibilidad real · cifra declarada · lo que entra sin tipear · capstone + quick win): skill `/ronda-de-mejoras`, memoria `propuestas-con-lentes`. No cierres en seco salvo «para acá» o paso intermedio.
 
 ---
 

@@ -35,12 +35,21 @@ Si una lente no se pudo medir, se dice «sin medir» en la opción — no se dis
 
 `AskUserQuestion`, `multiSelect: true`, 3-4 opciones. Brandon elige casi siempre **todas** y agrega texto libre → cada opción tiene que poder ejecutarse sola y en paralelo con las otras.
 
-Cada opción = **Qué** (verbo + pantalla exacta) · **cuándo pasa** (la situación real) · **evidencia** (la cifra medida) · **tamaño**.
+Cada opción se escribe **en el idioma de Brandon, no en el del código** (pedido 2026-09-25: «fácil de leer, con ejemplos, sencillo, útil y creativo»):
+- **label** (≤5 palabras) = lo que gana, con verbo («Imprimir la ficha para SERFOR»).
+- **description** = **Hoy:** el problema con una cifra real · **Con esto:** lo que él hace, en pasos de pantalla · **Ejemplo:** una escena de su día. Cierra con el tamaño: rápido · medio · grande.
+- Prohibido adentro: nombres de archivo/componente, «grep», SQL, ADR-###, inglés. Valen sus palabras: GTF, m³, pt, corrida, permiso, guía, lote.
 
-Mezcla obligatoria: 1 bug/deuda visto de paso · 1 pulido de lo recién hecho · 1 capstone · 1 integración o dato nuevo. La **recomendada primera**, con «(Recomendado)».
+Antes del menú, una tabla en el chat: **Opción | Qué ganas | Ejemplo**. La medición técnica, si hace falta, en UNA línea después de la tabla.
+
+Mezcla obligatoria: 1 arreglo de algo visto de paso · 1 pulido de lo recién hecho · 1 grande que cambia el juego · 1 **creativa** (algo que no pediría: aviso por WhatsApp, foto que se lee sola, papel que se imprime listo). La **recomendada primera**, con «(Recomendado)».
 
 Ejemplo de opción bien escrita:
-> **La misma tira en «Producir lote» (Recomendado)** — Las otras dos pantallas donde se elige fecha a ciegas: al declarar con lote y en Consumos (grep: 3 `<input type="date">` sin contexto). Mismo componente, cero código duplicado. Medio.
+> **label:** Descontar la madera usada (Recomendado)
+> **description:** Hoy: 30 corridas de tu permiso de Huánuco no descuentan la madera que usaron, así que el saldo dice que te sobran 135 m³. Con esto: en el aviso aparece «Vincular», eliges de qué guías salió y el saldo baja solo. Ejemplo: cierras el mes y el saldo del permiso coincide con lo que ves en el patio. Medio.
+
+Ejemplo de lo que NO va (menú del 25-09 que Brandon rechazó):
+> «El vinculador en tanda ya existe (CtpVincularEnTandaModal) y hoy no se llega desde la ficha (grep: 0 enlaces).»
 
 ## 3. Después del menú
 
